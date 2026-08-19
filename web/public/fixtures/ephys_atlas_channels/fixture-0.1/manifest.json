@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "0.1-provisional",
+  "dataset": {
+    "id": "ephys_atlas_channels",
+    "release": "fixture-0.1",
+    "title": "Ephys Atlas channels frontend fixture",
+    "description": "Synthetic three-region fixture for frontend contract tests only.",
+    "fixture": true
+  },
+  "parcellations": ["allen", "beryl", "cosmos"],
+  "features": [
+    {
+      "id": "firing_rate",
+      "label": "Firing rate",
+      "description": "Synthetic values for frontend development only.",
+      "unit": "Hz",
+      "statistics": ["mean", "median", "count"],
+      "representations": {
+        "regional": {
+          "kind": "regional",
+          "format": "json",
+          "parcellations": {
+            "allen": "./features/firing_rate/allen.json",
+            "beryl": "./features/firing_rate/beryl.json",
+            "cosmos": "./features/firing_rate/cosmos.json"
+          }
+        }
+      }
+    }
+  ]
+}
