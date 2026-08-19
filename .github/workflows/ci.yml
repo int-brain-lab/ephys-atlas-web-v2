@@ -48,7 +48,13 @@ jobs:
       - run: npm install
       - id: typecheck
         continue-on-error: true
-        run: npm run typecheck
+        run: |
+          set +e
+          npm run typecheck 2>&1 | tee /tmp/typecheck.log
+          status=${PIPESTATUS[0]}
+          summary=$(grep -m1 'error TS' /tmp/typecheck.log | tr -d '\r' | cut -c1-110)
+          echo "summary=${summary:-typecheck failed}" >> "$GITHUB_OUTPUT"
+          exit "$status"
       - id: unit
         continue-on-error: true
         run: npm run test:unit
@@ -65,6 +71,8 @@ jobs:
       - name: Report web statuses
         if: always()
         uses: actions/github-script@v7
+        env:
+          TYPECHECK_SUMMARY: ${{ steps.typecheck.outputs.summary }}
         with:
           script: |
             const outcomes = {
@@ -80,6 +88,16 @@ jobs:
                 sha: context.sha,
                 state: outcome === 'success' ? 'success' : 'failure',
                 context: contextName,
+              });
+            }
+            if (outcomes['CI / web typecheck'] !== 'success') {
+              const detail = (process.env.TYPECHECK_SUMMARY || 'typecheck failed').replace(/\s+/g, ' ').slice(0, 105);
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: context.sha,
+                state: 'failure',
+                context: `CI / diagnostic / ${detail}`,
               });
             }
             const state = Object.values(outcomes).every((value) => value === 'success') ? 'success' : 'failure';
