@@ -1,20 +1,7 @@
-import type { SliceAxis, SliceState } from '../domain/types.js';
+import type { SliceAxis, SliceGuide, SliceIndices, ViewBox } from './types.js';
 
-export interface ViewBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export interface SliceGuide {
-  sourceAxis: SliceAxis;
-  targetAxis: SliceAxis;
-  dimension: 'x' | 'y';
-  position: number;
-}
-
-interface AxisCalibration {
+export interface AxisCalibration {
+  axis: SliceAxis;
   indexCount: number;
   stepUm: number;
   originUm: number;
@@ -30,11 +17,16 @@ interface LegacyGuideProjection {
   clampMargin?: number;
 }
 
-// Copied from work/rendering's tested legacy display/scientific calibration.
 export const REGIONAL_10UM_CALIBRATION: Readonly<Record<SliceAxis, AxisCalibration>> = {
-  coronal: { indexCount: 1320, stepUm: 10, originUm: 5400, direction: -1 },
-  sagittal: { indexCount: 1140, stepUm: 10, originUm: -5739, direction: 1 },
-  horizontal: { indexCount: 800, stepUm: 10, originUm: 332, direction: -1 },
+  coronal: { axis: 'coronal', indexCount: 1320, stepUm: 10, originUm: 5400, direction: -1 },
+  sagittal: { axis: 'sagittal', indexCount: 1140, stepUm: 10, originUm: -5739, direction: 1 },
+  horizontal: { axis: 'horizontal', indexCount: 800, stepUm: 10, originUm: 332, direction: -1 },
+};
+
+export const VOLUME_25UM_CALIBRATION: Readonly<Record<SliceAxis, AxisCalibration>> = {
+  coronal: { axis: 'coronal', indexCount: 528, stepUm: 25, originUm: 5400, direction: -1 },
+  sagittal: { axis: 'sagittal', indexCount: 456, stepUm: 25, originUm: -5739, direction: 1 },
+  horizontal: { axis: 'horizontal', indexCount: 320, stepUm: 25, originUm: 332, direction: -1 },
 };
 
 export const LEGACY_VIEW_BOXES: Readonly<Record<SliceAxis, ViewBox>> = {
@@ -56,14 +48,33 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+function validateIndex(index: number, calibration: AxisCalibration): void {
+  if (!Number.isFinite(index) || index < 0 || index > calibration.indexCount - 1) {
+    throw new RangeError(`${calibration.axis} index ${index} is outside [0, ${calibration.indexCount - 1}]`);
+  }
+}
+
 export function maxRegionalSliceIndex(axis: SliceAxis): number {
   return REGIONAL_10UM_CALIBRATION[axis].indexCount - 1;
 }
 
+export function indexToCoordinateUm(index: number, calibration: AxisCalibration): number {
+  validateIndex(index, calibration);
+  return calibration.originUm + calibration.direction * calibration.stepUm * index;
+}
+
+export function coordinateUmToIndex(
+  coordinateUm: number,
+  calibration: AxisCalibration,
+  rounding: 'nearest' | 'floor' | 'ceil' = 'nearest',
+): number {
+  const raw = (coordinateUm - calibration.originUm) / (calibration.direction * calibration.stepUm);
+  const rounded = rounding === 'floor' ? Math.floor(raw) : rounding === 'ceil' ? Math.ceil(raw) : Math.round(raw);
+  return clamp(rounded, 0, calibration.indexCount - 1);
+}
+
 export function regionalIndexToCoordinateUm(axis: SliceAxis, index: number): number {
-  const calibration = REGIONAL_10UM_CALIBRATION[axis];
-  const safeIndex = clamp(Math.round(index), 0, calibration.indexCount - 1);
-  return calibration.originUm + calibration.direction * calibration.stepUm * safeIndex;
+  return indexToCoordinateUm(index, REGIONAL_10UM_CALIBRATION[axis]);
 }
 
 export function formatRegionalCoordinate(axis: SliceAxis, index: number): string {
@@ -73,23 +84,40 @@ export function formatRegionalCoordinate(axis: SliceAxis, index: number): string
   return `${prefix} ${signed} mm`;
 }
 
-export function linkedGuides(indices: SliceState, targetAxis: SliceAxis): readonly SliceGuide[] {
+export function volumeIndexToCoordinateUm(axis: SliceAxis, index: number): number {
+  return indexToCoordinateUm(index, VOLUME_25UM_CALIBRATION[axis]);
+}
+
+export function coordinateUmToVolumeIndex(axis: SliceAxis, coordinateUm: number): number {
+  return coordinateUmToIndex(coordinateUm, VOLUME_25UM_CALIBRATION[axis]);
+}
+
+export function regionalIndexToVolumeIndex(axis: SliceAxis, regionalIndex: number): number {
+  return coordinateUmToVolumeIndex(axis, regionalIndexToCoordinateUm(axis, regionalIndex));
+}
+
+export function projectLegacyGuide(sourceAxis: SliceAxis, targetAxis: SliceAxis, sourceIndex: number): SliceGuide {
+  const projection = LEGACY_GUIDE_PROJECTIONS.find(
+    (candidate) => candidate.sourceAxis === sourceAxis && candidate.targetAxis === targetAxis,
+  );
+  if (!projection) throw new Error(`No legacy guide projection from ${sourceAxis} to ${targetAxis}`);
+
+  const source = REGIONAL_10UM_CALIBRATION[sourceAxis];
+  validateIndex(sourceIndex, source);
+  const margin = projection.clampMargin ?? 0;
+  const visualIndex = clamp(sourceIndex, margin, source.indexCount - margin);
+  const ratio = visualIndex / source.indexCount;
+
+  return {
+    sourceAxis,
+    targetAxis,
+    dimension: projection.dimension,
+    position: projection.center + projection.span * (ratio - 0.5),
+  };
+}
+
+export function linkedGuides(indices: SliceIndices, targetAxis: SliceAxis): readonly SliceGuide[] {
   return (Object.keys(indices) as SliceAxis[])
     .filter((sourceAxis) => sourceAxis !== targetAxis)
-    .map((sourceAxis) => {
-      const projection = LEGACY_GUIDE_PROJECTIONS.find(
-        (candidate) => candidate.sourceAxis === sourceAxis && candidate.targetAxis === targetAxis,
-      );
-      if (!projection) throw new Error(`No legacy guide projection from ${sourceAxis} to ${targetAxis}`);
-      const source = REGIONAL_10UM_CALIBRATION[sourceAxis];
-      const margin = projection.clampMargin ?? 0;
-      const visualIndex = clamp(Math.round(indices[sourceAxis]), margin, source.indexCount - margin);
-      const ratio = visualIndex / source.indexCount;
-      return {
-        sourceAxis,
-        targetAxis,
-        dimension: projection.dimension,
-        position: projection.center + projection.span * (ratio - 0.5),
-      };
-    });
+    .map((sourceAxis) => projectLegacyGuide(sourceAxis, targetAxis, indices[sourceAxis]));
 }
