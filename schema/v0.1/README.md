@@ -21,17 +21,23 @@ Small metadata uses JSON. Large numeric payloads do not.
   realistic counts.
 - Histogram region x bin counts: dense little-endian `uint32` arrays. Bin edges
   and global counts remain in the small statistics JSON.
-- Current web volume representation: one feature per chunked array; chunks are
-  C-order little-endian raw numeric bytes, optionally gzip-compressed. Chunk
-  coordinates are substituted into `path_template`.
+- A volume declares its physical `layout` independently of its scientific grid.
+  `chunks3d` stores one feature as C-order 3-D chunks. The schema also permits
+  `orthogonal_slice_packs`, where each anatomical axis has packed consecutive
+  slices for low-request interactive access.
 
-The chunked volume contract is browser transport, not a declaration that the
-canonical scientific source must be chunked. Under D010 the pinned S3 NPZ remains
+`chunks3d` remains the deterministic builder/golden-fixture layout. It is not
+frozen as the only launch browser transport: rendering benchmarks show that a
+naive static 3-D chunk URL layout can exceed the request/transfer budget for
+orthogonal slice navigation. Real encoding-volume artifacts must be benchmarked
+before the production volume layout is selected.
+
+The volume contract is browser transport, not a declaration that the canonical
+scientific source has the same layout. Under D010 the pinned S3 NPZ remains
 canonical. `docs/data/VOLUME_HTTP_VALIDATION.md` records why the current NPZ is
-not directly browser-suitable. If a future canonical public object becomes
-feature/slice-addressable and passes browser access/performance checks, the
-contract may be extended with a direct representation instead of preserving a
-redundant transform.
+not directly browser-suitable. A future canonical public object that becomes
+feature/slice-addressable and passes browser access/performance checks may be
+consumed directly with explicit provenance.
 
 All binary array metadata includes dtype, shape, order, and endianness. No
 consumer should infer these from a filename.
