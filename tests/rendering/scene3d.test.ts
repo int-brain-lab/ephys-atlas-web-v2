@@ -4,7 +4,7 @@ import {
   estimateRenderer3DSceneBytes,
   validateRenderer3DScene,
   type Renderer3DScene,
-} from '../../web/src/rendering/scene3d.ts';
+} from '../../web/src/rendering/scene3d.js';
 
 test('3D scene contract accepts region meshes and dense point buffers', () => {
   const pointCount = 500_000;

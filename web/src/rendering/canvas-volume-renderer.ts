@@ -1,6 +1,5 @@
-import type { VolumeSliceFrame, VolumeSliceRenderer } from './types.ts';
+import type { VolumeSliceFrame, VolumeSliceRenderer } from './types.js';
 
-/** Simple dependency-free launch renderer; loading/decoding remains outside this class. */
 export class CanvasVolumeSliceRenderer implements VolumeSliceRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly canvas: HTMLCanvasElement;

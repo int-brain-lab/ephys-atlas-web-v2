@@ -9,8 +9,8 @@ import {
   regionalIndexToCoordinateUm,
   regionalIndexToVolumeIndex,
   volumeIndexToCoordinateUm,
-} from '../../web/src/rendering/slice-calibration.ts';
-import { regionIdFromClassNames } from '../../web/src/rendering/region-id.ts';
+} from '../../web/src/rendering/slice-calibration.js';
+import { regionIdFromClassNames } from '../../web/src/rendering/region-id.js';
 
 const fixture = JSON.parse(
   readFileSync(new URL('../../fixtures/rendering/linked-slices.fixture.json', import.meta.url), 'utf8'),
@@ -33,22 +33,13 @@ test('25 um volume grid shares the legacy Allen origins', () => {
 
 test('legacy guide centers reproduce the hand-tuned v1 fit', () => {
   assert.deepEqual(projectLegacyGuide('sagittal', 'coronal', 570), {
-    sourceAxis: 'sagittal',
-    targetAxis: 'coronal',
-    dimension: 'x',
-    position: 237,
+    sourceAxis: 'sagittal', targetAxis: 'coronal', dimension: 'x', position: 237,
   });
   assert.deepEqual(projectLegacyGuide('coronal', 'sagittal', 660), {
-    sourceAxis: 'coronal',
-    targetAxis: 'sagittal',
-    dimension: 'x',
-    position: 236,
+    sourceAxis: 'coronal', targetAxis: 'sagittal', dimension: 'x', position: 236,
   });
   assert.deepEqual(projectLegacyGuide('horizontal', 'coronal', 400), {
-    sourceAxis: 'horizontal',
-    targetAxis: 'coronal',
-    dimension: 'y',
-    position: 174,
+    sourceAxis: 'horizontal', targetAxis: 'coronal', dimension: 'y', position: 174,
   });
 });
 

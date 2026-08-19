@@ -1,4 +1,4 @@
-import type { SliceAxis, SliceGuide, SliceIndices, ViewBox } from './types.ts';
+import type { SliceAxis, SliceGuide, SliceIndices, ViewBox } from './types.js';
 
 export interface AxisCalibration {
   axis: SliceAxis;
@@ -17,8 +17,6 @@ interface LegacyGuideProjection {
   clampMargin?: number;
 }
 
-// These are the scientific coordinates implicit in v1 constants.js. They describe
-// Allen CCF coordinates, not the manually tuned SVG geometry.
 export const REGIONAL_10UM_CALIBRATION: Readonly<Record<SliceAxis, AxisCalibration>> = {
   coronal: { axis: 'coronal', indexCount: 1320, stepUm: 10, originUm: 5400, direction: -1 },
   sagittal: { axis: 'sagittal', indexCount: 1140, stepUm: 10, originUm: -5739, direction: 1 },
@@ -31,16 +29,12 @@ export const VOLUME_25UM_CALIBRATION: Readonly<Record<SliceAxis, AxisCalibration
   horizontal: { axis: 'horizontal', indexCount: 320, stepUm: 25, originUm: 332, direction: -1 },
 };
 
-// Exact v1 view boxes from index.html. Keep these with the display calibration so
-// the curated SVG paths can be reused without pretending they are canonical geometry.
 export const LEGACY_VIEW_BOXES: Readonly<Record<SliceAxis, ViewBox>> = {
   coronal: { x: 58, y: 50, width: 356, height: 250 },
   sagittal: { x: 56, y: 66, width: 358, height: 217 },
   horizontal: { x: 122, y: 42, width: 230, height: 266 },
 };
 
-// Exact v1 visual cross-view fits from js/core/slice-helpers.js. These are display
-// approximations tuned against the curated SVGs. They must not be used for data lookup.
 const LEGACY_GUIDE_PROJECTIONS: readonly LegacyGuideProjection[] = [
   { sourceAxis: 'sagittal', targetAxis: 'coronal', dimension: 'x', center: 237, span: 354, clampMargin: 10 },
   { sourceAxis: 'sagittal', targetAxis: 'horizontal', dimension: 'x', center: 237, span: 230, clampMargin: 10 },
@@ -95,9 +89,7 @@ export function projectLegacyGuide(sourceAxis: SliceAxis, targetAxis: SliceAxis,
   const projection = LEGACY_GUIDE_PROJECTIONS.find(
     (candidate) => candidate.sourceAxis === sourceAxis && candidate.targetAxis === targetAxis,
   );
-  if (!projection) {
-    throw new Error(`No legacy guide projection from ${sourceAxis} to ${targetAxis}`);
-  }
+  if (!projection) throw new Error(`No legacy guide projection from ${sourceAxis} to ${targetAxis}`);
 
   const source = REGIONAL_10UM_CALIBRATION[sourceAxis];
   validateIndex(sourceIndex, source);

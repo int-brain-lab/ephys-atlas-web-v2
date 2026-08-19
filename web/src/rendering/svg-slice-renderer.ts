@@ -1,11 +1,11 @@
-import { regionIdFromClassNames } from './region-id.ts';
+import { regionIdFromClassNames } from './region-id.js';
 import type {
   MappingName,
   RegionalSliceFrame,
   RegionalSliceRenderer,
   SliceAxis,
   SliceRegionPointerEvent,
-} from './types.ts';
+} from './types.js';
 
 export interface SvgSliceRendererMount {
   svg: SVGSVGElement;
@@ -17,8 +17,6 @@ export interface SvgSliceRendererOptions {
   onRegionPointer?: (event: SliceRegionPointerEvent) => void;
 }
 
-// This renderer deliberately consumes a complete immutable frame. It does not own
-// application state, feature state, selection state, or network loading.
 export class SvgSliceRenderer implements RegionalSliceRenderer {
   private currentAxis: SliceAxis | null = null;
   private currentIndex = -1;
@@ -36,7 +34,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     const signal = this.abortController.signal;
     mount.figureLayer.addEventListener('pointermove', this.onPointerMove, { signal });
     mount.figureLayer.addEventListener('pointerleave', this.onPointerLeave, { signal });
-    mount.figureLayer.addEventListener('click', this.onClick, { signal });
+    mount.figureLayer.addEventListener('pointerup', this.onClick, { signal });
   }
 
   render(frame: RegionalSliceFrame): void {
@@ -48,8 +46,6 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     );
 
     if (this.currentIndex !== frame.index || this.currentFragment !== frame.svgFragment || this.indexedMapping !== frame.mapping) {
-      // svgFragment must come from the curated immutable atlas asset release. Do not
-      // pass arbitrary user HTML/SVG through this renderer without sanitising it first.
       this.mount.figureLayer.innerHTML = frame.svgFragment;
       this.currentIndex = frame.index;
       this.currentFragment = frame.svgFragment;
@@ -123,12 +119,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
 
   private emitRegion(type: SliceRegionPointerEvent['type'], regionId: number, event: PointerEvent): void {
     if (this.currentAxis == null) return;
-    this.options.onRegionPointer?.({
-      axis: this.currentAxis,
-      regionId,
-      type,
-      originalEvent: event,
-    });
+    this.options.onRegionPointer?.({ axis: this.currentAxis, regionId, type, originalEvent: event });
   }
 
   private readonly onPointerMove = (event: PointerEvent): void => {

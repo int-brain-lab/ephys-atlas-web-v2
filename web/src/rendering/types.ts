@@ -61,7 +61,7 @@ export interface Renderer3DState {
 export interface Renderer3D {
   readonly technology: string;
   mount(host: HTMLElement): Promise<void> | void;
-  setScene(scene: import('./scene3d.ts').Renderer3DScene): Promise<void> | void;
+  setScene(scene: import('./scene3d.js').Renderer3DScene): Promise<void> | void;
   setState(state: Renderer3DState): Promise<void> | void;
   resize(width: number, height: number, devicePixelRatio: number): void;
   dispose(): void;
