@@ -2,8 +2,13 @@ import type { SliceAxis } from '../domain/types.js';
 import type { SliceRenderModel, SliceRenderer } from './interfaces.js';
 import { LEGACY_VIEW_BOXES, linkedGuides } from './slice-calibration.js';
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
+import {
+  LEGACY_CURATED_SLICE_ASSETS,
+  LEGACY_CURATED_SLICE_BASE_URL,
+  legacyCuratedSliceUrl,
+} from './legacy-slice-assets.js';
 
-export const LEGACY_CURATED_SLICE_BASE_URL = 'https://atlas.internationalbrainlab.org/data/json/';
+export { LEGACY_CURATED_SLICE_BASE_URL };
 
 interface AxisSliceBundle {
   entries: ReadonlyMap<number, string>;
@@ -91,7 +96,7 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
   }
 
   private async fetchAxis(axis: SliceAxis): Promise<AxisSliceBundle> {
-    const url = new URL(`slices_${axis}.json`, this.baseUrl).toString();
+    const url = legacyCuratedSliceUrl(axis, this.baseUrl);
     const response = await this.fetchImpl(url, { mode: 'cors', cache: 'force-cache' });
     if (!response.ok) throw new Error(`Curated slice request failed (${response.status})`);
     const raw: unknown = await response.json();
@@ -104,7 +109,29 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     }
     const sortedIndices = [...entries.keys()].sort((a, b) => a - b);
     if (!sortedIndices.length) throw new Error(`Curated ${axis} slice bundle contains no SVG fragments`);
+    this.assertKnownInventory(axis, sortedIndices);
     return { entries, sortedIndices };
+  }
+
+  private assertKnownInventory(axis: SliceAxis, indices: readonly number[]): void {
+    const expected = LEGACY_CURATED_SLICE_ASSETS[axis];
+    const first = indices[0];
+    const last = indices[indices.length - 1];
+    const step = expected.step ?? 1;
+    const regular = indices.every(
+      (index, position) => position === 0 || index - (indices[position - 1] ?? index) === step,
+    );
+    if (
+      indices.length !== expected.entryCount ||
+      first !== expected.minIndex ||
+      last !== expected.maxIndex ||
+      !regular
+    ) {
+      throw new Error(
+        `Curated ${axis} slice inventory does not match the pinned v1 asset ` +
+          `(${indices.length} entries, ${first ?? 'none'}..${last ?? 'none'})`,
+      );
+    }
   }
 
   private nearestIndex(indices: readonly number[], requested: number): number {
