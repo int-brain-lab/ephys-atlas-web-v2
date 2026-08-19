@@ -1,0 +1,12 @@
+{
+  "indices": {
+    "coronal": 660,
+    "sagittal": 570,
+    "horizontal": 400
+  },
+  "fragments": {
+    "coronal": "<path class=\"beryl_region_101\" d=\"M80 80h130v90H80z\"/><path class=\"beryl_region_202\" d=\"M220 80h130v90H220z\"/>",
+    "sagittal": "<path class=\"beryl_region_101\" d=\"M80 90h120v80H80z\"/><path class=\"beryl_region_202\" d=\"M210 90h120v80H210z\"/>",
+    "horizontal": "<path class=\"beryl_region_101\" d=\"M145 75h80v90h-80z\"/><path class=\"beryl_region_202\" d=\"M235 75h80v90h-80z\"/>"
+  }
+}
