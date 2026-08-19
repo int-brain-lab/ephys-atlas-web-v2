@@ -1,7 +1,9 @@
 import type { SliceAxis } from '../domain/types.js';
-import type { SliceRenderModel, SliceRenderer } from './interfaces.js';
+import type { RendererInteractionSink, SliceRenderModel, SliceRenderer } from './interfaces.js';
 import { LEGACY_VIEW_BOXES, linkedGuides } from './slice-calibration.js';
+import { regionalColorMap } from './scalar-colormap.js';
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
+import type { SliceRegionPointerEvent } from './types.js';
 import {
   LEGACY_CURATED_SLICE_ASSETS,
   LEGACY_CURATED_SLICE_BASE_URL,
@@ -30,6 +32,8 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
   private readonly axisBundles = new Map<SliceAxis, Promise<AxisSliceBundle>>();
   private readonly mounts = new Map<HTMLElement, RendererMount>();
   private readonly renderTokens = new WeakMap<HTMLElement, number>();
+  private readonly requestedIndices = new Map<SliceAxis, number>();
+  private interactionSink: RendererInteractionSink | null = null;
 
   constructor(options: LegacySvgSliceRendererOptions = {}) {
     const baseUrl = options.baseUrl ?? LEGACY_CURATED_SLICE_BASE_URL;
@@ -37,9 +41,14 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     this.fetchImpl = options.fetchImpl ?? fetch.bind(globalThis);
   }
 
+  setInteractionSink(sink: RendererInteractionSink): void {
+    this.interactionSink = sink;
+  }
+
   async render(target: HTMLElement, model: SliceRenderModel): Promise<void> {
     const token = (this.renderTokens.get(target) ?? 0) + 1;
     this.renderTokens.set(target, token);
+    this.requestedIndices.set(model.axis, model.sliceIndex);
     const bundle = await this.loadAxis(model.axis);
     if (this.renderTokens.get(target) !== token) return;
 
@@ -53,6 +62,9 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
       const numeric = Number(id);
       if (Number.isInteger(numeric)) selectedRegionIds.add(numeric);
     }
+    const regionColors = model.feature?.representation === 'regional' && model.feature.parcellation === model.parcellation
+      ? regionalColorMap(model.feature, model.coloring)
+      : undefined;
     mount.renderer.render({
       axis: model.axis,
       index: assetIndex,
@@ -60,6 +72,7 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
       svgFragment: fragment,
       viewBox: LEGACY_VIEW_BOXES[model.axis],
       guides: linkedGuides(model.slices, model.axis),
+      ...(regionColors ? { regionColors } : {}),
       selectedRegionIds,
     });
 
@@ -83,6 +96,7 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     }
     this.mounts.clear();
     this.axisBundles.clear();
+    this.requestedIndices.clear();
   }
 
   private async loadAxis(axis: SliceAxis): Promise<AxisSliceBundle> {
@@ -148,6 +162,22 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     return Math.abs(lower - requested) <= Math.abs(upper - requested) ? lower : upper;
   }
 
+  private onRegionPointer(event: SliceRegionPointerEvent): void {
+    const sink = this.interactionSink;
+    if (!sink) return;
+    if (event.type === 'leave') {
+      sink.hover(null);
+      return;
+    }
+    const hit = {
+      regionId: String(event.regionId),
+      axis: event.axis,
+      sliceIndex: this.requestedIndices.get(event.axis) ?? 0,
+    };
+    if (event.type === 'select') sink.toggleSelection(hit);
+    else sink.hover(hit);
+  }
+
   private ensureMount(target: HTMLElement): RendererMount {
     const existing = this.mounts.get(target);
     if (existing) return existing;
@@ -166,7 +196,12 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     svg.append(figureLayer, guideLayer);
     target.replaceChildren(svg);
 
-    const mount = { renderer: new SvgSliceRenderer({ svg, figureLayer, guideLayer }) };
+    const mount = {
+      renderer: new SvgSliceRenderer(
+        { svg, figureLayer, guideLayer },
+        { onRegionPointer: (event) => this.onRegionPointer(event) },
+      ),
+    };
     this.mounts.set(target, mount);
     return mount;
   }
