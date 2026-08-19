@@ -1,9 +1,13 @@
 import type { DatasetRef, ParcellationId, RepresentationKind, StatisticId } from '../domain/types.js';
 import {
+  materializeRegionalHistogram,
+  parseRegionMetadata,
+  parseRegionalStatisticsResource,
+} from './regional-data.js';
+import {
   decodeBinaryArray,
   parseDatasetManifestDocument,
   parseFeatureDescriptor,
-  parseStatisticsDocument,
   resolveDatasetManifest,
 } from './validate.js';
 import { SCHEMA_VERSION } from './contracts.js';
@@ -14,6 +18,7 @@ import type {
   DatasetSource,
   FeatureDescriptor,
   FeaturePayload,
+  RegionMetadata,
   RegionalFeaturePayload,
 } from './contracts.js';
 
@@ -146,6 +151,26 @@ export class LocalDatasetSource implements DatasetSource {
     return stored.manifest;
   }
 
+  async loadRegions(ref: DatasetRef, parcellation: ParcellationId): Promise<readonly RegionMetadata[]> {
+    if (!ref.releaseId) throw new Error('A local release id is required');
+    const manifest = await this.loadManifest(ref);
+    const parcel = manifest.parcellationDescriptors[parcellation];
+    if (!parcel) throw new Error(`Dataset has no ${parcellation} parcellation`);
+    if (!parcel.metadata) throw new Error(`${parcellation} parcellation has no region metadata resource`);
+    const [metadataBlob, regionIds] = await Promise.all([
+      this.readResource(ref.releaseId, parcel.metadata),
+      this.readArray(ref.releaseId, parcel.regionIndex.path, parcel.regionIndex),
+    ]);
+    const regions = parseRegionMetadata(JSON.parse(await metadataBlob.text()) as unknown);
+    if (regions.length !== regionIds.length) throw new Error(`${parcellation} metadata does not match region index length`);
+    for (const region of regions) {
+      if (region.index < 0 || region.index >= regionIds.length || regionIds[region.index] !== region.atlasId) {
+        throw new Error(`${parcellation} metadata/index mismatch at region ${region.id}`);
+      }
+    }
+    return regions;
+  }
+
   async loadFeature(
     ref: DatasetRef,
     featureId: string,
@@ -171,8 +196,17 @@ export class LocalDatasetSource implements DatasetSource {
     if (regionIds.length !== values.length) throw new Error(`${feature.id}/${parcellation} values do not match region index length`);
     const statsPath = resolvePath(feature.path, regional.statistics);
     const statsBlob = await this.readResource(ref.releaseId, statsPath);
-    const statsDocument = parseStatisticsDocument(JSON.parse(await statsBlob.text()) as unknown);
-    const matrix = await this.readArray(ref.releaseId, resolvePath(statsPath, statsDocument.values.path), statsDocument.values);
+    const statsDocument = parseRegionalStatisticsResource(JSON.parse(await statsBlob.text()) as unknown);
+    const [matrix, histogramFlat] = await Promise.all([
+      this.readArray(ref.releaseId, resolvePath(statsPath, statsDocument.values.path), statsDocument.values),
+      statsDocument.histogram?.regionalCounts
+        ? this.readArray(
+            ref.releaseId,
+            resolvePath(statsPath, statsDocument.histogram.regionalCounts.path),
+            statsDocument.histogram.regionalCounts,
+          )
+        : Promise.resolve(null),
+    ]);
     const fieldCount = statsDocument.fields.length;
     if (statsDocument.values.shape.length !== 2 || statsDocument.values.shape[0] !== regionIds.length || statsDocument.values.shape[1] !== fieldCount) {
       throw new Error(`${feature.id}/${parcellation} regional statistics shape is inconsistent`);
@@ -192,6 +226,11 @@ export class LocalDatasetSource implements DatasetSource {
       parcellation,
       regionIds: regionIds.map(String),
       statistics,
+      ...(statsDocument.population ? { population: statsDocument.population } : {}),
+      ...(statsDocument.global ? { global: statsDocument.global } : {}),
+      ...(statsDocument.histogram
+        ? { histogram: materializeRegionalHistogram(statsDocument.histogram, histogramFlat, regionIds.length) }
+        : {}),
     };
   }
 
