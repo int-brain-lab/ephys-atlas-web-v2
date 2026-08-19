@@ -2,90 +2,115 @@
 
 ## Launch recommendation
 
-Use a dependency-free Canvas2D renderer for the three orthogonal 25 um volume slices, fed by a storage/codec-neutral logical chunk loader. Do not download/materialize a full feature volume in the browser and do not make WebGPU a prerequisite for volume viewing.
+Use a dependency-free Canvas2D renderer for the three orthogonal 25 um volume slices behind a storage-neutral `VolumeSliceSource`. Do not download/materialize a full feature volume in the browser and do not make WebGPU a prerequisite for volume viewing.
 
-The renderer and loader are deliberately separate:
+The browser boundary is deliberately layered:
 
-- `VolumeChunkSource` translates the dataset's eventual physical storage format into decoded logical chunks. It may use object fetches, HTTP ranges, shards, OPFS/IndexedDB, and worker decoding.
-- `VolumeSliceLoader` plans intersecting chunks, limits fetch concurrency, maintains a byte-bounded LRU, and assembles canonical coronal/sagittal/horizontal planes.
-- `scalarToRgba` applies the active scalar range/palette to a plane.
-- `CanvasVolumeSliceRenderer` only paints prepared RGBA pixels.
+- `VolumeSliceSource` is what the application consumes: `loadSlice(axis, index)`.
+- `VolumeChunkSource` is one possible physical adapter. It turns an eventual storage format into decoded logical chunks, potentially using workers, byte ranges, shards, OPFS, or IndexedDB.
+- `VolumeSliceLoader` implements `VolumeSliceSource` on top of logical 3-D chunks, limits fetch concurrency, maintains a byte-bounded LRU, and assembles canonical planes.
+- another source can implement orientation-specific slice packs without changing the app or renderer.
+- `scalarToRgba` applies the active scalar range/palette.
+- `CanvasVolumeSliceRenderer` paints prepared RGBA pixels only.
 
-The source adapter is the only component that should know the schema team's physical format.
+This separation is intentional because the physical volume layout is still under cross-workstream review.
 
-## Why eager full-volume loading is rejected
+## Real launch source dimensions and dtype
 
-The launch Allen-grid shape is 528 x 456 x 320 = 77,045,760 voxels. A single float32 feature is 293.9 MiB before transport compression. Holding that complete array plus decoded payloads, RGB(A) buffers, regional assets, application state, and caches is an unnecessary browser-memory risk, particularly on Safari/tablets.
+The private paper source documents vintage `2026_W12` as:
 
-V1 currently materializes the whole volume and loops over every displayed pixel on the UI thread. V2 keeps only the chunks needed for current/nearby slices.
+- array shape `(456, 528, 320, 41)`;
+- 25 um resolution;
+- `float16` values;
+- 41 feature volumes;
+- per-feature means/stds stored separately.
 
-## Logical chunks versus physical objects
+A single 3-D feature therefore contains 77,045,760 voxels: **147.0 MiB raw float16**. Decoding an entire feature to float32 for browser computation would be **293.9 MiB**. The renderer prototype therefore normalizes decoded chunks to `Float32Array` but records the physical `storageDtype` separately.
 
-`benchmarks/rendering/volume-layout.mjs` evaluates cubic logical chunks assuming, deliberately pessimistically, that every chunk is a separately fetched object:
+Eager full-feature loading is rejected: it leaves too little safety margin for typed-array copies, RGBA planes, regional assets, application state, browser internals, and tablet/Safari constraints.
 
-| logical chunk | raw/chunk | coronal cold slice | sagittal cold slice | horizontal cold slice |
-| --- | ---: | ---: | ---: | ---: |
-| 32^3 | 0.125 MiB | 150 req / 18.8 MiB | 170 / 21.3 MiB | 255 / 31.9 MiB |
-| 48^3 | 0.422 MiB | 70 / 29.5 MiB | 77 / 32.5 MiB | 110 / 46.4 MiB |
-| 64^3 | 1.0 MiB | 40 / 40.0 MiB | 45 / 45.0 MiB | 72 / 72.0 MiB |
-| 96^3 | 3.375 MiB | 20 / 67.5 MiB | 24 / 81.0 MiB | 30 / 101.3 MiB |
+## 3-D cubic chunks: measured access-pattern problem
 
-This rules out **one HTTP object per logical brick** as the launch format. Small chunks control decoded overfetch but create excessive request fan-out; large chunks reduce fan-out by transferring too much data.
+`benchmarks/rendering/volume-layout.mjs` evaluates cubic logical chunks using the real shape and float16 storage size, deliberately assuming one independently fetched object per chunk:
 
-### Cross-workstream requirement for `work/data-schema`
+| logical chunk | raw/chunk | coronal cold slice | sagittal cold slice | horizontal cold slice | union of 3 current planes |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 32^3 | 0.063 MiB | 150 req / 9.4 MiB | 170 / 10.6 MiB | 255 / 15.9 MiB | 33.4 MiB |
+| 48^3 | 0.211 MiB | 70 / 14.8 MiB | 77 / 16.2 MiB | 110 / 23.2 MiB | 48.5 MiB |
+| 64^3 | 0.500 MiB | 40 / 20.0 MiB | 45 / 22.5 MiB | 72 / 36.0 MiB | 68.0 MiB |
+| 96^3 | 1.688 MiB | 20 / 33.8 MiB | 24 / 40.5 MiB | 30 / 50.6 MiB | 101.3 MiB |
 
-The physical format should support **logical chunks materially smaller than physical request/shard units**, with an index that permits request coalescing and/or byte-range access. The rendering branch does not require a particular container or codec. Zarr-style sharding is one candidate; a small custom indexed shard is another. The contract needed by the renderer is simply:
+This is the central launch issue. Small cubes reduce voxel overfetch but explode request count; large cubes reduce requests while loading tens of MiB for each cold slice.
 
-1. immutable volume metadata exposes shape, 25 um voxel size, dtype, and logical chunk shape;
-2. a logical chunk can be addressed deterministically;
-3. several chunks needed for one plane can be fetched without 100+ independent HTTP round trips;
-4. chunk decoding can run outside the UI thread when a JavaScript/native streaming decoder is insufficient;
-5. range/shard layout remains compatible with static object storage/CDN reads.
+The current `work/data-schema` v0.1 draft uses one raw/gzip `path_template` per 3-D chunk and suggests ~64 voxels as a production starting point. The renderer benchmark does **not** support freezing that physical layout yet: the 64^3 candidate touches 157 chunk objects / 78.5 MiB summed across the three views before overlap, or 136 unique chunks / 68.0 MiB raw for their union.
 
-Do not use whole-object HTTP `Content-Encoding` as the only compression mechanism for a range-addressed shard; the source must be able to decode the independently addressed chunk payloads it requests.
+## Simpler launch candidate: orientation-specific slice packs
 
-## Logical chunk size starting point
+For a static publication dataset, storage duplication may be a better trade than browser request/overfetch complexity. Store the same exact float16 volume in three orientations, each divided into packs of neighboring 2-D slices. A current view then needs one object per axis.
 
-Benchmark 32^3 and 48^3 logical chunks first against **real ephys-atlas volume features** once the schema branch has representative artifacts. They keep each decoded chunk at 128-432 KiB float32 and give 31-47 immediately reusable neighboring slices along a dimension when the relevant bricks remain cached.
+Measured raw costs:
 
-The synthetic compression benchmark is intentionally not a format decision. A smooth-but-microstructured float32 field compressed to 0.86-0.91 of raw with gzip at these chunk sizes; real ephys feature volumes may compress very differently. Codec choice must be benchmarked on real launch data.
+| slices per pack | three-view startup | decoded float32 cache | full feature storage | immediately warm steps |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 1.06 MiB | 2.12 MiB | 440.9 MiB | 1 |
+| 4 | 4.24 MiB | 8.48 MiB | 440.9 MiB | 4 |
+| 8 | 8.48 MiB | 16.96 MiB | 440.9 MiB | 8 |
+| 16 | 16.96 MiB | 33.91 MiB | 440.9 MiB | 16 |
+
+An **8-slice pack** is the strongest launch candidate to benchmark on real data: three requests for the current linked views, an 8.48 MiB raw upper bound before compression, and only ~17 MiB decoded working data. Its cost is 3x physical volume storage: 440.9 MiB raw per feature, ~17.7 GiB raw for all 41 `2026_W12` features before compression. For immutable object storage this may be acceptable; it must be weighed against build time/storage/whole-dataset packaging.
+
+This representation can use ordinary static gzip-compressed objects without range addressing because each requested pack is independently useful. It also keeps the browser implementation trivial.
+
+### Cross-workstream request to `work/data-schema`
+
+Do not freeze v0.1 as only one independently fetched 3-D chunk URL. Benchmark at least these two real-data candidates:
+
+1. existing 32^3/64^3 cube chunks, including real browser request fan-out and three-plane startup transfer;
+2. orientation-specific packs, especially depth 4 and 8, including total stored bytes and gzip ratios.
+
+A compatible schema direction is to make physical `layout` explicit and allow either `chunks3d` or `orthogonal_slice_packs`, while keeping scientific grid/dtype/affine metadata common. Another acceptable direction is an indexed shard that empirically achieves comparable request and byte budgets. The renderer does not require a specific container.
+
+If 3-D chunks remain, the physical format needs a way to coalesce many logical chunks without 100+ independent round trips. Do not rely on whole-object HTTP `Content-Encoding` alone for byte-addressed shards; independently addressed payloads must remain independently decodable.
+
+## Compression benchmark
+
+The committed synthetic smooth float16 field is only a codec sanity check, not a data-format decision. Gzip ratios were ~0.72 for 32^3 and ~0.85 for 64^3; Brotli compressed further but had much slower offline encoding in this Node run. Real ephys-atlas features may have very different distributions and must decide the codec.
+
+For independent slice-pack objects, ordinary HTTP gzip/Brotli content encoding is practical. For random-access shards, use independently decodable internal chunk payloads instead.
 
 ## Cache and scheduling
 
-The current prototype uses:
+The current 3-D chunk prototype uses:
 
 - 96 MiB decoded-chunk LRU default;
 - 8 concurrent logical chunk loads maximum;
 - exact reuse while navigation remains inside the same chunk slab;
-- optional adjacent-slice prefetch through the same bounded cache.
+- optional adjacent-slice prefetch through the same bounded cache;
+- `AbortSignal` for stale feature/slice requests.
 
-The frontend may lower the cache budget on constrained devices. Avoid relying solely on `navigator.deviceMemory` because browser coverage differs.
-
-Requests for a stale feature/slice should be cancelled with `AbortSignal`. The physical source should deduplicate in-flight chunk/range requests; this remains source-adapter work once the format is settled.
+A slice-pack source should use the same policies with a much smaller decoded cache. The physical source should deduplicate in-flight object/range requests.
 
 ## Slice orientation contract
 
-Logical chunk data is normalized by the source to canonical `(coronal, sagittal, horizontal)` order. `VolumeSliceLoader` returns:
+A source normalizes data to canonical `(coronal, sagittal, horizontal)` order before assembly. `VolumeSliceSource` returns:
 
 - coronal: width sagittal, height horizontal;
 - sagittal: width coronal, height horizontal;
 - horizontal: width sagittal, height coronal.
 
-Display flips/orientation should be applied by the view adapter, not hidden in physical data indexing. Physical coordinate lookup uses `slice-calibration.ts`, not SVG guide-line calibration.
+Display flips/orientation belong to the view adapter, not hidden physical indexing. Scientific coordinates come from schema geometry / `slice-calibration.ts`, never from SVG guide calibration.
 
 ## Canvas2D evidence
 
-`benchmarks/rendering/volume-render.mjs` maps all three full-resolution planes (555,648 pixels total) through a 256-entry RGBA palette with reusable buffers. Local Node 22 results:
+`benchmarks/rendering/volume-render.mjs` maps all three full-resolution planes (555,648 pixels) through a 256-entry RGBA palette with reusable buffers. Local Node 22 results:
 
 - p50: 4.79 ms
 - p95: 5.35 ms
 - max: 5.68 ms
 
-This is not a browser paint benchmark, but it shows that scalar recoloring itself is comfortably small compared with network/decode costs. Canvas2D therefore has the lowest launch risk. If browser profiling later misses the frame budget, the same `VolumeSliceRenderer` interface can move recoloring/painting to OffscreenCanvas/worker or a GPU renderer without changing application state or storage.
+This is not a browser paint benchmark, but it makes network/decode the dominant architectural concern. Canvas2D has the lowest launch risk. If browser profiling misses the frame budget, `VolumeSliceRenderer` permits OffscreenCanvas/worker or GPU replacement without changing data/application state.
 
 ## Provisional performance budgets
-
-These are launch engineering budgets, not measured product guarantees:
 
 | operation | target |
 | --- | --- |
@@ -93,11 +118,11 @@ These are launch engineering budgets, not measured product guarantees:
 | first regional linked slices, excluding feature table | <= 2 MiB transferred |
 | regional feature switch after metadata loaded | <= 100 ms local processing; <= 500 ms including network |
 | warm slice navigation | <= 50 ms p95 input-to-paint |
-| cold volume chunk-boundary navigation | <= 250 ms p95 on a typical broadband connection |
+| cold volume boundary/navigation | <= 250 ms p95 typical broadband |
 | scalar recolor of all three volume views | <= 10 ms p95 CPU before paint |
-| decoded volume chunk cache | 96 MiB default, configurable downward |
-| total steady-state viewer JS heap | aim <= 192 MiB; hard review threshold 256 MiB |
-| initial volume feature data needed for three current planes | aim <= 8 MiB transferred |
-| background/prefetch bytes | bounded and cancellable; never download whole 294 MiB float32 volume implicitly |
+| decoded volume cache | <= 96 MiB default; prefer much less for slice packs |
+| total steady-state viewer JS heap | aim <= 192 MiB; review at 256 MiB |
+| initial volume feature data for three current planes | <= 8-10 MiB raw/transfer target before opportunistic prefetch |
+| background/prefetch | bounded, cancellable; never fetch a whole 147 MiB float16 feature implicitly |
 
-The byte/latency targets must be re-run with real release artifacts and browser/network traces before launch.
+Re-run these budgets with real release artifacts and browser/network traces before schema freeze/launch.
