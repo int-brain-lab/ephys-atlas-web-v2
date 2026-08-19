@@ -1,6 +1,6 @@
 # Integration status
 
-Status: integration candidate on PR #1. Historical workstream handoff documents remain useful evidence but this file and `docs/DECISIONS.md` describe the accepted cross-workstream state.
+Status: integrated on `main`. Historical workstream handoff documents remain useful evidence, while this file and `docs/DECISIONS.md` describe the accepted cross-workstream state.
 
 ## Integrated components
 
@@ -25,7 +25,9 @@ The browser no longer defines a separate provisional scientific schema. Publishe
 
 ### Rendering
 
-The frontend `SliceRenderer` / `SliceRenderModel` facade is retained. The rendering workstream's `SvgSliceRenderer` now sits below the legacy curated-asset adapter, rather than defining a second application renderer abstraction.
+The frontend `SliceRenderer` / `SliceRenderModel` facade is retained. The rendering workstream's `SvgSliceRenderer` sits below the legacy curated-asset adapter, rather than defining a second application renderer abstraction.
+
+The five authoritative deployed v1 curated bundles have been inventoried and pinned by raw byte size, entry/path counts, coverage, and SHA-256 in `docs/frontend/LEGACY_CURATED_ASSETS.md` and `web/src/rendering/legacy-slice-assets.ts`. Orthogonal SVGs are display-downsampled to even indices; scientific navigation, coordinates, URL state, and linked guides remain on the full 10 um index domains. The adapter validates the loaded orthogonal index inventory before rendering and exposes the chosen display slice as `data-asset-index`.
 
 Scientific regional/volume coordinates and hand-tuned legacy SVG display calibration remain separate. Display calibration must never be used as a volume affine.
 
@@ -46,7 +48,7 @@ Publishing validates prepared release directories via the data validator; it doe
 
 The private paper source confirms the supported channel-feature loading path in `sources/examples/04_load_channel_features.py`: project `ea_active`, explicit/resolveable vintage, `download_tables`, then `read_features_from_disk`; its example currently uses raw features (`load_denoised=False`).
 
-The paper source's encoding-volume skill documents `brainwide_ephys_atlas_25um.npz` as a `(456, 528, 320, N)` float16 volume with `feature_names`, per-feature mean/std, `grid_shape`, and 25 um resolution; `2026_W12` has 41 features. This resolves file contents but does not by itself establish the complete scientific index-to-world affine, so release metadata must still come from an authoritative atlas/producer transform rather than shape inference.
+The paper source's encoding-volume documentation describes `brainwide_ephys_atlas_25um.npz` as a `(456, 528, 320, N)` float16 volume with `feature_names`, per-feature mean/std, `grid_shape`, and 25 um resolution; `2026_W12` has 41 features. This resolves file contents but does not by itself establish the complete scientific index-to-world affine, so release metadata must still come from an authoritative atlas/producer transform rather than shape inference.
 
 ## Remaining launch work
 
@@ -63,7 +65,7 @@ The paper source's encoding-volume skill documents `brainwide_ephys_atlas_25um.n
 - Replace representative Phase-3 region rows with real parcellation metadata and decoded regional values.
 - Connect region hover/selection and feature coloring to renderer interaction/state.
 - Implement histogram/distribution/comparison UI from schema-v0.1 statistics.
-- Publish/copy the deployed curated SVG bundles into a versioned immutable v2 asset release instead of relying on the legacy host.
+- Copy the five pinned curated SVG bundles, byte-for-byte, into a versioned immutable v2 asset release instead of relying on the legacy host.
 - Add the real volume source adapter after layout benchmarking.
 - Keep 3-D behind the regional + volume launch-critical path.
 
@@ -75,10 +77,10 @@ The paper source's encoding-volume skill documents `brainwide_ephys_atlas_25um.n
 
 ## Active workstreams
 
-Only three active conversations/workstreams should continue after this integration:
+Only three active conversations/workstreams continue after integration:
 
 1. Integration / release;
 2. Data / schema / reproducibility;
 3. Viewer (frontend + rendering + UX).
 
-Publishing is parked until deployment work requires it. The old UX/rendering/publishing branches remain historical references, not independent product streams.
+Publishing is parked until deployment work requires it. The old UX/rendering/publishing branches are historical references, not independent product streams.
