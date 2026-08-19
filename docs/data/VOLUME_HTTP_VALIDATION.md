@@ -48,10 +48,13 @@ For `2026_W12`:
 - uncompressed float16 payload: 6,317,752,320 bytes (5.88 GiB)
 - one feature volume: 154,091,520 bytes (146.95 MiB)
 
-The feature axis is last. In C order, values for one feature are interleaved with
-the other 40 features. Even if the NPY member were stored uncompressed inside
-the NPZ, a contiguous Range request cannot retrieve one feature without roughly
-41x overfetch or an impractical number of tiny ranges.
+The logical feature axis is last, but the NPY header of the private object could
+not be inspected, so its `fortran_order` flag must not be guessed. If the array
+is C-contiguous, values for one feature are interleaved with the other 40
+features and contiguous Range reads incur roughly 41x overfetch. If it is
+Fortran-contiguous, one complete feature could be contiguous, but it is still
+154,091,520 bytes (146.95 MiB) before compression, far too large for the desired
+fast feature-switching path.
 
 The published NPZ is documented as approximately 500 MB, far smaller than the
 6.32 GB raw main array. That strongly suggests compression of the large NPY
@@ -63,8 +66,9 @@ this compression detail is an inference rather than a measured property.
 
 Either physical case is poor for the required interaction model:
 
-- uncompressed member: feature-last interleaving makes feature/slice Range reads
-  highly inefficient;
+- uncompressed member: at best a complete feature is about 147 MiB; depending on
+  the recorded NPY memory order, slice/feature access may additionally be
+  strided and require large overfetch;
 - compressed member: switching to one feature requires substantial compressed
   transfer/decompression and the decoded full array is far beyond a reasonable
   browser memory budget.
