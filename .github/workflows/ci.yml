@@ -48,6 +48,8 @@ jobs:
       - run: npm install
       - run: npm test
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser -- --project=chromium
       - name: Report web status
         if: always()
         uses: actions/github-script@v7
