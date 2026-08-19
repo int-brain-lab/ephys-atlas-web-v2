@@ -6,12 +6,20 @@ import type {
   StatisticId,
 } from '../domain/types.js';
 
-/**
- * Provisional frontend boundary while work/data-schema is being designed.
- * Keep this small and replace it with generated/shared schema types once available.
- */
-export const PROVISIONAL_SCHEMA_VERSION = '0.1-provisional' as const;
-export type ProvisionalSchemaVersion = typeof PROVISIONAL_SCHEMA_VERSION;
+export const SCHEMA_VERSION = '0.1' as const;
+export type SchemaVersion = typeof SCHEMA_VERSION;
+
+export type BinaryDType = 'int16' | 'int32' | 'uint16' | 'uint32' | 'float16' | 'float32' | 'float64';
+
+export interface BinaryArrayDescriptor {
+  path: string;
+  dtype: BinaryDType;
+  shape: readonly number[];
+  order: 'C';
+  endianness: 'little' | 'not-applicable';
+  sha256?: string;
+  bytes?: number;
+}
 
 export interface DatasetReleaseSummary {
   id: string;
@@ -28,28 +36,84 @@ export interface DatasetCatalogEntry {
   defaultRelease: string;
 }
 
+/** Mutable publication index. Release manifests themselves follow schema v0.1. */
 export interface DatasetCatalog {
-  schemaVersion: ProvisionalSchemaVersion;
+  schemaVersion: SchemaVersion;
   datasets: readonly DatasetCatalogEntry[];
+}
+
+export interface FeatureReference {
+  id: string;
+  path: string;
+}
+
+export interface ParcellationDescriptor {
+  id: ParcellationId;
+  regionIndex: BinaryArrayDescriptor;
+  metadata?: string;
+}
+
+export interface DatasetManifestDocument {
+  schemaVersion: SchemaVersion;
+  datasetId: string;
+  title: string;
+  description: string;
+  release: {
+    releaseId: string;
+    immutable: boolean;
+    createdAt: string;
+    paperSnapshot: boolean;
+  };
+  parcellations: readonly ParcellationDescriptor[];
+  featureRefs: readonly FeatureReference[];
+}
+
+export interface RegionalParcellationDescriptor {
+  parcellationId: ParcellationId;
+  summary: string;
+  values: BinaryArrayDescriptor;
+  statistics: string;
 }
 
 export interface RegionalRepresentationDescriptor {
   kind: 'regional';
-  format: 'json';
-  parcellations: Partial<Record<ParcellationId, string>>;
+  format: 'ephys-atlas-regional-v0.1';
+  parcellations: Partial<Record<ParcellationId, RegionalParcellationDescriptor>>;
+}
+
+export interface VolumeGridDescriptor {
+  shape: readonly [number, number, number];
+  axisOrder: readonly [string, string, string];
+  coordinateSystem: string;
+  voxelSizeUm: readonly [number, number, number];
+  originUm: readonly [number, number, number];
+  indexToWorldUm: readonly number[];
+}
+
+export interface VolumeArrayDescriptor {
+  dtype: BinaryDType;
+  endianness: 'little' | 'not-applicable';
+  order: 'C';
+  nonfinite: 'preserve' | 'forbid';
 }
 
 export interface VolumeRepresentationDescriptor {
   kind: 'volume';
-  format: 'json';
-  resource: string;
+  format: 'ephys-atlas-chunked-volume-v0.1';
+  layout: 'chunks3d' | 'orthogonal_slice_packs';
+  grid: VolumeGridDescriptor;
+  array: VolumeArrayDescriptor;
+  resource: Record<string, unknown>;
+  statistics?: string;
+  valueRange?: readonly [number | null, number | null];
 }
 
 export interface FeatureDescriptor {
   id: string;
+  path: string;
   label: string;
-  description?: string;
-  unit?: string;
+  description: string;
+  unit: string | null;
   statistics: readonly StatisticId[];
   representations: {
     regional?: RegionalRepresentationDescriptor;
@@ -57,8 +121,9 @@ export interface FeatureDescriptor {
   };
 }
 
+/** Resolved browser view of a schema-v0.1 manifest plus its feature metadata. */
 export interface DatasetManifest {
-  schemaVersion: ProvisionalSchemaVersion;
+  schemaVersion: SchemaVersion;
   dataset: {
     id: DatasetId;
     release: string;
@@ -67,11 +132,12 @@ export interface DatasetManifest {
     fixture?: boolean;
   };
   parcellations: readonly ParcellationId[];
+  parcellationDescriptors: Partial<Record<ParcellationId, ParcellationDescriptor>>;
   features: readonly FeatureDescriptor[];
 }
 
 export interface RegionalFeaturePayload {
-  schemaVersion: ProvisionalSchemaVersion;
+  schemaVersion: SchemaVersion;
   featureId: string;
   representation: 'regional';
   parcellation: ParcellationId;
@@ -80,12 +146,11 @@ export interface RegionalFeaturePayload {
 }
 
 export interface VolumeFeaturePayload {
-  schemaVersion: ProvisionalSchemaVersion;
+  schemaVersion: SchemaVersion;
   featureId: string;
   representation: 'volume';
-  shape: readonly [number, number, number];
-  dtype: string;
-  data: string;
+  descriptor: VolumeRepresentationDescriptor;
+  baseUrl?: string;
 }
 
 export type FeaturePayload = RegionalFeaturePayload | VolumeFeaturePayload;
