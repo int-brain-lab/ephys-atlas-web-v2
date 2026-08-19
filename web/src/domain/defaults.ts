@@ -4,7 +4,7 @@ export const DEFAULT_VIEW_STATE: ViewState = {
   urlVersion: 1,
   dataset: {
     datasetId: 'ephys_atlas_channels',
-    releaseId: 'fixture-0.1',
+    releaseId: 'golden-v0.1',
   },
   featureId: null,
   representation: 'regional',
