@@ -113,6 +113,7 @@ def generate_golden(out: Path) -> Path:
             },
             "volume": {
                 "format": "ephys-atlas-chunked-volume-v0.1",
+                "layout": "chunks3d",
                 "grid": {
                     "shape": list(volume.shape),
                     "axis_order": ["ap", "ml", "dv"],
