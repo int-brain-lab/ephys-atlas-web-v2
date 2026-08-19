@@ -111,8 +111,8 @@ its SHA-256 must be recorded.
 `docs/data/VOLUME_HTTP_VALIDATION.md` records an empirical HTTP validation. The
 current private object is not anonymously readable; the volume prefix is not yet
 mirrored in the public IBL bucket; current public IBL objects support byte ranges
-but not browser CORS; and the NPZ's monolithic feature-last layout is unsuitable
-for efficient per-feature/slice Range access. Therefore the current v0.1 web
+but not browser CORS; and the NPZ's monolithic 4-D layout is unsuitable
+for efficient incremental feature/slice access. Therefore the current v0.1 web
 transport is a deterministic derived per-feature chunked representation, with
 provenance back to the pinned NPZ. This must be re-evaluated if the future public
 canonical artifact or CDN layout changes.

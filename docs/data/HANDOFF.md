@@ -41,8 +41,8 @@
 - current public bucket: no matching browser CORS headers for atlas/localhost;
 - current private encoding-volume URL: unsigned HEAD/Range/OPTIONS return 403;
 - documented `2026_W12` main array: `(456, 528, 320, 41)` float16 = 6.32 GB raw;
-  its feature-last monolithic layout cannot support efficient one-feature Range
-  reads, even before accounting for likely NPZ compression.
+  one raw feature alone is about 147 MiB and the approximately 500 MB NPZ size
+  strongly suggests compression; exact NPY memory order remains unmeasured.
 
 The future public bucket/CDN must be re-tested when the encoding volumes are
 published. A future directly addressable canonical layout may supersede the
