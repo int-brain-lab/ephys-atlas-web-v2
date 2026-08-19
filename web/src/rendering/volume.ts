@@ -25,16 +25,17 @@ export interface VolumeChunkMetadata {
   shape: VolumeShape;
   chunkShape: VolumeShape;
   voxelSizeUm: 25;
-  dtype: 'float32';
+  storageDtype: 'float16' | 'float32';
 }
 
-/**
- * Storage/codec-neutral boundary. Implementations may map a logical chunk to an
- * object, byte range, shard entry, OPFS cache entry, etc., and may decode in a worker.
- */
+/** Storage/codec-neutral logical chunk boundary. */
 export interface VolumeChunkSource {
   readonly metadata: VolumeChunkMetadata;
   loadChunk(key: VolumeChunkKey, signal?: AbortSignal): Promise<VolumeChunk>;
+}
+
+export interface VolumeSliceSource {
+  loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<VolumeSlice>;
 }
 
 export interface VolumeSlice {
@@ -61,7 +62,7 @@ function valueAt(chunk: VolumeChunk, c: number, s: number, h: number): number {
   return chunk.data[((c * chunk.shape.sagittal) + s) * chunk.shape.horizontal + h];
 }
 
-function clampIndex(index: number, count: number): number {
+function validateIndex(index: number, count: number): number {
   if (!Number.isInteger(index) || index < 0 || index >= count) {
     throw new RangeError(`slice index ${index} is outside [0, ${count - 1}]`);
   }
@@ -77,18 +78,15 @@ export function chunkGridShape(metadata: VolumeChunkMetadata): VolumeShape {
 }
 
 export function chunkKeysForSlice(metadata: VolumeChunkMetadata, axis: SliceAxis, index: number): VolumeChunkKey[] {
-  clampIndex(index, metadata.shape[axis]);
+  validateIndex(index, metadata.shape[axis]);
   const grid = chunkGridShape(metadata);
   const fixedChunk = Math.floor(index / metadata.chunkShape[axis]);
   const keys: VolumeChunkKey[] = [];
-
   for (let c = 0; c < grid.coronal; c++) {
     for (let s = 0; s < grid.sagittal; s++) {
       for (let h = 0; h < grid.horizontal; h++) {
         const candidate: VolumeChunkKey = { coronal: c, sagittal: s, horizontal: h };
-        if (candidate[axis] === fixedChunk) {
-          keys.push(candidate);
-        }
+        if (candidate[axis] === fixedChunk) keys.push(candidate);
       }
     }
   }
@@ -102,18 +100,11 @@ export class VolumeChunkCache {
 
   constructor(maxBytes: number) {
     this.maxBytes = maxBytes;
-    if (!Number.isFinite(maxBytes) || maxBytes <= 0) {
-      throw new RangeError('maxBytes must be positive');
-    }
+    if (!Number.isFinite(maxBytes) || maxBytes <= 0) throw new RangeError('maxBytes must be positive');
   }
 
-  get byteLength(): number {
-    return this.bytes;
-  }
-
-  get size(): number {
-    return this.entries.size;
-  }
+  get byteLength(): number { return this.bytes; }
+  get size(): number { return this.entries.size; }
 
   get(key: VolumeChunkKey): VolumeChunk | undefined {
     const id = chunkKeyId(key);
@@ -133,7 +124,6 @@ export class VolumeChunkCache {
     }
     this.entries.set(id, chunk);
     this.bytes += chunk.data.byteLength;
-
     while (this.bytes > this.maxBytes && this.entries.size > 1) {
       const oldestId = this.entries.keys().next().value as string;
       const oldest = this.entries.get(oldestId)!;
@@ -148,11 +138,7 @@ export class VolumeChunkCache {
   }
 }
 
-async function mapWithConcurrency<T, R>(
-  values: readonly T[],
-  concurrency: number,
-  fn: (value: T) => Promise<R>,
-): Promise<R[]> {
+async function mapWithConcurrency<T, R>(values: readonly T[], concurrency: number, fn: (value: T) => Promise<R>): Promise<R[]> {
   const out = new Array<R>(values.length);
   let next = 0;
   const worker = async (): Promise<void> => {
@@ -166,26 +152,21 @@ async function mapWithConcurrency<T, R>(
   return out;
 }
 
-export class VolumeSliceLoader {
+export class VolumeSliceLoader implements VolumeSliceSource {
   readonly cache: VolumeChunkCache;
   readonly source: VolumeChunkSource;
   private readonly concurrency: number;
 
-  constructor(
-    source: VolumeChunkSource,
-    options: { cacheBytes?: number; concurrency?: number } = {},
-  ) {
+  constructor(source: VolumeChunkSource, options: { cacheBytes?: number; concurrency?: number } = {}) {
     this.source = source;
     this.cache = new VolumeChunkCache(options.cacheBytes ?? 96 * 1024 * 1024);
     this.concurrency = options.concurrency ?? 8;
-    if (!Number.isInteger(this.concurrency) || this.concurrency < 1) {
-      throw new RangeError('concurrency must be a positive integer');
-    }
+    if (!Number.isInteger(this.concurrency) || this.concurrency < 1) throw new RangeError('concurrency must be a positive integer');
   }
 
   async loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<VolumeSlice> {
     const { metadata } = this.source;
-    clampIndex(index, metadata.shape[axis]);
+    validateIndex(index, metadata.shape[axis]);
     const keys = chunkKeysForSlice(metadata, axis, index);
     const chunks = await mapWithConcurrency(keys, this.concurrency, async (key) => {
       const cached = this.cache.get(key);
@@ -260,16 +241,8 @@ export class VolumeSliceLoader {
   }
 }
 
-export function scalarToRgba(
-  values: Float32Array,
-  palette: Uint8Array,
-  min: number,
-  max: number,
-  out = new Uint8ClampedArray(values.length * 4),
-): Uint8ClampedArray {
-  if (palette.length === 0 || palette.length % 4 !== 0) {
-    throw new RangeError('palette must contain RGBA entries');
-  }
+export function scalarToRgba(values: Float32Array, palette: Uint8Array, min: number, max: number, out = new Uint8ClampedArray(values.length * 4)): Uint8ClampedArray {
+  if (palette.length === 0 || palette.length % 4 !== 0) throw new RangeError('palette must contain RGBA entries');
   if (!(max > min)) throw new RangeError('max must be greater than min');
   if (out.length !== values.length * 4) throw new RangeError('out has wrong length');
   const n = palette.length / 4;
