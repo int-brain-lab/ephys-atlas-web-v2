@@ -27,13 +27,7 @@ jobs:
         with:
           script: |
             const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
-            await github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.sha,
-              state,
-              context: 'CI / python',
-            });
+            await github.rest.repos.createCommitStatus({ owner: context.repo.owner, repo: context.repo.repo, sha: context.sha, state, context: 'CI / python' });
 
   web:
     runs-on: ubuntu-latest
@@ -72,9 +66,13 @@ jobs:
           npm run test:browser 2>&1 | tee /tmp/browser.log
           status=${PIPESTATUS[0]}
           summary=$(grep -m1 -E '^  [0-9]+\) test/browser/' /tmp/browser.log | sed -E 's#^  [0-9]+\) test/browser/app\.spec\.ts:[0-9]+:[0-9]+ . ##' | tr -d '\r' | cut -c1-100)
-          error=$(grep -m1 -E '^    (Error:|Expected|Received)' /tmp/browser.log | sed -E 's/^ +//' | tr -d '\r' | cut -c1-100)
+          error=$(grep -m1 -E '^    Error:' /tmp/browser.log | sed -E 's/^ +//' | tr -d '\r' | cut -c1-100)
+          expected=$(grep -m1 -E '^    Expected' /tmp/browser.log | sed -E 's/^ +//' | tr -d '\r' | cut -c1-100)
+          received=$(grep -m1 -E '^    Received' /tmp/browser.log | sed -E 's/^ +//' | tr -d '\r' | cut -c1-100)
           echo "summary=${summary:-browser test failed}" >> "$GITHUB_OUTPUT"
           echo "error=${error:-see browser test}" >> "$GITHUB_OUTPUT"
+          echo "expected=${expected:-no expected value}" >> "$GITHUB_OUTPUT"
+          echo "received=${received:-no received value}" >> "$GITHUB_OUTPUT"
           exit "$status"
       - name: Report web statuses
         if: always()
@@ -83,6 +81,8 @@ jobs:
           TYPECHECK_SUMMARY: ${{ steps.typecheck.outputs.summary }}
           BROWSER_SUMMARY: ${{ steps.browser.outputs.summary }}
           BROWSER_ERROR: ${{ steps.browser.outputs.error }}
+          BROWSER_EXPECTED: ${{ steps.browser.outputs.expected }}
+          BROWSER_RECEIVED: ${{ steps.browser.outputs.received }}
         with:
           script: |
             const outcomes = {
@@ -92,50 +92,21 @@ jobs:
               'CI / web browser': '${{ steps.browser.outcome }}',
             };
             for (const [contextName, outcome] of Object.entries(outcomes)) {
-              await github.rest.repos.createCommitStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: context.sha,
-                state: outcome === 'success' ? 'success' : 'failure',
-                context: contextName,
-              });
+              await github.rest.repos.createCommitStatus({ owner: context.repo.owner, repo: context.repo.repo, sha: context.sha, state: outcome === 'success' ? 'success' : 'failure', context: contextName });
             }
-            if (outcomes['CI / web typecheck'] !== 'success') {
-              const detail = (process.env.TYPECHECK_SUMMARY || 'typecheck failed').replace(/\s+/g, ' ').slice(0, 105);
-              await github.rest.repos.createCommitStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: context.sha,
-                state: 'failure',
-                context: `CI / diagnostic / ${detail}`,
-              });
-            }
+            const diagnostic = async (prefix, detail) => {
+              const text = (detail || 'unavailable').replace(/\s+/g, ' ').slice(0, 90);
+              await github.rest.repos.createCommitStatus({ owner: context.repo.owner, repo: context.repo.repo, sha: context.sha, state: 'failure', context: `CI / diagnostic / ${prefix} / ${text}` });
+            };
+            if (outcomes['CI / web typecheck'] !== 'success') await diagnostic('typecheck', process.env.TYPECHECK_SUMMARY);
             if (outcomes['CI / web browser'] !== 'success') {
-              const test = (process.env.BROWSER_SUMMARY || 'browser test failed').replace(/\s+/g, ' ').slice(0, 90);
-              const error = (process.env.BROWSER_ERROR || 'see browser test').replace(/\s+/g, ' ').slice(0, 90);
-              await github.rest.repos.createCommitStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: context.sha,
-                state: 'failure',
-                context: `CI / diagnostic / browser / ${test}`,
-              });
-              await github.rest.repos.createCommitStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: context.sha,
-                state: 'failure',
-                context: `CI / diagnostic / browser error / ${error}`,
-              });
+              await diagnostic('browser test', process.env.BROWSER_SUMMARY);
+              await diagnostic('browser error', process.env.BROWSER_ERROR);
+              await diagnostic('browser expected', process.env.BROWSER_EXPECTED);
+              await diagnostic('browser received', process.env.BROWSER_RECEIVED);
             }
             const state = Object.values(outcomes).every((value) => value === 'success') ? 'success' : 'failure';
-            await github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.sha,
-              state,
-              context: 'CI / web',
-            });
+            await github.rest.repos.createCommitStatus({ owner: context.repo.owner, repo: context.repo.repo, sha: context.sha, state, context: 'CI / web' });
       - name: Fail failed web checks
         if: always()
         run: |
