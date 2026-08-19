@@ -1,18 +1,27 @@
-import type { DatasetRef, ParcellationId, RepresentationKind } from '../domain/types.js';
-import { PROVISIONAL_SCHEMA_VERSION } from './contracts.js';
-import { parseDatasetManifest, parseFeaturePayload } from './validate.js';
+import type { DatasetRef, ParcellationId, RepresentationKind, StatisticId } from '../domain/types.js';
+import {
+  decodeBinaryArray,
+  parseDatasetManifestDocument,
+  parseFeatureDescriptor,
+  parseStatisticsDocument,
+  resolveDatasetManifest,
+} from './validate.js';
+import { SCHEMA_VERSION } from './contracts.js';
 import type {
+  BinaryArrayDescriptor,
   DatasetCatalog,
   DatasetManifest,
   DatasetSource,
   FeatureDescriptor,
   FeaturePayload,
+  RegionalFeaturePayload,
 } from './contracts.js';
 
 const DB_NAME = 'ibl-ephys-atlas-v2-local';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const MANIFESTS = 'manifests';
 const RESOURCES = 'resources';
+const DISPLAY_STATISTICS = new Set<StatisticId>(['mean', 'median', 'min', 'max', 'count']);
 
 interface StoredManifest {
   key: string;
@@ -66,16 +75,9 @@ function relativePath(file: File): string {
   return parts.length > 1 ? parts.slice(1).join('/') : path;
 }
 
-function findResource(feature: FeatureDescriptor, representation: RepresentationKind, parcellation?: ParcellationId): string {
-  if (representation === 'regional') {
-    if (!parcellation) throw new Error(`Parcellation required for regional feature ${feature.id}`);
-    const path = feature.representations.regional?.parcellations[parcellation];
-    if (!path) throw new Error(`Feature ${feature.id} has no ${parcellation} regional representation`);
-    return path;
-  }
-  const path = feature.representations.volume?.resource;
-  if (!path) throw new Error(`Feature ${feature.id} has no volume representation`);
-  return path;
+function resolvePath(baseFile: string, relative: string): string {
+  const base = new URL(baseFile, 'https://local.invalid/');
+  return new URL(relative, base).pathname.replace(/^\//, '');
 }
 
 export class LocalDatasetSource implements DatasetSource {
@@ -83,16 +85,19 @@ export class LocalDatasetSource implements DatasetSource {
 
   async importFiles(files: Iterable<File>): Promise<DatasetManifest> {
     const allFiles = [...files];
-    const manifestFile = allFiles.find((file) => relativePath(file) === 'manifest.json' || file.name === 'manifest.json');
+    const byPath = new Map(allFiles.map((file) => [relativePath(file), file]));
+    const manifestFile = byPath.get('manifest.json') ?? allFiles.find((file) => file.name === 'manifest.json');
     if (!manifestFile) throw new Error('Local dataset must contain manifest.json');
 
-    const manifest = parseDatasetManifest(JSON.parse(await manifestFile.text()) as unknown);
-    if (manifest.schemaVersion !== PROVISIONAL_SCHEMA_VERSION) {
-      throw new Error(`Unsupported local schema: ${manifest.schemaVersion}`);
-    }
-    if (manifest.dataset.id !== 'local') {
-      throw new Error('Local manifest dataset.id must be "local"');
-    }
+    const document = parseDatasetManifestDocument(JSON.parse(await manifestFile.text()) as unknown);
+    const features = await Promise.all(document.featureRefs.map(async (featureRef) => {
+      const file = byPath.get(featureRef.path);
+      if (!file) throw new Error(`Local dataset is missing ${featureRef.path}`);
+      const feature = parseFeatureDescriptor(JSON.parse(await file.text()) as unknown, featureRef.path);
+      if (feature.id !== featureRef.id) throw new Error(`Feature id mismatch for ${featureRef.path}`);
+      return feature;
+    }));
+    const manifest = resolveDatasetManifest(document, features, 'local');
 
     const db = await openDatabase();
     const transaction = db.transaction([MANIFESTS, RESOURCES], 'readwrite');
@@ -120,11 +125,11 @@ export class LocalDatasetSource implements DatasetSource {
     }));
 
     return {
-      schemaVersion: PROVISIONAL_SCHEMA_VERSION,
+      schemaVersion: SCHEMA_VERSION,
       datasets: releases.length ? [{
         id: 'local',
         title: 'Local datasets',
-        description: 'Browser-imported datasets stored only on this device.',
+        description: 'Browser-imported schema-v0.1 datasets stored only on this device.',
         releases,
         defaultRelease: releases.at(-1)?.id ?? '',
       }] : [],
@@ -149,16 +154,65 @@ export class LocalDatasetSource implements DatasetSource {
   ): Promise<FeaturePayload> {
     if (!ref.releaseId) throw new Error('A local release id is required');
     const manifest = await this.loadManifest(ref);
+    const feature = this.findFeature(manifest, featureId);
+    if (representation === 'volume') {
+      const descriptor = feature.representations.volume;
+      if (!descriptor) throw new Error(`Feature ${featureId} has no volume representation`);
+      return { schemaVersion: SCHEMA_VERSION, featureId, representation: 'volume', descriptor };
+    }
+
+    if (!parcellation) throw new Error(`Parcellation required for regional feature ${feature.id}`);
+    const regional = feature.representations.regional?.parcellations[parcellation];
+    const parcel = manifest.parcellationDescriptors[parcellation];
+    if (!regional || !parcel) throw new Error(`Feature ${feature.id} has no ${parcellation} regional representation`);
+
+    const regionIds = await this.readArray(ref.releaseId, parcel.regionIndex.path, parcel.regionIndex);
+    const values = await this.readArray(ref.releaseId, resolvePath(feature.path, regional.values.path), regional.values);
+    if (regionIds.length !== values.length) throw new Error(`${feature.id}/${parcellation} values do not match region index length`);
+    const statsPath = resolvePath(feature.path, regional.statistics);
+    const statsBlob = await this.readResource(ref.releaseId, statsPath);
+    const statsDocument = parseStatisticsDocument(JSON.parse(await statsBlob.text()) as unknown);
+    const matrix = await this.readArray(ref.releaseId, resolvePath(statsPath, statsDocument.values.path), statsDocument.values);
+    const fieldCount = statsDocument.fields.length;
+    if (statsDocument.values.shape.length !== 2 || statsDocument.values.shape[0] !== regionIds.length || statsDocument.values.shape[1] !== fieldCount) {
+      throw new Error(`${feature.id}/${parcellation} regional statistics shape is inconsistent`);
+    }
+
+    const statistics: RegionalFeaturePayload['statistics'] = {};
+    if (DISPLAY_STATISTICS.has(regional.summary as StatisticId)) statistics[regional.summary as StatisticId] = values;
+    for (let fieldIndex = 0; fieldIndex < fieldCount; fieldIndex += 1) {
+      const field = statsDocument.fields[fieldIndex];
+      if (!field || !DISPLAY_STATISTICS.has(field as StatisticId)) continue;
+      statistics[field as StatisticId] = regionIds.map((_, row) => matrix[row * fieldCount + fieldIndex] ?? NaN);
+    }
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      featureId,
+      representation: 'regional',
+      parcellation,
+      regionIds: regionIds.map(String),
+      statistics,
+    };
+  }
+
+  private findFeature(manifest: DatasetManifest, featureId: string): FeatureDescriptor {
     const feature = manifest.features.find((item) => item.id === featureId);
     if (!feature) throw new Error(`Feature not found: ${featureId}`);
-    const path = findResource(feature, representation, parcellation);
+    return feature;
+  }
 
+  private async readResource(releaseId: string, path: string): Promise<Blob> {
     const db = await openDatabase();
     const transaction = db.transaction(RESOURCES, 'readonly');
-    const stored = await requestValue(transaction.objectStore(RESOURCES).get(resourceKey(ref.releaseId, path)) as IDBRequest<StoredResource | undefined>);
+    const stored = await requestValue(transaction.objectStore(RESOURCES).get(resourceKey(releaseId, path)) as IDBRequest<StoredResource | undefined>);
     db.close();
     if (!stored) throw new Error(`Local resource not found: ${path}`);
-    return parseFeaturePayload(JSON.parse(await stored.blob.text()) as unknown);
+    return stored.blob;
+  }
+
+  private async readArray(releaseId: string, path: string, descriptor: BinaryArrayDescriptor): Promise<number[]> {
+    const blob = await this.readResource(releaseId, path);
+    return decodeBinaryArray(await blob.arrayBuffer(), { ...descriptor, path });
   }
 
   private async listManifests(): Promise<DatasetManifest[]> {
