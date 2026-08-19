@@ -31,6 +31,15 @@ interface ContextFieldNodes {
   release?: HTMLElement;
 }
 
+interface PrototypeRegion {
+  id: string;
+  acronym: string;
+  name: string;
+  depth: 0 | 1 | 2;
+  value: number | null;
+  hasChildren?: boolean;
+}
+
 const VIEW_LABELS: ReadonlyArray<{ id: WorkspaceView; label: string }> = [
   { id: 'coronal', label: 'Coronal' },
   { id: 'sagittal', label: 'Sagittal' },
@@ -43,6 +52,25 @@ const ACTION_ICONS: Record<HeaderAction, string> = {
   download: '↓',
   info: 'i',
 };
+
+// Phase 3 UX-only representative content. These labels and normalized bars are not
+// loaded from, or written to, the scientific dataset/domain state.
+const PROTOTYPE_REGIONS: readonly PrototypeRegion[] = [
+  { id: 'CTX', acronym: 'CTX', name: 'Cerebral cortex', depth: 0, value: 72, hasChildren: true },
+  { id: 'VIS', acronym: 'VIS', name: 'Visual areas', depth: 1, value: 66, hasChildren: true },
+  { id: 'VISp', acronym: 'VISp', name: 'Primary visual area', depth: 2, value: 81 },
+  { id: 'VISrl', acronym: 'VISrl', name: 'Rostrolateral visual area', depth: 2, value: 47 },
+  { id: 'SSp-bfd', acronym: 'SSp-bfd', name: 'Primary somatosensory area, barrel field', depth: 1, value: 58 },
+  { id: 'MOs', acronym: 'MOs', name: 'Secondary motor area', depth: 1, value: 39 },
+  { id: 'HPF', acronym: 'HPF', name: 'Hippocampal formation', depth: 0, value: 54, hasChildren: true },
+  { id: 'CA1', acronym: 'CA1', name: 'Field CA1', depth: 1, value: 62 },
+  { id: 'DG', acronym: 'DG', name: 'Dentate gyrus', depth: 1, value: 44 },
+  { id: 'TH', acronym: 'TH', name: 'Thalamus', depth: 0, value: 35, hasChildren: true },
+  { id: 'LGd', acronym: 'LGd', name: 'Dorsal lateral geniculate complex', depth: 1, value: 69 },
+  { id: 'POL', acronym: 'POL', name: 'Posterior limiting nucleus of the thalamus', depth: 1, value: null },
+  { id: 'STR', acronym: 'STR', name: 'Striatum', depth: 0, value: 31, hasChildren: true },
+  { id: 'CP', acronym: 'CP', name: 'Caudoputamen', depth: 1, value: 28 },
+];
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -77,7 +105,16 @@ export class AppShell {
   private readonly datasetContext: ContextFieldNodes;
   private readonly featureContext: ContextFieldNodes;
   private readonly representationContext: ContextFieldNodes;
+  private readonly regionButtons = new Map<string, HTMLButtonElement>();
+  private readonly selectedPrototypeRegions = new Set<string>(['VISp', 'MOs']);
   private overflowActions: HTMLDetailsElement | null = null;
+  private regionSearch!: HTMLInputElement;
+  private regionSearchClear!: HTMLButtonElement;
+  private regionResultCount!: HTMLElement;
+  private regionList!: HTMLUListElement;
+  private selectedRegionList!: HTMLUListElement;
+  private clearPrototypeSelection!: HTMLButtonElement;
+  private activePrototypeRegion = 'CA1';
   private activeView: WorkspaceView = 'coronal';
 
   constructor(
@@ -110,6 +147,7 @@ export class AppShell {
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('resize', this.onResize);
     this.syncLayoutMode();
+    this.updatePrototypeRegionState();
   }
 
   render(model: ShellModel): void {
@@ -149,18 +187,11 @@ export class AppShell {
 
     const context = element('dl', 'app-header__context');
     context.setAttribute('aria-label', 'Atlas context');
-    context.append(
-      this.datasetContext.field,
-      this.featureContext.field,
-      this.representationContext.field,
-    );
+    context.append(this.datasetContext.field, this.featureContext.field, this.representationContext.field);
 
     const actions = element('nav', 'app-header__actions');
     actions.setAttribute('aria-label', 'Atlas actions');
-    actions.append(
-      this.drawerButton('regions', 'Regions', '☰'),
-      this.drawerButton('settings', 'Settings', '⚙'),
-    );
+    actions.append(this.drawerButton('regions', 'Regions', '☰'), this.drawerButton('settings', 'Settings', '⚙'));
 
     const desktopActions = element('div', 'app-header__desktop-actions');
     desktopActions.append(
@@ -177,21 +208,18 @@ export class AppShell {
   private createContextField(labelText: string, fieldName: string, withRelease = false): ContextFieldNodes {
     const field = element('div', 'context-field');
     field.dataset.contextField = fieldName;
-
     const label = element('dt', 'context-field__label');
     label.textContent = labelText;
     const data = element('dd', 'context-field__data');
     const value = element('span', 'context-field__value');
     value.textContent = '—';
     data.append(value);
-
     let release: HTMLElement | undefined;
     if (withRelease) {
       release = element('span', 'context-field__release');
       release.hidden = true;
       data.append(release);
     }
-
     field.append(label, data);
     return { field, value, ...(release ? { release } : {}) };
   }
@@ -245,7 +273,6 @@ export class AppShell {
     const summary = element('summary', 'app-header__overflow-trigger');
     summary.setAttribute('aria-label', 'More actions');
     summary.append(this.actionIcon('⋯'));
-
     const menu = element('div', 'app-header__overflow-menu');
     menu.append(
       this.placeholderActionButton('Share', 'share'),
@@ -262,24 +289,194 @@ export class AppShell {
     pane.id = 'regions-pane';
     pane.setAttribute('aria-label', 'Brain regions');
     pane.dataset.open = 'false';
+    pane.dataset.phase = 'prototype';
 
     const panelHeader = this.panelHeader('Brain regions', () => this.closeDrawers());
-    const searchPlaceholder = element('div', 'region-pane__search-placeholder');
-    searchPlaceholder.append(placeholderLine('long'));
+    const search = element('form', 'region-search');
+    search.setAttribute('role', 'search');
+    search.addEventListener('submit', (event) => event.preventDefault());
+
+    const inputWrap = element('div', 'region-search__input-wrap');
+    const searchIcon = element('span', 'region-search__icon');
+    searchIcon.textContent = '⌕';
+    searchIcon.setAttribute('aria-hidden', 'true');
+    this.regionSearch = element('input', 'region-search__input');
+    this.regionSearch.type = 'search';
+    this.regionSearch.autocomplete = 'off';
+    this.regionSearch.spellcheck = false;
+    this.regionSearch.placeholder = 'Search regions';
+    this.regionSearch.setAttribute('aria-label', 'Search brain regions');
+    this.regionSearch.addEventListener('input', () => this.filterPrototypeRegions());
+    this.regionSearchClear = element('button', 'region-search__clear');
+    this.regionSearchClear.type = 'button';
+    this.regionSearchClear.textContent = '×';
+    this.regionSearchClear.setAttribute('aria-label', 'Clear region search');
+    this.regionSearchClear.hidden = true;
+    this.regionSearchClear.addEventListener('click', () => {
+      this.regionSearch.value = '';
+      this.filterPrototypeRegions();
+      this.regionSearch.focus();
+    });
+    inputWrap.append(searchIcon, this.regionSearch, this.regionSearchClear);
+
+    const meta = element('div', 'region-search__meta');
+    const source = element('span', 'region-search__source');
+    source.textContent = 'Representative hierarchy';
+    this.regionResultCount = element('span', 'region-search__count');
+    this.regionResultCount.setAttribute('role', 'status');
+    this.regionResultCount.setAttribute('aria-live', 'polite');
+    meta.append(source, this.regionResultCount);
+    search.append(inputWrap, meta);
 
     const browser = element('div', 'region-pane__browser');
-    browser.setAttribute('aria-label', 'Region browser placeholder');
-    for (let i = 0; i < 9; i += 1) {
-      const row = element('div', 'region-pane__row-placeholder');
-      row.append(placeholderLine(i % 3 === 0 ? 'long' : i % 2 === 0 ? 'short' : 'medium'));
-      browser.append(row);
-    }
+    browser.setAttribute('aria-label', 'Representative region browser');
+    this.regionList = element('ul', 'region-list');
+    for (const region of PROTOTYPE_REGIONS) this.regionList.append(this.createRegionRow(region));
+    browser.append(this.regionList);
 
     const selected = element('section', 'region-pane__selected');
-    selected.append(heading('Selected regions', 3), placeholderLine('medium'));
+    const selectedHeader = element('div', 'selected-regions__header');
+    selectedHeader.append(heading('Selected regions', 3));
+    this.clearPrototypeSelection = element('button', 'selected-regions__clear');
+    this.clearPrototypeSelection.type = 'button';
+    this.clearPrototypeSelection.textContent = 'Clear';
+    this.clearPrototypeSelection.addEventListener('click', () => {
+      this.selectedPrototypeRegions.clear();
+      this.updatePrototypeRegionState();
+    });
+    selectedHeader.append(this.clearPrototypeSelection);
+    this.selectedRegionList = element('ul', 'selected-regions__list');
+    selected.append(selectedHeader, this.selectedRegionList);
 
-    pane.append(panelHeader, searchPlaceholder, browser, selected);
+    pane.append(panelHeader, search, browser, selected);
     return pane;
+  }
+
+  private createRegionRow(region: PrototypeRegion): HTMLLIElement {
+    const item = element('li', 'region-row');
+    item.dataset.regionId = region.id;
+    item.dataset.depth = String(region.depth);
+    item.dataset.missing = String(region.value === null);
+
+    const button = element('button', 'region-row__button');
+    button.type = 'button';
+    button.dataset.regionButton = region.id;
+    button.setAttribute('aria-pressed', 'false');
+    button.setAttribute('aria-label', `${region.acronym}, ${region.name}`);
+
+    const disclosure = element('span', 'region-row__disclosure');
+    disclosure.textContent = region.hasChildren ? '▾' : '·';
+    disclosure.setAttribute('aria-hidden', 'true');
+
+    const identity = element('span', 'region-row__identity');
+    const acronym = element('span', 'region-row__acronym');
+    acronym.textContent = region.acronym;
+    const name = element('span', 'region-row__name');
+    name.textContent = region.name;
+    name.title = region.name;
+    identity.append(acronym, name);
+
+    const value = element('span', 'region-row__value');
+    if (region.value === null) {
+      const missing = element('span', 'region-row__missing');
+      missing.textContent = 'no value';
+      value.append(missing);
+    } else {
+      const bar = element('span', 'region-row__bar');
+      const fill = element('span', 'region-row__bar-fill');
+      fill.style.setProperty('--region-value', `${region.value}%`);
+      bar.append(fill);
+      value.append(bar);
+      value.setAttribute('aria-label', 'Representative relative value');
+    }
+
+    button.append(disclosure, identity, value);
+    button.addEventListener('click', () => this.togglePrototypeRegion(region.id));
+    button.addEventListener('keydown', (event) => this.navigatePrototypeRegions(event, button));
+    this.regionButtons.set(region.id, button);
+    item.append(button);
+    return item;
+  }
+
+  private togglePrototypeRegion(regionId: string): void {
+    this.activePrototypeRegion = regionId;
+    if (this.selectedPrototypeRegions.has(regionId)) this.selectedPrototypeRegions.delete(regionId);
+    else this.selectedPrototypeRegions.add(regionId);
+    this.updatePrototypeRegionState();
+  }
+
+  private removePrototypeRegion(regionId: string): void {
+    this.selectedPrototypeRegions.delete(regionId);
+    this.updatePrototypeRegionState();
+    this.regionButtons.get(regionId)?.focus();
+  }
+
+  private updatePrototypeRegionState(): void {
+    for (const region of PROTOTYPE_REGIONS) {
+      const button = this.regionButtons.get(region.id);
+      const row = button?.closest<HTMLElement>('.region-row');
+      if (!button || !row) continue;
+      const selected = this.selectedPrototypeRegions.has(region.id);
+      row.dataset.selected = String(selected);
+      row.dataset.active = String(this.activePrototypeRegion === region.id);
+      button.setAttribute('aria-pressed', String(selected));
+    }
+
+    const selectedRegions = PROTOTYPE_REGIONS.filter((region) => this.selectedPrototypeRegions.has(region.id));
+    const selectedItems = selectedRegions.map((region) => {
+      const item = element('li', 'selected-region');
+      const identity = element('span', 'selected-region__identity');
+      const acronym = element('strong', 'selected-region__acronym');
+      acronym.textContent = region.acronym;
+      const name = element('span', 'selected-region__name');
+      name.textContent = region.name;
+      identity.append(acronym, name);
+      const remove = element('button', 'selected-region__remove');
+      remove.type = 'button';
+      remove.textContent = '×';
+      remove.setAttribute('aria-label', `Remove ${region.acronym} from selected regions`);
+      remove.addEventListener('click', () => this.removePrototypeRegion(region.id));
+      item.append(identity, remove);
+      return item;
+    });
+    if (!selectedItems.length) {
+      const empty = element('li', 'selected-regions__empty');
+      empty.textContent = 'No regions selected';
+      selectedItems.push(empty);
+    }
+    this.selectedRegionList.replaceChildren(...selectedItems);
+    this.clearPrototypeSelection.disabled = selectedRegions.length === 0;
+    this.filterPrototypeRegions();
+  }
+
+  private filterPrototypeRegions(): void {
+    if (!this.regionSearch || !this.regionResultCount) return;
+    const query = this.regionSearch.value.trim().toLocaleLowerCase();
+    let visible = 0;
+    for (const region of PROTOTYPE_REGIONS) {
+      const matches = !query || region.acronym.toLocaleLowerCase().includes(query) || region.name.toLocaleLowerCase().includes(query);
+      const row = this.regionButtons.get(region.id)?.closest<HTMLLIElement>('.region-row');
+      if (row) row.hidden = !matches;
+      if (matches) visible += 1;
+    }
+    this.regionSearchClear.hidden = !query;
+    this.regionResultCount.textContent = `${visible} ${visible === 1 ? 'region' : 'regions'}`;
+  }
+
+  private navigatePrototypeRegions(event: KeyboardEvent, current: HTMLButtonElement): void {
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    const visible = [...this.regionList.querySelectorAll<HTMLButtonElement>('.region-row:not([hidden]) .region-row__button')];
+    if (!visible.length) return;
+    const index = visible.indexOf(current);
+    let target = index;
+    if (event.key === 'ArrowDown') target = Math.min(visible.length - 1, index + 1);
+    if (event.key === 'ArrowUp') target = Math.max(0, index - 1);
+    if (event.key === 'Home') target = 0;
+    if (event.key === 'End') target = visible.length - 1;
+    if (target !== index) {
+      event.preventDefault();
+      visible[target]?.focus();
+    }
   }
 
   private createSettingsPane(): HTMLElement {
@@ -287,14 +484,9 @@ export class AppShell {
     pane.id = 'settings-pane';
     pane.setAttribute('aria-label', 'Visualization settings');
     pane.dataset.open = 'false';
-
     const panelHeader = this.panelHeader('Visualization settings', () => this.closeDrawers());
     const content = element('div', 'settings-pane__content');
-    content.append(
-      this.createSettingsGroup('Data interpretation', 3),
-      this.createSettingsGroup('Color', 4),
-      this.createSettingsGroup('Display', 2),
-    );
+    content.append(this.createSettingsGroup('Data interpretation', 3), this.createSettingsGroup('Color', 4), this.createSettingsGroup('Display', 2));
     pane.append(panelHeader, content);
     return pane;
   }
@@ -325,7 +517,6 @@ export class AppShell {
   private createWorkspace(): HTMLElement {
     const workspace = element('section', 'workspace');
     workspace.setAttribute('aria-label', 'Atlas workspace');
-
     const switcher = element('nav', 'view-switcher');
     switcher.setAttribute('aria-label', 'Workspace view');
     for (const item of VIEW_LABELS) {
@@ -338,26 +529,16 @@ export class AppShell {
       this.viewButtons.set(item.id, button);
       switcher.append(button);
     }
-
     const slices = element('section', 'slice-strip');
     slices.setAttribute('aria-label', 'Orthogonal brain slices');
-    slices.append(
-      this.createViewFrame('coronal'),
-      this.createViewFrame('sagittal'),
-      this.createViewFrame('horizontal'),
-    );
-
+    slices.append(this.createViewFrame('coronal'), this.createViewFrame('sagittal'), this.createViewFrame('horizontal'));
     const context = element('section', 'context-strip');
     context.setAttribute('aria-label', 'Secondary atlas context');
-
     const secondary = element('section', 'secondary-view panel');
     secondary.append(this.frameHeader('Secondary view'), element('div', 'secondary-view__surface'));
-
     const distribution = element('section', 'distribution-band panel');
     distribution.append(this.frameHeader('Global distribution'), element('div', 'distribution-band__surface'));
-
     context.append(secondary, distribution);
-
     const analysis = element('section', 'analysis-panel panel');
     analysis.dataset.state = 'compact';
     analysis.setAttribute('aria-label', 'Analysis and comparison');
@@ -365,7 +546,6 @@ export class AppShell {
     const analysisSurface = element('div', 'analysis-panel__surface');
     analysisSurface.append(placeholderLine('long'), placeholderLine('medium'));
     analysis.append(analysisHeader, analysisSurface);
-
     workspace.append(switcher, slices, context, analysis);
     return workspace;
   }
@@ -376,13 +556,11 @@ export class AppShell {
     frame.setAttribute('aria-label', `${axis} view`);
     const title = `${axis[0]?.toUpperCase() ?? ''}${axis.slice(1)}`;
     frame.append(this.frameHeader(title));
-
     const viewport = element('div', 'view-frame__viewport');
     viewport.setAttribute('aria-label', `${axis} renderer target`);
     const coordinate = element('span', 'view-frame__coordinate');
     coordinate.textContent = axis === 'coronal' ? 'AP —' : axis === 'sagittal' ? 'ML —' : 'DV —';
     viewport.append(coordinate);
-
     const footer = element('div', 'view-frame__footer');
     footer.append(placeholderLine('long'));
     frame.append(viewport, footer);
@@ -406,9 +584,7 @@ export class AppShell {
   private setActiveView(view: WorkspaceView): void {
     this.activeView = view;
     this.app.dataset.activeView = view;
-    for (const [id, button] of this.viewButtons) {
-      button.setAttribute('aria-pressed', id === view ? 'true' : 'false');
-    }
+    for (const [id, button] of this.viewButtons) button.setAttribute('aria-pressed', id === view ? 'true' : 'false');
   }
 
   private openDrawer(drawer: DrawerName): void {
@@ -419,7 +595,8 @@ export class AppShell {
     pane.dataset.open = 'true';
     this.app.dataset.drawerOpen = drawer;
     this.syncDrawerButtons(drawer);
-    pane.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')?.focus();
+    if (drawer === 'regions') this.regionSearch.focus();
+    else pane.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')?.focus();
   }
 
   private closeDrawers(): void {
@@ -439,13 +616,9 @@ export class AppShell {
     const width = window.innerWidth;
     const mode: LayoutMode = width >= 1480 ? 'wide' : width >= 1100 ? 'compact' : width >= 760 ? 'narrow' : 'phone';
     this.app.dataset.layout = mode;
-
     if (mode !== 'phone' && this.overflowActions) this.overflowActions.open = false;
-    if (mode === 'wide') {
-      this.closeDrawers();
-    } else if (mode === 'compact' && this.regionPane.dataset.open === 'true') {
-      this.closeDrawers();
-    }
+    if (mode === 'wide') this.closeDrawers();
+    else if (mode === 'compact' && this.regionPane.dataset.open === 'true') this.closeDrawers();
   }
 
   private readonly onResize = (): void => this.syncLayoutMode();
