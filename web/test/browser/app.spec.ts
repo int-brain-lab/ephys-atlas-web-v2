@@ -68,7 +68,7 @@ test('slice control updates calibrated coordinate and renderer request', async (
   const slider = page.getByLabel('coronal slice');
   await slider.fill('700');
   await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.60 mm');
-  await expect(page).toHaveURL(/slices=700,550,400/);
+  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('700,550,400');
 });
 
 test('view maximize is reversible with Escape', async ({ page }) => {
@@ -115,11 +115,12 @@ test('drawers still close on Escape and composition changes', async ({ page }) =
   await page.setViewportSize({ width: 1024, height: 768 });
   await mockCuratedSlices(page);
   await page.goto('/');
+  const settings = page.getByRole('complementary', { name: 'Visualization settings' });
   await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.getByLabel('Visualization settings')).toHaveAttribute('data-open', 'true');
+  await expect(settings).toHaveAttribute('data-open', 'true');
   await page.keyboard.press('Escape');
-  await expect(page.getByLabel('Visualization settings')).toHaveAttribute('data-open', 'false');
+  await expect(settings).toHaveAttribute('data-open', 'false');
   await page.getByRole('button', { name: 'Regions' }).click();
   await page.setViewportSize({ width: 1440, height: 900 });
-  await expect(page.getByLabel('Brain regions')).toHaveAttribute('data-open', 'false');
+  await expect(page.getByRole('complementary', { name: 'Brain regions' })).toHaveAttribute('data-open', 'false');
 });
