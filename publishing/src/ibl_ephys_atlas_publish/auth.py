@@ -69,10 +69,19 @@ def revoke_credential(path: str | Path, credential_id: str) -> None:
 class CredentialRegistry:
     def __init__(self, path: str | Path):
         self.path = Path(path)
+        self._cache_stamp: tuple[int, int] | None = None
+        self._cache: dict[str, dict[str, Any]] = {}
 
     def authenticate(self, token: str) -> dict[str, Any] | None:
         if not token or not self.path.exists():
             return None
+        stat = self.path.stat()
+        stamp = (stat.st_mtime_ns, stat.st_size)
+        if stamp != self._cache_stamp:
+            self._cache_stamp = stamp
+            self._cache.clear()
+        if token in self._cache:
+            return self._cache[token]
         try:
             credential_id = token.split("_", 2)[1]
         except (IndexError, AttributeError):
@@ -83,5 +92,6 @@ class CredentialRegistry:
                 continue
             actual = _hash_token(token, item["salt"])
             if hmac.compare_digest(actual, item["token_hash"]):
+                self._cache[token] = item
                 return item
         return None
