@@ -1,16 +1,16 @@
 {
-  "schemaVersion": "0.1-provisional",
+  "schemaVersion": "0.1",
   "datasets": [
     {
       "id": "ephys_atlas_channels",
-      "title": "Ephys Atlas channels (fixture)",
-      "description": "Tiny provisional frontend fixture; not scientific data.",
-      "defaultRelease": "fixture-0.1",
+      "title": "Ephys Atlas channels (integration fixture)",
+      "description": "Schema-v0.1 golden fixture wired through the real manifest/binary loader; not scientific data.",
+      "defaultRelease": "golden-v0.1",
       "releases": [
         {
-          "id": "fixture-0.1",
-          "label": "fixture-0.1",
-          "manifest": "./ephys_atlas_channels/fixture-0.1/manifest.json",
+          "id": "golden-v0.1",
+          "label": "golden-v0.1",
+          "manifest": "./ephys_atlas_channels/golden-v0.1/manifest.json",
           "immutable": true
         }
       ]
