@@ -8,6 +8,7 @@ import { createAppStore } from './domain/store.js';
 import type { DatasetRef, ParcellationId, RepresentationKind } from './domain/types.js';
 import { NullSliceRenderer, type SliceRenderer } from './rendering/interfaces.js';
 import { AppShell, type ShellModel } from './ui/app-shell.js';
+import { RegionalPanelController } from './ui/regional-panel.js';
 import { UrlStateController } from './url/url-state.js';
 
 export interface AppOptions {
@@ -21,6 +22,8 @@ export class AtlasApp {
   private readonly repository: DatasetRepository;
   private readonly urlController: UrlStateController;
   private readonly shell: AppShell;
+  private readonly regionalPanel: RegionalPanelController;
+  private readonly renderer: SliceRenderer;
   private readonly prefetch = new PrefetchQueue();
   private catalog: DatasetCatalog | null = null;
   private manifest: DatasetManifest | null = null;
@@ -33,7 +36,7 @@ export class AtlasApp {
     const published = new HttpDatasetSource(catalogUrl);
     this.repository = new DatasetRepository(published, this.localSource);
     this.urlController = new UrlStateController(this.store);
-    const renderer = options.renderer ?? new NullSliceRenderer();
+    this.renderer = options.renderer ?? new NullSliceRenderer();
     this.shell = new AppShell(root, {
       setDataset: (ref) => this.store.dispatch({ type: 'dataset/set', dataset: ref }),
       setFeature: (featureId, representation) => this.store.dispatch({ type: 'feature/set', featureId, ...(representation ? { representation } : {}) }),
@@ -41,11 +44,14 @@ export class AtlasApp {
       setStatistic: (statistic) => this.store.dispatch({ type: 'color/statistic', statistic }),
       setColormap: (colormap) => this.store.dispatch({ type: 'color/colormap', colormap }),
       setSlice: (axis, index) => this.store.dispatch({ type: 'slice/set', axis, index }),
-      toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       importLocal: (files) => this.importLocal(files),
-    }, renderer);
-    renderer.setInteractionSink?.({
+    }, this.renderer);
+    this.regionalPanel = new RegionalPanelController(root, {
+      toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
+      clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
+    });
+    this.renderer.setInteractionSink?.({
       hover: () => undefined,
       toggleSelection: (hit) => this.store.dispatch({ type: 'selection/toggle', regionId: hit.regionId }),
       moveCursor: (cursor) => this.store.dispatch({ type: 'cursor/set', cursor }),
@@ -71,18 +77,30 @@ export class AtlasApp {
   stop(): void {
     this.prefetch.cancel();
     this.urlController.stop();
+    this.regionalPanel.destroy();
     this.shell.destroy();
   }
 
   private render(): void {
+    const state = this.store.getState();
+    this.renderer.updatePresentation?.({
+      feature: this.feature,
+      coloring: state.view.coloring,
+      selectedRegionIds: state.view.selection,
+    });
     const model: ShellModel = {
-      state: this.store.getState(),
+      state,
       catalog: this.catalog,
       manifest: this.manifest,
       feature: this.feature,
-      regions: this.regions,
     };
     this.shell.render(model);
+    this.regionalPanel.render({
+      state,
+      manifest: this.manifest,
+      feature: this.feature,
+      regions: this.regions,
+    });
   }
 
   private async loadCatalog(): Promise<void> {
