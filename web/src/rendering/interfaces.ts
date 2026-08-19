@@ -1,9 +1,5 @@
-import type {
-  CursorState,
-  ParcellationId,
-  SliceAxis,
-  SliceState,
-} from '../domain/types.js';
+import type { AppState, ColoringState, ViewState } from '../domain/types.js';
+import type { CursorState, ParcellationId, SliceAxis, SliceState } from '../domain/types.js';
 import type { FeaturePayload } from '../data/contracts.js';
 
 export interface SliceRenderModel {
@@ -14,11 +10,13 @@ export interface SliceRenderModel {
   parcellation: ParcellationId;
   selectedRegionIds: readonly string[];
   feature: FeaturePayload | null;
+  coloring: ColoringState;
 }
 
 export interface SliceRenderer {
   render(target: HTMLElement, model: SliceRenderModel): void | Promise<void>;
   clear(target: HTMLElement): void;
+  setInteractionSink?(sink: RendererInteractionSink): void;
   destroy?(): void;
 }
 
