@@ -9,10 +9,10 @@ const reviewViewports = [
 ] as const;
 
 const reviewFragments = {
-  // Short real paths sampled from the downloaded curated v1 bundles.
-  coronal: '<path d="M236.473 167.48v-4.34 4.34z" class="allen_region_1 beryl_region_1 cosmos_region_1"/>',
-  sagittal: '<path d="M160.137 184.944v-2.721 2.721z" class="allen_region_1194 beryl_region_1 cosmos_region_1"/>',
-  horizontal: '<path d="M298.858 147.01v-.404.404z" class="allen_region_97 beryl_region_94 cosmos_region_6"/>',
+  // Geometry is sampled from the curated assets; region ids are deterministic test ids matching the golden fixture.
+  coronal: '<path d="M236.473 167.48v-4.34 4.34z" class="allen_region_10 beryl_region_10 cosmos_region_10"/>',
+  sagittal: '<path d="M160.137 184.944v-2.721 2.721z" class="allen_region_10 beryl_region_10 cosmos_region_10"/>',
+  horizontal: '<path d="M298.858 147.01v-.404.404z" class="allen_region_10 beryl_region_10 cosmos_region_10"/>',
 } as const;
 
 const curatedRanges = {
@@ -121,6 +121,49 @@ test('scientific range endpoints may reuse the nearest available display SVG', a
   await expect(page.locator('[data-view="horizontal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '754');
 });
 
+test('schema v0.1 regional fixture drives values, coloring, selection and histogram comparison', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockCuratedSlices(page);
+  await page.goto('/');
+
+  await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
+  await expect(page.locator('.region-row')).toHaveCount(4);
+  await expect(page.locator('.region-row').first()).toContainText('R1');
+  await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
+  await expect(page.locator('.regional-comparison__fixture')).toHaveText('Synthetic integration fixture');
+
+  const path = page.locator('[data-view="coronal"] path.allen_region_10').first();
+  await expect(path).toHaveAttribute('style', /fill:/);
+
+  await page.getByRole('button', { name: 'R1, Fixture region 1' }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('10');
+  await expect(page.locator('.selected-region')).toContainText('R1');
+  await expect(page.locator('.regional-comparison__list')).toContainText('mean: 1 dB rel. V');
+  await expect(path).toHaveClass(/is-selected/);
+});
+
+test('renderer region selection flows back into shared URL state', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockCuratedSlices(page);
+  await page.goto('/');
+  await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
+  const path = page.locator('[data-view="coronal"] path.allen_region_10').first();
+  await path.dispatchEvent('pointerup');
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('10');
+  await expect(page.locator('.selected-region')).toContainText('R1');
+});
+
+test('region search filters loaded metadata rather than prototype rows', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockCuratedSlices(page);
+  await page.goto('/');
+  await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
+  const search = page.getByLabel('Search brain regions');
+  await search.fill('fixture region 3');
+  await expect(page.locator('.region-row:not([hidden])')).toHaveCount(1);
+  await expect(page.locator('.region-row:not([hidden])')).toContainText('R3');
+});
+
 test('view maximize is reversible with Escape', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await mockCuratedSlices(page);
@@ -147,17 +190,6 @@ test('curated asset failure is an explicit view-frame error state', async ({ pag
   await page.goto('/');
   await expect(page.locator('[data-view="coronal"]')).toHaveAttribute('data-state', 'error');
   await expect(page.locator('[data-view="coronal"] .view-frame__status')).toHaveText('Unavailable');
-});
-
-test('phase 3 region search and prototype selection remain local', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
-  await page.goto('/');
-  const search = page.getByLabel('Search brain regions');
-  await search.fill('somato');
-  await expect(page.locator('.region-row:not([hidden])')).toHaveCount(1);
-  await expect(page.locator('.region-row:not([hidden])')).toContainText('SSp-bfd');
-  await expect(page).not.toHaveURL(/selected=/);
 });
 
 test('drawers still close on Escape and composition changes', async ({ page }) => {
