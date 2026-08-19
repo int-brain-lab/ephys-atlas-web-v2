@@ -12,9 +12,26 @@ Data loading is behind `DatasetSource` and `DatasetRepository`. `HttpDatasetSour
 
 Immutable HTTP resources have cache-first Cache Storage support plus in-flight request coalescing. `PrefetchQueue` provides small cancellable idle-time prefetch. No service worker is required.
 
-Rendering is behind `SliceRenderer`/`SliceRenderModel`. The default `NullSliceRenderer` only marks renderer slots as unconnected; it does not implement a fake atlas. Rendering work can replace this interface without taking ownership of app state or data loading.
+Rendering is behind `SliceRenderer`/`SliceRenderModel`. Phase 1 does not call the renderer: the shell deliberately exposes only empty view surfaces until the UX layout is approved. The renderer interfaces remain unchanged for the rendering workstream.
 
-The shell is semantic HTML with labeled controls, status live region, keyboard-native inputs, three renderer slots, selection list, and responsive structure. Visual design is intentionally minimal for UX iteration.
+## UX Phase 1 — responsive empty shell
+
+Implemented the accepted `docs/ux/layout-implementation-spec.md` Phase 1 only.
+
+- semantic `atlas-app` / header / region pane / workspace / settings pane composition;
+- four explicit responsive regimes at 1480, 1100, and 760px starting breakpoints;
+- wide desktop: region + three unequal slice frames + settings;
+- compact desktop: region + three slice frames, settings in a drawer;
+- tablet/phone: regions and settings in drawers, one scientific view at a time, with immediate Coronal/Sagittal/Horizontal/Context switching;
+- compact secondary/distribution context row and analysis band placeholders;
+- viewport-height desktop shell with owned internal scrolling and no macro absolute positioning;
+- drawer cleanup on Escape and responsive transitions;
+- dark scientific-instrument tokens and restrained panel primitive;
+- `styles.css` is now a cascade-layer import manifest with split token/reset/base/layout/component files.
+
+No scientific data presentation, brain rendering, charts, 3D, real header controls, region rows, analysis content, or settings functionality was implemented in this phase. Existing application state/data modules are intentionally left in place behind the empty shell.
+
+The five Phase-1 review viewports are encoded in `web/test/browser/app.spec.ts`. Screenshots are review artifacts, not committed visual-regression goldens until UX approves the real browser shell.
 
 ## Public interfaces
 
@@ -45,14 +62,15 @@ The fixture under `web/public/fixtures/` is synthetic frontend test data, not a 
 
 - Replace provisional contracts with the data-schema workstream's shared/generated types and golden fixture as soon as they land.
 - Decide whether volume payloads use JSON metadata plus binary chunks, Zarr, NPY-derived blocks, or another transport. The current provisional `VolumeFeaturePayload` is only a boundary placeholder.
-- Rendering needs canonical slice bounds/index/coordinate metadata; frontend sliders currently use a neutral 0–1000 range because that contract is not available yet.
+- Rendering needs canonical slice bounds/index/coordinate metadata; the Phase-1 shell intentionally does not expose slice controls yet.
 - Decide whether URL `selected` should persist stable numeric Allen IDs, acronyms, or another canonical region key. It currently stores opaque strings.
 - Decide cache version/eviction budgets once real release sizes are known. Current persistent caching is intentionally simple and only used for immutable resources.
 - OPFS may be preferable to IndexedDB blobs for very large local volume resources; the logical `DatasetSource` contract should stay unchanged if storage changes.
+- UX must visually approve the Phase-1 browser screenshots before frontend proceeds to Phase 2 context-header work.
 
 ## Integration decisions needed
 
 1. Data/schema: confirm catalog + manifest resolution, representation descriptors, canonical region identifiers, feature statistic metadata, and local package layout.
-2. Rendering: confirm `SliceRenderer` input contract and provide slice bounds/coordinates so UI range controls are data-driven.
-3. UX: iterate layout/control grouping without moving domain state into DOM modules.
+2. Rendering: confirm `SliceRenderer` input contract and provide slice bounds/coordinates when Phase 4 begins.
+3. UX: review the five Phase-1 real-browser layouts and tune macro proportions/breakpoints before detailed blocks.
 4. Integration: decide whether browser E2E belongs in default `npm test`; currently `npm test` is fast (typecheck + unit) and Playwright is `npm run test:browser`.
