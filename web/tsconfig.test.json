@@ -7,6 +7,15 @@
     "module": "ES2022",
     "moduleResolution": "Bundler"
   },
-  "include": ["src/domain/**/*.ts", "src/url/**/*.ts", "src/data/contracts.ts", "src/data/validate.ts", "src/data/repository.ts", "src/data/prefetch.ts"],
+  "include": [
+    "src/domain/**/*.ts",
+    "src/url/**/*.ts",
+    "src/data/contracts.ts",
+    "src/data/validate.ts",
+    "src/data/regional-data.ts",
+    "src/data/repository.ts",
+    "src/data/prefetch.ts",
+    "src/rendering/scalar-colormap.ts"
+  ],
   "exclude": ["test/browser/**/*.ts", "playwright.config.ts"]
 }
