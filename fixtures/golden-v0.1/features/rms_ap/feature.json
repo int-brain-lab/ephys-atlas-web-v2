@@ -54,6 +54,7 @@
         ]
       },
       "format": "ephys-atlas-chunked-volume-v0.1",
+      "layout": "chunks3d",
       "grid": {
         "axis_order": [
           "ap",
