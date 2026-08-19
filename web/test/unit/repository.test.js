@@ -7,15 +7,21 @@ function source(kind, datasetId) {
     kind,
     async loadCatalog() {
       return {
-        schemaVersion: '0.1-provisional',
+        schemaVersion: '0.1',
         datasets: [{ id: datasetId, title: datasetId, defaultRelease: 'r1', releases: [{ id: 'r1', label: 'r1', manifest: 'manifest.json', immutable: true }] }],
       };
     },
     async loadManifest(ref) {
-      return { schemaVersion: '0.1-provisional', dataset: { id: ref.datasetId, release: ref.releaseId, title: ref.datasetId }, parcellations: ['allen'], features: [] };
+      return {
+        schemaVersion: '0.1',
+        dataset: { id: ref.datasetId, release: ref.releaseId, title: ref.datasetId },
+        parcellations: ['allen'],
+        parcellationDescriptors: {},
+        features: [],
+      };
     },
     async loadFeature() {
-      return { schemaVersion: '0.1-provisional', featureId: 'x', representation: 'regional', parcellation: 'allen', regionIds: [], statistics: {} };
+      return { schemaVersion: '0.1', featureId: 'x', representation: 'regional', parcellation: 'allen', regionIds: [], statistics: {} };
     },
   };
 }
