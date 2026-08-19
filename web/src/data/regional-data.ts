@@ -128,11 +128,10 @@ export function parseRegionalStatisticsResource(value: unknown): RegionalStatist
 }
 
 export function materializeRegionalHistogram(
-  resource: RegionalStatisticsResource['histogram'],
+  resource: NonNullable<RegionalStatisticsResource['histogram']>,
   flatCounts: readonly number[] | null,
   regionCount: number,
-): RegionalHistogram | undefined {
-  if (!resource) return undefined;
+): RegionalHistogram {
   const histogram: RegionalHistogram = {
     edges: resource.edges,
     globalCounts: resource.globalCounts,
