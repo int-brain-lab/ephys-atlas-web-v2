@@ -23,7 +23,21 @@ Branch: `work/rendering`.
 - `web/src/rendering/scene3d.ts`
   - Allen-region mesh + future dense-point geometry contract, validation, memory estimation.
 
-Tests are dependency-free Node TypeScript tests under `tests/rendering/`. Current total: 12 passing.
+Tests are dependency-free Node TypeScript tests under `tests/rendering/`. Current total: 12 passing. The rendering source also compiles with the frontend branch's strict settings (`moduleResolution: Bundler`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) and emitted ES modules pass a runtime smoke test.
+
+## Frontend integration boundary
+
+`work/frontend` landed its own application-level `web/src/rendering/interfaces.ts` during this run. Keep that `SliceRenderer`/`SliceRenderModel` facade as the frontend-owned boundary rather than replacing it with the lower-level rendering interfaces here.
+
+Integration should:
+
+1. use frontend `domain/types.ts` as the canonical source for `SliceAxis` and parcellation types after merge;
+2. add a small adapter from `SliceRenderModel` to `RegionalSliceFrame`/`SvgSliceRenderer`;
+3. route SVG region pointer events into the frontend `RendererInteractionSink`;
+4. keep `VolumeSliceSource` below the facade so physical volume layout remains invisible to application state;
+5. preserve `.js` import specifiers in TypeScript source, matching the frontend Vite/Bundler convention.
+
+This avoids two competing application-level renderer abstractions while retaining the technology-neutral low-level renderers and volume source boundary.
 
 ## SVG findings
 
@@ -56,7 +70,7 @@ Key results:
 - one-object-per-64^3 chunk: 40/45/72 requests and 20.0/22.5/36.0 MiB raw for a cold coronal/sagittal/horizontal slice; three-plane union 68.0 MiB;
 - one-object-per-32^3 chunk: 150/170/255 requests; three-plane union 33.4 MiB;
 - orientation-specific 8-slice packs: three current views = 3 requests / 8.48 MiB raw / 16.96 MiB decoded float32 cache, with 8 warm steps; physical storage is 3x (440.9 MiB raw per feature);
-- scalar-to-RGBA mapping of all three full-resolution views: p50 4.79 ms, p95 5.35 ms in local Node 22.
+- scalar-to-RGBA mapping of all three full-resolution views: local Node 22 runs were approximately 3.4-4.8 ms p50 and 4.2-5.4 ms p95, comfortably below the provisional 10 ms CPU budget.
 
 Recommendation: **Canvas2D + `VolumeSliceSource` for launch. Benchmark orientation-specific 4/8-slice packs on real data before freezing the volume physical format.** 3-D chunk storage remains a valid canonical/interoperability representation, but current per-chunk static URLs do not meet the slice-view access pattern without substantial request/byte cost.
 
