@@ -16,7 +16,7 @@ const metadata: VolumeChunkMetadata = {
   shape: { coronal: 5, sagittal: 4, horizontal: 3 },
   chunkShape: { coronal: 2, sagittal: 3, horizontal: 2 },
   voxelSizeUm: 25,
-  dtype: 'float32',
+  storageDtype: 'float16',
 };
 
 function makeChunk(key: VolumeChunkKey): VolumeChunk {
@@ -92,11 +92,7 @@ test('LRU cache respects a byte budget', () => {
 
 test('scalar palette mapping is bounded and makes non-finite values transparent', () => {
   const values = new Float32Array([-1, 0, 0.5, 1, 2, Number.NaN]);
-  const palette = new Uint8Array([
-    0, 0, 0, 255,
-    100, 0, 0, 255,
-    200, 0, 0, 255,
-  ]);
+  const palette = new Uint8Array([0, 0, 0, 255, 100, 0, 0, 255, 200, 0, 0, 255]);
   const rgba = scalarToRgba(values, palette, 0, 1);
   assert.deepEqual([...rgba], [
     0, 0, 0, 255,

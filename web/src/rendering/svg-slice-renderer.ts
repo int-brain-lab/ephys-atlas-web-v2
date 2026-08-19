@@ -25,6 +25,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   private currentFragment = '';
   private mapping: MappingName = 'beryl';
   private indexedMapping: MappingName | null = null;
+  private hoveredRegionId: number | null = null;
   private readonly pathIndex = new Map<number, SVGPathElement[]>();
   private readonly abortController = new AbortController();
 
@@ -71,9 +72,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     this.pathIndex.clear();
     for (const path of this.mount.figureLayer.querySelectorAll<SVGPathElement>('path')) {
       const regionId = regionIdFromClassNames(this.mapping, path.classList);
-      if (regionId == null) {
-        continue;
-      }
+      if (regionId == null) continue;
       const paths = this.pathIndex.get(regionId) ?? [];
       paths.push(path);
       this.pathIndex.set(regionId, paths);
@@ -86,11 +85,8 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
       const selected = frame.selectedRegionIds?.has(regionId) ?? false;
       const highlighted = frame.highlightedRegionId === regionId;
       for (const path of paths) {
-        if (fill) {
-          path.style.fill = fill;
-        } else {
-          path.style.removeProperty('fill');
-        }
+        if (fill) path.style.fill = fill;
+        else path.style.removeProperty('fill');
         path.classList.toggle('is-selected', selected);
         path.classList.toggle('is-highlighted', highlighted);
       }
@@ -121,17 +117,12 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
 
   private eventRegionId(event: Event): number | null {
     const target = event.target;
-    if (!(target instanceof SVGPathElement)) {
-      return null;
-    }
+    if (!(target instanceof SVGPathElement)) return null;
     return regionIdFromClassNames(this.mapping, target.classList);
   }
 
-  private emit(type: SliceRegionPointerEvent['type'], event: PointerEvent): void {
-    const regionId = this.eventRegionId(event);
-    if (regionId == null || this.currentAxis == null) {
-      return;
-    }
+  private emitRegion(type: SliceRegionPointerEvent['type'], regionId: number, event: PointerEvent): void {
+    if (this.currentAxis == null) return;
     this.options.onRegionPointer?.({
       axis: this.currentAxis,
       regionId,
@@ -140,7 +131,21 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     });
   }
 
-  private readonly onPointerMove = (event: PointerEvent): void => this.emit('hover', event);
-  private readonly onPointerLeave = (event: PointerEvent): void => this.emit('leave', event);
-  private readonly onClick = (event: PointerEvent): void => this.emit('select', event);
+  private readonly onPointerMove = (event: PointerEvent): void => {
+    const regionId = this.eventRegionId(event);
+    if (regionId === this.hoveredRegionId) return;
+    if (this.hoveredRegionId != null) this.emitRegion('leave', this.hoveredRegionId, event);
+    this.hoveredRegionId = regionId;
+    if (regionId != null) this.emitRegion('hover', regionId, event);
+  };
+
+  private readonly onPointerLeave = (event: PointerEvent): void => {
+    if (this.hoveredRegionId != null) this.emitRegion('leave', this.hoveredRegionId, event);
+    this.hoveredRegionId = null;
+  };
+
+  private readonly onClick = (event: PointerEvent): void => {
+    const regionId = this.eventRegionId(event);
+    if (regionId != null) this.emitRegion('select', regionId, event);
+  };
 }
