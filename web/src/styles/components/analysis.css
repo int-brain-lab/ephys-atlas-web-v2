@@ -4,14 +4,56 @@
 }
 
 .analysis-panel__surface {
-  display: flex;
-  align-items: center;
-  gap: var(--space-5);
   min-width: 0;
   min-height: 0;
   padding: var(--space-3);
+  overflow: auto;
 }
 
-.analysis-panel__surface .placeholder-line {
-  max-width: 18rem;
+.regional-comparison {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: .4rem;
+}
+
+.regional-comparison__fixture {
+  justify-self: start;
+  padding: .16rem .38rem;
+  border: 1px solid rgb(239 180 72 / 34%);
+  border-radius: 999px;
+  background: rgb(239 180 72 / 8%);
+  color: rgb(245 204 124 / 84%);
+  font-size: .57rem;
+  letter-spacing: .025em;
+}
+
+.regional-comparison__list {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(7rem, 1fr) minmax(6rem, auto);
+  gap: .22rem .7rem;
+  margin: 0;
+  font-size: .64rem;
+}
+
+.regional-comparison__list dt {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.regional-comparison__list dd {
+  margin: 0;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.analysis-panel__surface .regional-data-message {
+  padding: 0;
+  text-align: left;
 }
