@@ -53,6 +53,17 @@ export interface ParcellationDescriptor {
   metadata?: string;
 }
 
+export interface RegionMetadata {
+  /** Stable parcellation region key used by browser selection and SVG classes. */
+  id: string;
+  atlasId: number;
+  index: number;
+  acronym: string;
+  name: string;
+  parentId?: string | null;
+  depth?: number;
+}
+
 export interface DatasetManifestDocument {
   schemaVersion: SchemaVersion;
   datasetId: string;
@@ -136,6 +147,28 @@ export interface DatasetManifest {
   features: readonly FeatureDescriptor[];
 }
 
+export interface GlobalStatistics {
+  count?: number;
+  missingCount?: number;
+  min?: number;
+  max?: number;
+  mean?: number;
+  std?: number;
+  median?: number;
+  q05?: number;
+  q25?: number;
+  q75?: number;
+  q95?: number;
+}
+
+export interface RegionalHistogram {
+  edges: readonly number[];
+  globalCounts: readonly number[];
+  /** One row per regionId, one column per histogram bin. */
+  regionalCounts?: readonly (readonly number[])[];
+  binRule?: string;
+}
+
 export interface RegionalFeaturePayload {
   schemaVersion: SchemaVersion;
   featureId: string;
@@ -143,6 +176,9 @@ export interface RegionalFeaturePayload {
   parcellation: ParcellationId;
   regionIds: readonly string[];
   statistics: Partial<Record<StatisticId, readonly number[]>>;
+  population?: string;
+  global?: GlobalStatistics;
+  histogram?: RegionalHistogram;
 }
 
 export interface VolumeFeaturePayload {
@@ -159,6 +195,7 @@ export interface DatasetSource {
   readonly kind: 'published' | 'local';
   loadCatalog(): Promise<DatasetCatalog>;
   loadManifest(ref: DatasetRef): Promise<DatasetManifest>;
+  loadRegions(ref: DatasetRef, parcellation: ParcellationId): Promise<readonly RegionMetadata[]>;
   loadFeature(
     ref: DatasetRef,
     featureId: string,
