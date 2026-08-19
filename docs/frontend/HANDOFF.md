@@ -31,22 +31,39 @@ Implemented the accepted `docs/ux/layout-implementation-spec.md` Phase 1. The fi
 
 No scientific data presentation, brain rendering, charts, 3D, real header controls, region rows, analysis content, or settings functionality was implemented in this phase. Existing application state/data modules are intentionally left in place behind the empty shell.
 
-The five Phase-1 review viewports are encoded in `web/test/browser/app.spec.ts`. After visual approval, their `.app-body` viewport geometry became an explicit browser-regression contract. Phase-2 Chromium review additionally verified the `.app-body` pixels are unchanged from the approved Phase-1 captures at all five viewports; the screenshots themselves remain review artifacts rather than repository goldens for now.
+The five Phase-1 review viewports are encoded in `web/test/browser/app.spec.ts`. After visual approval, their `.app-body` viewport geometry became an explicit browser-regression contract. Phase-2/3 browser review preserves that macro geometry; screenshots remain review artifacts rather than repository goldens for now.
 
 ## UX Phase 2 — context header
 
-Implemented Phase 2 only; awaiting visual review before Phase 3.
+Phase 2 was visually approved on 2026-08-19.
 
-- the header is now bound to the existing `ShellModel` dataset, release, feature, and representation state;
+- the header is bound to the existing `ShellModel` dataset, release, feature, and representation state;
 - release is rendered as deliberately secondary metadata and is omitted in narrow/tablet composition;
 - Share, Download, and Info are explicit placeholder affordances only — no detailed action behavior has been implemented;
 - compact desktop keeps Settings as a drawer trigger; tablet adds Regions as a drawer trigger;
 - phone keeps dataset/feature/representation context visible while collapsing Share/Download/Info behind a small overflow control;
 - phone drawer buttons use compact icon presentation while retaining accessible names;
 - the overflow closes on Escape and is cleared when leaving phone composition or opening a drawer;
-- all Phase-1 workspace geometry and pane behavior remains pixel-identical in the canonical browser harness.
+- all Phase-1 workspace geometry and pane behavior remains unchanged.
 
-No region rows/search behavior, anatomical rendering, chart content, analysis functionality, settings controls, 3D, feature catalogue, download implementation, share implementation, or info panel was added in Phase 2.
+No anatomical rendering, chart content, analysis functionality, settings controls, 3D, feature catalogue, download implementation, share implementation, or info panel was added in Phase 2.
+
+## UX Phase 3 — region browser
+
+Implemented Phase 3 only; awaiting visual review before Phase 4.
+
+- replaces the Phase-1 region-pane skeleton with a dense representative hierarchy of static region rows;
+- representative rows cover nested hierarchy, long names, value bars, selected, active, missing-value, hover, and keyboard-focus states;
+- search filters the representative rows locally by acronym or name and announces the result count;
+- selected-region rows support local prototype add/remove/clear interaction so density and interaction states can be reviewed;
+- Arrow Up/Down and Home/End move keyboard focus between visible region rows;
+- the region list owns scrolling while search and selected-region areas remain stable within the pane;
+- narrow/tablet/phone reuse the same component in the existing drawer, and opening the region drawer focuses search;
+- Playwright coverage exercises all five review viewports plus search, selection, keyboard navigation, focus, and drawer cleanup.
+
+The Phase-3 region labels and normalized value bars are explicitly UX-only representative content. They are not loaded from scientific datasets, are not used for scientific interpretation, do not dispatch selection into domain/URL state, and must be replaced when real region data is connected after visual approval.
+
+No real Allen/Beryl/Cosmos region data, feature coloring, anatomical rendering, charts, 3D, analysis functionality, or settings functionality was added in Phase 3.
 
 ## Public interfaces
 
@@ -81,11 +98,11 @@ The fixture under `web/public/fixtures/` is synthetic frontend test data, not a 
 - Decide whether URL `selected` should persist stable numeric Allen IDs, acronyms, or another canonical region key. It currently stores opaque strings.
 - Decide cache version/eviction budgets once real release sizes are known. Current persistent caching is intentionally simple and only used for immutable resources.
 - OPFS may be preferable to IndexedDB blobs for very large local volume resources; the logical `DatasetSource` contract should stay unchanged if storage changes.
-- UX must visually approve the Phase-2 header screenshots before frontend proceeds to Phase 3 region-browser work.
+- UX must visually approve the Phase-3 region-browser screenshots before frontend proceeds to Phase 4 anatomical-view integration.
 
 ## Integration decisions needed
 
 1. Data/schema: confirm catalog + manifest resolution, representation descriptors, canonical region identifiers, feature statistic metadata, and local package layout.
 2. Rendering: confirm `SliceRenderer` input contract and provide slice bounds/coordinates when Phase 4 begins.
-3. UX: review the five Phase-2 real-browser header layouts before Phase 3 region-browser work.
+3. UX: review the five Phase-3 real-browser region-browser layouts before Phase 4.
 4. Integration: decide whether browser E2E belongs in default `npm test`; currently `npm test` is fast (typecheck + unit) and Playwright is `npm run test:browser`.
