@@ -1,12 +1,14 @@
-import { LAUNCH_DATASET_IDS, type DatasetId, type ParcellationId, type StatisticId } from '../domain/types.js';
+import type { DatasetId, ParcellationId, StatisticId } from '../domain/types.js';
 import {
-  PROVISIONAL_SCHEMA_VERSION,
+  SCHEMA_VERSION,
+  type BinaryArrayDescriptor,
+  type BinaryDType,
   type DatasetCatalog,
   type DatasetManifest,
+  type DatasetManifestDocument,
   type FeatureDescriptor,
   type FeaturePayload,
   type RegionalFeaturePayload,
-  type VolumeFeaturePayload,
 } from './contracts.js';
 
 function object(value: unknown, context: string): Record<string, unknown> {
@@ -29,14 +31,12 @@ function array(value: unknown, context: string): unknown[] {
   return value;
 }
 
-function schemaVersion(value: unknown, context: string): void {
-  if (value !== PROVISIONAL_SCHEMA_VERSION) throw new Error(`${context}.schemaVersion must be ${PROVISIONAL_SCHEMA_VERSION}`);
-}
-
-function datasetId(value: unknown, context: string): DatasetId {
-  const id = string(value, context);
-  if (!(LAUNCH_DATASET_IDS as readonly string[]).includes(id)) throw new Error(`${context} is not a launch dataset id: ${id}`);
-  return id as DatasetId;
+function numberArray(value: unknown, length: number, context: string): number[] {
+  const values = array(value, context);
+  if (values.length !== length || values.some((item) => typeof item !== 'number' || !Number.isFinite(item))) {
+    throw new Error(`${context} must contain ${length} finite numbers`);
+  }
+  return values as number[];
 }
 
 function parcellation(value: unknown, context: string): ParcellationId {
@@ -45,50 +45,43 @@ function parcellation(value: unknown, context: string): ParcellationId {
 }
 
 function statistic(value: unknown, context: string): StatisticId {
-  if (!['mean', 'median', 'min', 'max', 'count'].includes(String(value))) throw new Error(`${context} is not a supported statistic`);
+  if (!['mean', 'median', 'min', 'max', 'count'].includes(String(value))) throw new Error(`${context} is not a supported display statistic`);
   return value as StatisticId;
 }
 
-function parseFeatureDescriptor(value: unknown, context: string): FeatureDescriptor {
-  const item = object(value, context);
-  const reps = object(item.representations, `${context}.representations`);
-  const descriptor: FeatureDescriptor = {
-    id: string(item.id, `${context}.id`),
-    label: string(item.label, `${context}.label`),
-    statistics: array(item.statistics, `${context}.statistics`).map((v, i) => statistic(v, `${context}.statistics[${i}]`)),
-    representations: {},
-  };
-  if (typeof item.description === 'string') descriptor.description = item.description;
-  if (typeof item.unit === 'string') descriptor.unit = item.unit;
+function dtype(value: unknown, context: string): BinaryDType {
+  const supported: readonly BinaryDType[] = ['int16', 'int32', 'uint16', 'uint32', 'float16', 'float32', 'float64'];
+  if (!supported.includes(value as BinaryDType)) throw new Error(`${context} has unsupported dtype ${String(value)}`);
+  return value as BinaryDType;
+}
 
-  if (reps.regional !== undefined) {
-    const regional = object(reps.regional, `${context}.representations.regional`);
-    if (regional.kind !== 'regional' || regional.format !== 'json') throw new Error(`${context}.representations.regional has unsupported kind/format`);
-    const mappings = object(regional.parcellations, `${context}.representations.regional.parcellations`);
-    const paths: Partial<Record<ParcellationId, string>> = {};
-    for (const key of ['allen', 'beryl', 'cosmos'] as const) {
-      if (mappings[key] !== undefined) paths[key] = string(mappings[key], `${context}.representations.regional.parcellations.${key}`);
+export function parseBinaryArray(value: unknown, context: string): BinaryArrayDescriptor {
+  const item = object(value, context);
+  const shape = array(item.shape, `${context}.shape`).map((dimension, index) => {
+    if (typeof dimension !== 'number' || !Number.isInteger(dimension) || dimension < 0) {
+      throw new Error(`${context}.shape[${index}] must be a non-negative integer`);
     }
-    descriptor.representations.regional = { kind: 'regional', format: 'json', parcellations: paths };
+    return dimension;
+  });
+  if (item.order !== 'C') throw new Error(`${context}.order must be C`);
+  if (item.endianness !== 'little' && item.endianness !== 'not-applicable') {
+    throw new Error(`${context}.endianness must be little or not-applicable`);
   }
-  if (reps.volume !== undefined) {
-    const volume = object(reps.volume, `${context}.representations.volume`);
-    if (volume.kind !== 'volume' || volume.format !== 'json') throw new Error(`${context}.representations.volume has unsupported kind/format`);
-    descriptor.representations.volume = {
-      kind: 'volume',
-      format: 'json',
-      resource: string(volume.resource, `${context}.representations.volume.resource`),
-    };
-  }
-  if (!descriptor.representations.regional && !descriptor.representations.volume) {
-    throw new Error(`${context} must provide regional and/or volume representation`);
-  }
+  const descriptor: BinaryArrayDescriptor = {
+    path: string(item.path, `${context}.path`),
+    dtype: dtype(item.dtype, `${context}.dtype`),
+    shape,
+    order: 'C',
+    endianness: item.endianness,
+  };
+  if (typeof item.sha256 === 'string') descriptor.sha256 = item.sha256;
+  if (typeof item.bytes === 'number' && Number.isInteger(item.bytes) && item.bytes >= 0) descriptor.bytes = item.bytes;
   return descriptor;
 }
 
 export function parseDatasetCatalog(value: unknown): DatasetCatalog {
   const root = object(value, 'catalog');
-  schemaVersion(root.schemaVersion, 'catalog');
+  if (root.schemaVersion !== SCHEMA_VERSION) throw new Error(`catalog.schemaVersion must be ${SCHEMA_VERSION}`);
   const datasets = array(root.datasets, 'catalog.datasets').map((value, index) => {
     const item = object(value, `catalog.datasets[${index}]`);
     const releases = array(item.releases, `catalog.datasets[${index}].releases`).map((value, releaseIndex) => {
@@ -100,7 +93,7 @@ export function parseDatasetCatalog(value: unknown): DatasetCatalog {
         immutable: boolean(release.immutable, `catalog.datasets[${index}].releases[${releaseIndex}].immutable`),
       };
     });
-    const id = datasetId(item.id, `catalog.datasets[${index}].id`);
+    const id = string(item.id, `catalog.datasets[${index}].id`) as DatasetId;
     const defaultRelease = string(item.defaultRelease, `catalog.datasets[${index}].defaultRelease`);
     if (!releases.some((release) => release.id === defaultRelease)) throw new Error(`catalog dataset ${id} defaultRelease is missing from releases`);
     return {
@@ -111,28 +104,176 @@ export function parseDatasetCatalog(value: unknown): DatasetCatalog {
       defaultRelease,
     };
   });
-  return { schemaVersion: PROVISIONAL_SCHEMA_VERSION, datasets };
+  return { schemaVersion: SCHEMA_VERSION, datasets };
 }
 
-export function parseDatasetManifest(value: unknown): DatasetManifest {
+export function parseDatasetManifestDocument(value: unknown): DatasetManifestDocument {
   const root = object(value, 'manifest');
-  schemaVersion(root.schemaVersion, 'manifest');
-  const dataset = object(root.dataset, 'manifest.dataset');
-  const parsedDataset = {
-    id: datasetId(dataset.id, 'manifest.dataset.id'),
-    release: string(dataset.release, 'manifest.dataset.release'),
-    title: string(dataset.title, 'manifest.dataset.title'),
-    ...(typeof dataset.description === 'string' ? { description: dataset.description } : {}),
-    ...(typeof dataset.fixture === 'boolean' ? { fixture: dataset.fixture } : {}),
+  if (root.schema_version !== SCHEMA_VERSION) throw new Error(`manifest.schema_version must be ${SCHEMA_VERSION}`);
+  const release = object(root.release, 'manifest.release');
+  const parcellations = array(root.parcellations, 'manifest.parcellations').map((value, index) => {
+    const item = object(value, `manifest.parcellations[${index}]`);
+    return {
+      id: parcellation(item.id, `manifest.parcellations[${index}].id`),
+      regionIndex: parseBinaryArray(item.region_index, `manifest.parcellations[${index}].region_index`),
+      ...(typeof item.metadata === 'string' ? { metadata: item.metadata } : {}),
+    };
+  });
+  const featureRefs = array(root.features, 'manifest.features').map((value, index) => {
+    const item = object(value, `manifest.features[${index}]`);
+    return {
+      id: string(item.id, `manifest.features[${index}].id`),
+      path: string(item.path, `manifest.features[${index}].path`),
+    };
+  });
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    datasetId: string(root.dataset_id, 'manifest.dataset_id'),
+    title: string(root.title, 'manifest.title'),
+    description: typeof root.description === 'string' ? root.description : '',
+    release: {
+      releaseId: string(release.release_id, 'manifest.release.release_id'),
+      immutable: boolean(release.immutable, 'manifest.release.immutable'),
+      createdAt: string(release.created_at, 'manifest.release.created_at'),
+      paperSnapshot: boolean(release.paper_snapshot, 'manifest.release.paper_snapshot'),
+    },
+    parcellations,
+    featureRefs,
   };
-  const parcellations = array(root.parcellations, 'manifest.parcellations').map((v, i) => parcellation(v, `manifest.parcellations[${i}]`));
-  const features = array(root.features, 'manifest.features').map((v, i) => parseFeatureDescriptor(v, `manifest.features[${i}]`));
-  return { schemaVersion: PROVISIONAL_SCHEMA_VERSION, dataset: parsedDataset, parcellations, features };
 }
 
+export function parseFeatureDescriptor(value: unknown, path: string): FeatureDescriptor {
+  const root = object(value, `feature ${path}`);
+  if (root.schema_version !== SCHEMA_VERSION) throw new Error(`${path}.schema_version must be ${SCHEMA_VERSION}`);
+  const representations = object(root.representations, `${path}.representations`);
+  const descriptor: FeatureDescriptor = {
+    id: string(root.id, `${path}.id`),
+    path,
+    label: string(root.label, `${path}.label`),
+    description: typeof root.description === 'string' ? root.description : '',
+    unit: typeof root.unit === 'string' ? root.unit : null,
+    statistics: [],
+    representations: {},
+  };
+
+  if (representations.regional !== undefined) {
+    const regional = object(representations.regional, `${path}.representations.regional`);
+    if (regional.format !== 'ephys-atlas-regional-v0.1') throw new Error(`${path} has unsupported regional format`);
+    const mappings: Partial<Record<ParcellationId, ReturnType<typeof parseRegionalParcellation>>> = {};
+    const stats = new Set<StatisticId>();
+    for (const [index, raw] of array(regional.parcellations, `${path}.representations.regional.parcellations`).entries()) {
+      const parsed = parseRegionalParcellation(raw, `${path}.representations.regional.parcellations[${index}]`);
+      mappings[parsed.parcellationId] = parsed;
+      try { stats.add(statistic(parsed.summary, `${path}.summary`)); } catch { /* descriptive field may not be a UI statistic */ }
+    }
+    descriptor.statistics = [...stats];
+    descriptor.representations.regional = {
+      kind: 'regional',
+      format: 'ephys-atlas-regional-v0.1',
+      parcellations: mappings,
+    };
+  }
+
+  if (representations.volume !== undefined) {
+    const volume = object(representations.volume, `${path}.representations.volume`);
+    if (volume.format !== 'ephys-atlas-chunked-volume-v0.1') throw new Error(`${path} has unsupported volume format`);
+    if (volume.layout !== 'chunks3d' && volume.layout !== 'orthogonal_slice_packs') throw new Error(`${path}.volume.layout is unsupported`);
+    const grid = object(volume.grid, `${path}.volume.grid`);
+    const arrayDescriptor = object(volume.array, `${path}.volume.array`);
+    const shape = numberArray(grid.shape, 3, `${path}.volume.grid.shape`) as [number, number, number];
+    const axisOrder = array(grid.axis_order, `${path}.volume.grid.axis_order`).map((item, i) => string(item, `${path}.volume.grid.axis_order[${i}]`));
+    if (axisOrder.length !== 3) throw new Error(`${path}.volume.grid.axis_order must have three entries`);
+    const voxelSizeUm = numberArray(grid.voxel_size_um, 3, `${path}.volume.grid.voxel_size_um`) as [number, number, number];
+    const originUm = numberArray(grid.origin_um, 3, `${path}.volume.grid.origin_um`) as [number, number, number];
+    const indexToWorldUm = numberArray(grid.index_to_world_um, 16, `${path}.volume.grid.index_to_world_um`);
+    if (arrayDescriptor.order !== 'C') throw new Error(`${path}.volume.array.order must be C`);
+    if (arrayDescriptor.endianness !== 'little' && arrayDescriptor.endianness !== 'not-applicable') throw new Error(`${path}.volume.array.endianness is unsupported`);
+    if (arrayDescriptor.nonfinite !== 'preserve' && arrayDescriptor.nonfinite !== 'forbid') throw new Error(`${path}.volume.array.nonfinite is unsupported`);
+    const resource = volume.layout === 'chunks3d'
+      ? object(volume.chunks, `${path}.volume.chunks`)
+      : object(volume.slice_packs, `${path}.volume.slice_packs`);
+    descriptor.representations.volume = {
+      kind: 'volume',
+      format: 'ephys-atlas-chunked-volume-v0.1',
+      layout: volume.layout,
+      grid: {
+        shape,
+        axisOrder: axisOrder as [string, string, string],
+        coordinateSystem: string(grid.coordinate_system, `${path}.volume.grid.coordinate_system`),
+        voxelSizeUm,
+        originUm,
+        indexToWorldUm,
+      },
+      array: {
+        dtype: dtype(arrayDescriptor.dtype, `${path}.volume.array.dtype`),
+        endianness: arrayDescriptor.endianness,
+        order: 'C',
+        nonfinite: arrayDescriptor.nonfinite,
+      },
+      resource,
+      ...(typeof volume.statistics === 'string' ? { statistics: volume.statistics } : {}),
+      ...(Array.isArray(volume.value_range) && volume.value_range.length === 2 ? { valueRange: volume.value_range as [number | null, number | null] } : {}),
+    };
+  }
+
+  if (!descriptor.representations.regional && !descriptor.representations.volume) {
+    throw new Error(`${path} must provide regional and/or volume representation`);
+  }
+  return descriptor;
+}
+
+function parseRegionalParcellation(value: unknown, context: string) {
+  const item = object(value, context);
+  return {
+    parcellationId: parcellation(item.parcellation_id, `${context}.parcellation_id`),
+    summary: string(item.summary, `${context}.summary`),
+    values: parseBinaryArray(item.values, `${context}.values`),
+    statistics: string(item.statistics, `${context}.statistics`),
+  };
+}
+
+export function resolveDatasetManifest(
+  document: DatasetManifestDocument,
+  features: readonly FeatureDescriptor[],
+  datasetId: DatasetId = document.datasetId as DatasetId,
+): DatasetManifest {
+  if (features.length !== document.featureRefs.length) throw new Error('Resolved feature count does not match manifest feature references');
+  const parcellationDescriptors: DatasetManifest['parcellationDescriptors'] = {};
+  for (const item of document.parcellations) parcellationDescriptors[item.id] = item;
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    dataset: {
+      id: datasetId,
+      release: document.release.releaseId,
+      title: document.title,
+      ...(document.description ? { description: document.description } : {}),
+      ...(document.datasetId === 'golden_fixture' ? { fixture: true } : {}),
+    },
+    parcellations: document.parcellations.map((item) => item.id),
+    parcellationDescriptors,
+    features,
+  };
+}
+
+export interface StatisticsDocument {
+  fields: readonly string[];
+  values: BinaryArrayDescriptor;
+}
+
+export function parseStatisticsDocument(value: unknown): StatisticsDocument {
+  const root = object(value, 'statistics');
+  if (root.format !== 'ephys-atlas-statistics-v0.1') throw new Error('statistics.format is unsupported');
+  const regional = object(root.regional_summary, 'statistics.regional_summary');
+  return {
+    fields: array(regional.fields, 'statistics.regional_summary.fields').map((item, index) => string(item, `statistics.regional_summary.fields[${index}]`)),
+    values: parseBinaryArray(regional.values, 'statistics.regional_summary.values'),
+  };
+}
+
+/** Validates already-decoded browser payloads. */
 export function parseFeaturePayload(value: unknown): FeaturePayload {
   const root = object(value, 'feature');
-  schemaVersion(root.schemaVersion, 'feature');
+  if (root.schemaVersion !== SCHEMA_VERSION) throw new Error(`feature.schemaVersion must be ${SCHEMA_VERSION}`);
   const featureId = string(root.featureId, 'feature.featureId');
   if (root.representation === 'regional') {
     const regionIds = array(root.regionIds, 'feature.regionIds').map((v, i) => string(v, `feature.regionIds[${i}]`));
@@ -141,14 +282,14 @@ export function parseFeaturePayload(value: unknown): FeaturePayload {
     for (const [key, raw] of Object.entries(statisticsObject)) {
       const stat = statistic(key, `feature.statistics.${key}`);
       const values = array(raw, `feature.statistics.${key}`).map((v, i) => {
-        if (typeof v !== 'number' || !Number.isFinite(v)) throw new Error(`feature.statistics.${key}[${i}] must be finite`);
+        if (typeof v !== 'number') throw new Error(`feature.statistics.${key}[${i}] must be numeric`);
         return v;
       });
       if (values.length !== regionIds.length) throw new Error(`feature.statistics.${key} length must match regionIds`);
       statistics[stat] = values;
     }
     return {
-      schemaVersion: PROVISIONAL_SCHEMA_VERSION,
+      schemaVersion: SCHEMA_VERSION,
       featureId,
       representation: 'regional',
       parcellation: parcellation(root.parcellation, 'feature.parcellation'),
@@ -156,19 +297,39 @@ export function parseFeaturePayload(value: unknown): FeaturePayload {
       statistics,
     };
   }
-  if (root.representation === 'volume') {
-    const rawShape = array(root.shape, 'feature.shape');
-    if (rawShape.length !== 3 || rawShape.some((v) => typeof v !== 'number' || !Number.isInteger(v) || v <= 0)) {
-      throw new Error('feature.shape must contain three positive integer dimensions');
+  throw new Error('parseFeaturePayload currently validates decoded regional payloads only');
+}
+
+export function decodeBinaryArray(buffer: ArrayBuffer, descriptor: BinaryArrayDescriptor): number[] {
+  const count = descriptor.shape.reduce((product, dimension) => product * dimension, 1);
+  const bytesPerElement: Record<BinaryDType, number> = {
+    int16: 2, int32: 4, uint16: 2, uint32: 4, float16: 2, float32: 4, float64: 8,
+  };
+  const expected = count * bytesPerElement[descriptor.dtype];
+  if (buffer.byteLength !== expected) throw new Error(`${descriptor.path} has ${buffer.byteLength} bytes; expected ${expected}`);
+  const view = new DataView(buffer);
+  const values = new Array<number>(count);
+  const little = true;
+  for (let i = 0; i < count; i += 1) {
+    const offset = i * bytesPerElement[descriptor.dtype];
+    switch (descriptor.dtype) {
+      case 'int16': values[i] = view.getInt16(offset, little); break;
+      case 'int32': values[i] = view.getInt32(offset, little); break;
+      case 'uint16': values[i] = view.getUint16(offset, little); break;
+      case 'uint32': values[i] = view.getUint32(offset, little); break;
+      case 'float32': values[i] = view.getFloat32(offset, little); break;
+      case 'float64': values[i] = view.getFloat64(offset, little); break;
+      case 'float16': values[i] = float16ToNumber(view.getUint16(offset, little)); break;
     }
-    return {
-      schemaVersion: PROVISIONAL_SCHEMA_VERSION,
-      featureId,
-      representation: 'volume',
-      shape: rawShape as [number, number, number],
-      dtype: string(root.dtype, 'feature.dtype'),
-      data: string(root.data, 'feature.data'),
-    } satisfies VolumeFeaturePayload;
   }
-  throw new Error('feature.representation must be regional or volume');
+  return values;
+}
+
+function float16ToNumber(bits: number): number {
+  const sign = bits & 0x8000 ? -1 : 1;
+  const exponent = (bits >>> 10) & 0x1f;
+  const fraction = bits & 0x03ff;
+  if (exponent === 0) return fraction === 0 ? sign * 0 : sign * 2 ** -14 * (fraction / 1024);
+  if (exponent === 0x1f) return fraction === 0 ? sign * Infinity : NaN;
+  return sign * 2 ** (exponent - 15) * (1 + fraction / 1024);
 }
