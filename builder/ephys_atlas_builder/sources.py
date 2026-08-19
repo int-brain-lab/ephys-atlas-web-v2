@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import hashlib
+import json
+import shutil
 from pathlib import Path
+
+from .io import canonical_json, sha256_file, write_json
 
 
 DEFAULTS = {
@@ -10,43 +15,114 @@ DEFAULTS = {
 }
 
 
-def pull(dataset: str, release: str, dest: Path) -> Path:
-    """Pull canonical scientific source artifacts without running the scientific pipeline.
+def _files(root: Path) -> list[dict]:
+    out = []
+    for path in sorted(p for p in root.rglob("*") if p.is_file() and p.name != "source.json"):
+        out.append(
+            {
+                "path": path.relative_to(root).as_posix(),
+                "bytes": path.stat().st_size,
+                "sha256": sha256_file(path),
+            }
+        )
+    return out
 
-    This intentionally delegates to the current scientific packages. The v2 builder
-    records and transforms their published artifacts; it does not reproduce raw-ephys
-    feature extraction during frontend development.
+
+def _content_release_id(files: list[dict]) -> str:
+    digest = hashlib.sha256(canonical_json(files)).hexdigest()
+    return f"sha256-{digest[:16]}"
+
+
+def _write_alias(dest: Path, dataset: str, alias: str, release_id: str) -> None:
+    write_json(
+        dest / dataset / "aliases" / f"{alias}.json",
+        {
+            "schema_version": "0.1",
+            "dataset_id": dataset,
+            "alias": alias,
+            "release_id": release_id,
+        },
+    )
+
+
+def resolve_source_release(dest: Path, dataset: str, release: str) -> str:
+    if release != "latest":
+        return release
+    path = dest / dataset / "aliases" / "latest.json"
+    if not path.is_file():
+        raise RuntimeError(f"no pulled latest alias for {dataset}: run data-pull first")
+    return json.loads(path.read_text())["release_id"]
+
+
+def pull(dataset: str, release: str, dest: Path) -> Path:
+    """Snapshot current canonical scientific artifacts without recomputing science.
+
+    The returned directory is immutable by convention and contains `source.json`
+    with checksums for every downloaded file. A request for `latest` additionally
+    updates a small mutable alias outside that snapshot directory. Cluster source
+    paths lack a vintage upstream, so their immutable release id is content-derived.
     """
-    dest.mkdir(parents=True, exist_ok=True)
-    if dataset in ("ephys_atlas_channels", "ephys_atlas_volumes", "ephys_atlas_clusters"):
-        try:
-            from one.api import ONE
-            import ephysatlas.data
-        except ImportError as e:
+    if dataset not in DEFAULTS:
+        if dataset == "brainwide_map":
             raise RuntimeError(
-                "pulling IBL scientific sources requires ONE + current ibleatools/ephysatlas; "
-                "install them in the scientific-data environment"
-            ) from e
-        one = ONE(base_url="https://alyx.internationalbrainlab.org", mode="remote")
-        project = DEFAULTS[dataset]["project"]
-        label = ephysatlas.data.get_latest_label(one=one, project=project) if release == "latest" and dataset != "ephys_atlas_clusters" else release
-        if dataset == "ephys_atlas_channels":
-            return Path(ephysatlas.data.download_tables(dest, label=label, project=project, one=one, verify=True))
-        if dataset == "ephys_atlas_volumes":
-            out = dest / project / str(label)
-            out.mkdir(parents=True, exist_ok=True)
-            return Path(ephysatlas.data.download_encoding_volume(out, label=label, project=project, one=one))
+                "brainwide_map v2 source selection is unresolved: do not guess between the paper freeze, "
+                "2026 aggregate tables, and legacy website analysis summaries; see docs/data/PROVENANCE.md"
+            )
+        if dataset == "local":
+            raise RuntimeError("local datasets are imported packages, not remotely pulled datasets")
+        raise ValueError(f"unknown dataset: {dataset}")
+
+    try:
+        from one.api import ONE
+        import ephysatlas.data
+    except ImportError as e:
+        raise RuntimeError(
+            "pulling IBL scientific sources requires ONE + current ibleatools/ephysatlas; "
+            "install them in the scientific-data environment"
+        ) from e
+
+    one = ONE(base_url="https://alyx.internationalbrainlab.org", mode="remote")
+    project = DEFAULTS[dataset]["project"]
+    requested_release = release
+
+    if dataset == "ephys_atlas_clusters":
         if release not in ("latest", "current"):
             raise RuntimeError(
-                "ephys_atlas_clusters source objects are not weekly-labelled in current ibleatools; "
-                "use latest/current, then snapshot object checksums into the immutable v2 release"
+                "ephys_atlas_clusters source objects are not vintage-labelled in current ibleatools; "
+                "use latest/current and v2 will assign a content-derived immutable snapshot id"
             )
-        return Path(ephysatlas.data.download_project_data(dest, project=project, one=one, large_files=False))
-    if dataset == "brainwide_map":
-        raise RuntimeError(
-            "brainwide_map v2 source selection is unresolved: do not guess between the paper freeze, "
-            "2026 aggregate tables, and legacy website analysis summaries; see docs/data/PROVENANCE.md"
-        )
-    if dataset == "local":
-        raise RuntimeError("local datasets are imported packages, not remotely pulled datasets")
-    raise ValueError(f"unknown dataset: {dataset}")
+        staging = dest / dataset / ".pull-current"
+        if staging.exists():
+            shutil.rmtree(staging)
+        staging.mkdir(parents=True)
+        ephysatlas.data.download_project_data(staging, project=project, one=one, large_files=False)
+        files = _files(staging)
+        release = _content_release_id(files)
+        root = dest / dataset / release
+        if root.exists():
+            shutil.rmtree(staging)
+        else:
+            staging.rename(root)
+    else:
+        if release == "latest":
+            release = ephysatlas.data.get_latest_label(one=one, project=project)
+        root = dest / dataset / str(release)
+        root.mkdir(parents=True, exist_ok=True)
+        if dataset == "ephys_atlas_channels":
+            ephysatlas.data.download_tables(root, label=release, project=project, one=one, verify=True)
+        else:
+            ephysatlas.data.download_encoding_volume(root, label=release, project=project, one=one)
+        files = _files(root)
+
+    source = {
+        "schema_version": "0.1",
+        "dataset_id": dataset,
+        "requested_release": requested_release,
+        "resolved_release": str(release),
+        "project": project,
+        "files": files,
+    }
+    write_json(root / "source.json", source)
+    if requested_release == "latest":
+        _write_alias(dest, dataset, "latest", str(release))
+    return root

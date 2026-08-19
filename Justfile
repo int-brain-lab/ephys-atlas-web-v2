@@ -6,7 +6,7 @@ data-pull dataset release="latest":
 
 # Validate a dataset-specific build output. Scientific transforms stay explicit recipes.
 data-build dataset release="latest":
-    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli build data/releases/{{dataset}}/{{release}}
+    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli build {{dataset}} {{release}}
 
 data-validate path:
     PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli validate {{path}}
@@ -16,3 +16,7 @@ golden:
 
 test:
     PYTHONPATH=builder pytest -q
+
+# Deterministic whole-release download artifact.
+data-package path output:
+    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli package {{path}} {{output}}
