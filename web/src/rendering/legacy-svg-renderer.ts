@@ -1,6 +1,7 @@
 import type { SliceAxis } from '../domain/types.js';
 import type { SliceRenderModel, SliceRenderer } from './interfaces.js';
 import { LEGACY_VIEW_BOXES, linkedGuides } from './slice-calibration.js';
+import { SvgSliceRenderer } from './svg-slice-renderer.js';
 
 export const LEGACY_CURATED_SLICE_BASE_URL = 'https://atlas.internationalbrainlab.org/data/json/';
 
@@ -14,17 +15,15 @@ export interface LegacySvgSliceRendererOptions {
   fetchImpl?: typeof fetch;
 }
 
-interface SvgMount {
-  svg: SVGSVGElement;
-  figure: SVGGElement;
-  guides: SVGGElement;
+interface RendererMount {
+  renderer: SvgSliceRenderer;
 }
 
 export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
   private readonly axisBundles = new Map<SliceAxis, Promise<AxisSliceBundle>>();
-  private readonly mounts = new Map<HTMLElement, SvgMount>();
+  private readonly mounts = new Map<HTMLElement, RendererMount>();
   private readonly renderTokens = new WeakMap<HTMLElement, number>();
 
   constructor(options: LegacySvgSliceRendererOptions = {}) {
@@ -44,27 +43,20 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     if (!fragment) throw new Error(`No curated ${model.axis} SVG fragment near index ${model.sliceIndex}`);
 
     const mount = this.ensureMount(target);
-    const viewBox = LEGACY_VIEW_BOXES[model.axis];
-    mount.svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`);
-    mount.figure.innerHTML = fragment;
-    mount.guides.replaceChildren();
-    for (const guide of linkedGuides(model.slices, model.axis)) {
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.classList.add('slice-guide');
-      line.dataset.sourceAxis = guide.sourceAxis;
-      if (guide.dimension === 'x') {
-        line.setAttribute('x1', String(guide.position));
-        line.setAttribute('x2', String(guide.position));
-        line.setAttribute('y1', String(viewBox.y));
-        line.setAttribute('y2', String(viewBox.y + viewBox.height));
-      } else {
-        line.setAttribute('x1', String(viewBox.x));
-        line.setAttribute('x2', String(viewBox.x + viewBox.width));
-        line.setAttribute('y1', String(guide.position));
-        line.setAttribute('y2', String(guide.position));
-      }
-      mount.guides.append(line);
+    const selectedRegionIds = new Set<number>();
+    for (const id of model.selectedRegionIds) {
+      const numeric = Number(id);
+      if (Number.isInteger(numeric)) selectedRegionIds.add(numeric);
     }
+    mount.renderer.render({
+      axis: model.axis,
+      index: assetIndex,
+      mapping: model.parcellation,
+      svgFragment: fragment,
+      viewBox: LEGACY_VIEW_BOXES[model.axis],
+      guides: linkedGuides(model.slices, model.axis),
+      selectedRegionIds,
+    });
 
     target.dataset.sliceAsset = 'legacy-curated-v1';
     target.dataset.assetIndex = String(assetIndex);
@@ -72,6 +64,7 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
 
   clear(target: HTMLElement): void {
     this.renderTokens.set(target, (this.renderTokens.get(target) ?? 0) + 1);
+    this.mounts.get(target)?.renderer.dispose();
     this.mounts.delete(target);
     target.replaceChildren();
     delete target.dataset.sliceAsset;
@@ -79,7 +72,10 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
   }
 
   destroy(): void {
-    for (const target of this.mounts.keys()) target.replaceChildren();
+    for (const [target, mount] of this.mounts) {
+      mount.renderer.dispose();
+      target.replaceChildren();
+    }
     this.mounts.clear();
     this.axisBundles.clear();
   }
@@ -125,7 +121,7 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     return Math.abs(lower - requested) <= Math.abs(upper - requested) ? lower : upper;
   }
 
-  private ensureMount(target: HTMLElement): SvgMount {
+  private ensureMount(target: HTMLElement): RendererMount {
     const existing = this.mounts.get(target);
     if (existing) return existing;
 
@@ -135,15 +131,15 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     svg.setAttribute('aria-label', 'Curated Allen atlas anatomical slice');
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
-    const figure = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    figure.classList.add('view-frame__slice-figure');
-    const guides = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    guides.classList.add('view-frame__guide-layer');
-    guides.setAttribute('aria-hidden', 'true');
-    svg.append(figure, guides);
+    const figureLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    figureLayer.classList.add('view-frame__slice-figure');
+    const guideLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    guideLayer.classList.add('view-frame__guide-layer');
+    guideLayer.setAttribute('aria-hidden', 'true');
+    svg.append(figureLayer, guideLayer);
     target.replaceChildren(svg);
 
-    const mount = { svg, figure, guides };
+    const mount = { renderer: new SvgSliceRenderer({ svg, figureLayer, guideLayer }) };
     this.mounts.set(target, mount);
     return mount;
   }
