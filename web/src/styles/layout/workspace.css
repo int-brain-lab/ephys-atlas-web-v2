@@ -1,0 +1,22 @@
+.workspace {
+  display: grid;
+  grid-template-rows: minmax(17rem, 1fr) clamp(9rem, 21vh, 12rem) var(--analysis-height);
+  gap: var(--space-2);
+  overflow: hidden;
+}
+
+.slice-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.5fr) minmax(0, 0.9fr);
+  gap: var(--space-2);
+}
+
+.context-strip {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.8fr) minmax(0, 1.65fr);
+  gap: var(--space-2);
+}
+
+.view-switcher {
+  display: none;
+}

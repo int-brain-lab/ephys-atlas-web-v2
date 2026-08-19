@@ -1,0 +1,22 @@
+@layer reset, base, layout, components, utilities;
+
+@import './styles/tokens.css' layer(base);
+@import './styles/reset.css' layer(reset);
+@import './styles/base.css' layer(base);
+
+@import './styles/layout/app-shell.css' layer(layout);
+@import './styles/layout/workspace.css' layer(layout);
+@import './styles/layout/responsive.css' layer(layout);
+
+@import './styles/components/panel.css' layer(components);
+@import './styles/components/controls.css' layer(components);
+@import './styles/components/app-header.css' layer(components);
+@import './styles/components/region-browser.css' layer(components);
+@import './styles/components/view-frame.css' layer(components);
+@import './styles/components/secondary-view.css' layer(components);
+@import './styles/components/distribution.css' layer(components);
+@import './styles/components/analysis.css' layer(components);
+@import './styles/components/settings-panel.css' layer(components);
+@import './styles/components/overlays.css' layer(components);
+
+@import './styles/utilities.css' layer(utilities);
