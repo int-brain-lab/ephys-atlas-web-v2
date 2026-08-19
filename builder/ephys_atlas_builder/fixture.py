@@ -75,8 +75,8 @@ def generate_golden(out: Path) -> Path:
     volume = np.arange(8 * 6 * 4, dtype=np.float32).reshape(8, 6, 4) / 10.0
     volume[0, 0, 0] = np.nan
     chunk_shape = (4, 3, 2)
-    path_template = "volume/chunks/{i0}.{i1}.{i2}.f32.gz"
-    write_chunked_volume(feature_root, volume, dtype="float32", chunk_shape=chunk_shape, codec="gzip", path_template=path_template)
+    path_template = "volume/chunks/{i0}.{i1}.{i2}.f32"
+    write_chunked_volume(feature_root, volume, dtype="float32", chunk_shape=chunk_shape, codec="none", path_template=path_template)
 
     feature_csv = feature_root / "rms_ap.csv"
     with feature_csv.open("w", newline="") as f:
@@ -122,7 +122,7 @@ def generate_golden(out: Path) -> Path:
                     "index_to_world_um": [25.0,0,0,0, 0,25.0,0,0, 0,0,25.0,0, 0,0,0,1],
                 },
                 "array": {"dtype": "float32", "endianness": "little", "order": "C", "nonfinite": "preserve"},
-                "chunks": {"shape": list(chunk_shape), "codec": {"name": "gzip", "level": 6}, "path_template": path_template},
+                "chunks": {"shape": list(chunk_shape), "codec": {"name": "none"}, "path_template": path_template},
                 "value_range": [float(np.nanmin(volume)), float(np.nanmax(volume))],
                 "statistics": "allen.statistics.json",
             },

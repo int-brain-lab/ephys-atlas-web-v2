@@ -1,4 +1,3 @@
-import gzip
 import json
 from pathlib import Path
 
@@ -26,9 +25,8 @@ def test_volume_edge_chunk_decodes_to_declared_dtype(tmp_path):
     release = generate_golden(tmp_path / "golden")
     feature = json.loads((release / "features/rms_ap/feature.json").read_text())
     volume = feature["representations"]["volume"]
-    path = release / "features/rms_ap/volume/chunks/1.1.1.f32.gz"
-    with gzip.open(path, "rb") as f:
-        raw = f.read()
+    path = release / "features/rms_ap/volume/chunks/1.1.1.f32"
+    raw = path.read_bytes()
     # 8x6x4 with 4x3x2 chunks -> every chunk is exactly 4x3x2 in this fixture.
     arr = np.frombuffer(raw, dtype=DTYPES[volume["array"]["dtype"]])
     assert arr.size == 4 * 3 * 2
