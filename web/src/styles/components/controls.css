@@ -1,0 +1,32 @@
+.view-switcher__button,
+.app-header__panel-button {
+  min-height: 2rem;
+  padding: 0 var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+}
+
+.view-switcher__button[aria-pressed="true"] {
+  border-color: rgb(85 167 247 / 42%);
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+}
+
+.placeholder-line {
+  display: block;
+  width: 52%;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgb(156 175 191 / 12%), rgb(156 175 191 / 5%));
+}
+
+.placeholder-line[data-width="short"] { width: 30%; }
+.placeholder-line[data-width="medium"] { width: 54%; }
+.placeholder-line[data-width="long"] { width: 78%; }
+
+@media (max-width: 1099px) {
+  .view-switcher__button,
+  .app-header__panel-button {
+    min-height: 2.5rem;
+  }
+}

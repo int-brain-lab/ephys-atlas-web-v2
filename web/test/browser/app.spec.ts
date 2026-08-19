@@ -1,17 +1,54 @@
 import { expect, test } from '@playwright/test';
 
-test('loads the provisional catalog and exposes renderer slots', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'IBL Ephys Atlas' })).toBeVisible();
-  await expect(page.getByLabel('Dataset')).toHaveValue('ephys_atlas_channels');
-  await expect(page.getByLabel('Feature')).toHaveValue('firing_rate');
-  await expect(page.getByRole('img', { name: 'coronal brain slice' })).toContainText('Slice renderer not connected');
-});
+const reviewViewports = [
+  { name: 'wide-desktop', width: 1680, height: 1050, layout: 'wide' },
+  { name: 'compact-desktop', width: 1440, height: 900, layout: 'compact' },
+  { name: 'compact-laptop', width: 1280, height: 800, layout: 'compact' },
+  { name: 'tablet', width: 1024, height: 768, layout: 'narrow' },
+  { name: 'phone', width: 390, height: 844, layout: 'phone' },
+] as const;
 
-test('common state is human-readable in the URL', async ({ page }) => {
-  await page.goto('/?v=1&parcel=beryl&slices=10,20,30&selected=CA1,VISp');
-  await expect(page.getByLabel('Parcellation')).toHaveValue('beryl');
-  await expect(page.locator('#coronal-slider')).toHaveValue('10');
-  await expect(page.getByText('CA1', { exact: true })).toBeVisible();
-  await expect(page).toHaveURL(/parcel=beryl/);
+for (const viewport of reviewViewports) {
+  test(`phase 1 shell: ${viewport.name}`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto('/');
+
+    const app = page.locator('.atlas-app');
+    await expect(app).toHaveAttribute('data-layout', viewport.layout);
+    await expect(page.getByRole('heading', { name: 'IBL Ephys Atlas' })).toBeVisible();
+    await expect(page.getByLabel('Atlas workspace')).toBeVisible();
+    await expect(page.locator('body')).toHaveJSProperty('scrollWidth', viewport.width);
+
+    if (viewport.width >= 1480) {
+      await expect(page.getByLabel('Brain regions')).toBeVisible();
+      await expect(page.getByLabel('Visualization settings')).toBeVisible();
+      await expect(page.getByLabel('coronal view')).toBeVisible();
+      await expect(page.getByLabel('sagittal view')).toBeVisible();
+      await expect(page.getByLabel('horizontal view')).toBeVisible();
+    } else if (viewport.width >= 1100) {
+      await expect(page.getByLabel('Brain regions')).toBeVisible();
+      await expect(page.getByLabel('Visualization settings')).not.toBeInViewport();
+    } else {
+      await expect(page.getByRole('button', { name: 'Coronal' })).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.getByLabel('coronal view')).toBeVisible();
+      await expect(page.getByLabel('sagittal view')).not.toBeVisible();
+      await page.getByRole('button', { name: 'Sagittal' }).click();
+      await expect(page.getByLabel('sagittal view')).toBeVisible();
+    }
+
+    await page.screenshot({ path: `test-results/phase1-${viewport.name}-${viewport.width}x${viewport.height}.png`, fullPage: true });
+  });
+}
+
+test('drawers close on Escape and do not survive composition changes', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.getByLabel('Visualization settings')).toHaveAttribute('data-open', 'true');
+  await page.keyboard.press('Escape');
+  await expect(page.getByLabel('Visualization settings')).toHaveAttribute('data-open', 'false');
+
+  await page.getByRole('button', { name: 'Regions' }).click();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(page.getByLabel('Brain regions')).toHaveAttribute('data-open', 'false');
 });

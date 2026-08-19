@@ -20,34 +20,43 @@ export interface ShellModel {
   feature: FeaturePayload | null;
 }
 
-const AXES: readonly SliceAxis[] = ['coronal', 'sagittal', 'horizontal'];
+type LayoutMode = 'wide' | 'compact' | 'narrow' | 'phone';
+type DrawerName = 'regions' | 'settings';
+type WorkspaceView = SliceAxis | 'context';
 
-function option(value: string, label = value): HTMLOptionElement {
-  const el = document.createElement('option');
-  el.value = value;
-  el.textContent = label;
-  return el;
+const VIEW_LABELS: ReadonlyArray<{ id: WorkspaceView; label: string }> = [
+  { id: 'coronal', label: 'Coronal' },
+  { id: 'sagittal', label: 'Sagittal' },
+  { id: 'horizontal', label: 'Horizontal' },
+  { id: 'context', label: 'Context' },
+];
+
+function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K] {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  return node;
 }
 
-function replaceOptions(select: HTMLSelectElement, values: readonly { value: string; label: string }[], selected: string | null): void {
-  const previous = select.value;
-  select.replaceChildren(...values.map((item) => option(item.value, item.label)));
-  const desired = selected ?? previous;
-  if (desired && values.some((item) => item.value === desired)) select.value = desired;
+function heading(text: string, level: 1 | 2 | 3 = 2): HTMLHeadingElement {
+  const node = document.createElement(`h${level}`);
+  node.textContent = text;
+  return node;
+}
+
+function placeholderLine(width: 'short' | 'medium' | 'long' = 'medium'): HTMLSpanElement {
+  const line = element('span', 'placeholder-line');
+  line.dataset.width = width;
+  line.setAttribute('aria-hidden', 'true');
+  return line;
 }
 
 export class AppShell {
-  private readonly datasetSelect: HTMLSelectElement;
-  private readonly releaseSelect: HTMLSelectElement;
-  private readonly featureSelect: HTMLSelectElement;
-  private readonly representationSelect: HTMLSelectElement;
-  private readonly parcellationSelect: HTMLSelectElement;
-  private readonly statisticSelect: HTMLSelectElement;
-  private readonly colormapSelect: HTMLSelectElement;
-  private readonly selectionList: HTMLUListElement;
-  private readonly status: HTMLElement;
-  private readonly sliceTargets = new Map<SliceAxis, HTMLElement>();
-  private model: ShellModel | null = null;
+  private readonly app: HTMLDivElement;
+  private readonly regionPane: HTMLElement;
+  private readonly settingsPane: HTMLElement;
+  private readonly backdrop: HTMLButtonElement;
+  private readonly viewButtons = new Map<WorkspaceView, HTMLButtonElement>();
+  private activeView: WorkspaceView = 'coronal';
 
   constructor(
     root: HTMLElement,
@@ -56,235 +65,281 @@ export class AppShell {
   ) {
     root.replaceChildren();
 
-    const header = document.createElement('header');
-    header.className = 'app-header';
-    const brand = document.createElement('div');
-    brand.className = 'brand';
-    const title = document.createElement('h1');
-    title.textContent = 'IBL Ephys Atlas';
-    const subtitle = document.createElement('p');
-    subtitle.textContent = 'Web v2';
-    brand.append(title, subtitle);
-    header.append(brand);
+    this.app = element('div', 'atlas-app');
+    this.app.dataset.activeView = this.activeView;
 
-    const layout = document.createElement('div');
-    layout.className = 'app-layout';
-    const sidebar = document.createElement('aside');
-    sidebar.className = 'controls';
-    sidebar.setAttribute('aria-label', 'Atlas controls');
+    this.regionPane = this.createRegionPane();
+    this.settingsPane = this.createSettingsPane();
+    this.backdrop = this.createBackdrop();
 
-    this.datasetSelect = this.controlSelect(sidebar, 'Dataset', 'dataset-select');
-    this.releaseSelect = this.controlSelect(sidebar, 'Release', 'release-select');
-    this.featureSelect = this.controlSelect(sidebar, 'Feature', 'feature-select');
-    this.representationSelect = this.controlSelect(sidebar, 'Representation', 'representation-select');
-    this.parcellationSelect = this.controlSelect(sidebar, 'Parcellation', 'parcellation-select');
-    this.statisticSelect = this.controlSelect(sidebar, 'Statistic', 'statistic-select');
-    this.colormapSelect = this.controlSelect(sidebar, 'Colormap', 'colormap-select');
+    const header = this.createHeader();
+    const body = element('main', 'app-body');
+    const workspace = this.createWorkspace();
+    body.append(this.regionPane, workspace, this.settingsPane);
 
-    const importSection = document.createElement('section');
-    importSection.className = 'control-group';
-    const importLabel = document.createElement('label');
-    importLabel.htmlFor = 'local-import';
-    importLabel.textContent = 'Local dataset';
-    const importInput = document.createElement('input');
-    importInput.id = 'local-import';
-    importInput.type = 'file';
-    importInput.multiple = true;
-    importInput.setAttribute('webkitdirectory', '');
-    importInput.setAttribute('directory', '');
-    importSection.append(importLabel, importInput);
-    sidebar.append(importSection);
+    this.app.append(header, body, this.backdrop);
+    root.append(this.app);
 
-    const selectedSection = document.createElement('section');
-    selectedSection.className = 'selection-panel';
-    const selectedHeader = document.createElement('div');
-    selectedHeader.className = 'section-heading';
-    const selectedTitle = document.createElement('h2');
-    selectedTitle.textContent = 'Selected regions';
-    const clearButton = document.createElement('button');
-    clearButton.type = 'button';
-    clearButton.textContent = 'Clear';
-    clearButton.addEventListener('click', () => this.callbacks.clearSelection());
-    selectedHeader.append(selectedTitle, clearButton);
-    this.selectionList = document.createElement('ul');
-    this.selectionList.className = 'selection-list';
-    selectedSection.append(selectedHeader, this.selectionList);
-    sidebar.append(selectedSection);
-
-    const main = document.createElement('main');
-    main.className = 'workspace';
-    const viewerHeader = document.createElement('div');
-    viewerHeader.className = 'workspace-heading';
-    const viewerTitle = document.createElement('h2');
-    viewerTitle.textContent = 'Linked slices';
-    this.status = document.createElement('p');
-    this.status.className = 'status';
-    this.status.setAttribute('role', 'status');
-    this.status.setAttribute('aria-live', 'polite');
-    viewerHeader.append(viewerTitle, this.status);
-
-    const sliceGrid = document.createElement('div');
-    sliceGrid.className = 'slice-grid';
-    for (const axis of AXES) sliceGrid.append(this.createSlicePanel(axis));
-    main.append(viewerHeader, sliceGrid);
-    layout.append(sidebar, main);
-    root.append(header, layout);
-
-    this.bindEvents(importInput);
+    this.backdrop.addEventListener('click', () => this.closeDrawers());
+    window.addEventListener('keydown', this.onKeyDown);
+    window.addEventListener('resize', this.onResize);
+    this.syncLayoutMode();
   }
 
-  render(model: ShellModel): void {
-    this.model = model;
-    const { state, catalog, manifest, feature } = model;
-    const view = state.view;
-
-    const datasets = catalog?.datasets.map((entry) => ({ value: entry.id, label: entry.title })) ?? [];
-    replaceOptions(this.datasetSelect, datasets, view.dataset.datasetId);
-
-    const datasetEntry = catalog?.datasets.find((entry) => entry.id === view.dataset.datasetId);
-    const releases = datasetEntry?.releases.map((release) => ({ value: release.id, label: release.label })) ?? [];
-    replaceOptions(this.releaseSelect, releases, view.dataset.releaseId ?? manifest?.dataset.release ?? null);
-    this.releaseSelect.disabled = releases.length <= 1;
-
-    const features = manifest?.features.map((item) => ({ value: item.id, label: item.label })) ?? [];
-    replaceOptions(this.featureSelect, features, view.featureId);
-    this.featureSelect.disabled = features.length === 0;
-
-    const selectedFeature = manifest?.features.find((item) => item.id === view.featureId);
-    const representations: { value: string; label: string }[] = [];
-    if (selectedFeature?.representations.regional) representations.push({ value: 'regional', label: 'Regional' });
-    if (selectedFeature?.representations.volume) representations.push({ value: 'volume', label: 'Volume' });
-    replaceOptions(this.representationSelect, representations, view.representation);
-    this.representationSelect.disabled = representations.length <= 1;
-
-    replaceOptions(
-      this.parcellationSelect,
-      (manifest?.parcellations ?? ['allen', 'beryl', 'cosmos']).map((id) => ({ value: id, label: id[0]?.toUpperCase() + id.slice(1) })),
-      view.parcellation,
-    );
-    this.parcellationSelect.disabled = view.representation !== 'regional';
-
-    const statistics = selectedFeature?.statistics ?? ['mean'];
-    replaceOptions(this.statisticSelect, statistics.map((id) => ({ value: id, label: id })), view.coloring.statistic);
-    replaceOptions(this.colormapSelect, ['viridis', 'magma', 'plasma', 'inferno'].map((id) => ({ value: id, label: id })), view.coloring.colormap);
-
-    this.selectionList.replaceChildren(...view.selection.map((regionId) => {
-      const item = document.createElement('li');
-      item.textContent = regionId;
-      return item;
-    }));
-    if (!view.selection.length) {
-      const empty = document.createElement('li');
-      empty.className = 'empty-selection';
-      empty.textContent = 'None';
-      this.selectionList.append(empty);
-    }
-
-    const status = state.runtime.error
-      ? state.runtime.error
-      : state.runtime.datasetStatus === 'loading'
-        ? 'Loading dataset…'
-        : manifest
-          ? `${manifest.dataset.title} · ${manifest.dataset.release}`
-          : 'Loading catalog…';
-    this.status.textContent = status;
-
-    for (const axis of AXES) {
-      const target = this.sliceTargets.get(axis);
-      if (!target) continue;
-      void this.renderer.render(target, {
-        axis,
-        sliceIndex: view.slices[axis],
-        slices: view.slices,
-        cursor: view.cursor,
-        parcellation: view.parcellation,
-        selectedRegionIds: view.selection,
-        feature,
-      });
-      const output = target.parentElement?.querySelector('output');
-      if (output) output.textContent = String(view.slices[axis]);
-      const slider = target.parentElement?.querySelector<HTMLInputElement>('input[type="range"]');
-      if (slider) slider.value = String(view.slices[axis]);
-    }
+  render(_model: ShellModel): void {
+    // Phase 1 is deliberately independent of scientific state/data loading.
+    // Later phases can reconnect existing model state block by block.
   }
 
   destroy(): void {
+    window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener('resize', this.onResize);
     this.renderer.destroy?.();
   }
 
-  private controlSelect(parent: HTMLElement, labelText: string, id: string): HTMLSelectElement {
-    const group = document.createElement('div');
-    group.className = 'control-group';
-    const label = document.createElement('label');
-    label.htmlFor = id;
+  private createHeader(): HTMLElement {
+    const header = element('header', 'app-header');
+
+    const brand = element('div', 'app-header__brand');
+    const mark = element('span', 'app-header__mark');
+    mark.setAttribute('aria-hidden', 'true');
+    const brandText = element('div', 'app-header__brand-text');
+    const title = heading('IBL Ephys Atlas', 1);
+    const version = element('span', 'app-header__version');
+    version.textContent = 'v2';
+    brandText.append(title, version);
+    brand.append(mark, brandText);
+
+    const context = element('div', 'app-header__context');
+    context.setAttribute('aria-label', 'Atlas context');
+    context.append(
+      this.createContextPlaceholder('Dataset', 'long'),
+      this.createContextPlaceholder('Feature', 'long'),
+      this.createContextPlaceholder('View', 'short'),
+    );
+
+    const actions = element('nav', 'app-header__actions');
+    actions.setAttribute('aria-label', 'Workspace panels');
+    actions.append(
+      this.drawerButton('regions', 'Regions'),
+      this.drawerButton('settings', 'Settings'),
+    );
+
+    header.append(brand, context, actions);
+    return header;
+  }
+
+  private createContextPlaceholder(labelText: string, width: 'short' | 'medium' | 'long'): HTMLElement {
+    const block = element('div', 'context-placeholder');
+    const label = element('span', 'context-placeholder__label');
     label.textContent = labelText;
-    const select = document.createElement('select');
-    select.id = id;
-    group.append(label, select);
-    parent.append(group);
-    return select;
+    block.append(label, placeholderLine(width));
+    return block;
   }
 
-  private createSlicePanel(axis: SliceAxis): HTMLElement {
-    const section = document.createElement('section');
-    section.className = 'slice-panel';
-    section.setAttribute('aria-labelledby', `${axis}-heading`);
-    const heading = document.createElement('div');
-    heading.className = 'slice-heading';
-    const title = document.createElement('h3');
-    title.id = `${axis}-heading`;
-    title.textContent = axis[0]?.toUpperCase() + axis.slice(1);
-    const output = document.createElement('output');
-    output.htmlFor = `${axis}-slider`;
-    output.textContent = '0';
-    heading.append(title, output);
-
-    const target = document.createElement('div');
-    target.className = 'slice-target';
-    target.dataset.axis = axis;
-    target.setAttribute('role', 'img');
-    target.setAttribute('aria-label', `${axis} brain slice`);
-    this.sliceTargets.set(axis, target);
-
-    const slider = document.createElement('input');
-    slider.id = `${axis}-slider`;
-    slider.type = 'range';
-    slider.min = '0';
-    slider.max = '1000';
-    slider.step = '1';
-    slider.value = '0';
-    slider.setAttribute('aria-label', `${axis} slice index`);
-    slider.addEventListener('input', () => this.callbacks.setSlice(axis, Number(slider.value)));
-    section.append(heading, target, slider);
-    return section;
+  private drawerButton(drawer: DrawerName, label: string): HTMLButtonElement {
+    const button = element('button', 'app-header__panel-button');
+    button.type = 'button';
+    button.textContent = label;
+    button.dataset.drawerTrigger = drawer;
+    button.setAttribute('aria-controls', `${drawer}-pane`);
+    button.setAttribute('aria-expanded', 'false');
+    button.addEventListener('click', () => this.openDrawer(drawer));
+    return button;
   }
 
-  private bindEvents(importInput: HTMLInputElement): void {
-    this.datasetSelect.addEventListener('change', () => {
-      const entry = this.model?.catalog?.datasets.find((item) => item.id === this.datasetSelect.value);
-      if (!entry) return;
-      this.callbacks.setDataset({ datasetId: entry.id, releaseId: entry.defaultRelease || null });
-    });
-    this.releaseSelect.addEventListener('change', () => {
-      const current = this.model?.state.view.dataset;
-      if (!current) return;
-      this.callbacks.setDataset({ datasetId: current.datasetId, releaseId: this.releaseSelect.value || null });
-    });
-    this.featureSelect.addEventListener('change', () => {
-      const feature = this.model?.manifest?.features.find((item) => item.id === this.featureSelect.value);
-      if (!feature) return;
-      const representation: RepresentationKind = feature.representations.regional ? 'regional' : 'volume';
-      this.callbacks.setFeature(feature.id, representation);
-    });
-    this.representationSelect.addEventListener('change', () => {
-      this.callbacks.setFeature(this.model?.state.view.featureId ?? null, this.representationSelect.value as RepresentationKind);
-    });
-    this.parcellationSelect.addEventListener('change', () => this.callbacks.setParcellation(this.parcellationSelect.value as ParcellationId));
-    this.statisticSelect.addEventListener('change', () => this.callbacks.setStatistic(this.statisticSelect.value as StatisticId));
-    this.colormapSelect.addEventListener('change', () => this.callbacks.setColormap(this.colormapSelect.value));
-    importInput.addEventListener('change', () => {
-      if (importInput.files?.length) void this.callbacks.importLocal(importInput.files);
-      importInput.value = '';
-    });
+  private createRegionPane(): HTMLElement {
+    const pane = element('aside', 'region-pane panel');
+    pane.id = 'regions-pane';
+    pane.setAttribute('aria-label', 'Brain regions');
+    pane.dataset.open = 'false';
+
+    const panelHeader = this.panelHeader('Brain regions', () => this.closeDrawers());
+    const searchPlaceholder = element('div', 'region-pane__search-placeholder');
+    searchPlaceholder.append(placeholderLine('long'));
+
+    const browser = element('div', 'region-pane__browser');
+    browser.setAttribute('aria-label', 'Region browser placeholder');
+    for (let i = 0; i < 9; i += 1) {
+      const row = element('div', 'region-pane__row-placeholder');
+      row.append(placeholderLine(i % 3 === 0 ? 'long' : i % 2 === 0 ? 'short' : 'medium'));
+      browser.append(row);
+    }
+
+    const selected = element('section', 'region-pane__selected');
+    selected.append(heading('Selected regions', 3), placeholderLine('medium'));
+
+    pane.append(panelHeader, searchPlaceholder, browser, selected);
+    return pane;
   }
+
+  private createSettingsPane(): HTMLElement {
+    const pane = element('aside', 'settings-pane panel');
+    pane.id = 'settings-pane';
+    pane.setAttribute('aria-label', 'Visualization settings');
+    pane.dataset.open = 'false';
+
+    const panelHeader = this.panelHeader('Visualization settings', () => this.closeDrawers());
+    const content = element('div', 'settings-pane__content');
+    content.append(
+      this.createSettingsGroup('Data interpretation', 3),
+      this.createSettingsGroup('Color', 4),
+      this.createSettingsGroup('Display', 2),
+    );
+    pane.append(panelHeader, content);
+    return pane;
+  }
+
+  private createSettingsGroup(labelText: string, rows: number): HTMLElement {
+    const group = element('section', 'settings-placeholder');
+    group.append(heading(labelText, 3));
+    for (let i = 0; i < rows; i += 1) {
+      const row = element('div', 'settings-placeholder__row');
+      row.append(placeholderLine(i % 2 ? 'medium' : 'short'), placeholderLine('medium'));
+      group.append(row);
+    }
+    return group;
+  }
+
+  private panelHeader(titleText: string, onClose: () => void): HTMLElement {
+    const header = element('div', 'panel__header');
+    header.append(heading(titleText, 2));
+    const close = element('button', 'panel__close');
+    close.type = 'button';
+    close.textContent = 'Close';
+    close.setAttribute('aria-label', `Close ${titleText}`);
+    close.addEventListener('click', onClose);
+    header.append(close);
+    return header;
+  }
+
+  private createWorkspace(): HTMLElement {
+    const workspace = element('section', 'workspace');
+    workspace.setAttribute('aria-label', 'Atlas workspace');
+
+    const switcher = element('nav', 'view-switcher');
+    switcher.setAttribute('aria-label', 'Workspace view');
+    for (const item of VIEW_LABELS) {
+      const button = element('button', 'view-switcher__button');
+      button.type = 'button';
+      button.textContent = item.label;
+      button.dataset.viewTarget = item.id;
+      button.setAttribute('aria-pressed', item.id === this.activeView ? 'true' : 'false');
+      button.addEventListener('click', () => this.setActiveView(item.id));
+      this.viewButtons.set(item.id, button);
+      switcher.append(button);
+    }
+
+    const slices = element('section', 'slice-strip');
+    slices.setAttribute('aria-label', 'Orthogonal brain slices');
+    slices.append(
+      this.createViewFrame('coronal'),
+      this.createViewFrame('sagittal'),
+      this.createViewFrame('horizontal'),
+    );
+
+    const context = element('section', 'context-strip');
+    context.setAttribute('aria-label', 'Secondary atlas context');
+
+    const secondary = element('section', 'secondary-view panel');
+    secondary.append(this.frameHeader('Secondary view'), element('div', 'secondary-view__surface'));
+
+    const distribution = element('section', 'distribution-band panel');
+    distribution.append(this.frameHeader('Global distribution'), element('div', 'distribution-band__surface'));
+
+    context.append(secondary, distribution);
+
+    const analysis = element('section', 'analysis-panel panel');
+    analysis.dataset.state = 'compact';
+    analysis.setAttribute('aria-label', 'Analysis and comparison');
+    const analysisHeader = this.frameHeader('Analysis / comparison');
+    const analysisSurface = element('div', 'analysis-panel__surface');
+    analysisSurface.append(placeholderLine('long'), placeholderLine('medium'));
+    analysis.append(analysisHeader, analysisSurface);
+
+    workspace.append(switcher, slices, context, analysis);
+    return workspace;
+  }
+
+  private createViewFrame(axis: SliceAxis): HTMLElement {
+    const frame = element('section', 'view-frame panel');
+    frame.dataset.view = axis;
+    frame.setAttribute('aria-label', `${axis} view`);
+    const title = `${axis[0]?.toUpperCase() ?? ''}${axis.slice(1)}`;
+    frame.append(this.frameHeader(title));
+
+    const viewport = element('div', 'view-frame__viewport');
+    viewport.setAttribute('aria-label', `${axis} renderer target`);
+    const coordinate = element('span', 'view-frame__coordinate');
+    coordinate.textContent = axis === 'coronal' ? 'AP —' : axis === 'sagittal' ? 'ML —' : 'DV —';
+    viewport.append(coordinate);
+
+    const footer = element('div', 'view-frame__footer');
+    footer.append(placeholderLine('long'));
+    frame.append(viewport, footer);
+    return frame;
+  }
+
+  private frameHeader(titleText: string): HTMLElement {
+    const header = element('div', 'view-frame__header');
+    header.append(heading(titleText, 3));
+    return header;
+  }
+
+  private createBackdrop(): HTMLButtonElement {
+    const backdrop = element('button', 'drawer-backdrop');
+    backdrop.type = 'button';
+    backdrop.tabIndex = -1;
+    backdrop.setAttribute('aria-label', 'Close panel');
+    return backdrop;
+  }
+
+  private setActiveView(view: WorkspaceView): void {
+    this.activeView = view;
+    this.app.dataset.activeView = view;
+    for (const [id, button] of this.viewButtons) {
+      button.setAttribute('aria-pressed', id === view ? 'true' : 'false');
+    }
+  }
+
+  private openDrawer(drawer: DrawerName): void {
+    const pane = drawer === 'regions' ? this.regionPane : this.settingsPane;
+    const other = drawer === 'regions' ? this.settingsPane : this.regionPane;
+    other.dataset.open = 'false';
+    pane.dataset.open = 'true';
+    this.app.dataset.drawerOpen = drawer;
+    this.syncDrawerButtons(drawer);
+    pane.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')?.focus();
+  }
+
+  private closeDrawers(): void {
+    this.regionPane.dataset.open = 'false';
+    this.settingsPane.dataset.open = 'false';
+    delete this.app.dataset.drawerOpen;
+    this.syncDrawerButtons(null);
+  }
+
+  private syncDrawerButtons(open: DrawerName | null): void {
+    for (const button of this.app.querySelectorAll<HTMLButtonElement>('[data-drawer-trigger]')) {
+      button.setAttribute('aria-expanded', button.dataset.drawerTrigger === open ? 'true' : 'false');
+    }
+  }
+
+  private syncLayoutMode(): void {
+    const width = window.innerWidth;
+    const mode: LayoutMode = width >= 1480 ? 'wide' : width >= 1100 ? 'compact' : width >= 760 ? 'narrow' : 'phone';
+    this.app.dataset.layout = mode;
+
+    if (mode === 'wide') {
+      this.closeDrawers();
+    } else if (mode === 'compact' && this.regionPane.dataset.open === 'true') {
+      this.closeDrawers();
+    }
+  }
+
+  private readonly onResize = (): void => this.syncLayoutMode();
+
+  private readonly onKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape' && this.app.dataset.drawerOpen) this.closeDrawers();
+  };
 }
