@@ -1,6 +1,7 @@
 import type { DatasetCatalog, DatasetManifest, FeaturePayload } from '../data/contracts.js';
 import type { AppState, DatasetRef, ParcellationId, RepresentationKind, SliceAxis, StatisticId } from '../domain/types.js';
 import type { SliceRenderer } from '../rendering/interfaces.js';
+import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
 
 export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
@@ -29,6 +30,18 @@ interface ContextFieldNodes {
   field: HTMLElement;
   value: HTMLElement;
   release?: HTMLElement;
+}
+
+interface ViewFrameNodes {
+  frame: HTMLElement;
+  target: HTMLElement;
+  coordinate: HTMLElement;
+  slider: HTMLInputElement;
+  index: HTMLOutputElement;
+  status: HTMLElement;
+  maximize: HTMLButtonElement;
+  renderKey: string;
+  renderToken: number;
 }
 
 interface PrototypeRegion {
@@ -102,6 +115,7 @@ export class AppShell {
   private readonly settingsPane: HTMLElement;
   private readonly backdrop: HTMLButtonElement;
   private readonly viewButtons = new Map<WorkspaceView, HTMLButtonElement>();
+  private readonly viewFrames = new Map<SliceAxis, ViewFrameNodes>();
   private readonly datasetContext: ContextFieldNodes;
   private readonly featureContext: ContextFieldNodes;
   private readonly representationContext: ContextFieldNodes;
@@ -116,6 +130,7 @@ export class AppShell {
   private clearPrototypeSelection!: HTMLButtonElement;
   private activePrototypeRegion = 'CA1';
   private activeView: WorkspaceView = 'coronal';
+  private maximizedView: SliceAxis | null = null;
 
   constructor(
     root: HTMLElement,
@@ -164,6 +179,10 @@ export class AppShell {
     this.setContextValue(this.datasetContext, datasetLabel, releaseLabel);
     this.setContextValue(this.featureContext, featureLabel);
     this.setContextValue(this.representationContext, representationLabel);
+
+    for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
+      this.renderViewFrame(axis, model);
+    }
   }
 
   destroy(): void {
@@ -553,18 +572,109 @@ export class AppShell {
   private createViewFrame(axis: SliceAxis): HTMLElement {
     const frame = element('section', 'view-frame panel');
     frame.dataset.view = axis;
+    frame.dataset.state = 'idle';
+    frame.dataset.maximized = 'false';
     frame.setAttribute('aria-label', `${axis} view`);
+
     const title = `${axis[0]?.toUpperCase() ?? ''}${axis.slice(1)}`;
-    frame.append(this.frameHeader(title));
-    const viewport = element('div', 'view-frame__viewport');
-    viewport.setAttribute('aria-label', `${axis} renderer target`);
+    const header = element('div', 'view-frame__header');
+    header.append(heading(title, 3));
+    const headerMeta = element('div', 'view-frame__header-meta');
     const coordinate = element('span', 'view-frame__coordinate');
-    coordinate.textContent = axis === 'coronal' ? 'AP —' : axis === 'sagittal' ? 'ML —' : 'DV —';
-    viewport.append(coordinate);
+    coordinate.textContent = formatRegionalCoordinate(axis, 0);
+    const status = element('span', 'view-frame__status');
+    status.textContent = 'Waiting';
+    const maximize = element('button', 'view-frame__maximize');
+    maximize.type = 'button';
+    maximize.textContent = '↗';
+    maximize.setAttribute('aria-label', `Maximize ${axis} view`);
+    maximize.setAttribute('aria-pressed', 'false');
+    maximize.addEventListener('click', () => this.toggleMaximizedView(axis));
+    headerMeta.append(coordinate, status, maximize);
+    header.append(headerMeta);
+
+    const viewport = element('div', 'view-frame__viewport');
+    const target = element('div', 'view-frame__renderer');
+    target.setAttribute('aria-label', `${axis} renderer target`);
+    const stateText = element('div', 'view-frame__state-message');
+    stateText.setAttribute('role', 'status');
+    stateText.textContent = 'Loading curated anatomy…';
+    viewport.append(target, stateText);
+
     const footer = element('div', 'view-frame__footer');
-    footer.append(placeholderLine('long'));
-    frame.append(viewport, footer);
+    const slider = element('input', 'view-frame__slider');
+    slider.type = 'range';
+    slider.min = '0';
+    slider.max = String(maxRegionalSliceIndex(axis));
+    slider.step = '1';
+    slider.value = '0';
+    slider.setAttribute('aria-label', `${axis} slice`);
+    slider.addEventListener('input', () => this.callbacks.setSlice(axis, slider.valueAsNumber));
+    const index = element('output', 'view-frame__index');
+    index.htmlFor = slider.id = `${axis}-slice-slider`;
+    index.textContent = `0 / ${maxRegionalSliceIndex(axis)}`;
+    footer.append(slider, index);
+
+    frame.append(header, viewport, footer);
+    this.viewFrames.set(axis, { frame, target, coordinate, slider, index, status, maximize, renderKey: '', renderToken: 0 });
     return frame;
+  }
+
+  private renderViewFrame(axis: SliceAxis, model: ShellModel): void {
+    const nodes = this.viewFrames.get(axis);
+    if (!nodes) return;
+    const view = model.state.view;
+    const sliceIndex = Math.min(maxRegionalSliceIndex(axis), Math.max(0, Math.round(view.slices[axis])));
+    nodes.coordinate.textContent = formatRegionalCoordinate(axis, sliceIndex);
+    nodes.slider.value = String(sliceIndex);
+    nodes.index.textContent = `${sliceIndex} / ${maxRegionalSliceIndex(axis)}`;
+
+    const renderKey = `${view.parcellation}:${view.slices.coronal}:${view.slices.sagittal}:${view.slices.horizontal}`;
+    if (nodes.renderKey === renderKey) return;
+    nodes.renderKey = renderKey;
+    const token = ++nodes.renderToken;
+    nodes.frame.dataset.state = 'loading';
+    nodes.status.textContent = 'Loading';
+    const stateMessage = nodes.frame.querySelector<HTMLElement>('.view-frame__state-message');
+    if (stateMessage) stateMessage.textContent = 'Loading curated anatomy…';
+
+    const pending = this.renderer.render(nodes.target, {
+      axis,
+      sliceIndex,
+      slices: view.slices,
+      cursor: view.cursor,
+      parcellation: view.parcellation,
+      selectedRegionIds: view.selection,
+      feature: model.feature,
+    });
+
+    Promise.resolve(pending).then(() => {
+      if (nodes.renderToken !== token) return;
+      nodes.frame.dataset.state = 'ready';
+      nodes.status.textContent = 'Curated atlas';
+    }).catch((error: unknown) => {
+      if (nodes.renderToken !== token) return;
+      nodes.frame.dataset.state = 'error';
+      nodes.status.textContent = 'Unavailable';
+      this.renderer.clear(nodes.target);
+      if (stateMessage) {
+        stateMessage.textContent = error instanceof Error ? error.message : 'Curated anatomy could not be loaded';
+      }
+    });
+  }
+
+  private toggleMaximizedView(axis: SliceAxis): void {
+    this.maximizedView = this.maximizedView === axis ? null : axis;
+    if (this.maximizedView) this.closeDrawers();
+    if (this.maximizedView) this.app.dataset.maximizedView = this.maximizedView;
+    else delete this.app.dataset.maximizedView;
+    for (const [id, nodes] of this.viewFrames) {
+      const active = id === this.maximizedView;
+      nodes.frame.dataset.maximized = String(active);
+      nodes.maximize.setAttribute('aria-pressed', String(active));
+      nodes.maximize.setAttribute('aria-label', `${active ? 'Restore' : 'Maximize'} ${id} view`);
+      nodes.maximize.textContent = active ? '↙' : '↗';
+    }
   }
 
   private frameHeader(titleText: string): HTMLElement {
@@ -625,6 +735,10 @@ export class AppShell {
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (event.key !== 'Escape') return;
+    if (this.maximizedView) {
+      this.toggleMaximizedView(this.maximizedView);
+      return;
+    }
     if (this.app.dataset.drawerOpen) {
       this.closeDrawers();
       return;

@@ -50,7 +50,7 @@ No anatomical rendering, chart content, analysis functionality, settings control
 
 ## UX Phase 3 — region browser
 
-Implemented Phase 3 only; awaiting visual review before Phase 4.
+Phase 3 was visually approved on 2026-08-19.
 
 - replaces the Phase-1 region-pane skeleton with a dense representative hierarchy of static region rows;
 - representative rows cover nested hierarchy, long names, value bars, selected, active, missing-value, hover, and keyboard-focus states;
@@ -64,6 +64,24 @@ Implemented Phase 3 only; awaiting visual review before Phase 4.
 The Phase-3 region labels and normalized value bars are explicitly UX-only representative content. They are not loaded from scientific datasets, are not used for scientific interpretation, do not dispatch selection into domain/URL state, and must be replaced when real region data is connected after visual approval.
 
 No real Allen/Beryl/Cosmos region data, feature coloring, anatomical rendering, charts, 3D, analysis functionality, or settings functionality was added in Phase 3.
+
+## UX Phase 4 — anatomical view frames
+
+Implemented Phase 4 only; awaiting visual review before Phase 5.
+
+- the three anatomical frames now expose calibrated AP/ML/DV coordinates, slice-index sliders, renderer status, and maximize/restore affordances;
+- initial regional slice indices match the legacy viewer defaults (`coronal=660`, `sagittal=550`, `horizontal=400`), corresponding to AP -1.20 mm, ML -0.24 mm, DV -3.67 mm;
+- exact 10 um regional calibration, legacy SVG view boxes, and linked-guide projection constants are taken from the tested `work/rendering` implementation rather than re-derived in frontend code;
+- `LegacyCuratedSvgSliceRenderer` implements the existing frontend-owned `SliceRenderer` facade and targets the deployed v1 curated bundles at `https://atlas.internationalbrainlab.org/data/json/slices_{axis}.json`;
+- axis bundles are loaded lazily, cached in memory, and the nearest available curated index is used when a requested index is absent;
+- view frames have explicit loading, ready, and error states; asset failure does not substitute a fake atlas;
+- linked cross-view guides use the rendering workstream's legacy display calibration and remain visually distinct from scientific coordinates;
+- maximize is a genuine view overlay and closes with Escape; the approved macro shell geometry remains unchanged when not maximized;
+- Playwright routes the external legacy asset requests to a deterministic SVG fixture for hermetic browser tests and review screenshots. The fixture is test-only and is not shipped as scientific anatomy.
+
+This is an intentionally transitional asset integration. The v1 curated slice JSON is deployed but is not present in the legacy source repository. Integration/data build still needs to copy those curated assets, without regeneration, into a versioned immutable v2 asset release. Once `work/rendering` is integrated, its lower-level `SvgSliceRenderer` should sit below the frontend facade; Phase 4 does not duplicate region hit-testing or scientific feature coloring.
+
+No real feature coloring, renderer-driven region selection/hover, volume slices, secondary-view content, charts, 3D, analysis functionality, or settings functionality was added in Phase 4.
 
 ## Public interfaces
 
@@ -94,15 +112,16 @@ The fixture under `web/public/fixtures/` is synthetic frontend test data, not a 
 
 - Replace provisional contracts with the data-schema workstream's shared/generated types and golden fixture as soon as they land.
 - Decide whether volume payloads use JSON metadata plus binary chunks, Zarr, NPY-derived blocks, or another transport. The current provisional `VolumeFeaturePayload` is only a boundary placeholder.
-- Rendering needs canonical slice bounds/index/coordinate metadata; the Phase-1 shell intentionally does not expose slice controls yet.
+- Regional slice bounds/coordinates now use the tested 10 um calibration from `work/rendering`; volume/grid affine semantics still come from the data/rendering contract and must not be inferred from SVG display calibration.
+- The deployed v1 curated SVG JSON must be copied unchanged into a versioned immutable v2 asset release; the Phase-4 direct legacy-host URL is transitional.
 - Decide whether URL `selected` should persist stable numeric Allen IDs, acronyms, or another canonical region key. It currently stores opaque strings.
 - Decide cache version/eviction budgets once real release sizes are known. Current persistent caching is intentionally simple and only used for immutable resources.
 - OPFS may be preferable to IndexedDB blobs for very large local volume resources; the logical `DatasetSource` contract should stay unchanged if storage changes.
-- UX must visually approve the Phase-3 region-browser screenshots before frontend proceeds to Phase 4 anatomical-view integration.
+- UX must visually approve the Phase-4 anatomical frame screenshots before frontend proceeds to Phase 5 secondary-view/distribution work.
 
 ## Integration decisions needed
 
 1. Data/schema: confirm catalog + manifest resolution, representation descriptors, canonical region identifiers, feature statistic metadata, and local package layout.
-2. Rendering: confirm `SliceRenderer` input contract and provide slice bounds/coordinates when Phase 4 begins.
-3. UX: review the five Phase-3 real-browser region-browser layouts before Phase 4.
+2. Rendering/integration: merge the `work/rendering` low-level SVG renderer below the existing frontend facade and publish the curated SVG assets as a v2 immutable release; do not duplicate or regenerate the hand-tuned assets.
+3. UX: review the five Phase-4 anatomical-frame layouts before Phase 5.
 4. Integration: decide whether browser E2E belongs in default `npm test`; currently `npm test` is fast (typecheck + unit) and Playwright is `npm run test:browser`.
