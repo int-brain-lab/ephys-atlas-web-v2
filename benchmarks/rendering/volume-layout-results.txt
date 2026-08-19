@@ -1,0 +1,14 @@
+volume voxels=77,045,760 float32=293.9 MiB
+
+Cold orthogonal slice cost if every logical chunk is one independently fetched object:
+layout	chunk MiB	coronal req/MiB	sagittal req/MiB	horizontal req/MiB
+cube32	0.13	150/18.8	170/21.3	255/31.9
+cube48	0.42	70/29.5	77/32.5	110/46.4
+cube64	1.00	40/40.0	45/45.0	72/72.0
+cube96	3.38	20/67.5	24/81.0	30/101.3
+
+Representative smooth float32 chunk compression (Node zlib; indicative only):
+edge	raw MiB	gzip MiB/ratio/ms	brotli MiB/ratio/ms
+32	0.13	0.11/0.86/3.3	0.10/0.79/504.7
+48	0.42	0.38/0.89/9.8	0.36/0.84/906.6
+64	1.00	0.91/0.91/24.0	0.86/0.86/2262.6

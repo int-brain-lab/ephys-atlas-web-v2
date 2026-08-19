@@ -24,6 +24,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   private currentIndex = -1;
   private currentFragment = '';
   private mapping: MappingName = 'beryl';
+  private indexedMapping: MappingName | null = null;
   private readonly pathIndex = new Map<number, SVGPathElement[]>();
   private readonly abortController = new AbortController();
 
@@ -45,12 +46,13 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
       `${frame.viewBox.x} ${frame.viewBox.y} ${frame.viewBox.width} ${frame.viewBox.height}`,
     );
 
-    if (this.currentIndex !== frame.index || this.currentFragment !== frame.svgFragment) {
+    if (this.currentIndex !== frame.index || this.currentFragment !== frame.svgFragment || this.indexedMapping !== frame.mapping) {
       // svgFragment must come from the curated immutable atlas asset release. Do not
       // pass arbitrary user HTML/SVG through this renderer without sanitising it first.
       this.mount.figureLayer.innerHTML = frame.svgFragment;
       this.currentIndex = frame.index;
       this.currentFragment = frame.svgFragment;
+      this.indexedMapping = frame.mapping;
       this.rebuildPathIndex();
     }
 

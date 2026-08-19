@@ -1,0 +1,2 @@
+pixels per three-view redraw=555,648
+scalar->RGBA p50=4.79 ms p95=5.35 ms max=5.68 ms
