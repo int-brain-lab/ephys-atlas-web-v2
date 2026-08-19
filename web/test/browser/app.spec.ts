@@ -9,20 +9,33 @@ const reviewViewports = [
 ] as const;
 
 const reviewFragments = {
-  coronal: '<path d="M78 184 C72 123 101 77 158 64 C195 55 224 68 237 92 C252 67 287 54 329 68 C378 83 402 125 393 183 C385 230 347 267 294 276 C264 281 245 269 237 248 C228 269 207 281 175 276 C123 267 85 230 78 184 Z"/>',
-  sagittal: '<path d="M71 183 C80 129 121 94 174 84 C226 74 289 80 350 104 C390 120 407 147 395 176 C381 208 339 232 284 240 C221 250 156 245 112 226 C82 213 66 198 71 183 Z"/>',
-  horizontal: '<path d="M144 157 C146 104 181 73 231 66 C282 59 326 79 347 117 C371 158 361 211 327 246 C303 271 270 281 237 267 C207 282 175 272 151 249 C117 216 112 174 144 157 Z"/>',
+  // Short real paths sampled from the downloaded curated v1 bundles.
+  coronal: '<path d="M236.473 167.48v-4.34 4.34z" class="allen_region_1 beryl_region_1 cosmos_region_1"/>',
+  sagittal: '<path d="M160.137 184.944v-2.721 2.721z" class="allen_region_1194 beryl_region_1 cosmos_region_1"/>',
+  horizontal: '<path d="M298.858 147.01v-.404.404z" class="allen_region_97 beryl_region_94 cosmos_region_6"/>',
 } as const;
+
+const curatedRanges = {
+  coronal: { min: 2, max: 1316, step: 2 },
+  sagittal: { min: 54, max: 1086, step: 2 },
+  horizontal: { min: 16, max: 754, step: 2 },
+} as const;
+
+function fixtureBundle(axis: keyof typeof reviewFragments): Record<string, string> {
+  const { min, max, step } = curatedRanges[axis];
+  const bundle: Record<string, string> = {};
+  for (let index = min; index <= max; index += step) bundle[String(index)] = reviewFragments[axis];
+  return bundle;
+}
 
 async function mockCuratedSlices(page: Page): Promise<void> {
   await page.route('https://atlas.internationalbrainlab.org/data/json/slices_*.json', async (route) => {
     const axis = route.request().url().match(/slices_(coronal|sagittal|horizontal)\.json/)?.[1] as keyof typeof reviewFragments | undefined;
     if (!axis) return route.abort();
-    const index = axis === 'coronal' ? 660 : axis === 'sagittal' ? 550 : 400;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ [index]: reviewFragments[axis] }),
+      body: JSON.stringify(fixtureBundle(axis)),
     });
   });
 }
@@ -46,6 +59,13 @@ for (const viewport of reviewViewports) {
     await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
     await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');
     await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toBeAttached();
+    await expect(page.getByLabel('coronal slice')).toHaveAttribute('min', '0');
+    await expect(page.getByLabel('coronal slice')).toHaveAttribute('max', '1319');
+    await expect(page.getByLabel('coronal slice')).toHaveAttribute('step', '1');
+    await expect(page.getByLabel('sagittal slice')).toHaveAttribute('min', '0');
+    await expect(page.getByLabel('sagittal slice')).toHaveAttribute('max', '1139');
+    await expect(page.getByLabel('horizontal slice')).toHaveAttribute('min', '0');
+    await expect(page.getByLabel('horizontal slice')).toHaveAttribute('max', '799');
 
     if (viewport.width < 1100) {
       await expect(page.locator('[data-view="coronal"]')).toBeVisible();
@@ -66,9 +86,39 @@ test('slice control updates calibrated coordinate and renderer request', async (
   await page.goto('/');
 
   const slider = page.getByLabel('coronal slice');
-  await slider.fill('700');
-  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.60 mm');
-  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('700,550,400');
+  await slider.fill('701');
+  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.61 mm');
+  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('701,550,400');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '700');
+});
+
+test('full-resolution navigation stays independent from downsampled SVG assets', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockCuratedSlices(page);
+  await page.goto('/?v=1&slices=661,551,401');
+
+  await expect(page.getByLabel('coronal slice')).toHaveValue('661');
+  await expect(page.getByLabel('sagittal slice')).toHaveValue('551');
+  await expect(page.getByLabel('horizontal slice')).toHaveValue('401');
+  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.21 mm');
+  await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.23 mm');
+  await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.68 mm');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '660');
+  await expect(page.locator('[data-view="sagittal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '550');
+  await expect(page.locator('[data-view="horizontal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '400');
+});
+
+test('scientific range endpoints may reuse the nearest available display SVG', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockCuratedSlices(page);
+  await page.goto('/?v=1&slices=0,1139,799');
+
+  await expect(page.getByLabel('coronal slice')).toHaveValue('0');
+  await expect(page.getByLabel('sagittal slice')).toHaveValue('1139');
+  await expect(page.getByLabel('horizontal slice')).toHaveValue('799');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '2');
+  await expect(page.locator('[data-view="sagittal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '1086');
+  await expect(page.locator('[data-view="horizontal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '754');
 });
 
 test('view maximize is reversible with Escape', async ({ page }) => {
@@ -91,8 +141,7 @@ test('curated asset failure is an explicit view-frame error state', async ({ pag
     if (route.request().url().includes('slices_coronal')) await route.fulfill({ status: 503, body: 'offline' });
     else {
       const axis = route.request().url().includes('sagittal') ? 'sagittal' : 'horizontal';
-      const index = axis === 'sagittal' ? 550 : 400;
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ [index]: reviewFragments[axis] }) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fixtureBundle(axis)) });
     }
   });
   await page.goto('/');
