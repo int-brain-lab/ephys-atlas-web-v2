@@ -1,0 +1,20 @@
+.distribution-band {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.distribution-band__surface {
+  position: relative;
+  min-height: 0;
+  background: var(--color-view);
+}
+
+.distribution-band__surface::after {
+  content: '';
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  bottom: 29%;
+  height: 1px;
+  background: var(--color-border-strong);
+}

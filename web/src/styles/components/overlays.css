@@ -1,0 +1,28 @@
+.region-pane {
+  transition: transform 140ms ease, visibility 140ms step-end;
+}
+
+.region-pane[data-open="true"] {
+  transition: transform 140ms ease, visibility 0ms step-start;
+}
+
+.drawer-backdrop {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--color-backdrop);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.atlas-app[data-drawer-open] .drawer-backdrop {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}

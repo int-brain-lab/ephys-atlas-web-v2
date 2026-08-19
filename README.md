@@ -19,10 +19,12 @@ Planned follow-ups include AGEA, MERFISH, large point datasets, and richer stati
 ## Repository layout
 
 - `web/` — TypeScript + Vite browser application, with no frontend framework by default
-- `builder/` — Python dataset build, validation, and publication tooling
+- `builder/` — Python deterministic dataset build, validation, and packaging tooling
+- `publishing/` — capability-based staging/publication service and Python client
 - `schema/` — versioned dataset schemas and format contracts
 - `fixtures/` — small golden datasets used across implementations and tests
-- `tests/` — cross-cutting integration tests
-- `docs/` — architecture, decisions, UX, rendering, and workstream documentation
+- `benchmarks/` — rendering/storage measurements used to choose launch physical formats
+- `tests/` — cross-cutting data and rendering tests
+- `docs/` — architecture, decisions, UX, rendering, publishing, and workstream documentation
 
-See `docs/PROJECT_BRIEF.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, and `docs/WORKSTREAMS.md` before making cross-cutting changes.
+Start with `docs/INTEGRATION_STATUS.md` for the current integrated state, then `docs/PROJECT_BRIEF.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, and `docs/WORKSTREAMS.md` before making cross-cutting changes.
