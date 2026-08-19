@@ -11,7 +11,7 @@ export const DEFAULT_VIEW_STATE: ViewState = {
   parcellation: 'allen',
   selection: [],
   cursor: { xUm: 0, yUm: 0, zUm: 0 },
-  slices: { coronal: 0, sagittal: 0, horizontal: 0 },
+  slices: { coronal: 660, sagittal: 550, horizontal: 400 },
   coloring: {
     statistic: 'mean',
     colormap: 'viridis',
