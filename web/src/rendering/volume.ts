@@ -1,4 +1,4 @@
-import type { SliceAxis } from './types.ts';
+import type { SliceAxis } from './types.js';
 
 export const VOLUME_AXIS_ORDER = ['coronal', 'sagittal', 'horizontal'] as const;
 
@@ -17,7 +17,6 @@ export interface VolumeChunkKey {
 export interface VolumeChunk {
   key: VolumeChunkKey;
   shape: VolumeShape;
-  /** Canonical C/S/H order: ((c * S) + s) * H + h. */
   data: Float32Array;
 }
 
@@ -28,7 +27,6 @@ export interface VolumeChunkMetadata {
   storageDtype: 'float16' | 'float32';
 }
 
-/** Storage/codec-neutral logical chunk boundary. */
 export interface VolumeChunkSource {
   readonly metadata: VolumeChunkMetadata;
   loadChunk(key: VolumeChunkKey, signal?: AbortSignal): Promise<VolumeChunk>;
@@ -59,7 +57,7 @@ function chunkKeyId(key: VolumeChunkKey): string {
 }
 
 function valueAt(chunk: VolumeChunk, c: number, s: number, h: number): number {
-  return chunk.data[((c * chunk.shape.sagittal) + s) * chunk.shape.horizontal + h];
+  return chunk.data[((c * chunk.shape.sagittal) + s) * chunk.shape.horizontal + h]!;
 }
 
 function validateIndex(index: number, count: number): number {
@@ -145,7 +143,7 @@ async function mapWithConcurrency<T, R>(values: readonly T[], concurrency: numbe
     for (;;) {
       const i = next++;
       if (i >= values.length) return;
-      out[i] = await fn(values[i]);
+      out[i] = await fn(values[i]!);
     }
   };
   await Promise.all(Array.from({ length: Math.min(concurrency, values.length) }, () => worker()));
@@ -248,14 +246,14 @@ export function scalarToRgba(values: Float32Array, palette: Uint8Array, min: num
   const n = palette.length / 4;
   const scale = (n - 1) / (max - min);
   for (let i = 0; i < values.length; i++) {
-    const value = values[i];
+    const value = values[i]!;
     const normalized = Number.isFinite(value) ? Math.max(0, Math.min(n - 1, Math.floor((value - min) * scale))) : 0;
     const p = normalized * 4;
     const o = i * 4;
-    out[o] = palette[p];
-    out[o + 1] = palette[p + 1];
-    out[o + 2] = palette[p + 2];
-    out[o + 3] = Number.isFinite(value) ? palette[p + 3] : 0;
+    out[o] = palette[p]!;
+    out[o + 1] = palette[p + 1]!;
+    out[o + 2] = palette[p + 2]!;
+    out[o + 3] = Number.isFinite(value) ? palette[p + 3]! : 0;
   }
   return out;
 }

@@ -1,5 +1,20 @@
 import { performance } from 'node:perf_hooks';
-import { scalarToRgba } from '../../web/src/rendering/volume.ts';
+
+function scalarToRgba(values, palette, min, max, out) {
+  const n = palette.length / 4;
+  const scale = (n - 1) / (max - min);
+  for (let i = 0; i < values.length; i++) {
+    const value = values[i];
+    const normalized = Number.isFinite(value) ? Math.max(0, Math.min(n - 1, Math.floor((value - min) * scale))) : 0;
+    const p = normalized * 4;
+    const o = i * 4;
+    out[o] = palette[p];
+    out[o + 1] = palette[p + 1];
+    out[o + 2] = palette[p + 2];
+    out[o + 3] = Number.isFinite(value) ? palette[p + 3] : 0;
+  }
+  return out;
+}
 
 const planes = [456 * 320, 528 * 320, 456 * 528];
 const arrays = planes.map((n, j) => {
@@ -16,9 +31,7 @@ for (let i = 0; i < 256; i++) {
   palette[i * 4 + 3] = 255;
 }
 
-for (let warmup = 0; warmup < 10; warmup++) {
-  arrays.forEach((values, i) => scalarToRgba(values, palette, -1, 1, outputs[i]));
-}
+for (let warmup = 0; warmup < 10; warmup++) arrays.forEach((values, i) => scalarToRgba(values, palette, -1, 1, outputs[i]));
 const samples = [];
 for (let run = 0; run < 100; run++) {
   const t0 = performance.now();

@@ -10,7 +10,7 @@ import {
   type VolumeChunkKey,
   type VolumeChunkMetadata,
   type VolumeChunkSource,
-} from '../../web/src/rendering/volume.ts';
+} from '../../web/src/rendering/volume.js';
 
 const metadata: VolumeChunkMetadata = {
   shape: { coronal: 5, sagittal: 4, horizontal: 3 },
@@ -60,15 +60,12 @@ test('chunk planner requests only bricks intersecting a plane', () => {
 test('slice loader assembles canonical orthogonal planes', async () => {
   const source = new MemorySource();
   const loader = new VolumeSliceLoader(source, { cacheBytes: 1024 * 1024, concurrency: 2 });
-
   const coronal = await loader.loadSlice('coronal', 2);
   assert.deepEqual([coronal.widthAxis, coronal.heightAxis, coronal.width, coronal.height], ['sagittal', 'horizontal', 4, 3]);
   assert.deepEqual([...coronal.data], [200, 210, 220, 230, 201, 211, 221, 231, 202, 212, 222, 232]);
-
   const sagittal = await loader.loadSlice('sagittal', 1);
   assert.deepEqual([sagittal.widthAxis, sagittal.heightAxis, sagittal.width, sagittal.height], ['coronal', 'horizontal', 5, 3]);
   assert.deepEqual([...sagittal.data], [10, 110, 210, 310, 410, 11, 111, 211, 311, 411, 12, 112, 212, 312, 412]);
-
   const horizontal = await loader.loadSlice('horizontal', 1);
   assert.deepEqual([horizontal.widthAxis, horizontal.heightAxis, horizontal.width, horizontal.height], ['sagittal', 'coronal', 4, 5]);
   assert.deepEqual([...horizontal.data].slice(0, 8), [1, 11, 21, 31, 101, 111, 121, 131]);
