@@ -1,9 +1,14 @@
 import type { SliceAxis } from '../domain/types.js';
-import type { RendererInteractionSink, SliceRenderModel, SliceRenderer } from './interfaces.js';
+import type {
+  RendererInteractionSink,
+  RendererPresentation,
+  SliceRenderModel,
+  SliceRenderer,
+} from './interfaces.js';
 import { LEGACY_VIEW_BOXES, linkedGuides } from './slice-calibration.js';
 import { regionalColorMap } from './scalar-colormap.js';
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
-import type { SliceRegionPointerEvent } from './types.js';
+import type { RegionalSliceFrame, SliceRegionPointerEvent } from './types.js';
 import {
   LEGACY_CURATED_SLICE_ASSETS,
   LEGACY_CURATED_SLICE_BASE_URL,
@@ -24,6 +29,7 @@ export interface LegacySvgSliceRendererOptions {
 
 interface RendererMount {
   renderer: SvgSliceRenderer;
+  frame?: RegionalSliceFrame;
 }
 
 export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
@@ -34,6 +40,11 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
   private readonly renderTokens = new WeakMap<HTMLElement, number>();
   private readonly requestedIndices = new Map<SliceAxis, number>();
   private interactionSink: RendererInteractionSink | null = null;
+  private presentation: RendererPresentation = {
+    feature: null,
+    coloring: { statistic: 'mean', colormap: 'viridis', range: { mode: 'auto' }, scale: 'linear' },
+    selectedRegionIds: [],
+  };
 
   constructor(options: LegacySvgSliceRendererOptions = {}) {
     const baseUrl = options.baseUrl ?? LEGACY_CURATED_SLICE_BASE_URL;
@@ -43,6 +54,13 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
 
   setInteractionSink(sink: RendererInteractionSink): void {
     this.interactionSink = sink;
+  }
+
+  updatePresentation(presentation: RendererPresentation): void {
+    this.presentation = presentation;
+    for (const mount of this.mounts.values()) {
+      if (mount.frame) mount.renderer.render(this.withPresentation(mount.frame));
+    }
   }
 
   async render(target: HTMLElement, model: SliceRenderModel): Promise<void> {
@@ -57,24 +75,16 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     if (!fragment) throw new Error(`No curated ${model.axis} SVG fragment near index ${model.sliceIndex}`);
 
     const mount = this.ensureMount(target);
-    const selectedRegionIds = new Set<number>();
-    for (const id of model.selectedRegionIds) {
-      const numeric = Number(id);
-      if (Number.isInteger(numeric)) selectedRegionIds.add(numeric);
-    }
-    const regionColors = model.feature?.representation === 'regional' && model.feature.parcellation === model.parcellation
-      ? regionalColorMap(model.feature, model.coloring)
-      : undefined;
-    mount.renderer.render({
+    const frame: RegionalSliceFrame = {
       axis: model.axis,
       index: assetIndex,
       mapping: model.parcellation,
       svgFragment: fragment,
       viewBox: LEGACY_VIEW_BOXES[model.axis],
       guides: linkedGuides(model.slices, model.axis),
-      ...(regionColors ? { regionColors } : {}),
-      selectedRegionIds,
-    });
+    };
+    mount.frame = frame;
+    mount.renderer.render(this.withPresentation(frame));
 
     target.dataset.sliceAsset = 'legacy-curated-v1';
     target.dataset.assetIndex = String(assetIndex);
@@ -97,6 +107,23 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     this.mounts.clear();
     this.axisBundles.clear();
     this.requestedIndices.clear();
+  }
+
+  private withPresentation(frame: RegionalSliceFrame): RegionalSliceFrame {
+    const selectedRegionIds = new Set<number>();
+    for (const id of this.presentation.selectedRegionIds) {
+      const numeric = Number(id);
+      if (Number.isInteger(numeric)) selectedRegionIds.add(numeric);
+    }
+    const feature = this.presentation.feature;
+    const regionColors = feature?.representation === 'regional' && feature.parcellation === frame.mapping
+      ? regionalColorMap(feature, this.presentation.coloring)
+      : undefined;
+    return {
+      ...frame,
+      ...(regionColors ? { regionColors } : {}),
+      selectedRegionIds,
+    };
   }
 
   private async loadAxis(axis: SliceAxis): Promise<AxisSliceBundle> {
@@ -196,7 +223,7 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     svg.append(figureLayer, guideLayer);
     target.replaceChildren(svg);
 
-    const mount = {
+    const mount: RendererMount = {
       renderer: new SvgSliceRenderer(
         { svg, figureLayer, guideLayer },
         { onRegionPointer: (event) => this.onRegionPointer(event) },
