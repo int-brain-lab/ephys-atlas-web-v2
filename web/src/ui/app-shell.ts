@@ -23,6 +23,13 @@ export interface ShellModel {
 type LayoutMode = 'wide' | 'compact' | 'narrow' | 'phone';
 type DrawerName = 'regions' | 'settings';
 type WorkspaceView = SliceAxis | 'context';
+type HeaderAction = 'share' | 'download' | 'info';
+
+interface ContextFieldNodes {
+  field: HTMLElement;
+  value: HTMLElement;
+  release?: HTMLElement;
+}
 
 const VIEW_LABELS: ReadonlyArray<{ id: WorkspaceView; label: string }> = [
   { id: 'coronal', label: 'Coronal' },
@@ -30,6 +37,12 @@ const VIEW_LABELS: ReadonlyArray<{ id: WorkspaceView; label: string }> = [
   { id: 'horizontal', label: 'Horizontal' },
   { id: 'context', label: 'Context' },
 ];
+
+const ACTION_ICONS: Record<HeaderAction, string> = {
+  share: '↗',
+  download: '↓',
+  info: 'i',
+};
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -50,12 +63,21 @@ function placeholderLine(width: 'short' | 'medium' | 'long' = 'medium'): HTMLSpa
   return line;
 }
 
+function titleCaseToken(value: string): string {
+  const words = value.replaceAll('_', ' ').replaceAll('-', ' ').trim();
+  return words ? words[0]?.toUpperCase() + words.slice(1) : 'Unavailable';
+}
+
 export class AppShell {
   private readonly app: HTMLDivElement;
   private readonly regionPane: HTMLElement;
   private readonly settingsPane: HTMLElement;
   private readonly backdrop: HTMLButtonElement;
   private readonly viewButtons = new Map<WorkspaceView, HTMLButtonElement>();
+  private readonly datasetContext: ContextFieldNodes;
+  private readonly featureContext: ContextFieldNodes;
+  private readonly representationContext: ContextFieldNodes;
+  private overflowActions: HTMLDetailsElement | null = null;
   private activeView: WorkspaceView = 'coronal';
 
   constructor(
@@ -67,6 +89,10 @@ export class AppShell {
 
     this.app = element('div', 'atlas-app');
     this.app.dataset.activeView = this.activeView;
+
+    this.datasetContext = this.createContextField('Dataset', 'dataset', true);
+    this.featureContext = this.createContextField('Feature', 'feature');
+    this.representationContext = this.createContextField('Representation', 'representation');
 
     this.regionPane = this.createRegionPane();
     this.settingsPane = this.createSettingsPane();
@@ -86,9 +112,20 @@ export class AppShell {
     this.syncLayoutMode();
   }
 
-  render(_model: ShellModel): void {
-    // Phase 1 is deliberately independent of scientific state/data loading.
-    // Later phases can reconnect existing model state block by block.
+  render(model: ShellModel): void {
+    const { state, catalog, manifest } = model;
+    const view = state.view;
+    const datasetEntry = catalog?.datasets.find((entry) => entry.id === view.dataset.datasetId);
+    const featureEntry = manifest?.features.find((entry) => entry.id === view.featureId);
+
+    const datasetLabel = datasetEntry?.title ?? manifest?.dataset.title ?? titleCaseToken(view.dataset.datasetId);
+    const releaseLabel = view.dataset.releaseId ?? manifest?.dataset.release ?? datasetEntry?.defaultRelease ?? '';
+    const featureLabel = featureEntry?.label ?? (view.featureId ? titleCaseToken(view.featureId) : 'No feature selected');
+    const representationLabel = view.representation === 'regional' ? 'Regional' : 'Volume';
+
+    this.setContextValue(this.datasetContext, datasetLabel, releaseLabel);
+    this.setContextValue(this.featureContext, featureLabel);
+    this.setContextValue(this.representationContext, representationLabel);
   }
 
   destroy(): void {
@@ -110,42 +147,114 @@ export class AppShell {
     brandText.append(title, version);
     brand.append(mark, brandText);
 
-    const context = element('div', 'app-header__context');
+    const context = element('dl', 'app-header__context');
     context.setAttribute('aria-label', 'Atlas context');
     context.append(
-      this.createContextPlaceholder('Dataset', 'long'),
-      this.createContextPlaceholder('Feature', 'long'),
-      this.createContextPlaceholder('View', 'short'),
+      this.datasetContext.field,
+      this.featureContext.field,
+      this.representationContext.field,
     );
 
     const actions = element('nav', 'app-header__actions');
-    actions.setAttribute('aria-label', 'Workspace panels');
+    actions.setAttribute('aria-label', 'Atlas actions');
     actions.append(
-      this.drawerButton('regions', 'Regions'),
-      this.drawerButton('settings', 'Settings'),
+      this.drawerButton('regions', 'Regions', '☰'),
+      this.drawerButton('settings', 'Settings', '⚙'),
     );
+
+    const desktopActions = element('div', 'app-header__desktop-actions');
+    desktopActions.append(
+      this.placeholderActionButton('Share', 'share'),
+      this.placeholderActionButton('Download', 'download'),
+      this.placeholderActionButton('Info', 'info'),
+    );
+    actions.append(desktopActions, this.createOverflowActions());
 
     header.append(brand, context, actions);
     return header;
   }
 
-  private createContextPlaceholder(labelText: string, width: 'short' | 'medium' | 'long'): HTMLElement {
-    const block = element('div', 'context-placeholder');
-    const label = element('span', 'context-placeholder__label');
+  private createContextField(labelText: string, fieldName: string, withRelease = false): ContextFieldNodes {
+    const field = element('div', 'context-field');
+    field.dataset.contextField = fieldName;
+
+    const label = element('dt', 'context-field__label');
     label.textContent = labelText;
-    block.append(label, placeholderLine(width));
-    return block;
+    const data = element('dd', 'context-field__data');
+    const value = element('span', 'context-field__value');
+    value.textContent = '—';
+    data.append(value);
+
+    let release: HTMLElement | undefined;
+    if (withRelease) {
+      release = element('span', 'context-field__release');
+      release.hidden = true;
+      data.append(release);
+    }
+
+    field.append(label, data);
+    return { field, value, ...(release ? { release } : {}) };
   }
 
-  private drawerButton(drawer: DrawerName, label: string): HTMLButtonElement {
+  private setContextValue(nodes: ContextFieldNodes, value: string, release = ''): void {
+    nodes.value.textContent = value;
+    nodes.value.title = value;
+    if (!nodes.release) return;
+    nodes.release.textContent = release;
+    nodes.release.title = release;
+    nodes.release.hidden = !release;
+  }
+
+  private drawerButton(drawer: DrawerName, label: string, iconText: string): HTMLButtonElement {
     const button = element('button', 'app-header__panel-button');
     button.type = 'button';
-    button.textContent = label;
     button.dataset.drawerTrigger = drawer;
     button.setAttribute('aria-controls', `${drawer}-pane`);
     button.setAttribute('aria-expanded', 'false');
+    button.append(this.actionIcon(iconText), this.actionLabel(label));
     button.addEventListener('click', () => this.openDrawer(drawer));
     return button;
+  }
+
+  private placeholderActionButton(label: string, action: HeaderAction): HTMLButtonElement {
+    const button = element('button', 'app-header__action');
+    button.type = 'button';
+    button.dataset.headerAction = action;
+    button.setAttribute('aria-disabled', 'true');
+    button.title = `${label} will be implemented in a later phase`;
+    button.append(this.actionIcon(ACTION_ICONS[action]), this.actionLabel(label));
+    button.addEventListener('click', (event) => event.preventDefault());
+    return button;
+  }
+
+  private actionIcon(text: string): HTMLSpanElement {
+    const icon = element('span', 'app-header__action-icon');
+    icon.textContent = text;
+    icon.setAttribute('aria-hidden', 'true');
+    return icon;
+  }
+
+  private actionLabel(text: string): HTMLSpanElement {
+    const label = element('span', 'app-header__action-label');
+    label.textContent = text;
+    return label;
+  }
+
+  private createOverflowActions(): HTMLDetailsElement {
+    const details = element('details', 'app-header__overflow');
+    const summary = element('summary', 'app-header__overflow-trigger');
+    summary.setAttribute('aria-label', 'More actions');
+    summary.append(this.actionIcon('⋯'));
+
+    const menu = element('div', 'app-header__overflow-menu');
+    menu.append(
+      this.placeholderActionButton('Share', 'share'),
+      this.placeholderActionButton('Download', 'download'),
+      this.placeholderActionButton('Info', 'info'),
+    );
+    details.append(summary, menu);
+    this.overflowActions = details;
+    return details;
   }
 
   private createRegionPane(): HTMLElement {
@@ -305,6 +414,7 @@ export class AppShell {
   private openDrawer(drawer: DrawerName): void {
     const pane = drawer === 'regions' ? this.regionPane : this.settingsPane;
     const other = drawer === 'regions' ? this.settingsPane : this.regionPane;
+    if (this.overflowActions) this.overflowActions.open = false;
     other.dataset.open = 'false';
     pane.dataset.open = 'true';
     this.app.dataset.drawerOpen = drawer;
@@ -330,6 +440,7 @@ export class AppShell {
     const mode: LayoutMode = width >= 1480 ? 'wide' : width >= 1100 ? 'compact' : width >= 760 ? 'narrow' : 'phone';
     this.app.dataset.layout = mode;
 
+    if (mode !== 'phone' && this.overflowActions) this.overflowActions.open = false;
     if (mode === 'wide') {
       this.closeDrawers();
     } else if (mode === 'compact' && this.regionPane.dataset.open === 'true') {
@@ -340,6 +451,11 @@ export class AppShell {
   private readonly onResize = (): void => this.syncLayoutMode();
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape' && this.app.dataset.drawerOpen) this.closeDrawers();
+    if (event.key !== 'Escape') return;
+    if (this.app.dataset.drawerOpen) {
+      this.closeDrawers();
+      return;
+    }
+    if (this.overflowActions?.open) this.overflowActions.open = false;
   };
 }
