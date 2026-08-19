@@ -17,8 +17,8 @@ import type {
   RegionalFeaturePayload,
 } from './contracts.js';
 
-const DB_NAME = 'ibl-ephys-atlas-v2-local';
-const DB_VERSION = 2;
+const DB_NAME = 'ibl-ephys-atlas-v2-local-v01';
+const DB_VERSION = 1;
 const MANIFESTS = 'manifests';
 const RESOURCES = 'resources';
 const DISPLAY_STATISTICS = new Set<StatisticId>(['mean', 'median', 'min', 'max', 'count']);
