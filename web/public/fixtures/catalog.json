@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "0.1-provisional",
+  "datasets": [
+    {
+      "id": "ephys_atlas_channels",
+      "title": "Ephys Atlas channels (fixture)",
+      "description": "Tiny provisional frontend fixture; not scientific data.",
+      "defaultRelease": "fixture-0.1",
+      "releases": [
+        {
+          "id": "fixture-0.1",
+          "label": "fixture-0.1",
+          "manifest": "./ephys_atlas_channels/fixture-0.1/manifest.json",
+          "immutable": true
+        }
+      ]
+    }
+  ]
+}
