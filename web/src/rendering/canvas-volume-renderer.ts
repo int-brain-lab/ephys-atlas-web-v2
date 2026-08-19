@@ -14,7 +14,9 @@ export class CanvasVolumeSliceRenderer implements VolumeSliceRenderer {
   render(frame: VolumeSliceFrame): void {
     if (this.canvas.width !== frame.width) this.canvas.width = frame.width;
     if (this.canvas.height !== frame.height) this.canvas.height = frame.height;
-    const image = new ImageData(frame.rgba, frame.width, frame.height);
+    const rgba = new Uint8ClampedArray(frame.rgba.length);
+    rgba.set(frame.rgba);
+    const image = new ImageData(rgba, frame.width, frame.height);
     this.context.putImageData(image, 0, 0);
   }
 
