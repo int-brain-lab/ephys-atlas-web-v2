@@ -13,7 +13,10 @@
 - Missing/non-finite observations do not enter descriptive statistics or
   histograms; missing counts are explicit. No inferential tests are modeled.
 - Immutable release ids live inside release manifests. Mutable aliases such as
-  `latest` live outside immutable release directories.
+  `latest` live outside immutable release directories and use `alias.schema.json`.
+- Pulled scientific inputs get a `source.json` file list with SHA-256 checksums.
+  Cluster aggregates lack an upstream vintage label, so their source snapshot id
+  is content-derived rather than pretending `current` is immutable.
 - Whole-release downloads should be deterministic ZIPs with their digest stored
   in an external publication/index layer; embedding the archive digest in its
   own manifest would be self-referential.
@@ -31,8 +34,10 @@
 - `docs/data/PROVENANCE.md` — source/reproduction mapping and explicit scientific
   unknowns.
 - `docs/data/STORAGE_FORMATS.md` — physical-format rationale.
-- `Justfile` — provisional `data-pull`, `data-build`, `data-validate`, `golden`,
-  and `test` workflow.
+- `Justfile` — provisional `data-pull`, `data-build`, `data-validate`, `data-package`,
+  `golden`, and `test` workflow.
+- deterministic whole-release ZIP writer; archive digests remain external to the
+  release manifest to avoid self-reference.
 
 ## Unresolved scientific/data questions
 

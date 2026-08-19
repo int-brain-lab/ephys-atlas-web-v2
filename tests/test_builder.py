@@ -46,3 +46,23 @@ def test_validator_detects_tampered_artifact(tmp_path):
     artifact.write_text(artifact.read_text() + "# tampered\n")
     with pytest.raises(ValidationError, match="artifact sha256 mismatch|byte size mismatch"):
         validate_release(release, ROOT / "schema" / "v0.1")
+
+
+def test_whole_release_package_is_deterministic(tmp_path):
+    from ephys_atlas_builder.package import package_release
+
+    release = generate_golden(tmp_path / "golden")
+    a = package_release(release, tmp_path / "a.zip")
+    b = package_release(release, tmp_path / "b.zip")
+    assert a["sha256"] == b["sha256"]
+    assert (tmp_path / "a.zip").read_bytes() == (tmp_path / "b.zip").read_bytes()
+
+
+def test_content_release_id_is_stable_and_sensitive():
+    from ephys_atlas_builder.sources import _content_release_id
+
+    files = [{"path": "a.bin", "bytes": 3, "sha256": "0" * 64}]
+    a = _content_release_id(files)
+    assert a == _content_release_id(files)
+    changed = [{"path": "a.bin", "bytes": 4, "sha256": "0" * 64}]
+    assert a != _content_release_id(changed)

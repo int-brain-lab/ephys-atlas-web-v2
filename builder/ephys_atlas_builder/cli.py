@@ -4,7 +4,8 @@ import argparse
 from pathlib import Path
 
 from .fixture import generate_golden
-from .sources import pull
+from .package import package_release
+from .sources import pull, resolve_source_release
 from .validate import ValidationError, validate_release
 
 
@@ -30,8 +31,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dest", type=Path, default=Path("data/source"))
 
     p = sub.add_parser("build", help="validate a release produced by a dataset-specific build recipe")
-    p.add_argument("release_dir", type=Path)
+    p.add_argument("dataset")
+    p.add_argument("release")
+    p.add_argument("--source-root", type=Path, default=Path("data/source"))
+    p.add_argument("--release-root", type=Path, default=Path("data/releases"))
     p.add_argument("--schema-dir", type=Path, default=_schema_dir())
+
+    p = sub.add_parser("package", help="create a deterministic whole-release ZIP")
+    p.add_argument("release_dir", type=Path)
+    p.add_argument("output", type=Path)
 
     args = parser.parse_args(argv)
     try:
@@ -46,12 +54,21 @@ def main(argv: list[str] | None = None) -> int:
             path = pull(args.dataset, args.release, args.dest)
             print(path)
         elif args.cmd == "build":
-            # Build recipes are intentionally dataset-specific because source scientific
-            # semantics are not interchangeable. v0.1 provides the common writer and
-            # validator primitives; recipe-specific transforms are added only after their
-            # semantics are approved and pinned.
-            validate_release(args.release_dir, args.schema_dir)
-            print(f"validated built release: {args.release_dir}")
+            resolved = resolve_source_release(args.source_root, args.dataset, args.release)
+            source = args.source_root / args.dataset / resolved / "source.json"
+            release_dir = args.release_root / args.dataset / resolved
+            if not source.is_file():
+                raise RuntimeError(f"missing source snapshot: {source}; run data-pull first")
+            if not (release_dir / "manifest.json").is_file():
+                raise RuntimeError(
+                    f"no approved dataset-specific recipe has produced {release_dir}; "
+                    "scientific transforms are intentionally not guessed (see docs/data/HANDOFF.md)"
+                )
+            validate_release(release_dir, args.schema_dir)
+            print(f"validated built release: {release_dir}")
+        elif args.cmd == "package":
+            info = package_release(args.release_dir, args.output)
+            print(f"{info['sha256']}  {info['bytes']}  {info['path']}")
     except (ValidationError, RuntimeError, ValueError) as e:
         parser.error(str(e))
     return 0
