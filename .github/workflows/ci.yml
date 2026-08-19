@@ -5,6 +5,10 @@ on:
     branches: [main, 'agent/**', 'work/**']
   pull_request:
 
+permissions:
+  contents: read
+  statuses: write
+
 jobs:
   python:
     runs-on: ubuntu-latest
@@ -17,6 +21,19 @@ jobs:
       - run: python -m pytest -q tests
       - run: python -m pip install -e publishing
       - run: python -m pytest -q publishing/tests
+      - name: Report Python status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state,
+              context: 'CI / python',
+            });
 
   web:
     runs-on: ubuntu-latest
@@ -31,3 +48,16 @@ jobs:
       - run: npm install
       - run: npm test
       - run: npm run build
+      - name: Report web status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state,
+              context: 'CI / web',
+            });
