@@ -65,3 +65,16 @@ export interface Renderer3D {
   resize(width: number, height: number, devicePixelRatio: number): void;
   dispose(): void;
 }
+
+export interface VolumeSliceFrame {
+  axis: SliceAxis;
+  index: number;
+  width: number;
+  height: number;
+  rgba: Uint8ClampedArray;
+}
+
+export interface VolumeSliceRenderer {
+  render(frame: VolumeSliceFrame): void | Promise<void>;
+  dispose(): void;
+}
