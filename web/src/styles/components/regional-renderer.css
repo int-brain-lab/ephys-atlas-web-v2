@@ -1,0 +1,15 @@
+.view-frame__slice-figure path.is-selected {
+  stroke: rgb(235 247 255 / 94%);
+  stroke-width: 1.35;
+  vector-effect: non-scaling-stroke;
+}
+
+.view-frame__slice-figure path.is-highlighted {
+  stroke: rgb(120 189 255 / 94%);
+  stroke-width: 1.15;
+  vector-effect: non-scaling-stroke;
+}
+
+.view-frame__slice-figure path[style*='fill'] {
+  transition: fill 90ms linear, stroke 90ms linear;
+}
