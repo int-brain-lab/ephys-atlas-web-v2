@@ -1,5 +1,5 @@
 import type { DatasetRef, ParcellationId, RepresentationKind } from '../domain/types.js';
-import type { DatasetCatalog, DatasetManifest, DatasetSource, FeaturePayload } from './contracts.js';
+import type { DatasetCatalog, DatasetManifest, DatasetSource, FeaturePayload, RegionMetadata } from './contracts.js';
 
 export class DatasetRepository {
   constructor(
@@ -23,6 +23,10 @@ export class DatasetRepository {
 
   loadManifest(ref: DatasetRef): Promise<DatasetManifest> {
     return this.sourceFor(ref).loadManifest(ref);
+  }
+
+  loadRegions(ref: DatasetRef, parcellation: ParcellationId): Promise<readonly RegionMetadata[]> {
+    return this.sourceFor(ref).loadRegions(ref, parcellation);
   }
 
   loadFeature(
