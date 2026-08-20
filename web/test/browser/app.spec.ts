@@ -207,7 +207,10 @@ test('generated anatomy renderer uses direct mapping IDs and affine-derived guid
         return {
           axis, sliceIndex, worldCoordinateUm: 50,
           viewBox: { x: -0.5, y: -0.5, width: 3, height: 2 },
-          paths: [{ atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: 'M0 0L1 0L1 1Z' }],
+          paths: [
+            { atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: 'M0 0L1 0L1 1Z' },
+            { atlasIds: { allen: 10, beryl: 20, cosmos: 30 }, d: 'M1 0L2 0L2 1Z' },
+          ],
         };
       },
       async worldFromSliceIndices() { return { ml: 25, ap: 50, dv: 75 }; },
@@ -232,21 +235,31 @@ test('generated anatomy renderer uses direct mapping IDs and affine-derived guid
       selectedRegionIds: ['-20'], feature: null,
     });
     renderer.updatePresentation({
-      feature: null, selectedRegionIds: ['-20'], hoveredRegionId: '-20',
+      feature: {
+        schemaVersion: '0.1', featureId: 'fixture', representation: 'regional', parcellation: 'beryl',
+        regionIds: ['-20'], statistics: { mean: [1] },
+      },
+      regions: [{ id: '-20', atlasId: -20, index: 0, acronym: 'R', name: 'Region', colorHex: '#123456' }],
+      selectedRegionIds: ['-20'], hoveredRegionId: '-20',
       coloring: { mode: 'feature', statistic: 'mean', colormap: 'viridis', range: { mode: 'auto' }, scale: 'linear' },
     });
-    target.querySelector('path')?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    target.querySelector('path[data-beryl-id="20"]')?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
   });
 
   const target = page.locator('#generated-anatomy-test');
   await expect(target).toHaveAttribute('data-slice-asset', 'generated-anatomy-v1');
   await expect(target).toHaveAttribute('data-world-coordinate-um', '50');
   await expect(target).toHaveAttribute('data-hit', '-20');
-  const path = target.locator('path');
-  await expect(path).toHaveAttribute('data-allen-id', '-10');
-  await expect(path).toHaveAttribute('data-beryl-id', '-20');
-  await expect(path).toHaveClass(/is-selected/);
-  await expect(path).toHaveClass(/is-highlighted/);
+  const leftPath = target.locator('path[data-beryl-id="-20"]');
+  const rightPath = target.locator('path[data-beryl-id="20"]');
+  await expect(leftPath).toHaveAttribute('data-allen-id', '-10');
+  await expect(rightPath).toHaveAttribute('data-allen-id', '10');
+  await expect(leftPath).toHaveAttribute('style', /fill: rgb\(68, 1, 84\)/);
+  await expect(rightPath).toHaveAttribute('style', /fill: rgb\(18, 52, 86\)/);
+  for (const path of [leftPath, rightPath]) {
+    await expect(path).toHaveClass(/is-selected/);
+    await expect(path).toHaveClass(/is-highlighted/);
+  }
   await expect(target.locator('.slice-guide[data-source-axis="sagittal"]')).toHaveAttribute('x1', '1');
   await expect(target.locator('.slice-guide[data-source-axis="horizontal"]')).toHaveAttribute('y1', '2');
 });

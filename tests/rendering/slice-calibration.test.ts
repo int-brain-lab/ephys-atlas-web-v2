@@ -151,10 +151,14 @@ test('generated anatomy exposes direct stable IDs for every parcellation', () =>
   const fragment = anatomySliceSvgFragment({
     axis: 'coronal', sliceIndex: 0, worldCoordinateUm: 0,
     viewBox: { x: -0.5, y: -0.5, width: 2, height: 2 },
-    paths: [{ atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: 'M0 0L1 0Z' }],
+    paths: [
+      { atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: 'M0 0L1 0Z' },
+      { atlasIds: { allen: 10, beryl: 20, cosmos: 30 }, d: 'M1 0L2 0Z' },
+    ],
   });
   assert.match(fragment, /data-allen-id="-10"/);
   assert.match(fragment, /data-beryl-id="-20"/);
   assert.match(fragment, /data-cosmos-id="-30"/);
+  assert.match(fragment, /data-allen-id="10"/);
   assert.match(fragment, /fill-rule="evenodd"/);
 });

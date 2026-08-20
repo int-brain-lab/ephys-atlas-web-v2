@@ -6,7 +6,7 @@ import type {
   SliceRenderModel,
   SliceRenderer,
 } from './interfaces.js';
-import { atlasRegionColorMap, regionalColorMap } from './scalar-colormap.js';
+import { bilateralAtlasRegionColorMap, bilateralFeatureColorMap } from './scalar-colormap.js';
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
 import type { AnatomySlice, AnatomySliceSource, RegionalSliceFrame, SliceRegionPointerEvent } from './types.js';
 
@@ -101,20 +101,29 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     const selectedRegionIds = new Set<number>();
     for (const id of this.presentation.selectedRegionIds) {
       const atlasId = Number(id);
-      if (Number.isInteger(atlasId)) selectedRegionIds.add(atlasId);
+      if (Number.isInteger(atlasId) && atlasId !== 0) {
+        selectedRegionIds.add(-Math.abs(atlasId));
+        selectedRegionIds.add(Math.abs(atlasId));
+      }
     }
     const hovered = this.presentation.hoveredRegionId == null ? null : Number(this.presentation.hoveredRegionId);
+    const highlightedRegionIds = new Set<number>();
+    if (hovered != null && Number.isInteger(hovered) && hovered !== 0) {
+      highlightedRegionIds.add(-Math.abs(hovered));
+      highlightedRegionIds.add(Math.abs(hovered));
+    }
     const feature = this.presentation.feature;
+    const atlasColors = bilateralAtlasRegionColorMap(this.presentation.regions ?? []);
     const regionColors = this.presentation.coloring.mode === 'anatomy'
-      ? atlasRegionColorMap(this.presentation.regions ?? [])
+      ? atlasColors
       : feature?.representation === 'regional' && feature.parcellation === frame.mapping
-        ? regionalColorMap(feature, this.presentation.coloring)
-        : undefined;
+        ? bilateralFeatureColorMap(feature, this.presentation.coloring, this.presentation.regions ?? [])
+        : new Map([...atlasColors].filter(([atlasId]) => atlasId > 0));
     return {
       ...frame,
       ...(regionColors ? { regionColors } : {}),
       selectedRegionIds,
-      highlightedRegionId: Number.isInteger(hovered) ? hovered : null,
+      highlightedRegionIds,
     };
   }
 
@@ -126,7 +135,7 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
       return;
     }
     const hit = {
-      regionId: String(event.regionId),
+      regionId: String(-Math.abs(event.regionId)),
       axis: event.axis,
       sliceIndex: this.requestedIndices.get(event.axis) ?? 0,
     };

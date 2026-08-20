@@ -83,7 +83,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     for (const [regionId, paths] of this.pathIndex) {
       const fill = frame.regionColors?.get(regionId);
       const selected = frame.selectedRegionIds?.has(regionId) ?? false;
-      const highlighted = frame.highlightedRegionId === regionId;
+      const highlighted = frame.highlightedRegionIds?.has(regionId) ?? frame.highlightedRegionId === regionId;
       for (const path of paths) {
         if (fill) path.style.fill = fill;
         else path.style.removeProperty('fill');
