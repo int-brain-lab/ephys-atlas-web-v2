@@ -116,6 +116,22 @@ small set of real Allen ancestor containers needed to make their reduced
 mapping inventories parent-closed. Arbitrary ontology depth is displayed, and
 container-only rows remain visibly distinct from selectable mapping regions.
 
+The application shell now exposes manifest-driven dataset/release, feature,
+representation, parcellation, statistic, colormap, scale, and robust/manual
+range controls. The numerical legend identifies the left-hemisphere feature
+scale and its effective range. The former secondary placeholder is a compact
+global feature summary. Share copies the complete URL state, Info exposes the
+immutable release, feature semantics, and source/builder provenance, and
+Download exports the current regional statistic as CSV with immutable context
+columns. The synthetic golden release remains fixture-only and is visibly
+identified as such.
+
+`just dev-real` validates and opens the ignored immutable `2026_W32` channel
+release with `rms_ap.denoised` as its catalog-aware development default. Its
+Playwright suite exercises the actual Vite HTTP middleware, all 70 dynamic
+features, Allen/Beryl/Cosmos, and promoted `float64` alpha values. Ordinary
+`just dev` and CI continue to use the deterministic golden fixture.
+
 The runtime anatomy is the byte-identical, validated bilateral 10 µm pack under
 `web/public/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/`,
 while the v1 pack remains available for rollback. It contains all
@@ -241,7 +257,7 @@ The active sequence is defined in `docs/IMPLEMENTATION_PLAN.md`. In summary:
 2. benchmark the unblocked M2 volume transport candidates, then resolve Q4-Q5 and build the real volume release/transport;
 3. resolve the remaining cluster project/catalog choices and build the production cluster release (Q6);
 4. define/build exact `brainwide_map` product (Q7);
-5. complete downloads/local-import production UX;
+5. complete selected-comparison/volume/whole-release downloads and local-dataset management UX; current regional CSV export and hardened import are implemented;
 6. relocate pinned curated assets and finalize catalog/origin/deployment/publishing choices (Q8-Q10);
 7. run final real-data performance and cross-browser release QA (Q11).
 
