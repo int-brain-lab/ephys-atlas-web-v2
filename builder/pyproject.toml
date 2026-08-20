@@ -15,6 +15,11 @@ scientific = [
     "iblatlas @ git+https://github.com/int-brain-lab/iblatlas.git@52083adf44825d0622a503705e095699a5957587",
     "ibleatools @ git+https://github.com/int-brain-lab/ibleatools.git@9bfa0623a16bc7a989a6b27a589887641beee0a8",
 ]
+anatomy = [
+    "brotli>=1.1,<2",
+    "iblatlas @ git+https://github.com/int-brain-lab/iblatlas.git@52083adf44825d0622a503705e095699a5957587",
+    "scikit-image>=0.26,<0.27",
+]
 
 [project.scripts]
 ephys-atlas-data = "ephys_atlas_builder.cli:main"

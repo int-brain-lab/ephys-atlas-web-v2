@@ -25,6 +25,7 @@ dist/
 # Local scientific source/build outputs
 data/source/
 data/releases/
+artifacts/
 
 # Frontend dependencies/build/test outputs
 node_modules/

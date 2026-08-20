@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:;">
+  <title>IBL anatomy SVG comparison</title>
+  <style>
+    :root{color-scheme:dark;--bg:#071019;--surface:#0d1b27;--surface2:#112331;--border:#294153;--text:#e6edf4;--muted:#8fa3b3;--accent:#55a7f7;--candidate:#f1ad63}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,sans-serif}button,select,input{font:inherit;color:inherit;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:.42rem .55rem}button{cursor:pointer}header{position:sticky;z-index:10;top:0;padding:.8rem 1rem;border-bottom:1px solid var(--border);background:rgb(7 16 25/.96);backdrop-filter:blur(10px)}h1{margin:0 0 .65rem;font-size:1rem}.controls{display:flex;flex-wrap:wrap;gap:.55rem 1rem;align-items:end}.control{display:grid;gap:.18rem}.control label{color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}.notice{margin:.65rem 0 0;color:#c8d7e3;font-size:.78rem}.notice strong{color:#ffd49e}main{padding:1rem;display:grid;gap:1rem}.panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}.panel{min-width:0;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--surface)}.panel h2{margin:0;padding:.55rem .7rem;border-bottom:1px solid var(--border);color:var(--muted);font-size:.78rem}.viewport{position:relative;aspect-ratio:1.35;overflow:hidden;background:#09141e}.viewport svg{position:absolute;inset:0;width:100%;height:100%}.viewport path{vector-effect:non-scaling-stroke;stroke-width:.55;transition:opacity 70ms linear,fill 70ms linear}.legacy path{fill:#263f50;stroke:#698296}.reference path{fill:rgb(85 167 247/.28);stroke:#55a7f7}.candidate path{fill:rgb(241 173 99/.26);stroke:#f1ad63}.boundary path{fill:transparent!important;stroke-width:.8}.is-hovered{fill:#fff3ad!important;stroke:#fff!important;stroke-width:1.3!important}.overlay-stage{display:none;position:relative;width:100%;max-width:980px;margin:auto;aspect-ratio:1.45;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#09141e}.overlay-stage svg{position:absolute;inset:0;width:100%;height:100%}.overlay-stage .watermark{position:absolute;z-index:3;right:.6rem;bottom:.5rem;padding:.25rem .4rem;border-radius:3px;background:rgb(7 16 25/.8);color:#ffd49e;font-size:.7rem}.mode-overlay .panels,.mode-blink .panels,.mode-legacy-overlay .panels{display:none}.mode-overlay .overlay-stage,.mode-blink .overlay-stage,.mode-legacy-overlay .overlay-stage{display:block}.blink-hidden{opacity:0}.metrics{display:grid;grid-template-columns:minmax(0,2fr) minmax(250px,1fr);gap:.75rem}.card{overflow:auto;border:1px solid var(--border);border-radius:8px;background:var(--surface)}.card h2{margin:0;padding:.55rem .7rem;border-bottom:1px solid var(--border);font-size:.82rem}table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}th,td{padding:.42rem .55rem;border-bottom:1px solid rgb(41 65 83/.55);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-size:.68rem;text-transform:uppercase}.facts{display:grid;grid-template-columns:auto 1fr;margin:0;padding:.6rem}.facts dt,.facts dd{margin:0;padding:.25rem}.facts dt{color:var(--muted)}.facts dd{text-align:right;font-variant-numeric:tabular-nums}.region-readout{min-height:1.3rem;color:#fff3ad}.footnote{margin:0;padding:.6rem;color:var(--muted);font-size:.72rem}@media(max-width:900px){.panels{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.viewport{aspect-ratio:1.6}}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>IBL anatomy SVG comparison lab</h1>
+    <div class="controls">
+      <div class="control"><label for="axis">Projection</label><select id="axis"></select></div>
+      <div class="control"><label for="slice">Slice</label><select id="slice"></select></div>
+      <div class="control"><label for="tolerance">Candidate tolerance</label><select id="tolerance"></select></div>
+      <div class="control"><label for="mode">Comparison</label><select id="mode"><option value="columns">Three columns</option><option value="overlay">Exact / simplified overlay</option><option value="boundary">Boundary only</option><option value="blink">Exact / simplified blink</option><option value="legacy-overlay">Legacy visual overlay</option></select></div>
+      <div class="control"><label for="opacity">Candidate opacity</label><input id="opacity" type="range" min="0" max="1" step=".05" value=".55"></div>
+      <button id="export" type="button">Export metrics CSV</button>
+    </div>
+    <p class="notice"><strong>Scientific metrics compare exact and simplified geometry only.</strong> The legacy overlay is display-registered and visual-only because v1 has no authoritative world affine. This pilot bounds contour error but does not yet validate shared-edge topology.</p>
+  </header>
+  <main id="app">
+    <section class="panels" aria-label="Anatomy comparison panels">
+      <article class="panel"><h2>Legacy curated v1 · visual reference</h2><div class="viewport legacy"><svg id="legacy" preserveAspectRatio="xMidYMid meet"></svg></div></article>
+      <article class="panel"><h2>Annotation-derived · 0 µm simplification</h2><div class="viewport reference"><svg id="reference" preserveAspectRatio="xMidYMid meet"></svg></div></article>
+      <article class="panel"><h2 id="candidate-title">Simplified candidate</h2><div class="viewport candidate"><svg id="candidate" preserveAspectRatio="xMidYMid meet"></svg></div></article>
+    </section>
+    <section class="overlay-stage" aria-label="Overlay comparison">
+      <svg id="overlay-a" class="reference" preserveAspectRatio="xMidYMid meet"></svg>
+      <svg id="overlay-b" class="candidate" preserveAspectRatio="xMidYMid meet"></svg>
+      <span class="watermark" id="watermark"></span>
+    </section>
+    <section class="metrics">
+      <article class="card"><h2>Current-slice simplification sweep</h2><table><thead><tr><th>Tolerance</th><th>Vertices</th><th>Reduction</th><th>Median</th><th>p95</th><th>Max</th><th>Raw</th><th>gzip</th><th>Brotli</th></tr></thead><tbody id="metrics-body"></tbody></table><p class="footnote">Distances are measured from unsimplified contour vertices to the simplified boundary in the same annotation grid.</p></article>
+      <article class="card"><h2>Provenance and current selection</h2><dl class="facts" id="facts"></dl><p class="footnote region-readout" id="region">Hover or focus a region to link it across panels.</p></article>
+    </section>
+  </main>
+  <script id="comparison-data" type="application/json">__ANATOMY_COMPARISON_DATA__</script>
+  <script>
+    'use strict';
+    const data=JSON.parse(document.getElementById('comparison-data').textContent);
+    const $=id=>document.getElementById(id);const axis=$('axis'),slice=$('slice'),tolerance=$('tolerance'),mode=$('mode'),opacity=$('opacity');
+    const svgs=['legacy','reference','candidate','overlay-a','overlay-b'].map($);let timer=null,pinned=null;
+    const fmt=n=>new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(n);const bytes=n=>n==null?'n/a':n<1024?`${n} B`:`${fmt(n/1024)} KiB`;
+    for(const name of Object.keys(data.axes)){const option=document.createElement('option');option.value=name;option.textContent=name[0].toUpperCase()+name.slice(1);axis.append(option)}
+    function axisData(){return data.axes[axis.value]}function sample(){return axisData().samples[Number(slice.value)]}function variant(){return sample().variants[Number(tolerance.value)]}
+    function setOptions(){slice.replaceChildren();axisData().samples.forEach((item,index)=>{const option=document.createElement('option');option.value=index;option.textContent=`${item.regionalIndex} · ${fmt(item.coordinateUm/1000)} mm`;slice.append(option)});render()}
+    function installPaths(svg,fragment,viewBox){svg.setAttribute('viewBox',viewBox.join(' '));svg.innerHTML=fragment;for(const path of svg.querySelectorAll('path')){path.setAttribute('tabindex','0');path.addEventListener('pointerenter',()=>hover(path));path.addEventListener('pointerleave',clearHover);path.addEventListener('focus',()=>hover(path));path.addEventListener('blur',clearHover);path.addEventListener('click',()=>{pinned=regionIndex(path);applyHover(pinned)})}}
+    function regionIndex(path){const match=[...path.classList].join(' ').match(/allen_region_(-?\d+)/);return match?match[1]:null}
+    function applyHover(id){document.querySelectorAll('.is-hovered').forEach(node=>node.classList.remove('is-hovered'));if(id!=null){document.querySelectorAll(`.allen_region_${CSS.escape(id)}`).forEach(node=>node.classList.add('is-hovered'));$('region').textContent=`BrainRegions index ${id}`}else $('region').textContent='Hover or focus a region to link it across panels.'}
+    function hover(path){applyHover(regionIndex(path))}function clearHover(){if(pinned==null)applyHover(null)}
+    function render(){pinned=null;clearInterval(timer);timer=null;$('overlay-b').classList.remove('blink-hidden');const current=sample(),candidate=variant(),exact=current.variants[0];
+      installPaths($('legacy'),current.legacyFragment,axisData().legacyViewBox);installPaths($('reference'),exact.fragment,current.newViewBox);installPaths($('candidate'),candidate.fragment,current.newViewBox);
+      const legacyMode=mode.value==='legacy-overlay';installPaths($('overlay-a'),legacyMode?current.legacyFragment:exact.fragment,legacyMode?axisData().legacyViewBox:current.newViewBox);installPaths($('overlay-b'),candidate.fragment,current.newViewBox);
+      $('overlay-b').style.opacity=opacity.value;$('candidate-title').textContent=`Simplified candidate · ${fmt(candidate.metrics.tolerance_um)} µm`;$('watermark').textContent=legacyMode?'Visual registration only':'Exact / simplified shared atlas grid';
+      $('app').className=`mode-${mode.value}`;document.body.classList.toggle('boundary',mode.value==='boundary');if(mode.value==='blink'){let hidden=false;timer=setInterval(()=>{$('overlay-b').classList.toggle('blink-hidden',hidden=!hidden)},550)}
+      $('metrics-body').replaceChildren(...current.variants.map(item=>{const m=item.metrics,tr=document.createElement('tr');const reduction=m.vertices_before?100*(1-m.vertices_after/m.vertices_before):0;for(const value of [`${fmt(m.tolerance_um)} µm`,`${m.vertices_after}/${m.vertices_before}`,`${fmt(reduction)}%`,`${fmt(m.median_error_um)} µm`,`${fmt(m.p95_error_um)} µm`,`${fmt(m.max_error_um)} µm`,bytes(m.raw_bytes),bytes(m.gzip_bytes),bytes(m.brotli_bytes)]){const td=document.createElement('td');td.textContent=value;tr.append(td)}return tr}));
+      const pack=axisData().samplePackMetrics[Number(tolerance.value)];const facts={Schema:data.schema,Created:data.createdAt,Atlas:data.source.name,Resolution:`${data.source.resolutionUm} µm`,Shape:data.source.labelShape.join(' × '),'Generator commit':data.source.generatorCommit.slice(0,12),'Generator dirty':data.source.generatorDirty?'yes':'no','Regional index':current.regionalIndex,'Requested coordinate':`${current.coordinateUm} µm`,'Rounded source coordinate':`${current.sourceCoordinateUm} µm`,'Source index':current.sourceIndex,'Legacy asset index':current.legacyIndex,'Regions':candidate.metrics.regions,'Contour rings':candidate.metrics.rings,'3-slice pack · gzip':bytes(pack.gzipBytes),'3-slice pack · Brotli':bytes(pack.brotliBytes),'Topology validated':candidate.metrics.topology_validated?'yes':'no'};$('facts').replaceChildren(...Object.entries(facts).flatMap(([key,value])=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=key;dd.textContent=value;return[dt,dd]}));clearHover()}
+    axis.addEventListener('change',setOptions);slice.addEventListener('change',render);tolerance.addEventListener('change',render);mode.addEventListener('change',render);opacity.addEventListener('input',()=>{$('overlay-b').style.opacity=opacity.value});document.addEventListener('keydown',event=>{if(event.key==='Escape'){pinned=null;clearHover()}});
+    $('export').addEventListener('click',()=>{const rows=['axis,slice_index,coordinate_um,tolerance_um,vertices_before,vertices_after,median_error_um,p95_error_um,max_error_um,raw_bytes,gzip_bytes,brotli_bytes'];for(const [name,entry] of Object.entries(data.axes))for(const item of entry.samples)for(const v of item.variants){const m=v.metrics;rows.push([name,item.regionalIndex,item.coordinateUm,m.tolerance_um,m.vertices_before,m.vertices_after,m.median_error_um,m.p95_error_um,m.max_error_um,m.raw_bytes,m.gzip_bytes,m.brotli_bytes??''].join(','))}const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='anatomy-comparison.csv';a.click();URL.revokeObjectURL(a.href)});
+    data.tolerancesUm.forEach((value,index)=>{const option=document.createElement('option');option.value=index;option.textContent=`${fmt(value)} µm`;tolerance.append(option)});tolerance.value=String(Math.min(3,data.tolerancesUm.length-1));axis.value='coronal';setOptions();
+  </script>
+</body>
+</html>
