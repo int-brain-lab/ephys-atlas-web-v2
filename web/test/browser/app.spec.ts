@@ -550,7 +550,7 @@ test('generated anatomy renderer reuses a prepared SVG slice layer on revisit', 
   expect(result).toEqual({ parseCount: 2, reusedPath: true, reusedLayer: true });
 });
 
-test('generated anatomy renderer starts only the latest slice in a rapid burst', async ({ page }) => {
+test('generated anatomy renderer keeps one request in flight and starts only the latest pending slice', async ({ page }) => {
   await page.goto('/');
   const result = await page.evaluate(async () => {
     const { GeneratedAnatomySliceRenderer } = await import('/src/rendering/generated-anatomy-renderer.ts');
@@ -587,7 +587,7 @@ test('generated anatomy renderer starts only the latest slice in a rapid burst',
     target.remove();
     return { loaded, assetIndex };
   });
-  expect(result).toEqual({ loaded: [4, 7], assetIndex: '7' });
+  expect(result).toEqual({ loaded: [4, 5, 7], assetIndex: '7' });
 });
 
 test('region search filters loaded metadata rather than prototype rows', async ({ page }) => {
