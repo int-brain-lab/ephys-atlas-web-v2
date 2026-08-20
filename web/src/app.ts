@@ -108,6 +108,7 @@ export class AtlasApp {
     this.renderer.updatePresentation?.({
       feature: this.feature,
       regions: visibleRegions,
+      anatomyRegions: this.atlasRegions?.mappings[state.view.parcellation] ?? visibleRegions,
       coloring: state.view.coloring,
       selectedRegionIds: state.view.selection,
       hoveredRegionId: this.hoveredRegionId,

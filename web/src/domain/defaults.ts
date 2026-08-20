@@ -1,7 +1,7 @@
 import type { AppState, ViewState } from './types.js';
 
 export const DEFAULT_VIEW_STATE: ViewState = {
-  urlVersion: 2,
+  urlVersion: 3,
   dataset: {
     datasetId: 'ephys_atlas_channels',
     releaseId: 'golden-v0.3',
@@ -11,7 +11,7 @@ export const DEFAULT_VIEW_STATE: ViewState = {
   parcellation: 'allen',
   selection: [],
   cursor: { xUm: -239, yUm: -1200, zUm: -3668 },
-  slices: { coronal: 264, sagittal: 220, horizontal: 160 },
+  slices: { coronal: 660, sagittal: 550, horizontal: 400 },
   coloring: {
     mode: 'feature',
     statistic: 'mean',

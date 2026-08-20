@@ -85,8 +85,8 @@ test('regional slice coordinates map through volume index_to_world transform', (
       },
     },
   });
-  assert.equal(regionalSliceToVolumeIndex(payload, 'coronal', 216), 0);
-  assert.equal(regionalSliceToVolumeIndex(payload, 'coronal', 214), 2);
-  assert.equal(regionalSliceToVolumeIndex(payload, 'sagittal', 229), 0);
-  assert.equal(regionalSliceToVolumeIndex(payload, 'horizontal', 13), 0);
+  assert.equal(regionalSliceToVolumeIndex(payload, 'coronal', 540), 0);
+  assert.equal(regionalSliceToVolumeIndex(payload, 'coronal', 535), 2);
+  assert.equal(regionalSliceToVolumeIndex(payload, 'sagittal', 574), 0);
+  assert.equal(regionalSliceToVolumeIndex(payload, 'horizontal', 33), 0);
 });

@@ -25,14 +25,14 @@ for (const viewport of reviewViewports) {
     await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.20 mm');
     await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
     await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');
-    await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '264');
+    await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '660');
     await expect(page.getByLabel('coronal slice')).toHaveAttribute('min', '0');
-    await expect(page.getByLabel('coronal slice')).toHaveAttribute('max', '527');
+    await expect(page.getByLabel('coronal slice')).toHaveAttribute('max', '1319');
     await expect(page.getByLabel('coronal slice')).toHaveAttribute('step', '1');
     await expect(page.getByLabel('sagittal slice')).toHaveAttribute('min', '0');
-    await expect(page.getByLabel('sagittal slice')).toHaveAttribute('max', '229');
+    await expect(page.getByLabel('sagittal slice')).toHaveAttribute('max', '1139');
     await expect(page.getByLabel('horizontal slice')).toHaveAttribute('min', '0');
-    await expect(page.getByLabel('horizontal slice')).toHaveAttribute('max', '319');
+    await expect(page.getByLabel('horizontal slice')).toHaveAttribute('max', '799');
 
     if (viewport.width < 1100) {
       await expect(page.locator('[data-view="coronal"]')).toBeVisible();
@@ -52,10 +52,10 @@ test('slice control updates calibrated coordinate and renderer request', async (
   await page.goto('/');
 
   const slider = page.getByLabel('coronal slice');
-  await slider.fill('281');
-  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.63 mm');
-  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('281,220,160');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '281');
+  await slider.fill('701');
+  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.61 mm');
+  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('701,550,400');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '701');
 });
 
 test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
@@ -63,10 +63,10 @@ test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
   await page.goto('/');
 
   await page.locator('[data-view="coronal"] .view-frame__brain-svg').dispatchEvent('wheel', { deltaY: 100 });
-  await expect(page.getByLabel('coronal slice')).toHaveValue('252');
-  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -0.90 mm');
-  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('252,220,160');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '252');
+  await expect(page.getByLabel('coronal slice')).toHaveValue('648');
+  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.08 mm');
+  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('648,550,400');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '648');
 });
 
 test('linked guides project one slice coordinate into both other views', async ({ page }) => {
@@ -78,37 +78,49 @@ test('linked guides project one slice coordinate into both other views', async (
   const horizontalGuide = page.locator('[data-view="horizontal"] .slice-guide[data-source-axis="coronal"]');
 
   await slider.fill('0');
-  await expect(sagittalGuide).toHaveAttribute('x1', '527');
+  await expect(sagittalGuide).toHaveAttribute('x1', '1319');
   await expect(horizontalGuide).toHaveAttribute('y1', '0');
 
-  await slider.fill('527');
+  await slider.fill('1319');
   await expect(sagittalGuide).toHaveAttribute('x1', '0');
-  await expect(horizontalGuide).toHaveAttribute('y1', '527');
+  await expect(horizontalGuide).toHaveAttribute('y1', '1319');
 });
 
-test('legacy 10 um URLs migrate to the native registered anatomy grid', async ({ page }) => {
+test('v1 10 um URLs preserve world coordinates on the native registered anatomy grid', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/?v=1&slices=661,551,401');
 
-  await expect(page.getByLabel('coronal slice')).toHaveValue('264');
-  await expect(page.getByLabel('sagittal slice')).toHaveValue('220');
-  await expect(page.getByLabel('horizontal slice')).toHaveValue('160');
-  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.20 mm');
-  await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
-  await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '264');
+  await expect(page.getByLabel('coronal slice')).toHaveValue('661');
+  await expect(page.getByLabel('sagittal slice')).toHaveValue('551');
+  await expect(page.getByLabel('horizontal slice')).toHaveValue('401');
+  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.21 mm');
+  await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.23 mm');
+  await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.68 mm');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '661');
 });
 
-test('native left-hemisphere anatomy exposes every scientific range endpoint', async ({ page }) => {
+test('v2 25 um URLs migrate through world coordinates to URL v3', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=2&slices=0,229,319');
+  await page.goto('/?v=2&slices=264,220,160');
+
+  await expect(page.getByLabel('coronal slice')).toHaveValue('660');
+  await expect(page.getByLabel('sagittal slice')).toHaveValue('550');
+  await expect(page.getByLabel('horizontal slice')).toHaveValue('400');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '660');
+  await page.getByLabel('coronal slice').fill('660');
+  await expect.poll(() => new URL(page.url()).searchParams.get('v')).toBe('3');
+});
+
+test('native bilateral anatomy exposes every scientific range endpoint', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/?v=3&slices=0,1139,799');
 
   await expect(page.getByLabel('coronal slice')).toHaveValue('0');
-  await expect(page.getByLabel('sagittal slice')).toHaveValue('229');
-  await expect(page.getByLabel('horizontal slice')).toHaveValue('319');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '0');
-  await expect(page.locator('[data-view="sagittal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '229');
-  await expect(page.locator('[data-view="horizontal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '319');
+  await expect(page.getByLabel('sagittal slice')).toHaveValue('1139');
+  await expect(page.getByLabel('horizontal slice')).toHaveValue('799');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '0');
+  await expect(page.locator('[data-view="sagittal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '1139');
+  await expect(page.locator('[data-view="horizontal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '799');
 });
 
 test('schema v0.1 regional fixture drives values, coloring, selection and histogram comparison', async ({ page }) => {
@@ -122,13 +134,16 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.regional-comparison__fixture')).toHaveText('Synthetic integration fixture');
 
   const path = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
+  const rightPath = page.locator('[data-view="coronal"] path[data-allen-id="362"]').first();
   await expect(path).toHaveAttribute('style', /fill:/);
+  await expect(rightPath).toHaveCSS('fill', 'rgb(255, 144, 159)');
 
   await page.getByRole('button', { name: 'R1, Fixture region 1' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
   await expect(page.locator('.selected-region')).toContainText('R1');
   await expect(page.locator('.regional-comparison__list')).toContainText('mean: 1 dB rel. V');
   await expect(path).toHaveClass(/is-selected/);
+  await expect(rightPath).toHaveClass(/is-selected/);
 });
 
 test('Allen anatomy mode shows actual regions and official ontology colors', async ({ page }) => {
@@ -210,7 +225,7 @@ test('generated anatomy renderer uses direct mapping IDs and affine-derived guid
     const source = {
       async loadSlice(axis: 'coronal' | 'sagittal' | 'horizontal', sliceIndex: number) {
         return {
-          axis, sliceIndex, worldCoordinateUm: 50,
+          packFormat: 'anatomy-pack-v2' as const, axis, sliceIndex, worldCoordinateUm: 50,
           viewBox: { x: -0.5, y: -0.5, width: 3, height: 2 },
           paths: [
             { atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: 'M0 0L1 0L1 1Z' },
@@ -255,7 +270,7 @@ test('generated anatomy renderer uses direct mapping IDs and affine-derived guid
   });
 
   const target = page.locator('#generated-anatomy-test');
-  await expect(target).toHaveAttribute('data-slice-asset', 'generated-anatomy-v1');
+  await expect(target).toHaveAttribute('data-slice-asset', 'generated-anatomy-v2');
   await expect(target).toHaveAttribute('data-world-coordinate-um', '50');
   await expect(target).toHaveAttribute('data-hit', '-20');
   const leftPath = target.locator('path[data-beryl-id="-20"]');

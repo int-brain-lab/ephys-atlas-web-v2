@@ -60,6 +60,7 @@ export interface AnatomyRegionPath {
 }
 
 export interface AnatomySlice {
+  packFormat: 'anatomy-pack-v1' | 'anatomy-pack-v2';
   axis: SliceAxis;
   sliceIndex: number;
   worldCoordinateUm: number;

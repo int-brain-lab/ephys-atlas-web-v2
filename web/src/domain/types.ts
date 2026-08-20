@@ -41,7 +41,7 @@ export interface ColoringState {
 }
 
 export interface ViewState {
-  urlVersion: 2;
+  urlVersion: 3;
   dataset: DatasetRef;
   featureId: string | null;
   representation: RepresentationKind;

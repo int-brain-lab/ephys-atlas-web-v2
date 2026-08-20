@@ -27,7 +27,10 @@ export const REGIONAL_10UM_CALIBRATION: Readonly<Record<SliceAxis, AxisCalibrati
   horizontal: { axis: 'horizontal', indexCount: 800, stepUm: 10, originUm: 332, direction: -1 },
 };
 
-/** Canonical generated-anatomy navigation grid (Allen CCFv3, left hemisphere). */
+/** Canonical generated-anatomy navigation grid (Allen CCFv3, bilateral). */
+export const ANATOMY_10UM_CALIBRATION = REGIONAL_10UM_CALIBRATION;
+
+/** Former URL v2 generated-anatomy grid, retained for explicit deep-link migration. */
 export const ANATOMY_25UM_CALIBRATION: Readonly<Record<SliceAxis, AxisCalibration>> = {
   coronal: { axis: 'coronal', indexCount: 528, stepUm: 25, originUm: 5400, direction: -1 },
   sagittal: { axis: 'sagittal', indexCount: 230, stepUm: 25, originUm: -5739, direction: 1 },
@@ -70,7 +73,7 @@ function validateIndex(index: number, calibration: AxisCalibration): void {
 }
 
 export function maxRegionalSliceIndex(axis: SliceAxis): number {
-  return ANATOMY_25UM_CALIBRATION[axis].indexCount - 1;
+  return ANATOMY_10UM_CALIBRATION[axis].indexCount - 1;
 }
 
 export function indexToCoordinateUm(index: number, calibration: AxisCalibration): number {
@@ -89,7 +92,7 @@ export function coordinateUmToIndex(
 }
 
 export function regionalIndexToCoordinateUm(axis: SliceAxis, index: number): number {
-  return indexToCoordinateUm(index, ANATOMY_25UM_CALIBRATION[axis]);
+  return indexToCoordinateUm(index, ANATOMY_10UM_CALIBRATION[axis]);
 }
 
 export function formatRegionalCoordinate(axis: SliceAxis, index: number): string {
@@ -128,9 +131,9 @@ export function regionalIndicesToWorld(indices: SliceIndices): WorldCoordinateUm
 
 export function worldToRegionalIndices(world: WorldCoordinateUm): SliceIndices {
   return {
-    coronal: coordinateUmToIndex(world.ap, ANATOMY_25UM_CALIBRATION.coronal),
-    sagittal: coordinateUmToIndex(world.ml, ANATOMY_25UM_CALIBRATION.sagittal),
-    horizontal: coordinateUmToIndex(world.dv, ANATOMY_25UM_CALIBRATION.horizontal),
+    coronal: coordinateUmToIndex(world.ap, ANATOMY_10UM_CALIBRATION.coronal),
+    sagittal: coordinateUmToIndex(world.ml, ANATOMY_10UM_CALIBRATION.sagittal),
+    horizontal: coordinateUmToIndex(world.dv, ANATOMY_10UM_CALIBRATION.horizontal),
   };
 }
 
@@ -139,6 +142,14 @@ export function legacyRegionalIndicesToWorld(indices: SliceIndices): WorldCoordi
     ml: indexToCoordinateUm(indices.sagittal, REGIONAL_10UM_CALIBRATION.sagittal),
     ap: indexToCoordinateUm(indices.coronal, REGIONAL_10UM_CALIBRATION.coronal),
     dv: indexToCoordinateUm(indices.horizontal, REGIONAL_10UM_CALIBRATION.horizontal),
+  };
+}
+
+export function legacyAnatomy25UmIndicesToWorld(indices: SliceIndices): WorldCoordinateUm {
+  return {
+    ml: indexToCoordinateUm(indices.sagittal, ANATOMY_25UM_CALIBRATION.sagittal),
+    ap: indexToCoordinateUm(indices.coronal, ANATOMY_25UM_CALIBRATION.coronal),
+    dv: indexToCoordinateUm(indices.horizontal, ANATOMY_25UM_CALIBRATION.horizontal),
   };
 }
 
