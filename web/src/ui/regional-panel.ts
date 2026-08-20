@@ -72,6 +72,7 @@ export class RegionalPanelController {
   private readonly rowById = new Map<string, HTMLLIElement>();
   private readonly regionById = new Map<string, RegionMetadata>();
   private rovingButton: HTMLButtonElement | null = null;
+  private foldMotionTimer: number | null = null;
   private analysisExpanded = false;
   private hadSelection = false;
 
@@ -184,6 +185,7 @@ export class RegionalPanelController {
     this.search.removeEventListener('input', this.filterRegions);
     this.searchClear.removeEventListener('click', this.clearSearch);
     this.analysisToggle.removeEventListener('click', this.toggleAnalysis);
+    if (this.foldMotionTimer !== null) window.clearTimeout(this.foldMotionTimer);
   }
 
   private renderEmpty(model: RegionalPanelModel): void {
@@ -503,6 +505,12 @@ export class RegionalPanelController {
   private toggleBranch(regionId: string): void {
     const row = this.rowById.get(regionId);
     if (!row || row.dataset.branch !== 'true') return;
+    this.list.dataset.foldMotion = 'true';
+    if (this.foldMotionTimer !== null) window.clearTimeout(this.foldMotionTimer);
+    this.foldMotionTimer = window.setTimeout(() => {
+      delete this.list.dataset.foldMotion;
+      this.foldMotionTimer = null;
+    }, 170);
     if (this.collapsedRegionIds.has(regionId)) this.collapsedRegionIds.delete(regionId);
     else this.collapsedRegionIds.add(regionId);
     const expanded = !this.collapsedRegionIds.has(regionId);
