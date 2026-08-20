@@ -1,0 +1,411 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.internationalbrainlab.org/schema/anatomy-pack-v1/manifest.schema.json",
+  "title": "IBL immutable anatomy pack manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schema_version",
+    "pack_id",
+    "immutable",
+    "created_at",
+    "source",
+    "coordinate_system",
+    "projections",
+    "provenance",
+    "validation",
+    "synchronization_sentinels"
+  ],
+  "properties": {
+    "format": { "const": "anatomy-pack-v1" },
+    "schema_version": { "const": "1.0" },
+    "pack_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]+$"
+    },
+    "immutable": { "const": true },
+    "created_at": { "type": "string", "format": "date-time" },
+    "source": { "$ref": "#/$defs/source" },
+    "coordinate_system": { "$ref": "#/$defs/coordinateSystem" },
+    "projections": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coronal", "sagittal", "horizontal"],
+      "properties": {
+        "coronal": {
+          "allOf": [
+            { "$ref": "#/$defs/projection" },
+            {
+              "properties": {
+                "fixed_world_axis": { "const": "ap" },
+                "plane_axes": {
+                  "prefixItems": [{ "const": "ml" }, { "const": "dv" }]
+                }
+              }
+            }
+          ]
+        },
+        "sagittal": {
+          "allOf": [
+            { "$ref": "#/$defs/projection" },
+            {
+              "properties": {
+                "fixed_world_axis": { "const": "ml" },
+                "plane_axes": {
+                  "prefixItems": [{ "const": "ap" }, { "const": "dv" }]
+                }
+              }
+            }
+          ]
+        },
+        "horizontal": {
+          "allOf": [
+            { "$ref": "#/$defs/projection" },
+            {
+              "properties": {
+                "fixed_world_axis": { "const": "dv" },
+                "plane_axes": {
+                  "prefixItems": [{ "const": "ml" }, { "const": "ap" }]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "provenance": { "$ref": "#/$defs/provenance" },
+    "validation": { "$ref": "#/$defs/validation" },
+    "synchronization_sentinels": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/sentinel" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "sourceArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "bytes", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/relativePath" },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "atlas",
+        "resolution_um",
+        "hemisphere",
+        "annotation",
+        "region_lut",
+        "region_ids"
+      ],
+      "properties": {
+        "atlas": { "const": "Allen CCFv3" },
+        "resolution_um": { "const": 25 },
+        "hemisphere": { "const": "left" },
+        "annotation": { "$ref": "#/$defs/sourceArtifact" },
+        "region_lut": { "$ref": "#/$defs/sourceArtifact" },
+        "region_ids": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["domain", "left_sign", "background_id"],
+          "properties": {
+            "domain": { "const": "signed_allen_atlas_id" },
+            "left_sign": { "const": "negative" },
+            "background_id": { "const": 0 }
+          }
+        }
+      }
+    },
+    "coordinateSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "units",
+        "world_axes",
+        "voxel_centers",
+        "voxel_edges",
+        "matrix_order"
+      ],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "units": { "const": "um" },
+        "world_axes": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "ml" },
+            { "const": "ap" },
+            { "const": "dv" }
+          ],
+          "items": false
+        },
+        "voxel_centers": { "const": "integer-indices" },
+        "voxel_edges": { "const": "half-integer-indices" },
+        "matrix_order": { "const": "row-major" }
+      }
+    },
+    "affine": {
+      "type": "array",
+      "minItems": 16,
+      "maxItems": 16,
+      "items": { "type": "number" }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pack_index",
+        "first_slice_index",
+        "slice_count",
+        "path",
+        "media_type",
+        "compression",
+        "bytes",
+        "uncompressed_bytes",
+        "sha256"
+      ],
+      "properties": {
+        "pack_index": { "type": "integer", "minimum": 0 },
+        "first_slice_index": { "type": "integer", "minimum": 0 },
+        "slice_count": { "type": "integer", "minimum": 1, "maximum": 32 },
+        "path": { "$ref": "#/$defs/relativePath" },
+        "media_type": { "const": "application/json" },
+        "compression": { "const": "gzip" },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "uncompressed_bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "packSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pack_depth", "path_template", "packs"],
+      "properties": {
+        "pack_depth": { "enum": [16, 32] },
+        "path_template": {
+          "type": "string",
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).*\\{pack\\}.*\\.json\\.gz$"
+        },
+        "packs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/artifact" }
+        }
+      }
+    },
+    "projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fixed_world_axis",
+        "plane_axes",
+        "slice_count",
+        "slice_shape",
+        "view_box",
+        "plane_index_to_world_um",
+        "world_to_plane_index",
+        "pack_sets"
+      ],
+      "properties": {
+        "fixed_world_axis": { "enum": ["ml", "ap", "dv"] },
+        "plane_axes": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "enum": ["ml", "ap", "dv"] }
+        },
+        "slice_count": { "type": "integer", "minimum": 1 },
+        "slice_shape": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "view_box": {
+          "type": "array",
+          "prefixItems": [
+            { "const": -0.5 },
+            { "const": -0.5 },
+            { "type": "number", "exclusiveMinimum": 0 },
+            { "type": "number", "exclusiveMinimum": 0 }
+          ],
+          "items": false
+        },
+        "plane_index_to_world_um": {
+          "description": "Row-major affine mapping [slice_index, u, v, 1] to [ml, ap, dv, 1] micrometres.",
+          "$ref": "#/$defs/affine"
+        },
+        "world_to_plane_index": {
+          "description": "Row-major inverse mapping [ml, ap, dv, 1] micrometres to [slice_index, u, v, 1].",
+          "$ref": "#/$defs/affine"
+        },
+        "pack_sets": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "16": {
+              "allOf": [
+                { "$ref": "#/$defs/packSet" },
+                { "properties": { "pack_depth": { "const": 16 } } }
+              ]
+            },
+            "32": {
+              "allOf": [
+                { "$ref": "#/$defs/packSet" },
+                { "properties": { "pack_depth": { "const": 32 } } }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "codePin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["iblatlas", "generator", "shapely_version", "geos_version", "simplification"],
+      "properties": {
+        "iblatlas": { "$ref": "#/$defs/codePin" },
+        "generator": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repository", "commit", "dirty"],
+          "properties": {
+            "repository": { "type": "string", "minLength": 1 },
+            "commit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+            "dirty": { "const": false }
+          }
+        },
+        "shapely_version": { "type": "string", "pattern": "^2\\.[0-9]+\\.[0-9]+" },
+        "geos_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+" },
+        "simplification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "algorithm",
+            "tolerance_um",
+            "boundary_sampling_interval_voxels",
+            "boundary_error_bound_um"
+          ],
+          "properties": {
+            "algorithm": { "const": "GEOS coverage_simplify" },
+            "tolerance_um": { "type": "number", "minimum": 0 },
+            "boundary_sampling_interval_voxels": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            },
+            "boundary_error_bound_um": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "errorMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["median", "p95", "max"],
+      "properties": {
+        "median": { "type": "number", "minimum": 0 },
+        "p95": { "type": "number", "minimum": 0 },
+        "max": { "type": "number", "minimum": 0 }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "topology_valid",
+        "coverage_valid",
+        "uncovered_voxels",
+        "multiply_covered_voxels",
+        "adjacency_mismatches",
+        "invalid_geometries",
+        "missing_atlas_ids",
+        "source_slices",
+        "emitted_slices",
+        "path_count",
+        "ring_count",
+        "vertices_before",
+        "vertices_after",
+        "boundary_error_um",
+        "accepted_max_boundary_error_um",
+        "coordinate_tolerance_um",
+        "sentinel_max_error_um"
+      ],
+      "properties": {
+        "topology_valid": { "const": true },
+        "coverage_valid": { "const": true },
+        "uncovered_voxels": { "const": 0 },
+        "multiply_covered_voxels": { "const": 0 },
+        "adjacency_mismatches": { "const": 0 },
+        "invalid_geometries": { "const": 0 },
+        "missing_atlas_ids": { "type": "array", "maxItems": 0 },
+        "source_slices": { "type": "integer", "minimum": 1 },
+        "emitted_slices": { "type": "integer", "minimum": 1 },
+        "path_count": { "type": "integer", "minimum": 1 },
+        "ring_count": { "type": "integer", "minimum": 1 },
+        "vertices_before": { "type": "integer", "minimum": 3 },
+        "vertices_after": { "type": "integer", "minimum": 3 },
+        "boundary_error_um": { "$ref": "#/$defs/errorMetrics" },
+        "accepted_max_boundary_error_um": { "type": "number", "minimum": 0 },
+        "coordinate_tolerance_um": { "type": "number", "exclusiveMinimum": 0 },
+        "sentinel_max_error_um": { "type": "number", "minimum": 0 }
+      }
+    },
+    "sentinel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "world_um", "projection_indices"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "world_um": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "type": "number" }
+        },
+        "projection_indices": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["coronal", "sagittal", "horizontal"],
+          "properties": {
+            "coronal": { "$ref": "#/$defs/point3" },
+            "sagittal": { "$ref": "#/$defs/point3" },
+            "horizontal": { "$ref": "#/$defs/point3" }
+          }
+        }
+      }
+    },
+    "point3": {
+      "description": "Projection coordinate ordered [slice_index, u, v].",
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "type": "number" }
+    }
+  }
+}
