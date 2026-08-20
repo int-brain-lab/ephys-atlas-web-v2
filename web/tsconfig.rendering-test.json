@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": ".rendering-test-dist",
+    "rootDir": "..",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "types": ["node"]
+  },
+  "include": ["../tests/rendering/**/*.test.ts"],
+  "exclude": ["test/browser/**/*.ts", "playwright.config.ts"]
+}
