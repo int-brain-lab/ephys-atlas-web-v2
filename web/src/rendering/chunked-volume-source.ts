@@ -62,9 +62,9 @@ function axisDimension(feature: VolumeFeaturePayload, axis: SliceAxis): number {
 
 function anatomicalShape(feature: VolumeFeaturePayload, raw: readonly [number, number, number]): VolumeShape {
   return {
-    coronal: raw[axisDimension(feature, 'coronal')],
-    sagittal: raw[axisDimension(feature, 'sagittal')],
-    horizontal: raw[axisDimension(feature, 'horizontal')],
+    coronal: raw[axisDimension(feature, 'coronal')]!,
+    sagittal: raw[axisDimension(feature, 'sagittal')]!,
+    horizontal: raw[axisDimension(feature, 'horizontal')]!,
   };
 }
 
@@ -181,9 +181,9 @@ export function regionalSliceToVolumeIndex(feature: VolumeFeaturePayload, axis: 
   }
   const step = matrix[worldRow * 4 + rawDimension] ?? 0;
   if (!Number.isFinite(step) || Math.abs(step) < 1e-12) throw new Error(`volume transform has no ${axisName} step`);
-  const origin = matrix[worldRow * 4 + 3] ?? feature.descriptor.grid.originUm[worldRow];
+  const origin = matrix[worldRow * 4 + 3] ?? feature.descriptor.grid.originUm[worldRow] ?? 0;
   const coordinate = regionalIndexToCoordinateUm(axis, regionalIndex);
   const rawIndex = Math.round((coordinate - origin) / step);
-  const count = feature.descriptor.grid.shape[rawDimension];
+  const count = feature.descriptor.grid.shape[rawDimension]!;
   return Math.min(count - 1, Math.max(0, rawIndex));
 }
