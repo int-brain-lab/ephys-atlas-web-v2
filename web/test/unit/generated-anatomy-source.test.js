@@ -115,7 +115,9 @@ function bilateralFixture() {
   result.manifest.source.resolution_um = 10;
   result.manifest.source.hemisphere = 'bilateral';
   result.manifest.source.region_ids.right_sign = 'positive';
-  result.manifest.provenance.simplification.boundary_error_bound_um = 1.25;
+  result.manifest.provenance.simplification.algorithm = 'exact collinear vertex removal';
+  result.manifest.provenance.simplification.tolerance_um = 0;
+  result.manifest.provenance.simplification.boundary_error_bound_um = 0;
   Object.assign(result.manifest.validation, {
     background_topology_valid: true,
     internal_background_components_before: 1,
