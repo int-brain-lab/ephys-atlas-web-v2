@@ -127,6 +127,7 @@ export class AppShell {
   private rangeMinInput!: HTMLInputElement;
   private rangeMaxInput!: HTMLInputElement;
   private legend!: HTMLElement;
+  private legendContext!: HTMLElement;
   private legendBar!: HTMLElement;
   private legendMin!: HTMLElement;
   private legendMax!: HTMLElement;
@@ -602,13 +603,14 @@ export class AppShell {
 
     this.legend = element('figure', 'color-legend');
     this.legend.setAttribute('aria-label', 'Feature color legend');
+    this.legendContext = element('div', 'color-legend__context');
     this.legendBar = element('div', 'color-legend__bar');
     const legendLabels = element('figcaption', 'color-legend__labels');
     this.legendMin = element('span', 'color-legend__minimum');
     this.legendUnit = element('span', 'color-legend__unit');
     this.legendMax = element('span', 'color-legend__maximum');
     legendLabels.append(this.legendMin, this.legendUnit, this.legendMax);
-    this.legend.append(this.legendBar, legendLabels);
+    this.legend.append(this.legendContext, this.legendBar, legendLabels);
 
     group.append(colorMode.row, statistic.row, colormap.row, scale.row, rangeMode.row, rangeRow, this.legend);
     return group;
@@ -713,6 +715,14 @@ export class AppShell {
     this.rangeMaxInput.disabled = !featureColors || !fixed;
     this.legend.hidden = !featureColors || !range;
     if (range) {
+      const usesRobustQuantiles = view.coloring.range.mode === 'auto'
+        && feature?.representation === 'regional'
+        && view.coloring.statistic !== 'count'
+        && feature.global?.q05 !== undefined
+        && feature.global.q95 !== undefined;
+      this.legendContext.textContent = view.coloring.range.mode === 'fixed'
+        ? 'Left hemisphere · manual range'
+        : usesRobustQuantiles ? 'Left hemisphere · robust 5–95%' : 'Left hemisphere · automatic range';
       this.legendBar.dataset.colormap = view.coloring.colormap;
       this.legendMin.textContent = this.formatScalar(range[0]);
       this.legendMax.textContent = this.formatScalar(range[1]);
