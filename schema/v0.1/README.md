@@ -15,7 +15,8 @@ may add or remove features without a frontend build.
 Small metadata uses JSON. Large numeric payloads do not.
 
 - Regional scalar values: dense little-endian raw typed arrays, normally
-  `float32`, aligned to the dataset-level region index.
+  `float32` and promoted to `float64` when required by the finite value range,
+  aligned to the dataset-level region index.
 - Regional descriptive statistics: `float64` dense matrices so counts and
   quantiles share one simple browser-readable array without precision loss for
   realistic counts.

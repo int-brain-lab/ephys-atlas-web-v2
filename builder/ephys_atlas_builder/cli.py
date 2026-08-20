@@ -3,16 +3,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .channels import (
-    DATASET_ID as CHANNELS_DATASET_ID,
-    ChannelBuildConfig,
-    build_channels_from_snapshot,
-)
-from .clusters import (
-    DATASET_ID as CLUSTERS_DATASET_ID,
-    ClusterBuildConfig,
-    build_clusters_from_snapshot,
-)
+from .channels import DATASET_ID as CHANNELS_DATASET_ID
+from .channels import ChannelBuildConfig, build_channels_from_snapshot
+from .clusters import DATASET_ID as CLUSTERS_DATASET_ID
+from .clusters import ClusterBuildConfig, build_clusters_from_snapshot
 from .fixture import generate_golden
 from .package import package_release
 from .sources import pull, resolve_source_release
@@ -171,7 +165,7 @@ def main(argv: list[str] | None = None) -> int:
                 feature_mode=args.feature_mode,
                 population=args.population,
                 parcellations=tuple(args.parcellations or ("allen", "beryl", "cosmos")),
-                features=tuple(args.features),
+                features=tuple(args.features) if args.features else None,
                 histogram_bins=args.histogram_bins,
                 paper_snapshot=args.paper_snapshot,
                 ibleatools_commit=args.ibleatools_commit,
