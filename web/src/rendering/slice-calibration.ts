@@ -1,4 +1,9 @@
 import type { SliceAxis, SliceGuide, SliceIndices, ViewBox } from './types.js';
+import {
+  PROJECTION_PLANE_AXES,
+  SLICE_WORLD_AXIS,
+  type WorldCoordinateUm,
+} from './coordinate-space.js';
 
 export interface AxisCalibration {
   axis: SliceAxis;
@@ -99,19 +104,36 @@ export function regionalIndexToVolumeIndex(axis: SliceAxis, regionalIndex: numbe
   return coordinateUmToVolumeIndex(axis, regionalIndexToCoordinateUm(axis, regionalIndex));
 }
 
-export function projectLegacyGuide(sourceAxis: SliceAxis, targetAxis: SliceAxis, sourceIndex: number): SliceGuide {
+export function regionalIndicesToWorld(indices: SliceIndices): WorldCoordinateUm {
+  return {
+    ml: regionalIndexToCoordinateUm('sagittal', indices.sagittal),
+    ap: regionalIndexToCoordinateUm('coronal', indices.coronal),
+    dv: regionalIndexToCoordinateUm('horizontal', indices.horizontal),
+  };
+}
+
+export function worldToRegionalIndices(world: WorldCoordinateUm): SliceIndices {
+  return {
+    coronal: coordinateUmToIndex(world.ap, REGIONAL_10UM_CALIBRATION.coronal),
+    sagittal: coordinateUmToIndex(world.ml, REGIONAL_10UM_CALIBRATION.sagittal),
+    horizontal: coordinateUmToIndex(world.dv, REGIONAL_10UM_CALIBRATION.horizontal),
+  };
+}
+
+function projectLegacyWorldGuide(
+  sourceAxis: SliceAxis,
+  targetAxis: SliceAxis,
+  world: WorldCoordinateUm,
+): SliceGuide {
   const registration = LEGACY_VIEW_REGISTRATIONS.find(
     (candidate) => candidate.sourceAxis === sourceAxis && candidate.targetAxis === targetAxis,
   );
   if (!registration) throw new Error(`No legacy guide projection from ${sourceAxis} to ${targetAxis}`);
-
   const source = REGIONAL_10UM_CALIBRATION[sourceAxis];
-  validateIndex(sourceIndex, source);
-  const coordinateUm = indexToCoordinateUm(sourceIndex, source);
+  const worldAxis = SLICE_WORLD_AXIS[sourceAxis];
   const firstCoordinateUm = indexToCoordinateUm(0, source);
   const lastCoordinateUm = indexToCoordinateUm(source.indexCount - 1, source);
-  const fraction = (coordinateUm - firstCoordinateUm) / (lastCoordinateUm - firstCoordinateUm);
-
+  const fraction = (world[worldAxis] - firstCoordinateUm) / (lastCoordinateUm - firstCoordinateUm);
   return {
     sourceAxis,
     targetAxis,
@@ -120,8 +142,20 @@ export function projectLegacyGuide(sourceAxis: SliceAxis, targetAxis: SliceAxis,
   };
 }
 
+export function projectLegacyGuide(sourceAxis: SliceAxis, targetAxis: SliceAxis, sourceIndex: number): SliceGuide {
+  const source = REGIONAL_10UM_CALIBRATION[sourceAxis];
+  validateIndex(sourceIndex, source);
+  const worldAxis = SLICE_WORLD_AXIS[sourceAxis];
+  const world = { ml: 0, ap: 0, dv: 0, [worldAxis]: indexToCoordinateUm(sourceIndex, source) };
+  return projectLegacyWorldGuide(sourceAxis, targetAxis, world);
+}
+
 export function linkedGuides(indices: SliceIndices, targetAxis: SliceAxis): readonly SliceGuide[] {
-  return (Object.keys(indices) as SliceAxis[])
-    .filter((sourceAxis) => sourceAxis !== targetAxis)
-    .map((sourceAxis) => projectLegacyGuide(sourceAxis, targetAxis, indices[sourceAxis]));
+  const world = regionalIndicesToWorld(indices);
+  return PROJECTION_PLANE_AXES[targetAxis].map((worldAxis) => {
+    const sourceAxis = (Object.keys(SLICE_WORLD_AXIS) as SliceAxis[])
+      .find((candidate) => SLICE_WORLD_AXIS[candidate] === worldAxis);
+    if (!sourceAxis) throw new Error(`No slice axis corresponds to world axis ${worldAxis}`);
+    return projectLegacyWorldGuide(sourceAxis, targetAxis, world);
+  });
 }

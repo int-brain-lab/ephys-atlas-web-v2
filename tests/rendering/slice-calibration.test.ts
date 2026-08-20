@@ -7,9 +7,20 @@ import {
   linkedGuides,
   projectLegacyGuide,
   regionalIndexToCoordinateUm,
+  regionalIndicesToWorld,
   regionalIndexToVolumeIndex,
   volumeIndexToCoordinateUm,
+  worldToRegionalIndices,
 } from '../../web/src/rendering/slice-calibration.js';
+import {
+  applyAffine,
+  assertInverseAffines,
+  cursorStateToWorld,
+  planeToWorld,
+  worldToCursorState,
+  worldToPlane,
+  type Matrix4,
+} from '../../web/src/rendering/coordinate-space.js';
 import { regionIdFromClassNames } from '../../web/src/rendering/region-id.js';
 
 const fixture = JSON.parse(
@@ -72,6 +83,37 @@ test('linked fixture produces two guides per view and exact v1 view boxes', () =
     assert.ok(LEGACY_VIEW_BOXES[axis].width > 0);
     assert.ok(fixture.fragments[axis].includes('beryl_region_101'));
   }
+});
+
+test('all projections share one explicit ML/AP/DV world cursor', () => {
+  const world = regionalIndicesToWorld(fixture.indices);
+  assert.deepEqual(world, { ml: -39, ap: -1200, dv: -3668 });
+  assert.deepEqual(worldToRegionalIndices(world), fixture.indices);
+  assert.deepEqual(cursorStateToWorld(worldToCursorState(world)), world);
+});
+
+test('projection affines round-trip a scientific cursor', () => {
+  const indexToWorld: Matrix4 = [
+    0, 25, 0, -5739,
+    -25, 0, 0, 5400,
+    0, 0, -25, 332,
+    0, 0, 0, 1,
+  ];
+  const worldToIndex: Matrix4 = [
+    0, -0.04, 0, 216,
+    0.04, 0, 0, 229.56,
+    0, 0, -0.04, 13.28,
+    0, 0, 0, 1,
+  ];
+  assertInverseAffines(indexToWorld, worldToIndex);
+  const plane = { slice: 264, u: 228, v: 160 };
+  const world = planeToWorld(indexToWorld, plane);
+  assert.deepEqual(world, { ml: -39, ap: -1200, dv: -3668 });
+  const roundTrip = worldToPlane(worldToIndex, world);
+  assert.ok(Math.abs(roundTrip.slice - plane.slice) < 1e-9);
+  assert.ok(Math.abs(roundTrip.u - plane.u) < 1e-9);
+  assert.ok(Math.abs(roundTrip.v - plane.v) < 1e-9);
+  assert.deepEqual(applyAffine(indexToWorld, [264, 228, 160]), [-39, -1200, -3668]);
 });
 
 test('region id extraction follows v1 mapping class convention', () => {
