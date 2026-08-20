@@ -13,7 +13,7 @@ generator commit:
 ```bash
 just bootstrap-anatomy
 uv run --project builder --extra anatomy --extra scientific --extra test --locked \
-  python tools/anatomy_pack/build.py \
+  python -m tools.anatomy_pack.build \
   --tolerance-um 10 \
   --pack-depth 16 \
   --created-at 2026-08-20T00:00:00Z
