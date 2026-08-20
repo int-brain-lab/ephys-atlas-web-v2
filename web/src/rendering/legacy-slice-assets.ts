@@ -69,6 +69,7 @@ export const LEGACY_CURATED_SLICE_ASSETS: Readonly<Record<LegacyCuratedProjectio
 };
 
 export const LEGACY_CURATED_SLICE_BASE_URL = 'https://atlas.internationalbrainlab.org/data/json/';
+export const LEGACY_CURATED_REGIONS_FILE = 'regions.json';
 
 export interface LegacyCuratedSliceRange {
   min: number;
@@ -91,4 +92,9 @@ export function nearestLegacyCuratedSliceIndex(axis: SliceAxis, requested: numbe
 export function legacyCuratedSliceUrl(axis: SliceAxis, baseUrl = LEGACY_CURATED_SLICE_BASE_URL): string {
   const normalized = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
   return new URL(LEGACY_CURATED_SLICE_ASSETS[axis].fileName, normalized).toString();
+}
+
+export function legacyCuratedRegionsUrl(baseUrl = LEGACY_CURATED_SLICE_BASE_URL): string {
+  const normalized = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  return new URL(LEGACY_CURATED_REGIONS_FILE, normalized).toString();
 }

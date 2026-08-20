@@ -35,6 +35,7 @@ export interface RendererInteractionSink {
   hover(hit: RegionHit | null): void;
   toggleSelection(hit: RegionHit): void;
   moveCursor(cursor: CursorState): void;
+  reportError(error: unknown): void;
 }
 
 export class NullSliceRenderer implements SliceRenderer {

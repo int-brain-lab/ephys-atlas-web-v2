@@ -54,7 +54,7 @@ export interface ParcellationDescriptor {
 }
 
 export interface RegionMetadata {
-  /** Stable parcellation region key used by browser selection and SVG classes. */
+  /** Stable atlas ID used by scientific payloads, browser selection, and URLs. */
   id: string;
   atlasId: number;
   index: number;

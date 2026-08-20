@@ -9,10 +9,11 @@ const reviewViewports = [
 ] as const;
 
 const reviewFragments = {
-  // Geometry is sampled from the curated assets; region ids are deterministic test ids matching the golden fixture.
-  coronal: '<path d="M236.473 167.48v-4.34 4.34z" class="allen_region_10 beryl_region_10 cosmos_region_10"/>',
-  sagittal: '<path d="M160.137 184.944v-2.721 2.721z" class="allen_region_10 beryl_region_10 cosmos_region_10"/>',
-  horizontal: '<path d="M298.858 147.01v-.404.404z" class="allen_region_10 beryl_region_10 cosmos_region_10"/>',
+  // Geometry is sampled from the curated assets. Allen atlas ID 10 is legacy
+  // BrainRegions index 835, so the fixture exercises the real ID crosswalk.
+  coronal: '<path d="M236.473 167.48v-4.34 4.34z" class="allen_region_835"/>',
+  sagittal: '<path d="M160.137 184.944v-2.721 2.721z" class="allen_region_835"/>',
+  horizontal: '<path d="M298.858 147.01v-.404.404z" class="allen_region_835"/>',
 } as const;
 
 const curatedRanges = {
@@ -29,6 +30,11 @@ function fixtureBundle(axis: keyof typeof reviewFragments): Record<string, strin
 }
 
 async function mockCuratedSlices(page: Page): Promise<void> {
+  await page.route('https://atlas.internationalbrainlab.org/data/json/regions.json', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ allen: [{ acronym: 'SCig', atlas_id: 10, idx: 835 }] }),
+  }));
   await page.route('https://atlas.internationalbrainlab.org/data/json/slices_*.json', async (route) => {
     const axis = route.request().url().match(/slices_(coronal|sagittal|horizontal)\.json/)?.[1] as keyof typeof reviewFragments | undefined;
     if (!axis) return route.abort();
@@ -132,7 +138,7 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
   await expect(page.locator('.regional-comparison__fixture')).toHaveText('Synthetic integration fixture');
 
-  const path = page.locator('[data-view="coronal"] path.allen_region_10').first();
+  const path = page.locator('[data-view="coronal"] path.allen_region_835').first();
   await expect(path).toHaveAttribute('style', /fill:/);
 
   await page.getByRole('button', { name: 'R1, Fixture region 1' }).click();
@@ -147,7 +153,7 @@ test('renderer region selection flows back into shared URL state', async ({ page
   await mockCuratedSlices(page);
   await page.goto('/');
   await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
-  const path = page.locator('[data-view="coronal"] path.allen_region_10').first();
+  const path = page.locator('[data-view="coronal"] path.allen_region_835').first();
   await path.dispatchEvent('pointerup');
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('10');
   await expect(page.locator('.selected-region')).toContainText('R1');
