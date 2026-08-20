@@ -34,6 +34,7 @@ export interface VolumeChunkSource {
 
 export interface VolumeSliceSource {
   loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<VolumeSlice>;
+  prefetchAdjacent?(axis: SliceAxis, index: number, radius?: number, signal?: AbortSignal): Promise<void>;
 }
 
 export interface VolumeSlice {

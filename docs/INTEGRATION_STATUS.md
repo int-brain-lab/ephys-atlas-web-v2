@@ -105,16 +105,17 @@ The five deployed v1 curated bundles are pinned by identity/inventory in `docs/f
 
 ## Volume viewer vertical slice
 
-A reference schema-v0.1 volume path is implemented and green on `main` using the golden `chunks3d` representation:
+A schema-v0.1 volume path is implemented and green on `main` using the golden `chunks3d` representation plus a tested `orthogonal_slice_packs` adapter:
 
 1. published/local volume payloads provide transport-independent resource callbacks;
 2. the `chunks3d` adapter decodes float16/float32 chunks (and optional gzip);
-3. descriptor axis order is permuted into anatomical AP/ML/DV slice axes explicitly;
-4. linked regional coordinates map to volume indices through the declared `index_to_world_um` transform;
-5. `VolumeSliceLoader` extracts orthogonal slices with bounded chunk caching;
-6. Canvas2D renders scalar slices;
-7. the hybrid application renderer switches between regional SVG and volume Canvas below the same `SliceRenderer` boundary;
-8. unit and Playwright coverage exercise the golden volume path.
+3. the slice-pack adapter decodes float16/float32 packs, reuses neighboring slices in a 48 MiB LRU, and deduplicates in-flight resource loads;
+4. descriptor axis order is permuted into anatomical AP/ML/DV slice axes explicitly for both layouts;
+5. linked regional coordinates map to volume indices through the declared `index_to_world_um` transform;
+6. `VolumeSliceLoader` extracts orthogonal slices with bounded chunk caching;
+7. Canvas2D renders scalar slices;
+8. the hybrid application renderer switches between regional SVG and volume Canvas below the same `SliceRenderer` boundary;
+9. unit and Playwright coverage exercise the golden volume path, while rendering tests cover all slice-pack planes, permuted storage axes, cache reuse, and edge packs.
 
 This validates the reference browser architecture, not the final production science/transport. Q4 must supply authoritative scientific transform/outside semantics and Q5 must select production physical layout from real-data benchmark evidence.
 
