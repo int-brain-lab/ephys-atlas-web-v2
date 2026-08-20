@@ -9,6 +9,7 @@ import { createAppStore, type AppStore } from './domain/store.js';
 import type { DatasetRef, ParcellationId, RepresentationKind, SliceAxis, ViewState } from './domain/types.js';
 import { NullSliceRenderer, type RendererPresentation, type SliceRenderer } from './rendering/interfaces.js';
 import { maxRegionalSliceIndex } from './rendering/slice-calibration.js';
+import type { DisplaySliceInventory } from './rendering/display-slice-inventory.js';
 import { AppShell, type ShellModel } from './ui/app-shell.js';
 import { RegionalPanelController } from './ui/regional-panel.js';
 import { UrlStateController } from './url/url-state.js';
@@ -32,6 +33,7 @@ export class AtlasApp {
   private catalog: DatasetCatalog | null = null;
   private manifest: DatasetManifest | null = null;
   private feature: FeaturePayload | null = null;
+  private displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null = null;
   private regions: readonly RegionMetadata[] = [];
   private atlasRegions: AtlasRegionCatalog | null = null;
   private hoveredRegionId: string | null = null;
@@ -72,7 +74,15 @@ export class AtlasApp {
     this.renderer.setInteractionSink?.({
       hover: (hit) => this.setHoveredRegion(hit?.regionId ?? null),
       toggleSelection: (hit) => this.store.dispatch({ type: 'selection/toggle', regionId: hit.regionId }),
-      stepSlice: (axis, delta) => this.setSlice(axis, this.store.getState().view.slices[axis] + delta),
+      stepSlice: (axis, delta) => {
+        const view = this.store.getState().view;
+        const inventory = view.representation === 'regional' ? this.displaySliceInventories?.[axis] : undefined;
+        const native = view.slices[axis];
+        const next = inventory
+          ? inventory.nativeIndexAtOrdinal(inventory.step(inventory.ordinalForNativeIndex(native), delta))
+          : native + delta * 4;
+        this.setSlice(axis, next);
+      },
       moveCursor: (cursor) => this.store.dispatch({ type: 'cursor/set', cursor }),
       reportError: (error) => this.reportRuntimeError(error),
     });
@@ -90,6 +100,12 @@ export class AtlasApp {
       }
     });
     this.render();
+    if (this.renderer.getDisplaySliceInventories) {
+      void this.renderer.getDisplaySliceInventories().then((inventories) => {
+        this.displaySliceInventories = inventories;
+        this.render();
+      }).catch((error: unknown) => this.reportRuntimeError(error));
+    }
     void loadAtlasRegionCatalog(this.options.atlasRegionsUrl).then((catalog) => {
       this.atlasRegions = catalog;
       this.render();
@@ -136,6 +152,7 @@ export class AtlasApp {
       catalog: this.catalog,
       manifest: this.manifest,
       feature: this.feature,
+      displaySliceInventories: this.displaySliceInventories,
     };
     this.shell.render(model);
     this.regionalPanel.render({

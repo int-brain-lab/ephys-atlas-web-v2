@@ -111,7 +111,8 @@ function anatomyPackPlugin(): Plugin {
     next: () => void,
   ) => {
     const pathname = request.url ? new URL(request.url, 'http://localhost').pathname : '';
-    if (!pathname.startsWith(ANATOMY_PREFIX) || !pathname.endsWith('.json.gz')) return next();
+    if (!pathname.startsWith(ANATOMY_PREFIX)
+      || (!pathname.endsWith('.json.gz') && !pathname.endsWith('.isvg.gz'))) return next();
     const target = path.resolve(PUBLIC_ROOT, decodeURIComponent(pathname.slice(1)));
     if (!target.startsWith(`${PUBLIC_ROOT}${path.sep}`)) {
       response.statusCode = 403;

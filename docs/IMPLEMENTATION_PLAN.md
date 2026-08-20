@@ -172,7 +172,7 @@ Blocked in part by: Q8, Q9, Q10.
 
 Actions:
 
-1. deploy the committed immutable anatomy pack and preserve opaque gzip bytes without HTTP `Content-Encoding`;
+1. deploy the committed immutable v3 indexed-SVG anatomy pack and preserve opaque gzip bytes without HTTP `Content-Encoding`;
 2. finalize static public catalog/default aliases for the frozen scientific release set;
 3. configure production CORS/cache policy;
 4. deploy or explicitly waive the remote publishing service for launch;

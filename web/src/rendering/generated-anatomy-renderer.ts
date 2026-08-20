@@ -8,12 +8,16 @@ import type {
 } from './interfaces.js';
 import { bilateralAtlasRegionColorMap, bilateralFeatureColorMap } from './scalar-colormap.js';
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
+import { createDisplaySliceInventories } from './display-slice-inventory.js';
+import type { DisplaySliceInventory } from './display-slice-inventory.js';
 import type { SvgSlicePerformanceEvent } from './svg-slice-renderer.js';
 import type { AnatomySlice, AnatomySliceSource, RegionalSliceFrame, SliceRegionPointerEvent } from './types.js';
 
 interface RendererMount {
   renderer: SvgSliceRenderer;
   frame?: RegionalSliceFrame;
+  /** Native scientific index requested by the application, which may resolve to sparse geometry. */
+  requestedIndex?: number;
 }
 
 interface PendingGeometryRender {
@@ -37,6 +41,7 @@ function escapeAttribute(value: string): string {
 }
 
 export function anatomySliceSvgFragment(slice: AnatomySlice): string {
+  if (slice.svgFragment !== undefined) return slice.svgFragment;
   return slice.paths.map((path) => (
     `<path class="atlas-region" fill-rule="evenodd" data-allen-id="${path.atlasIds.allen}" data-beryl-id="${path.atlasIds.beryl}" ` +
     `data-cosmos-id="${path.atlasIds.cosmos}" d="${escapeAttribute(path.d)}"/>`
@@ -67,6 +72,12 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     this.interactionSink = sink;
   }
 
+  async getDisplaySliceInventories(): Promise<Readonly<Record<SliceAxis, DisplaySliceInventory>> | null> {
+    const indices = await this.source.getDisplaySliceIndices?.();
+    if (!indices) return null;
+    return createDisplaySliceInventories(indices);
+  }
+
   updatePresentation(presentation: RendererPresentation): void {
     this.presentation = presentation;
     for (const mount of this.mounts.values()) {
@@ -81,7 +92,7 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     const world = cursorStateToWorld(model.cursor);
     const existing = this.mounts.get(target);
     if (existing?.frame?.axis === model.axis
-      && existing.frame.index === model.sliceIndex
+      && existing.requestedIndex === model.sliceIndex
       && existing.frame.mapping === model.parcellation) {
       this.cancelPendingGeometryRender(target);
       const guides = await this.source.guidesForWorld(model.axis, world);
@@ -98,7 +109,7 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     const world = cursorStateToWorld(model.cursor);
     const existing = this.mounts.get(target);
 
-    const previousIndex = existing?.frame?.axis === model.axis ? existing.frame.index : null;
+    const previousIndex = existing?.frame?.axis === model.axis ? existing.requestedIndex ?? existing.frame.index : null;
     const [slice, guides] = await Promise.all([
       this.source.loadSlice(model.axis, model.sliceIndex),
       this.source.guidesForWorld(model.axis, world),
@@ -106,15 +117,18 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     if (this.renderTokens.get(target) !== token) return;
 
     const mount = this.ensureMount(target);
-    const serializeStarted = this.options.onPerformance ? performance.now() : 0;
-    const svgFragment = anatomySliceSvgFragment(slice);
-    this.reportPerformance({
-      phase: 'serialize-fragment',
-      axis: model.axis,
-      sliceIndex: slice.sliceIndex,
-      durationMs: this.options.onPerformance ? performance.now() - serializeStarted : 0,
-      pathCount: slice.paths.length,
-    });
+    let svgFragment = slice.svgFragment;
+    if (svgFragment === undefined) {
+      const serializeStarted = this.options.onPerformance ? performance.now() : 0;
+      svgFragment = anatomySliceSvgFragment(slice);
+      this.reportPerformance({
+        phase: 'serialize-fragment',
+        axis: model.axis,
+        sliceIndex: slice.sliceIndex,
+        durationMs: this.options.onPerformance ? performance.now() - serializeStarted : 0,
+        pathCount: slice.paths.length,
+      });
+    }
     const frame: RegionalSliceFrame = {
       axis: model.axis,
       index: slice.sliceIndex,
@@ -124,10 +138,9 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
       guides,
     };
     mount.frame = frame;
+    mount.requestedIndex = model.sliceIndex;
     mount.renderer.render(this.withPresentation(frame));
-    target.dataset.sliceAsset = slice.packFormat === 'anatomy-pack-v2'
-      ? 'generated-anatomy-v2'
-      : 'generated-anatomy-v1';
+    target.dataset.sliceAsset = `generated-anatomy-${slice.packFormat.slice(-2)}`;
     target.dataset.assetIndex = String(slice.sliceIndex);
     target.dataset.worldCoordinateUm = String(slice.worldCoordinateUm);
     if (previousIndex !== null && previousIndex !== model.sliceIndex) {

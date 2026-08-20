@@ -2,14 +2,14 @@ import { expect, test } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import os from 'node:os';
 
-const manifestUrl = '/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/manifest.json';
+const manifestUrl = '/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1-display-80um-d8-f8277956e67a/manifest.json';
 const trials = 5;
 const output = process.env.EPHYS_ATLAS_ANATOMY_BENCHMARK_OUTPUT;
 const cases = [
-  { axis: 'coronal', sliceIndex: 809, samePackIndex: 813, label: 'coronal-p95' },
-  { axis: 'sagittal', sliceIndex: 605, samePackIndex: 601, label: 'sagittal-p95' },
-  { axis: 'horizontal', sliceIndex: 343, samePackIndex: 347, label: 'horizontal-p95' },
-  { axis: 'horizontal', sliceIndex: 400, samePackIndex: 404, label: 'horizontal-max' },
+  { axis: 'coronal', sliceIndex: 812, samePackIndex: 820, label: 'coronal-p95' },
+  { axis: 'sagittal', sliceIndex: 606, samePackIndex: 614, label: 'sagittal-p95' },
+  { axis: 'horizontal', sliceIndex: 345, samePackIndex: 353, label: 'horizontal-p95' },
+  { axis: 'horizontal', sliceIndex: 401, samePackIndex: 409, label: 'horizontal-max' },
 ] as const;
 
 function timing(values: number[]): { p50_ms: number; p95_ms: number; samples_ms: number[] } {
@@ -23,7 +23,7 @@ function timing(values: number[]): { p50_ms: number; p95_ms: number; samples_ms:
 
 test('cold anatomy packs expose browser pipeline timings', async ({ page, browserName }) => {
   await page.goto('/');
-  await expect(page.locator('[data-slice-asset="generated-anatomy-v2"]')).toHaveCount(3);
+  await expect(page.locator('[data-slice-asset="generated-anatomy-v3"]')).toHaveCount(3);
 
   const measurements = await page.evaluate(async ({ cases, manifestUrl, trials }) => {
     const [{ GeneratedAnatomySliceSource }, { GeneratedAnatomySliceRenderer }] = await Promise.all([
@@ -56,12 +56,12 @@ test('cold anatomy packs expose browser pipeline timings', async ({ page, browse
               ? input.toString()
               : input.url;
           const url = new URL(rawUrl, location.href);
-          if (url.pathname.endsWith('.json.gz')) url.searchParams.set('anatomy-benchmark', `${benchmarkCase.label}-${trial}`);
+          if (url.pathname.endsWith('.isvg.gz')) url.searchParams.set('anatomy-benchmark', `${benchmarkCase.label}-${trial}`);
           return fetch(url, { ...init, cache: 'no-store' });
         };
         const source = new GeneratedAnatomySliceSource({
           manifestUrl,
-          packDepth: 16,
+          packDepth: 8,
           fetchImpl,
           scheduleIdle: () => undefined,
           onPerformance: (event) => sourceEvents.push(event),
@@ -133,7 +133,7 @@ test('cold anatomy packs expose browser pipeline timings', async ({ page, browse
   }, { cases, manifestUrl, trials });
 
   const report = {
-    benchmark: 'anatomy-cache-miss-browser-v1',
+    benchmark: 'anatomy-cache-miss-browser-v2-isvg',
     measured_at: new Date().toISOString(),
     trials,
     environment: {

@@ -76,5 +76,13 @@ Before replacing the active JSON pack transport:
 6. update the anatomy manifest/schema and every producer/consumer together if
    the experiment is accepted.
 
+## Adoption outcome
+
+D026 accepts the format as the transport inside `anatomy-pack-v3`. The
+production 80 µm display corpus, browser worker ownership, explicit sparse
+inventories, integrity checks, and controlled measurements now satisfy the
+local adoption gate. Deployment-origin latency and throttled wheel-burst
+measurements remain release QA rather than a blocker for the local transport.
+
 The first phase-level browser evidence and reproduction command are recorded in
 `docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.
