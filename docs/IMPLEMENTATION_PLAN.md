@@ -67,6 +67,7 @@ Already implemented and green on the handoff baseline:
 
 - schema-v0.1 volume payload path for published/local sources;
 - `chunks3d` reference adapter;
+- `orthogonal_slice_packs` adapter with in-flight deduplication and a bounded decoded LRU;
 - float16/float32 decoding and optional gzip;
 - bounded slice chunk cache;
 - scientific coordinate mapping through declared `index_to_world_um`;
@@ -78,12 +79,13 @@ Blocked by: Q4 and Q5.
 
 Unblocked preparation work Codex may do before scientific resolution:
 
-1. extend the now-reproducible three-feature real storage benchmark to browser
-   HTTP, decode, cache, and paint measurements, prioritizing 4/8-slice packs
-   while retaining 32³/64³ cubes as comparison baselines;
+1. exercise the implemented slice-pack adapter against generated real pack
+   artifacts over HTTP and record decode, cache, and paint measurements,
+   prioritizing 4/8-slice packs while retaining 32³/64³ cubes as comparison
+   baselines;
 2. record request/bytes/decode/memory metrics in `benchmarks/` without selecting
    the winner prematurely;
-3. ensure volume renderer errors are explicit for unsupported transforms/layouts.
+3. keep renderer failures explicit for invalid transforms and resource layouts.
 
 After Q4/Q5 resolution:
 
