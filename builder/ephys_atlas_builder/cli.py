@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from .channels import DATASET_ID as CHANNELS_DATASET_ID, ChannelBuildConfig, build_channels_from_snapshot
 from .fixture import generate_golden
 from .package import package_release
 from .sources import pull, resolve_source_release
@@ -30,6 +31,22 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("release")
     p.add_argument("--dest", type=Path, default=Path("data/source"))
 
+    p = sub.add_parser(
+        "build-channels",
+        help="build a regional ephys_atlas_channels release from an already-pulled ea_active snapshot",
+    )
+    p.add_argument("release", help="immutable source vintage or latest alias already pulled locally")
+    p.add_argument("--feature-mode", required=True, choices=("raw", "denoised"))
+    p.add_argument("--population", required=True, choices=("all", "inside"))
+    p.add_argument("--created-at", required=True, help="ISO-8601 release timestamp recorded verbatim in provenance")
+    p.add_argument("--feature", action="append", dest="features", help="explicit feature id; repeat as needed; omit to resolve current voltage_features_set()")
+    p.add_argument("--parcellation", action="append", choices=("allen", "beryl", "cosmos"), dest="parcellations")
+    p.add_argument("--histogram-bins", type=int, default=50)
+    p.add_argument("--paper-snapshot", action="store_true")
+    p.add_argument("--source-root", type=Path, default=Path("data/source"))
+    p.add_argument("--release-root", type=Path, default=Path("data/releases"))
+    p.add_argument("--schema-dir", type=Path, default=_schema_dir())
+
     p = sub.add_parser("build", help="validate a release produced by a dataset-specific build recipe")
     p.add_argument("dataset")
     p.add_argument("release")
@@ -53,6 +70,23 @@ def main(argv: list[str] | None = None) -> int:
         elif args.cmd == "pull":
             path = pull(args.dataset, args.release, args.dest)
             print(path)
+        elif args.cmd == "build-channels":
+            resolved = resolve_source_release(args.source_root, CHANNELS_DATASET_ID, args.release)
+            source_snapshot = args.source_root / CHANNELS_DATASET_ID / resolved
+            release_dir = args.release_root / CHANNELS_DATASET_ID / resolved
+            config = ChannelBuildConfig(
+                release_id=resolved,
+                created_at=args.created_at,
+                feature_mode=args.feature_mode,
+                population=args.population,
+                parcellations=tuple(args.parcellations or ("allen", "beryl", "cosmos")),
+                features=tuple(args.features) if args.features else None,
+                histogram_bins=args.histogram_bins,
+                paper_snapshot=args.paper_snapshot,
+            )
+            build_channels_from_snapshot(source_snapshot, release_dir, config)
+            validate_release(release_dir, args.schema_dir)
+            print(f"built and validated: {release_dir}")
         elif args.cmd == "build":
             resolved = resolve_source_release(args.source_root, args.dataset, args.release)
             source = args.source_root / args.dataset / resolved / "source.json"
