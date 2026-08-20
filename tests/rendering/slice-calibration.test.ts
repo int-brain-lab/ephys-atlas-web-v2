@@ -31,16 +31,37 @@ test('25 um volume grid shares the legacy Allen origins', () => {
   assert.equal(regionalIndexToVolumeIndex('horizontal', 400), 160);
 });
 
-test('legacy guide centers reproduce the hand-tuned v1 fit', () => {
-  assert.deepEqual(projectLegacyGuide('sagittal', 'coronal', 570), {
-    sourceAxis: 'sagittal', targetAxis: 'coronal', dimension: 'x', position: 237,
+test('guide registration maps scientific axis endpoints to projection view boxes', () => {
+  assert.deepEqual(projectLegacyGuide('sagittal', 'coronal', 0), {
+    sourceAxis: 'sagittal', targetAxis: 'coronal', dimension: 'x', position: 58,
   });
-  assert.deepEqual(projectLegacyGuide('coronal', 'sagittal', 660), {
-    sourceAxis: 'coronal', targetAxis: 'sagittal', dimension: 'x', position: 236,
+  assert.deepEqual(projectLegacyGuide('sagittal', 'coronal', 1139), {
+    sourceAxis: 'sagittal', targetAxis: 'coronal', dimension: 'x', position: 414,
   });
-  assert.deepEqual(projectLegacyGuide('horizontal', 'coronal', 400), {
-    sourceAxis: 'horizontal', targetAxis: 'coronal', dimension: 'y', position: 174,
+  assert.deepEqual(projectLegacyGuide('coronal', 'sagittal', 0), {
+    sourceAxis: 'coronal', targetAxis: 'sagittal', dimension: 'x', position: 56,
   });
+  assert.deepEqual(projectLegacyGuide('horizontal', 'coronal', 799), {
+    sourceAxis: 'horizontal', targetAxis: 'coronal', dimension: 'y', position: 300,
+  });
+});
+
+test('all linked guides stay inside the registered target view box', () => {
+  const endpointSets = [
+    { coronal: 0, sagittal: 0, horizontal: 0 },
+    { coronal: 1319, sagittal: 1139, horizontal: 799 },
+  ];
+  for (const indices of endpointSets) {
+    for (const targetAxis of ['coronal', 'sagittal', 'horizontal'] as const) {
+      const viewBox = LEGACY_VIEW_BOXES[targetAxis];
+      for (const guide of linkedGuides(indices, targetAxis)) {
+        const [minimum, maximum] = guide.dimension === 'x'
+          ? [viewBox.x, viewBox.x + viewBox.width]
+          : [viewBox.y, viewBox.y + viewBox.height];
+        assert.ok(guide.position >= minimum && guide.position <= maximum);
+      }
+    }
+  }
 });
 
 test('linked fixture produces two guides per view and exact v1 view boxes', () => {

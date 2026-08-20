@@ -48,7 +48,7 @@ V1's historical processing pipeline includes MATLAB slice extraction, RDP simpli
 Two coordinate systems are now explicit and separate:
 
 1. **scientific coordinates**: regional slices at 10 um and volumes at 25 um share Allen origins (`AP +5400`, `ML -5739`, `DV +332` um) and can be mapped deterministically;
-2. **display calibration**: six hand-tuned affine guide fits and the exact coronal/sagittal/horizontal SVG view boxes from v1.
+2. **display registration**: one exact coronal/sagittal/horizontal SVG view-box envelope and orientation per curated v1 projection; slice indices first pass through the scientific Allen-coordinate calibration.
 
 Never use display calibration for scientific lookup. Exact constants and tests are in `slice-calibration.ts`; rationale is in `SVG_CALIBRATION.md`.
 

@@ -110,6 +110,24 @@ test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
   await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '656');
 });
 
+test('linked guides project one slice coordinate into both other views', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockCuratedSlices(page);
+  await page.goto('/');
+
+  const slider = page.getByLabel('coronal slice');
+  const sagittalGuide = page.locator('[data-view="sagittal"] .slice-guide[data-source-axis="coronal"]');
+  const horizontalGuide = page.locator('[data-view="horizontal"] .slice-guide[data-source-axis="coronal"]');
+
+  await slider.fill('0');
+  await expect(sagittalGuide).toHaveAttribute('x1', '56');
+  await expect(horizontalGuide).toHaveAttribute('y1', '42');
+
+  await slider.fill('1319');
+  await expect(sagittalGuide).toHaveAttribute('x1', '414');
+  await expect(horizontalGuide).toHaveAttribute('y1', '308');
+});
+
 test('full-resolution navigation stays independent from downsampled SVG assets', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await mockCuratedSlices(page);
