@@ -70,6 +70,31 @@ test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
   await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '648');
 });
 
+test('an existing anatomy slice stays visible while an adjacent pack loads', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  let releasePack: () => void = () => {};
+  const packGate = new Promise<void>((resolve) => { releasePack = resolve; });
+  await page.route('**/packs/16/coronal/42.json.gz', async (route) => {
+    await packGate;
+    await route.continue();
+  });
+  await page.goto('/');
+
+  const frame = page.locator('[data-view="coronal"]');
+  const target = frame.locator('[data-slice-asset="generated-anatomy-v2"]');
+  await expect(target).toHaveAttribute('data-asset-index', '660');
+  await page.getByLabel('coronal slice').fill('672');
+  await expect(page.getByLabel('coronal slice')).toHaveValue('672');
+  await expect(target).toHaveAttribute('data-asset-index', '660');
+  await expect(frame).toHaveAttribute('data-state', 'ready');
+  await expect(frame.locator('.view-frame__status')).toHaveText('Updating');
+  await expect(frame.locator('.view-frame__state-message')).toHaveCSS('opacity', '0');
+
+  releasePack();
+  await expect(target).toHaveAttribute('data-asset-index', '672');
+  await expect(frame.locator('.view-frame__status')).toHaveText('Allen CCFv3 · 10 µm');
+});
+
 test('linked guides project one slice coordinate into both other views', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
