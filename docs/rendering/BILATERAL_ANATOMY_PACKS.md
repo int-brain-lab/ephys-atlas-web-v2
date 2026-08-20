@@ -102,4 +102,5 @@ Its inventory hash (SHA-256 over sorted relative path, byte size, and file
 SHA-256 records) is
 `8c6eca8c7bf74c0847a7a56026398841d1852dd10fe31044dc165fe6709b711b`.
 The v1 pack remains present as a rollback asset. Registering this public copy
-does not by itself select a runtime anatomy URL or alter browser calibration.
+did not by itself select a runtime anatomy URL; D024 subsequently made this v2
+pack and its native bilateral 10 µm calibration the runtime authority.

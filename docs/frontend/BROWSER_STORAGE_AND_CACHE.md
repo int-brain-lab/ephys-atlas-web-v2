@@ -44,8 +44,12 @@ Catalogs are not persisted by this cache because they may contain mutable
 aliases and release listings. `HttpDatasetSource` also keeps manifests, region
 metadata, and feature URL resolutions in memory for the lifetime of the app.
 
-The curated SVG renderer uses browser `force-cache` requests and retains loaded
-axis bundles in application memory.
+The generated anatomy renderer uses browser `force-cache` requests for its
+immutable pack-ID URLs. It fetches only the three visible packs for initial
+display, then schedules at most one pack ahead in the active navigation
+direction. Decoded JSON packs share a 32 MiB byte-bounded in-memory LRU across
+the three projections; the budget is based on declared decoded resource bytes
+and does not claim to measure JavaScript object overhead exactly.
 
 ### Decoded volume data
 

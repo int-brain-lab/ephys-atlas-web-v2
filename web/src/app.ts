@@ -7,7 +7,7 @@ import { DatasetRepository } from './data/repository.js';
 import { DEFAULT_APP_STATE } from './domain/defaults.js';
 import { createAppStore } from './domain/store.js';
 import type { DatasetRef, ParcellationId, RepresentationKind, SliceAxis } from './domain/types.js';
-import { NullSliceRenderer, type SliceRenderer } from './rendering/interfaces.js';
+import { NullSliceRenderer, type RendererPresentation, type SliceRenderer } from './rendering/interfaces.js';
 import { maxRegionalSliceIndex } from './rendering/slice-calibration.js';
 import { AppShell, type ShellModel } from './ui/app-shell.js';
 import { RegionalPanelController } from './ui/regional-panel.js';
@@ -34,6 +34,7 @@ export class AtlasApp {
   private regions: readonly RegionMetadata[] = [];
   private atlasRegions: AtlasRegionCatalog | null = null;
   private hoveredRegionId: string | null = null;
+  private rendererPresentation: RendererPresentation | null = null;
   private loadGeneration = 0;
   private regionsLoadGeneration = 0;
   private featureLoadGeneration = 0;
@@ -104,14 +105,25 @@ export class AtlasApp {
     const state = this.store.getState();
     const anatomyRegions = this.atlasRegions?.mappings[state.view.parcellation] ?? this.regions;
     const rendererRegions = state.view.coloring.mode === 'anatomy' ? anatomyRegions : this.regions;
-    this.renderer.updatePresentation?.({
+    const presentation: RendererPresentation = {
       feature: this.feature,
       regions: rendererRegions,
       anatomyRegions,
       coloring: state.view.coloring,
       selectedRegionIds: state.view.selection,
       hoveredRegionId: this.hoveredRegionId,
-    });
+    };
+    const previous = this.rendererPresentation;
+    if (!previous
+      || previous.feature !== presentation.feature
+      || previous.regions !== presentation.regions
+      || previous.anatomyRegions !== presentation.anatomyRegions
+      || previous.coloring !== presentation.coloring
+      || previous.selectedRegionIds !== presentation.selectedRegionIds
+      || previous.hoveredRegionId !== presentation.hoveredRegionId) {
+      this.rendererPresentation = presentation;
+      this.renderer.updatePresentation?.(presentation);
+    }
     const model: ShellModel = {
       state,
       catalog: this.catalog,

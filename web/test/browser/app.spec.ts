@@ -65,10 +65,49 @@ test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
   await page.goto('/');
 
   await page.locator('[data-view="coronal"] .view-frame__brain-svg').dispatchEvent('wheel', { deltaY: 100 });
-  await expect(page.getByLabel('coronal slice')).toHaveValue('648');
-  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.08 mm');
-  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('648,550,400');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '648');
+  await expect(page.getByLabel('coronal slice')).toHaveValue('658');
+  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.18 mm');
+  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('658,550,400');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '658');
+});
+
+test('initial anatomy display fetches only the three visible packs', async ({ page }) => {
+  const packRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/packs/16/')) packRequests.push(new URL(request.url()).pathname);
+  });
+  await page.goto('/');
+  await expect(page.locator('[data-slice-asset="generated-anatomy-v2"]')).toHaveCount(3);
+  await page.waitForTimeout(250);
+
+  expect(new Set(packRequests)).toEqual(new Set([
+    '/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/packs/16/coronal/41.json.gz',
+    '/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/packs/16/sagittal/34.json.gz',
+    '/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/packs/16/horizontal/25.json.gz',
+  ]));
+});
+
+test('a wheel burst is coalesced into one animation-frame slice update', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('[data-slice-asset="generated-anatomy-v2"]')).toHaveCount(3);
+  const svg = page.locator('[data-view="coronal"] .view-frame__brain-svg');
+  await page.evaluate(() => {
+    const metrics = { sagittal: 0, horizontal: 0 };
+    (window as Window & { __unchangedFigureMutations?: typeof metrics }).__unchangedFigureMutations = metrics;
+    for (const axis of ['sagittal', 'horizontal'] as const) {
+      const figure = document.querySelector(`[data-view="${axis}"] .view-frame__slice-figure`)!;
+      new MutationObserver((mutations) => { metrics[axis] += mutations.length; })
+        .observe(figure, { attributes: true, childList: true, subtree: true });
+    }
+  });
+  await svg.evaluate((node) => {
+    for (let index = 0; index < 5; index += 1) node.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, cancelable: true }));
+  });
+  await expect(page.getByLabel('coronal slice')).toHaveValue('650');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '650');
+  expect(await page.evaluate(() => (
+    (window as Window & { __unchangedFigureMutations?: { sagittal: number; horizontal: number } }).__unchangedFigureMutations
+  ))).toEqual({ sagittal: 0, horizontal: 0 });
 });
 
 test('an existing anatomy slice stays visible while an adjacent pack loads', async ({ page }) => {

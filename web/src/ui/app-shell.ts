@@ -43,6 +43,7 @@ interface ViewFrameNodes {
   status: HTMLElement;
   maximize: HTMLButtonElement;
   renderKey: string;
+  geometryKey: string;
   renderToken: number;
 }
 
@@ -503,7 +504,7 @@ export class AppShell {
     footer.append(slider, index);
 
     frame.append(header, viewport, footer);
-    this.viewFrames.set(axis, { frame, target, coordinate, slider, index, status, maximize, renderKey: '', renderToken: 0 });
+    this.viewFrames.set(axis, { frame, target, coordinate, slider, index, status, maximize, renderKey: '', geometryKey: '', renderToken: 0 });
     return frame;
   }
 
@@ -516,22 +517,29 @@ export class AppShell {
     nodes.slider.value = String(sliceIndex);
     nodes.index.textContent = `${sliceIndex} / ${maxRegionalSliceIndex(axis)}`;
 
-    const renderKey = `${view.parcellation}:${view.slices.coronal}:${view.slices.sagittal}:${view.slices.horizontal}`;
+    const geometryKey = `${view.representation}:${view.parcellation}:${model.feature?.featureId ?? ''}:${sliceIndex}`;
+    const renderKey = view.representation === 'volume'
+      ? geometryKey
+      : `${geometryKey}:${view.slices.coronal}:${view.slices.sagittal}:${view.slices.horizontal}`;
     if (nodes.renderKey === renderKey) return;
     nodes.renderKey = renderKey;
+    const geometryChanged = nodes.geometryKey !== geometryKey;
+    nodes.geometryKey = geometryKey;
     const token = ++nodes.renderToken;
     const retainsAnatomy = view.representation !== 'volume'
       && nodes.target.dataset.sliceAsset?.startsWith('generated-anatomy-') === true;
-    nodes.frame.dataset.state = retainsAnatomy ? 'ready' : 'loading';
-    nodes.status.removeAttribute('aria-label');
-    nodes.status.textContent = retainsAnatomy ? 'Updating' : 'Loading';
     const stateMessage = nodes.frame.querySelector<HTMLElement>('.view-frame__state-message');
-    if (stateMessage) {
-      stateMessage.textContent = retainsAnatomy
-        ? ''
-        : view.representation === 'volume'
-          ? 'Loading scientific volume…'
-          : 'Loading registered anatomy…';
+    if (geometryChanged) {
+      nodes.frame.dataset.state = retainsAnatomy ? 'ready' : 'loading';
+      nodes.status.removeAttribute('aria-label');
+      nodes.status.textContent = retainsAnatomy ? 'Updating' : 'Loading';
+      if (stateMessage) {
+        stateMessage.textContent = retainsAnatomy
+          ? ''
+          : view.representation === 'volume'
+            ? 'Loading scientific volume…'
+            : 'Loading registered anatomy…';
+      }
     }
 
     const pending = this.renderer.render(nodes.target, {
@@ -546,14 +554,15 @@ export class AppShell {
 
     Promise.resolve(pending).then(() => {
       if (nodes.renderToken !== token) return;
+      if (!geometryChanged) return;
       nodes.frame.dataset.state = 'ready';
       nodes.status.textContent = '';
       nodes.status.setAttribute('aria-label', view.representation === 'volume' ? 'Scientific volume ready' : 'Registered anatomy ready');
     }).catch((error: unknown) => {
       if (nodes.renderToken !== token) return;
-      if (retainsAnatomy) {
+      if (!geometryChanged || retainsAnatomy) {
         nodes.frame.dataset.state = 'ready';
-        nodes.status.textContent = 'Previous slice';
+        if (geometryChanged) nodes.status.textContent = 'Previous slice';
       } else {
         nodes.frame.dataset.state = 'error';
         nodes.status.textContent = 'Unavailable';

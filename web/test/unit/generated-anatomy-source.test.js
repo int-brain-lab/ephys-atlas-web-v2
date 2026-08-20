@@ -209,13 +209,13 @@ test('generated anatomy source validates, verifies, decodes, and caches immutabl
   ]);
 });
 
-test('adjacent anatomy prefetch is idle, bounded to one pack per side, and cache-deduplicated', async () => {
+test('anatomy prefetch is idle, directional, latest-wins, and cache-deduplicated', async () => {
   const { manifest, buffers } = fixtureWithFiveCoronalPacks();
   const scheduled = [];
   const requests = new Map();
   const source = new GeneratedAnatomySliceSource({
     manifestUrl: 'https://example.test/anatomy/manifest.json',
-    maxCachedPacks: 3,
+    maxCachedBytes: 1_000_000,
     scheduleIdle: (callback) => scheduled.push(callback),
     fetchImpl: async (input) => {
       const url = String(input);
@@ -227,27 +227,45 @@ test('adjacent anatomy prefetch is idle, bounded to one pack per side, and cache
   });
 
   await source.loadSlice('coronal', 32);
-  source.prefetchAdjacentPacks('coronal', 32);
-  source.prefetchAdjacentPacks('coronal', 33);
+  source.prefetchNextPack('coronal', 32, 1);
+  source.prefetchNextPack('coronal', 33, 1);
   assert.equal(scheduled.length, 1);
   scheduled.shift()();
   await new Promise((resolve) => setTimeout(resolve, 10));
 
-  for (const packIndex of ['0001', '0002', '0003']) {
+  for (const packIndex of ['0002', '0003']) {
     assert.equal(requests.get(`https://example.test/anatomy/packs/coronal/${packIndex}.json.gz`), 1);
   }
-  assert.equal([...requests.keys()].filter((url) => url.includes('/packs/')).length, 3);
+  assert.equal(requests.has('https://example.test/anatomy/packs/coronal/0001.json.gz'), false);
+  assert.equal([...requests.keys()].filter((url) => url.includes('/packs/')).length, 2);
 
-  source.prefetchAdjacentPacks('coronal', 32);
+  source.prefetchNextPack('coronal', 32, 1);
   scheduled.shift()();
   await new Promise((resolve) => setTimeout(resolve, 10));
   for (const count of [...requests.entries()].filter(([url]) => url.includes('/packs/')).map(([, count]) => count)) {
     assert.equal(count, 1);
   }
+});
 
-  await source.loadSlice('coronal', 64);
-  await source.loadSlice('coronal', 32);
-  assert.equal(requests.get('https://example.test/anatomy/packs/coronal/0002.json.gz'), 2);
+test('anatomy decoded cache evicts least-recently-used packs by byte budget', async () => {
+  const { manifest, buffers } = fixtureWithFiveCoronalPacks();
+  const requests = new Map();
+  const source = new GeneratedAnatomySliceSource({
+    manifestUrl: 'https://example.test/anatomy/manifest.json',
+    maxCachedBytes: manifest.projections.coronal.pack_sets[16].packs[0].uncompressed_bytes + 1,
+    fetchImpl: async (input) => {
+      const url = String(input);
+      requests.set(url, (requests.get(url) ?? 0) + 1);
+      if (url.endsWith('/manifest.json')) return new Response(JSON.stringify(manifest), { status: 200 });
+      const body = buffers[url.split('/anatomy/')[1]];
+      return body ? new Response(body, { status: 200 }) : new Response('missing', { status: 404 });
+    },
+  });
+
+  await source.loadSlice('coronal', 0);
+  await source.loadSlice('coronal', 16);
+  await source.loadSlice('coronal', 0);
+  assert.equal(requests.get('https://example.test/anatomy/packs/coronal/0000.json.gz'), 2);
 });
 
 test('generated anatomy source consumes bilateral v2 packs with signed hemisphere IDs', async () => {
@@ -281,7 +299,7 @@ test('generated anatomy source fails closed on a pack SHA mismatch', async () =>
   await assert.rejects(source.loadSlice('coronal', 0), /SHA-256 mismatch/);
 });
 
-test('localhost anatomy bypasses stale development caches', async () => {
+test('immutable localhost anatomy uses the browser cache', async () => {
   const { manifest } = fixture();
   let cacheMode = null;
   const source = new GeneratedAnatomySliceSource({
@@ -292,7 +310,7 @@ test('localhost anatomy bypasses stale development caches', async () => {
     },
   });
   await source.loadManifest();
-  assert.equal(cacheMode, 'no-store');
+  assert.equal(cacheMode, 'force-cache');
 });
 
 test('anatomy manifest rejects ambiguous coordinate and ID conventions', () => {
