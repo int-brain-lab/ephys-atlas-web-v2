@@ -6,21 +6,24 @@ Every completed milestone must leave `main` green under `just check` and update 
 
 ## M0 — Codex handoff baseline
 
-Status: **in progress**.
+Status: **complete (2026-08-20)**.
 
 Goal: make a fresh checkout self-describing and safe for autonomous local development.
 
-Definition of done:
+Completed:
 
-- root `AGENTS.md` exists and reflects repository invariants;
-- `docs/LAUNCH_SPEC.md`, this plan, `docs/OPEN_QUESTIONS.md`, and `docs/AGENTIC_DEVELOPMENT.md` exist;
+- root `AGENTS.md` defines repository invariants;
+- `docs/LAUNCH_SPEC.md`, this plan, `docs/OPEN_QUESTIONS.md`, and `docs/AGENTIC_DEVELOPMENT.md` define durable product/execution context;
+- `docs/CODEX_HANDOFF.md` provides the local relay runbook;
 - `README.md` points to the durable handoff documents;
 - `Justfile` provides bootstrap/dev/targeted/full-check commands aligned with CI;
-- stale workstream instructions are removed or clearly historical;
-- current integration status is accurate;
-- `main` passes Python, TypeScript, unit, build, and Playwright gates.
+- generated local test/bootstrap artifacts are covered by the root `.gitignore`;
+- historical workstream instructions are reduced to the current single-main model;
+- current integration/source status is refreshed, including the raw/denoised ambiguity;
+- GitHub lists only `main` as a branch;
+- Python, TypeScript typecheck, unit tests, production build, and Playwright are green on the handoff baseline.
 
-After M0, routine product implementation should move to local Codex on `main`.
+Routine product implementation should now move to local Codex on `main`.
 
 ## M1 — Production `ephys_atlas_channels`
 
@@ -51,7 +54,7 @@ Acceptance reference: `docs/LAUNCH_SPEC.md` sections 2 and 4.
 
 Status: **browser/golden path implemented; production science/transport blocked**.
 
-Already implemented or in stabilization:
+Already implemented and green on the handoff baseline:
 
 - schema-v0.1 volume payload path for published/local sources;
 - `chunks3d` reference adapter;
