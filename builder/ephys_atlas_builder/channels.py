@@ -498,16 +498,18 @@ def _read_channel_frame(table_dir: Path, feature_mode: str, atlas):
     return pd.DataFrame(ephysatlas.features.ModelRawFeatures(frame))
 
 
-def _feature_info(
-    model, source_column: str, output_id: str, variant: str
-) -> FeatureInfo:
+def _feature_info(model, source_column: str, variant: str) -> FeatureInfo:
     column = model.to_schema().columns.get(source_column)
     metadata = getattr(column, "metadata", None) or {}
     label = metadata.get("label") or source_column.replace("_", " ")
     description = (
         getattr(column, "description", None) or f"Channel feature {source_column}"
     )
-    unit = metadata.get("transformed_unit") or metadata.get("unit")
+    unit = (
+        metadata.get("transformed_unit")
+        or metadata.get("raw_unit")
+        or metadata.get("unit")
+    )
     if unit in {"N/A", "n/a", ""}:
         unit = None
     return FeatureInfo(
@@ -577,7 +579,6 @@ def _scientific_inputs(source_snapshot: Path, config: ChannelBuildConfig):
             feature_metadata[output_id] = _feature_info(
                 ephysatlas.features.ModelRawFeatures,
                 feature,
-                output_id,
                 mode,
             )
     parcellation_ids = {
