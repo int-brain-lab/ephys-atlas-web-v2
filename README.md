@@ -31,6 +31,16 @@ just dev
 
 `just check` is the local completion gate and mirrors CI: builder/schema tests, publishing tests, TypeScript typecheck, frontend unit tests, production build, and Playwright browser tests.
 
+Real ephys channel builds use a separate pinned environment:
+
+```bash
+just bootstrap-scientific
+```
+
+This uses Python 3.12 and the committed `builder/uv.lock`; it does not require
+sudo. The first real development build and its exact source/code pins are
+recorded in [`docs/data/DEVELOPMENT_RELEASE.md`](docs/data/DEVELOPMENT_RELEASE.md).
+
 ## Launch scope
 
 Launch-critical datasets:

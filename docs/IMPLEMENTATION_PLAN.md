@@ -45,15 +45,15 @@ Q1 and Q3 are resolved. The paper-facing release remains blocked by Q2.
 Development may build the latest source only when it resolves and records an
 immutable vintage.
 
+The pinned environment and latest development build were completed against the
+immutable `2026_W32` snapshot on 2026-08-20. Details and exact pins are recorded
+in `docs/data/DEVELOPMENT_RELEASE.md`.
+
 Next actions:
 
-1. create the pinned scientific Python environment;
-2. pull and build the latest immutable `ea_active` development vintage with mode `both` and population `inside`;
-3. inspect units/transforms/feature metadata against the pinned source definitions;
-4. validate deterministic output and provenance;
-5. expose the immutable development release through the catalog;
-6. run browser acceptance against real values, not only the synthetic golden fixture;
-7. repeat with the final paper vintage when Q2 is resolved.
+1. expose the immutable development release through a non-production catalog;
+2. run browser acceptance against real values, not only the synthetic golden fixture;
+3. repeat with the final paper vintage when Q2 is resolved.
 
 Acceptance reference: `docs/LAUNCH_SPEC.md` sections 2 and 4.
 

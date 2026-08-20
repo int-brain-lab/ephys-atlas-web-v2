@@ -57,9 +57,11 @@ The builder makes scientifically material choices explicit rather than inheritin
 - pinned `ibleatools`, `iblatlas`, and builder commits plus the copied source manifest.
 
 Q1 and Q3 are resolved: releases contain both raw and denoised variants and
-use the explicit `inside` population with no additional physiological QC. A
-paper-facing scientific release is not frozen because Q2 still requires the
-final immutable `ea_active` vintage.
+use the explicit `inside` population with no additional physiological QC. The
+real immutable `2026_W32` snapshot has been pulled and built as a validated
+development release with the pinned scientific environment; see
+`docs/data/DEVELOPMENT_RELEASE.md`. A paper-facing scientific release is not
+frozen because Q2 still requires the final immutable `ea_active` vintage.
 
 ## `ephys_atlas_clusters` builder
 
@@ -168,7 +170,7 @@ This establishes contents/shape but not the authoritative scientific affine. Val
 
 The active sequence is defined in `docs/IMPLEMENTATION_PLAN.md`. In summary:
 
-1. install the pinned scientific environment, build/validate a latest immutable development channel release, and freeze the paper release after Q2;
+1. expose the validated immutable `2026_W32` development channel release through a non-production catalog, run real-value browser acceptance, and freeze the paper release after Q2;
 2. benchmark the unblocked M2 volume transport candidates, then resolve Q4-Q5 and build the real volume release/transport;
 3. resolve the remaining cluster project/catalog choices and build the production cluster release (Q6);
 4. define/build exact `brainwide_map` product (Q7);

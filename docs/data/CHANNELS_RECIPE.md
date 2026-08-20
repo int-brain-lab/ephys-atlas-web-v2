@@ -56,10 +56,13 @@ Non-finite feature observations are retained as missing observations and are
 excluded from finite summaries/histograms. There is no hidden QC filter beyond
 the explicitly selected population. In particular, the builder bypasses
 `read_features_from_disk()` because that function unconditionally replaces
-large `alpha_mean`/`alpha_std` values with a median. V2 loads, merges, maps, and
-schema-validates the parquet tables without replacing or clipping source
-values. `inside` means rows where the upstream `outside` column is false; `all`
-preserves the selected table population.
+large `alpha_mean`/`alpha_std` values with a median. V2 loads, merges, and maps
+the parquet tables, verifies the requested upstream feature catalog, and
+converts each published scalar independently without replacing or clipping
+source values. Whole-table non-null validation is deliberately not used because
+the canonical snapshot has legitimate feature-specific missing values. `inside`
+means rows where the upstream `outside` column is false; `all` preserves the
+selected table population.
 
 Histogram edges span the finite global minimum to maximum with a deterministic
 fixed bin count. Display ranges remain a browser concern and can use the stored
@@ -68,9 +71,13 @@ quantiles without clipping the underlying histogram population.
 ## Example
 
 ```bash
-ephys-atlas-data pull ephys_atlas_channels 2026_W12
+uv sync --project builder --python 3.12 --extra scientific --locked
 
-ephys-atlas-data build-channels 2026_W12 \
+uv run --project builder --extra scientific --locked ephys-atlas-data pull \
+  ephys_atlas_channels 2026_W12
+
+uv run --project builder --extra scientific --locked ephys-atlas-data \
+  build-channels 2026_W12 \
   --feature-mode both \
   --population inside \
   --created-at 2026-08-20T00:00:00Z \
@@ -82,6 +89,10 @@ ephys-atlas-data build-channels 2026_W12 \
 The resulting release is written under
 `data/releases/ephys_atlas_channels/<vintage>/` and validated immediately by the
 CLI.
+
+The committed `builder/uv.lock` resolves the pinned `scientific` extra. Editable
+sibling checkouts may be used for development only after verifying they are at
+the same commits recorded in the release.
 
 For publication, use both raw and denoised variants, the explicitly selected
 population, preserved source values, and pinned code commits. These choices are
