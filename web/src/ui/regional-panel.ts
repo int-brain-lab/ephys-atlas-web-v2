@@ -72,7 +72,6 @@ export class RegionalPanelController {
   private readonly rowById = new Map<string, HTMLLIElement>();
   private readonly regionById = new Map<string, RegionMetadata>();
   private rovingButton: HTMLButtonElement | null = null;
-  private foldMotionTimer: number | null = null;
   private analysisExpanded = false;
   private hadSelection = false;
 
@@ -185,7 +184,6 @@ export class RegionalPanelController {
     this.search.removeEventListener('input', this.filterRegions);
     this.searchClear.removeEventListener('click', this.clearSearch);
     this.analysisToggle.removeEventListener('click', this.toggleAnalysis);
-    if (this.foldMotionTimer !== null) window.clearTimeout(this.foldMotionTimer);
   }
 
   private renderEmpty(model: RegionalPanelModel): void {
@@ -505,12 +503,8 @@ export class RegionalPanelController {
   private toggleBranch(regionId: string): void {
     const row = this.rowById.get(regionId);
     if (!row || row.dataset.branch !== 'true') return;
-    this.list.dataset.foldMotion = 'true';
-    if (this.foldMotionTimer !== null) window.clearTimeout(this.foldMotionTimer);
-    this.foldMotionTimer = window.setTimeout(() => {
-      delete this.list.dataset.foldMotion;
-      this.foldMotionTimer = null;
-    }, 170);
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const before = reduceMotion ? new Map<string, number>() : this.captureVisibleRowTops();
     if (this.collapsedRegionIds.has(regionId)) this.collapsedRegionIds.delete(regionId);
     else this.collapsedRegionIds.add(regionId);
     const expanded = !this.collapsedRegionIds.has(regionId);
@@ -522,6 +516,42 @@ export class RegionalPanelController {
       toggle.setAttribute('aria-label', `${expanded ? 'Collapse' : 'Expand'} ${acronym}`);
     }
     this.filterRegions();
+    if (!reduceMotion) this.animateVisibleRowReflow(before);
+  }
+
+  private captureVisibleRowTops(): Map<string, number> {
+    for (const row of this.rowById.values()) row.getAnimations().forEach((animation) => animation.finish());
+    const viewport = this.pane.querySelector<HTMLElement>('.region-pane__browser')?.getBoundingClientRect();
+    const tops = new Map<string, number>();
+    for (const [id, row] of this.rowById) {
+      if (row.hidden) continue;
+      const rect = row.getBoundingClientRect();
+      if (!viewport || rect.bottom >= viewport.top - 40 && rect.top <= viewport.bottom + 40) tops.set(id, rect.top);
+    }
+    return tops;
+  }
+
+  private animateVisibleRowReflow(before: ReadonlyMap<string, number>): void {
+    const viewport = this.pane.querySelector<HTMLElement>('.region-pane__browser')?.getBoundingClientRect();
+    for (const [id, row] of this.rowById) {
+      if (row.hidden) continue;
+      const rect = row.getBoundingClientRect();
+      if (viewport && (rect.bottom < viewport.top - 40 || rect.top > viewport.bottom + 40)) continue;
+      const previousTop = before.get(id);
+      if (previousTop === undefined) {
+        row.animate(
+          [{ opacity: 0, transform: 'translateY(-3px)' }, { opacity: 1, transform: 'translateY(0)' }],
+          { duration: 150, easing: 'cubic-bezier(.2,.8,.2,1)' },
+        );
+        continue;
+      }
+      const delta = previousTop - rect.top;
+      if (Math.abs(delta) < 0.5) continue;
+      row.animate(
+        [{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }],
+        { duration: 150, easing: 'cubic-bezier(.2,.8,.2,1)' },
+      );
+    }
   }
 
   private hasCollapsedAncestor(regionId: string): boolean {
