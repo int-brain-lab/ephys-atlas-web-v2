@@ -15,8 +15,13 @@ def test_checked_in_golden_fixture_validates():
     validate_release(ROOT / "fixtures" / "golden-v0.1", ROOT / "schema" / "v0.1")
 
 
+def test_left_folded_checked_in_golden_fixture_validates():
+    validate_release(ROOT / "fixtures" / "golden-v0.2", ROOT / "schema" / "v0.1")
+
+
 def test_alias_schema(tmp_path):
     import json
+
     from jsonschema import Draft202012Validator
 
     schema = json.loads((ROOT / "schema/v0.1/alias.schema.json").read_text())

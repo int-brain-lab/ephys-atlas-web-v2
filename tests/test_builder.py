@@ -3,7 +3,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-
 from ephys_atlas_builder.fixture import generate_golden
 from ephys_atlas_builder.io import DTYPES
 from ephys_atlas_builder.validate import ValidationError, validate_release
@@ -19,6 +18,18 @@ def test_golden_is_deterministic(tmp_path):
     assert files_a == files_b
     for rel in files_a:
         assert (a / rel).read_bytes() == (b / rel).read_bytes(), rel
+
+
+def test_checked_in_golden_and_browser_copy_match_generator(tmp_path):
+    generated = generate_golden(tmp_path / "golden-v0.2")
+    canonical = ROOT / "fixtures" / "golden-v0.2"
+    browser = ROOT / "web" / "public" / "fixtures" / "ephys_atlas_channels" / "golden-v0.2"
+    expected_files = sorted(path.relative_to(generated) for path in generated.rglob("*") if path.is_file())
+    for copy in (canonical, browser):
+        actual_files = sorted(path.relative_to(copy) for path in copy.rglob("*") if path.is_file())
+        assert actual_files == expected_files
+        for relative in expected_files:
+            assert (copy / relative).read_bytes() == (generated / relative).read_bytes(), relative
 
 
 def test_volume_edge_chunk_decodes_to_declared_dtype(tmp_path):

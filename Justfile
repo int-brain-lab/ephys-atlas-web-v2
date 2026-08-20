@@ -83,7 +83,7 @@ data-inspect-volume path:
     PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli inspect-volume {{path}}
 
 golden:
-    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli golden fixtures/golden-v0.1
+    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli golden fixtures/golden-v0.2
 
 # Deterministic whole-release download artifact.
 data-package path output:
