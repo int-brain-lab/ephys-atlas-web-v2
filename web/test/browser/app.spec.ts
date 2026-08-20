@@ -243,7 +243,7 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(rightPath).toHaveClass(/is-selected/);
 });
 
-test('Allen anatomy mode shows actual regions and official ontology colors', async ({ page }) => {
+test('Allen anatomy mode shows actual regions and dark-theme ontology colors', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
 
@@ -253,6 +253,7 @@ test('Allen anatomy mode shows actual regions and official ontology colors', asy
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
   await expect(page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ })).toBeAttached();
   await expect(page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first()).toHaveCSS('fill', 'rgb(255, 144, 159)');
+  await expect(page.locator('[data-view="coronal"] path[data-allen-id="-1009"]').first()).toHaveCSS('fill', 'rgb(97, 111, 121)');
   await expect(page.locator('.region-row__swatch').first()).toBeVisible();
 });
 

@@ -74,14 +74,31 @@ export function atlasRegionColorMap(regions: readonly RegionMetadata[]): Readonl
   return new Map(regions.flatMap((region) => region.colorHex ? [[region.atlasId, region.colorHex] as const] : []));
 }
 
-/** Official ontology colors expanded onto both signed anatomical hemispheres. */
+/**
+ * Preserve chromatic Allen colors, but tone down achromatic near-white entries
+ * (notably root and fiber tracts) for the dark anatomical canvas.
+ */
+export function darkThemeAtlasColor(colorHex: string): string {
+  const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(colorHex);
+  if (!match) return colorHex;
+  const channels = match.slice(1).map((value) => Number.parseInt(value ?? '0', 16));
+  const minimum = Math.min(...channels);
+  const maximum = Math.max(...channels);
+  if (minimum < 192 || maximum - minimum > 16) return colorHex;
+  const darkNeutral = [40, 61, 76];
+  return `#${channels.map((channel, index) => Math.round(channel * .35 + (darkNeutral[index] ?? 0) * .65)
+    .toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** Dark-theme atlas presentation colors expanded onto both signed hemispheres. */
 export function bilateralAtlasRegionColorMap(regions: readonly RegionMetadata[]): ReadonlyMap<number, string> {
   const colors = new Map<number, string>();
   for (const region of regions) {
     if (!region.colorHex || region.atlasId === 0) continue;
     const leftId = -Math.abs(region.atlasId);
-    colors.set(leftId, region.colorHex);
-    colors.set(Math.abs(leftId), region.colorHex);
+    const color = darkThemeAtlasColor(region.colorHex);
+    colors.set(leftId, color);
+    colors.set(Math.abs(leftId), color);
   }
   return colors;
 }

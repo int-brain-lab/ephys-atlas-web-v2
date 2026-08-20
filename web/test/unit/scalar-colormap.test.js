@@ -4,6 +4,7 @@ import {
   atlasRegionColorMap,
   bilateralAtlasRegionColorMap,
   bilateralFeatureColorMap,
+  darkThemeAtlasColor,
   regionalColorMap,
   regionalColorRange,
 } from '../../.test-dist/rendering/scalar-colormap.js';
@@ -45,6 +46,15 @@ test('atlas colors are keyed by scientific atlas ids', () => {
 test('bilateral anatomy colors both homologues with the official ontology color', () => {
   const regions = [{ id: '-10', atlasId: -10, index: 0, acronym: 'SCig', name: 'Region', colorHex: '#ff90ff' }];
   assert.deepEqual([...bilateralAtlasRegionColorMap(regions)], [[-10, '#ff90ff'], [10, '#ff90ff']]);
+});
+
+test('dark anatomy presentation tones down only near-white neutral atlas colors', () => {
+  assert.equal(darkThemeAtlasColor('#ffffff'), '#73818b');
+  assert.equal(darkThemeAtlasColor('#cccccc'), '#616f79');
+  assert.equal(darkThemeAtlasColor('#ff90ff'), '#ff90ff');
+  assert.equal(darkThemeAtlasColor('#fffdbc'), '#fffdbc');
+  const regions = [{ id: '-1009', atlasId: -1009, index: 0, acronym: 'fiber tracts', name: 'fiber tracts', colorHex: '#cccccc' }];
+  assert.deepEqual([...bilateralAtlasRegionColorMap(regions)], [[-1009, '#616f79'], [1009, '#616f79']]);
 });
 
 test('bilateral feature mode keeps feature color left and ontology reference right', () => {
