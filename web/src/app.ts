@@ -55,14 +55,10 @@ export class AtlasApp {
     this.regionalPanel = new RegionalPanelController(root, {
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
+      hoverRegion: (regionId) => this.setHoveredRegion(regionId),
     });
     this.renderer.setInteractionSink?.({
-      hover: (hit) => {
-        const regionId = hit?.regionId ?? null;
-        if (regionId === this.hoveredRegionId) return;
-        this.hoveredRegionId = regionId;
-        this.render();
-      },
+      hover: (hit) => this.setHoveredRegion(hit?.regionId ?? null),
       toggleSelection: (hit) => this.store.dispatch({ type: 'selection/toggle', regionId: hit.regionId }),
       stepSlice: (axis, delta) => this.setSlice(axis, this.store.getState().view.slices[axis] + delta),
       moveCursor: (cursor) => this.store.dispatch({ type: 'cursor/set', cursor }),
@@ -122,6 +118,12 @@ export class AtlasApp {
   private setSlice(axis: SliceAxis, index: number): void {
     const clamped = Math.min(maxRegionalSliceIndex(axis), Math.max(0, Math.trunc(index)));
     this.store.dispatch({ type: 'slice/set', axis, index: clamped });
+  }
+
+  private setHoveredRegion(regionId: string | null): void {
+    if (regionId === this.hoveredRegionId) return;
+    this.hoveredRegionId = regionId;
+    this.render();
   }
 
   private async loadCatalog(): Promise<void> {
