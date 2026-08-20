@@ -12,14 +12,16 @@ from .io import canonical_json, sha256_file, write_json
 DEFAULTS = {
     "ephys_atlas_channels": {"project": "ea_active"},
     "ephys_atlas_volumes": {"project": "ea_active"},
-    "ephys_atlas_clusters": {"project": "ibl_neuropixel_brainwide_01"},
+    "ephys_atlas_clusters": {},
 }
 _LABEL_RE = re.compile(r"^\d{4}_W\d{2}$")
 
 
 def _files(root: Path) -> list[dict]:
     out = []
-    for path in sorted(p for p in root.rglob("*") if p.is_file() and p.name != "source.json"):
+    for path in sorted(
+        p for p in root.rglob("*") if p.is_file() and p.name != "source.json"
+    ):
         out.append(
             {
                 "path": path.relative_to(root).as_posix(),
@@ -83,10 +85,16 @@ def _latest_encoding_volume_label(s3, bucket_name: str, project: str) -> str:
     return labels[0]
 
 
-def _canonical_source(dataset: str, bucket_name: str, project: str, release: str) -> dict:
+def _canonical_source(
+    dataset: str, bucket_name: str, project: str, release: str
+) -> dict:
     if dataset == "ephys_atlas_channels":
         key = f"aggregates/atlas/features/{project}/{release}/agg_full/"
-        return {"bucket": bucket_name, "prefix": key, "uri": f"s3://{bucket_name}/{key}"}
+        return {
+            "bucket": bucket_name,
+            "prefix": key,
+            "uri": f"s3://{bucket_name}/{key}",
+        }
     if dataset == "ephys_atlas_volumes":
         key = (
             f"aggregates/atlas/encoding_volumes/{project}/{release}/"
@@ -95,11 +103,21 @@ def _canonical_source(dataset: str, bucket_name: str, project: str, release: str
         return {"bucket": bucket_name, "key": key, "uri": f"s3://{bucket_name}/{key}"}
     if dataset == "ephys_atlas_clusters":
         key = f"aggregates/atlas/projects/{project}/"
-        return {"bucket": bucket_name, "prefix": key, "uri": f"s3://{bucket_name}/{key}"}
+        return {
+            "bucket": bucket_name,
+            "prefix": key,
+            "uri": f"s3://{bucket_name}/{key}",
+        }
     raise ValueError(dataset)
 
 
-def pull(dataset: str, release: str, dest: Path) -> Path:
+def pull(
+    dataset: str,
+    release: str,
+    dest: Path,
+    *,
+    project: str | None = None,
+) -> Path:
     """Snapshot current canonical scientific artifacts without recomputing science.
 
     The returned directory is immutable by convention and contains `source.json`
@@ -114,8 +132,21 @@ def pull(dataset: str, release: str, dest: Path) -> Path:
                 "2026 aggregate tables, and legacy website analysis summaries; see docs/data/PROVENANCE.md"
             )
         if dataset == "local":
-            raise RuntimeError("local datasets are imported packages, not remotely pulled datasets")
+            raise RuntimeError(
+                "local datasets are imported packages, not remotely pulled datasets"
+            )
         raise ValueError(f"unknown dataset: {dataset}")
+
+    if dataset == "ephys_atlas_clusters":
+        if not project:
+            raise RuntimeError(
+                "pulling ephys_atlas_clusters requires an explicit --project; "
+                "the launch cohort must not be inferred from a historical default"
+            )
+    elif project is not None:
+        raise ValueError(
+            f"--project is only configurable for ephys_atlas_clusters; {dataset} uses its canonical project"
+        )
 
     try:
         from one.api import ONE
@@ -129,7 +160,7 @@ def pull(dataset: str, release: str, dest: Path) -> Path:
 
     one = ONE(base_url="https://alyx.internationalbrainlab.org", mode="remote")
     s3, bucket_name = aws.get_s3_from_alyx(alyx=one.alyx)
-    project = DEFAULTS[dataset]["project"]
+    project = project or DEFAULTS[dataset]["project"]
     requested_release = release
 
     if dataset == "ephys_atlas_clusters":
