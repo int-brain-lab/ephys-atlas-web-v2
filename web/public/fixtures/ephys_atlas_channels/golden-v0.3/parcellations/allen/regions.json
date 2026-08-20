@@ -1,0 +1,26 @@
+[
+  {
+    "acronym": "R1",
+    "atlas_id": -362,
+    "index": 0,
+    "name": "Fixture region 1"
+  },
+  {
+    "acronym": "R2",
+    "atlas_id": -382,
+    "index": 1,
+    "name": "Fixture region 2"
+  },
+  {
+    "acronym": "R3",
+    "atlas_id": -477,
+    "index": 2,
+    "name": "Fixture region 3"
+  },
+  {
+    "acronym": "R4",
+    "atlas_id": -803,
+    "index": 3,
+    "name": "Fixture region 4"
+  }
+]

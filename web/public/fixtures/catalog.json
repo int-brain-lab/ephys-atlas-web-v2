@@ -5,8 +5,14 @@
       "id": "ephys_atlas_channels",
       "title": "Ephys Atlas channels (integration fixture)",
       "description": "Schema-v0.1 golden fixture wired through the real manifest/binary loader; not scientific data.",
-      "defaultRelease": "golden-v0.2",
+      "defaultRelease": "golden-v0.3",
       "releases": [
+        {
+          "id": "golden-v0.3",
+          "label": "golden-v0.3 (visible left anatomy)",
+          "manifest": "./ephys_atlas_channels/golden-v0.3/manifest.json",
+          "immutable": true
+        },
         {
           "id": "golden-v0.2",
           "label": "golden-v0.2 (left-folded)",

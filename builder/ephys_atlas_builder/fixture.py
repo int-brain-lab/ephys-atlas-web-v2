@@ -31,14 +31,14 @@ def generate_golden(out: Path) -> Path:
     (out / "features" / "rms_ap").mkdir(parents=True)
     (out / "parcellations" / "allen").mkdir(parents=True)
 
-    region_ids = np.array([-10, -20, -30, -40], dtype=np.int32)
+    region_ids = np.array([-362, -382, -477, -803], dtype=np.int32)
     region_index = write_array(out / "parcellations" / "allen" / "region_ids.i32", region_ids, "int32")
     region_index["path"] = "parcellations/allen/region_ids.i32"
     regions = [
-        {"index": 0, "atlas_id": -10, "acronym": "R1", "name": "Fixture region 1"},
-        {"index": 1, "atlas_id": -20, "acronym": "R2", "name": "Fixture region 2"},
-        {"index": 2, "atlas_id": -30, "acronym": "R3", "name": "Fixture region 3"},
-        {"index": 3, "atlas_id": -40, "acronym": "R4", "name": "Fixture region 4"},
+        {"index": 0, "atlas_id": -362, "acronym": "R1", "name": "Fixture region 1"},
+        {"index": 1, "atlas_id": -382, "acronym": "R2", "name": "Fixture region 2"},
+        {"index": 2, "atlas_id": -477, "acronym": "R3", "name": "Fixture region 3"},
+        {"index": 3, "atlas_id": -803, "acronym": "R4", "name": "Fixture region 4"},
     ]
     write_json(out / "parcellations" / "allen" / "regions.json", regions)
 
@@ -134,17 +134,17 @@ def generate_golden(out: Path) -> Path:
     }
     write_json(feature_root / "feature.json", feature)
 
-    source_digest = hashlib.sha256(b"golden-fixture-v0.2\n").hexdigest()
+    source_digest = hashlib.sha256(b"golden-fixture-v0.3\n").hexdigest()
     manifest = {
         "schema_version": "0.1",
         "dataset_id": "golden_fixture",
         "title": "IBL Ephys Atlas v2 golden fixture",
         "description": "Small deterministic non-scientific dataset used to exercise the v0.1 browser contract.",
-        "release": {"release_id": "golden-v0.2", "immutable": True, "created_at": "2026-08-20T00:00:00Z", "paper_snapshot": False},
+        "release": {"release_id": "golden-v0.3", "immutable": True, "created_at": "2026-08-20T00:00:00Z", "paper_snapshot": False},
         "provenance": {
             "sources": [{"role": "canonical-data", "description": "Deterministic synthetic fixture seed", "sha256": source_digest}],
-            "builder": {"name": "ibl-ephys-atlas-builder", "version": "0.1.0", "repository": "rossant/ibl-ephys-atlas-web-v2", "command": "ephys-atlas-data golden fixtures/golden-v0.2"},
-            "recipe": {"id": "golden-fixture-v0.2"},
+            "builder": {"name": "ibl-ephys-atlas-builder", "version": "0.1.0", "repository": "rossant/ibl-ephys-atlas-web-v2", "command": "ephys-atlas-data golden fixtures/golden-v0.3"},
+            "recipe": {"id": "golden-fixture-v0.3"},
             "notes": ["This fixture is synthetic and has no scientific interpretation."],
         },
         "parcellations": [{"id": "allen", "region_index": region_index, "metadata": "parcellations/allen/regions.json"}],

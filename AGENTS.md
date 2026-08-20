@@ -41,7 +41,7 @@ Scientific provenance is part of the product contract, not optional metadata.
 - Schema v0.1 in `schema/v0.1/` is the contract shared by the builder, browser, local import, and publishing service.
 - Prefer changing the contract once and updating every producer/consumer in the same coherent task rather than adding adapter-specific shadow schemas.
 - Large numeric data belongs in typed binary artifacts, not large JSON payloads.
-- `fixtures/golden-v0.2/` is deterministic and synthetic. It must never be presented as scientific data.
+- `fixtures/golden-v0.3/` is deterministic and synthetic. It must never be presented as scientific data.
 - The browser-served golden fixture must remain semantically identical to the builder fixture. If copies are needed for Vite, update them from the canonical fixture rather than hand-editing divergent content.
 
 ## Rendering invariants
