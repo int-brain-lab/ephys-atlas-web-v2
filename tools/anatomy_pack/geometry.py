@@ -40,6 +40,9 @@ class SliceValidation:
     adjacency_count_before: int
     adjacency_count_after: int
     adjacency_preserved: bool
+    uncovered_voxels: int
+    multiply_covered_voxels: int
+    wrong_label_voxels: int
     minimum_eligible_region_iou: float
     median_boundary_error_um: float
     p95_boundary_error_um: float
@@ -163,9 +166,39 @@ def _boundary_errors(
     return np.concatenate((forward, reverse)) * resolution_um
 
 
+def _voxel_center_errors(
+    plane: np.ndarray,
+    geometries_by_label: dict[int, Polygon | MultiPolygon],
+) -> tuple[int, int, int]:
+    """Compare the candidate coverage with every raster voxel centre."""
+    coverage_count = np.zeros(plane.shape, dtype=np.uint16)
+    correct_label = np.zeros(plane.shape, dtype=bool)
+    for label, geometry in geometries_by_label.items():
+        min_x, min_y, max_x, max_y = geometry.bounds
+        x0 = max(0, math.floor(min_x))
+        x1 = min(plane.shape[1], math.ceil(max_x) + 1)
+        y0 = max(0, math.floor(min_y))
+        y1 = min(plane.shape[0], math.ceil(max_y) + 1)
+        if x0 >= x1 or y0 >= y1:
+            continue
+        yy, xx = np.mgrid[y0:y1, x0:x1]
+        inside = np.asarray(
+            shapely.covers(geometry, points(xx.reshape(-1), yy.reshape(-1)))
+        ).reshape(yy.shape)
+        coverage_count[y0:y1, x0:x1] += inside
+        correct_label[y0:y1, x0:x1] |= inside & (plane[y0:y1, x0:x1] == label)
+
+    brain = plane != 0
+    uncovered = int(np.count_nonzero(brain & ~correct_label))
+    multiply_covered = int(np.count_nonzero(coverage_count > 1))
+    wrong_label = int(np.count_nonzero((coverage_count > 0) & ~correct_label))
+    return uncovered, multiply_covered, wrong_label
+
+
 def simplify_coverage(
     geometries_by_label: dict[int, Polygon | MultiPolygon],
     *,
+    source_plane: np.ndarray,
     tolerance_um: float,
     resolution_um: int,
     maximum_error_um: float,
@@ -192,6 +225,9 @@ def simplify_coverage(
             0,
             0,
             True,
+            0,
+            0,
+            0,
             1.0,
             0.0,
             0.0,
@@ -225,6 +261,10 @@ def simplify_coverage(
     holes_after = sum(value[1] for value in signatures_after)
     adjacency_before = _adjacencies(exact)
     adjacency_after = _adjacencies(candidate)
+    candidate_by_label = dict(zip(labels, candidate, strict=True))
+    uncovered_voxels, multiply_covered_voxels, wrong_label_voxels = (
+        _voxel_center_errors(source_plane, candidate_by_label)
+    )
 
     eligible_ious: list[float] = []
     errors: list[np.ndarray] = []
@@ -252,6 +292,9 @@ def simplify_coverage(
         adjacency_count_before=len(adjacency_before),
         adjacency_count_after=len(adjacency_after),
         adjacency_preserved=adjacency_before == adjacency_after,
+        uncovered_voxels=uncovered_voxels,
+        multiply_covered_voxels=multiply_covered_voxels,
+        wrong_label_voxels=wrong_label_voxels,
         minimum_eligible_region_iou=float(min(eligible_ious, default=1.0)),
         median_boundary_error_um=float(np.median(all_errors)),
         p95_boundary_error_um=float(np.percentile(all_errors, 95)),
@@ -277,6 +320,12 @@ def simplify_coverage(
         failures.append("components/holes")
     if not validation.adjacency_preserved:
         failures.append("adjacency")
+    if uncovered_voxels or multiply_covered_voxels or wrong_label_voxels:
+        failures.append(
+            "voxel centres "
+            f"(uncovered={uncovered_voxels}, multiply-covered={multiply_covered_voxels}, "
+            f"wrong-label={wrong_label_voxels})"
+        )
     if validation.minimum_eligible_region_iou < minimum_iou:
         failures.append(
             f"eligible-region IoU {validation.minimum_eligible_region_iou:.6f}"
@@ -290,7 +339,7 @@ def simplify_coverage(
         )
     if failures:
         raise ValueError("simplified anatomy failed: " + ", ".join(failures))
-    return dict(zip(labels, candidate, strict=True)), validation
+    return candidate_by_label, validation
 
 
 def _format_coordinate(value: float) -> str:

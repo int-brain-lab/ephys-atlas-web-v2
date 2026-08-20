@@ -63,6 +63,7 @@ def test_coverage_simplification_preserves_topology_and_has_bounded_error() -> N
 
     candidate, validation = simplify_coverage(
         exact,
+        source_plane=plane,
         tolerance_um=10,
         resolution_um=25,
         maximum_error_um=10,

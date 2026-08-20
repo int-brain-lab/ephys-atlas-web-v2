@@ -182,6 +182,7 @@ def _slice_paths(
     exact = raster_label_geometries(plane)
     simplified, validation = simplify_coverage(
         exact,
+        source_plane=plane,
         tolerance_um=tolerance_um,
         resolution_um=RESOLUTION_UM,
         maximum_error_um=maximum_error_um,
@@ -454,8 +455,10 @@ def build_pack(
             "validation": {
                 "topology_valid": True,
                 "coverage_valid": True,
-                "uncovered_voxels": 0,
-                "multiply_covered_voxels": 0,
+                "uncovered_voxels": sum(item.uncovered_voxels for item in validations),
+                "multiply_covered_voxels": sum(
+                    item.multiply_covered_voxels for item in validations
+                ),
                 "adjacency_mismatches": 0,
                 "invalid_geometries": 0,
                 "missing_atlas_ids": [],
