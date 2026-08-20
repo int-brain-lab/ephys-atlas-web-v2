@@ -258,11 +258,17 @@ function parseProvenance(value: unknown): Readonly<Record<string, unknown>> {
     if (name === 'generator' && pin.dirty !== false) throw new Error('anatomy generator provenance must be from a clean commit');
   }
   const simplification = record(provenance.simplification, 'provenance.simplification');
-  if (simplification.algorithm !== 'GEOS coverage_simplify') throw new Error('unsupported anatomy simplification algorithm');
+  const algorithm = simplification.algorithm;
+  if (algorithm !== 'GEOS coverage_simplify' && algorithm !== 'exact collinear vertex removal') {
+    throw new Error('unsupported anatomy simplification algorithm');
+  }
   const tolerance = finiteNumber(simplification.tolerance_um, 'provenance.simplification.tolerance_um');
   const interval = finiteNumber(simplification.boundary_sampling_interval_voxels, 'provenance.simplification.boundary_sampling_interval_voxels');
   const errorBound = finiteNumber(simplification.boundary_error_bound_um, 'provenance.simplification.boundary_error_bound_um');
   if (tolerance < 0 || interval <= 0 || interval > 1 || errorBound < 0) throw new Error('anatomy simplification provenance has invalid bounds');
+  if (algorithm === 'exact collinear vertex removal' && (tolerance !== 0 || errorBound !== 0)) {
+    throw new Error('exact anatomy simplification must declare zero tolerance and boundary error');
+  }
   return provenance;
 }
 
