@@ -2,49 +2,61 @@
 
 The initial parallel exploration phase is complete. All accepted data/schema, publishing, UX, frontend, rendering, and integration work is consolidated on `main`.
 
+This file keeps the historical `WORKSTREAMS` name only so old links remain valid. It is no longer a branch/conversation assignment document. The active execution order lives in `docs/IMPLEMENTATION_PLAN.md`.
+
 ## Single development line
 
 `main` is the sole active product branch and the source of truth for code, schema, documentation, CI, and launch readiness.
 
-Do not create persistent `work/*` branches. Do not resume the historical data/frontend/rendering/UX/publishing branches. A short-lived branch is justified only for a genuinely isolated experiment that cannot safely be developed sequentially on `main`; it must be integrated or discarded immediately after the experiment.
+Do not create persistent `work/*` or `agent/*` branches. Do not resume historical data/frontend/rendering/UX/publishing branches. A temporary branch is justified only if the repository owner explicitly requests an isolated experiment; it must be integrated or discarded promptly.
 
-Routine project work, including data builder changes, viewer implementation, rendering integration, publishing fixes, and documentation, proceeds sequentially on `main` with CI as the integration gate. Pull requests are not required for this project workflow.
+Routine project work proceeds sequentially on `main` with `just check`/CI as the integration gate. Pull requests are not required for the current project workflow.
 
-Accepted cross-cutting decisions continue to be recorded in `docs/DECISIONS.md`.
+See D017 in `docs/DECISIONS.md` and the root `AGENTS.md`.
 
-## Ownership by subsystem
+## Subsystem boundaries
 
-The repository still has clear subsystem boundaries even though they no longer map to branches:
+The repository still has clear ownership boundaries even though they no longer map to branches:
 
-- `schema/`, `builder/`, fixtures, provenance and scientific metadata: data/schema/reproducibility;
-- `web/`: browser state, UX, regional and volume rendering, charts and interactions;
-- `publishing/`: capability-authenticated mutation service and client; public reads remain static;
-- `docs/`: architecture, decisions, source policy, deployment and launch notes;
-- CI and release integration: repository-wide.
+- `schema/`, `builder/`, fixtures, provenance, source adapters, scientific metadata: data/schema/reproducibility;
+- `web/`: browser state, UX, regional/volume rendering, charts, interactions, local transport;
+- `publishing/`: capability-authenticated mutation service/client; public reads stay static;
+- `benchmarks/`: measured evidence for physical/rendering choices;
+- `docs/`: product spec, architecture, decisions, open questions, source policy, deployment and launch state;
+- CI/release integration: repository-wide.
 
-Shared contracts are changed once on `main`, with their producers and consumers updated in the same integration sequence whenever practical.
+Shared contracts are changed once on `main`, with affected producers and consumers updated in the same coherent task whenever practical.
 
-## Current integrated state
+## Current vertical slices
 
-The first schema-v0.1 regional vertical slice is implemented end-to-end using the deterministic golden fixture:
+### Regional
 
-regional feature -> typed binary artifacts -> browser -> linked curated slices -> feature coloring -> region selection -> URL state -> histogram/comparison.
+The schema-v0.1 regional golden path is implemented end-to-end:
 
-The browser and publishing service now share the same static catalog contract. The `ephys_atlas_channels` builder has an explicit deterministic regional recipe; production raw/denoised and population choices remain scientific sign-off parameters rather than hidden defaults.
+regional feature -> typed binary artifacts -> published/local browser source -> region metadata/statistics/histograms -> linked curated SVG slices -> feature coloring -> list/SVG selection -> URL state -> selected/global comparison.
 
-## Next launch-critical work
+The fixture is synthetic; production channel science remains blocked on the explicit questions listed in `docs/OPEN_QUESTIONS.md`.
 
-1. Exercise the channel builder on a real pinned/current `ea_active` source snapshot when the scientific-data environment is available, then point a staging browser catalog at that immutable release.
-2. Complete the volume vertical slice. Benchmark realistic physical layouts before freezing the launch transport; the schema permits the current 3-D chunks and a browser-oriented orthogonal slice-pack layout.
-3. Complete remaining viewer controls, downloads/share state, local import polish, error/loading states and release selection around the real data path.
-4. Keep remote publishing operational but do not let deployment-specific publishing work block viewer launch.
-5. Treat 3-D as lower priority than regional and volume launch completeness unless it can be added without delaying them.
+### Volume
+
+The schema-v0.1 golden volume path is implemented through the shared renderer boundary:
+
+volume descriptor -> transport resource callback -> `chunks3d` adapter -> axis/coordinate mapping from declared scientific metadata -> bounded chunk cache -> orthogonal slice extraction -> Canvas rendering.
+
+This proves the browser contract/reference implementation. It does not freeze production volume transport or establish the unresolved authoritative scientific affine.
+
+### Publishing
+
+Publishing stages/resumes/validates immutable releases and emits a browser-compatible static public catalog while keeping administrative state separate. It does not perform scientific transforms.
 
 ## Coordination rules
 
-- `main` must remain buildable and testable; fix a red integration gate before starting the next independent feature.
+- Fix a red `main` gate before starting the next independent product feature.
+- Select new work from `docs/IMPLEMENTATION_PLAN.md`, not from old workstream handoffs.
 - Do not silently redefine scientific semantics, coordinate systems, region identifiers, source vintages, or physical formats.
-- Prefer code, tests, fixtures and measured browser/data evidence over prose-only proposals.
-- Feature catalogs remain data-driven; do not hard-code the mutable upstream feature list.
-- Published releases are immutable; mutable aliases resolve to immutable release IDs outside release contents.
-- Display calibration for curated SVG anatomy is presentation metadata, never a canonical scientific coordinate transform.
+- If a required scientific choice is unresolved, record/use `docs/OPEN_QUESTIONS.md` and work on an independent task rather than guessing.
+- Prefer code, tests, fixtures, and measured browser/data evidence over prose-only proposals.
+- Feature catalogs remain data-driven.
+- Published releases remain immutable; aliases resolve outside release contents.
+- Curated SVG display calibration is presentation metadata, never a canonical scientific coordinate transform.
+- 3-D remains lower priority than completing the launch-critical regional/volume/data/deployment path.
