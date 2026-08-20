@@ -125,6 +125,17 @@ adjacency/geometry/missing-ID failures, minimum eligible-region IoU 1.0, and a
 through one native ML/AP/DV cursor; URL v2 uses native indices and migrates v1
 10 µm links by world coordinate.
 
+A byte-identical, validated bilateral 10 µm successor is now registered under
+`web/public/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/`,
+while the v1 pack remains available for rollback. The v2 pack contains all
+3,260 source slices in 205 lazy depth-16 packs (44,424,303 compressed bytes),
+preserves negative-left/positive-right Allen, Beryl, and Cosmos IDs, and
+retains all 4,653 enclosed background components. Its exact collinear-only
+serialization has eligible-region IoU 1.0 and a 0 µm boundary-error upper
+bound. Browser runtime selection and calibration are intentionally left to the
+separate renderer integration unit; this asset-registration commit does not
+change the active anatomy URL.
+
 ## Volume viewer vertical slice
 
 A schema-v0.1 volume path is implemented and green on `main` using the golden `chunks3d` representation plus a tested `orthogonal_slice_packs` adapter:

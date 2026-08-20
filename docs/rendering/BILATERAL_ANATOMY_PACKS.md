@@ -73,6 +73,33 @@ uv run --project builder --extra anatomy --extra scientific --extra test --locke
 The generator refuses dirty tracked worktrees and existing output paths. It
 writes deterministic gzip bytes (`mtime=0`), validates both JSON schemas, and
 checks every compressed byte count, decoded byte count, and SHA-256 before
-atomically moving the staged directory into place. Generated packs remain
-review artifacts until their measured size and complete-corpus validation are
-accepted and registered separately.
+atomically moving the staged directory into place.
+
+## Accepted complete-corpus artifact
+
+The accepted depth-16 artifact is
+`allen-ccfv3-10um-bilateral-exact-599b5e0bbab1`, generated from clean commit
+`fcdb82d144d3104dc1ee76f6582ed537bfc211be`. Its manifest is 58,797 bytes with
+SHA-256
+`273adff9e76ee902126bfb1dc18b9f0a7f6dfccacb3305f56e0463c68b24fc8c`.
+The 205 gzip packs contain all 3,260 orthogonal slices and occupy 44,424,303
+bytes; the complete directory including the manifest is 44,483,100 bytes.
+No single depth-16 pack exceeds 517,748 compressed bytes or 3,825,077 decoded
+bytes.
+
+Complete-corpus validation records 537,110 region paths and 1,436,826 rings.
+All topology, exact coverage, background topology, signed-ID, affine, and
+resource-integrity gates pass. Eligible-region IoU is 1.0, the boundary-error
+upper bound is 0 µm, and all source/emitted counts agree. The 4,653 enclosed
+background components are preserved exactly. Independent validation reopened
+and schema-checked every pack, recomputed every compressed checksum and byte
+count, verified deterministic gzip headers and canonical decoded JSON, and
+rehashed both pinned source artifacts.
+
+The byte-identical public copy lives at
+`web/public/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/`.
+Its inventory hash (SHA-256 over sorted relative path, byte size, and file
+SHA-256 records) is
+`8c6eca8c7bf74c0847a7a56026398841d1852dd10fe31044dc165fe6709b711b`.
+The v1 pack remains present as a rollback asset. Registering this public copy
+does not by itself select a runtime anatomy URL or alter browser calibration.
