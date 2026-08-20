@@ -3,9 +3,10 @@ from __future__ import annotations
 import gzip
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
-from iblatlas.regions import BrainRegions
+import pytest
 from jsonschema import Draft202012Validator
 
 from tools.anatomy_pack.build_v2 import (
@@ -18,6 +19,20 @@ from tools.anatomy_pack.build_v2 import (
     plane_for_projection,
     slice_paths,
 )
+
+
+def _brain_regions():
+    regions = pytest.importorskip("iblatlas.regions")
+    return regions.BrainRegions()
+
+
+def _synthetic_regions() -> SimpleNamespace:
+    ids = np.asarray([0, -997, -8], dtype=np.int64)
+    identity = np.arange(ids.size, dtype=np.int64)
+    return SimpleNamespace(
+        id=ids,
+        mappings={name: identity for name in ("Allen", "Beryl", "Cosmos")},
+    )
 from tools.anatomy_pack.geometry import (
     geometry_path,
     geometry_path_relative,
@@ -26,7 +41,7 @@ from tools.anatomy_pack.geometry import (
 
 
 def test_raw_annotation_mapping_uses_physical_midline_and_both_signs() -> None:
-    regions = BrainRegions()
+    regions = _brain_regions()
     raw = np.full((1, 575, 1), 8, dtype=np.uint32)
     mapped = map_annotation_block(raw, regions)
 
@@ -36,7 +51,7 @@ def test_raw_annotation_mapping_uses_physical_midline_and_both_signs() -> None:
 
 
 def test_bilateral_ids_preserve_source_hemisphere_for_every_mapping() -> None:
-    regions = BrainRegions()
+    regions = _brain_regions()
     positive = atlas_ids_for_row(regions, 2)
     negative = atlas_ids_for_row(regions, 1329)
     assert all(value > 0 for value in positive.values())
@@ -64,7 +79,7 @@ def test_real_affines_round_trip_bilateral_sentinels() -> None:
 
 
 def test_bilateral_paths_declare_evenodd_and_keep_internal_background() -> None:
-    regions = BrainRegions()
+    regions = _synthetic_regions()
     plane = np.full((7, 7), 2, dtype=np.uint16)
     plane[2:5, 2:5] = 0
     paths, validation = slice_paths(plane, regions)
@@ -76,7 +91,7 @@ def test_bilateral_paths_declare_evenodd_and_keep_internal_background() -> None:
 
 
 def test_compact_path_is_deterministic_exact_and_keeps_hole_subpaths() -> None:
-    regions = BrainRegions()
+    regions = _synthetic_regions()
     plane = np.full((7, 7), 2, dtype=np.uint16)
     plane[2:5, 2:5] = 0
     paths, validation = slice_paths(plane, regions)
