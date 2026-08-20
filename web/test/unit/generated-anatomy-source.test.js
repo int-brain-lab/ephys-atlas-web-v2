@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { gzipSync } from 'node:zlib';
+import { gunzipSync, gzipSync } from 'node:zlib';
 import test from 'node:test';
 
 import { GeneratedAnatomySliceSource, parseAnatomyPackManifest } from '../../.test-dist/rendering/generated-anatomy-source.js';
@@ -107,6 +107,46 @@ function fixture() {
   };
 }
 
+function bilateralFixture() {
+  const result = fixture();
+  result.manifest.format = 'anatomy-pack-v2';
+  result.manifest.schema_version = '2.0';
+  result.manifest.pack_id = 'fixture-v2';
+  result.manifest.source.resolution_um = 10;
+  result.manifest.source.hemisphere = 'bilateral';
+  result.manifest.source.region_ids.right_sign = 'positive';
+  result.manifest.provenance.simplification.boundary_error_bound_um = 1.25;
+  Object.assign(result.manifest.validation, {
+    background_topology_valid: true,
+    internal_background_components_before: 1,
+    internal_background_components_after: 1,
+  });
+  for (const axis of ['coronal', 'sagittal', 'horizontal']) {
+    const projection = result.manifest.projections[axis];
+    projection.plane_index_to_world_um = projection.plane_index_to_world_um.map((value, index) => index % 4 === 3 ? value : value * 0.4);
+    projection.world_to_plane_index = projection.world_to_plane_index.map((value, index) => index % 4 === 3 ? value : value * 2.5);
+    const descriptor = projection.pack_sets[16].packs[0];
+    const payload = JSON.parse(gunzipSync(result.buffers[descriptor.path]).toString());
+    payload.format = 'anatomy-slice-pack-v2';
+    payload.schema_version = '2.0';
+    payload.anatomy_pack_id = 'fixture-v2';
+    for (const slice of payload.slices) {
+      for (const path of slice.paths) path.fill_rule = 'evenodd';
+      slice.paths.push({
+        atlas_ids: { allen: 10, beryl: 20, cosmos: 30 },
+        fill_rule: 'evenodd', d: 'M1 0L2 0L2 1Z',
+      });
+    }
+    const encoded = JSON.stringify(payload);
+    const compressed = gzipSync(encoded, { mtime: 0 });
+    result.buffers[descriptor.path] = compressed;
+    descriptor.bytes = compressed.byteLength;
+    descriptor.uncompressed_bytes = Buffer.byteLength(encoded);
+    descriptor.sha256 = createHash('sha256').update(compressed).digest('hex');
+  }
+  return result;
+}
+
 test('generated anatomy source validates, verifies, decodes, and caches immutable gzip packs', async () => {
   const { manifest, buffers } = fixture();
   const requests = new Map();
@@ -129,6 +169,24 @@ test('generated anatomy source validates, verifies, decodes, and caches immutabl
   assert.deepEqual(await source.guidesForWorld('coronal', { ml: 25, ap: 0, dv: 50 }), [
     { sourceAxis: 'sagittal', targetAxis: 'coronal', dimension: 'x', position: 1 },
     { sourceAxis: 'horizontal', targetAxis: 'coronal', dimension: 'y', position: 2 },
+  ]);
+});
+
+test('generated anatomy source consumes bilateral v2 packs with signed hemisphere IDs', async () => {
+  const { manifest, buffers } = bilateralFixture();
+  const source = new GeneratedAnatomySliceSource({
+    manifestUrl: 'https://example.test/anatomy/manifest.json',
+    fetchImpl: async (input) => {
+      const url = String(input);
+      if (url.endsWith('/manifest.json')) return new Response(JSON.stringify(manifest), { status: 200 });
+      const body = buffers[url.split('/anatomy/')[1]];
+      return body ? new Response(body, { status: 200 }) : new Response('missing', { status: 404 });
+    },
+  });
+  const slice = await source.loadSlice('coronal', 0);
+  assert.deepEqual(slice.paths.map((path) => path.atlasIds), [
+    { allen: -10, beryl: -20, cosmos: -30 },
+    { allen: 10, beryl: 20, cosmos: 30 },
   ]);
 });
 
