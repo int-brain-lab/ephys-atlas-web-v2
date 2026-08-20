@@ -39,13 +39,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install
+      - run: npm ci
       - id: typecheck
         continue-on-error: true
         run: npm run typecheck
       - id: unit
         continue-on-error: true
         run: npm run test:unit
+      - id: rendering
+        continue-on-error: true
+        run: npm run test:rendering
       - id: build
         continue-on-error: true
         run: npm run build
@@ -64,6 +67,7 @@ jobs:
             const outcomes = {
               'CI / web typecheck': '${{ steps.typecheck.outcome }}',
               'CI / web unit': '${{ steps.unit.outcome }}',
+              'CI / web rendering': '${{ steps.rendering.outcome }}',
               'CI / web build': '${{ steps.build.outcome }}',
               'CI / web browser': '${{ steps.browser.outcome }}',
             };
@@ -83,5 +87,6 @@ jobs:
         run: |
           test '${{ steps.typecheck.outcome }}' = success
           test '${{ steps.unit.outcome }}' = success
+          test '${{ steps.rendering.outcome }}' = success
           test '${{ steps.build.outcome }}' = success
           test '${{ steps.browser.outcome }}' = success
