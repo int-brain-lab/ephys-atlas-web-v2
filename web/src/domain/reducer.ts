@@ -1,5 +1,12 @@
 import type { AppAction } from './actions.js';
 import type { AppState } from './types.js';
+import { cursorStateToWorld, worldToCursorState } from '../rendering/coordinate-space.js';
+import {
+  maxRegionalSliceIndex,
+  regionalIndexToCoordinateUm,
+  regionalIndicesToWorld,
+  worldToRegionalIndices,
+} from '../rendering/slice-calibration.js';
 
 function normalizedSelection(regionIds: readonly string[]): readonly string[] {
   return [...new Set(regionIds.filter(Boolean))].sort();
@@ -49,16 +56,26 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       };
     case 'selection/clear':
       return { ...state, view: { ...state.view, selection: [] } };
-    case 'cursor/set':
-      return { ...state, view: { ...state.view, cursor: action.cursor } };
-    case 'slice/set':
+    case 'cursor/set': {
+      const slices = worldToRegionalIndices(cursorStateToWorld(action.cursor));
+      const cursor = worldToCursorState(regionalIndicesToWorld(slices));
+      return { ...state, view: { ...state.view, cursor, slices } };
+    }
+    case 'slice/set': {
+      const index = Math.min(maxRegionalSliceIndex(action.axis), Math.max(0, Math.trunc(action.index)));
+      const slices = { ...state.view.slices, [action.axis]: index };
+      const coordinate = regionalIndexToCoordinateUm(action.axis, index);
+      const world = cursorStateToWorld(state.view.cursor);
+      world[action.axis === 'coronal' ? 'ap' : action.axis === 'sagittal' ? 'ml' : 'dv'] = coordinate;
       return {
         ...state,
         view: {
           ...state.view,
-          slices: { ...state.view.slices, [action.axis]: Math.max(0, Math.trunc(action.index)) },
+          cursor: worldToCursorState(world),
+          slices,
         },
       };
+    }
     case 'color/statistic':
       return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, statistic: action.statistic } } };
     case 'color/mode':

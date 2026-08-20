@@ -26,7 +26,7 @@ export function anatomySliceSvgFragment(slice: AnatomySlice): string {
   )).join('');
 }
 
-/** Generated anatomy renderer. It remains inactive until main.ts selects this provider. */
+/** Default regional renderer for immutable, scientifically registered anatomy packs. */
 export class GeneratedAnatomySliceRenderer implements SliceRenderer {
   private readonly mounts = new Map<HTMLElement, RendererMount>();
   private readonly renderTokens = new WeakMap<HTMLElement, number>();

@@ -648,7 +648,7 @@ export class AppShell {
     target.setAttribute('aria-label', `${axis} renderer target`);
     const stateText = element('div', 'view-frame__state-message');
     stateText.setAttribute('role', 'status');
-    stateText.textContent = 'Loading curated anatomy…';
+    stateText.textContent = 'Loading registered anatomy…';
     viewport.append(target, stateText);
 
     const footer = element('div', 'view-frame__footer');
@@ -686,7 +686,9 @@ export class AppShell {
     nodes.frame.dataset.state = 'loading';
     nodes.status.textContent = 'Loading';
     const stateMessage = nodes.frame.querySelector<HTMLElement>('.view-frame__state-message');
-    if (stateMessage) stateMessage.textContent = 'Loading curated anatomy…';
+    if (stateMessage) stateMessage.textContent = view.representation === 'volume'
+      ? 'Loading scientific volume…'
+      : 'Loading registered anatomy…';
 
     const pending = this.renderer.render(nodes.target, {
       axis,
@@ -701,14 +703,14 @@ export class AppShell {
     Promise.resolve(pending).then(() => {
       if (nodes.renderToken !== token) return;
       nodes.frame.dataset.state = 'ready';
-      nodes.status.textContent = 'Curated atlas';
+      nodes.status.textContent = view.representation === 'volume' ? 'Scientific volume' : 'Allen CCFv3 · 25 µm';
     }).catch((error: unknown) => {
       if (nodes.renderToken !== token) return;
       nodes.frame.dataset.state = 'error';
       nodes.status.textContent = 'Unavailable';
       this.renderer.clear(nodes.target);
       if (stateMessage) {
-        stateMessage.textContent = error instanceof Error ? error.message : 'Curated anatomy could not be loaded';
+        stateMessage.textContent = error instanceof Error ? error.message : 'Registered anatomy could not be loaded';
       }
       this.callbacks.reportError(error);
     });

@@ -10,8 +10,16 @@ import type {
   ViewState,
 } from '../domain/types.js';
 import { LAUNCH_DATASET_IDS } from '../domain/types.js';
+import { cursorStateToWorld } from '../rendering/coordinate-space.js';
+import {
+  legacyRegionalIndicesToWorld,
+  maxRegionalSliceIndex,
+  REGIONAL_10UM_CALIBRATION,
+  regionalIndicesToWorld,
+  worldToRegionalIndices,
+} from '../rendering/slice-calibration.js';
 
-const URL_VERSION = 1;
+const URL_VERSION = 2;
 const PARCELLATIONS = new Set<ParcellationId>(['allen', 'beryl', 'cosmos']);
 const REPRESENTATIONS = new Set<RepresentationKind>(['regional', 'volume']);
 const STATISTICS = new Set<StatisticId>(['mean', 'median', 'min', 'max', 'count']);
@@ -50,7 +58,7 @@ function isDatasetId(value: string | null): value is DatasetId {
 export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIEW_STATE): ViewState {
   const params = new URLSearchParams(search);
   const version = Number(params.get('v'));
-  if (params.has('v') && version !== URL_VERSION) return defaults;
+  if (params.has('v') && version !== 1 && version !== URL_VERSION) return defaults;
 
   const datasetId = isDatasetId(params.get('dataset')) ? params.get('dataset') as DatasetId : defaults.dataset.datasetId;
   const releaseId = params.has('release')
@@ -66,8 +74,31 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
   const statistic = STATISTICS.has(params.get('stat') as StatisticId)
     ? params.get('stat') as StatisticId
     : defaults.coloring.statistic;
-  const [xUm, yUm, zUm] = parseTriple(params.get('cursor'), [defaults.cursor.xUm, defaults.cursor.yUm, defaults.cursor.zUm]);
-  const [coronal, sagittal, horizontal] = parseTriple(params.get('slices'), [defaults.slices.coronal, defaults.slices.sagittal, defaults.slices.horizontal]);
+  const isLegacyUrl = version === 1 || (!params.has('v') && params.has('slices'));
+  const fallbackSlices = isLegacyUrl
+    ? [660, 550, 400] as const
+    : [defaults.slices.coronal, defaults.slices.sagittal, defaults.slices.horizontal] as const;
+  const [rawCoronal, rawSagittal, rawHorizontal] = parseTriple(params.get('slices'), fallbackSlices);
+  const parsedSlices = {
+    coronal: Math.trunc(rawCoronal),
+    sagittal: Math.trunc(rawSagittal),
+    horizontal: Math.trunc(rawHorizontal),
+  };
+  const migratedWorld = isLegacyUrl
+    ? legacyRegionalIndicesToWorld({
+      coronal: Math.min(REGIONAL_10UM_CALIBRATION.coronal.indexCount - 1, Math.max(0, parsedSlices.coronal)),
+      sagittal: Math.min(REGIONAL_10UM_CALIBRATION.sagittal.indexCount - 1, Math.max(0, parsedSlices.sagittal)),
+      horizontal: Math.min(REGIONAL_10UM_CALIBRATION.horizontal.indexCount - 1, Math.max(0, parsedSlices.horizontal)),
+    })
+    : regionalIndicesToWorld({
+      coronal: Math.min(maxRegionalSliceIndex('coronal'), Math.max(0, parsedSlices.coronal)),
+      sagittal: Math.min(maxRegionalSliceIndex('sagittal'), Math.max(0, parsedSlices.sagittal)),
+      horizontal: Math.min(maxRegionalSliceIndex('horizontal'), Math.max(0, parsedSlices.horizontal)),
+    });
+  const [xUm, yUm, zUm] = parseTriple(params.get('cursor'), [migratedWorld.ml, migratedWorld.ap, migratedWorld.dv]);
+  const slices = worldToRegionalIndices(cursorStateToWorld({ xUm, yUm, zUm }));
+  const canonicalWorld = regionalIndicesToWorld(slices);
+  const cursor = { xUm: canonicalWorld.ml, yUm: canonicalWorld.ap, zUm: canonicalWorld.dv };
   const selection = params.get('selected')?.split(',').map(decodeURIComponent).filter(Boolean) ?? defaults.selection;
 
   return {
@@ -77,12 +108,8 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
     representation,
     parcellation,
     selection: [...new Set(selection)].sort(),
-    cursor: { xUm, yUm, zUm },
-    slices: {
-      coronal: Math.max(0, Math.trunc(coronal)),
-      sagittal: Math.max(0, Math.trunc(sagittal)),
-      horizontal: Math.max(0, Math.trunc(horizontal)),
-    },
+    cursor,
+    slices,
     coloring: {
       mode: params.get('colors') === 'anatomy' ? 'anatomy' : 'feature',
       statistic,
@@ -110,10 +137,6 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   if (view.coloring.colormap !== defaults.coloring.colormap) params.set('cmap', view.coloring.colormap);
   if (view.coloring.range.mode === 'fixed') params.set('range', `${view.coloring.range.min},${view.coloring.range.max}`);
   if (view.coloring.scale !== defaults.coloring.scale) params.set('scale', view.coloring.scale);
-
-  const cursor = [view.cursor.xUm, view.cursor.yUm, view.cursor.zUm];
-  const defaultCursor = [defaults.cursor.xUm, defaults.cursor.yUm, defaults.cursor.zUm];
-  if (!sameTriple(cursor, defaultCursor)) params.set('cursor', cursor.join(','));
 
   const slices = [view.slices.coronal, view.slices.sagittal, view.slices.horizontal];
   const defaultSlices = [defaults.slices.coronal, defaults.slices.sagittal, defaults.slices.horizontal];
