@@ -6,9 +6,11 @@ Status: accepted
 
 Display and interpretation settings use a collapsible right-side panel, typically about 280–340 px wide on desktop. Closing it returns the space to the scientific workspace. Region navigation and selection remain conceptually separate from display settings.
 
-Settings distinguish scientific interpretation from visual encoding:
+Scientific object selection lives in the persistent context header rather than
+being duplicated in this panel. Settings distinguish summary interpretation
+from visual encoding:
 
-- Mapping and statistic are visually prominent at the top.
+- Statistic is visually prominent at the top; representation and parcellation remain in the header context picker.
 - Color controls form a distinct section containing colormap, value range, scale/transform, and related display parameters.
 - Less common controls may be collapsible without hiding important non-default state.
 

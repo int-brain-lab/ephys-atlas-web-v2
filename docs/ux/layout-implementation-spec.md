@@ -470,7 +470,7 @@ Implement compact and expanded geometry first, then selected-region distribution
 
 ### Phase 7 — settings
 
-Implement the right-side wide-desktop pane plus compact-desktop/tablet drawer using the same component. Preserve the `Data interpretation` vs `Color` hierarchy and avoid generic form-page styling.
+Implement the right-side wide-desktop pane plus compact-desktop/tablet drawer using the same component. Keep dataset/release, feature, representation, and parcellation in custom context-header pickers; reserve this pane for statistic and color encoding, and avoid generic form-page styling.
 
 ### Phase 8 — overlays and polish
 
