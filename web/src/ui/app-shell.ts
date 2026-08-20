@@ -820,7 +820,7 @@ export class AppShell {
     const context = element('section', 'context-strip');
     context.setAttribute('aria-label', 'Secondary atlas context');
     const secondary = element('section', 'secondary-view panel');
-    secondary.append(this.frameHeader('Secondary view'), element('div', 'secondary-view__surface'));
+    secondary.append(this.frameHeader('Feature summary'), element('div', 'secondary-view__surface'));
     const distribution = element('section', 'distribution-band panel');
     distribution.append(this.frameHeader('Global distribution'), element('div', 'distribution-band__surface'));
     context.append(secondary, distribution);
