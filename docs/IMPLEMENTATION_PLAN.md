@@ -27,7 +27,7 @@ Routine product implementation should now move to local Codex on `main`.
 
 ## M1 — Production `ephys_atlas_channels`
 
-Status: **machinery implemented; scientific release blocked**.
+Status: **machinery implemented; paper release blocked only on source vintage**.
 
 Already implemented:
 
@@ -36,17 +36,24 @@ Already implemented:
 - dynamic feature discovery;
 - regional statistics/histograms and Allen/Beryl/Cosmos packaging;
 - provenance/validation tests.
+- explicit dual raw/denoised feature variants;
+- left-hemisphere folding and the approved `inside` population;
+- source-value preservation without hidden alpha replacement;
+- required source/tool/builder pins and copied source snapshot manifest.
 
-Blocked by: Q1, Q2, Q3 in `docs/OPEN_QUESTIONS.md`.
+Q1 and Q3 are resolved. The paper-facing release remains blocked by Q2.
+Development may build the latest source only when it resolves and records an
+immutable vintage.
 
-Next actions after resolution:
+Next actions:
 
-1. encode the authoritative QC/population recipe as a named builder recipe;
-2. build from the selected immutable `ea_active` vintage;
-3. inspect units/transforms/feature metadata against the authoritative source definitions;
+1. create the pinned scientific Python environment;
+2. pull and build the latest immutable `ea_active` development vintage with mode `both` and population `inside`;
+3. inspect units/transforms/feature metadata against the pinned source definitions;
 4. validate deterministic output and provenance;
-5. expose the immutable release through the catalog;
-6. run browser acceptance against real values, not only the synthetic golden fixture.
+5. expose the immutable development release through the catalog;
+6. run browser acceptance against real values, not only the synthetic golden fixture;
+7. repeat with the final paper vintage when Q2 is resolved.
 
 Acceptance reference: `docs/LAUNCH_SPEC.md` sections 2 and 4.
 
@@ -86,17 +93,24 @@ Acceptance reference: `docs/LAUNCH_SPEC.md` sections 3 and 6.
 
 ## M3 — `ephys_atlas_clusters`
 
-Status: **blocked on scientific definition**.
+Status: **deterministic builder implemented; production source/catalog blocked**.
 
-Blocked by: Q6.
+Implemented:
+
+- explicit project and content-addressed source snapshots;
+- explicit nonempty feature catalog with no hardcoded launch default;
+- all-cluster, equal-cluster regional aggregation with no good-unit filter;
+- left-folded Allen/Beryl/Cosmos summaries, provenance, and validation.
+
+Blocked by the remaining parts of Q6: authoritative project/source snapshot
+and launch feature catalog.
 
 After resolution:
 
-1. add a deterministic source adapter/recipe reusing the shared schema/provenance machinery;
-2. generate dynamic feature metadata;
-3. package applicable regional statistics/representations;
-4. validate the release;
-5. exercise the browser path without cluster-specific UI hardcoding.
+1. pull the approved content-addressed project snapshot;
+2. inspect source-provided feature metadata/units;
+3. build and validate the immutable release;
+4. exercise the browser path without cluster-specific UI hardcoding.
 
 Acceptance reference: section 5 of the launch spec.
 
@@ -117,7 +131,14 @@ Acceptance reference: section 7 of the launch spec.
 
 ## M5 — Downloads and local import completion
 
-Status: **partially implemented**.
+Status: **local import contract hardened; download/export UX remains**.
+
+Completed:
+
+- dataset/release-namespaced IndexedDB storage;
+- complete supported regional/volume resource-graph validation before storage;
+- WebCrypto SHA-256 verification and atomic immutable imports;
+- deterministic golden and corruption/missing-resource tests.
 
 Goals:
 

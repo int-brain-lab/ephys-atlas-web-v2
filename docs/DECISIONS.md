@@ -73,3 +73,28 @@ The parallel exploration phase is over. `main` is the sole active product-develo
 ## D018 — Scientific release choices are explicit inputs
 
 Dataset builders must not inherit scientifically material defaults when those defaults could change the meaning or reproducibility of a release. In particular, raw versus denoised channel features, source vintage, population/QC recipe, paper-snapshot status, and authoritative volume geometry are explicit release inputs/metadata. If an authoritative choice is unresolved, test the machinery with synthetic/pinned fixtures and block the scientific production release rather than guessing.
+
+## D019 — Left-hemisphere regional representation
+
+Match the deployed atlas product by showing a canonical left-hemisphere
+regional representation. Fold bilateral source atlas IDs with `-abs(id)` before
+aggregation. This is a folded bilateral summary, not a claim that observations
+were acquired only in the left hemisphere. Scientific payloads, selection, and
+URLs use atlas IDs; the legacy SVG renderer alone translates those IDs to
+BrainRegions row indices.
+
+## D020 — Channel variants and value preservation
+
+Publish raw and denoised channel values as distinctly identified feature
+variants in one immutable release. Use the `inside` source population, exclude
+non-finite observations per feature, and apply no additional physiological QC,
+clipping, or silent alpha outlier replacement. Preserve source values and use
+robust display ranges rather than mutating observations.
+
+## D021 — Cluster population and weighting
+
+Cluster regional features use all rows of `clusters.table.pqt`, not the
+good-cluster subset. Every finite cluster contributes equal weight to its
+left-folded region; there is no insertion balancing or hidden unit-QC filter.
+The project/source snapshot and feature catalog remain explicit production
+inputs and must not be defaulted by the builder.
