@@ -1,86 +1,149 @@
 # Integration status
 
-Status: integrated on `main`. Historical workstream handoff documents remain useful evidence, while this file and `docs/DECISIONS.md` describe the accepted cross-workstream state.
+Status: all accepted implementation work is consolidated on `main`. The repository is being finalized as a self-contained local Codex handoff; `docs/IMPLEMENTATION_PLAN.md` is the active execution plan and `docs/OPEN_QUESTIONS.md` contains unresolved choices that must not be guessed.
 
-## Integrated components
+## Development and handoff state
 
-- Data/schema: schema v0.1, deterministic builder/validator/packager, provenance model, source adapters, golden regional+volume fixture.
-- Viewer: TypeScript/Vite state/data foundation, responsive Phase-1 through Phase-4 UI, linked curated SVG anatomy, URL state, local import/cache foundations.
-- Rendering: lower-level SVG renderer, calibrated scientific/display transforms, storage-neutral volume source/Canvas2D renderer, volume benchmarks, technology-neutral 3-D contracts/evaluation.
-- Publishing: capability credentials, resumable staged upload, external schema validation, immutable publication, static public read path, deployment examples.
-- UX: accepted responsive shell/header/region-browser/anatomical-view specifications and browser review contracts.
+- `main` is the sole active product-development branch (D017).
+- Root `AGENTS.md` defines engineering/scientific guardrails.
+- `docs/LAUNCH_SPEC.md` defines launch acceptance criteria.
+- `docs/IMPLEMENTATION_PLAN.md` defines ordered milestones and next unblocked work.
+- `docs/OPEN_QUESTIONS.md` records launch-blocking scientific/operational choices.
+- `docs/AGENTIC_DEVELOPMENT.md` defines the autonomous local coding loop.
+- `Justfile` exposes `bootstrap`, `dev`, targeted gates, and the full `check` command aligned with CI.
 
-## Resolved integration boundaries
+M0 is complete only when the current handoff commit passes the clean full CI gate.
 
-### Dataset contract
+## Integrated data/schema foundation
 
-The browser no longer defines a separate provisional scientific schema. Published HTTP and local-import sources both consume schema v0.1:
+Schema v0.1 is the single contract for published HTTP releases and browser-imported local releases.
 
-1. publication catalog -> immutable `manifest.json`;
-2. manifest -> feature metadata and dataset-level parcellation indices;
-3. feature metadata -> regional typed arrays/statistics and/or volume descriptor;
-4. transport-specific source decodes the same resource graph into browser payloads.
+The repository contains:
 
-`web/public/fixtures/ephys_atlas_channels/golden-v0.1/` is a browser-served copy of the builder golden fixture and exercises this graph. It is synthetic and must not be presented as scientific data.
+- immutable release/provenance schemas;
+- dynamic feature references rather than a hardcoded ephys feature enum;
+- typed binary regional arrays/statistics/histograms;
+- explicit volume geometry and discriminated physical layouts;
+- deterministic golden regional+volume fixtures;
+- builder validation and deterministic packaging;
+- source acquisition/provenance helpers.
 
-### Rendering
+The golden fixture is synthetic and has no scientific interpretation.
 
-The frontend `SliceRenderer` / `SliceRenderModel` facade is retained. The rendering workstream's `SvgSliceRenderer` sits below the legacy curated-asset adapter, rather than defining a second application renderer abstraction.
+## `ephys_atlas_channels` builder
 
-The five authoritative deployed v1 curated bundles have been inventoried and pinned by raw byte size, entry/path counts, coverage, and SHA-256 in `docs/frontend/LEGACY_CURATED_ASSETS.md` and `web/src/rendering/legacy-slice-assets.ts`. Orthogonal SVGs are display-downsampled to even indices; scientific navigation, coordinates, URL state, and linked guides remain on the full 10 um index domains. The adapter validates the loaded orthogonal index inventory before rendering and exposes the chosen display slice as `data-asset-index`.
+A deterministic channel-release recipe is implemented on `main`.
 
-Scientific regional/volume coordinates and hand-tuned legacy SVG display calibration remain separate. Display calibration must never be used as a volume affine.
+The builder makes scientifically material choices explicit rather than inheriting hidden defaults:
 
-### Volumes
+- source project/vintage;
+- raw versus denoised feature mode;
+- source population/QC recipe input;
+- release timestamp and paper-snapshot status;
+- dynamic source feature catalog;
+- Allen/Beryl/Cosmos regional outputs;
+- descriptive statistics/histograms and schema-v0.1 metadata/provenance.
 
-Scientific grid metadata is independent of storage layout. Schema v0.1 declares `layout` and currently permits:
+A production scientific release is intentionally not frozen yet. Q1-Q3 in `docs/OPEN_QUESTIONS.md` must be resolved first.
 
-- `chunks3d` — deterministic builder/reference representation;
-- `orthogonal_slice_packs` — browser-oriented representation to benchmark on real encoding volumes.
+Important source ambiguity: the private paper example comments that `load_denoised=False` is the raw path, but its actual `read_features_from_disk(...)` call omits that parameter. The current `ibleatools` API defaults `load_denoised=True`. Therefore the effective paper-example behavior cannot be treated as an authoritative raw/denoised decision without explicit confirmation.
 
-The production layout is not frozen. Real-data transfer/request/decode benchmarks decide it. The browser consumes `VolumeSliceSource`, so the physical choice does not leak into application state.
+## Regional viewer vertical slice
 
-### Publishing
+The regional schema-v0.1 path is implemented end-to-end using the golden fixture:
 
-Publishing validates prepared release directories via the data validator; it does not duplicate scientific schema logic. Public release reads remain static and immutable. Mutable aliases/catalogs are control metadata outside immutable releases.
+1. catalog -> immutable manifest -> feature metadata;
+2. parcellation region index + metadata;
+3. regional values, descriptive-statistic matrix, global/regional histograms;
+4. browser regional payload;
+5. real region list/search and selected/global comparison;
+6. statistic/colormap coloring of curated SVG regions;
+7. SVG and list interactions sharing one selection state;
+8. selection persisted in URL state.
 
-## Current source evidence
+The lower-level curated SVG renderer remains under the application `SliceRenderer` facade.
 
-The private paper source confirms the supported channel-feature loading path in `sources/examples/04_load_channel_features.py`: project `ea_active`, explicit/resolveable vintage, `download_tables`, then `read_features_from_disk`; its example currently uses raw features (`load_denoised=False`).
+The five deployed v1 curated bundles are pinned by identity/inventory in `docs/frontend/LEGACY_CURATED_ASSETS.md`. Orthogonal bundles contain even display indices; scientific navigation remains on full 10 um domains and the display layer chooses the nearest available curated slice.
 
-The paper source's encoding-volume documentation describes `brainwide_ephys_atlas_25um.npz` as a `(456, 528, 320, N)` float16 volume with `feature_names`, per-feature mean/std, `grid_shape`, and 25 um resolution; `2026_W12` has 41 features. This resolves file contents but does not by itself establish the complete scientific index-to-world affine, so release metadata must still come from an authoritative atlas/producer transform rather than shape inference.
+## Volume viewer vertical slice
+
+A reference schema-v0.1 volume path is implemented on `main` using the golden `chunks3d` representation:
+
+1. published/local volume payloads provide transport-independent resource callbacks;
+2. the `chunks3d` adapter decodes float16/float32 chunks (and optional gzip);
+3. descriptor axis order is permuted into anatomical AP/ML/DV slice axes explicitly;
+4. linked regional coordinates map to volume indices through the declared `index_to_world_um` transform;
+5. `VolumeSliceLoader` extracts orthogonal slices with bounded chunk caching;
+6. Canvas2D renders scalar slices;
+7. the hybrid application renderer switches between regional SVG and volume Canvas below the same `SliceRenderer` boundary;
+8. unit and Playwright coverage exercise the golden volume path.
+
+This validates the reference browser architecture, not the final production science/transport. Q4 must supply authoritative scientific transform/outside semantics and Q5 must select production physical layout from real-data benchmark evidence.
+
+## Publishing/public catalog
+
+The capability-based publishing implementation is integrated:
+
+- revocable publisher credentials;
+- dataset ownership without a user/OAuth platform;
+- private resumable staged uploads;
+- byte-size/SHA checks;
+- optional external schema validator before atomic publication;
+- immutable public release directories and mutable aliases;
+- administrative API state kept separate from the static browser catalog;
+- public `catalog.json` emitted in the same v0.1 browser contract consumed by `HttpDatasetSource`.
+
+Publishing prepares/distributes releases but never transforms scientific data.
+
+## Browser/data runtime fixes already integrated
+
+- Browser `fetch` is bound correctly before use through the resource fetcher; this fixed the Chromium `Illegal invocation` failure uncovered by the regional integration test.
+- Regional metadata/value/statistics/histogram loading uses one schema-v0.1 path for HTTP and local imports.
+- Volume resource loading likewise uses one logical payload contract across HTTP and IndexedDB/local storage.
+- Curated SVG display inventory is validated before rendering.
+
+## Current canonical source evidence
+
+### Channel features
+
+- project: `ea_active`;
+- private example vintage: `2025_W28` (not yet the final paper freeze);
+- feature loading is through current `ephysatlas.data` tooling;
+- raw/denoised effective behavior is unresolved as described above.
+
+### Encoding volumes
+
+Private source documentation describes `brainwide_ephys_atlas_25um.npz` with:
+
+- `ephys_atlas_vol` shape `(456, 528, 320, N)` float16;
+- `feature_names`;
+- per-feature mean/std;
+- 25 um resolution;
+- 41 features in the documented `2026_W12` vintage.
+
+This establishes contents/shape but not the authoritative scientific affine. Values are not assumed pre-normalized.
 
 ## Remaining launch work
 
-### Data
+The active sequence is defined in `docs/IMPLEMENTATION_PLAN.md`. In summary:
 
-- Build `ephys_atlas_channels` from the chosen current/paper vintage and settle raw-vs-denoised/QC/units with authoritative scientific input.
-- Define and build `ephys_atlas_clusters` launch population/features.
-- Define the exact `brainwide_map` launch product rather than conflating paper selection/aggregates with legacy website files.
-- Confirm encoding-volume scientific affine/outside-brain semantics and benchmark real artifact layouts.
-- Pin immutable paper-facing source vintages at submission freeze.
+1. resolve Q1-Q3 and build/validate a real immutable `ephys_atlas_channels` release;
+2. resolve/benchmark Q4-Q5 and build the real volume release/transport;
+3. define/build `ephys_atlas_clusters` (Q6);
+4. define/build exact `brainwide_map` product (Q7);
+5. complete downloads/local-import production UX;
+6. relocate pinned curated assets and finalize catalog/origin/deployment/publishing choices (Q8-Q10);
+7. run final real-data performance and cross-browser release QA (Q11).
 
-### Viewer
+3-D, AGEA, MERFISH, large point-cloud workflows, advanced inferential statistics, full OAuth, and broad legacy custom-bucket compatibility remain deferred unless explicitly promoted.
 
-- Replace representative Phase-3 region rows with real parcellation metadata and decoded regional values.
-- Connect region hover/selection and feature coloring to renderer interaction/state.
-- Implement histogram/distribution/comparison UI from schema-v0.1 statistics.
-- Copy the five pinned curated SVG bundles, byte-for-byte, into a versioned immutable v2 asset release instead of relying on the legacy host.
-- Add the real volume source adapter after layout benchmarking.
-- Keep 3-D behind the regional + volume launch-critical path.
+## Source of truth for future agents
 
-### Operations
+Do not reconstruct next steps from historical workstream chats. Use, in order:
 
-- Choose the production public URL/domain/object-storage arrangement.
-- Re-test public encoding-volume CORS/Range behavior when the final bucket is available.
-- Configure the publishing validator command and deployment secrets/backups when remote publishing is deployed.
-
-## Active workstreams
-
-Only three active conversations/workstreams continue after integration:
-
-1. Integration / release;
-2. Data / schema / reproducibility;
-3. Viewer (frontend + rendering + UX).
-
-Publishing is parked until deployment work requires it. The old UX/rendering/publishing branches are historical references, not independent product streams.
+1. `AGENTS.md`;
+2. `docs/LAUNCH_SPEC.md`;
+3. `docs/IMPLEMENTATION_PLAN.md`;
+4. `docs/OPEN_QUESTIONS.md`;
+5. `docs/DECISIONS.md`;
+6. this file and focused implementation/source docs.
