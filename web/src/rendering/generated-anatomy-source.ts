@@ -79,6 +79,26 @@ export interface GeneratedAnatomySliceSourceOptions {
   fetchImpl?: typeof fetch;
   maxCachedBytes?: number;
   scheduleIdle?: (callback: () => void) => void;
+  onPerformance?: (event: AnatomyPackPerformanceEvent) => void;
+}
+
+export type AnatomyPackPerformancePhase =
+  | 'fetch'
+  | 'read-response'
+  | 'sha256'
+  | 'gunzip'
+  | 'utf8'
+  | 'json-parse'
+  | 'validate';
+
+export interface AnatomyPackPerformanceEvent {
+  phase: AnatomyPackPerformancePhase;
+  axis: SliceAxis;
+  packIndex: number;
+  path: string;
+  durationMs: number;
+  compressedBytes: number;
+  decodedBytes?: number;
 }
 
 function record(value: unknown, context: string): Record<string, unknown> {
@@ -431,18 +451,12 @@ async function sha256Hex(buffer: ArrayBuffer): Promise<string> {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-async function gunzipJson(buffer: ArrayBuffer, context: string): Promise<{ value: unknown; byteLength: number }> {
+async function gunzip(buffer: ArrayBuffer, context: string): Promise<ArrayBuffer> {
   if (!('DecompressionStream' in globalThis)) throw new Error(`${context} requires gzip DecompressionStream support`);
-  let decoded: ArrayBuffer;
   try {
-    decoded = await new Response(new Blob([buffer]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+    return await new Response(new Blob([buffer]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
   } catch (error) {
     throw new Error(`${context} could not be decompressed`, { cause: error });
-  }
-  try {
-    return { value: JSON.parse(new TextDecoder().decode(decoded)), byteLength: decoded.byteLength };
-  } catch (error) {
-    throw new Error(`${context} is not valid JSON`, { cause: error });
   }
 }
 
@@ -453,6 +467,7 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
   private readonly manifestUrl: string;
   private readonly maxCachedBytes: number;
   private readonly scheduleIdle: (callback: () => void) => void;
+  private readonly onPerformance: ((event: AnatomyPackPerformanceEvent) => void) | undefined;
   private manifestPromise: Promise<AnatomyPackManifest> | null = null;
   private readonly packs = new Map<string, Promise<SlicePack>>();
   private readonly packDecodedBytes = new Map<string, number>();
@@ -465,6 +480,7 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
   constructor(options: GeneratedAnatomySliceSourceOptions) {
     this.fetchImpl = options.fetchImpl ?? fetch.bind(globalThis);
     this.packDepth = options.packDepth;
+    this.onPerformance = options.onPerformance;
     this.maxCachedBytes = options.maxCachedBytes ?? 32 * 1024 * 1024;
     if (!Number.isInteger(this.maxCachedBytes) || this.maxCachedBytes <= 0) {
       throw new RangeError('maxCachedBytes must be a positive integer');
@@ -624,19 +640,68 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
 
   private async fetchPack(manifest: AnatomyPackManifest, axis: SliceAxis, packDepth: 16 | 32, artifact: PackArtifact, signal?: AbortSignal): Promise<SlicePack> {
     const url = new URL(artifact.path, this.manifestUrl).toString();
+    let started = this.performanceStart();
     const response = await this.fetchImpl(url, { cache: this.cacheMode, ...(signal ? { signal } : {}) });
+    this.reportPerformance('fetch', axis, artifact, started);
     if (!response.ok) throw new Error(`Anatomy pack request failed (${response.status}): ${artifact.path}`);
+    started = this.performanceStart();
     const buffer = await response.arrayBuffer();
+    this.reportPerformance('read-response', axis, artifact, started);
     if (buffer.byteLength !== artifact.bytes) throw new Error(`${artifact.path} has ${buffer.byteLength} bytes; expected ${artifact.bytes}`);
-    if (await sha256Hex(buffer) !== artifact.sha256) throw new Error(`SHA-256 mismatch for anatomy pack ${artifact.path}`);
-    const decoded = await gunzipJson(buffer, artifact.path);
+    started = this.performanceStart();
+    const digest = await sha256Hex(buffer);
+    this.reportPerformance('sha256', axis, artifact, started);
+    if (digest !== artifact.sha256) throw new Error(`SHA-256 mismatch for anatomy pack ${artifact.path}`);
+    started = this.performanceStart();
+    const decoded = await gunzip(buffer, artifact.path);
+    this.reportPerformance('gunzip', axis, artifact, started, decoded.byteLength);
     if (decoded.byteLength !== artifact.uncompressedBytes) {
       throw new Error(`${artifact.path} decodes to ${decoded.byteLength} bytes; expected ${artifact.uncompressedBytes}`);
     }
-    const pack = parseSlicePack(decoded.value, manifest, artifact);
+    started = this.performanceStart();
+    const json = new TextDecoder().decode(decoded);
+    this.reportPerformance('utf8', axis, artifact, started, decoded.byteLength);
+    let value: unknown;
+    started = this.performanceStart();
+    try {
+      value = JSON.parse(json);
+    } catch (error) {
+      throw new Error(`${artifact.path} is not valid JSON`, { cause: error });
+    }
+    this.reportPerformance('json-parse', axis, artifact, started, decoded.byteLength);
+    started = this.performanceStart();
+    const pack = parseSlicePack(value, manifest, artifact);
+    this.reportPerformance('validate', axis, artifact, started, decoded.byteLength);
     if (pack.projection !== axis || pack.packDepth !== packDepth || pack.packIndex !== artifact.packIndex || pack.firstSliceIndex !== artifact.firstSliceIndex) {
       throw new Error(`${artifact.path} metadata does not match its manifest descriptor`);
     }
     return pack;
+  }
+
+  private reportPerformance(
+    phase: AnatomyPackPerformancePhase,
+    axis: SliceAxis,
+    artifact: PackArtifact,
+    started: number,
+    decodedBytes?: number,
+  ): void {
+    if (!this.onPerformance) return;
+    try {
+      this.onPerformance({
+        phase,
+        axis,
+        packIndex: artifact.packIndex,
+        path: artifact.path,
+        durationMs: performance.now() - started,
+        compressedBytes: artifact.bytes,
+        ...(decodedBytes == null ? {} : { decodedBytes }),
+      });
+    } catch {
+      // Performance observers must not affect rendering.
+    }
+  }
+
+  private performanceStart(): number {
+    return this.onPerformance ? performance.now() : 0;
   }
 }

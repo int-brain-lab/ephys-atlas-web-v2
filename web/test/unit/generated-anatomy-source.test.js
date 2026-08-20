@@ -209,6 +209,30 @@ test('generated anatomy source validates, verifies, decodes, and caches immutabl
   ]);
 });
 
+test('anatomy source performance observer reports cold pipeline phases only', async () => {
+  const { manifest, buffers } = fixture();
+  const events = [];
+  const source = new GeneratedAnatomySliceSource({
+    manifestUrl: 'https://example.test/anatomy/manifest.json',
+    onPerformance: (event) => events.push(event),
+    fetchImpl: async (input) => {
+      const url = String(input);
+      if (url.endsWith('/manifest.json')) return new Response(JSON.stringify(manifest), { status: 200 });
+      const body = buffers[url.split('/anatomy/')[1]];
+      return body ? new Response(body, { status: 200 }) : new Response('missing', { status: 404 });
+    },
+  });
+  await source.loadSlice('coronal', 0);
+  assert.deepEqual(events.map((event) => event.phase), [
+    'fetch', 'read-response', 'sha256', 'gunzip', 'utf8', 'json-parse', 'validate',
+  ]);
+  assert.equal(events.every((event) => event.axis === 'coronal' && event.packIndex === 0), true);
+  assert.equal(events.every((event) => event.durationMs >= 0), true);
+  events.length = 0;
+  await source.loadSlice('coronal', 0);
+  assert.deepEqual(events, []);
+});
+
 test('anatomy prefetch is idle, directional, latest-wins, and cache-deduplicated', async () => {
   const { manifest, buffers } = fixtureWithFiveCoronalPacks();
   const scheduled = [];
