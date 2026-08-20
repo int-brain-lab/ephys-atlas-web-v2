@@ -46,7 +46,8 @@ For Allen, Beryl and Cosmos the builder writes this left-folded dataset-level
 dense region-id index plus region metadata. Each feature then writes, per
 parcellation:
 
-- regional arithmetic mean (`float32`);
+- regional arithmetic mean (`float32` when representable, promoted to `float64`
+  rather than clipped or overflowed when the source range requires it);
 - the full descriptive-statistics matrix (`float64`);
 - a global histogram and per-region histogram counts (`uint32`);
 - schema-v0.1 metadata linking those files.

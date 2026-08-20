@@ -1,16 +1,16 @@
 import json
 from pathlib import Path
+from typing import ClassVar
 
 import numpy as np
 import pytest
-
 from ephys_atlas_builder.channels import (
     ChannelBuildConfig,
     RegionInfo,
+    _feature_info,
     build_channels_release_from_arrays,
     discover_channel_table_dir,
     fold_region_ids_left,
-    _feature_info,
 )
 from ephys_atlas_builder.validate import validate_release
 
@@ -167,6 +167,31 @@ def test_channel_recipe_preserves_extreme_source_values(tmp_path):
     assert summary[-1, mean_column] == pytest.approx(50_000.5)
 
 
+def test_channel_recipe_promotes_regional_values_that_exceed_float32(tmp_path):
+    features, ids, metadata = _inputs()
+    features["alpha_mean"] = np.array([1e40, 1e40, 3.0, 4.0, 5.0, 6.0])
+    release = build_channels_release_from_arrays(
+        tmp_path / "release",
+        _config(),
+        features,
+        ids,
+        metadata,
+        [{"role": "canonical-data", "description": "float64 promotion test"}],
+    )
+
+    feature = json.loads(
+        (release / "features/alpha_mean/feature.json").read_text()
+    )
+    allen = feature["representations"]["regional"]["parcellations"][0]
+    assert allen["values"]["dtype"] == "float64"
+    assert allen["values"]["path"] == "allen.values.f64"
+    values = np.fromfile(
+        release / "features/alpha_mean/allen.values.f64", dtype="<f8"
+    )
+    assert np.isfinite(values).all()
+    assert values[-1] == pytest.approx(1e40)
+
+
 def test_both_mode_produces_explicit_variant_catalog(tmp_path):
     features, ids, metadata = _inputs()
     config = ChannelBuildConfig(
@@ -203,10 +228,10 @@ def test_snapshot_build_requires_reproducibility_pins():
 def test_channel_feature_metadata_prefers_transformed_then_raw_units():
     class Column:
         description = "Schema description"
-        metadata = {"raw_unit": "V", "transformed_unit": "dB rel. V"}
+        metadata: ClassVar = {"raw_unit": "V", "transformed_unit": "dB rel. V"}
 
     class Schema:
-        columns = {"rms_ap": Column()}
+        columns: ClassVar = {"rms_ap": Column()}
 
     class Model:
         @staticmethod

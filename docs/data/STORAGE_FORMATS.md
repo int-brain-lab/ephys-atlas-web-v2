@@ -11,9 +11,13 @@ Use dense raw typed arrays plus small JSON metadata.
 
 The launch parcellations have hundreds, not millions, of regions. A dense
 `float32` array is therefore tiny, has zero numeric-text parsing overhead, and
-maps directly to `Float32Array` in the browser. JSON numeric arrays are larger
+maps directly to a typed array in the browser. JSON numeric arrays are larger
 and slower to parse; Parquet/Arrow would add runtime surface without a useful
 access-pattern benefit for one scalar per region.
+
+Regional display arrays are promoted to `float64` when a finite mean exceeds
+the `float32` range. Silently clipping it or serializing infinity would violate
+the source-value preservation policy.
 
 Descriptive-statistic matrices use `float64`; histogram counts use `uint32`.
 Region ids are stored once per parcellation as `int32` and shared across

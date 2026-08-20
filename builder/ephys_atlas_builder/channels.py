@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Mapping, Sequence
 import json
 import re
 import shutil
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 
 from .io import sha256_file, write_array, write_json
 from .statistics import SUMMARY_FIELDS, describe, histogram, summary_matrix
-
 
 DATASET_ID = "ephys_atlas_channels"
 DEFAULT_PARCELLATIONS = ("allen", "beryl", "cosmos")
@@ -214,9 +213,22 @@ def _write_feature_parcellation(
     grouped_values = [values[rows] for rows in groups]
     matrix = summary_matrix(grouped_values)
     mean_index = SUMMARY_FIELDS.index("mean")
-    regional_values = matrix[:, mean_index].astype(np.float32)
+    regional_means = matrix[:, mean_index]
+    finite_means = regional_means[np.isfinite(regional_means)]
+    float32_max = np.finfo(np.float32).max
+    values_dtype = (
+        "float64"
+        if finite_means.size and np.any(np.abs(finite_means) > float32_max)
+        else "float32"
+    )
+    regional_values = regional_means.astype(
+        np.float64 if values_dtype == "float64" else np.float32
+    )
+    suffix = "f64" if values_dtype == "float64" else "f32"
     values_meta = write_array(
-        feature_root / f"{parcellation}.values.f32", regional_values, "float32"
+        feature_root / f"{parcellation}.values.{suffix}",
+        regional_values,
+        values_dtype,
     )
 
     summary_meta = write_array(
@@ -451,7 +463,6 @@ def discover_channel_table_dir(source_snapshot: Path, feature_mode: str) -> Path
 def _read_channel_frame(table_dir: Path, feature_mode: str, atlas):
     """Load one source variant without ibleatools' unconditional alpha mutation."""
     import pandas as pd
-    import ephysatlas.features
 
     filename = (
         "raw_ephys_features.pqt"
@@ -493,9 +504,14 @@ def _read_channel_frame(table_dir: Path, feature_mode: str, atlas):
     for mapping in ("Beryl", "Cosmos"):
         frame[f"{mapping}_id"] = atlas.regions.remap(aids, "Allen", mapping)
 
-    # Preserve upstream structural/schema validation while deliberately avoiding
-    # data.read_features_from_disk(), which mutates alpha_mean/alpha_std outliers.
-    return pd.DataFrame(ephysatlas.features.ModelRawFeatures(frame))
+    # Do not pass the complete table through ModelRawFeatures here. The canonical
+    # snapshots contain legitimate per-feature nulls (for example alpha_mean),
+    # while that model declares every inherited feature non-nullable. Validation
+    # would therefore impose a global complete-case population before the recipe
+    # can apply its documented per-feature finite-value selection. The requested
+    # feature catalog is checked below and conversion to float64 provides the
+    # relevant scalar/type validation without mutating or imputing source values.
+    return frame
 
 
 def _feature_info(model, source_column: str, variant: str) -> FeatureInfo:
