@@ -45,6 +45,10 @@ test-web:
 test-browser:
     cd web && npm run test:browser
 
+# Profile cold-pack, same-pack, and retained SVG navigation in Chromium.
+benchmark-anatomy:
+    cd web && npm run benchmark:anatomy
+
 # Exercise the anatomy contract, generator, artifact validator, and comparison cases.
 test-anatomy:
     uv run --project builder --extra anatomy --extra scientific --extra test --locked python -m pytest -q tests/test_anatomy_pack.py tests/test_anatomy_pack_schema.py tests/test_anatomy_compare.py

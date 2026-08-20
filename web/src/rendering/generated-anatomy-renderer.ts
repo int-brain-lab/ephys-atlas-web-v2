@@ -8,6 +8,7 @@ import type {
 } from './interfaces.js';
 import { bilateralAtlasRegionColorMap, bilateralFeatureColorMap } from './scalar-colormap.js';
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
+import type { SvgSlicePerformanceEvent } from './svg-slice-renderer.js';
 import type { AnatomySlice, AnatomySliceSource, RegionalSliceFrame, SliceRegionPointerEvent } from './types.js';
 
 interface RendererMount {
@@ -30,6 +31,10 @@ interface GeometryRenderSchedule {
 }
 
 const GEOMETRY_RENDER_INTERVAL_MS = 40;
+
+export interface GeneratedAnatomySliceRendererOptions {
+  onPerformance?: (event: SvgSlicePerformanceEvent) => void;
+}
 
 function escapeAttribute(value: string): string {
   return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
@@ -57,7 +62,10 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     hoveredRegionId: null,
   };
 
-  constructor(private readonly source: AnatomySliceSource) {}
+  constructor(
+    private readonly source: AnatomySliceSource,
+    private readonly options: GeneratedAnatomySliceRendererOptions = {},
+  ) {}
 
   setInteractionSink(sink: RendererInteractionSink): void {
     this.interactionSink = sink;
@@ -102,11 +110,20 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     if (this.renderTokens.get(target) !== token) return;
 
     const mount = this.ensureMount(target);
+    const serializeStarted = this.options.onPerformance ? performance.now() : 0;
+    const svgFragment = anatomySliceSvgFragment(slice);
+    this.reportPerformance({
+      phase: 'serialize-fragment',
+      axis: model.axis,
+      sliceIndex: slice.sliceIndex,
+      durationMs: this.options.onPerformance ? performance.now() - serializeStarted : 0,
+      pathCount: slice.paths.length,
+    });
     const frame: RegionalSliceFrame = {
       axis: model.axis,
       index: slice.sliceIndex,
       mapping: model.parcellation,
-      svgFragment: anatomySliceSvgFragment(slice),
+      svgFragment,
       viewBox: slice.viewBox,
       guides,
     };
@@ -266,10 +283,20 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
         {
           onRegionPointer: (event) => this.onRegionPointer(event),
           onSliceStep: (axis, delta) => this.interactionSink?.stepSlice(axis, delta),
+          ...(this.options.onPerformance ? { onPerformance: this.options.onPerformance } : {}),
         },
       ),
     };
     this.mounts.set(target, mount);
     return mount;
+  }
+
+  private reportPerformance(event: SvgSlicePerformanceEvent): void {
+    if (!this.options.onPerformance) return;
+    try {
+      this.options.onPerformance(event);
+    } catch {
+      // Performance observers must not affect rendering.
+    }
   }
 }

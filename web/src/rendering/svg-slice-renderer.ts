@@ -16,6 +16,23 @@ export interface SvgSliceRendererMount {
 export interface SvgSliceRendererOptions {
   onRegionPointer?: (event: SliceRegionPointerEvent) => void;
   onSliceStep?: (axis: SliceAxis, delta: number) => void;
+  onPerformance?: (event: SvgSlicePerformanceEvent) => void;
+}
+
+export type SvgSlicePerformancePhase =
+  | 'serialize-fragment'
+  | 'svg-parse'
+  | 'path-index'
+  | 'layer-swap'
+  | 'region-state'
+  | 'guides';
+
+export interface SvgSlicePerformanceEvent {
+  phase: SvgSlicePerformancePhase;
+  axis: SliceAxis;
+  sliceIndex: number;
+  durationMs: number;
+  pathCount?: number;
 }
 
 const WHEEL_PIXELS_PER_NAVIGATION_STEP = 100;
@@ -62,8 +79,12 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
 
     this.activatePreparedLayer(frame);
 
+    let started = this.performanceStart();
     this.applyRegionState(frame);
+    this.reportPerformance('region-state', frame, started);
+    started = this.performanceStart();
     this.drawGuides(frame);
+    this.reportPerformance('guides', frame, started);
   }
 
   dispose(): void {
@@ -78,7 +99,9 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
 
   updateGuides(frame: RegionalSliceFrame): void {
     this.currentAxis = frame.axis;
+    const started = this.performanceStart();
     this.drawGuides(frame);
+    this.reportPerformance('guides', frame, started);
   }
 
   private activatePreparedLayer(frame: RegionalSliceFrame): void {
@@ -89,7 +112,9 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
       : this.prepareLayer(frame, key);
     this.touchPreparedLayer(key, prepared);
     if (this.activeLayerKey !== key || this.mount.figureLayer.firstChild !== prepared.layer) {
+      const started = this.performanceStart();
       this.mount.figureLayer.replaceChildren(prepared.layer);
+      this.reportPerformance('layer-swap', frame, started);
       this.activeLayerKey = key;
     }
     this.pathIndex = prepared.pathIndex;
@@ -98,15 +123,21 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   private prepareLayer(frame: RegionalSliceFrame, key: string): PreparedSliceLayer {
     this.evictPreparedLayerIfNeeded();
     const layer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    let started = this.performanceStart();
     layer.innerHTML = frame.svgFragment;
+    this.reportPerformance('svg-parse', frame, started);
     const pathIndex = new Map<number, SVGPathElement[]>();
+    started = this.performanceStart();
+    let pathCount = 0;
     for (const path of layer.querySelectorAll<SVGPathElement>('path')) {
+      pathCount += 1;
       const regionId = regionIdFromPath(frame.mapping, path);
       if (regionId == null) continue;
       const paths = pathIndex.get(regionId) ?? [];
       paths.push(path);
       pathIndex.set(regionId, paths);
     }
+    this.reportPerformance('path-index', frame, started, pathCount);
     const prepared = { layer, pathIndex, svgFragment: frame.svgFragment };
     this.preparedLayers.set(key, prepared);
     return prepared;
@@ -128,6 +159,30 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
 
   private preparedLayerKey(frame: RegionalSliceFrame): string {
     return `${frame.axis}\u0000${frame.mapping}\u0000${frame.index}`;
+  }
+
+  private performanceStart(): number {
+    return this.options.onPerformance ? performance.now() : 0;
+  }
+
+  private reportPerformance(
+    phase: SvgSlicePerformancePhase,
+    frame: RegionalSliceFrame,
+    started: number,
+    pathCount?: number,
+  ): void {
+    if (!this.options.onPerformance) return;
+    try {
+      this.options.onPerformance({
+        phase,
+        axis: frame.axis,
+        sliceIndex: frame.index,
+        durationMs: performance.now() - started,
+        ...(pathCount == null ? {} : { pathCount }),
+      });
+    } catch {
+      // Performance observers must not affect rendering.
+    }
   }
 
   private applyRegionState(frame: RegionalSliceFrame): void {

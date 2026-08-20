@@ -74,3 +74,6 @@ Before replacing the active JSON pack transport:
    a 100-slice sweep;
 6. update the anatomy manifest/schema and every producer/consumer together if
    the experiment is accepted.
+
+The first phase-level browser evidence and reproduction command are recorded in
+`docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.

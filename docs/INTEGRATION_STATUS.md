@@ -165,6 +165,15 @@ and targets JSON/allocation/serialization cost. It remains outside the active
 manifest and renderer pending the adoption gates in
 `docs/rendering/INDEXED_SVG_PACK_EXPERIMENT.md`.
 
+The reproducible Chromium anatomy benchmark now reports source and SVG phases
+separately (`just benchmark-anatomy`). Five-trial local cache misses commit p95
+or maximum geometry in roughly 16–19 ms p50. Horizontal gzip plus UTF-8/JSON
+and structured validation consumes roughly 10–13 ms, while SVG serialization,
+parse, and indexing consumes roughly 1–2 ms. The benchmark also shows that the
+40 ms minimum geometry-start interval delays same-pack work to about 25 ms and
+retained revisits to about 32–33 ms. The evidence and next architecture change
+are recorded in `docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.
+
 ## Volume viewer vertical slice
 
 A schema-v0.1 volume path is implemented and green on `main` using the golden `chunks3d` representation plus a tested `orthogonal_slice_packs` adapter:
