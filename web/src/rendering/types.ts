@@ -35,6 +35,7 @@ export interface RegionalSliceFrame {
   regionColors?: ReadonlyMap<number, string>;
   selectedRegionIds?: ReadonlySet<number>;
   highlightedRegionId?: number | null;
+  highlightedRegionIds?: ReadonlySet<number>;
 }
 
 export interface SliceRegionPointerEvent {

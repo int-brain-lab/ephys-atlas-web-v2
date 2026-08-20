@@ -73,3 +73,31 @@ export function regionalColorMap(feature: RegionalFeaturePayload, coloring: Colo
 export function atlasRegionColorMap(regions: readonly RegionMetadata[]): ReadonlyMap<number, string> {
   return new Map(regions.flatMap((region) => region.colorHex ? [[region.atlasId, region.colorHex] as const] : []));
 }
+
+/** Official ontology colors expanded onto both signed anatomical hemispheres. */
+export function bilateralAtlasRegionColorMap(regions: readonly RegionMetadata[]): ReadonlyMap<number, string> {
+  const colors = new Map<number, string>();
+  for (const region of regions) {
+    if (!region.colorHex || region.atlasId === 0) continue;
+    const leftId = -Math.abs(region.atlasId);
+    colors.set(leftId, region.colorHex);
+    colors.set(Math.abs(leftId), region.colorHex);
+  }
+  return colors;
+}
+
+/** Feature colors on folded-left IDs, with right anatomy retained as reference. */
+export function bilateralFeatureColorMap(
+  feature: RegionalFeaturePayload,
+  coloring: ColoringState,
+  regions: readonly RegionMetadata[],
+): ReadonlyMap<number, string> {
+  const colors = new Map<number, string>();
+  for (const [atlasId, color] of bilateralAtlasRegionColorMap(regions)) {
+    if (atlasId > 0) colors.set(atlasId, color);
+  }
+  for (const [atlasId, color] of regionalColorMap(feature, coloring)) {
+    if (atlasId !== 0) colors.set(-Math.abs(atlasId), color);
+  }
+  return colors;
+}
