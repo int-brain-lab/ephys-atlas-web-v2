@@ -17,6 +17,7 @@ from typing import Any
 
 import numpy as np
 import shapely
+from jsonschema import Draft202012Validator
 
 from tools.anatomy_pack.geometry import (
     SliceValidation,
@@ -246,6 +247,30 @@ def _write_pack(
         "uncompressed_bytes": len(payload),
         "sha256": sha256_bytes(compressed),
     }
+
+
+def _validate_generated(root: Path, manifest: dict[str, Any], repository: Path) -> None:
+    schema_root = repository / "schema" / "anatomy-pack-v1"
+    manifest_schema = json.loads(
+        (schema_root / "manifest.schema.json").read_text(encoding="utf-8")
+    )
+    slice_schema = json.loads(
+        (schema_root / "slice-pack.schema.json").read_text(encoding="utf-8")
+    )
+    Draft202012Validator(manifest_schema).validate(manifest)
+    slice_validator = Draft202012Validator(slice_schema)
+    for projection in manifest["projections"].values():
+        for pack_set in projection["pack_sets"].values():
+            for artifact in pack_set["packs"]:
+                compressed = (root / artifact["path"]).read_bytes()
+                if len(compressed) != artifact["bytes"]:
+                    raise ValueError(f"pack byte-size mismatch: {artifact['path']}")
+                if sha256_bytes(compressed) != artifact["sha256"]:
+                    raise ValueError(f"pack SHA-256 mismatch: {artifact['path']}")
+                payload = gzip.decompress(compressed)
+                if len(payload) != artifact["uncompressed_bytes"]:
+                    raise ValueError(f"pack decoded-size mismatch: {artifact['path']}")
+                slice_validator.validate(json.loads(payload))
 
 
 def _ring_count(paths: list[dict[str, Any]]) -> int:
@@ -516,6 +541,7 @@ def build_pack(
             },
             "synchronization_sentinels": _sentinels(),
         }
+        _validate_generated(stage, manifest, repository)
         (stage / "manifest.json").write_bytes(canonical_json(manifest))
         shutil.move(stage, output)
     return manifest
