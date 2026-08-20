@@ -5,9 +5,7 @@
 }
 
 .view-frame__slice-figure path.is-highlighted {
-  stroke: rgb(120 189 255 / 94%);
-  stroke-width: 1.15;
-  vector-effect: non-scaling-stroke;
+  fill: var(--color-accent) !important;
 }
 
 .view-frame__slice-figure path[style*='fill'] {
