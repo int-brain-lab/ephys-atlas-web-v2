@@ -202,6 +202,7 @@ test('region hover is linked across all anatomical projections', async ({ page }
     await expect(highlighted).toHaveClass(/is-highlighted/);
     await expect(highlighted).not.toHaveClass(/is-selected/);
     await expect(highlighted).toHaveCSS('fill', 'rgb(85, 167, 247)');
+    await expect(highlighted).toHaveCSS('fill-opacity', '0.62');
   }
 
   await page.locator('[data-view="coronal"] .view-frame__slice-figure').dispatchEvent('pointerleave');
@@ -221,6 +222,7 @@ test('region-list hover previews the region in all anatomical projections', asyn
     const highlighted = page.locator(`[data-view="${axis}"] path.allen_region_835`).first();
     await expect(highlighted).toHaveClass(/is-highlighted/);
     await expect(highlighted).toHaveCSS('fill', 'rgb(85, 167, 247)');
+    await expect(highlighted).toHaveCSS('fill-opacity', '0.62');
   }
 
   await page.getByLabel('Search brain regions').hover();

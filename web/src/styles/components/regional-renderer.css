@@ -6,6 +6,7 @@
 
 .view-frame__slice-figure path.is-highlighted {
   fill: var(--color-accent) !important;
+  fill-opacity: 0.62;
 }
 
 .view-frame__slice-figure path[style*='fill'] {
