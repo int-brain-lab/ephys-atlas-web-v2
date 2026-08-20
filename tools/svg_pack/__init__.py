@@ -1,4 +1,4 @@
-"""Experimental indexed binary transport for concatenated SVG fragments."""
+"""Indexed binary transport for concatenated SVG fragments."""
 
 from .codec import SvgFragment, SvgPack, decode, encode
 

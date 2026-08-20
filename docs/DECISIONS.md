@@ -176,3 +176,28 @@ fragments. This format is experimental and is not an active anatomy-pack or
 schema contract yet. Production adoption requires a complete-corpus builder,
 manifest/SHA integration, worker/browser timing, memory measurements, and the
 existing anatomy topology and coverage gates.
+
+## D026 — Sparse indexed SVG anatomy display packs
+
+Accept the indexed SVG transport from D025 as `anatomy-pack-v3`. SVG remains
+the regional display and interaction representation. The canonical validated
+`anatomy-pack-v2` remains the scientific parent: v3 copies selected SVG
+fragments byte-for-byte and records the parent manifest SHA-256, source,
+provenance, validation, and synchronization sentinels.
+
+Application state, URL state, cursor coordinates, guides, and projection
+affines remain on the exact native 10 µm grid. Interactive anatomy is a
+separate explicit inventory sampled every 80 µm. Its lattice is anchored at
+the native plane nearest fixed-axis world coordinate zero, so the inventory is
+deterministic and aligned across rebuilds. Sliders expose display ordinals;
+their values map back to native indices before changing application state.
+Exact native indices loaded from URLs resolve to the nearest displayed plane
+for geometry only, with the lower native index winning a tie.
+
+Use depth-eight gzip-compressed ISVG packs. Fetch and compressed-byte SHA
+verification stay in the browser source. A persistent module worker owns a
+byte-bounded LRU of decompressed indexed packs and sends only the requested
+UTF-8 SVG fragment to the main thread. Worker eviction is reported to the
+source so residency cannot become stale. The immutable v2 corpus remains the
+fallback and derivation authority; v3 changes display sampling and transport,
+not atlas geometry or scientific calibration.

@@ -19,6 +19,14 @@ export interface IndexedSvgPack {
   fragment(sliceIndex: number): SvgPackFragment | undefined;
 }
 
+/** Metadata needed by the indexed-pack worker before it accepts a pack. */
+export interface SvgPackDescriptor {
+  readonly projection: string;
+  readonly packId: string;
+  readonly uncompressedBytes: number;
+  readonly entries?: readonly Pick<SvgPackEntry, 'sliceIndex' | 'worldCoordinateUm'>[];
+}
+
 export interface SvgPack {
   readonly projection: string;
   readonly packId: string;
@@ -99,7 +107,16 @@ export function parseIndexedSvgPack(input: ArrayBuffer | Uint8Array): IndexedSvg
     packId,
     entries,
     fragment(sliceIndex: number): SvgPackFragment | undefined {
-      const entry = entries.find((candidate) => candidate.sliceIndex === sliceIndex);
+      let low = 0;
+      let high = entries.length - 1;
+      let entry: SvgPackEntry | undefined;
+      while (low <= high) {
+        const middle = (low + high) >> 1;
+        const candidate = entries[middle]!;
+        if (candidate.sliceIndex === sliceIndex) { entry = candidate; break; }
+        if (candidate.sliceIndex < sliceIndex) low = middle + 1;
+        else high = middle - 1;
+      }
       if (!entry) return undefined;
       const start = payloadOffset + entry.offset;
       return {
@@ -109,6 +126,28 @@ export function parseIndexedSvgPack(input: ArrayBuffer | Uint8Array): IndexedSvg
       };
     },
   };
+}
+
+/** Decompresses the gzip transport and verifies its declared uncompressed size. */
+export async function decompressSvgPack(
+  compressed: ArrayBuffer,
+  descriptor: Pick<SvgPackDescriptor, 'packId' | 'uncompressedBytes'>,
+): Promise<ArrayBuffer> {
+  if (!('DecompressionStream' in globalThis)) {
+    throw new Error(`SVG pack ${descriptor.packId} requires gzip DecompressionStream support`);
+  }
+  let decoded: ArrayBuffer;
+  try {
+    decoded = await new Response(
+      new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip')),
+    ).arrayBuffer();
+  } catch (error) {
+    throw new Error(`SVG pack ${descriptor.packId} could not be decompressed`, { cause: error });
+  }
+  if (decoded.byteLength !== descriptor.uncompressedBytes) {
+    throw new Error(`SVG pack ${descriptor.packId} decodes to ${decoded.byteLength} bytes; expected ${descriptor.uncompressedBytes}`);
+  }
+  return decoded;
 }
 
 /** Full decoder used by validation and round-trip tests. */

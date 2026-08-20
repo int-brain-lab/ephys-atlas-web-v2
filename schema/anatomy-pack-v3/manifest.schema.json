@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.internationalbrainlab.org/schema/anatomy-pack-v3/manifest.schema.json",
+  "title": "Sparse indexed-SVG anatomy pack manifest v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "schema_version", "pack_id", "immutable", "created_at", "parent", "provenance", "sampling", "coordinate_system", "projections", "validation"],
+  "properties": {
+    "format": { "const": "anatomy-pack-v3" },
+    "schema_version": { "const": "3.0" },
+    "pack_id": { "$ref": "#/$defs/identity" },
+    "immutable": { "const": true },
+    "created_at": { "type": "string", "format": "date-time" },
+    "parent": { "$ref": "#/$defs/parent" },
+    "provenance": { "$ref": "#/$defs/provenance" },
+    "sampling": { "$ref": "#/$defs/sampling" },
+    "coordinate_system": { "type": "object" },
+    "projections": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coronal", "sagittal", "horizontal"],
+      "properties": {
+        "coronal": { "$ref": "#/$defs/projection" },
+        "sagittal": { "$ref": "#/$defs/projection" },
+        "horizontal": { "$ref": "#/$defs/projection" }
+      }
+    },
+    "validation": { "$ref": "#/$defs/samplingValidation" }
+  },
+  "$defs": {
+    "identity": {
+      "type": "string",
+      "minLength": 3,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "safePath": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "parent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest_sha256", "pack_id", "format", "source", "provenance", "validation", "synchronization_sentinels"],
+      "properties": {
+        "manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "pack_id": { "$ref": "#/$defs/identity" },
+        "format": { "const": "anatomy-pack-v2" },
+        "source": { "type": "object" },
+        "provenance": { "type": "object" },
+        "validation": { "type": "object" },
+        "synchronization_sentinels": { "type": "array", "minItems": 2 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generator", "derivation"],
+      "properties": {
+        "generator": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repository", "commit", "dirty"],
+          "properties": {
+            "repository": { "const": "rossant/ibl-ephys-atlas-web-v2" },
+            "commit": { "$ref": "#/$defs/identity" },
+            "dirty": { "const": false }
+          }
+        },
+        "derivation": { "const": "byte-preserving SVG fragment extraction from validated parent anatomy-pack-v2" }
+      }
+    },
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["native_resolution_um", "spacing_um", "lattice", "pack_depth"],
+      "properties": {
+        "native_resolution_um": { "const": 10 },
+        "spacing_um": { "type": "integer", "minimum": 10, "multipleOf": 10 },
+        "lattice": { "const": "native plane nearest fixed-axis world zero plus integer spacing" },
+        "pack_depth": { "enum": [4, 8, 16] }
+      }
+    },
+    "samplingValidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["native_source_slices", "display_emitted_slices"],
+      "properties": {
+        "native_source_slices": { "type": "integer", "minimum": 1 },
+        "display_emitted_slices": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pack_id", "pack_index", "first_display_index", "first_slice_index", "slice_count", "path", "media_type", "compression", "bytes", "uncompressed_bytes", "sha256"],
+      "properties": {
+        "pack_id": { "$ref": "#/$defs/identity" },
+        "pack_index": { "type": "integer", "minimum": 0 },
+        "first_display_index": { "type": "integer", "minimum": 0 },
+        "first_slice_index": { "type": "integer", "minimum": 0 },
+        "slice_count": { "type": "integer", "minimum": 1 },
+        "path": { "$ref": "#/$defs/safePath" },
+        "media_type": { "const": "application/vnd.ibl.indexed-svg" },
+        "compression": { "const": "gzip" },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "uncompressed_bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "packSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pack_depth", "path_template", "packs"],
+      "properties": {
+        "pack_depth": { "enum": [4, 8, 16] },
+        "path_template": { "$ref": "#/$defs/safePath" },
+        "packs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/artifact" }
+        }
+      }
+    },
+    "projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fixed_world_axis", "plane_axes", "slice_count", "display_slice_count", "display_slice_indices", "slice_shape", "view_box", "plane_index_to_world_um", "world_to_plane_index", "lattice_anchor_slice_index", "lattice_origin_um", "lattice_spacing_um", "pack_sets", "validation"],
+      "properties": {
+        "fixed_world_axis": { "enum": ["ml", "ap", "dv"] },
+        "plane_axes": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "enum": ["ml", "ap", "dv"] }
+        },
+        "slice_count": { "type": "integer", "minimum": 1 },
+        "display_slice_count": { "type": "integer", "minimum": 1 },
+        "display_slice_indices": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "integer", "minimum": 0 }
+        },
+        "slice_shape": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "view_box": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": { "type": "number" }
+        },
+        "plane_index_to_world_um": {
+          "type": "array",
+          "minItems": 16,
+          "maxItems": 16,
+          "items": { "type": "number" }
+        },
+        "world_to_plane_index": {
+          "type": "array",
+          "minItems": 16,
+          "maxItems": 16,
+          "items": { "type": "number" }
+        },
+        "lattice_anchor_slice_index": { "type": "integer", "minimum": 0 },
+        "lattice_origin_um": { "type": "number" },
+        "lattice_spacing_um": { "type": "integer", "minimum": 10, "multipleOf": 10 },
+        "pack_sets": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "propertyNames": { "pattern": "^(4|8|16)$" },
+          "additionalProperties": { "$ref": "#/$defs/packSet" }
+        },
+        "validation": { "$ref": "#/$defs/samplingValidation" }
+      }
+    }
+  }
+}
