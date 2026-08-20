@@ -4,6 +4,7 @@ import type {
   RegionMetadata,
   RegionalFeaturePayload,
 } from '../data/contracts.js';
+import { buildRegionHierarchy } from '../data/region-hierarchy.js';
 import type { AppState, StatisticId } from '../domain/types.js';
 import { regionalColorRange } from '../rendering/scalar-colormap.js';
 
@@ -31,10 +32,6 @@ function html<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string)
   const node = document.createElement(tag);
   if (className) node.className = className;
   return node;
-}
-
-function normalizedDepth(depth: number | undefined): string {
-  return String(Math.max(0, Math.min(2, depth ?? 0)));
 }
 
 function featureValues(feature: RegionalFeaturePayload, statistic: StatisticId): readonly number[] | undefined {
@@ -74,13 +71,14 @@ export class RegionalPanelController {
     this.source = required(root, '.region-search__source');
     this.resultCount = required(root, '.region-search__count');
     this.list = required(root, '.region-list');
+    this.list.setAttribute('role', 'tree');
     this.selectedList = required(root, '.selected-regions__list');
     this.clearSelectionButton = required(root, '.selected-regions__clear');
     this.distribution = required(root, '.distribution-band__surface');
     this.analysis = required(root, '.analysis-panel__surface');
 
     this.search.addEventListener('input', this.filterRegions);
-    this.searchClear.addEventListener('click', this.filterRegions);
+    this.searchClear.addEventListener('click', this.clearSearch);
     this.clearSelectionButton.addEventListener('click', () => this.callbacks.clearSelection());
   }
 
@@ -105,25 +103,27 @@ export class RegionalPanelController {
     this.lastFixture = fixture;
     this.lastAnatomyAtlas = model.anatomyAtlas;
     this.currentRegions = model.regions;
-    this.pane.dataset.phase = feature ? 'regional-data' : 'empty';
+    this.pane.dataset.phase = feature || model.anatomyAtlas ? 'regional-data' : 'empty';
     this.pane.dataset.fixture = String(fixture);
 
-    if (!feature || !model.regions.length) {
+    if ((!feature && !model.anatomyAtlas) || !model.regions.length) {
       this.renderEmpty(model);
       return;
     }
 
-    const descriptor = model.manifest?.features.find((item) => item.id === feature.featureId);
-    const values = featureValues(feature, statistic);
+    const descriptor = feature
+      ? model.manifest?.features.find((item) => item.id === feature.featureId)
+      : undefined;
+    const values = feature ? featureValues(feature, statistic) : undefined;
     const valueById = new Map<string, number>();
-    if (values) {
+    if (feature && values) {
       feature.regionIds.forEach((id, index) => {
         const value = values[index];
         if (value !== undefined) valueById.set(id, value);
       });
     }
     const selected = new Set(model.state.view.selection);
-    const range = regionalColorRange(feature, model.state.view.coloring);
+    const range = feature ? regionalColorRange(feature, model.state.view.coloring) : null;
     const unit = descriptor?.unit ?? null;
 
     this.source.textContent = model.anatomyAtlas
@@ -132,17 +132,23 @@ export class RegionalPanelController {
       ? 'Synthetic schema-v0.1 fixture'
       : `${model.state.view.parcellation.toUpperCase()} regional values`;
 
-    const rows = model.regions.map((region) => this.regionRow(region, valueById.get(region.id), statistic, unit, range, selected));
+    const rows = buildRegionHierarchy(model.regions).map(({ region, depth, hasChildren }) =>
+      this.regionRow(region, depth, hasChildren, valueById.get(region.id), statistic, unit, range, selected));
     this.list.replaceChildren(...rows);
     this.renderSelected(model.regions, selected, valueById, statistic, unit);
-    this.renderDistribution(feature, selected, model.regions, statistic, unit, fixture);
-    this.renderAnalysis(feature, model.regions, selected, valueById, statistic, unit, fixture);
+    if (feature) {
+      this.renderDistribution(feature, selected, model.regions, statistic, unit, fixture);
+      this.renderAnalysis(feature, model.regions, selected, valueById, statistic, unit, fixture);
+    } else {
+      this.distribution.replaceChildren(this.message('No regional distribution loaded'));
+      this.analysis.replaceChildren(this.message('No feature values are available for this parcellation'));
+    }
     this.filterRegions();
   }
 
   destroy(): void {
     this.search.removeEventListener('input', this.filterRegions);
-    this.searchClear.removeEventListener('click', this.filterRegions);
+    this.searchClear.removeEventListener('click', this.clearSearch);
   }
 
   private renderEmpty(model: RegionalPanelModel): void {
@@ -161,6 +167,8 @@ export class RegionalPanelController {
 
   private regionRow(
     region: RegionMetadata,
+    depth: number,
+    hasChildren: boolean,
     value: number | undefined,
     statistic: StatisticId,
     unit: string | null,
@@ -169,20 +177,30 @@ export class RegionalPanelController {
   ): HTMLLIElement {
     const item = html('li', 'region-row');
     item.dataset.regionId = region.id;
-    item.dataset.depth = normalizedDepth(region.depth);
+    if (region.parentId !== undefined && region.parentId !== null) item.dataset.parentId = region.parentId;
+    item.dataset.depth = String(depth);
+    item.dataset.branch = String(hasChildren);
+    item.dataset.mappingMember = String(region.mappingMember !== false);
     item.dataset.missing = String(value === undefined || !Number.isFinite(value));
     item.dataset.selected = String(selected.has(region.id));
+    item.style.setProperty('--region-indent', `${(depth * 0.58).toFixed(2)}rem`);
+    item.setAttribute('role', 'treeitem');
+    item.setAttribute('aria-level', String(depth + 1));
 
     const button = html('button', 'region-row__button');
     button.type = 'button';
     button.dataset.regionButton = region.id;
     button.setAttribute('aria-pressed', String(selected.has(region.id)));
     button.setAttribute('aria-label', `${region.acronym}, ${region.name}`);
-    button.addEventListener('click', () => this.callbacks.toggleSelection(region.id));
+    const selectable = region.mappingMember !== false;
+    if (!selectable) button.setAttribute('aria-disabled', 'true');
+    button.addEventListener('click', () => {
+      if (selectable) this.callbacks.toggleSelection(region.id);
+    });
     button.addEventListener('keydown', (event) => this.navigateRegions(event, button));
-    button.addEventListener('pointerenter', () => this.callbacks.hoverRegion(region.id));
+    button.addEventListener('pointerenter', () => this.callbacks.hoverRegion(selectable ? region.id : null));
     button.addEventListener('pointerleave', () => this.callbacks.hoverRegion(null));
-    button.addEventListener('focus', () => this.callbacks.hoverRegion(region.id));
+    button.addEventListener('focus', () => this.callbacks.hoverRegion(selectable ? region.id : null));
     button.addEventListener('blur', () => this.callbacks.hoverRegion(null));
 
     const disclosure = html('span', 'region-row__disclosure');
@@ -203,7 +221,9 @@ export class RegionalPanelController {
     identity.append(acronym, name);
 
     const valueNode = html('span', 'region-row__value');
-    if (value === undefined || !Number.isFinite(value)) {
+    if (!selectable) {
+      valueNode.setAttribute('aria-hidden', 'true');
+    } else if (value === undefined || !Number.isFinite(value)) {
       const missing = html('span', 'region-row__missing');
       missing.textContent = 'no value';
       valueNode.append(missing);
@@ -371,6 +391,12 @@ export class RegionalPanelController {
     }
     this.searchClear.hidden = !query;
     this.resultCount.textContent = `${visible} ${visible === 1 ? 'region' : 'regions'}`;
+  };
+
+  private readonly clearSearch = (): void => {
+    this.search.value = '';
+    this.filterRegions();
+    this.search.focus();
   };
 
   private navigateRegions(event: KeyboardEvent, current: HTMLButtonElement): void {

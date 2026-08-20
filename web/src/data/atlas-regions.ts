@@ -23,6 +23,11 @@ function integer(value: unknown, context: string): number {
   return value;
 }
 
+function boolean(value: unknown, context: string): boolean {
+  if (typeof value !== 'boolean') throw new Error(`${context} must be a boolean`);
+  return value;
+}
+
 export function parseAtlasRegionCatalog(value: unknown): AtlasRegionCatalog {
   const root = record(value, 'atlas regions');
   if (root.format !== 'ibl-atlas-regions-v1' || root.schema_version !== '1.0') {
@@ -54,9 +59,16 @@ export function parseAtlasRegionCatalog(value: unknown): AtlasRegionCatalog {
         parentId,
         depth: integer(row.depth, `${mapping} regions[${position}].depth`),
         colorHex,
+        mappingMember: boolean(row.mapping_member, `${mapping} regions[${position}].mapping_member`),
       });
     }
     if (!rows.length) throw new Error(`${mapping} atlas region mapping is empty`);
+    const ids = new Set(rows.map((row) => row.id));
+    for (const row of rows) {
+      if (row.parentId !== null && row.parentId !== undefined && !ids.has(row.parentId)) {
+        throw new Error(`${mapping} region ${row.id} has missing parent ${row.parentId}`);
+      }
+    }
     mappings[mapping] = rows;
   }
   return { atlas: string(root.atlas, 'atlas regions atlas'), mappings };
