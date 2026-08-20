@@ -117,14 +117,16 @@ mapping inventories parent-closed. Arbitrary ontology depth is displayed, and
 container-only rows remain visibly distinct from selectable mapping regions.
 
 The application shell now exposes manifest-driven dataset/release, feature,
-representation, parcellation, statistic, colormap, scale, and robust/manual
-range controls. The numerical legend identifies the left-hemisphere feature
-scale and its effective range. The former secondary placeholder is a compact
-global feature summary. Share copies the complete URL state, Info exposes the
-immutable release, feature semantics, and source/builder provenance, and
-Download exports the current regional statistic as CSV with immutable context
-columns. The synthetic golden release remains fixture-only and is visibly
-identified as such.
+representation, and parcellation pickers directly from the corresponding top
+context fields. The searchable feature picker handles the 70-feature launch
+catalog without a native-select form, while the right visualization drawer is
+reserved for statistic, colormap, scale, and robust/manual range controls. The
+numerical legend identifies the left-hemisphere feature scale and its effective
+range. The former secondary placeholder is a compact global feature summary.
+Share copies the complete URL state, Info exposes the immutable release,
+feature semantics, and source/builder provenance, and Download exports the
+current regional statistic as CSV with immutable context columns. The synthetic
+golden release remains fixture-only and is visibly identified as such.
 
 `just dev-real` validates and opens the ignored immutable `2026_W32` channel
 release with `rms_ap.denoised` as its catalog-aware development default. Its

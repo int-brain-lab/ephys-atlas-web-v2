@@ -36,9 +36,11 @@ Status: accepted
 Use a compact top-level context bar plus an on-demand settings panel.
 
 - Dataset and feature remain directly visible in the primary context bar.
-- Mapping, statistic, colormap, range, scaling, and similar display controls live in an adjacent settings panel or popover that can stay open while tuning.
+- Dataset/release and feature open manifest-driven pickers from their visible context values; feature search includes labels, units, IDs, and scientific semantics.
+- Representation and parcellation share a context picker because together they select the shape and mapping of the scientific payload.
+- Statistic, colormap, range, scaling, and similar visual-encoding controls live in an adjacent settings panel that can stay open while tuning.
 - The settings panel must not permanently reserve a large slice of horizontal workspace.
-- The current mapping/statistic and important non-default encoding state must remain legible from the collapsed state.
+- The current representation/parcellation and important non-default encoding state must remain legible from the collapsed state.
 
 Rationale: dataset and feature define the scientific object being explored; display encodings are frequently adjusted but should not compete permanently with anatomical views.
 
