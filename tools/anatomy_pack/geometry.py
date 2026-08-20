@@ -43,6 +43,9 @@ class SliceValidation:
     uncovered_voxels: int
     multiply_covered_voxels: int
     wrong_label_voxels: int
+    internal_background_components_before: int
+    internal_background_components_after: int
+    background_topology_valid: bool
     minimum_eligible_region_iou: float
     median_boundary_error_um: float
     p95_boundary_error_um: float
@@ -195,6 +198,23 @@ def _voxel_center_errors(
     return uncovered, multiply_covered, wrong_label
 
 
+def _internal_background_components(
+    plane: np.ndarray,
+    geometries: list[Polygon | MultiPolygon],
+) -> int:
+    """Count background components enclosed away from the plane boundary."""
+    height, width = plane.shape
+    frame = box(-0.5, -0.5, width - 0.5, height - 0.5)
+    if not geometries:
+        return 0
+    background = frame.difference(unary_union(geometries))
+    return sum(
+        1
+        for component in get_parts(background)
+        if component.boundary.intersection(frame.boundary).is_empty
+    )
+
+
 def simplify_coverage(
     geometries_by_label: dict[int, Polygon | MultiPolygon],
     *,
@@ -228,6 +248,9 @@ def simplify_coverage(
             0,
             0,
             0,
+            0,
+            0,
+            True,
             1.0,
             0.0,
             0.0,
@@ -265,6 +288,8 @@ def simplify_coverage(
     uncovered_voxels, multiply_covered_voxels, wrong_label_voxels = (
         _voxel_center_errors(source_plane, candidate_by_label)
     )
+    internal_background_before = _internal_background_components(source_plane, exact)
+    internal_background_after = _internal_background_components(source_plane, candidate)
 
     eligible_ious: list[float] = []
     errors: list[np.ndarray] = []
@@ -295,6 +320,11 @@ def simplify_coverage(
         uncovered_voxels=uncovered_voxels,
         multiply_covered_voxels=multiply_covered_voxels,
         wrong_label_voxels=wrong_label_voxels,
+        internal_background_components_before=internal_background_before,
+        internal_background_components_after=internal_background_after,
+        background_topology_valid=(
+            internal_background_before == internal_background_after
+        ),
         minimum_eligible_region_iou=float(min(eligible_ious, default=1.0)),
         median_boundary_error_um=float(np.median(all_errors)),
         p95_boundary_error_um=float(np.percentile(all_errors, 95)),
@@ -325,6 +355,11 @@ def simplify_coverage(
             "voxel centres "
             f"(uncovered={uncovered_voxels}, multiply-covered={multiply_covered_voxels}, "
             f"wrong-label={wrong_label_voxels})"
+        )
+    if not validation.background_topology_valid:
+        failures.append(
+            "internal background components "
+            f"{internal_background_before} != {internal_background_after}"
         )
     if validation.minimum_eligible_region_iou < minimum_iou:
         failures.append(

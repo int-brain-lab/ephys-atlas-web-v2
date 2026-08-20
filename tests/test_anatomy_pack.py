@@ -93,6 +93,26 @@ def test_geometry_path_is_canonical_and_uses_half_integer_cell_edges() -> None:
     assert "<" not in first
 
 
+def test_internal_background_hole_is_preserved_as_evenodd_subpath() -> None:
+    plane = np.full((7, 7), 2, dtype=np.uint16)
+    plane[2:5, 2:5] = 0
+    exact = raster_label_geometries(plane)
+    candidate, validation = simplify_coverage(
+        exact,
+        source_plane=plane,
+        tolerance_um=0,
+        resolution_um=10,
+        maximum_error_um=10,
+        minimum_iou=0.98,
+        minimum_iou_area_um2=10_000,
+    )
+
+    assert validation.internal_background_components_before == 1
+    assert validation.internal_background_components_after == 1
+    assert validation.background_topology_valid
+    assert geometry_path(candidate[2]).count("M") == 2
+
+
 def test_region_rows_map_directly_to_left_folded_stable_ids() -> None:
     assert atlas_ids_for_row(fake_regions(), 2) == {
         "allen": -10,
