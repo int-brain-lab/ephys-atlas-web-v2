@@ -8,13 +8,12 @@ export interface AxisCalibration {
   direction: 1 | -1;
 }
 
-interface LegacyGuideProjection {
+interface LegacyViewAxisRegistration {
   sourceAxis: SliceAxis;
   targetAxis: SliceAxis;
   dimension: 'x' | 'y';
-  center: number;
-  span: number;
-  clampMargin?: number;
+  startPosition: number;
+  endPosition: number;
 }
 
 export const REGIONAL_10UM_CALIBRATION: Readonly<Record<SliceAxis, AxisCalibration>> = {
@@ -35,13 +34,17 @@ export const LEGACY_VIEW_BOXES: Readonly<Record<SliceAxis, ViewBox>> = {
   horizontal: { x: 122, y: 42, width: 230, height: 266 },
 };
 
-const LEGACY_GUIDE_PROJECTIONS: readonly LegacyGuideProjection[] = [
-  { sourceAxis: 'sagittal', targetAxis: 'coronal', dimension: 'x', center: 237, span: 354, clampMargin: 10 },
-  { sourceAxis: 'sagittal', targetAxis: 'horizontal', dimension: 'x', center: 237, span: 230, clampMargin: 10 },
-  { sourceAxis: 'coronal', targetAxis: 'sagittal', dimension: 'x', center: 236, span: 354, clampMargin: 10 },
-  { sourceAxis: 'coronal', targetAxis: 'horizontal', dimension: 'y', center: 174, span: 264, clampMargin: 10 },
-  { sourceAxis: 'horizontal', targetAxis: 'coronal', dimension: 'y', center: 174, span: 242 },
-  { sourceAxis: 'horizontal', targetAxis: 'sagittal', dimension: 'y', center: 174, span: 210 },
+// The curated SVGs contain no scientific affine. Their fixed view boxes are the
+// registration envelopes: each visible dimension spans the full corresponding
+// Allen axis in the same display direction as the v1 anatomical artwork.
+// Scientific coordinates are converted before entering this display-only map.
+const LEGACY_VIEW_REGISTRATIONS: readonly LegacyViewAxisRegistration[] = [
+  { sourceAxis: 'sagittal', targetAxis: 'coronal', dimension: 'x', startPosition: 58, endPosition: 414 },
+  { sourceAxis: 'horizontal', targetAxis: 'coronal', dimension: 'y', startPosition: 50, endPosition: 300 },
+  { sourceAxis: 'coronal', targetAxis: 'sagittal', dimension: 'x', startPosition: 56, endPosition: 414 },
+  { sourceAxis: 'horizontal', targetAxis: 'sagittal', dimension: 'y', startPosition: 66, endPosition: 283 },
+  { sourceAxis: 'sagittal', targetAxis: 'horizontal', dimension: 'x', startPosition: 122, endPosition: 352 },
+  { sourceAxis: 'coronal', targetAxis: 'horizontal', dimension: 'y', startPosition: 42, endPosition: 308 },
 ];
 
 function clamp(value: number, min: number, max: number): number {
@@ -97,22 +100,23 @@ export function regionalIndexToVolumeIndex(axis: SliceAxis, regionalIndex: numbe
 }
 
 export function projectLegacyGuide(sourceAxis: SliceAxis, targetAxis: SliceAxis, sourceIndex: number): SliceGuide {
-  const projection = LEGACY_GUIDE_PROJECTIONS.find(
+  const registration = LEGACY_VIEW_REGISTRATIONS.find(
     (candidate) => candidate.sourceAxis === sourceAxis && candidate.targetAxis === targetAxis,
   );
-  if (!projection) throw new Error(`No legacy guide projection from ${sourceAxis} to ${targetAxis}`);
+  if (!registration) throw new Error(`No legacy guide projection from ${sourceAxis} to ${targetAxis}`);
 
   const source = REGIONAL_10UM_CALIBRATION[sourceAxis];
   validateIndex(sourceIndex, source);
-  const margin = projection.clampMargin ?? 0;
-  const visualIndex = clamp(sourceIndex, margin, source.indexCount - margin);
-  const ratio = visualIndex / source.indexCount;
+  const coordinateUm = indexToCoordinateUm(sourceIndex, source);
+  const firstCoordinateUm = indexToCoordinateUm(0, source);
+  const lastCoordinateUm = indexToCoordinateUm(source.indexCount - 1, source);
+  const fraction = (coordinateUm - firstCoordinateUm) / (lastCoordinateUm - firstCoordinateUm);
 
   return {
     sourceAxis,
     targetAxis,
-    dimension: projection.dimension,
-    position: projection.center + projection.span * (ratio - 0.5),
+    dimension: registration.dimension,
+    position: registration.startPosition + fraction * (registration.endPosition - registration.startPosition),
   };
 }
 

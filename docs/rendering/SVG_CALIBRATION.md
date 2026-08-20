@@ -22,24 +22,15 @@ The launch ephys-atlas volume uses the same origins at 25 um with axis counts 52
 
 ### Curated SVG display coordinates
 
-The cross-view guide lines are visually tuned affine fits in SVG coordinates. V1 encoded them as numeric constants in `js/core/slice-helpers.js`; v2 records them in `slice-calibration.ts` as display-only calibration:
-
-| source -> target | SVG dimension | center | span | edge clamp |
-| --- | --- | ---: | ---: | ---: |
-| sagittal -> coronal | x | 237 | 354 | 10 slices |
-| sagittal -> horizontal | x | 237 | 230 | 10 slices |
-| coronal -> sagittal | x | 236 | 354 | 10 slices |
-| coronal -> horizontal | y | 174 | 264 | 10 slices |
-| horizontal -> coronal | y | 174 | 242 | none |
-| horizontal -> sagittal | y | 174 | 210 | none |
-
-The exact v1 view boxes are also explicit:
+V1 positioned cross-view guides with six independently tuned pixel formulas and two arbitrary edge clamps. V2 instead converts every slice index to an Allen coordinate first, then registers that coordinate against one fixed display envelope and orientation per curated projection. The exact v1 view boxes are those envelopes:
 
 - coronal: `58 50 356 250`
 - sagittal: `56 66 358 217`
 - horizontal: `122 42 230 266`
 
-These fits are acceptable for guide placement and visual linkage. They must never be used to infer Allen coordinates or volume voxels.
+Within a projection, its two visible Allen axes map linearly across the corresponding view-box dimensions in the orientation of the curated artwork. This makes the guide intersection one deterministic AP/ML/DV point and removes pair-specific drift. It also gives exact, tested behavior at the CCF grid endpoints instead of dividing by a slice count and clamping away the edges.
+
+This is the strongest registration the legacy assets support: their bare path fragments contain no affine or physical bounds. The view box must never be used to infer Allen coordinates or volume voxels. A future anatomy asset should ship an explicit world-to-view transform if sub-pixel anatomical registration is required.
 
 ## Renderer boundary
 
