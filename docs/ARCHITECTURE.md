@@ -43,9 +43,11 @@ ML/AP/DV cursor; curated v1 SVGs are pinned historical fallback assets only.
 SVG remains the regional interaction representation because stable path IDs
 support delegated picking, selection, coloring, and linked guides. Runtime
 work is bounded with lazy source packs, byte-bounded decoded caching, an
-eight-layer retained parsed-DOM cache per view, and a latest-only 40 ms geometry
-scheduler. Interaction may stride over several slices while exact native
-indices remain addressable in state and URLs.
+eight-layer retained parsed-DOM cache per view, and a latest-only scheduler with
+one geometry request in flight. Verified pack bytes are transferred to a module
+worker for decompression, JSON parsing, and structural validation. Interaction
+may stride over several slices while exact native indices remain addressable in
+state and URLs.
 
 The indexed binary SVG pack is an experiment below this boundary, not a second
 scientific geometry model. See

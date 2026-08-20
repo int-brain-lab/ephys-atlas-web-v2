@@ -164,6 +164,12 @@ SVG region attributes. A controlled browser benchmark showed that the former
 40 ms interval delayed already-decoded and retained navigation enough to cap it
 at roughly 25–30 frames per second.
 
+Fetch and compressed-byte SHA verification remain in the anatomy source. A
+persistent module worker receives the verified buffer by transfer and performs
+gzip decompression, UTF-8 decoding, JSON parsing, and structural/affine
+validation. The decoded pack is returned to the source's existing byte-bounded
+LRU, so transport and worker details remain below `SliceRenderer`.
+
 Prototype an indexed binary transport containing a fixed little-endian header,
 projection/pack identity, fixed-width slice entries, and concatenated UTF-8 SVG
 fragments. This format is experimental and is not an active anatomy-pack or

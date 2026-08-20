@@ -1,10 +1,10 @@
 import type { SliceAxis } from '../domain/types.js';
 import { assertInverseAffines, planeToWorld, SLICE_WORLD_AXIS, worldToPlane, type Matrix4, type WorldAxis, type WorldCoordinateUm } from './coordinate-space.js';
+import { createAnatomyPackDecoder, type AnatomyPackDecoder } from './generated-anatomy-pack-decoder.js';
+import type { AnatomyPackDecodeContext, AnatomyPackDecodePhase, SlicePack } from './generated-anatomy-pack-codec.js';
 import type {
-  AnatomyRegionPath,
   AnatomySlice,
   AnatomySliceSource,
-  MappingName,
   SliceGuide,
   SliceIndices,
   ViewBox,
@@ -61,18 +61,6 @@ export interface AnatomySynchronizationSentinel {
   projectionIndices: Readonly<Record<SliceAxis, readonly [number, number, number]>>;
 }
 
-interface SlicePack {
-  projection: SliceAxis;
-  packDepth: 16 | 32;
-  packIndex: number;
-  firstSliceIndex: number;
-  slices: readonly {
-    sliceIndex: number;
-    worldCoordinateUm: number;
-    paths: readonly AnatomyRegionPath[];
-  }[];
-}
-
 export interface GeneratedAnatomySliceSourceOptions {
   manifestUrl: string;
   packDepth?: 16 | 32;
@@ -89,7 +77,8 @@ export type AnatomyPackPerformancePhase =
   | 'gunzip'
   | 'utf8'
   | 'json-parse'
-  | 'validate';
+  | 'validate'
+  | 'worker-roundtrip';
 
 export interface AnatomyPackPerformanceEvent {
   phase: AnatomyPackPerformancePhase;
@@ -392,72 +381,9 @@ export function parseAnatomyPackManifest(value: unknown): AnatomyPackManifest {
   };
 }
 
-function parseAtlasIds(value: unknown, context: string, bilateral: boolean): Readonly<Record<MappingName, number>> {
-  const item = record(value, context);
-  const result = {} as Record<MappingName, number>;
-  for (const mapping of ['allen', 'beryl', 'cosmos'] as const) {
-    const atlasId = integer(item[mapping], `${context}.${mapping}`, Number.MIN_SAFE_INTEGER);
-    if (atlasId === 0 || (!bilateral && atlasId > 0)) {
-      throw new Error(`${context}.${mapping} must be a valid signed hemisphere atlas ID`);
-    }
-    result[mapping] = atlasId;
-  }
-  const signs = new Set(Object.values(result).map((atlasId) => Math.sign(atlasId)));
-  if (signs.size !== 1) throw new Error(`${context} mixes atlas ID hemispheres`);
-  return result;
-}
-
-function parseSlicePack(value: unknown, manifest: AnatomyPackManifest, artifact: PackArtifact): SlicePack {
-  const root = record(value, artifact.path);
-  const bilateral = manifest.format === 'anatomy-pack-v2';
-  const expectedFormat = bilateral ? 'anatomy-slice-pack-v2' : 'anatomy-slice-pack-v1';
-  const expectedVersion = bilateral ? '2.0' : '1.0';
-  if (root.format !== expectedFormat || root.schema_version !== expectedVersion) throw new Error(`${artifact.path} has an unsupported format`);
-  if (root.anatomy_pack_id !== manifest.packId) throw new Error(`${artifact.path} belongs to another anatomy pack`);
-  const rawProjection = root.projection;
-  if (!AXES.includes(rawProjection as SliceAxis)) throw new Error(`${artifact.path}.projection is invalid`);
-  const projection = rawProjection as SliceAxis;
-  const packDepth = root.pack_depth;
-  if (packDepth !== 16 && packDepth !== 32) throw new Error(`${artifact.path}.pack_depth is invalid`);
-  const packIndex = integer(root.pack_index, `${artifact.path}.pack_index`);
-  const firstSliceIndex = integer(root.first_slice_index, `${artifact.path}.first_slice_index`);
-  if (root.slice_count !== artifact.sliceCount) throw new Error(`${artifact.path}.slice_count does not match its manifest descriptor`);
-  if (!Array.isArray(root.slices) || root.slices.length !== artifact.sliceCount) throw new Error(`${artifact.path}.slices has the wrong length`);
-  const slices = root.slices.map((value, offset) => {
-    const slice = record(value, `${artifact.path}.slices[${offset}]`);
-    const sliceIndex = integer(slice.slice_index, `${artifact.path}.slices[${offset}].slice_index`);
-    if (sliceIndex !== firstSliceIndex + offset) throw new Error(`${artifact.path}.slices are not contiguous`);
-    if (!Array.isArray(slice.paths)) throw new Error(`${artifact.path}.slices[${offset}].paths must be an array`);
-    const paths = slice.paths.map((pathValue, pathIndex) => {
-      const path = record(pathValue, `${artifact.path}.slices[${offset}].paths[${pathIndex}]`);
-      const d = string(path.d, `${artifact.path}.slices[${offset}].paths[${pathIndex}].d`);
-      if (!/^[Mm][^<>]{3,}$/.test(d)) throw new Error(`${artifact.path} contains an invalid path definition`);
-      if (bilateral && path.fill_rule !== 'evenodd') throw new Error(`${artifact.path} bilateral paths must use evenodd fill`);
-      return { atlasIds: parseAtlasIds(path.atlas_ids, `${artifact.path}.slices[${offset}].paths[${pathIndex}].atlas_ids`, bilateral), d };
-    });
-    const worldCoordinateUm = finiteNumber(slice.world_coordinate_um, `${artifact.path}.slices[${offset}].world_coordinate_um`);
-    const projectionGeometry = manifest.projections[projection];
-    const expectedWorld = planeToWorld(projectionGeometry.planeIndexToWorldUm, { slice: sliceIndex, u: 0, v: 0 });
-    if (Math.abs(worldCoordinateUm - expectedWorld[projectionGeometry.fixedWorldAxis]) > 1e-6) {
-      throw new Error(`${artifact.path}.slices[${offset}].world_coordinate_um does not match the projection affine`);
-    }
-    return { sliceIndex, worldCoordinateUm, paths };
-  });
-  return { projection, packDepth, packIndex, firstSliceIndex, slices };
-}
-
 async function sha256Hex(buffer: ArrayBuffer): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', buffer);
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
-async function gunzip(buffer: ArrayBuffer, context: string): Promise<ArrayBuffer> {
-  if (!('DecompressionStream' in globalThis)) throw new Error(`${context} requires gzip DecompressionStream support`);
-  try {
-    return await new Response(new Blob([buffer]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
-  } catch (error) {
-    throw new Error(`${context} could not be decompressed`, { cause: error });
-  }
 }
 
 export class GeneratedAnatomySliceSource implements AnatomySliceSource {
@@ -468,6 +394,7 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
   private readonly maxCachedBytes: number;
   private readonly scheduleIdle: (callback: () => void) => void;
   private readonly onPerformance: ((event: AnatomyPackPerformanceEvent) => void) | undefined;
+  private readonly decoder: AnatomyPackDecoder;
   private manifestPromise: Promise<AnatomyPackManifest> | null = null;
   private readonly packs = new Map<string, Promise<SlicePack>>();
   private readonly packDecodedBytes = new Map<string, number>();
@@ -481,6 +408,7 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
     this.fetchImpl = options.fetchImpl ?? fetch.bind(globalThis);
     this.packDepth = options.packDepth;
     this.onPerformance = options.onPerformance;
+    this.decoder = createAnatomyPackDecoder();
     this.maxCachedBytes = options.maxCachedBytes ?? 32 * 1024 * 1024;
     if (!Number.isInteger(this.maxCachedBytes) || this.maxCachedBytes <= 0) {
       throw new RangeError('maxCachedBytes must be a positive integer');
@@ -559,6 +487,10 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
       this.queuedPrefetches.clear();
       void this.prefetchQueuedNextPacks(queued).catch(() => {});
     });
+  }
+
+  dispose(): void {
+    this.decoder.dispose();
   }
 
   private async fetchManifest(): Promise<AnatomyPackManifest> {
@@ -652,30 +584,32 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
     const digest = await sha256Hex(buffer);
     this.reportPerformance('sha256', axis, artifact, started);
     if (digest !== artifact.sha256) throw new Error(`SHA-256 mismatch for anatomy pack ${artifact.path}`);
+
+    const projection = manifest.projections[axis];
+    const context: AnatomyPackDecodeContext = {
+      format: manifest.format,
+      packId: manifest.packId,
+      axis,
+      packDepth,
+      fixedWorldAxis: projection.fixedWorldAxis,
+      planeIndexToWorldUm: projection.planeIndexToWorldUm,
+      artifact: {
+        packIndex: artifact.packIndex,
+        firstSliceIndex: artifact.firstSliceIndex,
+        sliceCount: artifact.sliceCount,
+        path: artifact.path,
+        uncompressedBytes: artifact.uncompressedBytes,
+      },
+    };
     started = this.performanceStart();
-    const decoded = await gunzip(buffer, artifact.path);
-    this.reportPerformance('gunzip', axis, artifact, started, decoded.byteLength);
-    if (decoded.byteLength !== artifact.uncompressedBytes) {
-      throw new Error(`${artifact.path} decodes to ${decoded.byteLength} bytes; expected ${artifact.uncompressedBytes}`);
+    const decoded = await this.decoder.decode(buffer, context);
+    for (const timing of decoded.timings) {
+      this.reportPerformanceDuration(timing.phase, axis, artifact, timing.durationMs, decoded.decodedBytes);
     }
-    started = this.performanceStart();
-    const json = new TextDecoder().decode(decoded);
-    this.reportPerformance('utf8', axis, artifact, started, decoded.byteLength);
-    let value: unknown;
-    started = this.performanceStart();
-    try {
-      value = JSON.parse(json);
-    } catch (error) {
-      throw new Error(`${artifact.path} is not valid JSON`, { cause: error });
+    if (this.decoder.offThread) {
+      this.reportPerformance('worker-roundtrip', axis, artifact, started, decoded.decodedBytes);
     }
-    this.reportPerformance('json-parse', axis, artifact, started, decoded.byteLength);
-    started = this.performanceStart();
-    const pack = parseSlicePack(value, manifest, artifact);
-    this.reportPerformance('validate', axis, artifact, started, decoded.byteLength);
-    if (pack.projection !== axis || pack.packDepth !== packDepth || pack.packIndex !== artifact.packIndex || pack.firstSliceIndex !== artifact.firstSliceIndex) {
-      throw new Error(`${artifact.path} metadata does not match its manifest descriptor`);
-    }
-    return pack;
+    return decoded.pack;
   }
 
   private reportPerformance(
@@ -685,6 +619,16 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
     started: number,
     decodedBytes?: number,
   ): void {
+    this.reportPerformanceDuration(phase, axis, artifact, performance.now() - started, decodedBytes);
+  }
+
+  private reportPerformanceDuration(
+    phase: AnatomyPackPerformancePhase | AnatomyPackDecodePhase,
+    axis: SliceAxis,
+    artifact: PackArtifact,
+    durationMs: number,
+    decodedBytes?: number,
+  ): void {
     if (!this.onPerformance) return;
     try {
       this.onPerformance({
@@ -692,7 +636,7 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
         axis,
         packIndex: artifact.packIndex,
         path: artifact.path,
-        durationMs: performance.now() - started,
+        durationMs,
         compressedBytes: artifact.bytes,
         ...(decodedBytes == null ? {} : { decodedBytes }),
       });

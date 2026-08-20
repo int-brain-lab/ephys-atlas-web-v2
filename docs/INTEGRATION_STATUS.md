@@ -155,9 +155,12 @@ initial view fetches only its three current depth-16 packs. Subsequent idle
 prefetch is latest-wins and loads one pack in the active direction into a
 32 MiB decoded-byte LRU shared across projections. Each SVG view retains an
 eight-layer parsed-DOM LRU, including its per-slice path index, so reverse/warm
-navigation swaps the original nodes without parsing again. Geometry starts are
-limited to one every 40 ms per view and pending intermediate requests are
-replaced by the latest slice before source loading begins.
+navigation swaps the original nodes without parsing again. Geometry loading
+allows one request in flight per view with no artificial start delay; pending
+intermediate requests are replaced by the latest slice before source loading
+begins. After byte-size and SHA verification, compressed pack buffers transfer
+to a persistent module worker for gzip, UTF-8/JSON parsing, and structural and
+affine validation before entering the existing decoded-byte LRU.
 
 An isolated `ISVG` v1 prototype now exercises a fixed binary slice index over
 concatenated UTF-8 SVG fragments in Python and TypeScript. Its indexed browser
@@ -167,14 +170,15 @@ and targets JSON/allocation/serialization cost. It remains outside the active
 manifest and renderer pending the adoption gates in
 `docs/rendering/INDEXED_SVG_PACK_EXPERIMENT.md`.
 
-The reproducible Chromium anatomy benchmark now reports source and SVG phases
-separately (`just benchmark-anatomy`). Five-trial local cache misses commit p95
-or maximum geometry in roughly 16–19 ms p50. Horizontal gzip plus UTF-8/JSON
-and structured validation consumes roughly 10–13 ms, while SVG serialization,
-parse, and indexing consumes roughly 1–2 ms. The benchmark also shows that the
-40 ms minimum geometry-start interval delays same-pack work to about 25 ms and
-retained revisits to about 32–33 ms. The evidence and next architecture change
-are recorded in `docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.
+The reproducible Chromium anatomy benchmark reports source, worker round-trip,
+and SVG phases separately (`just benchmark-anatomy`). Removing the fixed 40 ms
+gate reduced median same-pack commits to 0.9–1.6 ms and retained revisits to
+0.3–0.5 ms. Moving gzip, UTF-8/JSON, and validation to the worker reduced the
+worst measured animation-frame gap from 33.3 ms to 17.6 ms, while current JSON
+pack cloning raised median cold commit latency to 17–21.1 ms. The indexed SVG
+experiment is therefore the next candidate for reducing cache-miss wait and
+cross-thread allocation; evidence is recorded in
+`docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.
 
 ## Volume viewer vertical slice
 
