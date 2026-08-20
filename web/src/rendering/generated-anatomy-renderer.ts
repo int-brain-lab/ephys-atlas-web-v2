@@ -1,4 +1,5 @@
 import type { SliceAxis } from '../domain/types.js';
+import { cursorStateToWorld } from './coordinate-space.js';
 import type {
   RendererInteractionSink,
   RendererPresentation,
@@ -55,10 +56,8 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     const token = (this.renderTokens.get(target) ?? 0) + 1;
     this.renderTokens.set(target, token);
     this.requestedIndices.set(model.axis, model.sliceIndex);
-    const [slice, world] = await Promise.all([
-      this.source.loadSlice(model.axis, model.sliceIndex),
-      this.source.worldFromSliceIndices(model.slices),
-    ]);
+    const slice = await this.source.loadSlice(model.axis, model.sliceIndex);
+    const world = cursorStateToWorld(model.cursor);
     const guides = await this.source.guidesForWorld(model.axis, world);
     if (this.renderTokens.get(target) !== token) return;
 
