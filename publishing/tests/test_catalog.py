@@ -17,7 +17,11 @@ def artifact(path: str, data: bytes) -> dict:
 
 
 def publish(store: PublicationStore, dataset: str, release: str, aliases=()):
-    manifest = json.dumps({"schema_version": "0.1", "dataset_id": dataset}).encode()
+    manifest = json.dumps({
+        "schema_version": "0.1",
+        "dataset_id": dataset,
+        "release": {"release_id": release},
+    }).encode()
     upload = store.create_upload(
         dataset,
         release,

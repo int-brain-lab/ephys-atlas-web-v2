@@ -101,6 +101,7 @@ class PublicationStore:
         root: str | Path,
         *,
         validator_command: str | list[str] | None = None,
+        validator_timeout_seconds: float = 300,
         max_artifacts: int = 100000,
         max_release_bytes: int = 100 * 1024**3,
     ):
@@ -115,6 +116,9 @@ class PublicationStore:
             if isinstance(validator_command, str)
             else list(validator_command or [])
         )
+        if validator_timeout_seconds <= 0:
+            raise ValueError("validator timeout must be positive")
+        self.validator_timeout_seconds = validator_timeout_seconds
         self._lock = threading.RLock()
         for path, mode in ((self.public, 0o755), (self.state, 0o700), (self.staging, 0o700)):
             path.mkdir(parents=True, exist_ok=True)
@@ -276,20 +280,70 @@ class PublicationStore:
         return result
 
     def append_artifact(self, upload_id: str, path: str, offset: int, body: bytes) -> dict[str, Any]:
-        upload, state = self._upload(upload_id)
-        artifact = self._artifact(state, path)
-        destination = upload / "files" / artifact["path"]
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        current = destination.stat().st_size if destination.exists() else 0
-        if int(offset) != current:
-            raise OffsetConflict(current)
-        if current + len(body) > artifact["size"]:
-            raise ValidationError("artifact exceeds declared size")
-        with destination.open("ab") as handle:
-            handle.write(body)
-            handle.flush()
-            os.fsync(handle.fileno())
-        return {"offset": current + len(body), "size": artifact["size"]}
+        # The offset check and append must be one operation. The documented
+        # threaded deployment otherwise allows two same-offset requests to both
+        # pass the check before either append becomes visible.
+        with self._lock:
+            upload, state = self._upload(upload_id)
+            artifact = self._artifact(state, path)
+            destination = upload / "files" / artifact["path"]
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            current = destination.stat().st_size if destination.exists() else 0
+            if int(offset) != current:
+                raise OffsetConflict(current)
+            if current + len(body) > artifact["size"]:
+                raise ValidationError("artifact exceeds declared size")
+            with destination.open("ab") as handle:
+                handle.write(body)
+                handle.flush()
+                os.fsync(handle.fileno())
+            return {"offset": current + len(body), "size": artifact["size"]}
+
+    def _validate_manifest_identity(
+        self,
+        release_root: Path,
+        *,
+        dataset_id: str,
+        release_id: str,
+    ) -> None:
+        manifest_path = release_root / "manifest.json"
+        if not manifest_path.is_file():
+            raise ValidationError("release must contain manifest.json")
+        try:
+            manifest = load_json(manifest_path)
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValidationError(f"invalid manifest.json: {exc}") from exc
+        if manifest.get("dataset_id") != dataset_id:
+            raise ValidationError("manifest dataset_id does not match upload dataset")
+        release = manifest.get("release")
+        if not isinstance(release, dict) or release.get("release_id") != release_id:
+            raise ValidationError("manifest release_id does not match upload release")
+
+    def _record_publication(
+        self,
+        publication: dict[str, Any],
+        aliases: list[str],
+    ) -> None:
+        dataset_id = publication["dataset_id"]
+        release_id = publication["release_id"]
+        index = self.get_dataset(dataset_id)
+        known = {item["release_id"] for item in index["releases"]}
+        if release_id not in known:
+            index["releases"].append({
+                "release_id": release_id,
+                "published_at": publication["published_at"],
+            })
+        for alias in aliases:
+            index["aliases"][_id(alias, "alias")] = release_id
+        atomic_json(self._dataset_index(dataset_id), index)
+        self._catalog()
+
+    def _cleanup_upload(self, upload: Path) -> None:
+        try:
+            (upload / "upload.json").unlink()
+            upload.rmdir()
+        except OSError:
+            pass
 
     def publish_upload(self, upload_id: str, aliases: list[str], credential_id: str) -> dict[str, Any]:
         with self._lock:
@@ -297,8 +351,27 @@ class PublicationStore:
             dataset_id = state["dataset_id"]
             release_id = state["release_id"]
             release_dir = self._dataset(dataset_id) / "releases" / release_id
+            aliases = [_id(alias, "alias") for alias in aliases]
             if release_dir.exists():
-                raise Conflict("release already exists")
+                # A process may have stopped after the atomic directory rename
+                # but before updating the dataset index/catalog. Retrying the
+                # same upload completes that publication idempotently.
+                publication_path = release_dir / "_publication.json"
+                if not publication_path.is_file():
+                    raise Conflict("release already exists")
+                publication = load_json(publication_path)
+                if (
+                    publication.get("dataset_id") != dataset_id
+                    or publication.get("release_id") != release_id
+                ):
+                    raise Conflict("release already exists with different identity")
+                self._validate_manifest_identity(
+                    release_dir, dataset_id=dataset_id, release_id=release_id
+                )
+                self._make_read_only(release_dir)
+                self._record_publication(publication, aliases)
+                self._cleanup_upload(upload)
+                return publication
 
             for artifact in state["artifacts"]:
                 path = upload / "files" / artifact["path"]
@@ -307,12 +380,26 @@ class PublicationStore:
                 if sha256_file(path) != artifact["sha256"]:
                     raise ValidationError(f"sha256 mismatch: {artifact['path']}")
 
+            self._validate_manifest_identity(
+                upload / "files", dataset_id=dataset_id, release_id=release_id
+            )
+
             if self.validator_command:
                 command = [
                     part.replace("{release_dir}", str(upload / "files"))
                     for part in self.validator_command
                 ]
-                result = subprocess.run(command, capture_output=True, text=True)
+                try:
+                    result = subprocess.run(
+                        command,
+                        capture_output=True,
+                        text=True,
+                        timeout=self.validator_timeout_seconds,
+                    )
+                except subprocess.TimeoutExpired as exc:
+                    raise ValidationError(
+                        f"validator timed out after {self.validator_timeout_seconds:g} seconds"
+                    ) from exc
                 if result.returncode:
                     raise ValidationError(
                         (result.stderr or result.stdout or "validation failed").strip()
@@ -329,21 +416,8 @@ class PublicationStore:
             release_dir.parent.mkdir(parents=True, exist_ok=True)
             os.replace(upload / "files", release_dir)
             self._make_read_only(release_dir)
-
-            index = self.get_dataset(dataset_id)
-            index["releases"].append({
-                "release_id": release_id,
-                "published_at": publication["published_at"],
-            })
-            for alias in aliases:
-                index["aliases"][_id(alias, "alias")] = release_id
-            atomic_json(self._dataset_index(dataset_id), index)
-            self._catalog()
-            try:
-                (upload / "upload.json").unlink()
-                upload.rmdir()
-            except OSError:
-                pass
+            self._record_publication(publication, aliases)
+            self._cleanup_upload(upload)
             self._audit(
                 credential_id,
                 "release.publish",
