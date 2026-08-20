@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 const reviewViewports = [
   { name: 'wide-desktop', width: 1680, height: 1050, layout: 'wide', body: { x: 8, y: 72, width: 1664, height: 970 } },
@@ -8,48 +8,9 @@ const reviewViewports = [
   { name: 'phone', width: 390, height: 844, layout: 'phone', body: { x: 4, y: 60, width: 382, height: 780 } },
 ] as const;
 
-const reviewFragments = {
-  // Geometry is sampled from the curated assets. Allen atlas ID 10 is legacy
-  // BrainRegions index 835, so the fixture exercises the real ID crosswalk.
-  coronal: '<path d="M236.473 167.48v-4.34 4.34z" class="allen_region_835"/><path d="M237 167v-4 4z" class="allen_region_2162"/>',
-  sagittal: '<path d="M160.137 184.944v-2.721 2.721z" class="allen_region_835"/><path d="M161 184v-2 2z" class="allen_region_2162"/>',
-  horizontal: '<path d="M298.858 147.01v-.404.404z" class="allen_region_835"/><path d="M299 147v-.4.4z" class="allen_region_2162"/>',
-} as const;
-
-const curatedRanges = {
-  coronal: { min: 2, max: 1316, step: 2 },
-  sagittal: { min: 54, max: 1086, step: 2 },
-  horizontal: { min: 16, max: 754, step: 2 },
-} as const;
-
-function fixtureBundle(axis: keyof typeof reviewFragments): Record<string, string> {
-  const { min, max, step } = curatedRanges[axis];
-  const bundle: Record<string, string> = {};
-  for (let index = min; index <= max; index += step) bundle[String(index)] = reviewFragments[axis];
-  return bundle;
-}
-
-async function mockCuratedSlices(page: Page): Promise<void> {
-  await page.route('https://atlas.internationalbrainlab.org/data/json/regions.json', (route) => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ allen: [{ acronym: 'SCig', atlas_id: 10, idx: 835 }] }),
-  }));
-  await page.route('https://atlas.internationalbrainlab.org/data/json/slices_*.json', async (route) => {
-    const axis = route.request().url().match(/slices_(coronal|sagittal|horizontal)\.json/)?.[1] as keyof typeof reviewFragments | undefined;
-    if (!axis) return route.abort();
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(fixtureBundle(axis)),
-    });
-  });
-}
-
 for (const viewport of reviewViewports) {
   test(`phase 4 anatomical frames: ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await mockCuratedSlices(page);
     await page.goto('/');
 
     const app = page.locator('.atlas-app');
@@ -64,14 +25,14 @@ for (const viewport of reviewViewports) {
     await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.20 mm');
     await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
     await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');
-    await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toBeAttached();
+    await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '264');
     await expect(page.getByLabel('coronal slice')).toHaveAttribute('min', '0');
-    await expect(page.getByLabel('coronal slice')).toHaveAttribute('max', '1319');
+    await expect(page.getByLabel('coronal slice')).toHaveAttribute('max', '527');
     await expect(page.getByLabel('coronal slice')).toHaveAttribute('step', '1');
     await expect(page.getByLabel('sagittal slice')).toHaveAttribute('min', '0');
-    await expect(page.getByLabel('sagittal slice')).toHaveAttribute('max', '1139');
+    await expect(page.getByLabel('sagittal slice')).toHaveAttribute('max', '229');
     await expect(page.getByLabel('horizontal slice')).toHaveAttribute('min', '0');
-    await expect(page.getByLabel('horizontal slice')).toHaveAttribute('max', '799');
+    await expect(page.getByLabel('horizontal slice')).toHaveAttribute('max', '319');
 
     if (viewport.width < 1100) {
       await expect(page.locator('[data-view="coronal"]')).toBeVisible();
@@ -88,31 +49,28 @@ for (const viewport of reviewViewports) {
 
 test('slice control updates calibrated coordinate and renderer request', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
   await page.goto('/');
 
   const slider = page.getByLabel('coronal slice');
-  await slider.fill('701');
-  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.61 mm');
-  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('701,550,400');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '700');
+  await slider.fill('281');
+  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.63 mm');
+  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('281,220,160');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '281');
 });
 
 test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
   await page.goto('/');
 
   await page.locator('[data-view="coronal"] .view-frame__brain-svg').dispatchEvent('wheel', { deltaY: 100 });
-  await expect(page.getByLabel('coronal slice')).toHaveValue('648');
-  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.08 mm');
-  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('648,550,400');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '648');
+  await expect(page.getByLabel('coronal slice')).toHaveValue('252');
+  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -0.90 mm');
+  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('252,220,160');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '252');
 });
 
 test('linked guides project one slice coordinate into both other views', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
   await page.goto('/');
 
   const slider = page.getByLabel('coronal slice');
@@ -120,46 +78,41 @@ test('linked guides project one slice coordinate into both other views', async (
   const horizontalGuide = page.locator('[data-view="horizontal"] .slice-guide[data-source-axis="coronal"]');
 
   await slider.fill('0');
-  await expect(sagittalGuide).toHaveAttribute('x1', '56');
-  await expect(horizontalGuide).toHaveAttribute('y1', '42');
+  await expect(sagittalGuide).toHaveAttribute('x1', '527');
+  await expect(horizontalGuide).toHaveAttribute('y1', '0');
 
-  await slider.fill('1319');
-  await expect(sagittalGuide).toHaveAttribute('x1', '414');
-  await expect(horizontalGuide).toHaveAttribute('y1', '308');
+  await slider.fill('527');
+  await expect(sagittalGuide).toHaveAttribute('x1', '0');
+  await expect(horizontalGuide).toHaveAttribute('y1', '527');
 });
 
-test('full-resolution navigation stays independent from downsampled SVG assets', async ({ page }) => {
+test('legacy 10 um URLs migrate to the native registered anatomy grid', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
   await page.goto('/?v=1&slices=661,551,401');
 
-  await expect(page.getByLabel('coronal slice')).toHaveValue('661');
-  await expect(page.getByLabel('sagittal slice')).toHaveValue('551');
-  await expect(page.getByLabel('horizontal slice')).toHaveValue('401');
-  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.21 mm');
-  await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.23 mm');
-  await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.68 mm');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '660');
-  await expect(page.locator('[data-view="sagittal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '550');
-  await expect(page.locator('[data-view="horizontal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '400');
+  await expect(page.getByLabel('coronal slice')).toHaveValue('264');
+  await expect(page.getByLabel('sagittal slice')).toHaveValue('220');
+  await expect(page.getByLabel('horizontal slice')).toHaveValue('160');
+  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.20 mm');
+  await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
+  await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '264');
 });
 
-test('scientific range endpoints may reuse the nearest available display SVG', async ({ page }) => {
+test('native left-hemisphere anatomy exposes every scientific range endpoint', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
-  await page.goto('/?v=1&slices=0,1139,799');
+  await page.goto('/?v=2&slices=0,229,319');
 
   await expect(page.getByLabel('coronal slice')).toHaveValue('0');
-  await expect(page.getByLabel('sagittal slice')).toHaveValue('1139');
-  await expect(page.getByLabel('horizontal slice')).toHaveValue('799');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '2');
-  await expect(page.locator('[data-view="sagittal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '1086');
-  await expect(page.locator('[data-view="horizontal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '754');
+  await expect(page.getByLabel('sagittal slice')).toHaveValue('229');
+  await expect(page.getByLabel('horizontal slice')).toHaveValue('319');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '0');
+  await expect(page.locator('[data-view="sagittal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '229');
+  await expect(page.locator('[data-view="horizontal"] [data-slice-asset="generated-anatomy-v1"]')).toHaveAttribute('data-asset-index', '319');
 });
 
 test('schema v0.1 regional fixture drives values, coloring, selection and histogram comparison', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
   await page.goto('/');
 
   await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
@@ -168,11 +121,11 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
   await expect(page.locator('.regional-comparison__fixture')).toHaveText('Synthetic integration fixture');
 
-  const path = page.locator('[data-view="coronal"] path.allen_region_835').first();
+  const path = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
   await expect(path).toHaveAttribute('style', /fill:/);
 
   await page.getByRole('button', { name: 'R1, Fixture region 1' }).click();
-  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('10');
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
   await expect(page.locator('.selected-region')).toContainText('R1');
   await expect(page.locator('.regional-comparison__list')).toContainText('mean: 1 dB rel. V');
   await expect(path).toHaveClass(/is-selected/);
@@ -180,39 +133,36 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
 
 test('Allen anatomy mode shows actual regions and official ontology colors', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
   await page.goto('/');
 
   await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByLabel('Region color mode').selectOption('anatomy');
   await expect.poll(() => new URL(page.url()).searchParams.get('colors')).toBe('anatomy');
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
-  await expect(page.getByRole('button', { name: /SCig, Superior colliculus motor related intermediate gray layer/ })).toBeAttached();
-  await expect(page.locator('[data-view="coronal"] path.allen_region_2162').first()).toHaveCSS('fill', 'rgb(255, 144, 255)');
+  await expect(page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ })).toBeAttached();
+  await expect(page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first()).toHaveCSS('fill', 'rgb(255, 144, 159)');
   await expect(page.locator('.region-row__swatch').first()).toBeVisible();
 });
 
 test('renderer region selection flows back into shared URL state', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
   await page.goto('/');
   await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
-  const path = page.locator('[data-view="coronal"] path.allen_region_835').first();
+  const path = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
   await path.dispatchEvent('pointerup');
-  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('10');
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
   await expect(page.locator('.selected-region')).toContainText('R1');
 });
 
 test('region hover is linked across all anatomical projections', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
   await page.goto('/');
   await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
 
-  const source = page.locator('[data-view="coronal"] path.allen_region_835').first();
+  const source = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
   await source.dispatchEvent('pointermove');
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
-    const highlighted = page.locator(`[data-view="${axis}"] path.allen_region_835`).first();
+    const highlighted = page.locator(`[data-view="${axis}"] path[data-allen-id="-362"]`).first();
     await expect(highlighted).toHaveClass(/is-highlighted/);
     await expect(highlighted).not.toHaveClass(/is-selected/);
     await expect(highlighted).toHaveCSS('fill', 'rgb(85, 167, 247)');
@@ -221,19 +171,18 @@ test('region hover is linked across all anatomical projections', async ({ page }
 
   await page.locator('[data-view="coronal"] .view-frame__slice-figure').dispatchEvent('pointerleave');
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
-    await expect(page.locator(`[data-view="${axis}"] path.allen_region_835`).first()).not.toHaveClass(/is-highlighted/);
+    await expect(page.locator(`[data-view="${axis}"] path[data-allen-id="-362"]`).first()).not.toHaveClass(/is-highlighted/);
   }
 });
 
 test('region-list hover previews the region in all anatomical projections', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
   await page.goto('/');
   await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
 
   await page.getByRole('button', { name: 'R1, Fixture region 1' }).hover();
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
-    const highlighted = page.locator(`[data-view="${axis}"] path.allen_region_835`).first();
+    const highlighted = page.locator(`[data-view="${axis}"] path[data-allen-id="-362"]`).first();
     await expect(highlighted).toHaveClass(/is-highlighted/);
     await expect(highlighted).toHaveCSS('fill', 'rgb(85, 167, 247)');
     await expect(highlighted).toHaveCSS('fill-opacity', '0.62');
@@ -241,13 +190,12 @@ test('region-list hover previews the region in all anatomical projections', asyn
 
   await page.getByLabel('Search brain regions').hover();
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
-    await expect(page.locator(`[data-view="${axis}"] path.allen_region_835`).first()).not.toHaveClass(/is-highlighted/);
+    await expect(page.locator(`[data-view="${axis}"] path[data-allen-id="-362"]`).first()).not.toHaveClass(/is-highlighted/);
   }
 });
 
 test('generated anatomy renderer uses direct mapping IDs and affine-derived guides', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
   await page.goto('/');
   await page.evaluate(async () => {
     const { GeneratedAnatomySliceRenderer } = await import('/src/rendering/generated-anatomy-renderer.ts');
@@ -305,7 +253,6 @@ test('generated anatomy renderer uses direct mapping IDs and affine-derived guid
 
 test('region search filters loaded metadata rather than prototype rows', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
   await page.goto('/');
   await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
   const search = page.getByLabel('Search brain regions');
@@ -316,7 +263,6 @@ test('region search filters loaded metadata rather than prototype rows', async (
 
 test('view maximize is reversible with Escape', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
   await page.goto('/');
 
   const frame = page.locator('[data-view="coronal"]');
@@ -328,15 +274,9 @@ test('view maximize is reversible with Escape', async ({ page }) => {
   await expect(page.locator('.atlas-app')).not.toHaveAttribute('data-maximized-view', /.+/);
 });
 
-test('curated asset failure is an explicit view-frame error state', async ({ page }) => {
+test('generated anatomy pack failure is an explicit view-frame error state', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.route('https://atlas.internationalbrainlab.org/data/json/slices_*.json', async (route) => {
-    if (route.request().url().includes('slices_coronal')) await route.fulfill({ status: 503, body: 'offline' });
-    else {
-      const axis = route.request().url().includes('sagittal') ? 'sagittal' : 'horizontal';
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fixtureBundle(axis)) });
-    }
-  });
+  await page.route('**/packs/16/coronal/*.json.gz', (route) => route.fulfill({ status: 503, body: 'offline' }));
   await page.goto('/');
   await expect(page.locator('[data-view="coronal"]')).toHaveAttribute('data-state', 'error');
   await expect(page.locator('[data-view="coronal"] .view-frame__status')).toHaveText('Unavailable');
@@ -344,7 +284,6 @@ test('curated asset failure is an explicit view-frame error state', async ({ pag
 
 test('drawers still close on Escape and composition changes', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
-  await mockCuratedSlices(page);
   await page.goto('/');
   const settings = page.getByRole('complementary', { name: 'Visualization settings' });
   await page.getByRole('button', { name: 'Settings' }).click();

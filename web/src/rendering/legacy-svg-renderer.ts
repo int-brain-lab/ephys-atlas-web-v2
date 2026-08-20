@@ -5,7 +5,7 @@ import type {
   SliceRenderModel,
   SliceRenderer,
 } from './interfaces.js';
-import { LEGACY_VIEW_BOXES, linkedGuides } from './slice-calibration.js';
+import { LEGACY_VIEW_BOXES, linkedGuides, regionalIndexToLegacyIndex } from './slice-calibration.js';
 import { atlasRegionColorMap, regionalColorMap } from './scalar-colormap.js';
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
 import { parseLegacyRegionCrosswalk, type LegacyRegionCrosswalk } from './legacy-region-crosswalk.js';
@@ -82,7 +82,8 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     const [bundle, crosswalk] = await Promise.all([this.loadAxis(model.axis), this.loadCrosswalk(model.parcellation)]);
     if (this.renderTokens.get(target) !== token) return;
 
-    const assetIndex = this.nearestIndex(bundle.sortedIndices, model.sliceIndex);
+    const legacyIndex = regionalIndexToLegacyIndex(model.axis, model.sliceIndex);
+    const assetIndex = this.nearestIndex(bundle.sortedIndices, legacyIndex);
     const fragment = bundle.entries.get(assetIndex);
     if (!fragment) throw new Error(`No curated ${model.axis} SVG fragment near index ${model.sliceIndex}`);
 

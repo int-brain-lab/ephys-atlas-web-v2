@@ -30,3 +30,20 @@ test('atlas anatomy color mode is explicit application state', () => {
   const next = reduceAppState(DEFAULT_APP_STATE, { type: 'color/mode', mode: 'anatomy' });
   assert.equal(next.view.coloring.mode, 'anatomy');
 });
+
+test('slice movement updates the canonical world cursor', () => {
+  const next = reduceAppState(DEFAULT_APP_STATE, { type: 'slice/set', axis: 'coronal', index: 265 });
+  assert.equal(next.view.slices.coronal, 265);
+  assert.equal(next.view.cursor.yUm, -1225);
+  assert.equal(next.view.cursor.xUm, DEFAULT_APP_STATE.view.cursor.xUm);
+  assert.equal(next.view.cursor.zUm, DEFAULT_APP_STATE.view.cursor.zUm);
+});
+
+test('world cursor movement selects the nearest native anatomy slices', () => {
+  const next = reduceAppState(DEFAULT_APP_STATE, {
+    type: 'cursor/set',
+    cursor: { xUm: -40, yUm: -1211, zUm: -3679 },
+  });
+  assert.deepEqual(next.view.slices, { coronal: 264, sagittal: 228, horizontal: 160 });
+  assert.deepEqual(next.view.cursor, { xUm: -39, yUm: -1200, zUm: -3668 });
+});
