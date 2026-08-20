@@ -166,7 +166,12 @@ Private source documentation describes `brainwide_ephys_atlas_25um.npz` with:
 - 25 um resolution;
 - 41 features in the documented `2026_W12` vintage.
 
-This establishes contents/shape but not the authoritative scientific affine. Values are not assumed pre-normalized.
+The canonical `2026_W12` object is now checksummed and its ZIP/NPY headers are
+measured: 1,636,734,203 bytes; a DEFLATE-compressed C-order
+`(456, 528, 320, 41)` float16 main member; and a last, interleaved feature axis.
+This resolves physical-container facts but not the authoritative scientific
+axis mapping/affine, outside semantics, or interpretation of stored values
+versus the included mean/std arrays.
 
 ## Remaining launch work
 

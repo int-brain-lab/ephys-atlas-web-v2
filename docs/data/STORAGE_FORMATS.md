@@ -45,10 +45,11 @@ Current findings are sufficient to reject direct browser use of the present NPZ:
 - existing objects in the public IBL bucket support HTTP Range, but current
   responses do not expose browser CORS headers;
 - `2026_W12` contains a `(456, 528, 320, 41)` float16 array: 6.32 GB raw;
-- its logical feature axis is last and one raw feature alone is about 147 MiB;
-  exact NPY memory order could not be inspected, while the approximately 500 MB
-  NPZ size strongly suggests compression, which removes random access inside the
-  large compressed member.
+- its logical feature axis is last in a measured C-order array, so feature values
+  are interleaved rather than independently contiguous;
+- the main NPY member is measured DEFLATE data: 6,317,752,448 bytes expand from
+  1,636,732,282 compressed bytes, removing random access inside the member;
+- one decoded feature alone is about 147 MiB.
 
 Thus Range support alone does not make this NPZ incrementally browser-readable.
 
