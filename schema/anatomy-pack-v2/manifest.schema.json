@@ -306,6 +306,21 @@
         "simplification": {
           "type": "object",
           "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "algorithm": { "const": "exact collinear vertex removal" }
+                }
+              },
+              "then": {
+                "properties": {
+                  "tolerance_um": { "const": 0 },
+                  "boundary_error_bound_um": { "const": 0 }
+                }
+              }
+            }
+          ],
           "required": [
             "algorithm",
             "tolerance_um",
@@ -313,7 +328,12 @@
             "boundary_error_bound_um"
           ],
           "properties": {
-            "algorithm": { "const": "GEOS coverage_simplify" },
+            "algorithm": {
+              "enum": [
+                "GEOS coverage_simplify",
+                "exact collinear vertex removal"
+              ]
+            },
             "tolerance_um": { "type": "number", "minimum": 0 },
             "boundary_sampling_interval_voxels": {
               "type": "number",

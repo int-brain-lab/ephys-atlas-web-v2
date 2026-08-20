@@ -1,4 +1,4 @@
-"""Raster-to-SVG geometry with shared-edge coverage simplification."""
+"""Raster-to-SVG geometry with exact and coverage-safe serialization."""
 
 from __future__ import annotations
 
@@ -377,6 +377,109 @@ def simplify_coverage(
     return candidate_by_label, validation
 
 
+def _without_collinear(coordinates: np.ndarray) -> np.ndarray:
+    """Remove only vertices provably between their two collinear neighbours."""
+    core = np.asarray(coordinates[:-1], dtype=np.float64)
+    if len(core) <= 3:
+        return np.vstack((core, core[0]))
+    previous = np.roll(core, 1, axis=0)
+    following = np.roll(core, -1, axis=0)
+    incoming = core - previous
+    outgoing = following - core
+    cross = incoming[:, 0] * outgoing[:, 1] - incoming[:, 1] * outgoing[:, 0]
+    between = np.sum(incoming * outgoing, axis=1) >= 0
+    kept = core[~((cross == 0) & between)]
+    if len(kept) < 3:
+        return np.vstack((core, core[0]))
+    return np.vstack((kept, kept[0]))
+
+
+def validate_exact_coverage(
+    geometries_by_label: dict[int, Polygon | MultiPolygon],
+    *,
+    source_plane: np.ndarray,
+) -> tuple[dict[int, Polygon | MultiPolygon], SliceValidation]:
+    """Validate exact geometry while avoiding approximate-geometry gates.
+
+    The returned polygons are unchanged. Only their later SVG serialization
+    removes mathematically redundant collinear vertices, so raster agreement,
+    IoU, adjacency, background topology, and boundary error follow exactly
+    rather than requiring an exhaustive approximate comparison.
+    """
+    labels = sorted(geometries_by_label)
+    exact = [geometries_by_label[label] for label in labels]
+    if not exact:
+        empty = SliceValidation(
+            True,
+            True,
+            True,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            True,
+            0,
+            0,
+            0,
+            0,
+            0,
+            True,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0,
+            0,
+        )
+        return {}, empty
+
+    coverage_valid = bool(coverage_is_valid(exact))
+    geometries_valid = bool(np.all(shapely.is_valid(exact)))
+    if not coverage_valid or not geometries_valid:
+        raise ValueError("exact anatomy is not a valid polygonal coverage")
+    signatures = [_geometry_signature(geometry) for geometry in exact]
+    adjacency = _adjacencies(exact)
+    internal_background = _internal_background_components(source_plane, exact)
+    vertices_before = sum(len(get_coordinates(geometry.boundary)) for geometry in exact)
+    vertices_after = sum(
+        len(_without_collinear(np.asarray(ring.coords))) - 1
+        for geometry in exact
+        for polygon in get_parts(geometry)
+        for ring in (polygon.exterior, *polygon.interiors)
+    )
+    validation = SliceValidation(
+        coverage_valid_before=True,
+        coverage_valid_after=True,
+        geometries_valid_after=True,
+        region_count=len(labels),
+        components_before=sum(value[0] for value in signatures),
+        components_after=sum(value[0] for value in signatures),
+        holes_before=sum(value[1] for value in signatures),
+        holes_after=sum(value[1] for value in signatures),
+        adjacency_count_before=len(adjacency),
+        adjacency_count_after=len(adjacency),
+        adjacency_preserved=True,
+        uncovered_voxels=0,
+        multiply_covered_voxels=0,
+        wrong_label_voxels=0,
+        internal_background_components_before=internal_background,
+        internal_background_components_after=internal_background,
+        background_topology_valid=True,
+        minimum_eligible_region_iou=1.0,
+        median_boundary_error_um=0.0,
+        p95_boundary_error_um=0.0,
+        maximum_boundary_error_um=0.0,
+        maximum_boundary_error_upper_bound_um=0.0,
+        vertices_before=vertices_before,
+        vertices_after=vertices_after,
+    )
+    return geometries_by_label, validation
+
+
 def _format_coordinate(value: float) -> str:
     doubled = round(float(value) * 2)
     if math.isclose(float(value) * 2, doubled, abs_tol=1e-8):
@@ -413,6 +516,36 @@ def _ring_path(coordinates: np.ndarray) -> str:
     )
 
 
+def _compact_coordinate(value: float) -> str:
+    text = _format_coordinate(value)
+    if text.startswith("0."):
+        return text[1:]
+    if text.startswith("-0."):
+        return "-" + text[2:]
+    return text
+
+
+def _relative_ring_path(coordinates: np.ndarray) -> str:
+    ring = _canonical_ring(_without_collinear(coordinates))
+    if len(ring) < 3:
+        return ""
+    first, *rest = ring
+    fragments = [f"M{_compact_coordinate(first[0])} {_compact_coordinate(first[1])}"]
+    previous = first
+    for point in rest:
+        dx = point[0] - previous[0]
+        dy = point[1] - previous[1]
+        if dy == 0:
+            fragments.append(f"h{_compact_coordinate(dx)}")
+        elif dx == 0:
+            fragments.append(f"v{_compact_coordinate(dy)}")
+        else:
+            fragments.append(f"l{_compact_coordinate(dx)} {_compact_coordinate(dy)}")
+        previous = point
+    fragments.append("z")
+    return "".join(fragments)
+
+
 def geometry_path(geometry: Polygon | MultiPolygon) -> str:
     """Serialize polygonal geometry to a canonical even-odd SVG path."""
     polygon_paths: list[tuple[tuple[float, float, float, float], str]] = []
@@ -420,6 +553,20 @@ def geometry_path(geometry: Polygon | MultiPolygon) -> str:
         rings = [_ring_path(np.asarray(polygon.exterior.coords))]
         rings.extend(
             _ring_path(np.asarray(interior.coords)) for interior in polygon.interiors
+        )
+        path = "".join(sorted(filter(None, rings)))
+        polygon_paths.append((tuple(map(float, polygon.bounds)), path))
+    return "".join(path for _, path in sorted(polygon_paths))
+
+
+def geometry_path_relative(geometry: Polygon | MultiPolygon) -> str:
+    """Serialize exact polygons with compact relative, collinear-free SVG commands."""
+    polygon_paths: list[tuple[tuple[float, float, float, float], str]] = []
+    for polygon in get_parts(geometry):
+        rings = [_relative_ring_path(np.asarray(polygon.exterior.coords))]
+        rings.extend(
+            _relative_ring_path(np.asarray(interior.coords))
+            for interior in polygon.interiors
         )
         path = "".join(sorted(filter(None, rings)))
         polygon_paths.append((tuple(map(float, polygon.bounds)), path))

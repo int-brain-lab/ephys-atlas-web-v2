@@ -77,3 +77,21 @@ def test_v2_requires_background_topology_validation() -> None:
     invalid["validation"]["background_topology_valid"] = False
     with pytest.raises(ValidationError):
         validate(invalid, schema)
+
+
+def test_exact_serialization_requires_zero_tolerance_and_error_bound() -> None:
+    schema = load(SCHEMA / "manifest.schema.json")
+    manifest = load(FIXTURE / "manifest.json")
+    simplification = manifest["provenance"]["simplification"]
+    simplification.update(
+        {
+            "algorithm": "exact collinear vertex removal",
+            "tolerance_um": 0,
+            "boundary_error_bound_um": 0,
+        }
+    )
+    validate(manifest, schema)
+
+    manifest["provenance"]["simplification"]["tolerance_um"] = 1
+    with pytest.raises(ValidationError):
+        validate(manifest, schema)
