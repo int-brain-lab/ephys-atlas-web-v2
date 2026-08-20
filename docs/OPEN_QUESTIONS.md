@@ -69,6 +69,12 @@ Schema v0.1 permits `chunks3d` and `orthogonal_slice_packs`. `chunks3d` is the d
 
 Resolution needed: benchmark representative real features and choose a layout using recorded request count, transferred bytes, decode latency, interaction latency, and memory. Benchmark multiple chunk/pack sizes as appropriate.
 
+Current evidence: real `2026_W12` offline benchmarks for `psd_lfp`, `rms_ap`,
+and `polarity` measure 32³/64³ chunks and 4/8-slice packs. Packs need only three
+center-plane objects and 0.83–3.32 MiB gzip versus 136/534 cube objects and
+5.21–21.77 MiB. This prioritizes packs for browser benchmarking but does not yet
+measure browser/HTTP latency, all features, or the final origin.
+
 Blocks: final browser volume transport and production packaging recipe.
 
 ## Q6 — Cluster launch population and feature set

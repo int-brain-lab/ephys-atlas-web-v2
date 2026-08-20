@@ -78,6 +78,48 @@ The committed synthetic smooth float16 field is only a codec sanity check, not a
 
 For independent slice-pack objects, ordinary HTTP gzip/Brotli content encoding is practical. For random-access shards, use independently decodable internal chunk payloads instead.
 
+### Real `2026_W12` feature benchmark
+
+`benchmarks/rendering/real-volume-layout.py` streams one feature from the
+checksummed canonical NPZ without loading the 5.88 GiB main array. Measurements
+cover indices 1 (`psd_lfp`), 26 (`rms_ap`), and 40 (`polarity`). The benchmark
+assigns only physical `axis0/axis1/axis2` names: Q4 must still provide the
+scientific axis mapping. Each candidate is split into independently
+gzip-compressed objects at level 6. The committed raw reports are the three
+`benchmarks/rendering/real-volume-layout-*-results.json` files.
+
+| layout | stored gzip / feature | current center planes | requests | warm depth |
+| --- | ---: | ---: | ---: | ---: |
+| 32³ chunks | 17.37–37.68 MiB | 5.21–11.39 MiB | 534 | 32 within each chunk slab |
+| 64³ chunks | 17.75–38.71 MiB | 9.84–21.77 MiB | 136 | 64 within each chunk slab |
+| 4-slice packs, three orientations | 58.21–117.73 MiB | 0.83–1.66 MiB | 3 | 4 |
+| 8-slice packs, three orientations | 58.22–117.72 MiB | 1.65–3.32 MiB | 3 | 8 |
+
+The three real features compress to roughly 11.8–26.7% of raw storage, showing
+why a single synthetic or real feature is insufficient for capacity planning.
+Three-orientation packs cost roughly three times the gzip storage of cubes, but
+reduce the first three linked planes from 136–534 object requests to three and
+remain below the 8–10 MiB startup-transfer target for every sampled feature.
+Pack depth 4 trades half the initial bytes for half the immediately warm
+navigation range relative to depth 8.
+
+This is strong evidence to prioritize slice packs in the browser benchmark, not
+a final Q5 decision. The measurement covers three real features and offline
+Python gzip sizes/times; it does not yet cover HTTP overhead, browser
+decompression, paint latency, cache behavior, the other 38 features, or the
+final origin.
+
+Reproduce it after `just bootstrap-scientific`:
+
+```bash
+uv run --project builder --extra scientific --locked python \
+  benchmarks/rendering/real-volume-layout.py \
+  data/source/ephys_atlas_volumes/2026_W12/brainwide_ephys_atlas_25um.npz \
+  --feature-index 26 --feature-id rms_ap \
+  --work-dir /tmp/ibl-ephys-real-volume-layout \
+  --output benchmarks/rendering/real-volume-layout-rms_ap-results.json
+```
+
 ## Cache and scheduling
 
 The current 3-D chunk prototype uses:
