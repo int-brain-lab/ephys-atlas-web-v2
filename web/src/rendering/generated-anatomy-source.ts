@@ -42,8 +42,8 @@ export interface AnatomyProjection {
 }
 
 export interface AnatomyPackManifest {
-  format: 'anatomy-pack-v1';
-  schemaVersion: '1.0';
+  format: 'anatomy-pack-v1' | 'anatomy-pack-v2';
+  schemaVersion: '1.0' | '2.0';
   packId: string;
   immutable: true;
   createdAt: string;
@@ -156,7 +156,7 @@ function parsePackSet(value: unknown, depth: 16 | 32, context: string): PackSet 
   return { packDepth: depth, packs };
 }
 
-function parseProjection(value: unknown, axis: SliceAxis): AnatomyProjection {
+function parseProjection(value: unknown, axis: SliceAxis, resolutionUm: 10 | 25): AnatomyProjection {
   const item = record(value, `projections.${axis}`);
   const fixedWorldAxis = worldAxis(item.fixed_world_axis, `projections.${axis}.fixed_world_axis`);
   if (fixedWorldAxis !== SLICE_WORLD_AXIS[axis]) throw new Error(`projections.${axis}.fixed_world_axis is inconsistent with the projection`);
@@ -184,7 +184,9 @@ function parseProjection(value: unknown, axis: SliceAxis): AnatomyProjection {
     for (let column = 0; column < 3; column += 1) {
       const coefficient = planeIndexToWorldUm[row * 4 + column]!;
       if (column === expectedColumns[worldName]) {
-        if (Math.abs(Math.abs(coefficient) - 25) > 1e-9) throw new Error(`projections.${axis} ${worldName} step must be 25 um`);
+        if (Math.abs(Math.abs(coefficient) - resolutionUm) > 1e-9) {
+          throw new Error(`projections.${axis} ${worldName} step must be ${resolutionUm} um`);
+        }
       } else if (Math.abs(coefficient) > 1e-9) {
         throw new Error(`projections.${axis} affine couples orthogonal anatomy axes`);
       }
@@ -267,6 +269,7 @@ function parseProvenance(value: unknown): Readonly<Record<string, unknown>> {
 function parseValidation(
   value: unknown,
   projections: Readonly<Record<SliceAxis, AnatomyProjection>>,
+  bilateral: boolean,
 ): Readonly<Record<string, unknown>> {
   const validation = record(value, 'validation');
   if (validation.topology_valid !== true || validation.coverage_valid !== true) throw new Error('anatomy topology and coverage validation must pass');
@@ -290,12 +293,23 @@ function parseValidation(
   if (coordinateTolerance <= 0 || sentinelError < 0 || sentinelError > coordinateTolerance) {
     throw new Error('anatomy synchronization sentinel error exceeds coordinate tolerance');
   }
+  if (bilateral) {
+    if (validation.background_topology_valid !== true) throw new Error('bilateral anatomy background topology validation must pass');
+    const before = integer(validation.internal_background_components_before, 'validation.internal_background_components_before');
+    const after = integer(validation.internal_background_components_after, 'validation.internal_background_components_after');
+    if (before !== after) throw new Error('bilateral anatomy changed internal background topology');
+  }
   return validation;
 }
 
 export function parseAnatomyPackManifest(value: unknown): AnatomyPackManifest {
   const root = record(value, 'anatomy manifest');
-  if (root.format !== 'anatomy-pack-v1' || root.schema_version !== '1.0') throw new Error('unsupported anatomy manifest format');
+  const v1 = root.format === 'anatomy-pack-v1' && root.schema_version === '1.0';
+  const v2 = root.format === 'anatomy-pack-v2' && root.schema_version === '2.0';
+  if (!v1 && !v2) throw new Error('unsupported anatomy manifest format');
+  const format = v2 ? 'anatomy-pack-v2' as const : 'anatomy-pack-v1' as const;
+  const schemaVersion = v2 ? '2.0' as const : '1.0' as const;
+  const resolutionUm = v2 ? 10 : 25;
   if (root.immutable !== true) throw new Error('anatomy manifest must be immutable');
   const packId = string(root.pack_id, 'pack_id');
   if (!/^[a-z0-9][a-z0-9._-]+$/.test(packId)) throw new Error('pack_id is invalid');
@@ -311,13 +325,15 @@ export function parseAnatomyPackManifest(value: unknown): AnatomyPackManifest {
     throw new Error('coordinate_system.world_axes must be [ml, ap, dv]');
   }
   const source = record(root.source, 'source');
-  if (source.atlas !== 'Allen CCFv3' || source.resolution_um !== 25 || source.hemisphere !== 'left') {
-    throw new Error('generated anatomy must be the 25 um left-hemisphere Allen CCFv3 atlas');
+  const hemisphere = v2 ? 'bilateral' : 'left';
+  if (source.atlas !== 'Allen CCFv3' || source.resolution_um !== resolutionUm || source.hemisphere !== hemisphere) {
+    throw new Error(`generated anatomy must be the ${resolutionUm} um ${hemisphere} Allen CCFv3 atlas`);
   }
   const ids = record(source.region_ids, 'source.region_ids');
   if (ids.domain !== 'signed_allen_atlas_id' || ids.left_sign !== 'negative' || ids.background_id !== 0) {
     throw new Error('source.region_ids must declare negative signed Allen IDs with background 0');
   }
+  if (v2 && ids.right_sign !== 'positive') throw new Error('bilateral source.region_ids must declare positive right IDs');
   for (const key of ['annotation', 'region_lut'] as const) {
     const descriptor = record(source[key], `source.${key}`);
     safeRelativePath(descriptor.path, `source.${key}.path`);
@@ -327,15 +343,15 @@ export function parseAnatomyPackManifest(value: unknown): AnatomyPackManifest {
   }
   const rawProjections = record(root.projections, 'projections');
   const projections = {
-    coronal: parseProjection(rawProjections.coronal, 'coronal'),
-    sagittal: parseProjection(rawProjections.sagittal, 'sagittal'),
-    horizontal: parseProjection(rawProjections.horizontal, 'horizontal'),
+    coronal: parseProjection(rawProjections.coronal, 'coronal', resolutionUm),
+    sagittal: parseProjection(rawProjections.sagittal, 'sagittal', resolutionUm),
+    horizontal: parseProjection(rawProjections.horizontal, 'horizontal', resolutionUm),
   };
   const provenance = parseProvenance(root.provenance);
-  const validation = parseValidation(root.validation, projections);
+  const validation = parseValidation(root.validation, projections, v2);
   return {
-    format: 'anatomy-pack-v1',
-    schemaVersion: '1.0',
+    format,
+    schemaVersion,
     packId,
     immutable: true,
     createdAt,
@@ -348,20 +364,27 @@ export function parseAnatomyPackManifest(value: unknown): AnatomyPackManifest {
   };
 }
 
-function parseAtlasIds(value: unknown, context: string): Readonly<Record<MappingName, number>> {
+function parseAtlasIds(value: unknown, context: string, bilateral: boolean): Readonly<Record<MappingName, number>> {
   const item = record(value, context);
   const result = {} as Record<MappingName, number>;
   for (const mapping of ['allen', 'beryl', 'cosmos'] as const) {
     const atlasId = integer(item[mapping], `${context}.${mapping}`, Number.MIN_SAFE_INTEGER);
-    if (atlasId >= 0) throw new Error(`${context}.${mapping} must be a negative left-hemisphere atlas ID`);
+    if (atlasId === 0 || (!bilateral && atlasId > 0)) {
+      throw new Error(`${context}.${mapping} must be a valid signed hemisphere atlas ID`);
+    }
     result[mapping] = atlasId;
   }
+  const signs = new Set(Object.values(result).map((atlasId) => Math.sign(atlasId)));
+  if (signs.size !== 1) throw new Error(`${context} mixes atlas ID hemispheres`);
   return result;
 }
 
 function parseSlicePack(value: unknown, manifest: AnatomyPackManifest, artifact: PackArtifact): SlicePack {
   const root = record(value, artifact.path);
-  if (root.format !== 'anatomy-slice-pack-v1' || root.schema_version !== '1.0') throw new Error(`${artifact.path} has an unsupported format`);
+  const bilateral = manifest.format === 'anatomy-pack-v2';
+  const expectedFormat = bilateral ? 'anatomy-slice-pack-v2' : 'anatomy-slice-pack-v1';
+  const expectedVersion = bilateral ? '2.0' : '1.0';
+  if (root.format !== expectedFormat || root.schema_version !== expectedVersion) throw new Error(`${artifact.path} has an unsupported format`);
   if (root.anatomy_pack_id !== manifest.packId) throw new Error(`${artifact.path} belongs to another anatomy pack`);
   const rawProjection = root.projection;
   if (!AXES.includes(rawProjection as SliceAxis)) throw new Error(`${artifact.path}.projection is invalid`);
@@ -381,7 +404,8 @@ function parseSlicePack(value: unknown, manifest: AnatomyPackManifest, artifact:
       const path = record(pathValue, `${artifact.path}.slices[${offset}].paths[${pathIndex}]`);
       const d = string(path.d, `${artifact.path}.slices[${offset}].paths[${pathIndex}].d`);
       if (!/^[Mm][^<>]{3,}$/.test(d)) throw new Error(`${artifact.path} contains an invalid path definition`);
-      return { atlasIds: parseAtlasIds(path.atlas_ids, `${artifact.path}.slices[${offset}].paths[${pathIndex}].atlas_ids`), d };
+      if (bilateral && path.fill_rule !== 'evenodd') throw new Error(`${artifact.path} bilateral paths must use evenodd fill`);
+      return { atlasIds: parseAtlasIds(path.atlas_ids, `${artifact.path}.slices[${offset}].paths[${pathIndex}].atlas_ids`, bilateral), d };
     });
     const worldCoordinateUm = finiteNumber(slice.world_coordinate_um, `${artifact.path}.slices[${offset}].world_coordinate_um`);
     const projectionGeometry = manifest.projections[projection];
