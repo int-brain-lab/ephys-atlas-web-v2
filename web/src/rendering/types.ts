@@ -31,6 +31,7 @@ export interface RegionalSliceFrame {
   svgFragment: string;
   viewBox: ViewBox;
   guides: readonly SliceGuide[];
+  /** Numeric domain used by the concrete SVG asset (legacy assets use BrainRegions indices). */
   regionColors?: ReadonlyMap<number, string>;
   selectedRegionIds?: ReadonlySet<number>;
   highlightedRegionId?: number | null;

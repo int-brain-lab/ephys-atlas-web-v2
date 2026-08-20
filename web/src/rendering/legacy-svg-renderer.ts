@@ -8,11 +8,13 @@ import type {
 import { LEGACY_VIEW_BOXES, linkedGuides } from './slice-calibration.js';
 import { regionalColorMap } from './scalar-colormap.js';
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
+import { parseLegacyRegionCrosswalk, type LegacyRegionCrosswalk } from './legacy-region-crosswalk.js';
 import type { RegionalSliceFrame, SliceRegionPointerEvent } from './types.js';
 import {
   LEGACY_CURATED_SLICE_ASSETS,
   LEGACY_CURATED_SLICE_BASE_URL,
   legacyCuratedSliceUrl,
+  legacyCuratedRegionsUrl,
 } from './legacy-slice-assets.js';
 
 export { LEGACY_CURATED_SLICE_BASE_URL };
@@ -36,9 +38,13 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
   private readonly axisBundles = new Map<SliceAxis, Promise<AxisSliceBundle>>();
+  private readonly crosswalks = new Map<string, Promise<LegacyRegionCrosswalk>>();
+  private readonly resolvedCrosswalks = new Map<string, LegacyRegionCrosswalk>();
+  private regionTable: Promise<unknown> | null = null;
   private readonly mounts = new Map<HTMLElement, RendererMount>();
   private readonly renderTokens = new WeakMap<HTMLElement, number>();
   private readonly requestedIndices = new Map<SliceAxis, number>();
+  private readonly requestedMappings = new Map<SliceAxis, RegionalSliceFrame['mapping']>();
   private interactionSink: RendererInteractionSink | null = null;
   private presentation: RendererPresentation = {
     feature: null,
@@ -59,7 +65,7 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
   updatePresentation(presentation: RendererPresentation): void {
     this.presentation = presentation;
     for (const mount of this.mounts.values()) {
-      if (mount.frame) mount.renderer.render(this.withPresentation(mount.frame));
+      if (mount.frame) mount.renderer.render(this.withPresentation(mount.frame, this.resolvedCrosswalks.get(mount.frame.mapping)));
     }
   }
 
@@ -67,7 +73,8 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     const token = (this.renderTokens.get(target) ?? 0) + 1;
     this.renderTokens.set(target, token);
     this.requestedIndices.set(model.axis, model.sliceIndex);
-    const bundle = await this.loadAxis(model.axis);
+    this.requestedMappings.set(model.axis, model.parcellation);
+    const [bundle, crosswalk] = await Promise.all([this.loadAxis(model.axis), this.loadCrosswalk(model.parcellation)]);
     if (this.renderTokens.get(target) !== token) return;
 
     const assetIndex = this.nearestIndex(bundle.sortedIndices, model.sliceIndex);
@@ -84,7 +91,7 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
       guides: linkedGuides(model.slices, model.axis),
     };
     mount.frame = frame;
-    mount.renderer.render(this.withPresentation(frame));
+    mount.renderer.render(this.withPresentation(frame, crosswalk));
 
     target.dataset.sliceAsset = 'legacy-curated-v1';
     target.dataset.assetIndex = String(assetIndex);
@@ -106,24 +113,65 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     }
     this.mounts.clear();
     this.axisBundles.clear();
+    this.crosswalks.clear();
+    this.resolvedCrosswalks.clear();
+    this.regionTable = null;
     this.requestedIndices.clear();
+    this.requestedMappings.clear();
   }
 
-  private withPresentation(frame: RegionalSliceFrame): RegionalSliceFrame {
+  private withPresentation(frame: RegionalSliceFrame, crosswalk?: LegacyRegionCrosswalk): RegionalSliceFrame {
     const selectedRegionIds = new Set<number>();
     for (const id of this.presentation.selectedRegionIds) {
-      const numeric = Number(id);
-      if (Number.isInteger(numeric)) selectedRegionIds.add(numeric);
+      const atlasId = Number(id);
+      const legacyIndex = crosswalk?.atlasIdToLegacyIndex.get(atlasId);
+      if (legacyIndex != null) selectedRegionIds.add(legacyIndex);
     }
     const feature = this.presentation.feature;
-    const regionColors = feature?.representation === 'regional' && feature.parcellation === frame.mapping
-      ? regionalColorMap(feature, this.presentation.coloring)
-      : undefined;
+    const atlasColors = feature?.representation === 'regional' && feature.parcellation === frame.mapping
+      ? regionalColorMap(feature, this.presentation.coloring) : undefined;
+    const regionColors = atlasColors && crosswalk ? new Map<number, string>() : undefined;
+    if (atlasColors && regionColors && crosswalk) {
+      for (const [atlasId, color] of atlasColors) {
+        const legacyIndex = crosswalk.atlasIdToLegacyIndex.get(atlasId);
+        if (legacyIndex != null) regionColors.set(legacyIndex, color);
+      }
+    }
     return {
       ...frame,
       ...(regionColors ? { regionColors } : {}),
       selectedRegionIds,
     };
+  }
+
+  private async loadCrosswalk(mapping: RegionalSliceFrame['mapping']): Promise<LegacyRegionCrosswalk> {
+    let pending = this.crosswalks.get(mapping);
+    if (!pending) {
+      pending = this.fetchCrosswalk(mapping);
+      this.crosswalks.set(mapping, pending);
+      pending.catch(() => this.crosswalks.delete(mapping));
+    }
+    return pending;
+  }
+
+  private async fetchCrosswalk(mapping: RegionalSliceFrame['mapping']): Promise<LegacyRegionCrosswalk> {
+    const raw = await this.loadRegionTable();
+    const crosswalk = parseLegacyRegionCrosswalk(raw, mapping);
+    this.resolvedCrosswalks.set(mapping, crosswalk);
+    return crosswalk;
+  }
+
+  private loadRegionTable(): Promise<unknown> {
+    if (this.regionTable) return this.regionTable;
+    this.regionTable = this.fetchRegionTable();
+    this.regionTable.catch(() => { this.regionTable = null; });
+    return this.regionTable;
+  }
+
+  private async fetchRegionTable(): Promise<unknown> {
+    const response = await this.fetchImpl(legacyCuratedRegionsUrl(this.baseUrl), { mode: 'cors', cache: 'force-cache' });
+    if (!response.ok) throw new Error(`Legacy region crosswalk request failed (${response.status})`);
+    return response.json();
   }
 
   private async loadAxis(axis: SliceAxis): Promise<AxisSliceBundle> {
@@ -196,8 +244,13 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
       sink.hover(null);
       return;
     }
+    const mapping = this.requestedMappings.get(event.axis);
+    const resolved = mapping ? this.resolvedCrosswalks.get(mapping) : undefined;
+    if (!resolved) return;
+    const atlasId = resolved.legacyIndexToAtlasId.get(event.regionId);
+    if (atlasId == null) return;
     const hit = {
-      regionId: String(event.regionId),
+      regionId: String(atlasId),
       axis: event.axis,
       sliceIndex: this.requestedIndices.get(event.axis) ?? 0,
     };

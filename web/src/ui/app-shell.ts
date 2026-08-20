@@ -12,6 +12,7 @@ export interface AppShellCallbacks {
   setSlice(axis: SliceAxis, index: number): void;
   clearSelection(): void;
   importLocal(files: FileList): Promise<void>;
+  reportError(error: unknown): void;
 }
 
 export interface ShellModel {
@@ -660,6 +661,7 @@ export class AppShell {
       if (stateMessage) {
         stateMessage.textContent = error instanceof Error ? error.message : 'Curated anatomy could not be loaded';
       }
+      this.callbacks.reportError(error);
     });
   }
 

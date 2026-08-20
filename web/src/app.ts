@@ -30,6 +30,8 @@ export class AtlasApp {
   private feature: FeaturePayload | null = null;
   private regions: readonly RegionMetadata[] = [];
   private loadGeneration = 0;
+  private regionsLoadGeneration = 0;
+  private featureLoadGeneration = 0;
 
   constructor(root: HTMLElement, options: AppOptions = {}) {
     const catalogUrl = options.catalogUrl ?? new URL('/fixtures/catalog.json', window.location.href).toString();
@@ -46,6 +48,7 @@ export class AtlasApp {
       setSlice: (axis, index) => this.store.dispatch({ type: 'slice/set', axis, index }),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       importLocal: (files) => this.importLocal(files),
+      reportError: (error) => this.reportRuntimeError(error),
     }, this.renderer);
     this.regionalPanel = new RegionalPanelController(root, {
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
@@ -55,6 +58,7 @@ export class AtlasApp {
       hover: () => undefined,
       toggleSelection: (hit) => this.store.dispatch({ type: 'selection/toggle', regionId: hit.regionId }),
       moveCursor: (cursor) => this.store.dispatch({ type: 'cursor/set', cursor }),
+      reportError: (error) => this.reportRuntimeError(error),
     });
   }
 
@@ -75,6 +79,9 @@ export class AtlasApp {
   }
 
   stop(): void {
+    this.loadGeneration += 1;
+    this.regionsLoadGeneration += 1;
+    this.featureLoadGeneration += 1;
     this.prefetch.cancel();
     this.urlController.stop();
     this.regionalPanel.destroy();
@@ -116,6 +123,8 @@ export class AtlasApp {
 
   private async loadDataset(ref: DatasetRef): Promise<void> {
     const generation = ++this.loadGeneration;
+    this.regionsLoadGeneration += 1;
+    this.featureLoadGeneration += 1;
     this.prefetch.cancel();
     this.feature = null;
     this.regions = [];
@@ -126,8 +135,9 @@ export class AtlasApp {
       if (generation !== this.loadGeneration) return;
       this.manifest = manifest;
       const state = this.store.getState();
-      await this.loadRegions(state.view.dataset, state.view.parcellation, generation);
+      const regionsReady = await this.loadRegions(state.view.dataset, state.view.parcellation, generation);
       if (generation !== this.loadGeneration) return;
+      if (!regionsReady) return;
       this.store.dispatch({ type: 'runtime/dataset', status: 'ready' });
       const selected = manifest.features.find((item) => item.id === state.view.featureId);
       if (!selected && manifest.features.length) {
@@ -145,25 +155,29 @@ export class AtlasApp {
     }
   }
 
-  private async loadRegions(ref: DatasetRef, parcellation: ParcellationId, generation: number): Promise<void> {
+  private async loadRegions(ref: DatasetRef, parcellation: ParcellationId, generation: number): Promise<boolean> {
+    const requestGeneration = ++this.regionsLoadGeneration;
     if (!this.manifest?.parcellations.includes(parcellation)) {
       this.regions = [];
       this.render();
-      return;
+      return true;
     }
     try {
       const regions = await this.repository.loadRegions(ref, parcellation);
-      if (generation !== this.loadGeneration) return;
+      if (generation !== this.loadGeneration || requestGeneration !== this.regionsLoadGeneration) return true;
       this.regions = regions;
       this.render();
+      return true;
     } catch (error) {
-      if (generation !== this.loadGeneration) return;
+      if (generation !== this.loadGeneration || requestGeneration !== this.regionsLoadGeneration) return true;
       this.regions = [];
       this.store.dispatch({ type: 'runtime/dataset', status: 'error', error: this.message(error) });
+      return false;
     }
   }
 
   private async loadCurrentFeature(): Promise<void> {
+    const requestGeneration = ++this.featureLoadGeneration;
     const state = this.store.getState();
     const { featureId, representation, parcellation, dataset } = state.view;
     if (!featureId || !this.manifest) {
@@ -173,17 +187,24 @@ export class AtlasApp {
     }
     const generation = this.loadGeneration;
     try {
-      this.feature = await this.repository.loadFeature(
+      const feature = await this.repository.loadFeature(
         dataset,
         featureId,
         representation,
         representation === 'regional' ? parcellation : undefined,
       );
-      if (generation !== this.loadGeneration) return;
+      if (generation !== this.loadGeneration || requestGeneration !== this.featureLoadGeneration) return;
+      const current = this.store.getState().view;
+      if (
+        current.featureId !== featureId || current.representation !== representation ||
+        current.parcellation !== parcellation || current.dataset.datasetId !== dataset.datasetId ||
+        current.dataset.releaseId !== dataset.releaseId
+      ) return;
+      this.feature = feature;
       this.schedulePrefetch(featureId, dataset, representation, parcellation);
       this.render();
     } catch (error) {
-      if (generation !== this.loadGeneration) return;
+      if (generation !== this.loadGeneration || requestGeneration !== this.featureLoadGeneration) return;
       this.feature = null;
       this.store.dispatch({ type: 'runtime/dataset', status: 'error', error: this.message(error) });
     }
@@ -226,5 +247,9 @@ export class AtlasApp {
 
   private message(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
+  }
+
+  private reportRuntimeError(error: unknown): void {
+    this.store.dispatch({ type: 'runtime/dataset', status: 'error', error: this.message(error) });
   }
 }

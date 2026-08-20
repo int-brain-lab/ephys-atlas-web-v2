@@ -91,6 +91,7 @@ function rgbaForSlice(feature: VolumeFeaturePayload, slice: VolumeSlice, colorin
 export class ChunkedVolumeSliceRenderer implements SliceRenderer {
   private readonly loaders = new WeakMap<VolumeFeaturePayload, VolumeSliceLoader>();
   private readonly mounts = new Map<HTMLElement, VolumeMount>();
+  private readonly renderTokens = new WeakMap<HTMLElement, number>();
   private presentation: RendererPresentation | null = null;
 
   updatePresentation(presentation: RendererPresentation): void {
@@ -109,11 +110,14 @@ export class ChunkedVolumeSliceRenderer implements SliceRenderer {
   }
 
   async render(target: HTMLElement, model: SliceRenderModel): Promise<void> {
+    const token = (this.renderTokens.get(target) ?? 0) + 1;
+    this.renderTokens.set(target, token);
     const feature = model.feature;
     if (!feature || feature.representation !== 'volume') throw new Error('Volume renderer requires a decoded volume feature');
     const loader = this.loader(feature);
     const volumeIndex = regionalSliceToVolumeIndex(feature, model.axis, model.sliceIndex);
     const slice = await loader.loadSlice(model.axis, volumeIndex);
+    if (this.renderTokens.get(target) !== token) return;
     const mount = this.mount(target);
     const coloring = this.presentation?.coloring ?? {
       statistic: 'mean',
@@ -137,6 +141,7 @@ export class ChunkedVolumeSliceRenderer implements SliceRenderer {
   }
 
   clear(target: HTMLElement): void {
+    this.renderTokens.set(target, (this.renderTokens.get(target) ?? 0) + 1);
     const mount = this.mounts.get(target);
     mount?.renderer.dispose();
     this.mounts.delete(target);
@@ -148,6 +153,7 @@ export class ChunkedVolumeSliceRenderer implements SliceRenderer {
 
   destroy(): void {
     for (const [target, mount] of this.mounts) {
+      this.renderTokens.set(target, (this.renderTokens.get(target) ?? 0) + 1);
       mount.renderer.dispose();
       target.replaceChildren();
     }

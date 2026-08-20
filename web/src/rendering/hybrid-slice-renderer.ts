@@ -13,6 +13,7 @@ interface TargetState {
 export class HybridSliceRenderer implements SliceRenderer {
   private readonly targets = new Map<HTMLElement, TargetState>();
   private presentation: RendererPresentation | null = null;
+  private interactionSink: RendererInteractionSink | null = null;
 
   constructor(
     private readonly regional: SliceRenderer,
@@ -41,11 +42,13 @@ export class HybridSliceRenderer implements SliceRenderer {
       const nextState = { model: nextModel, kind: nextKind } as const;
       if (state.kind !== nextKind) this.delegate(state.kind).clear(target);
       this.targets.set(target, nextState);
-      void Promise.resolve(this.delegate(nextKind).render(target, nextModel)).catch(() => undefined);
+      void Promise.resolve(this.delegate(nextKind).render(target, nextModel))
+        .catch((error: unknown) => this.interactionSink?.reportError(error));
     }
   }
 
   setInteractionSink(sink: RendererInteractionSink): void {
+    this.interactionSink = sink;
     this.regional.setInteractionSink?.(sink);
     this.volume.setInteractionSink?.(sink);
   }
