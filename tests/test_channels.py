@@ -9,6 +9,7 @@ from ephys_atlas_builder.channels import (
     RegionInfo,
     build_channels_release_from_arrays,
     discover_channel_table_dir,
+    fold_region_ids_left,
 )
 from ephys_atlas_builder.validate import validate_release
 
@@ -76,10 +77,25 @@ def test_channel_recipe_builds_schema_valid_release(tmp_path):
     assert manifest["provenance"]["recipe"]["feature_mode"] == "denoised"
     assert manifest["provenance"]["recipe"]["population"] == "inside"
     assert manifest["provenance"]["recipe"]["features"] == ["polarity", "rms_ap"]
-    assert [item["id"] for item in manifest["parcellations"]] == ["allen", "beryl", "cosmos"]
+    assert [item["id"] for item in manifest["parcellations"]] == [
+        "allen",
+        "beryl",
+        "cosmos",
+    ]
 
     values = np.fromfile(release / "features/rms_ap/allen.values.f32", dtype="<f4")
-    np.testing.assert_allclose(values, [1.5, 3.5, 6.0])
+    # Region ids are folded left and therefore sorted -30, -20, -10.
+    np.testing.assert_allclose(values, [6.0, 3.5, 1.5])
+    region_ids = np.fromfile(
+        release / "parcellations/allen/region_ids.i32", dtype="<i4"
+    )
+    np.testing.assert_array_equal(region_ids, [-30, -20, -10])
+
+    feature = json.loads((release / "features/rms_ap/feature.json").read_text())
+    assert "no outlier replacement" in feature["value_semantics"]["transform"]
+    recipe = manifest["provenance"]["recipe"]
+    assert recipe["hemisphere"].startswith("bilateral observations folded onto left")
+    assert recipe["outlier_policy"].startswith("preserve source values")
 
 
 def test_channel_recipe_is_deterministic(tmp_path):
@@ -117,3 +133,67 @@ def test_discover_channel_table_dir_uses_explicit_feature_mode(tmp_path):
     (table / "raw_ephys_features_denoised.pqt").write_bytes(b"")
     assert discover_channel_table_dir(tmp_path, "raw") == table
     assert discover_channel_table_dir(tmp_path, "denoised") == table
+    assert discover_channel_table_dir(tmp_path, "both") == table
+
+
+def test_region_ids_are_folded_left_and_strictly_validated():
+    folded = fold_region_ids_left(np.array([10, -10, np.nan, 20.0]))
+    np.testing.assert_allclose(folded, [-10, -10, np.nan, -20], equal_nan=True)
+
+    with pytest.raises(ValueError, match="integral"):
+        fold_region_ids_left(np.array([10.5]))
+    with pytest.raises(ValueError, match="int32"):
+        fold_region_ids_left(np.array([float(2**31)]))
+
+
+def test_channel_recipe_preserves_extreme_source_values(tmp_path):
+    features, ids, metadata = _inputs()
+    features["alpha_mean"] = np.array([1.0, 100_000.0, 3.0, 4.0, 5.0, 6.0])
+    release = build_channels_release_from_arrays(
+        tmp_path / "release",
+        _config(),
+        features,
+        ids,
+        metadata,
+        [{"role": "canonical-data", "description": "outlier preservation test"}],
+    )
+    summary = np.fromfile(
+        release / "features/alpha_mean/allen.summary.f64", dtype="<f8"
+    ).reshape(3, -1)
+    # -10 is last after left folding. Its arithmetic mean proves 100000 was not
+    # silently replaced by the median, as upstream read_features_from_disk does.
+    mean_column = 4
+    assert summary[-1, mean_column] == pytest.approx(50_000.5)
+
+
+def test_both_mode_produces_explicit_variant_catalog(tmp_path):
+    features, ids, metadata = _inputs()
+    config = ChannelBuildConfig(
+        release_id="2026_W12",
+        created_at="2026-08-20T00:00:00Z",
+        feature_mode="both",
+        population="inside",
+        features=("rms_ap",),
+    )
+    variant_values = {
+        "rms_ap.raw": features["rms_ap"],
+        "rms_ap.denoised": features["rms_ap"] + 1,
+    }
+    release = build_channels_release_from_arrays(
+        tmp_path / "release",
+        config,
+        variant_values,
+        ids,
+        metadata,
+        [{"role": "canonical-data", "description": "variant test"}],
+    )
+    manifest = json.loads((release / "manifest.json").read_text())
+    assert [feature["id"] for feature in manifest["features"]] == [
+        "rms_ap.denoised",
+        "rms_ap.raw",
+    ]
+
+
+def test_snapshot_build_requires_reproducibility_pins():
+    with pytest.raises(ValueError, match="reproducibility pins"):
+        _config().require_scientific_pins()
