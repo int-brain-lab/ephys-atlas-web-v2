@@ -6,9 +6,9 @@ import {
 } from './regional-data.js';
 import {
   decodeBinaryArray,
-  parseDatasetManifestDocument,
-  parseFeatureDescriptor,
+  localDatasetReleaseId,
   resolveDatasetManifest,
+  validateLocalDatasetFiles,
 } from './validate.js';
 import { SCHEMA_VERSION } from './contracts.js';
 import type {
@@ -22,7 +22,7 @@ import type {
   RegionalFeaturePayload,
 } from './contracts.js';
 
-const DB_NAME = 'ibl-ephys-atlas-v2-local-v01';
+const DB_NAME = 'ibl-ephys-atlas-v2-local-v02';
 const DB_VERSION = 1;
 const MANIFESTS = 'manifests';
 const RESOURCES = 'resources';
@@ -30,6 +30,9 @@ const DISPLAY_STATISTICS = new Set<StatisticId>(['mean', 'median', 'min', 'max',
 
 interface StoredManifest {
   key: string;
+  selector: string;
+  sourceDatasetId: string;
+  sourceReleaseId: string;
   manifest: DatasetManifest;
 }
 
@@ -66,12 +69,8 @@ function transactionDone(transaction: IDBTransaction): Promise<void> {
   });
 }
 
-function releaseKey(releaseId: string): string {
-  return `local@${releaseId}`;
-}
-
-function resourceKey(releaseId: string, path: string): string {
-  return `${releaseKey(releaseId)}:${path}`;
+function resourceKey(namespace: string, path: string): string {
+  return `${namespace}\u0000${path}`;
 }
 
 function relativePath(file: File): string {
@@ -90,41 +89,58 @@ export class LocalDatasetSource implements DatasetSource {
 
   async importFiles(files: Iterable<File>): Promise<DatasetManifest> {
     const allFiles = [...files];
-    const byPath = new Map(allFiles.map((file) => [relativePath(file), file]));
-    const manifestFile = byPath.get('manifest.json') ?? allFiles.find((file) => file.name === 'manifest.json');
-    if (!manifestFile) throw new Error('Local dataset must contain manifest.json');
+    const byPath = new Map<string, File>();
+    for (const file of allFiles) {
+      const path = relativePath(file);
+      if (byPath.has(path)) throw new Error(`Local dataset contains duplicate path: ${path}`);
+      byPath.set(path, file);
+    }
+    if (!byPath.has('manifest.json')) throw new Error('Local dataset must contain manifest.json');
 
-    const document = parseDatasetManifestDocument(JSON.parse(await manifestFile.text()) as unknown);
-    const features = await Promise.all(document.featureRefs.map(async (featureRef) => {
-      const file = byPath.get(featureRef.path);
-      if (!file) throw new Error(`Local dataset is missing ${featureRef.path}`);
-      const feature = parseFeatureDescriptor(JSON.parse(await file.text()) as unknown, featureRef.path);
-      if (feature.id !== featureRef.id) throw new Error(`Feature id mismatch for ${featureRef.path}`);
-      return feature;
-    }));
+    const { document, features } = await validateLocalDatasetFiles(byPath);
+    const selector = localDatasetReleaseId(document.datasetId, document.release.releaseId);
+    const namespace = selector;
     const manifest = resolveDatasetManifest(document, features, 'local');
+    const storedManifest = {
+      ...manifest,
+      dataset: { ...manifest.dataset, release: selector },
+    } satisfies DatasetManifest;
 
     const db = await openDatabase();
     const transaction = db.transaction([MANIFESTS, RESOURCES], 'readwrite');
-    transaction.objectStore(MANIFESTS).put({ key: releaseKey(manifest.dataset.release), manifest } satisfies StoredManifest);
-    for (const file of allFiles) {
-      const path = relativePath(file);
-      if (path === 'manifest.json') continue;
-      transaction.objectStore(RESOURCES).put({
-        key: resourceKey(manifest.dataset.release, path),
-        blob: file,
-      } satisfies StoredResource);
+    try {
+      transaction.objectStore(MANIFESTS).add({
+        key: namespace,
+        selector,
+        sourceDatasetId: document.datasetId,
+        sourceReleaseId: document.release.releaseId,
+        manifest: storedManifest,
+      } satisfies StoredManifest);
+      for (const [path, file] of byPath) {
+        if (path === 'manifest.json') continue;
+        transaction.objectStore(RESOURCES).put({
+          key: resourceKey(namespace, path),
+          blob: file,
+        } satisfies StoredResource);
+      }
+      await transactionDone(transaction);
+    } catch (error) {
+      try { transaction.abort(); } catch { /* transaction already completed or aborted */ }
+      if (error instanceof DOMException && error.name === 'ConstraintError') {
+        throw new Error(`Local dataset ${document.datasetId}/${document.release.releaseId} is already imported`);
+      }
+      throw error;
+    } finally {
+      db.close();
     }
-    await transactionDone(transaction);
-    db.close();
-    return manifest;
+    return storedManifest;
   }
 
   async loadCatalog(): Promise<DatasetCatalog> {
-    const manifests = await this.listManifests();
-    const releases = manifests.map((manifest) => ({
-      id: manifest.dataset.release,
-      label: manifest.dataset.release,
+    const storedManifests = await this.listManifests();
+    const releases = storedManifests.map((stored) => ({
+      id: stored.selector,
+      label: `${stored.sourceDatasetId} / ${stored.sourceReleaseId}`,
       manifest: 'indexeddb://manifest.json',
       immutable: true,
     }));
@@ -145,7 +161,7 @@ export class LocalDatasetSource implements DatasetSource {
     if (ref.datasetId !== 'local' || !ref.releaseId) throw new Error('A local release id is required');
     const db = await openDatabase();
     const transaction = db.transaction(MANIFESTS, 'readonly');
-    const stored = await requestValue(transaction.objectStore(MANIFESTS).get(releaseKey(ref.releaseId)) as IDBRequest<StoredManifest | undefined>);
+    const stored = await requestValue(transaction.objectStore(MANIFESTS).get(ref.releaseId) as IDBRequest<StoredManifest | undefined>);
     db.close();
     if (!stored) throw new Error(`Local release not found: ${ref.releaseId}`);
     return stored.manifest;
@@ -158,8 +174,8 @@ export class LocalDatasetSource implements DatasetSource {
     if (!parcel) throw new Error(`Dataset has no ${parcellation} parcellation`);
     if (!parcel.metadata) throw new Error(`${parcellation} parcellation has no region metadata resource`);
     const [metadataBlob, regionIds] = await Promise.all([
-      this.readResource(ref.releaseId, parcel.metadata),
-      this.readArray(ref.releaseId, parcel.regionIndex.path, parcel.regionIndex),
+      this.readResource(manifest, parcel.metadata),
+      this.readArray(manifest, parcel.regionIndex.path, parcel.regionIndex),
     ]);
     const regions = parseRegionMetadata(JSON.parse(await metadataBlob.text()) as unknown);
     if (regions.length !== regionIds.length) throw new Error(`${parcellation} metadata does not match region index length`);
@@ -189,7 +205,7 @@ export class LocalDatasetSource implements DatasetSource {
         representation: 'volume',
         descriptor,
         loadResource: async (path) => {
-          const blob = await this.readResource(ref.releaseId!, resolvePath(feature.path, path));
+          const blob = await this.readResource(manifest, resolvePath(feature.path, path));
           return blob.arrayBuffer();
         },
       };
@@ -200,17 +216,17 @@ export class LocalDatasetSource implements DatasetSource {
     const parcel = manifest.parcellationDescriptors[parcellation];
     if (!regional || !parcel) throw new Error(`Feature ${feature.id} has no ${parcellation} regional representation`);
 
-    const regionIds = await this.readArray(ref.releaseId, parcel.regionIndex.path, parcel.regionIndex);
-    const values = await this.readArray(ref.releaseId, resolvePath(feature.path, regional.values.path), regional.values);
+    const regionIds = await this.readArray(manifest, parcel.regionIndex.path, parcel.regionIndex);
+    const values = await this.readArray(manifest, resolvePath(feature.path, regional.values.path), regional.values);
     if (regionIds.length !== values.length) throw new Error(`${feature.id}/${parcellation} values do not match region index length`);
     const statsPath = resolvePath(feature.path, regional.statistics);
-    const statsBlob = await this.readResource(ref.releaseId, statsPath);
+    const statsBlob = await this.readResource(manifest, statsPath);
     const statsDocument = parseRegionalStatisticsResource(JSON.parse(await statsBlob.text()) as unknown);
     const [matrix, histogramFlat] = await Promise.all([
-      this.readArray(ref.releaseId, resolvePath(statsPath, statsDocument.values.path), statsDocument.values),
+      this.readArray(manifest, resolvePath(statsPath, statsDocument.values.path), statsDocument.values),
       statsDocument.histogram?.regionalCounts
         ? this.readArray(
-            ref.releaseId,
+            manifest,
             resolvePath(statsPath, statsDocument.histogram.regionalCounts.path),
             statsDocument.histogram.regionalCounts,
           )
@@ -249,25 +265,26 @@ export class LocalDatasetSource implements DatasetSource {
     return feature;
   }
 
-  private async readResource(releaseId: string, path: string): Promise<Blob> {
+  private async readResource(manifest: DatasetManifest, path: string): Promise<Blob> {
     const db = await openDatabase();
     const transaction = db.transaction(RESOURCES, 'readonly');
-    const stored = await requestValue(transaction.objectStore(RESOURCES).get(resourceKey(releaseId, path)) as IDBRequest<StoredResource | undefined>);
+    const namespace = manifest.dataset.release;
+    const stored = await requestValue(transaction.objectStore(RESOURCES).get(resourceKey(namespace, path)) as IDBRequest<StoredResource | undefined>);
     db.close();
     if (!stored) throw new Error(`Local resource not found: ${path}`);
     return stored.blob;
   }
 
-  private async readArray(releaseId: string, path: string, descriptor: BinaryArrayDescriptor): Promise<number[]> {
-    const blob = await this.readResource(releaseId, path);
+  private async readArray(manifest: DatasetManifest, path: string, descriptor: BinaryArrayDescriptor): Promise<number[]> {
+    const blob = await this.readResource(manifest, path);
     return decodeBinaryArray(await blob.arrayBuffer(), { ...descriptor, path });
   }
 
-  private async listManifests(): Promise<DatasetManifest[]> {
+  private async listManifests(): Promise<StoredManifest[]> {
     const db = await openDatabase();
     const transaction = db.transaction(MANIFESTS, 'readonly');
     const stored = await requestValue(transaction.objectStore(MANIFESTS).getAll() as IDBRequest<StoredManifest[]>);
     db.close();
-    return stored.map((item) => item.manifest);
+    return stored;
   }
 }

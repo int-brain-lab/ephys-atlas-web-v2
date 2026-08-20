@@ -55,6 +55,26 @@ function dtype(value: unknown, context: string): BinaryDType {
   return value as BinaryDType;
 }
 
+const RELATIVE_PATH = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$)).+$/;
+const SHA256 = /^[0-9a-f]{64}$/;
+const DATASET_ID = /^[a-z0-9][a-z0-9._-]*$/;
+
+export function localDatasetReleaseId(datasetId: string, releaseId: string): string {
+  if (!DATASET_ID.test(datasetId)) throw new Error('Local dataset id has an invalid format');
+  if (!releaseId) throw new Error('Local release id must be non-empty');
+  return `${datasetId}@${encodeURIComponent(releaseId)}`;
+}
+
+function relativePath(value: unknown, context: string): string {
+  const path = string(value, context);
+  if (!RELATIVE_PATH.test(path)) throw new Error(`${context} must be a safe relative path`);
+  return path;
+}
+
+function unique(values: readonly string[], context: string): void {
+  if (new Set(values).size !== values.length) throw new Error(`${context} must not contain duplicates`);
+}
+
 export function parseBinaryArray(value: unknown, context: string): BinaryArrayDescriptor {
   const item = object(value, context);
   const shape = array(item.shape, `${context}.shape`).map((dimension, index) => {
@@ -63,19 +83,26 @@ export function parseBinaryArray(value: unknown, context: string): BinaryArrayDe
     }
     return dimension;
   });
+  if (shape.length === 0) throw new Error(`${context}.shape must not be empty`);
   if (item.order !== 'C') throw new Error(`${context}.order must be C`);
   if (item.endianness !== 'little' && item.endianness !== 'not-applicable') {
     throw new Error(`${context}.endianness must be little or not-applicable`);
   }
   const descriptor: BinaryArrayDescriptor = {
-    path: string(item.path, `${context}.path`),
+    path: relativePath(item.path, `${context}.path`),
     dtype: dtype(item.dtype, `${context}.dtype`),
     shape,
     order: 'C',
     endianness: item.endianness,
   };
-  if (typeof item.sha256 === 'string') descriptor.sha256 = item.sha256;
-  if (typeof item.bytes === 'number' && Number.isInteger(item.bytes) && item.bytes >= 0) descriptor.bytes = item.bytes;
+  if (item.sha256 !== undefined) {
+    if (typeof item.sha256 !== 'string' || !SHA256.test(item.sha256)) throw new Error(`${context}.sha256 must be 64 lowercase hexadecimal characters`);
+    descriptor.sha256 = item.sha256;
+  }
+  if (item.bytes !== undefined) {
+    if (typeof item.bytes !== 'number' || !Number.isInteger(item.bytes) || item.bytes < 0) throw new Error(`${context}.bytes must be a non-negative integer`);
+    descriptor.bytes = item.bytes;
+  }
   return descriptor;
 }
 
@@ -111,31 +138,43 @@ export function parseDatasetManifestDocument(value: unknown): DatasetManifestDoc
   const root = object(value, 'manifest');
   if (root.schema_version !== SCHEMA_VERSION) throw new Error(`manifest.schema_version must be ${SCHEMA_VERSION}`);
   const release = object(root.release, 'manifest.release');
+  object(root.provenance, 'manifest.provenance');
+  array(root.artifacts, 'manifest.artifacts');
   const parcellations = array(root.parcellations, 'manifest.parcellations').map((value, index) => {
     const item = object(value, `manifest.parcellations[${index}]`);
     return {
       id: parcellation(item.id, `manifest.parcellations[${index}].id`),
       regionIndex: parseBinaryArray(item.region_index, `manifest.parcellations[${index}].region_index`),
-      ...(typeof item.metadata === 'string' ? { metadata: item.metadata } : {}),
+      ...(item.metadata !== undefined ? { metadata: relativePath(item.metadata, `manifest.parcellations[${index}].metadata`) } : {}),
     };
   });
   const featureRefs = array(root.features, 'manifest.features').map((value, index) => {
     const item = object(value, `manifest.features[${index}]`);
     return {
       id: string(item.id, `manifest.features[${index}].id`),
-      path: string(item.path, `manifest.features[${index}].path`),
+      path: relativePath(item.path, `manifest.features[${index}].path`),
     };
   });
+  unique(parcellations.map((item) => item.id), 'manifest.parcellations ids');
+  unique(featureRefs.map((item) => item.id), 'manifest.features ids');
+  unique(featureRefs.map((item) => item.path), 'manifest.features paths');
+  if (featureRefs.length === 0) throw new Error('manifest.features must not be empty');
+  const datasetId = string(root.dataset_id, 'manifest.dataset_id');
+  if (!DATASET_ID.test(datasetId)) throw new Error('manifest.dataset_id has an invalid format');
+  const immutable = boolean(release.immutable, 'manifest.release.immutable');
+  if (!immutable) throw new Error('manifest.release.immutable must be true');
   return {
     schemaVersion: SCHEMA_VERSION,
-    datasetId: string(root.dataset_id, 'manifest.dataset_id'),
+    datasetId,
     title: string(root.title, 'manifest.title'),
     description: typeof root.description === 'string' ? root.description : '',
     release: {
       releaseId: string(release.release_id, 'manifest.release.release_id'),
-      immutable: boolean(release.immutable, 'manifest.release.immutable'),
+      immutable,
       createdAt: string(release.created_at, 'manifest.release.created_at'),
-      paperSnapshot: boolean(release.paper_snapshot, 'manifest.release.paper_snapshot'),
+      paperSnapshot: release.paper_snapshot === undefined
+        ? false
+        : boolean(release.paper_snapshot, 'manifest.release.paper_snapshot'),
     },
     parcellations,
     featureRefs,
@@ -146,8 +185,12 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
   const root = object(value, `feature ${path}`);
   if (root.schema_version !== SCHEMA_VERSION) throw new Error(`${path}.schema_version must be ${SCHEMA_VERSION}`);
   const representations = object(root.representations, `${path}.representations`);
+  object(root.value_semantics, `${path}.value_semantics`);
+  array(root.artifacts, `${path}.artifacts`);
+  const featureId = string(root.id, `${path}.id`);
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(featureId)) throw new Error(`${path}.id has an invalid format`);
   const descriptor: FeatureDescriptor = {
-    id: string(root.id, `${path}.id`),
+    id: featureId,
     path,
     label: string(root.label, `${path}.label`),
     description: typeof root.description === 'string' ? root.description : '',
@@ -161,8 +204,11 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
     if (regional.format !== 'ephys-atlas-regional-v0.1') throw new Error(`${path} has unsupported regional format`);
     const mappings: Partial<Record<ParcellationId, ReturnType<typeof parseRegionalParcellation>>> = {};
     const stats = new Set<StatisticId>();
-    for (const [index, raw] of array(regional.parcellations, `${path}.representations.regional.parcellations`).entries()) {
+    const parcellations = array(regional.parcellations, `${path}.representations.regional.parcellations`);
+    if (parcellations.length === 0) throw new Error(`${path}.representations.regional.parcellations must not be empty`);
+    for (const [index, raw] of parcellations.entries()) {
       const parsed = parseRegionalParcellation(raw, `${path}.representations.regional.parcellations[${index}]`);
+      if (mappings[parsed.parcellationId]) throw new Error(`${path} has duplicate ${parsed.parcellationId} regional representations`);
       mappings[parsed.parcellationId] = parsed;
       try { stats.add(statistic(parsed.summary, `${path}.summary`)); } catch { /* descriptive field may not be a UI statistic */ }
     }
@@ -181,9 +227,16 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
     const grid = object(volume.grid, `${path}.volume.grid`);
     const arrayDescriptor = object(volume.array, `${path}.volume.array`);
     const shape = numberArray(grid.shape, 3, `${path}.volume.grid.shape`) as [number, number, number];
+    if (shape.some((item) => !Number.isInteger(item) || item <= 0)) throw new Error(`${path}.volume.grid.shape must contain positive integers`);
     const axisOrder = array(grid.axis_order, `${path}.volume.grid.axis_order`).map((item, i) => string(item, `${path}.volume.grid.axis_order[${i}]`));
     if (axisOrder.length !== 3) throw new Error(`${path}.volume.grid.axis_order must have three entries`);
+    const normalizedAxes = axisOrder.map((item) => item.toLowerCase());
+    unique(normalizedAxes, `${path}.volume.grid.axis_order`);
+    if (!['ap', 'ml', 'dv'].every((axis) => normalizedAxes.includes(axis))) {
+      throw new Error(`${path}.volume.grid.axis_order must contain ap, ml, and dv`);
+    }
     const voxelSizeUm = numberArray(grid.voxel_size_um, 3, `${path}.volume.grid.voxel_size_um`) as [number, number, number];
+    if (voxelSizeUm.some((item) => item <= 0)) throw new Error(`${path}.volume.grid.voxel_size_um must be positive`);
     const originUm = numberArray(grid.origin_um, 3, `${path}.volume.grid.origin_um`) as [number, number, number];
     const indexToWorldUm = numberArray(grid.index_to_world_um, 16, `${path}.volume.grid.index_to_world_um`);
     if (arrayDescriptor.order !== 'C') throw new Error(`${path}.volume.array.order must be C`);
@@ -212,7 +265,7 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
       },
       resource,
       ...(typeof volume.statistics === 'string' ? { statistics: volume.statistics } : {}),
-      ...(Array.isArray(volume.value_range) && volume.value_range.length === 2 ? { valueRange: volume.value_range as [number | null, number | null] } : {}),
+      ...(volume.value_range === undefined ? {} : { valueRange: nullableRange(volume.value_range, `${path}.volume.value_range`) }),
     };
   }
 
@@ -220,6 +273,14 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
     throw new Error(`${path} must provide regional and/or volume representation`);
   }
   return descriptor;
+}
+
+function nullableRange(value: unknown, context: string): [number | null, number | null] {
+  const values = array(value, context);
+  if (values.length !== 2 || values.some((item) => item !== null && (typeof item !== 'number' || !Number.isFinite(item)))) {
+    throw new Error(`${context} must contain two finite numbers or null values`);
+  }
+  return values as [number | null, number | null];
 }
 
 function parseRegionalParcellation(value: unknown, context: string) {
@@ -258,16 +319,355 @@ export function resolveDatasetManifest(
 export interface StatisticsDocument {
   fields: readonly string[];
   values: BinaryArrayDescriptor;
+  histogram?: {
+    edges: readonly number[];
+    regionalCounts: BinaryArrayDescriptor;
+  };
 }
 
 export function parseStatisticsDocument(value: unknown): StatisticsDocument {
   const root = object(value, 'statistics');
   if (root.format !== 'ephys-atlas-statistics-v0.1') throw new Error('statistics.format is unsupported');
+  string(root.population, 'statistics.population');
+  const global = object(root.global, 'statistics.global');
+  for (const field of ['count', 'missing_count'] as const) {
+    if (typeof global[field] !== 'number' || !Number.isInteger(global[field]) || global[field] < 0) {
+      throw new Error(`statistics.global.${field} must be a non-negative integer`);
+    }
+  }
+  for (const field of ['min', 'max', 'mean', 'std', 'median'] as const) {
+    if (global[field] !== null && (typeof global[field] !== 'number' || !Number.isFinite(global[field]))) {
+      throw new Error(`statistics.global.${field} must be finite or null`);
+    }
+  }
   const regional = object(root.regional_summary, 'statistics.regional_summary');
-  return {
-    fields: array(regional.fields, 'statistics.regional_summary.fields').map((item, index) => string(item, `statistics.regional_summary.fields[${index}]`)),
+  const fields = array(regional.fields, 'statistics.regional_summary.fields').map((item, index) => string(item, `statistics.regional_summary.fields[${index}]`));
+  const supportedFields = new Set(['count', 'missing_count', 'min', 'max', 'mean', 'std', 'median', 'q05', 'q25', 'q75', 'q95']);
+  if (fields.length === 0 || fields.some((field) => !supportedFields.has(field))) throw new Error('statistics.regional_summary.fields contains unsupported values');
+  unique(fields, 'statistics.regional_summary.fields');
+  const result: StatisticsDocument = {
+    fields,
     values: parseBinaryArray(regional.values, 'statistics.regional_summary.values'),
   };
+  if (root.histogram !== undefined) {
+    const histogram = object(root.histogram, 'statistics.histogram');
+    const edges = array(histogram.edges, 'statistics.histogram.edges').map((item, index) => {
+      if (typeof item !== 'number' || !Number.isFinite(item)) throw new Error(`statistics.histogram.edges[${index}] must be finite`);
+      return item;
+    });
+    if (edges.length < 2 || edges.some((edge, index) => index > 0 && edge <= edges[index - 1]!)) {
+      throw new Error('statistics.histogram.edges must be strictly increasing');
+    }
+    const globalCounts = array(histogram.global_counts, 'statistics.histogram.global_counts');
+    if (globalCounts.length !== edges.length - 1 || globalCounts.some((item) => typeof item !== 'number' || !Number.isInteger(item) || item < 0)) {
+      throw new Error('statistics.histogram.global_counts must contain one non-negative integer per bin');
+    }
+    if (histogram.bin_rule !== 'left-closed-right-open-last-closed') throw new Error('statistics.histogram.bin_rule is unsupported');
+    result.histogram = {
+      edges,
+      regionalCounts: parseBinaryArray(histogram.regional_counts, 'statistics.histogram.regional_counts'),
+    };
+  }
+  return result;
+}
+
+interface ArtifactExpectation {
+  path: string;
+  bytes: number;
+  sha256: string;
+  context: string;
+}
+
+interface ResourceExpectation {
+  path: string;
+  context: string;
+  bytes?: number;
+  sha256?: string;
+  decodedBytes?: number;
+  codec?: 'none' | 'gzip';
+}
+
+export interface ValidatedLocalDataset {
+  document: DatasetManifestDocument;
+  features: readonly FeatureDescriptor[];
+}
+
+function bytesPerElement(value: BinaryDType): number {
+  return { int16: 2, int32: 4, uint16: 2, uint32: 4, float16: 2, float32: 4, float64: 8 }[value];
+}
+
+function binaryBytes(descriptor: BinaryArrayDescriptor): number {
+  return descriptor.shape.reduce((product, dimension) => product * dimension, 1) * bytesPerElement(descriptor.dtype);
+}
+
+function resolveRelativePath(baseFile: string, child: string, context: string): string {
+  relativePath(baseFile, `${context} base path`);
+  relativePath(child, context);
+  const directory = baseFile.includes('/') ? baseFile.slice(0, baseFile.lastIndexOf('/') + 1) : '';
+  return `${directory}${child}`;
+}
+
+function parseArtifacts(value: unknown, baseFile: string, context: string): ArtifactExpectation[] {
+  return array(value, context).map((raw, index) => {
+    const item = object(raw, `${context}[${index}]`);
+    const id = string(item.id, `${context}[${index}].id`);
+    if (!/^[a-z0-9][a-z0-9._-]*$/.test(id)) throw new Error(`${context}[${index}].id has an invalid format`);
+    if (!['current-feature', 'selected-data', 'source-snapshot', 'auxiliary'].includes(String(item.role))) {
+      throw new Error(`${context}[${index}].role is unsupported`);
+    }
+    string(item.media_type, `${context}[${index}].media_type`);
+    const bytesValue = item.bytes;
+    if (typeof bytesValue !== 'number' || !Number.isInteger(bytesValue) || bytesValue < 0) {
+      throw new Error(`${context}[${index}].bytes must be a non-negative integer`);
+    }
+    if (typeof item.sha256 !== 'string' || !SHA256.test(item.sha256)) {
+      throw new Error(`${context}[${index}].sha256 must be 64 lowercase hexadecimal characters`);
+    }
+    const path = resolveRelativePath(baseFile, relativePath(item.path, `${context}[${index}].path`), `${context}[${index}].path`);
+    return { path, bytes: bytesValue, sha256: item.sha256, context: `${context}[${index}]` };
+  });
+}
+
+async function readJsonResource(files: ReadonlyMap<string, Blob>, path: string, context: string): Promise<unknown> {
+  const file = files.get(path);
+  if (!file) throw new Error(`Local dataset is missing ${path} (${context})`);
+  try {
+    return JSON.parse(await file.text()) as unknown;
+  } catch (error) {
+    if (error instanceof SyntaxError) throw new Error(`${path} is not valid JSON: ${error.message}`);
+    throw error;
+  }
+}
+
+async function parseJsonResource(files: ReadonlyMap<string, Blob>, path: string, context: string): Promise<Record<string, unknown>> {
+  return object(await readJsonResource(files, path, context), context);
+}
+
+export async function sha256Hex(blob: Blob): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function decodedByteLength(blob: Blob, codec: 'none' | 'gzip', path: string): Promise<number> {
+  if (codec === 'none') return blob.size;
+  if (!('DecompressionStream' in globalThis)) throw new Error(`Cannot validate gzip resource ${path}: DecompressionStream is unavailable`);
+  try {
+    const stream = blob.stream().pipeThrough(new DecompressionStream('gzip'));
+    return (await new Response(stream).arrayBuffer()).byteLength;
+  } catch {
+    throw new Error(`Local resource ${path} is not valid gzip data`);
+  }
+}
+
+function addResource(resources: Map<string, ResourceExpectation>, expectation: ResourceExpectation): void {
+  const existing = resources.get(expectation.path);
+  if (!existing) {
+    resources.set(expectation.path, expectation);
+    return;
+  }
+  for (const key of ['bytes', 'sha256', 'decodedBytes', 'codec'] as const) {
+    const previous = existing[key];
+    const next = expectation[key];
+    if (previous !== undefined && next !== undefined && previous !== next) {
+      throw new Error(`Inconsistent declarations for ${expectation.path}: ${existing.context} and ${expectation.context}`);
+    }
+  }
+  resources.set(expectation.path, { ...existing, ...expectation, context: `${existing.context}; ${expectation.context}` });
+}
+
+function addBinaryResource(
+  resources: Map<string, ResourceExpectation>,
+  baseFile: string,
+  descriptor: BinaryArrayDescriptor,
+  context: string,
+): string {
+  const path = resolveRelativePath(baseFile, descriptor.path, context);
+  const expectedBytes = binaryBytes(descriptor);
+  if (descriptor.bytes !== undefined && descriptor.bytes !== expectedBytes) {
+    throw new Error(`${context}.bytes is ${descriptor.bytes}; dtype and shape require ${expectedBytes}`);
+  }
+  addResource(resources, {
+    path,
+    context,
+    bytes: expectedBytes,
+    ...(descriptor.sha256 ? { sha256: descriptor.sha256 } : {}),
+  });
+  return path;
+}
+
+function addArtifact(resources: Map<string, ResourceExpectation>, artifact: ArtifactExpectation): void {
+  addResource(resources, artifact);
+}
+
+function integerArray(value: unknown, length: number, context: string): number[] {
+  const values = array(value, context);
+  if (values.length !== length || values.some((item) => typeof item !== 'number' || !Number.isInteger(item) || item <= 0)) {
+    throw new Error(`${context} must contain ${length} positive integers`);
+  }
+  return values as number[];
+}
+
+function templatePath(template: string, replacements: Readonly<Record<string, number>>, context: string): string {
+  let path = template;
+  for (const [name, value] of Object.entries(replacements)) path = path.replaceAll(`{${name}}`, String(value));
+  if (/\{[^}]+\}/.test(path)) throw new Error(`${context} contains an unsupported template field`);
+  return relativePath(path, context);
+}
+
+async function validateResourceFiles(files: ReadonlyMap<string, Blob>, resources: ReadonlyMap<string, ResourceExpectation>): Promise<void> {
+  for (const resource of resources.values()) {
+    const file = files.get(resource.path);
+    if (!file) throw new Error(`Local dataset is missing ${resource.path} (${resource.context})`);
+    if (resource.bytes !== undefined && file.size !== resource.bytes) {
+      throw new Error(`${resource.path} has ${file.size} bytes; expected ${resource.bytes}`);
+    }
+    if (resource.decodedBytes !== undefined) {
+      const actual = await decodedByteLength(file, resource.codec ?? 'none', resource.path);
+      if (actual !== resource.decodedBytes) throw new Error(`${resource.path} decodes to ${actual} bytes; expected ${resource.decodedBytes}`);
+    }
+    if (resource.sha256 && await sha256Hex(file) !== resource.sha256) {
+      throw new Error(`SHA-256 mismatch for ${resource.path}`);
+    }
+  }
+}
+
+/** Validate the complete browser-supported schema-v0.1 graph before IndexedDB is mutated. */
+export async function validateLocalDatasetFiles(files: ReadonlyMap<string, Blob>): Promise<ValidatedLocalDataset> {
+  const manifestRaw = await parseJsonResource(files, 'manifest.json', 'manifest');
+  const document = parseDatasetManifestDocument(manifestRaw);
+  const resources = new Map<string, ResourceExpectation>();
+  for (const artifact of parseArtifacts(manifestRaw.artifacts, 'manifest.json', 'manifest.artifacts')) addArtifact(resources, artifact);
+
+  const regionCounts = new Map<ParcellationId, number>();
+  for (const parcel of document.parcellations) {
+    if (!['int16', 'int32', 'uint16', 'uint32'].includes(parcel.regionIndex.dtype)) {
+      throw new Error(`${parcel.id} region index must use an integer dtype`);
+    }
+    const indexPath = addBinaryResource(resources, 'manifest.json', parcel.regionIndex, `manifest.parcellations.${parcel.id}.region_index`);
+    const count = parcel.regionIndex.shape.length === 1 ? parcel.regionIndex.shape[0] : undefined;
+    if (count === undefined) throw new Error(`${parcel.id} region index must be one-dimensional`);
+    regionCounts.set(parcel.id, count);
+    if (!parcel.metadata) throw new Error(`${parcel.id} parcellation requires metadata for browser import`);
+    addResource(resources, { path: parcel.metadata, context: `manifest.parcellations.${parcel.id}.metadata` });
+
+    const metadata = array(await readJsonResource(files, parcel.metadata, `${parcel.id} region metadata`), `${parcel.id} region metadata`);
+    if (metadata.length !== count) throw new Error(`${parcel.id} metadata has ${metadata.length} rows; expected ${count}`);
+    const regionIdsFile = files.get(indexPath);
+    if (!regionIdsFile) throw new Error(`Local dataset is missing ${indexPath}`);
+    const regionIds = decodeBinaryArray(await regionIdsFile.arrayBuffer(), { ...parcel.regionIndex, path: indexPath });
+    const seenAtlasIds = new Set<number>();
+    for (const [row, raw] of metadata.entries()) {
+      const item = object(raw, `${parcel.id} metadata[${row}]`);
+      if (!Number.isInteger(item.index) || !Number.isInteger(item.atlas_id)) throw new Error(`${parcel.id} metadata[${row}] requires integer index and atlas_id`);
+      const index = item.index as number;
+      const atlasId = item.atlas_id as number;
+      if (index !== row || regionIds[row] !== atlasId) throw new Error(`${parcel.id} metadata/index mismatch at row ${row}`);
+      if (seenAtlasIds.has(atlasId)) throw new Error(`${parcel.id} metadata contains duplicate atlas_id ${atlasId}`);
+      seenAtlasIds.add(atlasId);
+    }
+  }
+
+  const features: FeatureDescriptor[] = [];
+  for (const featureRef of document.featureRefs) {
+    const featureRaw = await parseJsonResource(files, featureRef.path, `feature ${featureRef.path}`);
+    const feature = parseFeatureDescriptor(featureRaw, featureRef.path);
+    if (feature.id !== featureRef.id) throw new Error(`Feature id mismatch for ${featureRef.path}: expected ${featureRef.id}, got ${feature.id}`);
+    features.push(feature);
+    for (const artifact of parseArtifacts(featureRaw.artifacts, featureRef.path, `${featureRef.path}.artifacts`)) addArtifact(resources, artifact);
+
+    const regional = feature.representations.regional;
+    if (regional) {
+      for (const [parcellationId, descriptor] of Object.entries(regional.parcellations) as [ParcellationId, NonNullable<typeof regional.parcellations[ParcellationId]>][]) {
+        const count = regionCounts.get(parcellationId);
+        if (count === undefined) throw new Error(`${feature.id} references undeclared ${parcellationId} parcellation`);
+        if (descriptor.values.shape.length !== 1 || descriptor.values.shape[0] !== count) {
+          throw new Error(`${feature.id}/${parcellationId} values shape must be [${count}]`);
+        }
+        addBinaryResource(resources, feature.path, descriptor.values, `${feature.id}/${parcellationId} values`);
+        const statisticsPath = resolveRelativePath(feature.path, descriptor.statistics, `${feature.id}/${parcellationId} statistics`);
+        addResource(resources, { path: statisticsPath, context: `${feature.id}/${parcellationId} statistics` });
+        const statisticsRaw = await parseJsonResource(files, statisticsPath, `${feature.id}/${parcellationId} statistics`);
+        const statistics = parseStatisticsDocument(statisticsRaw);
+        if (statistics.values.shape.length !== 2 || statistics.values.shape[0] !== count || statistics.values.shape[1] !== statistics.fields.length) {
+          throw new Error(`${feature.id}/${parcellationId} statistics shape must be [${count}, ${statistics.fields.length}]`);
+        }
+        addBinaryResource(resources, statisticsPath, statistics.values, `${feature.id}/${parcellationId} regional summary`);
+        if (statistics.histogram) {
+          const bins = statistics.histogram.edges.length - 1;
+          if (statistics.histogram.regionalCounts.shape.length !== 2 || statistics.histogram.regionalCounts.shape[0] !== count || statistics.histogram.regionalCounts.shape[1] !== bins) {
+            throw new Error(`${feature.id}/${parcellationId} histogram shape must be [${count}, ${bins}]`);
+          }
+          addBinaryResource(resources, statisticsPath, statistics.histogram.regionalCounts, `${feature.id}/${parcellationId} regional histogram`);
+        }
+      }
+    }
+
+    const volume = feature.representations.volume;
+    if (volume) {
+      const volumePaths = new Set<string>();
+      if (volume.statistics) {
+        const statisticsPath = resolveRelativePath(feature.path, volume.statistics, `${feature.id} volume statistics`);
+        addResource(resources, { path: statisticsPath, context: `${feature.id} volume statistics` });
+        await parseJsonResource(files, statisticsPath, `${feature.id} volume statistics`);
+      }
+      const elementBytes = bytesPerElement(volume.array.dtype);
+      if (volume.layout === 'chunks3d') {
+        const chunkShape = integerArray(volume.resource.shape, 3, `${feature.id}.volume.chunks.shape`);
+        const codecRaw = object(volume.resource.codec, `${feature.id}.volume.chunks.codec`);
+        if (codecRaw.name !== 'none' && codecRaw.name !== 'gzip') throw new Error(`${feature.id}.volume.chunks.codec.name is unsupported`);
+        const codec = codecRaw.name;
+        const template = relativePath(volume.resource.path_template, `${feature.id}.volume.chunks.path_template`);
+        if (!['{i0}', '{i1}', '{i2}'].every((field) => template.includes(field))) {
+          throw new Error(`${feature.id}.volume.chunks.path_template must contain {i0}, {i1}, and {i2}`);
+        }
+        const chunkCounts = volume.grid.shape.map((size, dimension) => Math.ceil(size / chunkShape[dimension]!));
+        for (let i0 = 0; i0 < chunkCounts[0]!; i0 += 1) {
+          for (let i1 = 0; i1 < chunkCounts[1]!; i1 += 1) {
+            for (let i2 = 0; i2 < chunkCounts[2]!; i2 += 1) {
+              const indices = [i0, i1, i2];
+              const actualShape = volume.grid.shape.map((size, dimension) => Math.min(chunkShape[dimension]!, size - indices[dimension]! * chunkShape[dimension]!));
+              const decodedBytes = actualShape.reduce((product, size) => product * size, elementBytes);
+              const path = resolveRelativePath(feature.path, templatePath(template, { i0, i1, i2 }, `${feature.id}.volume.chunks.path_template`), `${feature.id} volume chunk`);
+              if (volumePaths.has(path)) throw new Error(`${feature.id} volume resource template does not produce unique paths`);
+              volumePaths.add(path);
+              addResource(resources, { path, context: `${feature.id} volume chunk`, decodedBytes, codec });
+            }
+          }
+        }
+      } else {
+        const packDepth = volume.resource.pack_depth;
+        if (typeof packDepth !== 'number' || !Number.isInteger(packDepth) || packDepth <= 0) throw new Error(`${feature.id}.volume.slice_packs.pack_depth must be a positive integer`);
+        const axes = object(volume.resource.axes, `${feature.id}.volume.slice_packs.axes`);
+        for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
+          const axisResource = object(axes[axis], `${feature.id}.volume.slice_packs.axes.${axis}`);
+          const sliceShape = integerArray(axisResource.slice_shape, 2, `${feature.id}.volume.slice_packs.axes.${axis}.slice_shape`);
+          const codecRaw = object(axisResource.codec, `${feature.id}.volume.slice_packs.axes.${axis}.codec`);
+          if (codecRaw.name !== 'none' && codecRaw.name !== 'gzip') throw new Error(`${feature.id}.volume.slice_packs.axes.${axis}.codec.name is unsupported`);
+          const template = relativePath(axisResource.path_template, `${feature.id}.volume.slice_packs.axes.${axis}.path_template`);
+          if (!template.includes('{pack}')) throw new Error(`${feature.id}.volume.slice_packs.axes.${axis}.path_template must contain {pack}`);
+          const dimensionName = axis === 'coronal' ? 'ap' : axis === 'sagittal' ? 'ml' : 'dv';
+          const dimension = volume.grid.axisOrder.findIndex((name) => name.toLowerCase() === dimensionName);
+          if (dimension < 0) throw new Error(`${feature.id}.volume.grid.axis_order does not contain ${dimensionName}`);
+          const sliceCount = volume.grid.shape[dimension]!;
+          const expectedSliceShape = volume.grid.shape.filter((_, index) => index !== dimension);
+          if (sliceShape[0] !== expectedSliceShape[0] || sliceShape[1] !== expectedSliceShape[1]) {
+            throw new Error(`${feature.id}.volume.slice_packs.axes.${axis}.slice_shape is inconsistent with the grid`);
+          }
+          for (let pack = 0; pack < Math.ceil(sliceCount / packDepth); pack += 1) {
+            const depth = Math.min(packDepth, sliceCount - pack * packDepth);
+            const decodedBytes = sliceShape[0]! * sliceShape[1]! * depth * elementBytes;
+            const path = resolveRelativePath(feature.path, templatePath(template, { pack }, `${feature.id}.volume.slice_packs.axes.${axis}.path_template`), `${feature.id} ${axis} slice pack`);
+            if (volumePaths.has(path)) throw new Error(`${feature.id} volume resource template does not produce unique paths`);
+            volumePaths.add(path);
+            addResource(resources, { path, context: `${feature.id} ${axis} slice pack`, decodedBytes, codec: codecRaw.name });
+          }
+        }
+      }
+    }
+  }
+
+  await validateResourceFiles(files, resources);
+  return { document, features };
 }
 
 /** Validates already-decoded browser payloads. */
