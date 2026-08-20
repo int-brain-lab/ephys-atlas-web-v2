@@ -144,6 +144,20 @@ test('generated anatomy source fails closed on a pack SHA mismatch', async () =>
   await assert.rejects(source.loadSlice('coronal', 0), /SHA-256 mismatch/);
 });
 
+test('localhost anatomy bypasses stale development caches', async () => {
+  const { manifest } = fixture();
+  let cacheMode = null;
+  const source = new GeneratedAnatomySliceSource({
+    manifestUrl: 'http://127.0.0.1:5173/anatomy/manifest.json',
+    fetchImpl: async (_input, init) => {
+      cacheMode = init?.cache ?? null;
+      return new Response(JSON.stringify(manifest), { status: 200 });
+    },
+  });
+  await source.loadManifest();
+  assert.equal(cacheMode, 'no-store');
+});
+
 test('anatomy manifest rejects ambiguous coordinate and ID conventions', () => {
   const { manifest } = fixture();
   manifest.coordinate_system.world_axes = ['ap', 'ml', 'dv'];

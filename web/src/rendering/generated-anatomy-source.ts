@@ -416,6 +416,7 @@ async function gunzipJson(buffer: ArrayBuffer, context: string): Promise<{ value
 
 export class GeneratedAnatomySliceSource implements AnatomySliceSource {
   private readonly fetchImpl: typeof fetch;
+  private readonly cacheMode: RequestCache;
   private readonly packDepth: 16 | 32 | undefined;
   private readonly manifestUrl: string;
   private manifestPromise: Promise<AnatomyPackManifest> | null = null;
@@ -426,6 +427,8 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
     this.packDepth = options.packDepth;
     const baseUrl = typeof globalThis.location?.href === 'string' ? globalThis.location.href : 'http://localhost/';
     this.manifestUrl = new URL(options.manifestUrl, baseUrl).toString();
+    const hostname = new URL(this.manifestUrl).hostname;
+    this.cacheMode = hostname === 'localhost' || hostname === '127.0.0.1' ? 'no-store' : 'force-cache';
   }
 
   loadManifest(): Promise<AnatomyPackManifest> {
@@ -481,7 +484,7 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
   }
 
   private async fetchManifest(): Promise<AnatomyPackManifest> {
-    const response = await this.fetchImpl(this.manifestUrl, { cache: 'force-cache' });
+    const response = await this.fetchImpl(this.manifestUrl, { cache: this.cacheMode });
     if (!response.ok) throw new Error(`Anatomy manifest request failed (${response.status})`);
     return parseAnatomyPackManifest(await response.json());
   }
@@ -499,7 +502,7 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
 
   private async fetchPack(manifest: AnatomyPackManifest, axis: SliceAxis, packDepth: 16 | 32, artifact: PackArtifact, signal?: AbortSignal): Promise<SlicePack> {
     const url = new URL(artifact.path, this.manifestUrl).toString();
-    const response = await this.fetchImpl(url, { cache: 'force-cache', ...(signal ? { signal } : {}) });
+    const response = await this.fetchImpl(url, { cache: this.cacheMode, ...(signal ? { signal } : {}) });
     if (!response.ok) throw new Error(`Anatomy pack request failed (${response.status}): ${artifact.path}`);
     const buffer = await response.arrayBuffer();
     if (buffer.byteLength !== artifact.bytes) throw new Error(`${artifact.path} has ${buffer.byteLength} bytes; expected ${artifact.bytes}`);
