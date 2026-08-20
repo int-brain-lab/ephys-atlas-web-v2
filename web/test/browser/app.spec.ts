@@ -33,6 +33,11 @@ for (const viewport of reviewViewports) {
       const atlasRegistration = page.locator('[data-context-field="representation"] .context-field__release');
       await expect(atlasRegistration).toBeVisible();
       expect(await atlasRegistration.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+      const datasetBounds = await page.locator('[data-context-field="dataset"]').boundingBox();
+      const featureBounds = await page.locator('[data-context-field="feature"]').boundingBox();
+      expect(datasetBounds).not.toBeNull();
+      expect(featureBounds).not.toBeNull();
+      expect(datasetBounds!.width).toBeGreaterThan(featureBounds!.width);
     }
     await expect(page.locator('[data-view="coronal"] .view-frame__status')).toHaveText('');
     await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
