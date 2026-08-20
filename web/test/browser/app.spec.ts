@@ -104,10 +104,10 @@ test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
   await page.goto('/');
 
   await page.locator('[data-view="coronal"] .view-frame__brain-svg').dispatchEvent('wheel', { deltaY: 100 });
-  await expect(page.getByLabel('coronal slice')).toHaveValue('656');
-  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.16 mm');
-  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('656,550,400');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '656');
+  await expect(page.getByLabel('coronal slice')).toHaveValue('648');
+  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.08 mm');
+  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('648,550,400');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '648');
 });
 
 test('linked guides project one slice coordinate into both other views', async ({ page }) => {

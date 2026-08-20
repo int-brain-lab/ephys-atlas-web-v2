@@ -18,7 +18,7 @@ export interface SvgSliceRendererOptions {
   onSliceStep?: (axis: SliceAxis, delta: number) => void;
 }
 
-const WHEEL_STEP_SLICES = 4;
+const WHEEL_STEP_SLICES = 12;
 
 export class SvgSliceRenderer implements RegionalSliceRenderer {
   private currentAxis: SliceAxis | null = null;
