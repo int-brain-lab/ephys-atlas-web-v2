@@ -119,6 +119,11 @@
   background: linear-gradient(90deg, rgb(68 1 84), rgb(59 82 139), rgb(33 145 140), rgb(94 201 98), rgb(253 231 37));
 }
 
+.color-legend__context {
+  color: var(--color-text-muted);
+  font-size: .59rem;
+}
+
 .color-legend__bar[data-colormap="magma"] {
   background: linear-gradient(90deg, rgb(0 0 4), rgb(81 18 124), rgb(183 55 121), rgb(252 137 97), rgb(252 253 191));
 }
