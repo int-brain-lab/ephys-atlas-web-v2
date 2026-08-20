@@ -18,18 +18,25 @@ export interface SvgSliceRendererOptions {
   onSliceStep?: (axis: SliceAxis, delta: number) => void;
 }
 
-const WHEEL_PIXELS_PER_SLICE = 50;
+const WHEEL_PIXELS_PER_NAVIGATION_STEP = 100;
+const WHEEL_SLICE_STRIDE = 4;
 const WHEEL_LINE_HEIGHT_PX = 16;
 const WHEEL_PAGE_HEIGHT_PX = 800;
+const MAX_PREPARED_SLICE_LAYERS = 8;
+
+interface PreparedSliceLayer {
+  layer: SVGGElement;
+  pathIndex: Map<number, SVGPathElement[]>;
+  svgFragment: string;
+}
 
 export class SvgSliceRenderer implements RegionalSliceRenderer {
   private currentAxis: SliceAxis | null = null;
-  private currentIndex = -1;
-  private currentFragment = '';
   private mapping: MappingName = 'beryl';
-  private indexedMapping: MappingName | null = null;
   private hoveredRegionId: number | null = null;
-  private readonly pathIndex = new Map<number, SVGPathElement[]>();
+  private pathIndex: ReadonlyMap<number, readonly SVGPathElement[]> = new Map();
+  private readonly preparedLayers = new Map<string, PreparedSliceLayer>();
+  private activeLayerKey: string | null = null;
   private readonly abortController = new AbortController();
   private wheelPixels = 0;
   private wheelFrame: number | null = null;
@@ -53,13 +60,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
       `${frame.viewBox.x} ${frame.viewBox.y} ${frame.viewBox.width} ${frame.viewBox.height}`,
     );
 
-    if (this.currentIndex !== frame.index || this.currentFragment !== frame.svgFragment || this.indexedMapping !== frame.mapping) {
-      this.mount.figureLayer.innerHTML = frame.svgFragment;
-      this.currentIndex = frame.index;
-      this.currentFragment = frame.svgFragment;
-      this.indexedMapping = frame.mapping;
-      this.rebuildPathIndex();
-    }
+    this.activatePreparedLayer(frame);
 
     this.applyRegionState(frame);
     this.drawGuides(frame);
@@ -68,7 +69,9 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   dispose(): void {
     this.abortController.abort();
     if (this.wheelFrame !== null) cancelAnimationFrame(this.wheelFrame);
-    this.pathIndex.clear();
+    this.pathIndex = new Map();
+    this.preparedLayers.clear();
+    this.activeLayerKey = null;
     this.mount.figureLayer.replaceChildren();
     this.mount.guideLayer.replaceChildren();
   }
@@ -78,15 +81,53 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     this.drawGuides(frame);
   }
 
-  private rebuildPathIndex(): void {
-    this.pathIndex.clear();
-    for (const path of this.mount.figureLayer.querySelectorAll<SVGPathElement>('path')) {
-      const regionId = regionIdFromPath(this.mapping, path);
-      if (regionId == null) continue;
-      const paths = this.pathIndex.get(regionId) ?? [];
-      paths.push(path);
-      this.pathIndex.set(regionId, paths);
+  private activatePreparedLayer(frame: RegionalSliceFrame): void {
+    const key = this.preparedLayerKey(frame);
+    const cached = this.preparedLayers.get(key);
+    const prepared = cached?.svgFragment === frame.svgFragment
+      ? cached
+      : this.prepareLayer(frame, key);
+    this.touchPreparedLayer(key, prepared);
+    if (this.activeLayerKey !== key || this.mount.figureLayer.firstChild !== prepared.layer) {
+      this.mount.figureLayer.replaceChildren(prepared.layer);
+      this.activeLayerKey = key;
     }
+    this.pathIndex = prepared.pathIndex;
+  }
+
+  private prepareLayer(frame: RegionalSliceFrame, key: string): PreparedSliceLayer {
+    this.evictPreparedLayerIfNeeded();
+    const layer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    layer.innerHTML = frame.svgFragment;
+    const pathIndex = new Map<number, SVGPathElement[]>();
+    for (const path of layer.querySelectorAll<SVGPathElement>('path')) {
+      const regionId = regionIdFromPath(frame.mapping, path);
+      if (regionId == null) continue;
+      const paths = pathIndex.get(regionId) ?? [];
+      paths.push(path);
+      pathIndex.set(regionId, paths);
+    }
+    const prepared = { layer, pathIndex, svgFragment: frame.svgFragment };
+    this.preparedLayers.set(key, prepared);
+    return prepared;
+  }
+
+  private touchPreparedLayer(key: string, prepared: PreparedSliceLayer): void {
+    this.preparedLayers.delete(key);
+    this.preparedLayers.set(key, prepared);
+  }
+
+  private evictPreparedLayerIfNeeded(): void {
+    if (this.preparedLayers.size < MAX_PREPARED_SLICE_LAYERS) return;
+    for (const key of this.preparedLayers.keys()) {
+      if (key === this.activeLayerKey) continue;
+      this.preparedLayers.delete(key);
+      return;
+    }
+  }
+
+  private preparedLayerKey(frame: RegionalSliceFrame): string {
+    return `${frame.axis}\u0000${frame.mapping}\u0000${frame.index}`;
   }
 
   private applyRegionState(frame: RegionalSliceFrame): void {
@@ -166,10 +207,10 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     if (this.wheelFrame !== null) return;
     this.wheelFrame = requestAnimationFrame(() => {
       this.wheelFrame = null;
-      const slices = Math.trunc(this.wheelPixels / WHEEL_PIXELS_PER_SLICE);
-      if (slices === 0) return;
-      this.wheelPixels -= slices * WHEEL_PIXELS_PER_SLICE;
-      if (this.currentAxis != null) this.options.onSliceStep?.(this.currentAxis, slices);
+      const steps = Math.trunc(this.wheelPixels / WHEEL_PIXELS_PER_NAVIGATION_STEP);
+      if (steps === 0) return;
+      this.wheelPixels -= steps * WHEEL_PIXELS_PER_NAVIGATION_STEP;
+      if (this.currentAxis != null) this.options.onSliceStep?.(this.currentAxis, steps * WHEEL_SLICE_STRIDE);
     });
   };
 }

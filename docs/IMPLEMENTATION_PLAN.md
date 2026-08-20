@@ -136,7 +136,7 @@ Acceptance reference: section 7 of the launch spec.
 
 ## M5 — Downloads and local import completion
 
-Status: **local import contract hardened; download/export UX remains**.
+Status: **local import hardened; current regional export implemented; broader package/export UX remains**.
 
 Completed:
 
@@ -144,12 +144,15 @@ Completed:
 - complete supported regional/volume resource-graph validation before storage;
 - WebCrypto SHA-256 verification and atomic immutable imports;
 - deterministic golden and corruption/missing-resource tests.
+- immutable release, feature semantics, and provenance retained by the browser model and exposed through the contextual Info dialog;
+- share action copies the complete URL-persisted exploration state;
+- current regional statistic exports as CSV with dataset, immutable release, feature, representation, parcellation, statistic, unit, and region identity columns.
 
 Goals:
 
 - production-grade local import validation for regional and supported volume releases;
-- current-feature download/navigation;
 - selected comparison export;
+- volume-feature download/navigation;
 - deterministic whole-release package path exposed/documented where practical;
 - visible provenance identifiers in exported data.
 
