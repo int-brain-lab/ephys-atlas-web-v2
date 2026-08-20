@@ -161,7 +161,11 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.region-pane__selected')).toHaveAttribute('data-empty', 'true');
   await expect(page.locator('.selected-regions__list')).toBeEmpty();
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-empty', 'true');
+  await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'false');
   await expect(page.locator('.analysis-panel__surface')).toBeHidden();
+  await expect(page.locator('.analysis-panel__title')).toHaveText('Analysis / comparison');
+  await expect(page.locator('.analysis-panel__toggle')).toBeDisabled();
+  const coronalBeforeSelection = await page.locator('[data-view="coronal"]').boundingBox();
 
   const path = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
   const rightPath = page.locator('[data-view="coronal"] path[data-allen-id="362"]').first();
@@ -171,7 +175,13 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ }).click();
   await expect(page.locator('.region-pane__selected')).toHaveAttribute('data-empty', 'false');
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-empty', 'false');
+  await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'true');
   await expect(page.locator('.regional-comparison__fixture')).toHaveText('Synthetic integration fixture');
+  expect(await page.locator('[data-view="coronal"]').boundingBox()).toEqual(coronalBeforeSelection);
+  await page.getByRole('button', { name: 'Collapse analysis and comparison' }).click();
+  await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'false');
+  await expect(page.locator('.analysis-panel__surface')).toBeHidden();
+  expect(await page.locator('[data-view="coronal"]').boundingBox()).toEqual(coronalBeforeSelection);
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
   await expect(page.locator('.selected-region')).toContainText('MD');
   await expect(page.locator('.regional-comparison__list')).toContainText('mean: 1 dB rel. V');

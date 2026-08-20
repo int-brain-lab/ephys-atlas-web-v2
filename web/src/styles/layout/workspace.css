@@ -1,7 +1,9 @@
 .workspace {
+  position: relative;
   display: grid;
-  grid-template-rows: minmax(17rem, 1fr) clamp(9rem, 21vh, 12rem) var(--analysis-height);
+  grid-template-rows: minmax(17rem, 1fr) clamp(9rem, 21vh, 12rem);
   gap: var(--space-2);
+  padding-bottom: calc(2.25rem + var(--space-2));
   overflow: hidden;
 }
 
