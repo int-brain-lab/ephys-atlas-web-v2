@@ -86,10 +86,20 @@ An immutable production manifest pins:
 - `GEOS coverage_simplify` tolerance;
 - boundary sampling interval and the conservative unsampled-error bound.
 
-`validation.boundary_error_um.max` is the conservative upper bound: sampled
-maximum plus `provenance.simplification.boundary_error_bound_um`. It, rather
-than the raw sampled maximum, is compared with
+Streaming validation records the maximum per-slice median and maximum
+per-slice p95 as `worst_slice_median` and `worst_slice_p95`; these fields do not
+claim to be pooled full-corpus quantiles. `max_upper_bound` is the conservative
+global upper bound: sampled maximum plus
+`provenance.simplification.boundary_error_bound_um`. It, rather than the raw
+sampled maximum, is compared with
 `accepted_max_boundary_error_um`.
+
+For regions whose source-plane area is at least
+`region_area_threshold_mm2=0.01`, the minimum measured region IoU must be at
+least `accepted_minimum_region_iou=0.98`. `minimum_eligible_region_iou` records
+the observed worst eligible region. Topology, coverage, component, and missing
+ID gates still protect smaller islands; the area threshold does not permit
+their removal.
 
 The full-corpus gate requires valid topology and coverage, zero uncovered or
 multiply covered source voxels, zero adjacency mismatches and invalid

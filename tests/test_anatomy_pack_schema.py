@@ -192,16 +192,22 @@ def test_validation_metrics_encode_a_passing_full_corpus_gate(manifest: dict) ->
     assert validation["source_slices"] == validation["emitted_slices"]
     assert validation["vertices_after"] <= validation["vertices_before"]
     assert (
-        validation["boundary_error_um"]["median"]
-        <= validation["boundary_error_um"]["p95"]
+        validation["boundary_error_um"]["worst_slice_median"]
+        <= validation["boundary_error_um"]["worst_slice_p95"]
     )
     assert (
-        validation["boundary_error_um"]["p95"] <= validation["boundary_error_um"]["max"]
+        validation["boundary_error_um"]["worst_slice_p95"]
+        <= validation["boundary_error_um"]["max_upper_bound"]
     )
     assert (
-        validation["boundary_error_um"]["max"]
+        validation["boundary_error_um"]["max_upper_bound"]
         <= validation["accepted_max_boundary_error_um"]
     )
+    assert (
+        validation["minimum_eligible_region_iou"]
+        >= validation["accepted_minimum_region_iou"]
+    )
+    assert validation["region_area_threshold_mm2"] == 0.01
     simplification = manifest["provenance"]["simplification"]
     assert 0 < simplification["boundary_sampling_interval_voxels"] <= 1
     assert simplification["boundary_error_bound_um"] >= 0

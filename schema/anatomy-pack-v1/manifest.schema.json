@@ -327,11 +327,15 @@
     "errorMetrics": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["median", "p95", "max"],
+      "required": [
+        "worst_slice_median",
+        "worst_slice_p95",
+        "max_upper_bound"
+      ],
       "properties": {
-        "median": { "type": "number", "minimum": 0 },
-        "p95": { "type": "number", "minimum": 0 },
-        "max": { "type": "number", "minimum": 0 }
+        "worst_slice_median": { "type": "number", "minimum": 0 },
+        "worst_slice_p95": { "type": "number", "minimum": 0 },
+        "max_upper_bound": { "type": "number", "minimum": 0 }
       }
     },
     "validation": {
@@ -353,6 +357,9 @@
         "vertices_after",
         "boundary_error_um",
         "accepted_max_boundary_error_um",
+        "minimum_eligible_region_iou",
+        "region_area_threshold_mm2",
+        "accepted_minimum_region_iou",
         "coordinate_tolerance_um",
         "sentinel_max_error_um"
       ],
@@ -372,6 +379,13 @@
         "vertices_after": { "type": "integer", "minimum": 3 },
         "boundary_error_um": { "$ref": "#/$defs/errorMetrics" },
         "accepted_max_boundary_error_um": { "type": "number", "minimum": 0 },
+        "minimum_eligible_region_iou": {
+          "type": "number",
+          "minimum": 0.98,
+          "maximum": 1
+        },
+        "region_area_threshold_mm2": { "const": 0.01 },
+        "accepted_minimum_region_iou": { "const": 0.98 },
         "coordinate_tolerance_um": { "type": "number", "exclusiveMinimum": 0 },
         "sentinel_max_error_um": { "type": "number", "minimum": 0 }
       }

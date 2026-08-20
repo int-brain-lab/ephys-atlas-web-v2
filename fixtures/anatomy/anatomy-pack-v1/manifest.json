@@ -266,11 +266,14 @@
     "vertices_before": 96,
     "vertices_after": 48,
     "boundary_error_um": {
-      "median": 0,
-      "p95": 6.25,
-      "max": 8.84
+      "worst_slice_median": 0,
+      "worst_slice_p95": 6.25,
+      "max_upper_bound": 8.84
     },
     "accepted_max_boundary_error_um": 12.5,
+    "minimum_eligible_region_iou": 0.995,
+    "region_area_threshold_mm2": 0.01,
+    "accepted_minimum_region_iou": 0.98,
     "coordinate_tolerance_um": 0.000001,
     "sentinel_max_error_um": 0
   },
