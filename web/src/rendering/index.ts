@@ -1,4 +1,5 @@
 export * from './types.js';
+export * from './coordinate-space.js';
 export * from './slice-calibration.js';
 export * from './region-id.js';
 export * from './svg-slice-renderer.js';
