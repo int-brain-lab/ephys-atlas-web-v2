@@ -61,7 +61,11 @@ The Phase-3 region labels and value bars are still UX-only representative conten
 
 ## UX Phase 4 — anatomical view frames
 
-Phase 4 is implemented. The refreshed real-curated-asset screenshots remain the next visual review point before proceeding with later UX blocks.
+Phase 4's layout remains implemented, but D023 supersedes its legacy rendering
+details. The active viewer uses the immutable 25 µm left-hemisphere generated
+pack, native ranges `527/229/319`, direct signed atlas IDs, and manifest affines
+for exact cross-projection synchronization. The historical bullets below
+document the provider retained for code-level fallback only.
 
 - three anatomical frames expose calibrated AP/ML/DV coordinates, full-resolution slice-index sliders, renderer status, and maximize/restore affordances;
 - initial indices match the legacy defaults (`coronal=660`, `sagittal=550`, `horizontal=400`), corresponding to AP -1.20 mm, ML -0.24 mm, DV -3.67 mm;
@@ -101,12 +105,12 @@ The previous frontend provisional schema has been removed from the active path. 
 4. volume features resolve explicit scientific grid metadata plus a physical-layout descriptor;
 5. transport differences do not redefine the scientific contract.
 
-`web/public/fixtures/ephys_atlas_channels/golden-v0.1/` is the browser-served golden fixture used to exercise this contract end-to-end. It is synthetic test data.
+`web/public/fixtures/ephys_atlas_channels/golden-v0.3/` is the browser-served golden fixture used to exercise this contract end-to-end. It is synthetic test data whose signed IDs intersect all three default anatomy planes.
 
 ## Current next work
 
 1. Publish the validated real channel development release through an authorized non-production catalog; `just dev-real` already provides the local equivalent.
-2. Publish the five pinned curated bundles or the accepted generated anatomy pack to an immutable v2 asset location and remove the remaining slice-bundle dependency on the legacy host.
+2. Deploy the committed generated anatomy pack with opaque gzip delivery and verify its immutable public URLs.
 3. Benchmark real encoding-volume layouts before selecting the launch physical representation; keep volume scientific geometry independent of SVG display calibration.
 4. Keep 3-D behind the regional and volume launch-critical vertical slices.
 

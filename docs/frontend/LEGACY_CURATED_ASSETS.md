@@ -1,5 +1,11 @@
 # Legacy curated atlas slice assets
 
+Status: **inactive historical fallback**. D023 supersedes these bundles as the
+v2 runtime geometry. The default viewer uses the registered generated anatomy
+pack and makes no request to the legacy atlas host. This inventory remains so a
+code/config revert can restore the prior provider without rediscovering asset
+identity.
+
 This note pins the exact legacy SVG-fragment bundles used by IBL Ephys Atlas Web v1 and validated for the v2 anatomical-view integration.
 
 ## Provenance
@@ -35,8 +41,11 @@ by `docs/frontend/ALLEN_REGION_METADATA.md`.
 
 The v2 frontend keeps scientific 10 um navigation/coordinate calibration separate from this display-asset inventory. The odd SVG slices were deliberately omitted from the legacy bundles to reduce file size: slicing is primarily a user navigation/display convenience here, not a scientifically critical 10 um anatomical measurement. The UI therefore preserves the full scientific index domains with `step=1`, including odd indices. `LegacyCuratedSvgSliceRenderer` independently chooses the nearest available curated SVG fragment for display (normally at 20 um spacing), while coordinates, URL state, and linked-guide navigation continue to use the requested 10 um index. The chosen SVG index is exposed only as renderer/debug metadata (`data-asset-index`).
 
-## Publication decision
+## Historical fallback decision
 
-The implementation repository records the immutable inventory and hashes but does not duplicate the 83.44 MiB of generated deployment artifacts in normal source history. For launch, copy these exact bytes into a versioned immutable v2 asset release and point `LegacyCuratedSvgSliceRenderer` at that release with its existing `baseUrl` option. Until that release exists, the default URL remains the deployed v1 atlas as a transitional source.
+The implementation repository records the immutable inventory and hashes but
+does not duplicate the 83.44 MiB of legacy deployment artifacts. The modular
+`LegacyCuratedSvgSliceRenderer` remains available in source, but it is not
+constructed by `main.ts` and its deployed host is not contacted by default.
 
 A release copy is valid only if all five SHA-256 hashes above match. Do not use the historical generation script as a substitute for the curated deployed files.

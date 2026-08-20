@@ -110,3 +110,22 @@ not own this choice, and selection/hover styling remains independent of both.
 The legacy SVG BrainRegions row crosswalk is a versioned display-domain input,
 not the authority for names or colors. See
 `docs/frontend/ALLEN_REGION_METADATA.md`.
+
+## D023 — Registered generated anatomy is the runtime authority
+
+Supersede D007 and D016 for the v2 runtime. Use immutable
+`anatomy-pack-v1` geometry recomputed from the pinned Allen CCFv3 25 µm
+annotation and LUT, restricted to the physical left hemisphere. Paths carry
+negative signed Allen/Beryl/Cosmos atlas IDs directly. The native 25 µm grid
+and declared row-major `[slice,u,v] -> [ml,ap,dv]` affines are authoritative for
+slice coordinates and cross-projection guides. URL v2 stores native indices;
+v1 10 µm links migrate by world coordinate.
+
+The accepted pack is
+`allen-ccfv3-25um-left-t15-4a565958b938`, generated at 15 µm GEOS coverage
+simplification tolerance from clean commit `d5d60ca`. It passed complete-corpus
+topology and source-voxel coverage gates with minimum eligible-region IoU 1.0
+and a conservative 3.125 µm boundary-error upper bound. The legacy renderer
+remains modular source code and the pinned v1 bundles remain documented, but
+neither is active or fetched by default. Reversion is a normal code/config
+revert, not a user-facing provider switch.

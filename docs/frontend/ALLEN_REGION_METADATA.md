@@ -40,6 +40,6 @@ left structural inventory and color swatches in the region browser. The mode
 is persisted as `colors=anatomy` in URL state. Selection and hover remain
 independent outlines/states and never replace either color source.
 
-The same renderer presentation contract supplies colors to the current curated
-SVG renderer and the generated anatomy-pack renderer. Neither renderer owns the
+The same renderer presentation contract supplies colors to the default
+generated anatomy-pack renderer and the inactive legacy fallback. Neither renderer owns the
 color-mode state or scientific feature data.
