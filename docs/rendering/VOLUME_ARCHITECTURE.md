@@ -9,7 +9,7 @@ The browser boundary is deliberately layered:
 - `VolumeSliceSource` is what the application consumes: `loadSlice(axis, index)`.
 - `VolumeChunkSource` is one possible physical adapter. It turns an eventual storage format into decoded logical chunks, potentially using workers, byte ranges, shards, OPFS, or IndexedDB.
 - `VolumeSliceLoader` implements `VolumeSliceSource` on top of logical 3-D chunks, limits fetch concurrency, maintains a byte-bounded LRU, and assembles canonical planes.
-- another source can implement orientation-specific slice packs without changing the app or renderer.
+- `SchemaSlicePackVolumeSource` directly decodes orientation-specific float16/float32 packs, deduplicates in-flight loads, and keeps a byte-bounded decoded LRU without changing the app or renderer.
 - `scalarToRgba` applies the active scalar range/palette.
 - `CanvasVolumeSliceRenderer` paints prepared RGBA pixels only.
 
@@ -130,7 +130,11 @@ The current 3-D chunk prototype uses:
 - optional adjacent-slice prefetch through the same bounded cache;
 - `AbortSignal` for stale feature/slice requests.
 
-A slice-pack source should use the same policies with a much smaller decoded cache. The physical source should deduplicate in-flight object/range requests.
+The slice-pack source uses a 48 MiB decoded LRU by default, reuses all slices in
+the current pack, prefetches only adjacent packs, and deduplicates in-flight
+requests. Both schema layouts now terminate at the same canonical
+`VolumeSliceSource`; the real HTTP/browser benchmark still determines which
+layout is published for launch.
 
 ## Slice orientation contract
 

@@ -3,7 +3,9 @@ import type { VolumeFeaturePayload } from '../data/contracts.js';
 import { CanvasVolumeSliceRenderer } from './canvas-volume-renderer.js';
 import { SchemaChunks3dVolumeSource, regionalSliceToVolumeIndex } from './chunked-volume-source.js';
 import type { RendererPresentation, SliceRenderModel, SliceRenderer } from './interfaces.js';
+import { SchemaSlicePackVolumeSource } from './slice-pack-volume-source.js';
 import { VolumeSliceLoader, type VolumeSlice } from './volume.js';
+import type { VolumeSliceSource } from './volume.js';
 
 const PALETTES: Record<string, readonly [number, number, number][]> = {
   viridis: [[68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37]],
@@ -88,8 +90,8 @@ function rgbaForSlice(feature: VolumeFeaturePayload, slice: VolumeSlice, colorin
   return rgba;
 }
 
-export class ChunkedVolumeSliceRenderer implements SliceRenderer {
-  private readonly loaders = new WeakMap<VolumeFeaturePayload, VolumeSliceLoader>();
+export class SchemaVolumeSliceRenderer implements SliceRenderer {
+  private readonly loaders = new WeakMap<VolumeFeaturePayload, VolumeSliceSource>();
   private readonly mounts = new Map<HTMLElement, VolumeMount>();
   private readonly renderTokens = new WeakMap<HTMLElement, number>();
   private presentation: RendererPresentation | null = null;
@@ -137,7 +139,8 @@ export class ChunkedVolumeSliceRenderer implements SliceRenderer {
     target.dataset.sliceAsset = 'schema-volume-v0.1';
     target.dataset.volumeIndex = String(volumeIndex);
     target.dataset.volumeFeature = feature.featureId;
-    void loader.prefetchAdjacent(model.axis, volumeIndex, 1).catch(() => undefined);
+    const prefetch = loader.prefetchAdjacent?.(model.axis, volumeIndex, 1);
+    void prefetch?.catch(() => undefined);
   }
 
   clear(target: HTMLElement): void {
@@ -160,10 +163,12 @@ export class ChunkedVolumeSliceRenderer implements SliceRenderer {
     this.mounts.clear();
   }
 
-  private loader(feature: VolumeFeaturePayload): VolumeSliceLoader {
+  private loader(feature: VolumeFeaturePayload): VolumeSliceSource {
     let loader = this.loaders.get(feature);
     if (!loader) {
-      loader = new VolumeSliceLoader(new SchemaChunks3dVolumeSource(feature));
+      loader = feature.descriptor.layout === 'chunks3d'
+        ? new VolumeSliceLoader(new SchemaChunks3dVolumeSource(feature))
+        : new SchemaSlicePackVolumeSource(feature);
       this.loaders.set(feature, loader);
     }
     return loader;

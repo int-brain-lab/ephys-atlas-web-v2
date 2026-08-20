@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import type { VolumeFeaturePayload } from '../../web/src/data/contracts.js';
+import type { SliceAxis } from '../../web/src/domain/types.js';
+import { SchemaSlicePackVolumeSource } from '../../web/src/rendering/slice-pack-volume-source.js';
 import {
   VolumeChunkCache,
   VolumeSliceLoader,
@@ -11,6 +14,80 @@ import {
   type VolumeChunkMetadata,
   type VolumeChunkSource,
 } from '../../web/src/rendering/volume.js';
+
+const axisNames: Record<SliceAxis, 'ap' | 'ml' | 'dv'> = {
+  coronal: 'ap',
+  sagittal: 'ml',
+  horizontal: 'dv',
+};
+
+function makeSlicePackFeature(axisOrder: readonly ['dv', 'ap', 'ml'] = ['dv', 'ap', 'ml']): {
+  feature: VolumeFeaturePayload;
+  loads: Map<string, number>;
+} {
+  const anatomicalShape = { ap: 5, ml: 4, dv: 3 };
+  const shape = axisOrder.map((axis) => anatomicalShape[axis]) as [number, number, number];
+  const packDepth = 2;
+  const loads = new Map<string, number>();
+  const resource = {
+    pack_depth: packDepth,
+    axes: Object.fromEntries((['coronal', 'sagittal', 'horizontal'] as const).map((axis) => {
+      const dimension = axisOrder.indexOf(axisNames[axis]);
+      return [axis, {
+        slice_shape: shape.filter((_, index) => index !== dimension),
+        codec: { name: 'none' },
+        path_template: `${axis}/{pack}.f32`,
+      }];
+    })),
+  };
+  const feature: VolumeFeaturePayload = {
+    schemaVersion: '0.1',
+    featureId: 'memory-slice-packs',
+    representation: 'volume',
+    descriptor: {
+      kind: 'volume',
+      format: 'ephys-atlas-chunked-volume-v0.1',
+      layout: 'orthogonal_slice_packs',
+      grid: {
+        shape,
+        axisOrder,
+        coordinateSystem: 'test',
+        voxelSizeUm: [25, 25, 25],
+        originUm: [0, 0, 0],
+        indexToWorldUm: [25, 0, 0, 0, 0, 25, 0, 0, 0, 0, 25, 0, 0, 0, 0, 1],
+      },
+      array: { dtype: 'float32', endianness: 'little', order: 'C', nonfinite: 'preserve' },
+      resource,
+    },
+    async loadResource(path: string): Promise<ArrayBuffer> {
+      loads.set(path, (loads.get(path) ?? 0) + 1);
+      const match = /^(coronal|sagittal|horizontal)\/(\d+)\.f32$/.exec(path);
+      if (!match) throw new Error(`unexpected test path ${path}`);
+      const axis = match[1] as SliceAxis;
+      const pack = Number(match[2]);
+      const fixedDimension = axisOrder.indexOf(axisNames[axis]);
+      const fixedCount = shape[fixedDimension]!;
+      const depth = Math.min(packDepth, fixedCount - pack * packDepth);
+      const remainingDimensions = [0, 1, 2].filter((dimension) => dimension !== fixedDimension);
+      const values = new Float32Array(depth * shape[remainingDimensions[0]!]! * shape[remainingDimensions[1]!]!);
+      let offset = 0;
+      for (let local = 0; local < depth; local += 1) {
+        for (let first = 0; first < shape[remainingDimensions[0]!]!; first += 1) {
+          for (let second = 0; second < shape[remainingDimensions[1]!]!; second += 1) {
+            const raw = [0, 0, 0];
+            raw[fixedDimension] = pack * packDepth + local;
+            raw[remainingDimensions[0]!] = first;
+            raw[remainingDimensions[1]!] = second;
+            const byAxis = Object.fromEntries(axisOrder.map((name, dimension) => [name, raw[dimension]!])) as Record<'ap' | 'ml' | 'dv', number>;
+            values[offset++] = byAxis.ap * 100 + byAxis.ml * 10 + byAxis.dv;
+          }
+        }
+      }
+      return values.buffer;
+    },
+  };
+  return { feature, loads };
+}
 
 const metadata: VolumeChunkMetadata = {
   shape: { coronal: 5, sagittal: 4, horizontal: 3 },
@@ -78,6 +155,29 @@ test('cache makes navigation inside the same chunk slab request-free', async () 
   const afterFirst = source.loads;
   await loader.loadSlice('coronal', 1);
   assert.equal(source.loads, afterFirst);
+});
+
+test('slice-pack source assembles all planes under permuted storage axes', async () => {
+  const { feature } = makeSlicePackFeature();
+  const source = new SchemaSlicePackVolumeSource(feature);
+  const coronal = await source.loadSlice('coronal', 2);
+  assert.deepEqual([coronal.widthAxis, coronal.heightAxis, coronal.width, coronal.height], ['sagittal', 'horizontal', 4, 3]);
+  assert.deepEqual([...coronal.data], [200, 210, 220, 230, 201, 211, 221, 231, 202, 212, 222, 232]);
+  const sagittal = await source.loadSlice('sagittal', 1);
+  assert.deepEqual([...sagittal.data], [10, 110, 210, 310, 410, 11, 111, 211, 311, 411, 12, 112, 212, 312, 412]);
+  const horizontal = await source.loadSlice('horizontal', 1);
+  assert.deepEqual([...horizontal.data].slice(0, 8), [1, 11, 21, 31, 101, 111, 121, 131]);
+});
+
+test('slice-pack source reuses a pack and decodes a short edge pack', async () => {
+  const { feature, loads } = makeSlicePackFeature();
+  const source = new SchemaSlicePackVolumeSource(feature);
+  await source.loadSlice('coronal', 0);
+  await source.loadSlice('coronal', 1);
+  assert.equal(loads.get('coronal/0.f32'), 1);
+  const edge = await source.loadSlice('coronal', 4);
+  assert.deepEqual([...edge.data].slice(0, 4), [400, 410, 420, 430]);
+  assert.equal(loads.get('coronal/2.f32'), 1);
 });
 
 test('LRU cache respects a byte budget', () => {
