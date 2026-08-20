@@ -6,8 +6,12 @@ import {
   type DatasetCatalog,
   type DatasetManifest,
   type DatasetManifestDocument,
+  type DatasetProvenance,
   type FeatureDescriptor,
   type FeaturePayload,
+  type JsonValue,
+  type ProvenanceSourceRole,
+  type ReleaseMetadata,
   type RegionalFeaturePayload,
 } from './contracts.js';
 
@@ -18,6 +22,11 @@ function object(value: unknown, context: string): Record<string, unknown> {
 
 function string(value: unknown, context: string): string {
   if (typeof value !== 'string' || !value) throw new Error(`${context} must be a non-empty string`);
+  return value;
+}
+
+function plainString(value: unknown, context: string): string {
+  if (typeof value !== 'string') throw new Error(`${context} must be a string`);
   return value;
 }
 
@@ -58,6 +67,108 @@ function dtype(value: unknown, context: string): BinaryDType {
 const RELATIVE_PATH = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$)).+$/;
 const SHA256 = /^[0-9a-f]{64}$/;
 const DATASET_ID = /^[a-z0-9][a-z0-9._-]*$/;
+const COMMIT = /^[0-9a-f]{7,40}$/;
+const DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
+
+function dateTime(value: unknown, context: string): string {
+  const timestamp = plainString(value, context);
+  const match = DATE_TIME.exec(timestamp);
+  if (!match) throw new Error(`${context} must be an RFC 3339 date-time`);
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  if (day < 1 || day > daysInMonth) throw new Error(`${context} must be an RFC 3339 date-time`);
+  return timestamp;
+}
+
+function jsonValue(value: unknown, context: string): JsonValue {
+  if (value === null || typeof value === 'boolean' || typeof value === 'string') return value;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) throw new Error(`${context} must contain JSON values`);
+    return value;
+  }
+  if (Array.isArray(value)) return value.map((item, index) => jsonValue(item, `${context}[${index}]`));
+  if (value && typeof value === 'object') {
+    const result: Record<string, JsonValue> = {};
+    for (const [key, item] of Object.entries(value)) result[key] = jsonValue(item, `${context}.${key}`);
+    return result;
+  }
+  throw new Error(`${context} must contain JSON values`);
+}
+
+function parseRelease(value: unknown): ReleaseMetadata {
+  const release = object(value, 'manifest.release');
+  const immutable = boolean(release.immutable, 'manifest.release.immutable');
+  if (!immutable) throw new Error('manifest.release.immutable must be true');
+  let publication: ReleaseMetadata['publication'];
+  if (release.publication !== undefined) {
+    const raw = object(release.publication, 'manifest.release.publication');
+    publication = {
+      ...(raw.doi !== undefined ? { doi: plainString(raw.doi, 'manifest.release.publication.doi') } : {}),
+      ...(raw.label !== undefined ? { label: plainString(raw.label, 'manifest.release.publication.label') } : {}),
+    };
+  }
+  return {
+    releaseId: string(release.release_id, 'manifest.release.release_id'),
+    immutable: true,
+    createdAt: dateTime(release.created_at, 'manifest.release.created_at'),
+    paperSnapshot: release.paper_snapshot === undefined
+      ? false
+      : boolean(release.paper_snapshot, 'manifest.release.paper_snapshot'),
+    ...(publication ? { publication } : {}),
+  };
+}
+
+function parseProvenance(value: unknown): DatasetProvenance {
+  const provenance = object(value, 'manifest.provenance');
+  const roles: readonly ProvenanceSourceRole[] = [
+    'scientific-code', 'canonical-data', 'selection-freeze', 'publication-input', 'user-input',
+  ];
+  const sources = array(provenance.sources, 'manifest.provenance.sources').map((value, index) => {
+    const context = `manifest.provenance.sources[${index}]`;
+    const source = object(value, context);
+    if (!roles.includes(source.role as ProvenanceSourceRole)) throw new Error(`${context}.role is unsupported`);
+    if (source.commit !== undefined && (typeof source.commit !== 'string' || !COMMIT.test(source.commit))) {
+      throw new Error(`${context}.commit must be 7 to 40 lowercase hexadecimal characters`);
+    }
+    if (source.sha256 !== undefined && (typeof source.sha256 !== 'string' || !SHA256.test(source.sha256))) {
+      throw new Error(`${context}.sha256 must be 64 lowercase hexadecimal characters`);
+    }
+    return {
+      role: source.role as ProvenanceSourceRole,
+      description: string(source.description, `${context}.description`),
+      ...(source.repository !== undefined ? { repository: plainString(source.repository, `${context}.repository`) } : {}),
+      ...(source.commit !== undefined ? { commit: source.commit } : {}),
+      ...(source.path !== undefined ? { path: plainString(source.path, `${context}.path`) } : {}),
+      ...(source.release !== undefined ? { release: plainString(source.release, `${context}.release`) } : {}),
+      ...(source.uri !== undefined ? { uri: plainString(source.uri, `${context}.uri`) } : {}),
+      ...(source.sha256 !== undefined ? { sha256: source.sha256 } : {}),
+    };
+  });
+  if (sources.length === 0) throw new Error('manifest.provenance.sources must not be empty');
+  const rawBuilder = object(provenance.builder, 'manifest.provenance.builder');
+  const rawRecipe = object(provenance.recipe, 'manifest.provenance.recipe');
+  const recipe: Record<string, JsonValue> = {};
+  for (const [key, item] of Object.entries(rawRecipe)) {
+    recipe[key] = jsonValue(item, `manifest.provenance.recipe.${key}`);
+  }
+  const recipeId = string(recipe.id, 'manifest.provenance.recipe.id');
+  return {
+    sources,
+    builder: {
+      name: plainString(rawBuilder.name, 'manifest.provenance.builder.name'),
+      version: plainString(rawBuilder.version, 'manifest.provenance.builder.version'),
+      command: plainString(rawBuilder.command, 'manifest.provenance.builder.command'),
+      ...(rawBuilder.repository !== undefined ? { repository: plainString(rawBuilder.repository, 'manifest.provenance.builder.repository') } : {}),
+      ...(rawBuilder.commit !== undefined ? { commit: plainString(rawBuilder.commit, 'manifest.provenance.builder.commit') } : {}),
+    },
+    recipe: { ...recipe, id: recipeId },
+    notes: provenance.notes === undefined
+      ? []
+      : array(provenance.notes, 'manifest.provenance.notes').map((item, index) => plainString(item, `manifest.provenance.notes[${index}]`)),
+  };
+}
 
 export function localDatasetReleaseId(datasetId: string, releaseId: string): string {
   if (!DATASET_ID.test(datasetId)) throw new Error('Local dataset id has an invalid format');
@@ -137,8 +248,8 @@ export function parseDatasetCatalog(value: unknown): DatasetCatalog {
 export function parseDatasetManifestDocument(value: unknown): DatasetManifestDocument {
   const root = object(value, 'manifest');
   if (root.schema_version !== SCHEMA_VERSION) throw new Error(`manifest.schema_version must be ${SCHEMA_VERSION}`);
-  const release = object(root.release, 'manifest.release');
-  object(root.provenance, 'manifest.provenance');
+  const release = parseRelease(root.release);
+  const provenance = parseProvenance(root.provenance);
   array(root.artifacts, 'manifest.artifacts');
   const parcellations = array(root.parcellations, 'manifest.parcellations').map((value, index) => {
     const item = object(value, `manifest.parcellations[${index}]`);
@@ -161,21 +272,13 @@ export function parseDatasetManifestDocument(value: unknown): DatasetManifestDoc
   if (featureRefs.length === 0) throw new Error('manifest.features must not be empty');
   const datasetId = string(root.dataset_id, 'manifest.dataset_id');
   if (!DATASET_ID.test(datasetId)) throw new Error('manifest.dataset_id has an invalid format');
-  const immutable = boolean(release.immutable, 'manifest.release.immutable');
-  if (!immutable) throw new Error('manifest.release.immutable must be true');
   return {
     schemaVersion: SCHEMA_VERSION,
     datasetId,
     title: string(root.title, 'manifest.title'),
-    description: typeof root.description === 'string' ? root.description : '',
-    release: {
-      releaseId: string(release.release_id, 'manifest.release.release_id'),
-      immutable,
-      createdAt: string(release.created_at, 'manifest.release.created_at'),
-      paperSnapshot: release.paper_snapshot === undefined
-        ? false
-        : boolean(release.paper_snapshot, 'manifest.release.paper_snapshot'),
-    },
+    description: plainString(root.description, 'manifest.description'),
+    release,
+    provenance,
     parcellations,
     featureRefs,
   };
@@ -185,7 +288,7 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
   const root = object(value, `feature ${path}`);
   if (root.schema_version !== SCHEMA_VERSION) throw new Error(`${path}.schema_version must be ${SCHEMA_VERSION}`);
   const representations = object(root.representations, `${path}.representations`);
-  object(root.value_semantics, `${path}.value_semantics`);
+  const valueSemantics = object(root.value_semantics, `${path}.value_semantics`);
   array(root.artifacts, `${path}.artifacts`);
   const featureId = string(root.id, `${path}.id`);
   if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(featureId)) throw new Error(`${path}.id has an invalid format`);
@@ -193,8 +296,20 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
     id: featureId,
     path,
     label: string(root.label, `${path}.label`),
-    description: typeof root.description === 'string' ? root.description : '',
-    unit: typeof root.unit === 'string' ? root.unit : null,
+    description: plainString(root.description, `${path}.description`),
+    unit: root.unit === null ? null : plainString(root.unit, `${path}.unit`),
+    valueSemantics: {
+      quantity: string(valueSemantics.quantity, `${path}.value_semantics.quantity`),
+      transform: string(valueSemantics.transform, `${path}.value_semantics.transform`),
+      sourcePopulation: string(valueSemantics.source_population, `${path}.value_semantics.source_population`),
+      missingValues: string(valueSemantics.missing_values, `${path}.value_semantics.missing_values`),
+      ...(valueSemantics.source_column !== undefined
+        ? { sourceColumn: plainString(valueSemantics.source_column, `${path}.value_semantics.source_column`) }
+        : {}),
+      ...(valueSemantics.qc_filter !== undefined
+        ? { qcFilter: plainString(valueSemantics.qc_filter, `${path}.value_semantics.qc_filter`) }
+        : {}),
+    },
     statistics: [],
     representations: {},
   };
@@ -307,9 +422,11 @@ export function resolveDatasetManifest(
       id: datasetId,
       release: document.release.releaseId,
       title: document.title,
-      ...(document.description ? { description: document.description } : {}),
+      description: document.description,
       ...(document.datasetId === 'golden_fixture' ? { fixture: true } : {}),
     },
+    release: document.release,
+    provenance: document.provenance,
     parcellations: document.parcellations.map((item) => item.id),
     parcellationDescriptors,
     features,
