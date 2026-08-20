@@ -526,7 +526,7 @@ export class AppShell {
     Promise.resolve(pending).then(() => {
       if (nodes.renderToken !== token) return;
       nodes.frame.dataset.state = 'ready';
-      nodes.status.textContent = view.representation === 'volume' ? 'Scientific volume' : 'Allen CCFv3 · 25 µm';
+      nodes.status.textContent = view.representation === 'volume' ? 'Scientific volume' : 'Allen CCFv3 · 10 µm';
     }).catch((error: unknown) => {
       if (nodes.renderToken !== token) return;
       nodes.frame.dataset.state = 'error';
