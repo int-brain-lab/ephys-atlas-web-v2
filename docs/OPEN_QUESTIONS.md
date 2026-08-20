@@ -72,8 +72,12 @@ Resolution needed: benchmark representative real features and choose a layout us
 Current evidence: real `2026_W12` offline benchmarks for `psd_lfp`, `rms_ap`,
 and `polarity` measure 32³/64³ chunks and 4/8-slice packs. Packs need only three
 center-plane objects and 0.83–3.32 MiB gzip versus 136/534 cube objects and
-5.21–21.77 MiB. This prioritizes packs for browser benchmarking but does not yet
-measure browser/HTTP latency, all features, or the final origin.
+5.21–21.77 MiB. A ten-trial real-`rms_ap` Chromium benchmark of the implemented
+adapter measured depth-4 cold planes at 37.8/54.1 ms p50/p95, cached navigation
+at 0.8/1.5 ms with zero requests, and six-plane prepare+paint at 3.7/8.7 ms.
+Depth 4 is the current recommendation; it still needs confirmation on more
+feature distributions and the final HTTP/CDN origin before this question is
+resolved.
 
 Blocks: final browser volume transport and production packaging recipe.
 

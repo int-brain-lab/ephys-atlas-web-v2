@@ -136,17 +136,22 @@ export class SchemaSlicePackVolumeSource implements VolumeSliceSource {
     const remainingNames = this.feature.descriptor.grid.axisOrder
       .map((name) => name.toLowerCase())
       .filter((_, rawDimension) => rawDimension !== dimension);
+    const widthName = AXIS_NAME[widthAxis];
+    const heightName = AXIS_NAME[heightAxis];
+    const firstIsWidth = remainingNames[0] === widthName && remainingNames[1] === heightName;
+    const firstIsHeight = remainingNames[0] === heightName && remainingNames[1] === widthName;
+    if (!firstIsWidth && !firstIsHeight) throw new Error(`${axis} slice pack axes are inconsistent with axis_order`);
     const data = new Float32Array(width * height);
+    const sliceOffset = localSlice * pack.sliceShape[0] * pack.sliceShape[1];
+    if (firstIsHeight && pack.sliceShape[0] === height && pack.sliceShape[1] === width) {
+      data.set(pack.values.subarray(sliceOffset, sliceOffset + data.length));
+      return { axis, index, widthAxis, heightAxis, width, height, data };
+    }
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
-        const coordinates: Record<string, number> = {
-          [AXIS_NAME[widthAxis]]: x,
-          [AXIS_NAME[heightAxis]]: y,
-        };
-        const first = coordinates[remainingNames[0] ?? ''];
-        const second = coordinates[remainingNames[1] ?? ''];
-        if (first === undefined || second === undefined) throw new Error(`${axis} slice pack axes are inconsistent with axis_order`);
-        const offset = ((localSlice * pack.sliceShape[0] + first) * pack.sliceShape[1]) + second;
+        const first = firstIsWidth ? x : y;
+        const second = firstIsWidth ? y : x;
+        const offset = sliceOffset + first * pack.sliceShape[1] + second;
         data[y * width + x] = pack.values[offset] ?? NaN;
       }
     }

@@ -119,6 +119,12 @@ A schema-v0.1 volume path is implemented and green on `main` using the golden `c
 
 This validates the reference browser architecture, not the final production science/transport. Q4 must supply authoritative scientific transform/outside semantics and Q5 must select production physical layout from real-data benchmark evidence.
 
+The first ten-trial real-`rms_ap` Chromium measurement is also committed. The
+optimized depth-4 adapter loads three current planes in 37.8/54.1 ms p50/p95,
+reuses a neighboring slice in 0.8/1.5 ms without another request, and prepares
+and paints six planes in 3.7/8.7 ms. Depth 4 is now the provisional transport
+recommendation, pending other feature distributions and the final origin.
+
 ## Publishing/public catalog
 
 The capability-based publishing implementation is integrated:

@@ -103,11 +103,26 @@ remain below the 8–10 MiB startup-transfer target for every sampled feature.
 Pack depth 4 trades half the initial bytes for half the immediately warm
 navigation range relative to depth 8.
 
-This is strong evidence to prioritize slice packs in the browser benchmark, not
-a final Q5 decision. The measurement covers three real features and offline
-Python gzip sizes/times; it does not yet cover HTTP overhead, browser
-decompression, paint latency, cache behavior, the other 38 features, or the
-final origin.
+The implemented slice-pack adapter was then measured in headless Chromium over
+Vite/Playwright route fulfillment using real `rms_ap` center and boundary
+packs. Ten trials include browser fetch, `DecompressionStream`, float16 decode,
+orientation normalization, cache reuse, RGBA preparation, and Canvas2D paint.
+The committed raw report is
+`benchmarks/rendering/real-volume-browser-rms_ap-results.json`.
+
+| depth | current planes | cold p50 / p95 | cached adjacent p50 / p95 | boundary p50 / p95 | six-plane prepare+paint p50 / p95 |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 4 | 3 req / 0.83 MiB | 37.8 / 54.1 ms | 0 req / 0.8 / 1.5 ms | 3 req / 0.84 MiB / 36.8 / 71.9 ms | 3.7 / 8.7 ms |
+| 8 | 3 req / 1.65 MiB | 70.9 / 75.0 ms | 0 req / 0.8 / 1.0 ms | 3 req / 1.70 MiB / 71.0 / 73.7 ms | 3.8 / 5.2 ms |
+
+This exposed and prompted removal of a per-voxel object allocation in the
+orientation transpose; cached three-plane navigation fell from about 57 ms in
+the first diagnostic run to 1.5 ms p95. Depth 4 is the current launch
+recommendation because it halves cold bytes/decode relative to depth 8 while
+remaining comfortably within the warm-navigation budget. Q5 stays open until
+the measurement covers additional feature distributions and a real HTTP/CDN
+origin; route fulfillment does not model production latency, caching headers,
+or contention.
 
 Reproduce it after `just bootstrap-scientific`:
 
@@ -118,6 +133,21 @@ uv run --project builder --extra scientific --locked python \
   --feature-index 26 --feature-id rms_ap \
   --work-dir /tmp/ibl-ephys-real-volume-layout \
   --output benchmarks/rendering/real-volume-layout-rms_ap-results.json
+```
+
+Generate the bounded real artifacts and run the browser measurement:
+
+```bash
+uv run --project builder --extra scientific --locked python \
+  benchmarks/rendering/prepare-volume-browser-benchmark.py \
+  data/source/ephys_atlas_volumes/2026_W12/brainwide_ephys_atlas_25um.npz \
+  --feature-index 26 --feature-id rms_ap \
+  --work-dir /tmp/ibl-ephys-volume-browser-benchmark
+
+cd web
+EPHYS_ATLAS_VOLUME_BENCHMARK_DIR=/tmp/ibl-ephys-volume-browser-benchmark \
+EPHYS_ATLAS_VOLUME_BENCHMARK_OUTPUT=../benchmarks/rendering/real-volume-browser-rms_ap-results.json \
+  npm run benchmark:real-volume
 ```
 
 ## Cache and scheduling
