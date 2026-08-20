@@ -1,7 +1,9 @@
 import type { ParcellationId } from '../domain/types.js';
 import type { RegionMetadata } from './contracts.js';
 
-export const ALLEN_ATLAS_REGIONS_URL = '/atlas/allen-ccf-2017/regions.json';
+// Version the stable public path so browsers cannot reuse an older catalog
+// whose schema predates parent-closed hierarchy metadata.
+export const ALLEN_ATLAS_REGIONS_URL = '/atlas/allen-ccf-2017/regions.json?v=2';
 
 export interface AtlasRegionCatalog {
   atlas: string;
@@ -78,7 +80,7 @@ export async function loadAtlasRegionCatalog(
   url = ALLEN_ATLAS_REGIONS_URL,
   fetchImpl: typeof fetch = fetch.bind(globalThis),
 ): Promise<AtlasRegionCatalog> {
-  const response = await fetchImpl(url, { cache: 'force-cache' });
+  const response = await fetchImpl(url, { cache: 'no-cache' });
   if (!response.ok) throw new Error(`Allen atlas region metadata request failed (${response.status})`);
   return parseAtlasRegionCatalog(await response.json());
 }
