@@ -10,6 +10,7 @@ import { regionalColorRange } from '../rendering/scalar-colormap.js';
 export interface RegionalPanelCallbacks {
   toggleSelection(regionId: string): void;
   clearSelection(): void;
+  hoverRegion(regionId: string | null): void;
 }
 
 export interface RegionalPanelModel {
@@ -173,6 +174,10 @@ export class RegionalPanelController {
     button.setAttribute('aria-label', `${region.acronym}, ${region.name}`);
     button.addEventListener('click', () => this.callbacks.toggleSelection(region.id));
     button.addEventListener('keydown', (event) => this.navigateRegions(event, button));
+    button.addEventListener('pointerenter', () => this.callbacks.hoverRegion(region.id));
+    button.addEventListener('pointerleave', () => this.callbacks.hoverRegion(null));
+    button.addEventListener('focus', () => this.callbacks.hoverRegion(region.id));
+    button.addEventListener('blur', () => this.callbacks.hoverRegion(null));
 
     const disclosure = html('span', 'region-row__disclosure');
     disclosure.textContent = region.parentId !== undefined ? '·' : '·';

@@ -210,6 +210,25 @@ test('region hover is linked across all anatomical projections', async ({ page }
   }
 });
 
+test('region-list hover previews the region in all anatomical projections', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockCuratedSlices(page);
+  await page.goto('/');
+  await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
+
+  await page.getByRole('button', { name: 'R1, Fixture region 1' }).hover();
+  for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
+    const highlighted = page.locator(`[data-view="${axis}"] path.allen_region_835`).first();
+    await expect(highlighted).toHaveClass(/is-highlighted/);
+    await expect(highlighted).toHaveCSS('fill', 'rgb(85, 167, 247)');
+  }
+
+  await page.getByLabel('Search brain regions').hover();
+  for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
+    await expect(page.locator(`[data-view="${axis}"] path.allen_region_835`).first()).not.toHaveClass(/is-highlighted/);
+  }
+});
+
 test('region search filters loaded metadata rather than prototype rows', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await mockCuratedSlices(page);
