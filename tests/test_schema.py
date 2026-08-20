@@ -17,6 +17,7 @@ def test_checked_in_golden_fixture_validates():
 
 def test_left_folded_checked_in_golden_fixture_validates():
     validate_release(ROOT / "fixtures" / "golden-v0.2", ROOT / "schema" / "v0.1")
+    validate_release(ROOT / "fixtures" / "golden-v0.3", ROOT / "schema" / "v0.1")
 
 
 def test_alias_schema(tmp_path):

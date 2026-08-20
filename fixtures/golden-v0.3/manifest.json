@@ -1,0 +1,57 @@
+{
+  "artifacts": [],
+  "dataset_id": "golden_fixture",
+  "description": "Small deterministic non-scientific dataset used to exercise the v0.1 browser contract.",
+  "features": [
+    {
+      "id": "rms_ap",
+      "path": "features/rms_ap/feature.json"
+    }
+  ],
+  "parcellations": [
+    {
+      "id": "allen",
+      "metadata": "parcellations/allen/regions.json",
+      "region_index": {
+        "bytes": 16,
+        "dtype": "int32",
+        "endianness": "little",
+        "order": "C",
+        "path": "parcellations/allen/region_ids.i32",
+        "sha256": "fdf4d0c3db1a6c4e324353af9d7d71f87167169412ce1ccb90480e1392d68472",
+        "shape": [
+          4
+        ]
+      }
+    }
+  ],
+  "provenance": {
+    "builder": {
+      "command": "ephys-atlas-data golden fixtures/golden-v0.3",
+      "name": "ibl-ephys-atlas-builder",
+      "repository": "rossant/ibl-ephys-atlas-web-v2",
+      "version": "0.1.0"
+    },
+    "notes": [
+      "This fixture is synthetic and has no scientific interpretation."
+    ],
+    "recipe": {
+      "id": "golden-fixture-v0.3"
+    },
+    "sources": [
+      {
+        "description": "Deterministic synthetic fixture seed",
+        "role": "canonical-data",
+        "sha256": "7730db5c6fc3255277b731050f7ea6dff764c11b3f6a2e21284907b68ec349b6"
+      }
+    ]
+  },
+  "release": {
+    "created_at": "2026-08-20T00:00:00Z",
+    "immutable": true,
+    "paper_snapshot": false,
+    "release_id": "golden-v0.3"
+  },
+  "schema_version": "0.1",
+  "title": "IBL Ephys Atlas v2 golden fixture"
+}

@@ -21,9 +21,9 @@ def test_golden_is_deterministic(tmp_path):
 
 
 def test_checked_in_golden_and_browser_copy_match_generator(tmp_path):
-    generated = generate_golden(tmp_path / "golden-v0.2")
-    canonical = ROOT / "fixtures" / "golden-v0.2"
-    browser = ROOT / "web" / "public" / "fixtures" / "ephys_atlas_channels" / "golden-v0.2"
+    generated = generate_golden(tmp_path / "golden-v0.3")
+    canonical = ROOT / "fixtures" / "golden-v0.3"
+    browser = ROOT / "web" / "public" / "fixtures" / "ephys_atlas_channels" / "golden-v0.3"
     expected_files = sorted(path.relative_to(generated) for path in generated.rglob("*") if path.is_file())
     for copy in (canonical, browser):
         actual_files = sorted(path.relative_to(copy) for path in copy.rglob("*") if path.is_file())
