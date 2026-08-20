@@ -77,6 +77,8 @@ export interface GeneratedAnatomySliceSourceOptions {
   manifestUrl: string;
   packDepth?: 16 | 32;
   fetchImpl?: typeof fetch;
+  maxCachedPacks?: number;
+  scheduleIdle?: (callback: () => void) => void;
 }
 
 function record(value: unknown, context: string): Record<string, unknown> {
@@ -449,12 +451,29 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
   private readonly cacheMode: RequestCache;
   private readonly packDepth: 16 | 32 | undefined;
   private readonly manifestUrl: string;
+  private readonly maxCachedPacks: number;
+  private readonly scheduleIdle: (callback: () => void) => void;
   private manifestPromise: Promise<AnatomyPackManifest> | null = null;
   private readonly packs = new Map<string, Promise<SlicePack>>();
+  private readonly settledPackKeys = new Set<string>();
+  private readonly packLru: string[] = [];
+  private readonly queuedPrefetchIndices = new Map<SliceAxis, number>();
+  private prefetchScheduled = false;
 
   constructor(options: GeneratedAnatomySliceSourceOptions) {
     this.fetchImpl = options.fetchImpl ?? fetch.bind(globalThis);
     this.packDepth = options.packDepth;
+    this.maxCachedPacks = options.maxCachedPacks ?? 9;
+    if (!Number.isInteger(this.maxCachedPacks) || this.maxCachedPacks < 3) {
+      throw new RangeError('maxCachedPacks must be an integer >= 3');
+    }
+    this.scheduleIdle = options.scheduleIdle ?? ((callback) => {
+      if (typeof globalThis.requestIdleCallback === 'function') {
+        globalThis.requestIdleCallback(() => callback(), { timeout: 1_000 });
+      } else {
+        globalThis.setTimeout(callback, 0);
+      }
+    });
     const baseUrl = typeof globalThis.location?.href === 'string' ? globalThis.location.href : 'http://localhost/';
     this.manifestUrl = new URL(options.manifestUrl, baseUrl).toString();
     const hostname = new URL(this.manifestUrl).hostname;
@@ -513,6 +532,18 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
     }));
   }
 
+  prefetchAdjacentPacks(axis: SliceAxis, index: number): void {
+    this.queuedPrefetchIndices.set(axis, index);
+    if (this.prefetchScheduled) return;
+    this.prefetchScheduled = true;
+    this.scheduleIdle(() => {
+      this.prefetchScheduled = false;
+      const queued = [...this.queuedPrefetchIndices];
+      this.queuedPrefetchIndices.clear();
+      void this.prefetchQueuedAdjacentPacks(queued).catch(() => {});
+    });
+  }
+
   private async fetchManifest(): Promise<AnatomyPackManifest> {
     const response = await this.fetchImpl(this.manifestUrl, { cache: this.cacheMode });
     if (!response.ok) throw new Error(`Anatomy manifest request failed (${response.status})`);
@@ -525,9 +556,65 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
     if (!pending) {
       pending = this.fetchPack(manifest, axis, packDepth, artifact, signal);
       this.packs.set(key, pending);
-      pending.catch(() => this.packs.delete(key));
+      this.touchPack(key);
+      void pending.then(
+        () => {
+          this.settledPackKeys.add(key);
+          this.trimPackCache();
+        },
+        () => this.deletePack(key),
+      );
+    } else {
+      this.touchPack(key);
     }
     return pending;
+  }
+
+  private async prefetchQueuedAdjacentPacks(entries: readonly (readonly [SliceAxis, number])[]): Promise<void> {
+    const manifest = await this.loadManifest();
+    const pending: Promise<SlicePack>[] = [];
+    for (const [axis, index] of entries) {
+      const projection = manifest.projections[axis];
+      if (!Number.isInteger(index) || index < 0 || index >= projection.sliceCount) continue;
+      const packSet = this.packDepth == null
+        ? projection.packSets['16'] ?? projection.packSets['32']
+        : projection.packSets[String(this.packDepth) as '16' | '32'];
+      if (!packSet) continue;
+      const current = packSet.packs.find((artifact) => (
+        index >= artifact.firstSliceIndex && index < artifact.firstSliceIndex + artifact.sliceCount
+      ));
+      if (!current) continue;
+      for (const neighborIndex of [current.packIndex - 1, current.packIndex + 1]) {
+        const neighbor = packSet.packs[neighborIndex];
+        if (neighbor) pending.push(this.loadPack(manifest, axis, packSet.packDepth, neighbor));
+      }
+    }
+    await Promise.allSettled(pending);
+  }
+
+  private touchPack(key: string): void {
+    const previousIndex = this.packLru.indexOf(key);
+    if (previousIndex >= 0) this.packLru.splice(previousIndex, 1);
+    this.packLru.push(key);
+  }
+
+  private trimPackCache(): void {
+    while (this.packs.size > this.maxCachedPacks) {
+      const candidateIndex = this.packLru.findIndex((key) => this.settledPackKeys.has(key));
+      if (candidateIndex < 0) return;
+      const [candidate] = this.packLru.splice(candidateIndex, 1);
+      if (candidate) {
+        this.packs.delete(candidate);
+        this.settledPackKeys.delete(candidate);
+      }
+    }
+  }
+
+  private deletePack(key: string): void {
+    this.packs.delete(key);
+    this.settledPackKeys.delete(key);
+    const index = this.packLru.indexOf(key);
+    if (index >= 0) this.packLru.splice(index, 1);
   }
 
   private async fetchPack(manifest: AnatomyPackManifest, axis: SliceAxis, packDepth: 16 | 32, artifact: PackArtifact, signal?: AbortSignal): Promise<SlicePack> {

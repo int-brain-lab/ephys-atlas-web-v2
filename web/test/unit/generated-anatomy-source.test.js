@@ -149,6 +149,40 @@ function bilateralFixture() {
   return result;
 }
 
+function fixtureWithFiveCoronalPacks() {
+  const result = fixture();
+  const projection = result.manifest.projections.coronal;
+  const packs = [];
+  for (let packIndex = 0; packIndex < 5; packIndex += 1) {
+    const firstSliceIndex = packIndex * 16;
+    const sliceCount = packIndex === 4 ? 1 : 16;
+    const path = `packs/coronal/${String(packIndex).padStart(4, '0')}.json.gz`;
+    const payload = {
+      format: 'anatomy-slice-pack-v1', schema_version: '1.0', anatomy_pack_id: 'fixture-v1',
+      projection: 'coronal', pack_depth: 16, pack_index: packIndex,
+      first_slice_index: firstSliceIndex, slice_count: sliceCount,
+      slices: Array.from({ length: sliceCount }, (_unused, offset) => ({
+        slice_index: firstSliceIndex + offset,
+        world_coordinate_um: (firstSliceIndex + offset) * 25,
+        paths: [{ atlas_ids: { allen: -10, beryl: -20, cosmos: -30 }, d: 'M0 0L1 0L1 1Z' }],
+      })),
+    };
+    const encoded = JSON.stringify(payload);
+    const compressed = gzipSync(encoded, { mtime: 0 });
+    result.buffers[path] = compressed;
+    packs.push({
+      pack_index: packIndex, first_slice_index: firstSliceIndex, slice_count: sliceCount, path,
+      media_type: 'application/json', compression: 'gzip', bytes: compressed.byteLength,
+      uncompressed_bytes: Buffer.byteLength(encoded), sha256: createHash('sha256').update(compressed).digest('hex'),
+    });
+  }
+  projection.slice_count = 65;
+  projection.pack_sets[16].packs = packs;
+  result.manifest.validation.source_slices = 67;
+  result.manifest.validation.emitted_slices = 67;
+  return result;
+}
+
 test('generated anatomy source validates, verifies, decodes, and caches immutable gzip packs', async () => {
   const { manifest, buffers } = fixture();
   const requests = new Map();
@@ -173,6 +207,47 @@ test('generated anatomy source validates, verifies, decodes, and caches immutabl
     { sourceAxis: 'sagittal', targetAxis: 'coronal', dimension: 'x', position: 1 },
     { sourceAxis: 'horizontal', targetAxis: 'coronal', dimension: 'y', position: 2 },
   ]);
+});
+
+test('adjacent anatomy prefetch is idle, bounded to one pack per side, and cache-deduplicated', async () => {
+  const { manifest, buffers } = fixtureWithFiveCoronalPacks();
+  const scheduled = [];
+  const requests = new Map();
+  const source = new GeneratedAnatomySliceSource({
+    manifestUrl: 'https://example.test/anatomy/manifest.json',
+    maxCachedPacks: 3,
+    scheduleIdle: (callback) => scheduled.push(callback),
+    fetchImpl: async (input) => {
+      const url = String(input);
+      requests.set(url, (requests.get(url) ?? 0) + 1);
+      if (url.endsWith('/manifest.json')) return new Response(JSON.stringify(manifest), { status: 200 });
+      const body = buffers[url.split('/anatomy/')[1]];
+      return body ? new Response(body, { status: 200 }) : new Response('missing', { status: 404 });
+    },
+  });
+
+  await source.loadSlice('coronal', 32);
+  source.prefetchAdjacentPacks('coronal', 32);
+  source.prefetchAdjacentPacks('coronal', 33);
+  assert.equal(scheduled.length, 1);
+  scheduled.shift()();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+
+  for (const packIndex of ['0001', '0002', '0003']) {
+    assert.equal(requests.get(`https://example.test/anatomy/packs/coronal/${packIndex}.json.gz`), 1);
+  }
+  assert.equal([...requests.keys()].filter((url) => url.includes('/packs/')).length, 3);
+
+  source.prefetchAdjacentPacks('coronal', 32);
+  scheduled.shift()();
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  for (const count of [...requests.entries()].filter(([url]) => url.includes('/packs/')).map(([, count]) => count)) {
+    assert.equal(count, 1);
+  }
+
+  await source.loadSlice('coronal', 64);
+  await source.loadSlice('coronal', 32);
+  assert.equal(requests.get('https://example.test/anatomy/packs/coronal/0002.json.gz'), 2);
 });
 
 test('generated anatomy source consumes bilateral v2 packs with signed hemisphere IDs', async () => {

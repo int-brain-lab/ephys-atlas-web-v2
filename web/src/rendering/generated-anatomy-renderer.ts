@@ -78,6 +78,7 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
       : 'generated-anatomy-v1';
     target.dataset.assetIndex = String(slice.sliceIndex);
     target.dataset.worldCoordinateUm = String(slice.worldCoordinateUm);
+    this.source.prefetchAdjacentPacks?.(model.axis, model.sliceIndex);
   }
 
   clear(target: HTMLElement): void {

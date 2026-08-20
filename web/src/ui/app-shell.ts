@@ -506,12 +506,18 @@ export class AppShell {
     if (nodes.renderKey === renderKey) return;
     nodes.renderKey = renderKey;
     const token = ++nodes.renderToken;
-    nodes.frame.dataset.state = 'loading';
-    nodes.status.textContent = 'Loading';
+    const retainsAnatomy = view.representation !== 'volume'
+      && nodes.target.dataset.sliceAsset?.startsWith('generated-anatomy-') === true;
+    nodes.frame.dataset.state = retainsAnatomy ? 'ready' : 'loading';
+    nodes.status.textContent = retainsAnatomy ? 'Updating' : 'Loading';
     const stateMessage = nodes.frame.querySelector<HTMLElement>('.view-frame__state-message');
-    if (stateMessage) stateMessage.textContent = view.representation === 'volume'
-      ? 'Loading scientific volume…'
-      : 'Loading registered anatomy…';
+    if (stateMessage) {
+      stateMessage.textContent = retainsAnatomy
+        ? ''
+        : view.representation === 'volume'
+          ? 'Loading scientific volume…'
+          : 'Loading registered anatomy…';
+    }
 
     const pending = this.renderer.render(nodes.target, {
       axis,
@@ -529,11 +535,16 @@ export class AppShell {
       nodes.status.textContent = view.representation === 'volume' ? 'Scientific volume' : 'Allen CCFv3 · 10 µm';
     }).catch((error: unknown) => {
       if (nodes.renderToken !== token) return;
-      nodes.frame.dataset.state = 'error';
-      nodes.status.textContent = 'Unavailable';
-      this.renderer.clear(nodes.target);
-      if (stateMessage) {
-        stateMessage.textContent = error instanceof Error ? error.message : 'Registered anatomy could not be loaded';
+      if (retainsAnatomy) {
+        nodes.frame.dataset.state = 'ready';
+        nodes.status.textContent = 'Previous slice';
+      } else {
+        nodes.frame.dataset.state = 'error';
+        nodes.status.textContent = 'Unavailable';
+        this.renderer.clear(nodes.target);
+        if (stateMessage) {
+          stateMessage.textContent = error instanceof Error ? error.message : 'Registered anatomy could not be loaded';
+        }
       }
       this.callbacks.reportError(error);
     });

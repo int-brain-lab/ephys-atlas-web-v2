@@ -73,6 +73,8 @@ export interface AnatomySliceSource {
   loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<AnatomySlice>;
   worldFromSliceIndices(indices: SliceIndices): Promise<import('./coordinate-space.js').WorldCoordinateUm>;
   guidesForWorld(axis: SliceAxis, world: import('./coordinate-space.js').WorldCoordinateUm): Promise<readonly SliceGuide[]>;
+  /** Opportunistically warm the immutable packs immediately before and after the requested slice's pack. */
+  prefetchAdjacentPacks?(axis: SliceAxis, index: number): void;
 }
 
 export interface Renderer3DState {
