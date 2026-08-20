@@ -1,6 +1,6 @@
 # Integration status
 
-Status: all accepted implementation work is consolidated on `main`. The repository is being finalized as a self-contained local Codex handoff; `docs/IMPLEMENTATION_PLAN.md` is the active execution plan and `docs/OPEN_QUESTIONS.md` contains unresolved choices that must not be guessed.
+Status: local Codex handoff baseline complete on `main`. All accepted implementation work is consolidated there, GitHub lists no other branches, and the handoff baseline has passed Python, TypeScript, unit, production-build, and Playwright gates. `docs/IMPLEMENTATION_PLAN.md` is now the active execution plan and `docs/OPEN_QUESTIONS.md` contains unresolved choices that must not be guessed.
 
 ## Development and handoff state
 
@@ -10,9 +10,11 @@ Status: all accepted implementation work is consolidated on `main`. The reposito
 - `docs/IMPLEMENTATION_PLAN.md` defines ordered milestones and next unblocked work.
 - `docs/OPEN_QUESTIONS.md` records launch-blocking scientific/operational choices.
 - `docs/AGENTIC_DEVELOPMENT.md` defines the autonomous local coding loop.
+- `docs/CODEX_HANDOFF.md` provides the fresh-checkout relay runbook and suggested first local task.
 - `Justfile` exposes `bootstrap`, `dev`, targeted gates, and the full `check` command aligned with CI.
+- Root `.gitignore` prevents routine bootstrap/test outputs from appearing as false worktree changes.
 
-M0 is complete only when the current handoff commit passes the clean full CI gate.
+M0 is complete. Routine product implementation should continue with local Codex on `main`.
 
 ## Integrated data/schema foundation
 
@@ -67,7 +69,7 @@ The five deployed v1 curated bundles are pinned by identity/inventory in `docs/f
 
 ## Volume viewer vertical slice
 
-A reference schema-v0.1 volume path is implemented on `main` using the golden `chunks3d` representation:
+A reference schema-v0.1 volume path is implemented and green on `main` using the golden `chunks3d` representation:
 
 1. published/local volume payloads provide transport-independent resource callbacks;
 2. the `chunks3d` adapter decodes float16/float32 chunks (and optional gzip);
@@ -101,6 +103,7 @@ Publishing prepares/distributes releases but never transforms scientific data.
 - Regional metadata/value/statistics/histogram loading uses one schema-v0.1 path for HTTP and local imports.
 - Volume resource loading likewise uses one logical payload contract across HTTP and IndexedDB/local storage.
 - Curated SVG display inventory is validated before rendering.
+- Strict TypeScript indexing in the volume adapter is resolved without weakening compiler settings.
 
 ## Current canonical source evidence
 
@@ -128,7 +131,7 @@ This establishes contents/shape but not the authoritative scientific affine. Val
 The active sequence is defined in `docs/IMPLEMENTATION_PLAN.md`. In summary:
 
 1. resolve Q1-Q3 and build/validate a real immutable `ephys_atlas_channels` release;
-2. resolve/benchmark Q4-Q5 and build the real volume release/transport;
+2. benchmark the unblocked M2 volume transport candidates, then resolve Q4-Q5 and build the real volume release/transport;
 3. define/build `ephys_atlas_clusters` (Q6);
 4. define/build exact `brainwide_map` product (Q7);
 5. complete downloads/local-import production UX;
