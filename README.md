@@ -15,6 +15,8 @@ Before making changes, read:
 5. [`docs/AGENTIC_DEVELOPMENT.md`](docs/AGENTIC_DEVELOPMENT.md) — local autonomous coding workflow;
 6. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/DECISIONS.md`](docs/DECISIONS.md), and [`docs/INTEGRATION_STATUS.md`](docs/INTEGRATION_STATUS.md) for accepted architecture and current state.
 
+For the one-time transition from this project bootstrap to local Codex, see [`docs/CODEX_HANDOFF.md`](docs/CODEX_HANDOFF.md).
+
 Historical/focused documents under `docs/data/`, `docs/frontend/`, `docs/rendering/`, `docs/publishing/`, and `docs/ux/` remain supporting evidence but do not override the active launch spec or decision log.
 
 ## Quick start
