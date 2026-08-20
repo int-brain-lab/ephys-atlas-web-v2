@@ -52,6 +52,8 @@ export class RegionalPanelController {
   private readonly searchClear: HTMLButtonElement;
   private readonly source: HTMLElement;
   private readonly resultCount: HTMLElement;
+  private readonly expandAllButton: HTMLButtonElement;
+  private readonly collapseAllButton: HTMLButtonElement;
   private readonly list: HTMLUListElement;
   private readonly selectedList: HTMLUListElement;
   private readonly selectedSection: HTMLElement;
@@ -81,6 +83,19 @@ export class RegionalPanelController {
     this.searchClear = required(root, '.region-search__clear');
     this.source = required(root, '.region-search__source');
     this.resultCount = required(root, '.region-search__count');
+    const treeControls = html('span', 'region-tree-controls');
+    this.collapseAllButton = html('button', 'region-tree-controls__button');
+    this.collapseAllButton.type = 'button';
+    this.collapseAllButton.textContent = '⊟';
+    this.collapseAllButton.title = 'Collapse all regions';
+    this.collapseAllButton.setAttribute('aria-label', 'Collapse all regions');
+    this.expandAllButton = html('button', 'region-tree-controls__button');
+    this.expandAllButton.type = 'button';
+    this.expandAllButton.textContent = '⊞';
+    this.expandAllButton.title = 'Expand all regions';
+    this.expandAllButton.setAttribute('aria-label', 'Expand all regions');
+    treeControls.append(this.collapseAllButton, this.expandAllButton);
+    this.resultCount.before(treeControls);
     this.list = required(root, '.region-list');
     this.list.setAttribute('role', 'tree');
     this.selectedList = required(root, '.selected-regions__list');
@@ -95,6 +110,8 @@ export class RegionalPanelController {
     this.searchClear.addEventListener('click', this.clearSearch);
     this.clearSelectionButton.addEventListener('click', () => this.callbacks.clearSelection());
     this.analysisToggle.addEventListener('click', this.toggleAnalysis);
+    this.collapseAllButton.addEventListener('click', this.collapseAllRegions);
+    this.expandAllButton.addEventListener('click', this.expandAllRegions);
   }
 
   render(model: RegionalPanelModel): void {
@@ -184,12 +201,16 @@ export class RegionalPanelController {
     this.search.removeEventListener('input', this.filterRegions);
     this.searchClear.removeEventListener('click', this.clearSearch);
     this.analysisToggle.removeEventListener('click', this.toggleAnalysis);
+    this.collapseAllButton.removeEventListener('click', this.collapseAllRegions);
+    this.expandAllButton.removeEventListener('click', this.expandAllRegions);
   }
 
   private renderEmpty(model: RegionalPanelModel): void {
     this.rowById.clear();
     this.rovingButton = null;
     this.lastHoveredRegionId = null;
+    this.collapseAllButton.disabled = true;
+    this.expandAllButton.disabled = true;
     this.selectedSection.dataset.empty = 'true';
     this.analysisPanel.dataset.empty = 'true';
     this.analysisExpanded = false;
@@ -450,6 +471,7 @@ export class RegionalPanelController {
     }
     this.searchClear.hidden = !query;
     this.resultCount.textContent = `${visible} ${visible === 1 ? 'region' : 'regions'}`;
+    this.syncTreeControls(query.length > 0);
     if (this.rovingButton?.closest<HTMLLIElement>('.region-row')?.hidden) {
       const firstVisible = this.list.querySelector<HTMLButtonElement>('.region-row:not([hidden]) .region-row__button');
       if (firstVisible) this.setRovingButton(firstVisible);
@@ -503,11 +525,36 @@ export class RegionalPanelController {
   private toggleBranch(regionId: string): void {
     const row = this.rowById.get(regionId);
     if (!row || row.dataset.branch !== 'true') return;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const before = reduceMotion ? new Map<string, number>() : this.captureVisibleRowTops();
-    if (this.collapsedRegionIds.has(regionId)) this.collapsedRegionIds.delete(regionId);
-    else this.collapsedRegionIds.add(regionId);
-    const expanded = !this.collapsedRegionIds.has(regionId);
+    const expanded = this.collapsedRegionIds.has(regionId);
+    this.animateTreeMutation(() => {
+      if (expanded) this.collapsedRegionIds.delete(regionId);
+      else this.collapsedRegionIds.add(regionId);
+      this.syncBranchDisclosure(row, expanded);
+    });
+  }
+
+  private readonly collapseAllRegions = (): void => {
+    this.setAllBranchesExpanded(false);
+  };
+
+  private readonly expandAllRegions = (): void => {
+    this.setAllBranchesExpanded(true);
+  };
+
+  private setAllBranchesExpanded(expanded: boolean): void {
+    this.animateTreeMutation(() => {
+      for (const [id, row] of this.rowById) {
+        if (row.dataset.branch !== 'true') continue;
+        if (expanded) this.collapsedRegionIds.delete(id);
+        else this.collapsedRegionIds.add(id);
+        this.syncBranchDisclosure(row, expanded);
+      }
+    });
+  }
+
+  private syncBranchDisclosure(row: HTMLLIElement, expanded: boolean): void {
+    const regionId = row.dataset.regionId;
+    if (!regionId) return;
     row.setAttribute('aria-expanded', String(expanded));
     const toggle = row.querySelector<HTMLButtonElement>('.region-row__toggle');
     if (toggle) {
@@ -515,8 +562,22 @@ export class RegionalPanelController {
       const acronym = this.regionById.get(regionId)?.acronym ?? regionId;
       toggle.setAttribute('aria-label', `${expanded ? 'Collapse' : 'Expand'} ${acronym}`);
     }
+  }
+
+  private animateTreeMutation(mutation: () => void): void {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const before = reduceMotion ? new Map<string, number>() : this.captureVisibleRowTops();
+    mutation();
     this.filterRegions();
     if (!reduceMotion) this.animateVisibleRowReflow(before);
+  }
+
+  private syncTreeControls(filtering: boolean): void {
+    const branchIds = [...this.rowById]
+      .filter(([, row]) => row.dataset.branch === 'true')
+      .map(([id]) => id);
+    this.collapseAllButton.disabled = filtering || !branchIds.length || branchIds.every((id) => this.collapsedRegionIds.has(id));
+    this.expandAllButton.disabled = filtering || !branchIds.some((id) => this.collapsedRegionIds.has(id));
   }
 
   private captureVisibleRowTops(): Map<string, number> {

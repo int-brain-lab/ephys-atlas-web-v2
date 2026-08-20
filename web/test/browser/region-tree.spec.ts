@@ -93,3 +93,29 @@ test('collapsing a branch smoothly moves the following rows into place', async (
   const finalTop = (await somatomotor.boundingBox())?.y ?? motion.beforeTop;
   expect(finalTop).toBeLessThan(motion.beforeTop - 100);
 });
+
+test('tree-wide controls collapse and expand every ontology branch', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+
+  const collapseAll = page.getByRole('button', { name: 'Collapse all regions' });
+  const expandAll = page.getByRole('button', { name: 'Expand all regions' });
+  await expect(collapseAll).toBeEnabled();
+  await expect(expandAll).toBeDisabled();
+
+  await collapseAll.click();
+  await expect(page.locator('.region-row:visible')).toHaveCount(1);
+  await expect(page.locator('.region-row[data-region-id="-997"]')).toHaveAttribute('aria-expanded', 'false');
+  await expect(collapseAll).toBeDisabled();
+  await expect(expandAll).toBeEnabled();
+
+  await expandAll.click();
+  await expect(page.locator('.region-row:visible')).toHaveCount(1097);
+  await expect(page.locator('.region-row[data-region-id="-997"]')).toHaveAttribute('aria-expanded', 'true');
+  await expect(collapseAll).toBeEnabled();
+  await expect(expandAll).toBeDisabled();
+
+  await page.getByLabel('Search brain regions').fill('mediodorsal');
+  await expect(collapseAll).toBeDisabled();
+  await expect(expandAll).toBeDisabled();
+});
