@@ -32,6 +32,19 @@ test('unknown URL version falls back to defaults', () => {
   assert.deepEqual(parseViewState('?v=999&dataset=local&feature=nope'), DEFAULT_VIEW_STATE);
 });
 
+test('development defaults initialize parsing while explicit shared state overrides them', () => {
+  const developmentDefaults = {
+    ...DEFAULT_VIEW_STATE,
+    dataset: { datasetId: 'ephys_atlas_channels', releaseId: '2026_W32' },
+    featureId: 'rms_ap.denoised',
+  };
+  assert.deepEqual(parseViewState('', developmentDefaults), developmentDefaults);
+  assert.equal(serializeViewState(developmentDefaults, developmentDefaults), 'v=3&feature=rms_ap.denoised');
+  const explicit = parseViewState('?v=3&release=other&feature=polarity.raw', developmentDefaults);
+  assert.equal(explicit.dataset.releaseId, 'other');
+  assert.equal(explicit.featureId, 'polarity.raw');
+});
+
 test('malformed fixed range is ignored', () => {
   const parsed = parseViewState('?v=3&range=3,2');
   assert.deepEqual(parsed.coloring.range, DEFAULT_VIEW_STATE.coloring.range);

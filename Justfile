@@ -20,8 +20,8 @@ dev:
     cd web && npm run dev
 
 # Run the viewer against a pinned local real channel release (development only).
-dev-real release="2026_W32":
-    cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/{{release}} npm run dev:real
+dev-real release="2026_W32" feature="rms_ap.denoised":
+    cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/{{release}} EPHYS_ATLAS_REAL_FEATURE={{feature}} npm run dev:real
 
 # Builder/schema tests.
 test-builder:

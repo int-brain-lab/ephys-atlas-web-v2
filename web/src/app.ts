@@ -4,9 +4,9 @@ import { HttpDatasetSource } from './data/http-source.js';
 import { LocalDatasetSource } from './data/local-source.js';
 import { PrefetchQueue } from './data/prefetch.js';
 import { DatasetRepository } from './data/repository.js';
-import { DEFAULT_APP_STATE } from './domain/defaults.js';
-import { createAppStore } from './domain/store.js';
-import type { DatasetRef, ParcellationId, RepresentationKind, SliceAxis } from './domain/types.js';
+import { DEFAULT_APP_STATE, DEFAULT_VIEW_STATE } from './domain/defaults.js';
+import { createAppStore, type AppStore } from './domain/store.js';
+import type { DatasetRef, ParcellationId, RepresentationKind, SliceAxis, ViewState } from './domain/types.js';
 import { NullSliceRenderer, type RendererPresentation, type SliceRenderer } from './rendering/interfaces.js';
 import { maxRegionalSliceIndex } from './rendering/slice-calibration.js';
 import { AppShell, type ShellModel } from './ui/app-shell.js';
@@ -16,11 +16,12 @@ import { UrlStateController } from './url/url-state.js';
 export interface AppOptions {
   catalogUrl?: string;
   atlasRegionsUrl?: string;
+  defaultView?: ViewState;
   renderer?: SliceRenderer;
 }
 
 export class AtlasApp {
-  private readonly store = createAppStore(DEFAULT_APP_STATE);
+  private readonly store: AppStore;
   private readonly localSource = new LocalDatasetSource();
   private readonly repository: DatasetRepository;
   private readonly urlController: UrlStateController;
@@ -40,10 +41,12 @@ export class AtlasApp {
   private featureLoadGeneration = 0;
 
   constructor(root: HTMLElement, private readonly options: AppOptions = {}) {
-    const catalogUrl = options.catalogUrl ?? new URL('/fixtures/catalog.json', window.location.href).toString();
+    const defaultView = options.defaultView ?? DEFAULT_VIEW_STATE;
+    this.store = createAppStore({ ...DEFAULT_APP_STATE, view: defaultView });
+    const catalogUrl = new URL(options.catalogUrl ?? '/fixtures/catalog.json', window.location.href).toString();
     const published = new HttpDatasetSource(catalogUrl);
     this.repository = new DatasetRepository(published, this.localSource);
-    this.urlController = new UrlStateController(this.store);
+    this.urlController = new UrlStateController(this.store, window, defaultView);
     this.renderer = options.renderer ?? new NullSliceRenderer();
     this.shell = new AppShell(root, {
       setDataset: (ref) => this.store.dispatch({ type: 'dataset/set', dataset: ref }),
