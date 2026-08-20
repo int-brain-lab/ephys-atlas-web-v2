@@ -7,6 +7,10 @@ bootstrap:
     cd web && npm ci
     cd web && npx playwright install chromium
 
+# Install the exact scientific channel-builder environment (no sudo required).
+bootstrap-scientific:
+    uv sync --project builder --python 3.12 --extra scientific --locked
+
 # Run the browser app locally.
 dev:
     cd web && npm run dev
@@ -41,11 +45,11 @@ test: check
 
 # Pull canonical source artifacts only; never recompute raw scientific features.
 data-pull dataset release="latest":
-    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli pull {{dataset}} {{release}} --dest data/source
+    uv run --project builder --extra scientific --locked ephys-atlas-data pull {{dataset}} {{release}} --dest data/source
 
 # Build the launch channel dataset. Raw/denoised and population are intentionally explicit.
 data-build-channels release feature_mode population created_at ibleatools_commit iblatlas_commit builder_commit:
-    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli build-channels {{release}} --feature-mode {{feature_mode}} --population {{population}} --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
+    uv run --project builder --extra scientific --locked ephys-atlas-data build-channels {{release}} --feature-mode {{feature_mode}} --population {{population}} --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
 
 # Validate a dataset-specific build output. Scientific transforms stay explicit recipes.
 data-build dataset release="latest":
