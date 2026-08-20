@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, 'agent/**', 'work/**']
+    branches: [main]
   pull_request:
 
 permissions:
@@ -42,13 +42,7 @@ jobs:
       - run: npm install
       - id: typecheck
         continue-on-error: true
-        run: |
-          set +e
-          npm run typecheck 2>&1 | tee /tmp/typecheck.log
-          status=${PIPESTATUS[0]}
-          summary=$(grep -m1 'error TS' /tmp/typecheck.log | tr -d '\r' | cut -c1-110)
-          echo "summary=${summary:-typecheck failed}" >> "$GITHUB_OUTPUT"
-          exit "$status"
+        run: npm run typecheck
       - id: unit
         continue-on-error: true
         run: npm run test:unit
@@ -61,28 +55,10 @@ jobs:
       - id: browser
         if: always() && steps.browser-install.outcome == 'success'
         continue-on-error: true
-        run: |
-          set +e
-          npm run test:browser 2>&1 | tee /tmp/browser.log
-          status=${PIPESTATUS[0]}
-          summary=$(grep -m1 -E '^  [0-9]+\) test/browser/' /tmp/browser.log | sed -E 's#^  [0-9]+\) test/browser/app\.spec\.ts:[0-9]+:[0-9]+ . ##' | tr -d '\r' | cut -c1-100)
-          error=$(grep -m1 -E '^    Error:' /tmp/browser.log | sed -E 's/^ +//' | tr -d '\r' | cut -c1-100)
-          expected=$(grep -m1 -E '^    Expected' /tmp/browser.log | sed -E 's/^ +//' | tr -d '\r' | cut -c1-100)
-          received=$(grep -m1 -E '^    Received' /tmp/browser.log | sed -E 's/^ +//' | tr -d '\r' | cut -c1-100)
-          echo "summary=${summary:-browser test failed}" >> "$GITHUB_OUTPUT"
-          echo "error=${error:-see browser test}" >> "$GITHUB_OUTPUT"
-          echo "expected=${expected:-no expected value}" >> "$GITHUB_OUTPUT"
-          echo "received=${received:-no received value}" >> "$GITHUB_OUTPUT"
-          exit "$status"
+        run: npm run test:browser
       - name: Report web statuses
         if: always()
         uses: actions/github-script@v7
-        env:
-          TYPECHECK_SUMMARY: ${{ steps.typecheck.outputs.summary }}
-          BROWSER_SUMMARY: ${{ steps.browser.outputs.summary }}
-          BROWSER_ERROR: ${{ steps.browser.outputs.error }}
-          BROWSER_EXPECTED: ${{ steps.browser.outputs.expected }}
-          BROWSER_RECEIVED: ${{ steps.browser.outputs.received }}
         with:
           script: |
             const outcomes = {
@@ -92,18 +68,13 @@ jobs:
               'CI / web browser': '${{ steps.browser.outcome }}',
             };
             for (const [contextName, outcome] of Object.entries(outcomes)) {
-              await github.rest.repos.createCommitStatus({ owner: context.repo.owner, repo: context.repo.repo, sha: context.sha, state: outcome === 'success' ? 'success' : 'failure', context: contextName });
-            }
-            const diagnostic = async (prefix, detail) => {
-              const text = (detail || 'unavailable').replace(/\s+/g, ' ').slice(0, 90);
-              await github.rest.repos.createCommitStatus({ owner: context.repo.owner, repo: context.repo.repo, sha: context.sha, state: 'failure', context: `CI / diagnostic / ${prefix} / ${text}` });
-            };
-            if (outcomes['CI / web typecheck'] !== 'success') await diagnostic('typecheck', process.env.TYPECHECK_SUMMARY);
-            if (outcomes['CI / web browser'] !== 'success') {
-              await diagnostic('browser test', process.env.BROWSER_SUMMARY);
-              await diagnostic('browser error', process.env.BROWSER_ERROR);
-              await diagnostic('browser expected', process.env.BROWSER_EXPECTED);
-              await diagnostic('browser received', process.env.BROWSER_RECEIVED);
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: context.sha,
+                state: outcome === 'success' ? 'success' : 'failure',
+                context: contextName,
+              });
             }
             const state = Object.values(outcomes).every((value) => value === 'success') ? 'success' : 'failure';
             await github.rest.repos.createCommitStatus({ owner: context.repo.owner, repo: context.repo.repo, sha: context.sha, state, context: 'CI / web' });
