@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseAtlasRegionCatalog } from '../../.test-dist/data/atlas-regions.js';
+import {
+  ALLEN_ATLAS_REGIONS_URL,
+  loadAtlasRegionCatalog,
+  parseAtlasRegionCatalog,
+} from '../../.test-dist/data/atlas-regions.js';
 import { buildRegionHierarchy } from '../../.test-dist/data/region-hierarchy.js';
 
 function row(atlasId, acronym, parentId, depth, mappingMember = true, colorHex = '#123456') {
@@ -54,4 +58,18 @@ test('hierarchy rejects cycles even when every parent ID exists', () => {
     { id: '-2', atlasId: -2, index: 1, acronym: 'B', name: 'B', parentId: '-1' },
   ];
   assert.throws(() => buildRegionHierarchy(regions), /cycle/);
+});
+
+test('catalog loading bypasses incompatible cached hierarchy metadata', async () => {
+  let request;
+  const fetchImpl = async (input, init) => {
+    request = { input, init };
+    return { ok: true, json: async () => document([row(-10, 'root', null, 0)]) };
+  };
+
+  await loadAtlasRegionCatalog(undefined, fetchImpl);
+
+  assert.equal(request.input, ALLEN_ATLAS_REGIONS_URL);
+  assert.match(request.input, /[?&]v=2$/);
+  assert.equal(request.init.cache, 'no-cache');
 });
