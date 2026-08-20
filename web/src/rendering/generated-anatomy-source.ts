@@ -246,10 +246,61 @@ function parseSynchronizationSentinels(
   });
 }
 
+function parseProvenance(value: unknown): Readonly<Record<string, unknown>> {
+  const provenance = record(value, 'provenance');
+  for (const name of ['iblatlas', 'generator'] as const) {
+    const pin = record(provenance[name], `provenance.${name}`);
+    string(pin.repository, `provenance.${name}.repository`);
+    const commit = string(pin.commit, `provenance.${name}.commit`);
+    if (!/^[0-9a-f]{7,40}$/.test(commit)) throw new Error(`provenance.${name}.commit is invalid`);
+    if (name === 'generator' && pin.dirty !== false) throw new Error('anatomy generator provenance must be from a clean commit');
+  }
+  const simplification = record(provenance.simplification, 'provenance.simplification');
+  if (simplification.algorithm !== 'GEOS coverage_simplify') throw new Error('unsupported anatomy simplification algorithm');
+  const tolerance = finiteNumber(simplification.tolerance_um, 'provenance.simplification.tolerance_um');
+  const interval = finiteNumber(simplification.boundary_sampling_interval_voxels, 'provenance.simplification.boundary_sampling_interval_voxels');
+  const errorBound = finiteNumber(simplification.boundary_error_bound_um, 'provenance.simplification.boundary_error_bound_um');
+  if (tolerance < 0 || interval <= 0 || interval > 1 || errorBound < 0) throw new Error('anatomy simplification provenance has invalid bounds');
+  return provenance;
+}
+
+function parseValidation(
+  value: unknown,
+  projections: Readonly<Record<SliceAxis, AnatomyProjection>>,
+): Readonly<Record<string, unknown>> {
+  const validation = record(value, 'validation');
+  if (validation.topology_valid !== true || validation.coverage_valid !== true) throw new Error('anatomy topology and coverage validation must pass');
+  for (const key of ['uncovered_voxels', 'multiply_covered_voxels', 'adjacency_mismatches', 'invalid_geometries'] as const) {
+    if (validation[key] !== 0) throw new Error(`validation.${key} must be zero`);
+  }
+  if (!Array.isArray(validation.missing_atlas_ids) || validation.missing_atlas_ids.length) throw new Error('validation.missing_atlas_ids must be empty');
+  const expectedSlices = AXES.reduce((sum, axis) => sum + projections[axis].sliceCount, 0);
+  if (validation.source_slices !== expectedSlices || validation.emitted_slices !== expectedSlices) {
+    throw new Error(`anatomy validation must account for all ${expectedSlices} projection slices`);
+  }
+  const boundary = record(validation.boundary_error_um, 'validation.boundary_error_um');
+  const upperBound = finiteNumber(boundary.max_upper_bound, 'validation.boundary_error_um.max_upper_bound');
+  const accepted = finiteNumber(validation.accepted_max_boundary_error_um, 'validation.accepted_max_boundary_error_um');
+  if (upperBound < 0 || accepted < 0 || upperBound > accepted) throw new Error('anatomy boundary error exceeds its accepted maximum');
+  const minimumIou = finiteNumber(validation.minimum_eligible_region_iou, 'validation.minimum_eligible_region_iou');
+  const acceptedIou = finiteNumber(validation.accepted_minimum_region_iou, 'validation.accepted_minimum_region_iou');
+  if (minimumIou < acceptedIou || acceptedIou < 0.98) throw new Error('anatomy region IoU is below its accepted minimum');
+  const coordinateTolerance = finiteNumber(validation.coordinate_tolerance_um, 'validation.coordinate_tolerance_um');
+  const sentinelError = finiteNumber(validation.sentinel_max_error_um, 'validation.sentinel_max_error_um');
+  if (coordinateTolerance <= 0 || sentinelError < 0 || sentinelError > coordinateTolerance) {
+    throw new Error('anatomy synchronization sentinel error exceeds coordinate tolerance');
+  }
+  return validation;
+}
+
 export function parseAnatomyPackManifest(value: unknown): AnatomyPackManifest {
   const root = record(value, 'anatomy manifest');
   if (root.format !== 'anatomy-pack-v1' || root.schema_version !== '1.0') throw new Error('unsupported anatomy manifest format');
   if (root.immutable !== true) throw new Error('anatomy manifest must be immutable');
+  const packId = string(root.pack_id, 'pack_id');
+  if (!/^[a-z0-9][a-z0-9._-]+$/.test(packId)) throw new Error('pack_id is invalid');
+  const createdAt = string(root.created_at, 'created_at');
+  if (!Number.isFinite(Date.parse(createdAt))) throw new Error('created_at must be an ISO date-time');
   const coordinateSystem = record(root.coordinate_system, 'coordinate_system');
   if (coordinateSystem.units !== 'um') throw new Error('coordinate_system.units must be um');
   if (coordinateSystem.matrix_order !== 'row-major') throw new Error('coordinate_system.matrix_order must be row-major');
@@ -269,7 +320,7 @@ export function parseAnatomyPackManifest(value: unknown): AnatomyPackManifest {
   }
   for (const key of ['annotation', 'region_lut'] as const) {
     const descriptor = record(source[key], `source.${key}`);
-    string(descriptor.path, `source.${key}.path`);
+    safeRelativePath(descriptor.path, `source.${key}.path`);
     integer(descriptor.bytes, `source.${key}.bytes`, 1);
     const digest = string(descriptor.sha256, `source.${key}.sha256`);
     if (!SHA256.test(digest)) throw new Error(`source.${key}.sha256 must be 64 lowercase hexadecimal characters`);
@@ -280,17 +331,19 @@ export function parseAnatomyPackManifest(value: unknown): AnatomyPackManifest {
     sagittal: parseProjection(rawProjections.sagittal, 'sagittal'),
     horizontal: parseProjection(rawProjections.horizontal, 'horizontal'),
   };
+  const provenance = parseProvenance(root.provenance);
+  const validation = parseValidation(root.validation, projections);
   return {
     format: 'anatomy-pack-v1',
     schemaVersion: '1.0',
-    packId: string(root.pack_id, 'pack_id'),
+    packId,
     immutable: true,
-    createdAt: string(root.created_at, 'created_at'),
+    createdAt,
     source,
     coordinateSystem,
     projections,
-    provenance: record(root.provenance, 'provenance'),
-    validation: record(root.validation, 'validation'),
+    provenance,
+    validation,
     synchronizationSentinels: parseSynchronizationSentinels(root.synchronization_sentinels, projections),
   };
 }
