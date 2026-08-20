@@ -156,10 +156,13 @@ materialize every scientific index crossed by an input burst.
 
 The active renderer retains up to eight parsed slice `<g>` layers per view and
 reuses both their DOM nodes and region-path indexes on a warm revisit. Geometry
-requests use a latest-only scheduler with a 40 ms minimum start interval;
-superseded requests that have not started do no source or DOM work. Picking,
-selection, coloring, and guide synchronization remain within the existing
-`SliceRenderer` boundary and continue to use stable SVG region attributes.
+requests use a latest-only scheduler with at most one request in flight and no
+artificial minimum start interval; superseded requests that have not started do
+no source or DOM work. Picking, selection, coloring, and guide synchronization
+remain within the existing `SliceRenderer` boundary and continue to use stable
+SVG region attributes. A controlled browser benchmark showed that the former
+40 ms interval delayed already-decoded and retained navigation enough to cap it
+at roughly 25–30 frames per second.
 
 Prototype an indexed binary transport containing a fixed little-endian header,
 projection/pack identity, fixed-width slice entries, and concatenated UTF-8 SVG

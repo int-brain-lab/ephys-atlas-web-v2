@@ -25,12 +25,8 @@ interface PendingGeometryRender {
 
 interface GeometryRenderSchedule {
   pending: PendingGeometryRender | undefined;
-  timer: number | null;
   inFlight: boolean;
-  lastStartedAt: number;
 }
-
-const GEOMETRY_RENDER_INTERVAL_MS = 40;
 
 export interface GeneratedAnatomySliceRendererOptions {
   onPerformance?: (event: SvgSlicePerformanceEvent) => void;
@@ -163,9 +159,7 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
   private scheduleGeometryRender(target: HTMLElement, model: SliceRenderModel, token: number): Promise<void> {
     const schedule = this.geometrySchedules.get(target) ?? {
       pending: undefined,
-      timer: null,
       inFlight: false,
-      lastStartedAt: Number.NEGATIVE_INFINITY,
     };
     this.geometrySchedules.set(target, schedule);
     schedule.pending?.resolve();
@@ -176,19 +170,10 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
   }
 
   private pumpGeometryRender(target: HTMLElement, schedule: GeometryRenderSchedule): void {
-    if (schedule.inFlight || schedule.timer !== null || !schedule.pending) return;
-    const waitMs = Math.max(0, GEOMETRY_RENDER_INTERVAL_MS - (performance.now() - schedule.lastStartedAt));
-    if (waitMs > 0) {
-      schedule.timer = window.setTimeout(() => {
-        schedule.timer = null;
-        this.pumpGeometryRender(target, schedule);
-      }, waitMs);
-      return;
-    }
+    if (schedule.inFlight || !schedule.pending) return;
     const request = schedule.pending;
     schedule.pending = undefined;
     schedule.inFlight = true;
-    schedule.lastStartedAt = performance.now();
     void this.renderGeometry(target, request.model, request.token)
       .then(request.resolve, request.reject)
       .finally(() => {
@@ -202,10 +187,6 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     if (!schedule?.pending) return;
     schedule.pending.resolve();
     schedule.pending = undefined;
-    if (schedule.timer !== null) {
-      window.clearTimeout(schedule.timer);
-      schedule.timer = null;
-    }
   }
 
   private clearGeometrySchedule(target: HTMLElement): void {

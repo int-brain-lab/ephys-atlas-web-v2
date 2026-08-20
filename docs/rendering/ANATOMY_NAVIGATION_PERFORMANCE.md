@@ -66,13 +66,21 @@ the intentionally retained path present at about 25–30 frames per second.
 
 ## Architectural consequence
 
+The fixed 40 ms scheduler delay has now been removed. Geometry work remains
+latest-only with at most one request in flight, so an input burst still skips
+superseded work without imposing latency on the next useful render.
+
+On the same benchmark machine, the corrected scheduler reduced median
+same-pack commit latency to 0.9–1.6 ms and retained-revisit commit latency to
+0.3–0.5 ms across the four cases. Median cold-pack commits remained 9.9–14.7
+ms, with one horizontal p95 trial reaching 23.5 ms. This isolates the remaining
+cache-miss problem from warm SVG navigation.
+
 The next implementation should:
 
-1. remove the fixed 40 ms delay while preserving latest-only replacement of
-   requests that have not started;
-2. move cold-pack decompression and validation off the main thread;
-3. benchmark the indexed UTF-8 SVG pack in that worker path—the prototype can
+1. move cold-pack decompression and validation off the main thread;
+2. benchmark the indexed UTF-8 SVG pack in that worker path—the prototype can
    remove UTF-8/JSON object parsing, validation allocation, and fragment
    serialization, but gzip cost remains unless transport changes;
-4. repeat this benchmark against the deployed origin with network throttling
+3. repeat this benchmark against the deployed origin with network throttling
    and a visible wheel-burst scenario before selecting prefetch distance.
