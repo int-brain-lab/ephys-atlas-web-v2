@@ -102,13 +102,12 @@ export class AtlasApp {
 
   private render(): void {
     const state = this.store.getState();
-    const visibleRegions = state.view.coloring.mode === 'anatomy'
-      ? this.atlasRegions?.mappings[state.view.parcellation] ?? this.regions
-      : this.regions;
+    const anatomyRegions = this.atlasRegions?.mappings[state.view.parcellation] ?? this.regions;
+    const rendererRegions = state.view.coloring.mode === 'anatomy' ? anatomyRegions : this.regions;
     this.renderer.updatePresentation?.({
       feature: this.feature,
-      regions: visibleRegions,
-      anatomyRegions: this.atlasRegions?.mappings[state.view.parcellation] ?? visibleRegions,
+      regions: rendererRegions,
+      anatomyRegions,
       coloring: state.view.coloring,
       selectedRegionIds: state.view.selection,
       hoveredRegionId: this.hoveredRegionId,
@@ -124,8 +123,8 @@ export class AtlasApp {
       state,
       manifest: this.manifest,
       feature: this.feature,
-      regions: visibleRegions,
-      anatomyAtlas: state.view.coloring.mode === 'anatomy' ? this.atlasRegions?.atlas ?? null : null,
+      regions: anatomyRegions,
+      anatomyAtlas: this.atlasRegions?.atlas ?? null,
     });
   }
 

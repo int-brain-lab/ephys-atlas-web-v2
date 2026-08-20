@@ -23,6 +23,7 @@ for (const viewport of reviewViewports) {
     await expect(page.locator('[data-view="sagittal"]')).toHaveAttribute('data-state', 'ready');
     await expect(page.locator('[data-view="horizontal"]')).toHaveAttribute('data-state', 'ready');
     await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.20 mm');
+    await expect(page.locator('[data-view="coronal"] .view-frame__status')).toHaveText('Allen CCFv3 · 10 µm');
     await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
     await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');
     await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '660');
@@ -127,9 +128,9 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
 
-  await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
-  await expect(page.locator('.region-row')).toHaveCount(4);
-  await expect(page.locator('.region-row').first()).toContainText('R1');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.region-row')).toHaveCount(1097);
+  await expect(page.locator('.region-row').first()).toContainText('root');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
   await expect(page.locator('.regional-comparison__fixture')).toHaveText('Synthetic integration fixture');
 
@@ -138,9 +139,9 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(path).toHaveAttribute('style', /fill:/);
   await expect(rightPath).toHaveCSS('fill', 'rgb(255, 144, 159)');
 
-  await page.getByRole('button', { name: 'R1, Fixture region 1' }).click();
+  await page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
-  await expect(page.locator('.selected-region')).toContainText('R1');
+  await expect(page.locator('.selected-region')).toContainText('MD');
   await expect(page.locator('.regional-comparison__list')).toContainText('mean: 1 dB rel. V');
   await expect(path).toHaveClass(/is-selected/);
   await expect(rightPath).toHaveClass(/is-selected/);
@@ -162,17 +163,17 @@ test('Allen anatomy mode shows actual regions and official ontology colors', asy
 test('renderer region selection flows back into shared URL state', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
-  await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
   const path = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
   await path.dispatchEvent('pointerup');
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
-  await expect(page.locator('.selected-region')).toContainText('R1');
+  await expect(page.locator('.selected-region')).toContainText('MD');
 });
 
 test('region hover is linked across all anatomical projections', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
-  await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
 
   const source = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
   await source.dispatchEvent('pointermove');
@@ -193,9 +194,9 @@ test('region hover is linked across all anatomical projections', async ({ page }
 test('region-list hover previews the region in all anatomical projections', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
-  await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
 
-  await page.getByRole('button', { name: 'R1, Fixture region 1' }).hover();
+  await page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ }).hover();
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
     const highlighted = page.locator(`[data-view="${axis}"] path[data-allen-id="-362"]`).first();
     await expect(highlighted).toHaveClass(/is-highlighted/);
@@ -295,11 +296,11 @@ test('generated anatomy renderer uses direct mapping IDs and affine-derived guid
 test('region search filters loaded metadata rather than prototype rows', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
-  await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
   const search = page.getByLabel('Search brain regions');
-  await search.fill('fixture region 3');
+  await search.fill('mediodorsal nucleus of thalamus');
   await expect(page.locator('.region-row:not([hidden])')).toHaveCount(1);
-  await expect(page.locator('.region-row:not([hidden])')).toContainText('R3');
+  await expect(page.locator('.region-row:not([hidden])')).toContainText('MD');
 });
 
 test('view maximize is reversible with Escape', async ({ page }) => {
