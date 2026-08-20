@@ -231,3 +231,14 @@ test('browser parser consumes the canonical anatomy-pack-v1 fixture', () => {
   assert.equal(parsed.packId, 'synthetic-left-25um-v1');
   assert.deepEqual(parsed.synchronizationSentinels[0].worldUm, [-300, 50, -100]);
 });
+
+test('browser parser consumes the canonical bilateral anatomy-pack-v2 fixture', () => {
+  const fixtureManifest = JSON.parse(readFileSync(
+    new URL('../../../fixtures/anatomy/anatomy-pack-v2/manifest.json', import.meta.url),
+    'utf8',
+  ));
+  const parsed = parseAnatomyPackManifest(fixtureManifest);
+  assert.equal(parsed.format, 'anatomy-pack-v2');
+  assert.equal(parsed.packId, 'synthetic-bilateral-10um-v2');
+  assert.deepEqual(parsed.synchronizationSentinels[0].worldUm, [-360, 140, 20]);
+});
