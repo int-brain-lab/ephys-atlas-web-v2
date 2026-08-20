@@ -87,9 +87,10 @@ test('initial anatomy display fetches only the three visible packs', async ({ pa
   ]));
 });
 
-test('a wheel burst is coalesced into one animation-frame slice update', async ({ page }) => {
+test('a wheel burst is coalesced and only updates linked guides in other projections', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('[data-slice-asset="generated-anatomy-v2"]')).toHaveCount(3);
+  await expect(page.locator('.view-frame[data-state="ready"]')).toHaveCount(3);
   const svg = page.locator('[data-view="coronal"] .view-frame__brain-svg');
   await page.evaluate(() => {
     const metrics = { sagittal: 0, horizontal: 0 };
@@ -107,7 +108,7 @@ test('a wheel burst is coalesced into one animation-frame slice update', async (
   await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '650');
   expect(await page.evaluate(() => (
     (window as Window & { __unchangedFigureMutations?: { sagittal: number; horizontal: number } }).__unchangedFigureMutations
-  ))).toEqual({ sagittal: 0, horizontal: 0 });
+  ))).toEqual({ sagittal: 4, horizontal: 4 });
 });
 
 test('an existing anatomy slice stays visible while an adjacent pack loads', async ({ page }) => {
