@@ -58,6 +58,7 @@ export class RegionalPanelController {
   private readonly selectedList: HTMLUListElement;
   private readonly selectedSection: HTMLElement;
   private readonly clearSelectionButton: HTMLButtonElement;
+  private readonly summary: HTMLElement;
   private readonly distribution: HTMLElement;
   private readonly analysis: HTMLElement;
   private readonly analysisPanel: HTMLElement;
@@ -101,6 +102,7 @@ export class RegionalPanelController {
     this.selectedList = required(root, '.selected-regions__list');
     this.selectedSection = required(root, '.region-pane__selected');
     this.clearSelectionButton = required(root, '.selected-regions__clear');
+    this.summary = required(root, '.secondary-view__surface');
     this.distribution = required(root, '.distribution-band__surface');
     this.analysis = required(root, '.analysis-panel__surface');
     this.analysisPanel = required(root, '.analysis-panel');
@@ -188,9 +190,11 @@ export class RegionalPanelController {
     this.updateHoveredRegion(model.hoveredRegionId);
     this.renderSelected(model.regions, selected, valueById, statistic, unit);
     if (feature) {
+      this.renderSummary(feature, descriptor?.unit ?? null);
       this.renderDistribution(feature, selected, model.regions, statistic, unit, fixture);
       this.renderAnalysis(feature, model.regions, selected, valueById, statistic, unit, fixture);
     } else {
+      this.summary.replaceChildren();
       this.distribution.replaceChildren(this.message('No regional distribution loaded'));
       this.analysis.replaceChildren(this.message('No feature values are available for this parcellation'));
     }
@@ -225,8 +229,36 @@ export class RegionalPanelController {
     this.clearSelectionButton.disabled = true;
     this.source.textContent = 'No regional values';
     this.resultCount.textContent = '0 regions';
+    this.summary.replaceChildren();
     this.distribution.replaceChildren(this.message('No regional distribution loaded'));
     this.analysis.replaceChildren(this.message('Select a regional feature to compare regions'));
+  }
+
+  private renderSummary(feature: RegionalFeaturePayload, unit: string | null): void {
+    const global = feature.global;
+    if (!global) {
+      this.summary.replaceChildren();
+      return;
+    }
+    const fields: readonly (readonly [string, number | undefined, StatisticId])[] = [
+      ['Observations', global.count, 'count'],
+      ['Mean', global.mean, 'mean'],
+      ['Median', global.median, 'median'],
+      ['Std. deviation', global.std, 'mean'],
+    ];
+    const cards = fields.flatMap(([label, value, statistic]) => {
+      if (value === undefined || !Number.isFinite(value)) return [];
+      const card = html('div', 'feature-summary__item');
+      const term = html('dt', 'feature-summary__label');
+      term.textContent = label;
+      const description = html('dd', 'feature-summary__value');
+      description.textContent = formatValue(value, statistic, unit);
+      card.append(term, description);
+      return [card];
+    });
+    const list = html('dl', 'feature-summary');
+    list.append(...cards);
+    this.summary.replaceChildren(list);
   }
 
   private regionRow(

@@ -199,6 +199,9 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.region-row')).toHaveCount(874);
   await expect(page.locator('.region-row').first()).toContainText('CH');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
+  await expect(page.locator('.feature-summary__item')).toHaveCount(4);
+  await expect(page.locator('.feature-summary')).toContainText('Observations');
+  await expect(page.locator('.feature-summary')).toContainText('Mean');
   await expect(page.locator('.region-pane__selected')).toHaveAttribute('data-empty', 'true');
   await expect(page.locator('.selected-regions__list')).toBeEmpty();
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-empty', 'true');
