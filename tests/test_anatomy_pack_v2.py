@@ -18,6 +18,11 @@ from tools.anatomy_pack.build_v2 import (
     plane_for_projection,
     slice_paths,
 )
+from tools.anatomy_pack.geometry import (
+    geometry_path,
+    geometry_path_relative,
+    raster_label_geometries,
+)
 
 
 def test_raw_annotation_mapping_uses_physical_midline_and_both_signs() -> None:
@@ -62,11 +67,31 @@ def test_bilateral_paths_declare_evenodd_and_keep_internal_background() -> None:
     regions = BrainRegions()
     plane = np.full((7, 7), 2, dtype=np.uint16)
     plane[2:5, 2:5] = 0
-    paths, validation = slice_paths(plane, regions, tolerance_um=0, maximum_error_um=10)
+    paths, validation = slice_paths(plane, regions)
     assert paths[0]["fill_rule"] == "evenodd"
     assert paths[0]["d"].count("M") == 2
     assert validation.background_topology_valid
     assert validation.internal_background_components_before == 1
+    assert validation.maximum_boundary_error_upper_bound_um == 0
+
+
+def test_compact_path_is_deterministic_exact_and_keeps_hole_subpaths() -> None:
+    regions = BrainRegions()
+    plane = np.full((7, 7), 2, dtype=np.uint16)
+    plane[2:5, 2:5] = 0
+    paths, validation = slice_paths(plane, regions)
+    compact = paths[0]["d"]
+
+    assert compact == slice_paths(plane, regions)[0][0]["d"]
+    assert compact == "M-.5 -.5v7h7v-7zM1.5 1.5v3h3v-3z"
+    assert compact.count("M") == 2
+    assert "h" in compact and "v" in compact
+    assert "L" not in compact
+    assert validation.vertices_after < validation.vertices_before
+
+    geometry = raster_label_geometries(plane)[2]
+    assert compact == geometry_path_relative(geometry)
+    assert len(compact) < len(geometry_path(geometry))
 
 
 def test_v2_gzip_pack_is_deterministic_and_schema_valid(tmp_path: Path) -> None:

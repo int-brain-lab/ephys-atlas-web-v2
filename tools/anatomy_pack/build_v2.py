@@ -27,8 +27,9 @@ from tools.anatomy_pack.build import (
 from tools.anatomy_pack.geometry import (
     SliceValidation,
     geometry_path,
+    geometry_path_relative,
     raster_label_geometries,
-    simplify_coverage,
+    validate_exact_coverage,
 )
 
 RESOLUTION_UM = 10
@@ -223,20 +224,12 @@ def atlas_ids_for_row(regions: Any, row: int) -> dict[str, int]:
 def slice_paths(
     plane: np.ndarray,
     regions: Any,
-    *,
-    tolerance_um: float,
-    maximum_error_um: float,
 ) -> tuple[list[dict[str, Any]], SliceValidation]:
     rows = sorted(int(value) for value in np.unique(plane) if int(value) != 0)
     exact = raster_label_geometries(plane)
-    simplified, validation = simplify_coverage(
+    simplified, validation = validate_exact_coverage(
         exact,
         source_plane=plane,
-        tolerance_um=tolerance_um,
-        resolution_um=RESOLUTION_UM,
-        maximum_error_um=maximum_error_um,
-        minimum_iou=0.98,
-        minimum_iou_area_um2=10_000,
     )
     if sorted(simplified) != rows:
         raise ValueError("polygonization changed the non-background atlas row set")
@@ -244,7 +237,7 @@ def slice_paths(
         {
             "atlas_ids": atlas_ids_for_row(regions, row),
             "fill_rule": "evenodd",
-            "d": geometry_path(simplified[row]),
+            "d": geometry_path_relative(simplified[row]),
         }
         for row in rows
     ], validation
@@ -302,8 +295,6 @@ def _pack_id(
     annotation_sha: str,
     lut_sha: str,
     *,
-    tolerance_um: float,
-    maximum_error_um: float,
     pack_depth: int,
     generator_commit: str,
 ) -> str:
@@ -314,8 +305,7 @@ def _pack_id(
             "region_lut_sha256": lut_sha,
             "resolution_um": 10,
             "hemisphere": "bilateral",
-            "tolerance_um": tolerance_um,
-            "maximum_error_um": maximum_error_um,
+            "algorithm": "exact collinear vertex removal",
             "minimum_iou": 0.98,
             "minimum_iou_area_mm2": 0.01,
             "boundary_sampling_interval_voxels": 0.25,
@@ -327,8 +317,7 @@ def _pack_id(
             "sagittal_orientation": "posterior-to-anterior",
         }
     )
-    tolerance = f"{float(tolerance_um):g}".replace(".", "p")
-    return f"allen-ccfv3-10um-bilateral-t{tolerance}-{sha256_bytes(identity)[:12]}"
+    return f"allen-ccfv3-10um-bilateral-exact-{sha256_bytes(identity)[:12]}"
 
 
 def _sentinels() -> list[dict[str, Any]]:
@@ -377,41 +366,38 @@ def _validate_generated(root: Path, manifest: dict[str, Any], repository: Path) 
 def probe(
     label: np.ndarray,
     regions: Any,
-    tolerances_um: Sequence[float],
 ) -> list[dict[str, Any]]:
     results = []
     samples = {"coronal": 660, "sagittal": 300, "horizontal": 400}
-    for tolerance_um in tolerances_um:
-        for projection, index in samples.items():
-            try:
-                paths, validation = slice_paths(
-                    plane_for_projection(label, projection, index),
-                    regions,
-                    tolerance_um=tolerance_um,
-                    maximum_error_um=20,
-                )
-            except ValueError as error:
-                results.append(
-                    {
-                        "projection": projection,
-                        "slice_index": index,
-                        "tolerance_um": tolerance_um,
-                        "passed": False,
-                        "error": str(error),
-                    }
-                )
-                continue
-            payload = canonical_json(paths)
-            results.append(
-                {
-                    "projection": projection,
-                    "slice_index": index,
-                    "tolerance_um": tolerance_um,
-                    "passed": True,
-                    "gzip_bytes": len(gzip.compress(payload, compresslevel=9, mtime=0)),
-                    **validation.to_dict(),
-                }
-            )
+    for projection, index in samples.items():
+        plane = plane_for_projection(label, projection, index)
+        paths, validation = slice_paths(plane, regions)
+        exact = raster_label_geometries(plane)
+        absolute_paths = [
+            {
+                "atlas_ids": atlas_ids_for_row(regions, row),
+                "fill_rule": "evenodd",
+                "d": geometry_path(exact[row]),
+            }
+            for row in sorted(exact)
+        ]
+        compact_payload = canonical_json(paths)
+        absolute_payload = canonical_json(absolute_paths)
+        results.append(
+            {
+                "projection": projection,
+                "slice_index": index,
+                "absolute_raw_bytes": len(absolute_payload),
+                "absolute_gzip_bytes": len(
+                    gzip.compress(absolute_payload, compresslevel=9, mtime=0)
+                ),
+                "relative_raw_bytes": len(compact_payload),
+                "relative_gzip_bytes": len(
+                    gzip.compress(compact_payload, compresslevel=9, mtime=0)
+                ),
+                **validation.to_dict(),
+            }
+        )
     return results
 
 
@@ -419,8 +405,6 @@ def build_pack(
     *,
     output: Path,
     created_at: str,
-    tolerance_um: float,
-    maximum_error_um: float,
     pack_depth: int,
 ) -> dict[str, Any]:
     from iblatlas.atlas import AllenAtlas
@@ -444,8 +428,6 @@ def build_pack(
     pack_id = _pack_id(
         annotation_sha,
         lut_sha,
-        tolerance_um=tolerance_um,
-        maximum_error_um=maximum_error_um,
         pack_depth=pack_depth,
         generator_commit=commit,
     )
@@ -463,10 +445,7 @@ def build_pack(
             inventory: list[dict[str, Any]] = []
             for slice_index in range(spec.slice_count):
                 paths, validation = slice_paths(
-                    plane_for_projection(label, projection, slice_index),
-                    regions,
-                    tolerance_um=tolerance_um,
-                    maximum_error_um=maximum_error_um,
+                    plane_for_projection(label, projection, slice_index), regions
                 )
                 validations.append(validation)
                 path_count += len(paths)
@@ -564,10 +543,10 @@ def build_pack(
                 "shapely_version": shapely.__version__,
                 "geos_version": shapely.geos_version_string,
                 "simplification": {
-                    "algorithm": "GEOS coverage_simplify",
-                    "tolerance_um": tolerance_um,
+                    "algorithm": "exact collinear vertex removal",
+                    "tolerance_um": 0,
                     "boundary_sampling_interval_voxels": 0.25,
-                    "boundary_error_bound_um": RESOLUTION_UM * 0.125,
+                    "boundary_error_bound_um": 0,
                 },
             },
             "validation": {
@@ -600,7 +579,7 @@ def build_pack(
                         for item in validations
                     ),
                 },
-                "accepted_max_boundary_error_um": maximum_error_um,
+                "accepted_max_boundary_error_um": 0,
                 "minimum_eligible_region_iou": min(
                     item.minimum_eligible_region_iou for item in validations
                 ),
@@ -626,27 +605,15 @@ def build_pack(
     return manifest
 
 
-def _parse_tolerances(value: str) -> tuple[float, ...]:
-    result = tuple(float(item) for item in value.split(",") if item)
-    if not result or any(item < 0 for item in result):
-        raise argparse.ArgumentTypeError("tolerances must be non-negative")
-    return result
-
-
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     root = Path(__file__).resolve().parents[2]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output", type=Path, default=root / "artifacts/anatomy-pack-v2"
     )
-    parser.add_argument("--tolerance-um", type=float, default=5.0)
-    parser.add_argument("--maximum-error-um", type=float, default=20.0)
     parser.add_argument("--pack-depth", type=int, choices=(16, 32), default=16)
     parser.add_argument("--prepare-only", action="store_true")
     parser.add_argument("--probe", action="store_true")
-    parser.add_argument(
-        "--probe-tolerances-um", type=_parse_tolerances, default=(0.0, 5.0, 7.0, 10.0)
-    )
     parser.add_argument(
         "--created-at",
         default=datetime.now(timezone.utc)
@@ -654,10 +621,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         .isoformat()
         .replace("+00:00", "Z"),
     )
-    args = parser.parse_args(argv)
-    if args.tolerance_um < 0 or args.maximum_error_um <= 0:
-        parser.error("tolerance must be non-negative and maximum error positive")
-    return args
+    return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -672,13 +636,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Prepared {lut_path} ({lut_path.stat().st_size:,} bytes)")
         if args.probe:
             label = np.load(lut_path, mmap_mode="r")
-            print(json.dumps(probe(label, regions, args.probe_tolerances_um), indent=2))
+            print(json.dumps(probe(label, regions), indent=2))
         return 0
     manifest = build_pack(
         output=args.output,
         created_at=args.created_at,
-        tolerance_um=args.tolerance_um,
-        maximum_error_um=args.maximum_error_um,
         pack_depth=args.pack_depth,
     )
     print(f"Wrote {args.output} ({manifest['pack_id']})")
