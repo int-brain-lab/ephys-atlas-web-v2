@@ -5,12 +5,12 @@ import gzip
 import hashlib
 import json
 import math
+from itertools import pairwise
 from pathlib import Path
 
 import numpy as np
 import pytest
 from jsonschema import Draft202012Validator, FormatChecker, ValidationError
-
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = ROOT / "schema" / "anatomy-pack-v1"
@@ -145,7 +145,7 @@ def test_cross_projection_world_coordinate_sentinels_are_synchronized(
                 observed_max,
                 float(np.linalg.norm(reconstructed[:3] - expected_world[:3])),
             )
-        for left, right in zip(reconstructed_worlds, reconstructed_worlds[1:]):
+        for left, right in pairwise(reconstructed_worlds):
             np.testing.assert_allclose(left, right, atol=coordinate_tolerance_um)
     assert observed_max <= recorded_max + coordinate_tolerance_um
 
