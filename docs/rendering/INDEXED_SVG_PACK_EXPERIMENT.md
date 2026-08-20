@@ -1,7 +1,8 @@
 # Indexed SVG pack experiment
 
-Status: experimental codec; not used by the active anatomy source or published
-as a scientific artifact.
+Status: codec accepted by D026; production v3 integration and measurements are
+in progress. The normative sampling, manifest, and runtime contract is
+`docs/rendering/ANATOMY_PACK_V3_CONTRACT.md`.
 
 ## Goal
 

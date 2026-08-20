@@ -1,7 +1,7 @@
 """Deterministic v1 indexed SVG fragment pack codec.
 
-The wire format is independent of anatomy geometry and is not used by the
-active renderer. All integers are little-endian.
+The wire format is independent of anatomy geometry. All integers are
+little-endian.
 """
 from __future__ import annotations
 
