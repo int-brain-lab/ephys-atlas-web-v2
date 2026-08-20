@@ -334,6 +334,8 @@ test('region search filters loaded metadata rather than prototype rows', async (
   await search.fill('mediodorsal nucleus of thalamus');
   await expect(page.locator('.region-row:not([hidden])')).toHaveCount(1);
   await expect(page.locator('.region-row:not([hidden])')).toContainText('MD');
+  await expect(page.locator('.region-row:visible')).toHaveCount(1);
+  await expect(page.locator('.region-row[data-region-id="-997"]')).toBeHidden();
 });
 
 test('view maximize is reversible with Escape', async ({ page }) => {
