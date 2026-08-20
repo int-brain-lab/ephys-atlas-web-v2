@@ -59,6 +59,7 @@ export class RegionalPanelController {
   private readonly distribution: HTMLElement;
   private readonly analysis: HTMLElement;
   private readonly analysisPanel: HTMLElement;
+  private readonly analysisToggle: HTMLButtonElement;
   private currentRegions: readonly RegionMetadata[] = [];
   private lastFeature: FeaturePayload | null = null;
   private lastRegions: readonly RegionMetadata[] | null = null;
@@ -71,6 +72,8 @@ export class RegionalPanelController {
   private readonly rowById = new Map<string, HTMLLIElement>();
   private readonly regionById = new Map<string, RegionMetadata>();
   private rovingButton: HTMLButtonElement | null = null;
+  private analysisExpanded = false;
+  private hadSelection = false;
 
   constructor(root: ParentNode, private readonly callbacks: RegionalPanelCallbacks) {
     this.pane = required(root, '.region-pane');
@@ -86,10 +89,12 @@ export class RegionalPanelController {
     this.distribution = required(root, '.distribution-band__surface');
     this.analysis = required(root, '.analysis-panel__surface');
     this.analysisPanel = required(root, '.analysis-panel');
+    this.analysisToggle = required(root, '.analysis-panel__toggle');
 
     this.search.addEventListener('input', this.filterRegions);
     this.searchClear.addEventListener('click', this.clearSearch);
     this.clearSelectionButton.addEventListener('click', () => this.callbacks.clearSelection());
+    this.analysisToggle.addEventListener('click', this.toggleAnalysis);
   }
 
   render(model: RegionalPanelModel): void {
@@ -138,7 +143,7 @@ export class RegionalPanelController {
       });
     }
     const selected = new Set(model.state.view.selection);
-    this.analysisPanel.dataset.empty = String(selected.size === 0);
+    this.updateAnalysisDisclosure(selected.size > 0);
     const range = feature ? regionalColorRange(feature, model.state.view.coloring) : null;
     const unit = descriptor?.unit ?? null;
 
@@ -178,6 +183,7 @@ export class RegionalPanelController {
   destroy(): void {
     this.search.removeEventListener('input', this.filterRegions);
     this.searchClear.removeEventListener('click', this.clearSearch);
+    this.analysisToggle.removeEventListener('click', this.toggleAnalysis);
   }
 
   private renderEmpty(model: RegionalPanelModel): void {
@@ -186,6 +192,9 @@ export class RegionalPanelController {
     this.lastHoveredRegionId = null;
     this.selectedSection.dataset.empty = 'true';
     this.analysisPanel.dataset.empty = 'true';
+    this.analysisExpanded = false;
+    this.hadSelection = false;
+    this.syncAnalysisDisclosure();
     const item = html('li', 'selected-regions__empty');
     item.textContent = model.state.view.representation === 'volume'
       ? 'Region values are unavailable in volume mode'
@@ -536,6 +545,32 @@ export class RegionalPanelController {
     if (!button) return;
     this.setRovingButton(button);
     button.focus();
+  }
+
+  private readonly toggleAnalysis = (): void => {
+    if (!this.hadSelection) return;
+    this.analysisExpanded = !this.analysisExpanded;
+    this.syncAnalysisDisclosure();
+  };
+
+  private updateAnalysisDisclosure(hasSelection: boolean): void {
+    if (hasSelection && !this.hadSelection) this.analysisExpanded = true;
+    if (!hasSelection) this.analysisExpanded = false;
+    this.hadSelection = hasSelection;
+    this.syncAnalysisDisclosure();
+  }
+
+  private syncAnalysisDisclosure(): void {
+    this.analysisPanel.dataset.empty = String(!this.hadSelection);
+    this.analysisPanel.dataset.expanded = String(this.hadSelection && this.analysisExpanded);
+    this.analysisToggle.disabled = !this.hadSelection;
+    this.analysisToggle.setAttribute('aria-expanded', String(this.hadSelection && this.analysisExpanded));
+    this.analysisToggle.setAttribute('aria-label', `${this.analysisExpanded ? 'Collapse' : 'Expand'} analysis and comparison`);
+    const chevron = this.analysisToggle.querySelector<HTMLElement>('.analysis-panel__chevron');
+    if (chevron) {
+      chevron.hidden = !this.hadSelection;
+      chevron.textContent = this.analysisExpanded ? '⌄' : '⌃';
+    }
   }
 
   private message(text: string): HTMLElement {
