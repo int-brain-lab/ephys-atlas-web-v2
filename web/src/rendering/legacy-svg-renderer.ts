@@ -287,7 +287,10 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     const mount: RendererMount = {
       renderer: new SvgSliceRenderer(
         { svg, figureLayer, guideLayer },
-        { onRegionPointer: (event) => this.onRegionPointer(event) },
+        {
+          onRegionPointer: (event) => this.onRegionPointer(event),
+          onSliceStep: (axis, delta) => this.interactionSink?.stepSlice(axis, delta),
+        },
       ),
     };
     this.mounts.set(target, mount);
