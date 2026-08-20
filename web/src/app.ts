@@ -29,6 +29,7 @@ export class AtlasApp {
   private manifest: DatasetManifest | null = null;
   private feature: FeaturePayload | null = null;
   private regions: readonly RegionMetadata[] = [];
+  private hoveredRegionId: string | null = null;
   private loadGeneration = 0;
   private regionsLoadGeneration = 0;
   private featureLoadGeneration = 0;
@@ -55,7 +56,12 @@ export class AtlasApp {
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
     });
     this.renderer.setInteractionSink?.({
-      hover: () => undefined,
+      hover: (hit) => {
+        const regionId = hit?.regionId ?? null;
+        if (regionId === this.hoveredRegionId) return;
+        this.hoveredRegionId = regionId;
+        this.render();
+      },
       toggleSelection: (hit) => this.store.dispatch({ type: 'selection/toggle', regionId: hit.regionId }),
       moveCursor: (cursor) => this.store.dispatch({ type: 'cursor/set', cursor }),
       reportError: (error) => this.reportRuntimeError(error),
@@ -94,6 +100,7 @@ export class AtlasApp {
       feature: this.feature,
       coloring: state.view.coloring,
       selectedRegionIds: state.view.selection,
+      hoveredRegionId: this.hoveredRegionId,
     });
     const model: ShellModel = {
       state,
@@ -128,6 +135,7 @@ export class AtlasApp {
     this.prefetch.cancel();
     this.feature = null;
     this.regions = [];
+    this.hoveredRegionId = null;
     this.manifest = null;
     this.store.dispatch({ type: 'runtime/dataset', status: 'loading' });
     try {
