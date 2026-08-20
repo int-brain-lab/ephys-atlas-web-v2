@@ -258,14 +258,15 @@ test('region hover is linked across all anatomical projections', async ({ page }
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
 
   const source = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
-  const sourceFill = await source.evaluate((node) => getComputedStyle(node).fill);
+  await expect(source).toHaveAttribute('style', /fill:/);
+  const sourceStyle = await source.getAttribute('style');
   await source.dispatchEvent('pointermove');
   await expect(page.locator('.region-row[data-region-id="-362"]')).toHaveAttribute('data-hovered', 'true');
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
     const highlighted = page.locator(`[data-view="${axis}"] path[data-allen-id="-362"]`).first();
     await expect(highlighted).toHaveClass(/is-highlighted/);
     await expect(highlighted).not.toHaveClass(/is-selected/);
-    if (axis === 'coronal') await expect(highlighted).toHaveCSS('fill', sourceFill);
+    if (axis === 'coronal') await expect(highlighted).toHaveAttribute('style', sourceStyle ?? '');
     await expect(highlighted).toHaveCSS('filter', 'brightness(1.22) saturate(1.12)');
   }
 
