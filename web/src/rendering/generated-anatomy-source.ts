@@ -364,12 +364,15 @@ async function gunzipJson(buffer: ArrayBuffer, context: string): Promise<{ value
 export class GeneratedAnatomySliceSource implements AnatomySliceSource {
   private readonly fetchImpl: typeof fetch;
   private readonly packDepth: 16 | 32 | undefined;
+  private readonly manifestUrl: string;
   private manifestPromise: Promise<AnatomyPackManifest> | null = null;
   private readonly packs = new Map<string, Promise<SlicePack>>();
 
-  constructor(private readonly options: GeneratedAnatomySliceSourceOptions) {
+  constructor(options: GeneratedAnatomySliceSourceOptions) {
     this.fetchImpl = options.fetchImpl ?? fetch.bind(globalThis);
     this.packDepth = options.packDepth;
+    const baseUrl = typeof globalThis.location?.href === 'string' ? globalThis.location.href : 'http://localhost/';
+    this.manifestUrl = new URL(options.manifestUrl, baseUrl).toString();
   }
 
   loadManifest(): Promise<AnatomyPackManifest> {
@@ -425,7 +428,7 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
   }
 
   private async fetchManifest(): Promise<AnatomyPackManifest> {
-    const response = await this.fetchImpl(this.options.manifestUrl, { cache: 'force-cache' });
+    const response = await this.fetchImpl(this.manifestUrl, { cache: 'force-cache' });
     if (!response.ok) throw new Error(`Anatomy manifest request failed (${response.status})`);
     return parseAnatomyPackManifest(await response.json());
   }
@@ -442,7 +445,7 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
   }
 
   private async fetchPack(manifest: AnatomyPackManifest, axis: SliceAxis, packDepth: 16 | 32, artifact: PackArtifact, signal?: AbortSignal): Promise<SlicePack> {
-    const url = new URL(artifact.path, this.options.manifestUrl).toString();
+    const url = new URL(artifact.path, this.manifestUrl).toString();
     const response = await this.fetchImpl(url, { cache: 'force-cache', ...(signal ? { signal } : {}) });
     if (!response.ok) throw new Error(`Anatomy pack request failed (${response.status}): ${artifact.path}`);
     const buffer = await response.arrayBuffer();
