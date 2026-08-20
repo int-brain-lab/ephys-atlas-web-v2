@@ -84,10 +84,31 @@ still requires a structured clone of the complete decoded pack back to the main
 thread. This improves interaction continuity but confirms that a compact indexed
 SVG response is needed to reduce both wait time and cross-thread allocation.
 
-The next implementation should:
+## Sparse indexed-SVG result
 
-1. benchmark the indexed UTF-8 SVG pack in the worker path—the prototype can
-   remove UTF-8/JSON object parsing, validation allocation, and fragment
-   serialization, but gzip cost remains unless transport changes;
-2. repeat this benchmark against the deployed origin with network throttling
-   and a visible wheel-burst scenario before selecting prefetch distance.
+`anatomy-pack-v3` now exercises the accepted worker-owned indexed path against
+the complete production display corpus. The corpus contains 407 display planes
+(165 coronal, 142 sagittal, 100 horizontal) in 52 depth-eight packs. Its
+compressed artifacts total 5,604,696 bytes, down 87.4% from the 44,424,303-byte
+native v2 artifact inventory. Native 10 µm state and calibration are unchanged.
+
+On the same benchmark class, five cache-busted trials produced:
+
+| slice | paths | cold commit p50 | cold paint p50 | same-pack commit p50 | retained commit p50 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| coronal p95, 812 | 339 | 9.5 ms | 16.4 ms | 2.5 ms | 1.6 ms |
+| sagittal p95, 606 | 199 | 9.3 ms | 16.4 ms | 2.2 ms | 1.4 ms |
+| horizontal p95, 345 | 390 | 10.6 ms | 16.4 ms | 3.1 ms | 2.1 ms |
+| horizontal maximum, 401 | 416 | 10.3 ms | 16.5 ms | 3.4 ms | 2.1 ms |
+
+Median worker round-trip was 3.7–4.2 ms after module initialization. One first
+trial paid a 32.7 ms worker/module startup cost; ordinary cache misses after the
+initial three-view load did not. No long task was observed, and the largest
+animation-frame gap was 17.6 ms. Compared with the JSON worker path's 17–21.1
+ms median cold commits, returning one fragment removes the whole-pack clone and
+cuts median cache-miss commit time to 9.3–10.6 ms.
+
+The next production measurement is against the deployed origin with network
+throttling and a visible wheel-burst scenario. That evidence should select any
+prefetch-distance change; the current policy remains one adjacent pack during
+idle time.

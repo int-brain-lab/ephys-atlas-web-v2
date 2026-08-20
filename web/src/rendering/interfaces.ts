@@ -1,5 +1,6 @@
 import type { ColoringState, CursorState, ParcellationId, SliceAxis, SliceState } from '../domain/types.js';
 import type { FeaturePayload, RegionMetadata } from '../data/contracts.js';
+import type { DisplaySliceInventory } from './display-slice-inventory.js';
 
 export interface SliceRenderModel {
   axis: SliceAxis;
@@ -26,6 +27,7 @@ export interface SliceRenderer {
   clear(target: HTMLElement): void;
   updatePresentation?(presentation: RendererPresentation): void;
   setInteractionSink?(sink: RendererInteractionSink): void;
+  getDisplaySliceInventories?(): Promise<Readonly<Record<SliceAxis, DisplaySliceInventory>> | null>;
   destroy?(): void;
 }
 

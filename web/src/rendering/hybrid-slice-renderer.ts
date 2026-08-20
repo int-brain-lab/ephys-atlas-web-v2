@@ -4,6 +4,8 @@ import type {
   SliceRenderModel,
   SliceRenderer,
 } from './interfaces.js';
+import type { DisplaySliceInventory } from './display-slice-inventory.js';
+import type { SliceAxis } from '../domain/types.js';
 
 interface TargetState {
   model: SliceRenderModel;
@@ -51,6 +53,10 @@ export class HybridSliceRenderer implements SliceRenderer {
     this.interactionSink = sink;
     this.regional.setInteractionSink?.(sink);
     this.volume.setInteractionSink?.(sink);
+  }
+
+  getDisplaySliceInventories(): Promise<Readonly<Record<SliceAxis, DisplaySliceInventory>> | null> {
+    return this.regional.getDisplaySliceInventories?.() ?? Promise.resolve(null);
   }
 
   clear(target: HTMLElement): void {

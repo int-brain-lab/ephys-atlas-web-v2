@@ -134,7 +134,7 @@ Playwright suite exercises the actual Vite HTTP middleware, all 70 dynamic
 features, Allen/Beryl/Cosmos, and promoted `float64` alpha values. Ordinary
 `just dev` and CI continue to use the deterministic golden fixture.
 
-The runtime anatomy is the byte-identical, validated bilateral 10 µm pack under
+The scientific anatomy parent is the byte-identical, validated bilateral 10 µm pack under
 `web/public/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/`,
 while the v1 pack remains available for rollback. It contains all
 3,260 source slices in 205 lazy depth-16 packs (44,424,303 compressed bytes),
@@ -146,39 +146,36 @@ cursor; URL v3 uses native indices and migrates v1 10 µm and v2 25 µm links by
 world coordinate.
 
 Slice navigation coalesces wheel bursts to one update per animation frame and
-uses 100 normalized wheel pixels per four-slice (40 µm) interaction step while
-preserving exact 10 µm indices in state and URLs. A slice change reloads geometry
-only in its own projection; the other projections update their guide layers.
+uses 100 normalized wheel pixels per 80 µm display-plane step while preserving
+exact 10 µm indices in state and URLs. A slice change reloads geometry only in
+its own projection; the other projections update their guide layers.
 Presentation styling is skipped when feature/color/selection/hover state is
 unchanged, and URL replacement is deferred for 120 ms during navigation. The
-initial view fetches only its three current depth-16 packs. Subsequent idle
+initial view fetches only its three current depth-eight packs. Subsequent idle
 prefetch is latest-wins and loads one pack in the active direction into a
-32 MiB decoded-byte LRU shared across projections. Each SVG view retains an
+worker-owned 32 MiB decoded-byte LRU shared across projections. Each SVG view retains an
 eight-layer parsed-DOM LRU, including its per-slice path index, so reverse/warm
 navigation swaps the original nodes without parsing again. Geometry loading
 allows one request in flight per view with no artificial start delay; pending
 intermediate requests are replaced by the latest slice before source loading
 begins. After byte-size and SHA verification, compressed pack buffers transfer
-to a persistent module worker for gzip, UTF-8/JSON parsing, and structural and
-affine validation before entering the existing decoded-byte LRU.
+to a persistent module worker for gzip and indexed-structure validation. Only
+the requested UTF-8 SVG fragment returns to the main thread.
 
-An isolated `ISVG` v1 prototype now exercises a fixed binary slice index over
-concatenated UTF-8 SVG fragments in Python and TypeScript. Its indexed browser
-reader decodes a fragment on lookup. The three default packs are within
-0.3–0.6% of the current JSON gzip size, so the candidate is transfer-neutral
-and targets JSON/allocation/serialization cost. It remains outside the active
-manifest and renderer pending the adoption gates in
-`docs/rendering/INDEXED_SVG_PACK_EXPERIMENT.md`.
+The active regional display is now the immutable 80 µm `anatomy-pack-v3`
+derived byte-for-byte from the validated bilateral 10 µm v2 parent. It exposes
+165 coronal, 142 sagittal, and 100 horizontal SVG planes while preserving
+native 10 µm application/URL/cursor state and projection affines. Sliders use
+display ordinals and wheel input advances one display plane. Exact URL indices
+resolve to the nearest SVG only for geometry, with lower-index tie breaking.
 
-The reproducible Chromium anatomy benchmark reports source, worker round-trip,
-and SVG phases separately (`just benchmark-anatomy`). Removing the fixed 40 ms
-gate reduced median same-pack commits to 0.9–1.6 ms and retained revisits to
-0.3–0.5 ms. Moving gzip, UTF-8/JSON, and validation to the worker reduced the
-worst measured animation-frame gap from 33.3 ms to 17.6 ms, while current JSON
-pack cloning raised median cold commit latency to 17–21.1 ms. The indexed SVG
-experiment is therefore the next candidate for reducing cache-miss wait and
-cross-thread allocation; evidence is recorded in
-`docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.
+The v3 corpus uses 52 depth-eight ISVG packs totaling 5,604,696 compressed
+bytes versus 44,424,303 bytes for the complete v2 inventory. Fetch and SHA
+verification remain in the source; a persistent worker owns the 32 MiB decoded
+LRU and returns only one requested fragment. The reproducible Chromium
+benchmark (`just benchmark-anatomy`) measured 9.3–10.6 ms median cold commits,
+2.2–3.4 ms same-pack commits, no long tasks, and a 17.6 ms maximum frame gap.
+Detailed evidence is in `docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.
 
 ## Volume viewer vertical slice
 

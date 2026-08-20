@@ -36,7 +36,6 @@ export interface SvgSlicePerformanceEvent {
 }
 
 const WHEEL_PIXELS_PER_NAVIGATION_STEP = 100;
-const WHEEL_SLICE_STRIDE = 4;
 const WHEEL_LINE_HEIGHT_PX = 16;
 const WHEEL_PAGE_HEIGHT_PX = 800;
 const MAX_PREPARED_SLICE_LAYERS = 8;
@@ -265,7 +264,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
       const steps = Math.trunc(this.wheelPixels / WHEEL_PIXELS_PER_NAVIGATION_STEP);
       if (steps === 0) return;
       this.wheelPixels -= steps * WHEEL_PIXELS_PER_NAVIGATION_STEP;
-      if (this.currentAxis != null) this.options.onSliceStep?.(this.currentAxis, steps * WHEEL_SLICE_STRIDE);
+      if (this.currentAxis != null) this.options.onSliceStep?.(this.currentAxis, steps);
     });
   };
 }

@@ -57,6 +57,10 @@ test-anatomy:
 anatomy-pack tolerance="15" depth="16" output="artifacts/anatomy-pack-v1":
     uv run --project builder --extra anatomy --extra scientific --extra test --locked python -m tools.anatomy_pack.build --tolerance-um {{tolerance}} --pack-depth {{depth}} --created-at 2026-08-20T00:00:00Z --output {{output}}
 
+# Derive a sparse indexed-SVG display corpus from one validated immutable v2 pack.
+sampled-anatomy-pack parent output spacing="80" depth="8":
+    uv run --project builder --extra anatomy --extra scientific --extra test --locked python -m tools.svg_pack.build_sampled --parent {{parent}} --output {{output}} --spacing-um {{spacing}} --pack-depth {{depth}} --created-at 2026-08-21T00:00:00Z
+
 # Generate the ignored, fully offline anatomy comparison lab.
 anatomy-compare resolution="25":
     uv run --project builder --extra anatomy --extra scientific --extra test --locked python tools/anatomy_compare/build.py --resolution {{resolution}}

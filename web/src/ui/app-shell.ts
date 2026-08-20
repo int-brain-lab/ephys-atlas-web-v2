@@ -15,6 +15,7 @@ import type { SliceRenderer } from '../rendering/interfaces.js';
 import { regionalColorRange } from '../rendering/scalar-colormap.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
 import { ContextMenu, type ContextMenuOption } from './context-menu.js';
+import type { DisplaySliceInventory } from '../rendering/display-slice-inventory.js';
 
 export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
@@ -38,6 +39,7 @@ export interface ShellModel {
   catalog: DatasetCatalog | null;
   manifest: DatasetManifest | null;
   feature: FeaturePayload | null;
+  displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null;
 }
 
 type LayoutMode = 'wide' | 'compact' | 'narrow' | 'phone';
@@ -200,6 +202,7 @@ export class AppShell {
   }
 
   render(model: ShellModel): void {
+    this.currentModel = model;
     const { state, catalog, manifest } = model;
     const view = state.view;
     const datasetEntry = catalog?.datasets.find((entry) => entry.id === view.dataset.datasetId);
@@ -866,7 +869,11 @@ export class AppShell {
     slider.step = '1';
     slider.value = '0';
     slider.setAttribute('aria-label', `${axis} slice`);
-    slider.addEventListener('input', () => this.callbacks.setSlice(axis, slider.valueAsNumber));
+    slider.addEventListener('input', () => {
+      const model = this.currentModel;
+      const inventory = model?.state.view.representation === 'regional' ? model.displaySliceInventories?.[axis] : undefined;
+      this.callbacks.setSlice(axis, inventory?.nativeIndexAtOrdinal(slider.valueAsNumber) ?? slider.valueAsNumber);
+    });
     const index = element('output', 'view-frame__index');
     index.htmlFor = slider.id = `${axis}-slice-slider`;
     index.textContent = `0 / ${maxRegionalSliceIndex(axis)}`;
@@ -877,14 +884,20 @@ export class AppShell {
     return frame;
   }
 
+  private currentModel: ShellModel | null = null;
+
   private renderViewFrame(axis: SliceAxis, model: ShellModel): void {
     const nodes = this.viewFrames.get(axis);
     if (!nodes) return;
     const view = model.state.view;
+    const inventory = view.representation === 'regional' ? model.displaySliceInventories?.[axis] : undefined;
     const sliceIndex = Math.min(maxRegionalSliceIndex(axis), Math.max(0, Math.round(view.slices[axis])));
+    const displayOrdinal = inventory?.ordinalForNativeIndex(sliceIndex) ?? sliceIndex;
+    const displayMax = inventory ? inventory.count - 1 : maxRegionalSliceIndex(axis);
     nodes.coordinate.textContent = formatRegionalCoordinate(axis, sliceIndex);
-    nodes.slider.value = String(sliceIndex);
-    nodes.index.textContent = `${sliceIndex} / ${maxRegionalSliceIndex(axis)}`;
+    nodes.slider.max = String(displayMax);
+    nodes.slider.value = String(displayOrdinal);
+    nodes.index.textContent = `${displayOrdinal} / ${displayMax}`;
 
     const geometryKey = `${view.representation}:${view.parcellation}:${model.feature?.featureId ?? ''}:${sliceIndex}`;
     const renderKey = view.representation === 'volume'

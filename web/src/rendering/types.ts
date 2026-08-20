@@ -60,11 +60,13 @@ export interface AnatomyRegionPath {
 }
 
 export interface AnatomySlice {
-  packFormat: 'anatomy-pack-v1' | 'anatomy-pack-v2';
+  packFormat: 'anatomy-pack-v1' | 'anatomy-pack-v2' | 'anatomy-pack-v3';
   axis: SliceAxis;
   sliceIndex: number;
   worldCoordinateUm: number;
   paths: readonly AnatomyRegionPath[];
+  /** Pre-serialized indexed-pack fragment, when supplied by anatomy-pack-v3. */
+  svgFragment?: string;
   viewBox: ViewBox;
 }
 
@@ -75,6 +77,8 @@ export interface AnatomySliceSource {
   guidesForWorld(axis: SliceAxis, world: import('./coordinate-space.js').WorldCoordinateUm): Promise<readonly SliceGuide[]>;
   /** Opportunistically warm one immutable pack in the active navigation direction. */
   prefetchNextPack?(axis: SliceAxis, index: number, direction: -1 | 1): void;
+  /** Optional sparse display inventory; values remain authoritative native slice indices. */
+  getDisplaySliceIndices?(): Promise<Readonly<Record<SliceAxis, readonly number[]>> | null>;
   /** Release transport resources such as persistent decoding workers. */
   dispose?(): void;
 }

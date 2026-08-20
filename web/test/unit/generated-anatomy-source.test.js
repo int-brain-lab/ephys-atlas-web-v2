@@ -363,3 +363,16 @@ test('browser parser consumes the canonical bilateral anatomy-pack-v2 fixture', 
   assert.equal(parsed.packId, 'synthetic-bilateral-10um-v2');
   assert.deepEqual(parsed.synchronizationSentinels[0].worldUm, [-360, 140, 20]);
 });
+
+test('browser parser consumes the production sparse indexed anatomy-pack-v3 manifest', () => {
+  const manifest = JSON.parse(readFileSync(
+    new URL('../../public/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1-display-80um-d8-f8277956e67a/manifest.json', import.meta.url),
+    'utf8',
+  ));
+  const parsed = parseAnatomyPackManifest(manifest);
+  assert.equal(parsed.format, 'anatomy-pack-v3');
+  assert.equal(parsed.projections.coronal.sliceCount, 1320);
+  assert.equal(parsed.projections.coronal.displaySliceIndices.length, 165);
+  assert.deepEqual(parsed.projections.coronal.displaySliceIndices.slice(0, 3), [4, 12, 20]);
+  assert.equal(parsed.projections.coronal.packSets[8].packDepth, 8);
+});
