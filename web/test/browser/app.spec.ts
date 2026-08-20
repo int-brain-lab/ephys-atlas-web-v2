@@ -11,9 +11,9 @@ const reviewViewports = [
 const reviewFragments = {
   // Geometry is sampled from the curated assets. Allen atlas ID 10 is legacy
   // BrainRegions index 835, so the fixture exercises the real ID crosswalk.
-  coronal: '<path d="M236.473 167.48v-4.34 4.34z" class="allen_region_835"/>',
-  sagittal: '<path d="M160.137 184.944v-2.721 2.721z" class="allen_region_835"/>',
-  horizontal: '<path d="M298.858 147.01v-.404.404z" class="allen_region_835"/>',
+  coronal: '<path d="M236.473 167.48v-4.34 4.34z" class="allen_region_835"/><path d="M237 167v-4 4z" class="allen_region_2162"/>',
+  sagittal: '<path d="M160.137 184.944v-2.721 2.721z" class="allen_region_835"/><path d="M161 184v-2 2z" class="allen_region_2162"/>',
+  horizontal: '<path d="M298.858 147.01v-.404.404z" class="allen_region_835"/><path d="M299 147v-.4.4z" class="allen_region_2162"/>',
 } as const;
 
 const curatedRanges = {
@@ -178,6 +178,20 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(path).toHaveClass(/is-selected/);
 });
 
+test('Allen anatomy mode shows actual regions and official ontology colors', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockCuratedSlices(page);
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByLabel('Region color mode').selectOption('anatomy');
+  await expect.poll(() => new URL(page.url()).searchParams.get('colors')).toBe('anatomy');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.getByRole('button', { name: /SCig, Superior colliculus motor related intermediate gray layer/ })).toBeAttached();
+  await expect(page.locator('[data-view="coronal"] path.allen_region_2162').first()).toHaveCSS('fill', 'rgb(255, 144, 255)');
+  await expect(page.locator('.region-row__swatch').first()).toBeVisible();
+});
+
 test('renderer region selection flows back into shared URL state', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await mockCuratedSlices(page);
@@ -271,7 +285,7 @@ test('generated anatomy renderer uses direct mapping IDs and affine-derived guid
     });
     renderer.updatePresentation({
       feature: null, selectedRegionIds: ['-20'], hoveredRegionId: '-20',
-      coloring: { statistic: 'mean', colormap: 'viridis', range: { mode: 'auto' }, scale: 'linear' },
+      coloring: { mode: 'feature', statistic: 'mean', colormap: 'viridis', range: { mode: 'auto' }, scale: 'linear' },
     });
     target.querySelector('path')?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
   });

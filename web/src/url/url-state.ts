@@ -84,6 +84,7 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
       horizontal: Math.max(0, Math.trunc(horizontal)),
     },
     coloring: {
+      mode: params.get('colors') === 'anatomy' ? 'anatomy' : 'feature',
       statistic,
       colormap: params.get('cmap') || defaults.coloring.colormap,
       range: parseRange(params.get('range'), defaults.coloring.range),
@@ -105,6 +106,7 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   if (view.representation !== defaults.representation) params.set('repr', view.representation);
   if (view.parcellation !== defaults.parcellation) params.set('parcel', view.parcellation);
   if (view.coloring.statistic !== defaults.coloring.statistic) params.set('stat', view.coloring.statistic);
+  if (view.coloring.mode === 'anatomy' && defaults.coloring.mode !== 'anatomy') params.set('colors', 'anatomy');
   if (view.coloring.colormap !== defaults.coloring.colormap) params.set('cmap', view.coloring.colormap);
   if (view.coloring.range.mode === 'fixed') params.set('range', `${view.coloring.range.min},${view.coloring.range.max}`);
   if (view.coloring.scale !== defaults.coloring.scale) params.set('scale', view.coloring.scale);

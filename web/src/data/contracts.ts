@@ -62,6 +62,10 @@ export interface RegionMetadata {
   name: string;
   parentId?: string | null;
   depth?: number;
+  /** Official atlas ontology color, independent of scientific feature coloring. */
+  colorHex?: string;
+  /** Numeric region domain embedded in the pinned legacy SVG assets. */
+  legacyIndex?: number;
 }
 
 export interface DatasetManifestDocument {

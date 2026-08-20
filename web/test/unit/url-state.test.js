@@ -13,6 +13,7 @@ test('URL state round-trips common shareable state', () => {
     cursor: { xUm: 120, yUm: -30, zUm: 900 },
     slices: { coronal: 10, sagittal: 20, horizontal: 30 },
     coloring: {
+      mode: 'anatomy',
       statistic: 'median',
       colormap: 'magma',
       range: { mode: 'fixed', min: -2, max: 4 },
@@ -23,6 +24,7 @@ test('URL state round-trips common shareable state', () => {
   assert.match(query, /v=1/);
   assert.match(query, /dataset=brainwide_map/);
   assert.match(query, /feature=wheel_speed/);
+  assert.match(query, /colors=anatomy/);
   assert.deepEqual(parseViewState(`?${query}`), view);
 });
 

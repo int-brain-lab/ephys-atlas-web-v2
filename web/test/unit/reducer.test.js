@@ -25,3 +25,8 @@ test('selection toggles are unique and stable-sorted', () => {
   state = reduceAppState(state, { type: 'selection/toggle', regionId: 'VISp' });
   assert.deepEqual(state.view.selection, ['CA1']);
 });
+
+test('atlas anatomy color mode is explicit application state', () => {
+  const next = reduceAppState(DEFAULT_APP_STATE, { type: 'color/mode', mode: 'anatomy' });
+  assert.equal(next.view.coloring.mode, 'anatomy');
+});

@@ -1,5 +1,5 @@
 import type { DatasetCatalog, DatasetManifest, FeaturePayload } from '../data/contracts.js';
-import type { AppState, DatasetRef, ParcellationId, RepresentationKind, SliceAxis, StatisticId } from '../domain/types.js';
+import type { AppState, ColorMode, DatasetRef, ParcellationId, RepresentationKind, SliceAxis, StatisticId } from '../domain/types.js';
 import type { SliceRenderer } from '../rendering/interfaces.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
 
@@ -8,6 +8,7 @@ export interface AppShellCallbacks {
   setFeature(featureId: string | null, representation?: RepresentationKind): void;
   setParcellation(parcellation: ParcellationId): void;
   setStatistic(statistic: StatisticId): void;
+  setColorMode(mode: ColorMode): void;
   setColormap(colormap: string): void;
   setSlice(axis: SliceAxis, index: number): void;
   clearSelection(): void;
@@ -129,6 +130,9 @@ export class AppShell {
   private regionList!: HTMLUListElement;
   private selectedRegionList!: HTMLUListElement;
   private clearPrototypeSelection!: HTMLButtonElement;
+  private colorModeSelect!: HTMLSelectElement;
+  private statisticSelect!: HTMLSelectElement;
+  private colormapSelect!: HTMLSelectElement;
   private activePrototypeRegion = 'CA1';
   private activeView: WorkspaceView = 'coronal';
   private maximizedView: SliceAxis | null = null;
@@ -180,6 +184,12 @@ export class AppShell {
     this.setContextValue(this.datasetContext, datasetLabel, releaseLabel);
     this.setContextValue(this.featureContext, featureLabel);
     this.setContextValue(this.representationContext, representationLabel);
+    this.colorModeSelect.value = view.coloring.mode ?? 'feature';
+    this.statisticSelect.value = view.coloring.statistic;
+    this.colormapSelect.value = view.coloring.colormap;
+    const featureColors = (view.coloring.mode ?? 'feature') === 'feature';
+    this.statisticSelect.disabled = !featureColors;
+    this.colormapSelect.disabled = !featureColors;
 
     for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
       this.renderViewFrame(axis, model);
@@ -506,7 +516,7 @@ export class AppShell {
     pane.dataset.open = 'false';
     const panelHeader = this.panelHeader('Visualization settings', () => this.closeDrawers());
     const content = element('div', 'settings-pane__content');
-    content.append(this.createSettingsGroup('Data interpretation', 3), this.createSettingsGroup('Color', 4), this.createSettingsGroup('Display', 2));
+    content.append(this.createSettingsGroup('Data interpretation', 3), this.createColorSettings(), this.createSettingsGroup('Display', 2));
     pane.append(panelHeader, content);
     return pane;
   }
@@ -520,6 +530,45 @@ export class AppShell {
       group.append(row);
     }
     return group;
+  }
+
+  private createColorSettings(): HTMLElement {
+    const group = element('section', 'settings-placeholder settings-controls');
+    group.append(heading('Color', 3));
+    const colorMode = this.settingsSelect('Region fill', [
+      ['feature', 'Feature values'],
+      ['anatomy', 'Allen anatomy'],
+    ]);
+    this.colorModeSelect = colorMode.select;
+    this.colorModeSelect.setAttribute('aria-label', 'Region color mode');
+    this.colorModeSelect.addEventListener('change', () => this.callbacks.setColorMode(this.colorModeSelect.value as ColorMode));
+    const statistic = this.settingsSelect('Statistic', [
+      ['mean', 'Mean'], ['median', 'Median'], ['min', 'Minimum'], ['max', 'Maximum'], ['count', 'Count'],
+    ]);
+    this.statisticSelect = statistic.select;
+    this.statisticSelect.setAttribute('aria-label', 'Regional statistic');
+    this.statisticSelect.addEventListener('change', () => this.callbacks.setStatistic(this.statisticSelect.value as StatisticId));
+    const colormap = this.settingsSelect('Colormap', [['viridis', 'Viridis'], ['magma', 'Magma']]);
+    this.colormapSelect = colormap.select;
+    this.colormapSelect.setAttribute('aria-label', 'Feature colormap');
+    this.colormapSelect.addEventListener('change', () => this.callbacks.setColormap(this.colormapSelect.value));
+    group.append(colorMode.row, statistic.row, colormap.row);
+    return group;
+  }
+
+  private settingsSelect(labelText: string, options: readonly (readonly [string, string])[]): { row: HTMLLabelElement; select: HTMLSelectElement } {
+    const row = element('label', 'settings-control');
+    const label = element('span', 'settings-control__label');
+    label.textContent = labelText;
+    const select = element('select', 'settings-control__select');
+    for (const [value, text] of options) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = text;
+      select.append(option);
+    }
+    row.append(label, select);
+    return { row, select };
   }
 
   private panelHeader(titleText: string, onClose: () => void): HTMLElement {

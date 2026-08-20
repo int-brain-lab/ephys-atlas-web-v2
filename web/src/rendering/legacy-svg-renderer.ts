@@ -6,15 +6,15 @@ import type {
   SliceRenderer,
 } from './interfaces.js';
 import { LEGACY_VIEW_BOXES, linkedGuides } from './slice-calibration.js';
-import { regionalColorMap } from './scalar-colormap.js';
+import { atlasRegionColorMap, regionalColorMap } from './scalar-colormap.js';
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
 import { parseLegacyRegionCrosswalk, type LegacyRegionCrosswalk } from './legacy-region-crosswalk.js';
 import type { RegionalSliceFrame, SliceRegionPointerEvent } from './types.js';
+import { ALLEN_ATLAS_REGIONS_URL } from '../data/atlas-regions.js';
 import {
   LEGACY_CURATED_SLICE_ASSETS,
   LEGACY_CURATED_SLICE_BASE_URL,
   legacyCuratedSliceUrl,
-  legacyCuratedRegionsUrl,
 } from './legacy-slice-assets.js';
 
 export { LEGACY_CURATED_SLICE_BASE_URL };
@@ -26,6 +26,7 @@ interface AxisSliceBundle {
 
 export interface LegacySvgSliceRendererOptions {
   baseUrl?: string;
+  regionsUrl?: string;
   fetchImpl?: typeof fetch;
 }
 
@@ -37,6 +38,7 @@ interface RendererMount {
 export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
+  private readonly regionsUrl: string;
   private readonly axisBundles = new Map<SliceAxis, Promise<AxisSliceBundle>>();
   private readonly crosswalks = new Map<string, Promise<LegacyRegionCrosswalk>>();
   private readonly resolvedCrosswalks = new Map<string, LegacyRegionCrosswalk>();
@@ -48,7 +50,8 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
   private interactionSink: RendererInteractionSink | null = null;
   private presentation: RendererPresentation = {
     feature: null,
-    coloring: { statistic: 'mean', colormap: 'viridis', range: { mode: 'auto' }, scale: 'linear' },
+    regions: [],
+    coloring: { mode: 'feature', statistic: 'mean', colormap: 'viridis', range: { mode: 'auto' }, scale: 'linear' },
     selectedRegionIds: [],
     hoveredRegionId: null,
   };
@@ -56,6 +59,7 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
   constructor(options: LegacySvgSliceRendererOptions = {}) {
     const baseUrl = options.baseUrl ?? LEGACY_CURATED_SLICE_BASE_URL;
     this.baseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+    this.regionsUrl = options.regionsUrl ?? ALLEN_ATLAS_REGIONS_URL;
     this.fetchImpl = options.fetchImpl ?? fetch.bind(globalThis);
   }
 
@@ -135,8 +139,10 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
       ? null
       : crosswalk?.atlasIdToLegacyIndex.get(hoveredAtlasId) ?? null;
     const feature = this.presentation.feature;
-    const atlasColors = feature?.representation === 'regional' && feature.parcellation === frame.mapping
-      ? regionalColorMap(feature, this.presentation.coloring) : undefined;
+    const atlasColors = this.presentation.coloring.mode === 'anatomy'
+      ? atlasRegionColorMap(this.presentation.regions ?? [])
+      : feature?.representation === 'regional' && feature.parcellation === frame.mapping
+        ? regionalColorMap(feature, this.presentation.coloring) : undefined;
     const regionColors = atlasColors && crosswalk ? new Map<number, string>() : undefined;
     if (atlasColors && regionColors && crosswalk) {
       for (const [atlasId, color] of atlasColors) {
@@ -177,7 +183,7 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
   }
 
   private async fetchRegionTable(): Promise<unknown> {
-    const response = await this.fetchImpl(legacyCuratedRegionsUrl(this.baseUrl), { mode: 'cors', cache: 'force-cache' });
+    const response = await this.fetchImpl(this.regionsUrl, { mode: 'cors', cache: 'force-cache' });
     if (!response.ok) throw new Error(`Legacy region crosswalk request failed (${response.status})`);
     return response.json();
   }

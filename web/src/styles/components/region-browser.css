@@ -40,6 +40,8 @@
 
 .region-row__disclosure{width:1rem;color:var(--color-text-muted);font-size:.68rem;text-align:center}
 
+.region-row__swatch{width:.72rem;height:.72rem;margin-inline:auto;border:1px solid rgb(255 255 255 / 22%);border-radius:2px;box-shadow:0 0 0 1px rgb(0 0 0 / 28%)}
+
 .region-row__identity{min-width:0;display:grid;grid-template-columns:minmax(3.2rem,max-content) minmax(0,1fr);align-items:baseline;gap:.42rem}
 
 .region-row__acronym{overflow:hidden;color:var(--color-text);font-size:.71rem;font-weight:680;text-overflow:ellipsis;white-space:nowrap}

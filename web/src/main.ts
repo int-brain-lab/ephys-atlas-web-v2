@@ -11,5 +11,6 @@ const renderer = new HybridSliceRenderer(
   new LegacyCuratedSvgSliceRenderer(),
   new SchemaVolumeSliceRenderer(),
 );
-const app = new AtlasApp(root, { renderer });
+const catalogUrl = import.meta.env.VITE_DATASET_CATALOG_URL as string | undefined;
+const app = new AtlasApp(root, { renderer, ...(catalogUrl ? { catalogUrl } : {}) });
 void app.start();

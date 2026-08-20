@@ -122,6 +122,7 @@ export class SchemaVolumeSliceRenderer implements SliceRenderer {
     if (this.renderTokens.get(target) !== token) return;
     const mount = this.mount(target);
     const coloring = this.presentation?.coloring ?? {
+      mode: 'feature' as const,
       statistic: 'mean',
       colormap: 'viridis',
       range: { mode: 'auto' as const },

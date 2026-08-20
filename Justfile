@@ -19,6 +19,10 @@ bootstrap-anatomy:
 dev:
     cd web && npm run dev
 
+# Run the viewer against a pinned local real channel release (development only).
+dev-real release="2026_W32":
+    cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/{{release}} npm run dev:real
+
 # Builder/schema tests.
 test-builder:
     PYTHONPATH=builder {{python}} -m pytest -q tests
@@ -48,6 +52,10 @@ test-anatomy:
 # Generate the ignored, fully offline anatomy comparison lab.
 anatomy-compare resolution="25":
     uv run --project builder --extra anatomy --extra scientific --extra test --locked python tools/anatomy_compare/build.py --resolution {{resolution}}
+
+# Rebuild the pinned Allen ontology/color and legacy-SVG crosswalk asset.
+atlas-regions:
+    uv run --project builder --extra scientific --locked python tools/allen_regions/build.py --force
 
 # Full local completion gate. Keep this aligned with .github/workflows/ci.yml.
 check: test-python test-web test-browser

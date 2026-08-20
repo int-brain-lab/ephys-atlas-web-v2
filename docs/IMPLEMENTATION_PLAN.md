@@ -51,10 +51,12 @@ in `docs/data/DEVELOPMENT_RELEASE.md`.
 
 Next actions:
 
-1. expose the immutable development release through a non-production catalog;
-2. repeat the now-green real-value browser acceptance suite against that origin
+1. use `just dev-real` for the implemented local non-production catalog and
+   viewer path to the immutable development release;
+2. expose the same release through an authorized non-production object-store catalog;
+3. repeat the now-green real-value browser acceptance suite against that origin
    to cover deployment headers and caching;
-3. repeat the build and acceptance suite with the final paper vintage when Q2
+4. repeat the build and acceptance suite with the final paper vintage when Q2
    is resolved.
 
 Acceptance reference: `docs/LAUNCH_SPEC.md` sections 2 and 4.

@@ -18,6 +18,7 @@ export interface RegionalPanelModel {
   manifest: DatasetManifest | null;
   feature: FeaturePayload | null;
   regions: readonly RegionMetadata[];
+  anatomyAtlas: string | null;
 }
 
 function required<T extends Element>(root: ParentNode, selector: string): T {
@@ -64,6 +65,7 @@ export class RegionalPanelController {
   private lastStatistic: StatisticId | null = null;
   private lastSelectionKey = '';
   private lastFixture = false;
+  private lastAnatomyAtlas: string | null = null;
 
   constructor(root: ParentNode, private readonly callbacks: RegionalPanelCallbacks) {
     this.pane = required(root, '.region-pane');
@@ -92,7 +94,8 @@ export class RegionalPanelController {
       model.regions === this.lastRegions &&
       statistic === this.lastStatistic &&
       selectionKey === this.lastSelectionKey &&
-      fixture === this.lastFixture
+      fixture === this.lastFixture &&
+      model.anatomyAtlas === this.lastAnatomyAtlas
     ) return;
 
     this.lastFeature = feature;
@@ -100,6 +103,7 @@ export class RegionalPanelController {
     this.lastStatistic = statistic;
     this.lastSelectionKey = selectionKey;
     this.lastFixture = fixture;
+    this.lastAnatomyAtlas = model.anatomyAtlas;
     this.currentRegions = model.regions;
     this.pane.dataset.phase = feature ? 'regional-data' : 'empty';
     this.pane.dataset.fixture = String(fixture);
@@ -122,7 +126,9 @@ export class RegionalPanelController {
     const range = regionalColorRange(feature, model.state.view.coloring);
     const unit = descriptor?.unit ?? null;
 
-    this.source.textContent = fixture
+    this.source.textContent = model.anatomyAtlas
+      ? `${model.anatomyAtlas} · official colors`
+      : fixture
       ? 'Synthetic schema-v0.1 fixture'
       : `${model.state.view.parcellation.toUpperCase()} regional values`;
 
@@ -180,7 +186,13 @@ export class RegionalPanelController {
     button.addEventListener('blur', () => this.callbacks.hoverRegion(null));
 
     const disclosure = html('span', 'region-row__disclosure');
-    disclosure.textContent = region.parentId !== undefined ? '·' : '·';
+    if (region.colorHex) {
+      disclosure.classList.add('region-row__swatch');
+      disclosure.style.backgroundColor = region.colorHex;
+      disclosure.title = `Official atlas color ${region.colorHex}`;
+    } else {
+      disclosure.textContent = '·';
+    }
     disclosure.setAttribute('aria-hidden', 'true');
     const identity = html('span', 'region-row__identity');
     const acronym = html('span', 'region-row__acronym');

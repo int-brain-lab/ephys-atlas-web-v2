@@ -28,6 +28,11 @@ Each bundle is a JSON object whose keys are slice indices encoded as strings and
 
 Every parsed path in all five files carries an `allen_region_<id>`, `beryl_region_<id>`, and `cosmos_region_<id>` class. No embedded `<svg>`, `<style>`, `<script>`, or wrapper `<g>` elements were found in the fragment values.
 
+The companion deployed `regions.json` is no longer fetched at runtime. Its
+BrainRegions row crosswalk is pinned by SHA-256 and joined to authoritative
+ontology names, hierarchy, and RGB in the committed browser asset documented
+by `docs/frontend/ALLEN_REGION_METADATA.md`.
+
 The v2 frontend keeps scientific 10 um navigation/coordinate calibration separate from this display-asset inventory. The odd SVG slices were deliberately omitted from the legacy bundles to reduce file size: slicing is primarily a user navigation/display convenience here, not a scientifically critical 10 um anatomical measurement. The UI therefore preserves the full scientific index domains with `step=1`, including odd indices. `LegacyCuratedSvgSliceRenderer` independently chooses the nearest available curated SVG fragment for display (normally at 20 um spacing), while coordinates, URL state, and linked-guide navigation continue to use the requested 10 um index. The chosen SVG index is exposed only as renderer/debug metadata (`data-asset-index`).
 
 ## Publication decision

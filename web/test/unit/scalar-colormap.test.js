@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { regionalColorMap, regionalColorRange } from '../../.test-dist/rendering/scalar-colormap.js';
+import { atlasRegionColorMap, regionalColorMap, regionalColorRange } from '../../.test-dist/rendering/scalar-colormap.js';
 
 const feature = {
   schemaVersion: '0.1',
@@ -28,4 +28,10 @@ test('regional colors are keyed by numeric atlas ids', () => {
   assert.equal(colors.size, 3);
   assert.match(colors.get(10), /^rgb\(/);
   assert.notEqual(colors.get(10), colors.get(30));
+});
+
+test('atlas colors are keyed by scientific atlas ids', () => {
+  assert.deepEqual([...atlasRegionColorMap([
+    { id: '-10', atlasId: -10, index: 0, acronym: 'SCig', name: 'Region', colorHex: '#ff90ff' },
+  ])], [[-10, '#ff90ff']]);
 });

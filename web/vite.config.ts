@@ -1,0 +1,69 @@
+import { readFile, stat } from 'node:fs/promises';
+import path from 'node:path';
+import { defineConfig, type Plugin } from 'vite';
+
+const REAL_PREFIX = '/__real-data/';
+
+function mediaType(filePath: string): string {
+  if (filePath.endsWith('.json')) return 'application/json; charset=utf-8';
+  if (filePath.endsWith('.f32') || filePath.endsWith('.f64') || filePath.endsWith('.i32') || filePath.endsWith('.u32')) {
+    return 'application/octet-stream';
+  }
+  return 'application/octet-stream';
+}
+
+function realReleasePlugin(releasePath: string): Plugin {
+  const releaseRoot = path.resolve(releasePath);
+  const releaseId = path.basename(releaseRoot);
+  const datasetId = path.basename(path.dirname(releaseRoot));
+  return {
+    name: 'ephys-atlas-real-development-release',
+    configureServer(server) {
+      server.middlewares.use(async (request, response, next) => {
+        const pathname = request.url ? new URL(request.url, 'http://localhost').pathname : '';
+        if (pathname === `${REAL_PREFIX}catalog.json`) {
+          response.setHeader('Content-Type', 'application/json; charset=utf-8');
+          response.setHeader('Cache-Control', 'no-store');
+          response.end(JSON.stringify({
+            schemaVersion: '0.1',
+            datasets: [{
+              id: datasetId,
+              title: 'Ephys Atlas channels (real development release)',
+              description: 'Pinned local development release; not the paper snapshot.',
+              defaultRelease: releaseId,
+              releases: [{
+                id: releaseId,
+                label: releaseId,
+                manifest: `./${datasetId}/${releaseId}/manifest.json`,
+                immutable: true,
+              }],
+            }],
+          }));
+          return;
+        }
+        const releasePrefix = `${REAL_PREFIX}${datasetId}/${releaseId}/`;
+        if (!pathname.startsWith(releasePrefix)) return next();
+        const relative = decodeURIComponent(pathname.slice(releasePrefix.length));
+        const target = path.resolve(releaseRoot, relative);
+        if (target !== releaseRoot && !target.startsWith(`${releaseRoot}${path.sep}`)) {
+          response.statusCode = 403;
+          response.end('Forbidden');
+          return;
+        }
+        try {
+          if (!(await stat(target)).isFile()) return next();
+          response.setHeader('Content-Type', mediaType(target));
+          response.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          response.end(await readFile(target));
+        } catch {
+          next();
+        }
+      });
+    },
+  };
+}
+
+export default defineConfig(() => {
+  const releasePath = process.env.EPHYS_ATLAS_REAL_RELEASE;
+  return { plugins: releasePath ? [realReleasePlugin(releasePath)] : [] };
+});

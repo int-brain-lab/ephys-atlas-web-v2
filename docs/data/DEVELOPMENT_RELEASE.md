@@ -84,6 +84,17 @@ from that directory through the production `HttpDatasetSource` path. It does
 not bypass contract parsing or binary decoding, copy the release into Git, or
 claim to test production-origin CORS/cache headers.
 
+For interactive local review, run:
+
+```bash
+just dev-real release=2026_W32
+```
+
+Vite then exposes a development-only catalog and immutable release bytes under
+one local origin. This exercises the normal `HttpDatasetSource`; it does not
+copy the ignored real release into `web/public`, transform it, or label it as
+the paper snapshot. Standard `just dev` remains fixture-backed.
+
 ## Remaining step
 
 The release is local and ignored by Git. It still needs an authorized immutable
