@@ -123,6 +123,13 @@ export class HttpDatasetSource implements DatasetSource {
         representation: 'volume',
         descriptor,
         baseUrl: featureUrl,
+        loadResource: async (path, signal) => {
+          const response = await this.fetcher.fetch(
+            new URL(path, featureUrl).toString(),
+            { immutable: release.immutable, ...(signal ? { signal } : {}) },
+          );
+          return response.arrayBuffer();
+        },
       };
     }
 
