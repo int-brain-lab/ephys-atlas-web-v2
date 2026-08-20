@@ -12,6 +12,10 @@ Data loading is behind `DatasetSource` and `DatasetRepository`. `HttpDatasetSour
 
 Immutable HTTP resources have cache-first Cache Storage support plus in-flight request coalescing. `PrefetchQueue` provides small cancellable idle-time prefetch. No service worker is required.
 
+The current storage layers, launch cache-header policy, local dataset management
+UX, quota/eviction requirements, and ordered follow-up work are specified in
+`docs/frontend/BROWSER_STORAGE_AND_CACHE.md`.
+
 Rendering remains behind the frontend-owned `SliceRenderer` / `SliceRenderModel` facade. `LegacyCuratedSvgSliceRenderer` is the application adapter for curated anatomy and delegates actual SVG region rendering/interactions to the lower-level `SvgSliceRenderer` integrated from the rendering workstream.
 
 ## UX Phase 1 — responsive empty shell
