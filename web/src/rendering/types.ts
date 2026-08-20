@@ -53,6 +53,26 @@ export interface SvgSliceAssetSource {
   loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<string>;
 }
 
+export interface AnatomyRegionPath {
+  atlasIds: Readonly<Record<MappingName, number>>;
+  d: string;
+}
+
+export interface AnatomySlice {
+  axis: SliceAxis;
+  sliceIndex: number;
+  worldCoordinateUm: number;
+  paths: readonly AnatomyRegionPath[];
+  viewBox: ViewBox;
+}
+
+/** Transport-independent boundary between generated anatomy and its renderer. */
+export interface AnatomySliceSource {
+  loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<AnatomySlice>;
+  worldFromSliceIndices(indices: SliceIndices): Promise<import('./coordinate-space.js').WorldCoordinateUm>;
+  guidesForWorld(axis: SliceAxis, world: import('./coordinate-space.js').WorldCoordinateUm): Promise<readonly SliceGuide[]>;
+}
+
 export interface Renderer3DState {
   regionColors: ReadonlyMap<number, string>;
   selectedRegionIds: ReadonlySet<number>;
