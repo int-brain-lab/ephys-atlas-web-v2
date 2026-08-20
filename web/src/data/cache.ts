@@ -7,11 +7,14 @@ export interface FetchOptions {
 
 export class ResourceFetcher {
   private readonly inFlight = new Map<string, Promise<Response>>();
+  private readonly fetchImpl: typeof fetch;
 
   constructor(
-    private readonly fetchImpl: typeof fetch = fetch,
+    fetchImpl: typeof fetch = fetch,
     private readonly cacheName = DEFAULT_CACHE_NAME,
-  ) {}
+  ) {
+    this.fetchImpl = fetchImpl === fetch ? fetch.bind(globalThis) : fetchImpl;
+  }
 
   async fetch(url: string, options: FetchOptions = {}): Promise<Response> {
     const key = new URL(url, globalThis.location?.href ?? 'http://localhost/').toString();
