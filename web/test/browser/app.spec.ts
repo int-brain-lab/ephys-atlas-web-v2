@@ -25,6 +25,15 @@ for (const viewport of reviewViewports) {
     await expect(page.locator('[data-view="horizontal"]')).toHaveAttribute('data-state', 'ready');
     await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.20 mm');
     await expect(page.locator('[data-context-field="representation"] .context-field__release')).toHaveText('Allen CCFv3 · 10 µm');
+    if (viewport.width >= 1100) {
+      const representationValue = page.locator('[data-context-field="representation"] .context-field__value');
+      expect(await representationValue.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+    }
+    if (viewport.width >= 1480) {
+      const atlasRegistration = page.locator('[data-context-field="representation"] .context-field__release');
+      await expect(atlasRegistration).toBeVisible();
+      expect(await atlasRegistration.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+    }
     await expect(page.locator('[data-view="coronal"] .view-frame__status')).toHaveText('');
     await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
     await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');

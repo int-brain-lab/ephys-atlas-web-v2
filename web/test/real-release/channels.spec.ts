@@ -13,6 +13,21 @@ test.beforeEach(async ({ page }) => {
   await stat(path.join(releaseRoot, 'manifest.json'));
 });
 
+test('wide header keeps long feature and representation context legible', async ({ page }) => {
+  await page.setViewportSize({ width: 1680, height: 900 });
+  await page.goto('/?feature=aperiodic_exponent.denoised');
+
+  const feature = page.locator('[data-context-field="feature"] .context-field__value');
+  const representation = page.locator('[data-context-field="representation"] .context-field__value');
+  const registration = page.locator('[data-context-field="representation"] .context-field__release');
+  await expect(feature).toHaveText('aperiodic exponent (denoised)');
+  await expect(representation).toHaveText('Regional · Allen');
+  await expect(registration).toHaveText('Allen CCFv3 · 10 µm');
+  for (const field of [feature, representation, registration]) {
+    expect(await field.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+  }
+});
+
 test('uses the immutable release and approved denoised feature as development defaults', async ({ page }) => {
   await page.goto('/');
 
