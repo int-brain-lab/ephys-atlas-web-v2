@@ -59,15 +59,35 @@ The second command writes and validates
 - 918 files, approximately 19.2 MB
 - schema-v0.1 validation passed
 - a second build in an independent output root was byte-identical (`diff -qr`)
+- the opt-in real-release Playwright suite passed against the HTTP loader: 591
+  Allen, 289 Beryl, and 13 Cosmos rows; raw alpha `float64` decoding; 50-bin
+  distribution; and real-region selection
 
 The raw alpha ranges demonstrate why dtype promotion and robust browser display
 ranges are necessary. They are intentionally not median-replaced, clipped, or
 silently serialized as infinity. The full `float64` statistics and histograms
 retain the declared source population.
 
+## Browser acceptance
+
+The real release remains ignored local data. Run its separate acceptance suite
+without adding it to fixture-only CI:
+
+```bash
+cd web
+EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/2026_W32 \
+  npm run test:real-release
+```
+
+The test intercepts the development catalog/release requests and serves bytes
+from that directory through the production `HttpDatasetSource` path. It does
+not bypass contract parsing or binary decoding, copy the release into Git, or
+claim to test production-origin CORS/cache headers.
+
 ## Remaining step
 
 The release is local and ignored by Git. It still needs an authorized immutable
-object-store or publishing target plus a non-production catalog entry before
-the browser can run its real-value acceptance suite. Q2 remains the only blocker
-to labeling a channel release as the paper snapshot.
+object-store or publishing target plus a non-production catalog entry. Repeat
+the same acceptance checks against that origin to cover its CORS and cache
+policy. Q2 remains the only blocker to labeling a channel release as the paper
+snapshot.
