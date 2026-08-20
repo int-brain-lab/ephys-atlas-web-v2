@@ -14,6 +14,7 @@
 @import './styles/components/region-browser.css' layer(components);
 @import './styles/components/view-frame.css' layer(components);
 @import './styles/components/regional-renderer.css' layer(components);
+@import './styles/components/volume-renderer.css' layer(components);
 @import './styles/components/secondary-view.css' layer(components);
 @import './styles/components/distribution.css' layer(components);
 @import './styles/components/analysis.css' layer(components);
