@@ -4,6 +4,7 @@ from ephys_atlas_builder.sources import (
     _canonical_source,
     _encoding_volume_labels,
     _latest_encoding_volume_label,
+    pull,
 )
 
 
@@ -69,3 +70,13 @@ def test_volume_source_records_exact_canonical_object():
         "s3://ibl-brain-wide-map-private/aggregates/atlas/encoding_volumes/"
         "ea_active/2026_W12/brainwide_ephys_atlas_25um.npz"
     )
+
+
+def test_cluster_pull_requires_explicit_project_before_remote_access(tmp_path):
+    with pytest.raises(RuntimeError, match="explicit --project"):
+        pull("ephys_atlas_clusters", "latest", tmp_path)
+
+
+def test_other_pullers_do_not_accept_project_override(tmp_path):
+    with pytest.raises(ValueError, match="only configurable"):
+        pull("ephys_atlas_channels", "latest", tmp_path, project="ad-hoc")
