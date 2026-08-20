@@ -52,6 +52,8 @@ export class AtlasApp {
       setStatistic: (statistic) => this.store.dispatch({ type: 'color/statistic', statistic }),
       setColorMode: (mode) => this.store.dispatch({ type: 'color/mode', mode }),
       setColormap: (colormap) => this.store.dispatch({ type: 'color/colormap', colormap }),
+      setColorRange: (range) => this.store.dispatch({ type: 'color/range', range }),
+      setColorScale: (scale) => this.store.dispatch({ type: 'color/scale', scale }),
       setSlice: (axis, index) => this.setSlice(axis, index),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       importLocal: (files) => this.importLocal(files),
