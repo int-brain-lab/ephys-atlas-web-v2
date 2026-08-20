@@ -52,8 +52,10 @@ in `docs/data/DEVELOPMENT_RELEASE.md`.
 Next actions:
 
 1. expose the immutable development release through a non-production catalog;
-2. run browser acceptance against real values, not only the synthetic golden fixture;
-3. repeat with the final paper vintage when Q2 is resolved.
+2. repeat the now-green real-value browser acceptance suite against that origin
+   to cover deployment headers and caching;
+3. repeat the build and acceptance suite with the final paper vintage when Q2
+   is resolved.
 
 Acceptance reference: `docs/LAUNCH_SPEC.md` sections 2 and 4.
 

@@ -59,7 +59,9 @@ The builder makes scientifically material choices explicit rather than inheritin
 Q1 and Q3 are resolved: releases contain both raw and denoised variants and
 use the explicit `inside` population with no additional physiological QC. The
 real immutable `2026_W32` snapshot has been pulled and built as a validated
-development release with the pinned scientific environment; see
+development release with the pinned scientific environment. Its separate
+real-release Playwright suite passes through the production HTTP loader for all
+three parcellations, including the promoted raw alpha `float64` arrays; see
 `docs/data/DEVELOPMENT_RELEASE.md`. A paper-facing scientific release is not
 frozen because Q2 still requires the final immutable `ea_active` vintage.
 
