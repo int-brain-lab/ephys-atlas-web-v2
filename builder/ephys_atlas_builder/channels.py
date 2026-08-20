@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Sequence
 import json
+import re
+import shutil
 
 import numpy as np
 
@@ -18,6 +20,7 @@ _PARCELLATION_COLUMNS = {
     "beryl": "Beryl_id",
     "cosmos": "Cosmos_id",
 }
+_COMMIT_RE = re.compile(r"^[0-9a-f]{7,40}$")
 
 
 @dataclass(frozen=True)
@@ -30,16 +33,21 @@ class ChannelBuildConfig:
     features: tuple[str, ...] | None = None
     histogram_bins: int = 50
     paper_snapshot: bool = False
+    ibleatools_commit: str | None = None
+    iblatlas_commit: str | None = None
+    builder_commit: str | None = None
 
     def validate(self) -> None:
-        if self.feature_mode not in {"raw", "denoised"}:
-            raise ValueError("feature_mode must be explicitly raw or denoised")
+        if self.feature_mode not in {"raw", "denoised", "both"}:
+            raise ValueError("feature_mode must be explicitly raw, denoised, or both")
         if self.population not in {"all", "inside"}:
             raise ValueError("population must be explicitly all or inside")
         if not self.release_id:
             raise ValueError("release_id is required")
         if not self.created_at:
-            raise ValueError("created_at is required for deterministic release metadata")
+            raise ValueError(
+                "created_at is required for deterministic release metadata"
+            )
         if self.histogram_bins < 2:
             raise ValueError("histogram_bins must be >= 2")
         unknown = sorted(set(self.parcellations) - set(_PARCELLATION_COLUMNS))
@@ -47,6 +55,30 @@ class ChannelBuildConfig:
             raise ValueError(f"unsupported parcellations: {', '.join(unknown)}")
         if not self.parcellations:
             raise ValueError("at least one parcellation is required")
+        for name, value in (
+            ("ibleatools_commit", self.ibleatools_commit),
+            ("iblatlas_commit", self.iblatlas_commit),
+            ("builder_commit", self.builder_commit),
+        ):
+            if value is not None and not _COMMIT_RE.fullmatch(value):
+                raise ValueError(
+                    f"{name} must be a 7-40 character lowercase Git commit"
+                )
+
+    def require_scientific_pins(self) -> None:
+        missing = [
+            name
+            for name, value in (
+                ("ibleatools_commit", self.ibleatools_commit),
+                ("iblatlas_commit", self.iblatlas_commit),
+                ("builder_commit", self.builder_commit),
+            )
+            if value is None
+        ]
+        if missing:
+            raise ValueError(
+                f"snapshot builds require reproducibility pins: {', '.join(missing)}"
+            )
 
 
 @dataclass(frozen=True)
@@ -54,6 +86,35 @@ class RegionInfo:
     atlas_id: int
     acronym: str
     name: str
+
+
+@dataclass(frozen=True)
+class FeatureInfo:
+    source_column: str
+    label: str
+    description: str
+    unit: str | None = None
+    variant: str | None = None
+
+
+def fold_region_ids_left(region_ids: np.ndarray) -> np.ndarray:
+    """Validate atlas identifiers and fold both hemispheres onto the left.
+
+    IBL atlas identifiers encode hemisphere by sign. The public atlas viewer is
+    intentionally a left-hemisphere view, so observations from either side are
+    grouped under the corresponding negative identifier. Missing identifiers
+    remain NaN and are excluded from regional groups.
+    """
+    ids = np.asarray(region_ids, dtype=np.float64)
+    finite = np.isfinite(ids)
+    finite_ids = ids[finite]
+    if np.any(finite_ids != np.trunc(finite_ids)):
+        raise ValueError("region ids must be integral numbers")
+    if np.any(np.abs(finite_ids) > np.iinfo(np.int32).max):
+        raise ValueError("region ids must fit in signed int32 after hemisphere folding")
+    folded = ids.copy()
+    folded[finite] = -np.abs(finite_ids)
+    return folded
 
 
 def _histogram_edges(values: np.ndarray, bins: int) -> np.ndarray:
@@ -71,7 +132,7 @@ def _histogram_edges(values: np.ndarray, bins: int) -> np.ndarray:
 
 
 def _group_indices(region_ids: np.ndarray) -> tuple[np.ndarray, list[np.ndarray]]:
-    ids = np.asarray(region_ids, dtype=np.float64)
+    ids = fold_region_ids_left(region_ids)
     valid_rows = np.flatnonzero(np.isfinite(ids))
     if valid_rows.size == 0:
         return np.array([], dtype=np.int32), []
@@ -83,8 +144,19 @@ def _group_indices(region_ids: np.ndarray) -> tuple[np.ndarray, list[np.ndarray]
     groups: list[np.ndarray] = []
     for index, start in enumerate(starts):
         stop = int(starts[index + 1]) if index + 1 < len(starts) else len(sorted_rows)
-        groups.append(sorted_rows[int(start):stop])
+        groups.append(sorted_rows[int(start) : stop])
     return unique.astype(np.int32), groups
+
+
+def _region_info(
+    metadata: Mapping[int, RegionInfo], region_id: int
+) -> RegionInfo | None:
+    """Resolve metadata supplied in either lateralized or non-lateralized form."""
+    return (
+        metadata.get(region_id)
+        or metadata.get(abs(region_id))
+        or metadata.get(-abs(region_id))
+    )
 
 
 def _write_parcellation(
@@ -95,9 +167,15 @@ def _write_parcellation(
 ) -> tuple[dict, list[np.ndarray]]:
     ids, groups = _group_indices(region_ids)
     if ids.size == 0:
-        raise ValueError(f"{parcellation} has no finite region ids in the selected population")
+        raise ValueError(
+            f"{parcellation} has no finite region ids in the selected population"
+        )
 
-    missing = [int(region_id) for region_id in ids if int(region_id) not in metadata]
+    missing = [
+        int(region_id)
+        for region_id in ids
+        if _region_info(metadata, int(region_id)) is None
+    ]
     if missing:
         preview = ", ".join(map(str, missing[:8]))
         raise ValueError(f"{parcellation} metadata is missing region ids: {preview}")
@@ -107,7 +185,8 @@ def _write_parcellation(
     index_meta["path"] = f"parcellations/{parcellation}/region_ids.i32"
     regions = []
     for index, region_id in enumerate(ids):
-        info = metadata[int(region_id)]
+        info = _region_info(metadata, int(region_id))
+        assert info is not None
         regions.append(
             {
                 "index": index,
@@ -136,11 +215,19 @@ def _write_feature_parcellation(
     matrix = summary_matrix(grouped_values)
     mean_index = SUMMARY_FIELDS.index("mean")
     regional_values = matrix[:, mean_index].astype(np.float32)
-    values_meta = write_array(feature_root / f"{parcellation}.values.f32", regional_values, "float32")
+    values_meta = write_array(
+        feature_root / f"{parcellation}.values.f32", regional_values, "float32"
+    )
 
-    summary_meta = write_array(feature_root / f"{parcellation}.summary.f64", matrix, "float64")
-    regional_histogram = np.stack([histogram(group, histogram_edges) for group in grouped_values])
-    histogram_meta = write_array(feature_root / f"{parcellation}.hist.u32", regional_histogram, "uint32")
+    summary_meta = write_array(
+        feature_root / f"{parcellation}.summary.f64", matrix, "float64"
+    )
+    regional_histogram = np.stack(
+        [histogram(group, histogram_edges) for group in grouped_values]
+    )
+    histogram_meta = write_array(
+        feature_root / f"{parcellation}.hist.u32", regional_histogram, "uint32"
+    )
 
     stats = {
         "format": "ephys-atlas-statistics-v0.1",
@@ -170,6 +257,7 @@ def build_channels_release_from_arrays(
     parcellation_ids: Mapping[str, np.ndarray],
     region_metadata: Mapping[str, Mapping[int, RegionInfo]],
     provenance_sources: Sequence[dict],
+    feature_metadata: Mapping[str, FeatureInfo] | None = None,
 ) -> Path:
     """Build a schema-v0.1 regional channel release from already-selected arrays.
 
@@ -214,6 +302,7 @@ def build_channels_release_from_arrays(
         if config.population == "all"
         else "rows marked inside the atlas (outside == false)"
     )
+    feature_metadata = feature_metadata or {}
     for feature_id in sorted(feature_values):
         values = np.asarray(feature_values[feature_id], dtype=np.float64)
         edges = _histogram_edges(values, config.histogram_bins)
@@ -230,18 +319,32 @@ def build_channels_release_from_arrays(
                     population_description,
                 )
             )
+        info = feature_metadata.get(feature_id)
+        source_column = info.source_column if info else feature_id
+        variant = (
+            info.variant
+            if info
+            else (config.feature_mode if config.feature_mode != "both" else None)
+        )
+        variant_label = f" ({variant})" if variant else ""
         feature_doc = {
             "schema_version": "0.1",
             "id": feature_id,
-            "label": feature_id.replace("_", " "),
-            "description": f"Channel feature {feature_id} aggregated regionally by arithmetic mean.",
-            "unit": None,
+            "label": info.label if info else feature_id.replace("_", " "),
+            "description": (
+                info.description
+                if info
+                else f"Channel feature {source_column}{variant_label} aggregated regionally by arithmetic mean."
+            ),
+            "unit": info.unit if info else None,
             "value_semantics": {
-                "quantity": feature_id,
-                "transform": "identity after upstream ephysatlas table loading",
+                "quantity": source_column,
+                "transform": (
+                    "identity from the selected source parquet; no outlier replacement or value clipping"
+                ),
                 "source_population": population_description,
                 "missing_values": "non-finite observations are excluded from summaries and histograms",
-                "source_column": feature_id,
+                "source_column": source_column,
                 "qc_filter": config.population,
             },
             "representations": {
@@ -253,8 +356,29 @@ def build_channels_release_from_arrays(
             "artifacts": [],
         }
         write_json(feature_root / "feature.json", feature_doc)
-        features.append({"id": feature_id, "path": f"features/{feature_id}/feature.json"})
+        features.append(
+            {"id": feature_id, "path": f"features/{feature_id}/feature.json"}
+        )
 
+    scientific_sources = []
+    if config.ibleatools_commit:
+        scientific_sources.append(
+            {
+                "role": "scientific-code",
+                "description": "ephysatlas channel table schema and feature catalog",
+                "repository": "int-brain-lab/ibleatools",
+                "commit": config.ibleatools_commit,
+            }
+        )
+    if config.iblatlas_commit:
+        scientific_sources.append(
+            {
+                "role": "scientific-code",
+                "description": "IBL atlas coordinates and parcellation mappings",
+                "repository": "int-brain-lab/iblatlas",
+                "commit": config.iblatlas_commit,
+            }
+        )
     manifest = {
         "schema_version": "0.1",
         "dataset_id": DATASET_ID,
@@ -267,11 +391,12 @@ def build_channels_release_from_arrays(
             "paper_snapshot": config.paper_snapshot,
         },
         "provenance": {
-            "sources": list(provenance_sources),
+            "sources": [*provenance_sources, *scientific_sources],
             "builder": {
                 "name": "ibl-ephys-atlas-builder",
                 "version": "0.1.0",
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
+                **({"commit": config.builder_commit} if config.builder_commit else {}),
                 "command": (
                     f"ephys-atlas-data build-channels {config.release_id} "
                     f"--feature-mode {config.feature_mode} --population {config.population}"
@@ -285,6 +410,8 @@ def build_channels_release_from_arrays(
                 "features": sorted(feature_values),
                 "regional_summary": "mean",
                 "histogram_bins": config.histogram_bins,
+                "hemisphere": "bilateral observations folded onto left atlas ids using -abs(id)",
+                "outlier_policy": "preserve source values; exclude only non-finite values from summaries",
             },
             "notes": [
                 "The source feature list is resolved at build time; the browser must not hard-code it.",
@@ -300,25 +427,101 @@ def build_channels_release_from_arrays(
 
 
 def discover_channel_table_dir(source_snapshot: Path, feature_mode: str) -> Path:
-    if feature_mode not in {"raw", "denoised"}:
-        raise ValueError("feature_mode must be raw or denoised")
-    wanted = "raw_ephys_features.pqt" if feature_mode == "raw" else "raw_ephys_features_denoised.pqt"
+    if feature_mode not in {"raw", "denoised", "both"}:
+        raise ValueError("feature_mode must be raw, denoised, or both")
+    wanted = {
+        "raw": ("raw_ephys_features.pqt",),
+        "denoised": ("raw_ephys_features_denoised.pqt",),
+        "both": ("raw_ephys_features.pqt", "raw_ephys_features_denoised.pqt"),
+    }[feature_mode]
     candidates = sorted(
         path.parent
-        for path in source_snapshot.rglob(wanted)
+        for path in source_snapshot.rglob(wanted[0])
         if (path.parent / "channels.pqt").is_file()
+        and all((path.parent / filename).is_file() for filename in wanted)
     )
     if len(candidates) != 1:
         raise RuntimeError(
-            f"expected exactly one channel table directory containing {wanted} and channels.pqt; found {len(candidates)}"
+            f"expected exactly one channel table directory containing {', '.join(wanted)} and channels.pqt; "
+            f"found {len(candidates)}"
         )
     return candidates[0]
+
+
+def _read_channel_frame(table_dir: Path, feature_mode: str, atlas):
+    """Load one source variant without ibleatools' unconditional alpha mutation."""
+    import pandas as pd
+    import ephysatlas.features
+
+    filename = (
+        "raw_ephys_features.pqt"
+        if feature_mode == "raw"
+        else "raw_ephys_features_denoised.pqt"
+    )
+    frame = pd.read_parquet(table_dir / filename)
+    channels = pd.read_parquet(table_dir / "channels.pqt")
+    duplicate_columns = set(frame.columns).intersection(channels.columns)
+    frame = frame.merge(
+        channels.drop(columns=list(duplicate_columns)),
+        how="inner",
+        right_index=True,
+        left_index=True,
+    )
+    if "channel_labels" not in frame.columns and "labels" not in frame.columns:
+        labels_path = table_dir / "channels_labels.pqt"
+        if not labels_path.is_file():
+            raise RuntimeError(
+                "channel source has neither channel_labels/labels nor channels_labels.pqt"
+            )
+        frame = frame.merge(
+            pd.read_parquet(labels_path).fillna(0),
+            how="inner",
+            right_index=True,
+            left_index=True,
+        )
+    if "channel_labels" in frame.columns:
+        frame["outside"] = frame["channel_labels"] == 3
+    elif "labels" in frame.columns:
+        frame["outside"] = frame["labels"] == 3
+    else:
+        raise RuntimeError(
+            "channel_labels or labels not found in the merged channel source"
+        )
+
+    aids = atlas.get_labels(frame.loc[:, ["x", "y", "z"]].values, mode="clip")
+    frame["Allen_id"] = aids
+    for mapping in ("Beryl", "Cosmos"):
+        frame[f"{mapping}_id"] = atlas.regions.remap(aids, "Allen", mapping)
+
+    # Preserve upstream structural/schema validation while deliberately avoiding
+    # data.read_features_from_disk(), which mutates alpha_mean/alpha_std outliers.
+    return pd.DataFrame(ephysatlas.features.ModelRawFeatures(frame))
+
+
+def _feature_info(
+    model, source_column: str, output_id: str, variant: str
+) -> FeatureInfo:
+    column = model.to_schema().columns.get(source_column)
+    metadata = getattr(column, "metadata", None) or {}
+    label = metadata.get("label") or source_column.replace("_", " ")
+    description = (
+        getattr(column, "description", None) or f"Channel feature {source_column}"
+    )
+    unit = metadata.get("transformed_unit") or metadata.get("unit")
+    if unit in {"N/A", "n/a", ""}:
+        unit = None
+    return FeatureInfo(
+        source_column=source_column,
+        label=f"{label} ({variant})",
+        description=f"{description} Source variant: {variant}.",
+        unit=unit,
+        variant=variant,
+    )
 
 
 def _scientific_inputs(source_snapshot: Path, config: ChannelBuildConfig):
     try:
         import ephysatlas.anatomy
-        import ephysatlas.data
         import ephysatlas.features
     except ImportError as exc:
         raise RuntimeError(
@@ -327,49 +530,79 @@ def _scientific_inputs(source_snapshot: Path, config: ChannelBuildConfig):
 
     table_dir = discover_channel_table_dir(source_snapshot, config.feature_mode)
     atlas = ephysatlas.anatomy.ClassifierAtlas()
-    frame = ephysatlas.data.read_features_from_disk(
-        table_dir,
-        brain_atlas=atlas,
-        mappings=["Beryl", "Cosmos"],
-        strict=True,
-        load_denoised=config.feature_mode == "denoised",
-    )
-    if config.population == "inside":
-        if "outside" not in frame.columns:
-            raise RuntimeError("inside population requested but the channel table has no outside column")
-        frame = frame.loc[~frame["outside"].astype(bool)].copy()
-
     if config.features is None:
         requested = sorted(set(ephysatlas.features.voltage_features_set()))
     else:
         requested = list(config.features)
-    missing = [feature for feature in requested if feature not in frame.columns]
-    if config.features is not None and missing:
-        raise RuntimeError(f"requested channel features are missing: {', '.join(missing)}")
-    features = [feature for feature in requested if feature in frame.columns]
-    if not features:
-        raise RuntimeError("no canonical channel features are present in the selected source table")
+    modes = (
+        ("raw", "denoised") if config.feature_mode == "both" else (config.feature_mode,)
+    )
+    frames = {}
+    for mode in modes:
+        frame = _read_channel_frame(table_dir, mode, atlas)
+        if config.population == "inside":
+            if "outside" not in frame.columns:
+                raise RuntimeError(
+                    "inside population requested but the channel table has no outside column"
+                )
+            frame = frame.loc[~frame["outside"].astype(bool)].copy()
+        frames[mode] = frame
+    reference = frames[modes[0]]
+    for mode in modes[1:]:
+        if not reference.index.equals(frames[mode].index):
+            raise RuntimeError(
+                "raw and denoised channel tables do not select identical channel rows"
+            )
 
-    feature_values = {feature: frame[feature].to_numpy(dtype=np.float64, copy=False) for feature in features}
+    feature_values = {}
+    feature_metadata = {}
+    for mode, frame in frames.items():
+        missing = [feature for feature in requested if feature not in frame.columns]
+        if config.features is not None and missing:
+            raise RuntimeError(
+                f"requested {mode} channel features are missing: {', '.join(missing)}"
+            )
+        features = [feature for feature in requested if feature in frame.columns]
+        if not features:
+            raise RuntimeError(
+                f"no canonical channel features are present in the {mode} source table"
+            )
+        for feature in features:
+            output_id = (
+                f"{feature}.{mode}" if config.feature_mode == "both" else feature
+            )
+            feature_values[output_id] = frame[feature].to_numpy(
+                dtype=np.float64, copy=False
+            )
+            feature_metadata[output_id] = _feature_info(
+                ephysatlas.features.ModelRawFeatures,
+                feature,
+                output_id,
+                mode,
+            )
     parcellation_ids = {
-        parcellation: frame[_PARCELLATION_COLUMNS[parcellation]].to_numpy(copy=False)
+        parcellation: reference[_PARCELLATION_COLUMNS[parcellation]].to_numpy(
+            copy=False
+        )
         for parcellation in config.parcellations
     }
 
     atlas_lookup = {
         int(region_id): RegionInfo(int(region_id), str(acronym), str(name))
-        for region_id, acronym, name in zip(atlas.regions.id, atlas.regions.acronym, atlas.regions.name)
+        for region_id, acronym, name in zip(
+            atlas.regions.id, atlas.regions.acronym, atlas.regions.name
+        )
     }
     region_metadata = {}
     for parcellation in config.parcellations:
-        ids = np.asarray(parcellation_ids[parcellation], dtype=np.float64)
+        ids = fold_region_ids_left(parcellation_ids[parcellation])
         unique = sorted({int(value) for value in ids[np.isfinite(ids)]})
         region_metadata[parcellation] = {
-            region_id: atlas_lookup[region_id]
+            region_id: atlas_lookup.get(region_id, atlas_lookup.get(abs(region_id)))
             for region_id in unique
-            if region_id in atlas_lookup
+            if region_id in atlas_lookup or abs(region_id) in atlas_lookup
         }
-    return feature_values, parcellation_ids, region_metadata
+    return feature_values, parcellation_ids, region_metadata, feature_metadata
 
 
 def build_channels_from_snapshot(
@@ -378,12 +611,15 @@ def build_channels_from_snapshot(
     config: ChannelBuildConfig,
 ) -> Path:
     config.validate()
+    config.require_scientific_pins()
     source_json = source_snapshot / "source.json"
     if not source_json.is_file():
         raise RuntimeError(f"missing source snapshot metadata: {source_json}")
     source = json.loads(source_json.read_text())
     if source.get("dataset_id") != DATASET_ID:
-        raise RuntimeError(f"source snapshot is not {DATASET_ID}: {source.get('dataset_id')}")
+        raise RuntimeError(
+            f"source snapshot is not {DATASET_ID}: {source.get('dataset_id')}"
+        )
     if str(source.get("resolved_release")) != config.release_id:
         raise RuntimeError(
             f"source release {source.get('resolved_release')} does not match requested release {config.release_id}"
@@ -404,12 +640,17 @@ def build_channels_from_snapshot(
             "sha256": sha256_file(source_json),
         },
     ]
-    feature_values, parcellation_ids, region_metadata = _scientific_inputs(source_snapshot, config)
-    return build_channels_release_from_arrays(
+    feature_values, parcellation_ids, region_metadata, feature_metadata = (
+        _scientific_inputs(source_snapshot, config)
+    )
+    result = build_channels_release_from_arrays(
         release_dir,
         config,
         feature_values,
         parcellation_ids,
         region_metadata,
         provenance_sources,
+        feature_metadata,
     )
+    shutil.copyfile(source_json, result / "source.json")
+    return result
