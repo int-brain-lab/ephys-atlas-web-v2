@@ -1,0 +1,35 @@
+# OS / editor
+.DS_Store
+*.swp
+*.swo
+
+# Secrets / local environment
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Local scientific source/build outputs
+data/source/
+data/releases/
+
+# Frontend dependencies/build/test outputs
+web/node_modules/
+web/dist/
+web/.test-dist/
+web/test-results/
+web/playwright-report/
+web/.vite/
+
+# Temporary files
+*.tmp
+*.log
