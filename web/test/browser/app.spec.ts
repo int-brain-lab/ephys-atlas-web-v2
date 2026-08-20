@@ -231,6 +231,64 @@ test('region-list hover previews the region in all anatomical projections', asyn
   }
 });
 
+test('generated anatomy renderer uses direct mapping IDs and affine-derived guides', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockCuratedSlices(page);
+  await page.goto('/');
+  await page.evaluate(async () => {
+    const { GeneratedAnatomySliceRenderer } = await import('/src/rendering/generated-anatomy-renderer.ts');
+    const target = document.createElement('div');
+    target.id = 'generated-anatomy-test';
+    document.body.append(target);
+    const source = {
+      async loadSlice(axis: 'coronal' | 'sagittal' | 'horizontal', sliceIndex: number) {
+        return {
+          axis, sliceIndex, worldCoordinateUm: 50,
+          viewBox: { x: -0.5, y: -0.5, width: 3, height: 2 },
+          paths: [{ atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: 'M0 0L1 0L1 1Z' }],
+        };
+      },
+      async worldFromSliceIndices() { return { ml: 25, ap: 50, dv: 75 }; },
+      async guidesForWorld(axis: 'coronal' | 'sagittal' | 'horizontal') {
+        return [
+          { sourceAxis: 'sagittal' as const, targetAxis: axis, dimension: 'x' as const, position: 1 },
+          { sourceAxis: 'horizontal' as const, targetAxis: axis, dimension: 'y' as const, position: 2 },
+        ];
+      },
+    };
+    const renderer = new GeneratedAnatomySliceRenderer(source);
+    renderer.setInteractionSink({
+      hover: () => undefined,
+      toggleSelection: (hit) => { target.dataset.hit = hit.regionId; },
+      stepSlice: () => undefined,
+      moveCursor: () => undefined,
+      reportError: () => undefined,
+    });
+    await renderer.render(target, {
+      axis: 'coronal', sliceIndex: 2, slices: { coronal: 2, sagittal: 1, horizontal: 3 },
+      cursor: { xUm: 25, yUm: 50, zUm: 75 }, parcellation: 'beryl',
+      selectedRegionIds: ['-20'], feature: null,
+    });
+    renderer.updatePresentation({
+      feature: null, selectedRegionIds: ['-20'], hoveredRegionId: '-20',
+      coloring: { statistic: 'mean', colormap: 'viridis', range: { mode: 'auto' }, scale: 'linear' },
+    });
+    target.querySelector('path')?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+  });
+
+  const target = page.locator('#generated-anatomy-test');
+  await expect(target).toHaveAttribute('data-slice-asset', 'generated-anatomy-v1');
+  await expect(target).toHaveAttribute('data-world-coordinate-um', '50');
+  await expect(target).toHaveAttribute('data-hit', '-20');
+  const path = target.locator('path');
+  await expect(path).toHaveAttribute('data-allen-id', '-10');
+  await expect(path).toHaveAttribute('data-beryl-id', '-20');
+  await expect(path).toHaveClass(/is-selected/);
+  await expect(path).toHaveClass(/is-highlighted/);
+  await expect(target.locator('.slice-guide[data-source-axis="sagittal"]')).toHaveAttribute('x1', '1');
+  await expect(target.locator('.slice-guide[data-source-axis="horizontal"]')).toHaveAttribute('y1', '2');
+});
+
 test('region search filters loaded metadata rather than prototype rows', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await mockCuratedSlices(page);

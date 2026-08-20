@@ -1,4 +1,4 @@
-import { regionIdFromClassNames } from './region-id.js';
+import { regionIdFromPath } from './region-id.js';
 import type {
   MappingName,
   RegionalSliceFrame,
@@ -71,7 +71,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   private rebuildPathIndex(): void {
     this.pathIndex.clear();
     for (const path of this.mount.figureLayer.querySelectorAll<SVGPathElement>('path')) {
-      const regionId = regionIdFromClassNames(this.mapping, path.classList);
+      const regionId = regionIdFromPath(this.mapping, path);
       if (regionId == null) continue;
       const paths = this.pathIndex.get(regionId) ?? [];
       paths.push(path);
@@ -118,7 +118,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   private eventRegionId(event: Event): number | null {
     const target = event.target;
     if (!(target instanceof SVGPathElement)) return null;
-    return regionIdFromClassNames(this.mapping, target.classList);
+    return regionIdFromPath(this.mapping, target);
   }
 
   private emitRegion(type: SliceRegionPointerEvent['type'], regionId: number, event: PointerEvent): void {

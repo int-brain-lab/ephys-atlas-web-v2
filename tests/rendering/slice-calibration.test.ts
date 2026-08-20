@@ -22,6 +22,8 @@ import {
   type Matrix4,
 } from '../../web/src/rendering/coordinate-space.js';
 import { regionIdFromClassNames } from '../../web/src/rendering/region-id.js';
+import { regionIdFromAtlasAttributes } from '../../web/src/rendering/region-id.js';
+import { anatomySliceSvgFragment } from '../../web/src/rendering/generated-anatomy-renderer.js';
 
 const fixture = JSON.parse(
   readFileSync(new URL('../../fixtures/rendering/linked-slices.fixture.json', import.meta.url), 'utf8'),
@@ -119,4 +121,20 @@ test('projection affines round-trip a scientific cursor', () => {
 test('region id extraction follows v1 mapping class convention', () => {
   assert.equal(regionIdFromClassNames('beryl', ['foo', 'beryl_region_202']), 202);
   assert.equal(regionIdFromClassNames('allen', ['beryl_region_202']), null);
+});
+
+test('generated anatomy exposes direct stable IDs for every parcellation', () => {
+  const attributes = new Map([['data-allen-id', '-10'], ['data-beryl-id', '-20'], ['data-cosmos-id', '-30']]);
+  assert.equal(regionIdFromAtlasAttributes('allen', (name) => attributes.get(name) ?? null), -10);
+  assert.equal(regionIdFromAtlasAttributes('beryl', (name) => attributes.get(name) ?? null), -20);
+  assert.equal(regionIdFromAtlasAttributes('cosmos', (name) => attributes.get(name) ?? null), -30);
+  const fragment = anatomySliceSvgFragment({
+    axis: 'coronal', sliceIndex: 0, worldCoordinateUm: 0,
+    viewBox: { x: -0.5, y: -0.5, width: 2, height: 2 },
+    paths: [{ atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: 'M0 0L1 0Z' }],
+  });
+  assert.match(fragment, /data-allen-id="-10"/);
+  assert.match(fragment, /data-beryl-id="-20"/);
+  assert.match(fragment, /data-cosmos-id="-30"/);
+  assert.match(fragment, /fill-rule="evenodd"/);
 });
