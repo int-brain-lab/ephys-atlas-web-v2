@@ -67,7 +67,7 @@ function realReleasePlugin(releasePath: string): Plugin {
 }
 
 function anatomyPackPlugin(): Plugin {
-  const middleware = async (
+  const middleware = (cacheControl: string) => async (
     request: { url?: string },
     response: { statusCode: number; setHeader(name: string, value: string | number): void; end(body?: Uint8Array | string): void },
     next: () => void,
@@ -84,7 +84,7 @@ function anatomyPackPlugin(): Plugin {
       const bytes = await readFile(target);
       response.setHeader('Content-Type', 'application/gzip');
       response.setHeader('Content-Length', bytes.byteLength);
-      response.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      response.setHeader('Cache-Control', cacheControl);
       response.end(bytes);
     } catch {
       next();
@@ -93,10 +93,10 @@ function anatomyPackPlugin(): Plugin {
   return {
     name: 'opaque-anatomy-gzip-packs',
     configureServer(server) {
-      server.middlewares.use(middleware);
+      server.middlewares.use(middleware('no-store'));
     },
     configurePreviewServer(server) {
-      server.middlewares.use(middleware);
+      server.middlewares.use(middleware('public, max-age=31536000, immutable'));
     },
   };
 }
