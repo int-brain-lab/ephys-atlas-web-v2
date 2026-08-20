@@ -186,6 +186,9 @@ export interface VolumeFeaturePayload {
   featureId: string;
   representation: 'volume';
   descriptor: VolumeRepresentationDescriptor;
+  /** Resolve a path relative to the feature metadata regardless of HTTP vs local transport. */
+  loadResource(path: string, signal?: AbortSignal): Promise<ArrayBuffer>;
+  /** Optional browser-visible base URL retained for download/debug surfaces. */
   baseUrl?: string;
 }
 
