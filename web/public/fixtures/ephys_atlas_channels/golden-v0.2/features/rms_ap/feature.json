@@ -1,0 +1,116 @@
+{
+  "artifacts": [
+    {
+      "bytes": 41,
+      "description": "Human-readable regional fixture values",
+      "id": "rms_ap-csv",
+      "media_type": "text/csv",
+      "path": "rms_ap.csv",
+      "role": "current-feature",
+      "sha256": "8ab0867a378808031ed94e212a96e9c8d578bee0f60c07d7ecaa45419d54687e"
+    }
+  ],
+  "description": "Synthetic feature exercising regional values, descriptive statistics, histogram, volume chunks and download metadata.",
+  "id": "rms_ap",
+  "label": "AP RMS (golden fixture)",
+  "representations": {
+    "regional": {
+      "format": "ephys-atlas-regional-v0.1",
+      "parcellations": [
+        {
+          "parcellation_id": "allen",
+          "statistics": "allen.statistics.json",
+          "summary": "mean",
+          "values": {
+            "bytes": 16,
+            "dtype": "float32",
+            "endianness": "little",
+            "order": "C",
+            "path": "allen.values.f32",
+            "sha256": "a1af495da02f97f69cf092d25ec0a424a1d70932e21755134ab5bcd869ff860d",
+            "shape": [
+              4
+            ]
+          }
+        }
+      ]
+    },
+    "volume": {
+      "array": {
+        "dtype": "float32",
+        "endianness": "little",
+        "nonfinite": "preserve",
+        "order": "C"
+      },
+      "chunks": {
+        "codec": {
+          "name": "none"
+        },
+        "path_template": "volume/chunks/{i0}.{i1}.{i2}.f32",
+        "shape": [
+          4,
+          3,
+          2
+        ]
+      },
+      "format": "ephys-atlas-chunked-volume-v0.1",
+      "grid": {
+        "axis_order": [
+          "ap",
+          "ml",
+          "dv"
+        ],
+        "coordinate_system": "fixture-index-space; not Allen CCF",
+        "index_to_world_um": [
+          25.0,
+          0,
+          0,
+          0,
+          0,
+          25.0,
+          0,
+          0,
+          0,
+          0,
+          25.0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "origin_um": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "shape": [
+          8,
+          6,
+          4
+        ],
+        "voxel_size_um": [
+          25.0,
+          25.0,
+          25.0
+        ]
+      },
+      "layout": "chunks3d",
+      "statistics": "allen.statistics.json",
+      "value_range": [
+        0.10000000149011612,
+        19.100000381469727
+      ]
+    }
+  },
+  "schema_version": "0.1",
+  "unit": "dB rel. V",
+  "value_semantics": {
+    "missing_values": "non-finite observations are excluded from summaries and histograms",
+    "qc_filter": "none; synthetic fixture",
+    "quantity": "synthetic AP RMS-like scalar",
+    "source_column": "rms_ap",
+    "source_population": "synthetic fixture observations",
+    "transform": "identity; fixture values are already display values"
+  }
+}
