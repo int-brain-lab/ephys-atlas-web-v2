@@ -252,7 +252,16 @@ def _ring_count(paths: list[dict[str, Any]]) -> int:
     return sum(path["d"].count("M") + path["d"].count("m") for path in paths)
 
 
-def _pack_id(annotation_sha: str, lut_sha: str, tolerance_um: float) -> str:
+def _pack_id(
+    annotation_sha: str,
+    lut_sha: str,
+    *,
+    tolerance_um: float,
+    maximum_error_um: float,
+    minimum_iou: float,
+    pack_depths: tuple[int, ...],
+    generator_commit: str,
+) -> str:
     identity = canonical_json(
         {
             "annotation_sha256": annotation_sha,
@@ -260,7 +269,16 @@ def _pack_id(annotation_sha: str, lut_sha: str, tolerance_um: float) -> str:
             "resolution_um": RESOLUTION_UM,
             "hemisphere": "left",
             "tolerance_um": tolerance_um,
+            "maximum_error_um": maximum_error_um,
+            "minimum_iou": minimum_iou,
+            "minimum_iou_area_mm2": 0.01,
+            "boundary_sampling_interval_voxels": 0.25,
+            "pack_depths": sorted(pack_depths),
             "iblatlas_commit": IBLATLAS_COMMIT,
+            "generator_commit": generator_commit,
+            "shapely_version": shapely.__version__,
+            "geos_version": shapely.geos_version_string,
+            "sagittal_orientation": "posterior-to-anterior",
         }
     )
     tolerance = str(tolerance_um).replace(".", "p")
@@ -323,7 +341,15 @@ def build_pack(
 
     annotation_sha = sha256_file(annotation)
     lut_sha = sha256_file(annotation_lut_volume)
-    pack_id = _pack_id(annotation_sha, lut_sha, tolerance_um)
+    pack_id = _pack_id(
+        annotation_sha,
+        lut_sha,
+        tolerance_um=tolerance_um,
+        maximum_error_um=maximum_error_um,
+        minimum_iou=minimum_iou,
+        pack_depths=pack_depths,
+        generator_commit=commit,
+    )
 
     temporary_parent = output.parent
     temporary_parent.mkdir(parents=True, exist_ok=True)

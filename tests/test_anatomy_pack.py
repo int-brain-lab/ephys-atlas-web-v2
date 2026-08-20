@@ -12,6 +12,7 @@ from shapely import coverage_is_valid
 
 from tools.anatomy_pack.build import (
     PROJECTIONS,
+    _pack_id,
     _sentinels,
     _slice_paths,
     _write_pack,
@@ -195,3 +196,19 @@ def test_gzip_slice_pack_is_deterministic_and_matches_schema(tmp_path: Path) -> 
     )
     Draft202012Validator(schema).validate(decoded)
     assert gzip.decompress(payload) == canonical_json(decoded)
+
+
+def test_pack_identity_changes_with_generator_or_layout() -> None:
+    base = {
+        "annotation_sha": "a" * 64,
+        "lut_sha": "b" * 64,
+        "tolerance_um": 10,
+        "maximum_error_um": 50,
+        "minimum_iou": 0.98,
+        "pack_depths": (16,),
+        "generator_commit": "c" * 40,
+    }
+    first = _pack_id(**base)
+    assert first == _pack_id(**base)
+    assert first != _pack_id(**{**base, "pack_depths": (16, 32)})
+    assert first != _pack_id(**{**base, "generator_commit": "d" * 40})
