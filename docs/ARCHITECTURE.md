@@ -35,7 +35,21 @@ Do not force all representations into one physical format.
 
 ## Rendering
 
-Reuse the existing curated SVG slice assets where useful. Their alignment is manually/visually calibrated rather than scientifically exact, so treat them as display assets with explicit transforms rather than a canonical coordinate representation.
+`SliceRenderer` is the application rendering boundary. The active regional
+renderer uses immutable generated SVG anatomy from the exact bilateral Allen
+CCFv3 10 µm pack. Its declared affines synchronize all projections through one
+ML/AP/DV cursor; curated v1 SVGs are pinned historical fallback assets only.
+
+SVG remains the regional interaction representation because stable path IDs
+support delegated picking, selection, coloring, and linked guides. Runtime
+work is bounded with lazy source packs, byte-bounded decoded caching, an
+eight-layer retained parsed-DOM cache per view, and a latest-only 40 ms geometry
+scheduler. Interaction may stride over several slices while exact native
+indices remain addressable in state and URLs.
+
+The indexed binary SVG pack is an experiment below this boundary, not a second
+scientific geometry model. See
+`docs/rendering/INDEXED_SVG_PACK_EXPERIMENT.md`.
 
 3D is renderer-agnostic. Evaluate Datoviz, custom WebGPU, Three.js/WebGPU/WebGL, or another suitable browser renderer. Do not make a 3D replacement a dependency of the first end-to-end vertical slice.
 

@@ -146,3 +146,24 @@ coalesced to animation frames, unchanged projections update guides without
 reloading or restyling geometry, URL writes are deferred during navigation,
 and idle prefetch loads at most one pack in the active direction. Decoded
 anatomy packs use a byte-bounded LRU; immutable pack URLs use browser caching.
+
+## D025 — Retained SVG navigation and indexed-fragment experiment
+
+Keep SVG as the regional anatomy representation. Preserve exact native 10 µm
+indices in application state, URLs, coordinates, and linked guides, but make a
+wheel navigation step four slices (40 µm); interactive display cadence need not
+materialize every scientific index crossed by an input burst.
+
+The active renderer retains up to eight parsed slice `<g>` layers per view and
+reuses both their DOM nodes and region-path indexes on a warm revisit. Geometry
+requests use a latest-only scheduler with a 40 ms minimum start interval;
+superseded requests that have not started do no source or DOM work. Picking,
+selection, coloring, and guide synchronization remain within the existing
+`SliceRenderer` boundary and continue to use stable SVG region attributes.
+
+Prototype an indexed binary transport containing a fixed little-endian header,
+projection/pack identity, fixed-width slice entries, and concatenated UTF-8 SVG
+fragments. This format is experimental and is not an active anatomy-pack or
+schema contract yet. Production adoption requires a complete-corpus builder,
+manifest/SHA integration, worker/browser timing, memory measurements, and the
+existing anatomy topology and coverage gates.

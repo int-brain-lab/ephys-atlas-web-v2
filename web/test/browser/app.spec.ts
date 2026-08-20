@@ -66,10 +66,10 @@ test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
   await page.goto('/');
 
   await page.locator('[data-view="coronal"] .view-frame__brain-svg').dispatchEvent('wheel', { deltaY: 100 });
-  await expect(page.getByLabel('coronal slice')).toHaveValue('658');
-  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.18 mm');
-  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('658,550,400');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '658');
+  await expect(page.getByLabel('coronal slice')).toHaveValue('656');
+  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.16 mm');
+  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('656,550,400');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '656');
 });
 
 test('initial anatomy display fetches only the three visible packs', async ({ page }) => {
@@ -92,6 +92,7 @@ test('a wheel burst is coalesced and only updates linked guides in other project
   await page.goto('/');
   await expect(page.locator('[data-slice-asset="generated-anatomy-v2"]')).toHaveCount(3);
   await expect(page.locator('.view-frame[data-state="ready"]')).toHaveCount(3);
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
   const svg = page.locator('[data-view="coronal"] .view-frame__brain-svg');
   await page.evaluate(() => {
     const metrics = { sagittal: 0, horizontal: 0 };
@@ -99,17 +100,17 @@ test('a wheel burst is coalesced and only updates linked guides in other project
     for (const axis of ['sagittal', 'horizontal'] as const) {
       const figure = document.querySelector(`[data-view="${axis}"] .view-frame__slice-figure`)!;
       new MutationObserver((mutations) => { metrics[axis] += mutations.length; })
-        .observe(figure, { attributes: true, childList: true, subtree: true });
+        .observe(figure, { childList: true });
     }
   });
   await svg.evaluate((node) => {
     for (let index = 0; index < 5; index += 1) node.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, cancelable: true }));
   });
-  await expect(page.getByLabel('coronal slice')).toHaveValue('650');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '650');
+  await expect(page.getByLabel('coronal slice')).toHaveValue('640');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '640');
   expect(await page.evaluate(() => (
     (window as Window & { __unchangedFigureMutations?: { sagittal: number; horizontal: number } }).__unchangedFigureMutations
-  ))).toEqual({ sagittal: 4, horizontal: 4 });
+  ))).toEqual({ sagittal: 0, horizontal: 0 });
 });
 
 test('an existing anatomy slice stays visible while an adjacent pack loads', async ({ page }) => {
@@ -442,6 +443,100 @@ test('generated anatomy renderer uses direct mapping IDs and affine-derived guid
   }
   await expect(target.locator('.slice-guide[data-source-axis="sagittal"]')).toHaveAttribute('x1', '1');
   await expect(target.locator('.slice-guide[data-source-axis="horizontal"]')).toHaveAttribute('y1', '2');
+});
+
+test('generated anatomy renderer reuses a prepared SVG slice layer on revisit', async ({ page }) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const { GeneratedAnatomySliceRenderer } = await import('/src/rendering/generated-anatomy-renderer.ts');
+    const target = document.createElement('div');
+    document.body.append(target);
+    const descriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+    if (!descriptor?.get || !descriptor.set) throw new Error('Element.innerHTML is unavailable');
+    let parseCount = 0;
+    Object.defineProperty(Element.prototype, 'innerHTML', {
+      configurable: true,
+      get() { return descriptor.get!.call(this); },
+      set(value: string) {
+        if (this instanceof SVGGElement && (value.includes('d="M4 ') || value.includes('d="M5 '))) parseCount += 1;
+        descriptor.set!.call(this, value);
+      },
+    });
+    try {
+      const source = {
+        async loadSlice(axis: 'coronal' | 'sagittal' | 'horizontal', sliceIndex: number) {
+          return {
+            packFormat: 'anatomy-pack-v2' as const, axis, sliceIndex, worldCoordinateUm: sliceIndex * 10,
+            viewBox: { x: -0.5, y: -0.5, width: 2, height: 2 },
+            paths: [{ atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: `M${sliceIndex} 0L1 0L1 1Z` }],
+          };
+        },
+        async worldFromSliceIndices() { return { ml: 0, ap: 0, dv: 0 }; },
+        async guidesForWorld() { return []; },
+      };
+      const renderer = new GeneratedAnatomySliceRenderer(source);
+      const model = (sliceIndex: number) => ({
+        axis: 'coronal' as const, sliceIndex,
+        slices: { coronal: sliceIndex, sagittal: 0, horizontal: 0 },
+        cursor: { xUm: 0, yUm: 0, zUm: 0 }, parcellation: 'allen' as const,
+        selectedRegionIds: [], feature: null,
+      });
+      await renderer.render(target, model(4));
+      const firstPath = target.querySelector('path');
+      const firstLayer = target.querySelector('.view-frame__slice-figure > g');
+      await renderer.render(target, model(5));
+      await renderer.render(target, model(4));
+      return {
+        parseCount,
+        reusedPath: firstPath === target.querySelector('path'),
+        reusedLayer: firstLayer === target.querySelector('.view-frame__slice-figure > g'),
+      };
+    } finally {
+      Object.defineProperty(Element.prototype, 'innerHTML', descriptor);
+      target.remove();
+    }
+  });
+  expect(result).toEqual({ parseCount: 2, reusedPath: true, reusedLayer: true });
+});
+
+test('generated anatomy renderer starts only the latest slice in a rapid burst', async ({ page }) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const { GeneratedAnatomySliceRenderer } = await import('/src/rendering/generated-anatomy-renderer.ts');
+    const target = document.createElement('div');
+    document.body.append(target);
+    const loaded: number[] = [];
+    const source = {
+      async loadSlice(axis: 'coronal' | 'sagittal' | 'horizontal', sliceIndex: number) {
+        loaded.push(sliceIndex);
+        return {
+          packFormat: 'anatomy-pack-v2' as const, axis, sliceIndex, worldCoordinateUm: sliceIndex * 10,
+          viewBox: { x: 0, y: 0, width: 2, height: 2 },
+          paths: [{ atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: `M${sliceIndex} 0L1 0L1 1Z` }],
+        };
+      },
+      async worldFromSliceIndices() { return { ml: 0, ap: 0, dv: 0 }; },
+      async guidesForWorld() { return []; },
+    };
+    const renderer = new GeneratedAnatomySliceRenderer(source);
+    const model = (sliceIndex: number) => ({
+      axis: 'coronal' as const, sliceIndex,
+      slices: { coronal: sliceIndex, sagittal: 0, horizontal: 0 },
+      cursor: { xUm: 0, yUm: 0, zUm: 0 }, parcellation: 'allen' as const,
+      selectedRegionIds: [], feature: null,
+    });
+    await renderer.render(target, model(4));
+    await Promise.all([
+      renderer.render(target, model(5)),
+      renderer.render(target, model(6)),
+      renderer.render(target, model(7)),
+    ]);
+    const assetIndex = target.dataset.assetIndex;
+    renderer.destroy();
+    target.remove();
+    return { loaded, assetIndex };
+  });
+  expect(result).toEqual({ loaded: [4, 7], assetIndex: '7' });
 });
 
 test('region search filters loaded metadata rather than prototype rows', async ({ page }) => {

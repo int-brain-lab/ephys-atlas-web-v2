@@ -128,13 +128,26 @@ cursor; URL v3 uses native indices and migrates v1 10 µm and v2 25 µm links by
 world coordinate.
 
 Slice navigation coalesces wheel bursts to one update per animation frame and
-uses 50 normalized wheel pixels per 10 µm slice. A slice change reloads geometry
+uses 100 normalized wheel pixels per four-slice (40 µm) interaction step while
+preserving exact 10 µm indices in state and URLs. A slice change reloads geometry
 only in its own projection; the other projections update their guide layers.
 Presentation styling is skipped when feature/color/selection/hover state is
 unchanged, and URL replacement is deferred for 120 ms during navigation. The
 initial view fetches only its three current depth-16 packs. Subsequent idle
 prefetch is latest-wins and loads one pack in the active direction into a
-32 MiB decoded-byte LRU shared across projections.
+32 MiB decoded-byte LRU shared across projections. Each SVG view retains an
+eight-layer parsed-DOM LRU, including its per-slice path index, so reverse/warm
+navigation swaps the original nodes without parsing again. Geometry starts are
+limited to one every 40 ms per view and pending intermediate requests are
+replaced by the latest slice before source loading begins.
+
+An isolated `ISVG` v1 prototype now exercises a fixed binary slice index over
+concatenated UTF-8 SVG fragments in Python and TypeScript. Its indexed browser
+reader decodes a fragment on lookup. The three default packs are within
+0.3–0.6% of the current JSON gzip size, so the candidate is transfer-neutral
+and targets JSON/allocation/serialization cost. It remains outside the active
+manifest and renderer pending the adoption gates in
+`docs/rendering/INDEXED_SVG_PACK_EXPERIMENT.md`.
 
 ## Volume viewer vertical slice
 

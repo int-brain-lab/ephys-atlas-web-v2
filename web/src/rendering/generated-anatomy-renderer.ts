@@ -15,6 +15,22 @@ interface RendererMount {
   frame?: RegionalSliceFrame;
 }
 
+interface PendingGeometryRender {
+  model: SliceRenderModel;
+  token: number;
+  resolve: () => void;
+  reject: (error: unknown) => void;
+}
+
+interface GeometryRenderSchedule {
+  pending: PendingGeometryRender | undefined;
+  timer: number | null;
+  inFlight: boolean;
+  lastStartedAt: number;
+}
+
+const GEOMETRY_RENDER_INTERVAL_MS = 40;
+
 function escapeAttribute(value: string): string {
   return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
@@ -30,6 +46,7 @@ export function anatomySliceSvgFragment(slice: AnatomySlice): string {
 export class GeneratedAnatomySliceRenderer implements SliceRenderer {
   private readonly mounts = new Map<HTMLElement, RendererMount>();
   private readonly renderTokens = new WeakMap<HTMLElement, number>();
+  private readonly geometrySchedules = new Map<HTMLElement, GeometryRenderSchedule>();
   private readonly requestedIndices = new Map<SliceAxis, number>();
   private interactionSink: RendererInteractionSink | null = null;
   private presentation: RendererPresentation = {
@@ -62,12 +79,20 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     if (existing?.frame?.axis === model.axis
       && existing.frame.index === model.sliceIndex
       && existing.frame.mapping === model.parcellation) {
+      this.cancelPendingGeometryRender(target);
       const guides = await this.source.guidesForWorld(model.axis, world);
       if (this.renderTokens.get(target) !== token) return;
       existing.frame = { ...existing.frame, guides };
       existing.renderer.updateGuides(existing.frame);
       return;
     }
+
+    return this.scheduleGeometryRender(target, model, token);
+  }
+
+  private async renderGeometry(target: HTMLElement, model: SliceRenderModel, token: number): Promise<void> {
+    const world = cursorStateToWorld(model.cursor);
+    const existing = this.mounts.get(target);
 
     const previousIndex = existing?.frame?.axis === model.axis ? existing.frame.index : null;
     const [slice, guides] = await Promise.all([
@@ -99,6 +124,7 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
 
   clear(target: HTMLElement): void {
     this.renderTokens.set(target, (this.renderTokens.get(target) ?? 0) + 1);
+    this.clearGeometrySchedule(target);
     this.mounts.get(target)?.renderer.dispose();
     this.mounts.delete(target);
     target.replaceChildren();
@@ -108,12 +134,68 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
   }
 
   destroy(): void {
+    for (const target of this.geometrySchedules.keys()) this.clearGeometrySchedule(target);
     for (const [target, mount] of this.mounts) {
       mount.renderer.dispose();
       target.replaceChildren();
     }
     this.mounts.clear();
     this.requestedIndices.clear();
+  }
+
+  private scheduleGeometryRender(target: HTMLElement, model: SliceRenderModel, token: number): Promise<void> {
+    const schedule = this.geometrySchedules.get(target) ?? {
+      pending: undefined,
+      timer: null,
+      inFlight: false,
+      lastStartedAt: Number.NEGATIVE_INFINITY,
+    };
+    this.geometrySchedules.set(target, schedule);
+    schedule.pending?.resolve();
+    return new Promise<void>((resolve, reject) => {
+      schedule.pending = { model, token, resolve, reject };
+      this.pumpGeometryRender(target, schedule);
+    });
+  }
+
+  private pumpGeometryRender(target: HTMLElement, schedule: GeometryRenderSchedule): void {
+    if (schedule.inFlight || schedule.timer !== null || !schedule.pending) return;
+    const waitMs = Math.max(0, GEOMETRY_RENDER_INTERVAL_MS - (performance.now() - schedule.lastStartedAt));
+    if (waitMs > 0) {
+      schedule.timer = window.setTimeout(() => {
+        schedule.timer = null;
+        this.pumpGeometryRender(target, schedule);
+      }, waitMs);
+      return;
+    }
+    const request = schedule.pending;
+    schedule.pending = undefined;
+    schedule.inFlight = true;
+    schedule.lastStartedAt = performance.now();
+    void this.renderGeometry(target, request.model, request.token)
+      .then(request.resolve, request.reject)
+      .finally(() => {
+        schedule.inFlight = false;
+        this.pumpGeometryRender(target, schedule);
+      });
+  }
+
+  private cancelPendingGeometryRender(target: HTMLElement): void {
+    const schedule = this.geometrySchedules.get(target);
+    if (!schedule?.pending) return;
+    schedule.pending.resolve();
+    schedule.pending = undefined;
+    if (schedule.timer !== null) {
+      window.clearTimeout(schedule.timer);
+      schedule.timer = null;
+    }
+  }
+
+  private clearGeometrySchedule(target: HTMLElement): void {
+    const schedule = this.geometrySchedules.get(target);
+    if (!schedule) return;
+    this.cancelPendingGeometryRender(target);
+    this.geometrySchedules.delete(target);
   }
 
   private withPresentation(frame: RegionalSliceFrame): RegionalSliceFrame {

@@ -6,7 +6,7 @@
 
 State uses an immutable `AppState` plus explicit `AppAction` values, a reducer, and direct store subscriptions. Shareable/view state is separated from runtime loading/error state.
 
-URL state is versioned (`v=1`) and human-readable. Common state is represented with named query parameters (`dataset`, `release`, `feature`, `repr`, `parcel`, `stat`, `cmap`, `range`, `scale`, `cursor`, `slices`, `selected`). URL updates use `history.replaceState`, and `popstate` is supported.
+URL state is versioned (`v=3`) and human-readable. Common state is represented with named query parameters (`dataset`, `release`, `feature`, `repr`, `parcel`, `stat`, `cmap`, `range`, `scale`, `cursor`, `slices`, `selected`). URL updates use `history.replaceState`, and `popstate` is supported. Historical v1 10 µm and v2 25 µm slice links migrate through world coordinates.
 
 Data loading is behind `DatasetSource` and `DatasetRepository`. `HttpDatasetSource` handles published immutable releases. `LocalDatasetSource` persists imported directory contents in IndexedDB but exposes the same scientific resource graph. Both consume schema v0.1 rather than a frontend-specific provisional data format.
 
@@ -44,7 +44,8 @@ Phase 2 was visually approved on 2026-08-19.
 
 - the header is bound to dataset, release, feature, and representation state;
 - release is deliberately secondary metadata and is omitted in narrow/tablet composition;
-- Share, Download, and Info remain explicit placeholder affordances;
+- Share copies the complete deep link; Download exports the current regional statistic as provenance-bearing CSV; Info shows immutable release, feature semantics, and source/builder provenance;
+- dataset/release, feature, representation, parcellation, statistic, colormap, scale, and robust/manual range controls are driven by the loaded manifest and payload rather than a hardcoded feature list;
 - compact/tablet/phone compositions expose the appropriate drawer triggers and overflow behavior;
 - Phase-1 workspace geometry remains unchanged.
 
@@ -52,36 +53,26 @@ Phase 2 was visually approved on 2026-08-19.
 
 Phase 3 was visually approved on 2026-08-19.
 
-- representative hierarchy rows cover nesting, long names, value bars, selection, missing values, hover, and keyboard focus;
-- local search and keyboard navigation are implemented;
-- selected-region prototype interactions are local-only;
+- the real pinned Allen hierarchy covers nesting, long names, ontology colors, value bars, selection, missing values, hover, and keyboard focus;
+- local search, keyboard navigation, animated branch disclosure, and expand/collapse-all controls are implemented;
+- one selection and hover state drives both the region tree and all anatomical projections;
 - narrow/tablet/phone reuse the same component in the region drawer.
 
-The Phase-3 region labels and value bars are still UX-only representative content. They are not scientific data and must now be replaced by real parcellation metadata and schema-v0.1 regional values as the first integrated viewer milestone.
+Schema-v0.1 regional values come from the active dataset release. The pinned ontology remains independently available for anatomy colors and hierarchy containers even when a feature has no value for a row.
 
 ## UX Phase 4 — anatomical view frames
 
-Phase 4's layout remains implemented, but D023 supersedes its legacy rendering
-details. The active viewer uses the immutable 25 µm left-hemisphere generated
-pack, native ranges `527/229/319`, direct signed atlas IDs, and manifest affines
-for exact cross-projection synchronization. The historical bullets below
-document the provider retained for code-level fallback only.
+Phase 4's layout remains implemented, while D024 defines the active scientific
+geometry. The viewer uses the committed exact bilateral 10 µm pack with native
+ranges `1320/1140/800`, direct signed atlas IDs, and manifest affines for exact
+cross-projection synchronization.
 
 - three anatomical frames expose calibrated AP/ML/DV coordinates, full-resolution slice-index sliders, renderer status, and maximize/restore affordances;
-- initial indices match the legacy defaults (`coronal=660`, `sagittal=550`, `horizontal=400`), corresponding to AP -1.20 mm, ML -0.24 mm, DV -3.67 mm;
-- exact 10 um regional calibration, legacy SVG view boxes, and linked-guide projection constants come from the tested rendering implementation;
-- `LegacyCuratedSvgSliceRenderer` defaults to the deployed v1 curated bundles at `https://atlas.internationalbrainlab.org/data/json/` while accepting a replacement immutable `baseUrl`;
-- the five deployed curated bundles were validated and pinned by byte size, SHA-256, path count, entry count, and index coverage in `web/src/rendering/legacy-slice-assets.ts` and `docs/frontend/LEGACY_CURATED_ASSETS.md`;
-- real orthogonal SVG coverage is coronal even indices `2..1316`, sagittal `54..1086`, and horizontal `16..754`;
-- scientific/navigation state remains on the full 10 um domains (`coronal 0..1319`, `sagittal 0..1139`, `horizontal 0..799`) with slider `step=1`;
-- coordinates, URL state, and linked guides use requested full-resolution indices while the renderer independently selects the nearest available curated SVG and exposes that display choice as `data-asset-index`;
-- loaded orthogonal bundles are checked against the pinned entry-count/range/step inventory before rendering;
-- axis bundles load lazily and are cached in memory;
-- view frames have explicit loading/ready/error states; asset failure never substitutes fake anatomy;
-- the lower-level `SvgSliceRenderer` is now below the frontend facade, so region-class parsing, selected-region styling, and renderer interaction machinery are not duplicated;
-- hermetic Playwright tests generate the complete pinned key inventory using short path fragments sampled from the real bundles.
-
-The 83.44 MiB of generated curated deployment artifacts are intentionally not duplicated in normal Git history. Launch publication still needs to copy those exact five files, unchanged, into a versioned immutable v2 asset release and configure the renderer to use it. The SHA-256 values in `docs/frontend/LEGACY_CURATED_ASSETS.md` are the acceptance check.
+- one ML/AP/DV cursor and the registered manifest affines drive slices and guides without visual calibration formulas;
+- feature mode colors folded feature values on the left and official Allen ontology colors on the right; anatomy mode colors both hemispheres by ontology identity;
+- pack bytes are lazy, integrity checked, explicitly decompressed, prefetched directionally, and held in bounded caches;
+- view frames retain the previous valid anatomy while a replacement loads and report failures explicitly;
+- the generated and legacy providers remain modular below the shared `SliceRenderer`; legacy assets are code-level rollback inputs, not runtime dependencies.
 
 ## Public interfaces
 
@@ -109,7 +100,7 @@ The previous frontend provisional schema has been removed from the active path. 
 
 ## Current next work
 
-1. Publish the validated real channel development release through an authorized non-production catalog; `just dev-real` already provides the local equivalent.
+1. Publish the validated real channel development release through an authorized non-production catalog; `just dev-real` validates and defaults to immutable `2026_W32` plus `rms_ap.denoised` locally.
 2. Deploy the committed generated anatomy pack with opaque gzip delivery and verify its immutable public URLs.
 3. Benchmark real encoding-volume layouts before selecting the launch physical representation; keep volume scientific geometry independent of SVG display calibration.
 4. Keep 3-D behind the regional and volume launch-critical vertical slices.
