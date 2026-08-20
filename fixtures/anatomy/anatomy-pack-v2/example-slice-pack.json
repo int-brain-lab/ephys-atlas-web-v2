@@ -1,0 +1,51 @@
+{
+  "format": "anatomy-slice-pack-v2",
+  "schema_version": "2.0",
+  "anatomy_pack_id": "synthetic-bilateral-10um-v2",
+  "projection": "coronal",
+  "pack_depth": 16,
+  "pack_index": 0,
+  "first_slice_index": 0,
+  "slice_count": 2,
+  "slices": [
+    {
+      "slice_index": 0,
+      "world_coordinate_um": 200,
+      "paths": [
+        {
+          "atlas_ids": {
+            "allen": -101,
+            "beryl": -10,
+            "cosmos": -1
+          },
+          "d": "M-0.5 -0.5L7.5 -0.5 7.5 7.5 -0.5 7.5Z",
+          "fill_rule": "evenodd"
+        },
+        {
+          "atlas_ids": {
+            "allen": 102,
+            "beryl": 10,
+            "cosmos": 1
+          },
+          "d": "M7.5 -0.5L16.5 -0.5 16.5 7.5 7.5 7.5Z",
+          "fill_rule": "evenodd"
+        }
+      ]
+    },
+    {
+      "slice_index": 1,
+      "world_coordinate_um": 190,
+      "paths": [
+        {
+          "atlas_ids": {
+            "allen": -101,
+            "beryl": -10,
+            "cosmos": -1
+          },
+          "d": "M-0.5 -0.5L8.5 -0.5 8.5 8.5 -0.5 8.5Z",
+          "fill_rule": "evenodd"
+        }
+      ]
+    }
+  ]
+}
