@@ -35,6 +35,7 @@ export interface RegionHit {
 export interface RendererInteractionSink {
   hover(hit: RegionHit | null): void;
   toggleSelection(hit: RegionHit): void;
+  stepSlice(axis: SliceAxis, delta: number): void;
   moveCursor(cursor: CursorState): void;
   reportError(error: unknown): void;
 }

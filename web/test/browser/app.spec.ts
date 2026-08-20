@@ -98,6 +98,18 @@ test('slice control updates calibrated coordinate and renderer request', async (
   await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '700');
 });
 
+test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockCuratedSlices(page);
+  await page.goto('/');
+
+  await page.locator('[data-view="coronal"] .view-frame__brain-svg').dispatchEvent('wheel', { deltaY: 100 });
+  await expect(page.getByLabel('coronal slice')).toHaveValue('656');
+  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.16 mm');
+  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('656,550,400');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="legacy-curated-v1"]')).toHaveAttribute('data-asset-index', '656');
+});
+
 test('full-resolution navigation stays independent from downsampled SVG assets', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await mockCuratedSlices(page);

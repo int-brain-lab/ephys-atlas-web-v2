@@ -5,8 +5,9 @@ import { PrefetchQueue } from './data/prefetch.js';
 import { DatasetRepository } from './data/repository.js';
 import { DEFAULT_APP_STATE } from './domain/defaults.js';
 import { createAppStore } from './domain/store.js';
-import type { DatasetRef, ParcellationId, RepresentationKind } from './domain/types.js';
+import type { DatasetRef, ParcellationId, RepresentationKind, SliceAxis } from './domain/types.js';
 import { NullSliceRenderer, type SliceRenderer } from './rendering/interfaces.js';
+import { maxRegionalSliceIndex } from './rendering/slice-calibration.js';
 import { AppShell, type ShellModel } from './ui/app-shell.js';
 import { RegionalPanelController } from './ui/regional-panel.js';
 import { UrlStateController } from './url/url-state.js';
@@ -46,7 +47,7 @@ export class AtlasApp {
       setParcellation: (parcellation) => this.store.dispatch({ type: 'parcellation/set', parcellation }),
       setStatistic: (statistic) => this.store.dispatch({ type: 'color/statistic', statistic }),
       setColormap: (colormap) => this.store.dispatch({ type: 'color/colormap', colormap }),
-      setSlice: (axis, index) => this.store.dispatch({ type: 'slice/set', axis, index }),
+      setSlice: (axis, index) => this.setSlice(axis, index),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       importLocal: (files) => this.importLocal(files),
       reportError: (error) => this.reportRuntimeError(error),
@@ -63,6 +64,7 @@ export class AtlasApp {
         this.render();
       },
       toggleSelection: (hit) => this.store.dispatch({ type: 'selection/toggle', regionId: hit.regionId }),
+      stepSlice: (axis, delta) => this.setSlice(axis, this.store.getState().view.slices[axis] + delta),
       moveCursor: (cursor) => this.store.dispatch({ type: 'cursor/set', cursor }),
       reportError: (error) => this.reportRuntimeError(error),
     });
@@ -115,6 +117,11 @@ export class AtlasApp {
       feature: this.feature,
       regions: this.regions,
     });
+  }
+
+  private setSlice(axis: SliceAxis, index: number): void {
+    const clamped = Math.min(maxRegionalSliceIndex(axis), Math.max(0, Math.trunc(index)));
+    this.store.dispatch({ type: 'slice/set', axis, index: clamped });
   }
 
   private async loadCatalog(): Promise<void> {

@@ -15,7 +15,10 @@ export interface SvgSliceRendererMount {
 
 export interface SvgSliceRendererOptions {
   onRegionPointer?: (event: SliceRegionPointerEvent) => void;
+  onSliceStep?: (axis: SliceAxis, delta: number) => void;
 }
+
+const WHEEL_STEP_SLICES = 4;
 
 export class SvgSliceRenderer implements RegionalSliceRenderer {
   private currentAxis: SliceAxis | null = null;
@@ -35,6 +38,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     mount.figureLayer.addEventListener('pointermove', this.onPointerMove, { signal });
     mount.figureLayer.addEventListener('pointerleave', this.onPointerLeave, { signal });
     mount.figureLayer.addEventListener('pointerup', this.onClick, { signal });
+    mount.svg.addEventListener('wheel', this.onWheel, { signal, passive: false });
   }
 
   render(frame: RegionalSliceFrame): void {
@@ -138,5 +142,12 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   private readonly onClick = (event: PointerEvent): void => {
     const regionId = this.eventRegionId(event);
     if (regionId != null) this.emitRegion('select', regionId, event);
+  };
+
+  private readonly onWheel = (event: WheelEvent): void => {
+    if (this.currentAxis == null || event.deltaY === 0) return;
+    event.preventDefault();
+    const delta = event.deltaY < 0 ? WHEEL_STEP_SLICES : -WHEEL_STEP_SLICES;
+    this.options.onSliceStep?.(this.currentAxis, delta);
   };
 }
