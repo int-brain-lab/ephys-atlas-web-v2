@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
 const reviewViewports = [
   { name: 'wide-desktop', width: 1680, height: 1050, layout: 'wide', body: { x: 8, y: 72, width: 1664, height: 970 } },
@@ -266,6 +267,43 @@ test('data and color controls are driven by the loaded release', async ({ page }
 
   await page.getByLabel('Color range mode').selectOption('auto');
   await expect.poll(() => new URL(page.url()).searchParams.get('range')).toBeNull();
+});
+
+test('share, download and info expose the immutable scientific context', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: async (value: string) => { (window as Window & { __copiedUrl?: string }).__copiedUrl = value; } },
+    });
+  });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/?feature=rms_ap&stat=median');
+  const actions = page.locator('.app-header__desktop-actions');
+
+  await actions.getByRole('button', { name: 'Share' }).click();
+  await expect(actions.getByRole('button', { name: 'Copied' })).toBeVisible();
+  expect(await page.evaluate(() => (window as Window & { __copiedUrl?: string }).__copiedUrl)).toBe(page.url());
+
+  await actions.getByRole('button', { name: 'Info' }).click();
+  const info = page.getByRole('dialog', { name: 'Dataset information' });
+  await expect(info).toBeVisible();
+  await expect(info).toContainText('Synthetic test fixture');
+  await expect(info).toContainText('golden-v0.3');
+  await expect(info).toContainText('AP RMS (golden fixture)');
+  await expect(info).toContainText('dB rel. V');
+  await expect(info).toContainText('golden-fixture-v0.3');
+  await expect(info).toContainText('Deterministic synthetic fixture seed');
+  await info.getByRole('button', { name: 'Close' }).click();
+
+  const downloadPromise = page.waitForEvent('download');
+  await actions.getByRole('button', { name: 'Download' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('ephys_atlas_channels-golden-v0.3-rms_ap-allen-median.csv');
+  const path = await download.path();
+  expect(path).not.toBeNull();
+  const csv = await readFile(path!, 'utf8');
+  expect(csv).toContain('dataset_id,release_id,feature_id,representation,parcellation,statistic,unit,region_id,acronym,region_name,value');
+  expect(csv).toContain('ephys_atlas_channels,golden-v0.3,rms_ap,regional,allen,median,dB rel. V');
 });
 
 test('renderer region selection flows back into shared URL state', async ({ page }) => {

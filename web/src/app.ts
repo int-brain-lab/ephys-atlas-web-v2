@@ -56,6 +56,8 @@ export class AtlasApp {
       setColorScale: (scale) => this.store.dispatch({ type: 'color/scale', scale }),
       setSlice: (axis, index) => this.setSlice(axis, index),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
+      shareCurrentView: () => this.copyCurrentUrl(),
+      downloadCurrentFeature: () => this.downloadCurrentFeature(),
       importLocal: (files) => this.importLocal(files),
       reportError: (error) => this.reportRuntimeError(error),
     }, this.renderer);
@@ -288,6 +290,54 @@ export class AtlasApp {
     } catch (error) {
       this.store.dispatch({ type: 'runtime/dataset', status: 'error', error: this.message(error) });
     }
+  }
+
+  private async copyCurrentUrl(): Promise<void> {
+    if (!navigator.clipboard?.writeText) throw new Error('Clipboard access is unavailable in this browser');
+    await navigator.clipboard.writeText(window.location.href);
+  }
+
+  private downloadCurrentFeature(): void {
+    const state = this.store.getState().view;
+    if (!this.manifest || this.feature?.representation !== 'regional' || !state.featureId) return;
+    const values = this.feature.statistics[state.coloring.statistic];
+    if (!values) return;
+    const descriptor = this.manifest.features.find((item) => item.id === state.featureId);
+    const regions = new Map(this.regions.map((region) => [region.id, region]));
+    const fields = [
+      'dataset_id', 'release_id', 'feature_id', 'representation', 'parcellation', 'statistic', 'unit',
+      'region_id', 'acronym', 'region_name', 'value',
+    ];
+    const rows = this.feature.regionIds.map((regionId, index) => {
+      const region = regions.get(regionId);
+      const value = values[index];
+      return [
+        state.dataset.datasetId,
+        state.dataset.releaseId ?? this.manifest?.release.releaseId ?? '',
+        state.featureId ?? '',
+        state.representation,
+        state.parcellation,
+        state.coloring.statistic,
+        descriptor?.unit ?? '',
+        regionId,
+        region?.acronym ?? '',
+        region?.name ?? '',
+        value !== undefined && Number.isFinite(value) ? String(value) : '',
+      ];
+    });
+    const csv = [fields, ...rows].map((row) => row.map((value) => this.csvCell(value)).join(',')).join('\n') + '\n';
+    const release = state.dataset.releaseId ?? this.manifest.release.releaseId;
+    const filename = `${state.dataset.datasetId}-${release}-${state.featureId}-${state.parcellation}-${state.coloring.statistic}.csv`;
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  private csvCell(value: string): string {
+    return /[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
   }
 
   private message(error: unknown): string {

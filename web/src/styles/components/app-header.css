@@ -147,8 +147,9 @@
   white-space: nowrap;
 }
 
-.app-header__action[aria-disabled="true"] {
-  color: var(--color-text-secondary);
+.app-header__action:disabled {
+  opacity: .42;
+  cursor: default;
 }
 
 .app-header__action-icon {
