@@ -5,10 +5,9 @@
 }
 
 .view-frame__slice-figure path.is-highlighted {
-  fill: var(--color-accent) !important;
-  fill-opacity: 0.62;
+  filter: brightness(1.22) saturate(1.12);
 }
 
 .view-frame__slice-figure path[style*='fill'] {
-  transition: fill 90ms linear, stroke 90ms linear;
+  transition: fill 90ms linear, filter 90ms linear, stroke 90ms linear;
 }

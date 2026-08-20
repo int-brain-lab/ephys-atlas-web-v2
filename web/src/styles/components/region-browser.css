@@ -26,13 +26,23 @@
 
 .region-list,.selected-regions__list{list-style:none;margin:0;padding:0}
 
-.region-row{min-width:0}
+.region-row{min-width:0;display:grid;grid-template-columns:1rem minmax(0,1fr);align-items:center;padding-left:calc(var(--space-2) + var(--region-indent,0rem))}
 
-.region-row__button{width:100%;min-height:2.28rem;display:grid;grid-template-columns:1rem minmax(0,1fr) 3.9rem;align-items:center;gap:.34rem;padding:.23rem var(--space-2) .23rem calc(var(--space-2) + var(--region-indent,0rem));border:0;border-radius:0;background:transparent;text-align:left}
+.region-row__button{width:100%;min-height:2.28rem;display:grid;grid-template-columns:1rem minmax(0,1fr) 3.9rem;align-items:center;gap:.34rem;padding:.23rem var(--space-2) .23rem .15rem;border:0;border-radius:0;background:transparent;text-align:left}
 
 .region-row__button:hover{background:var(--color-surface-hover)}
 
 .region-row__button:focus-visible{position:relative;z-index:2;outline-offset:-2px}
+
+.region-row__toggle,.region-row__toggle-placeholder{width:1rem;height:1.55rem;display:grid;place-items:center;padding:0;border:0;background:transparent;color:var(--color-text-muted);font-size:1rem;line-height:1}
+
+.region-row__toggle{transition:color 90ms linear,transform 90ms ease}
+
+.region-row__toggle[aria-expanded=true]{transform:rotate(90deg)}
+
+.region-row__toggle:hover{background:var(--color-surface-hover);color:var(--color-text)}
+
+.region-row__toggle:focus-visible{outline-offset:-2px}
 
 .region-row__disclosure{width:1rem;color:var(--color-text-muted);font-size:.68rem;text-align:center}
 
@@ -59,6 +69,10 @@
 .region-row[data-selected=true] .region-row__acronym{color:#dceeff}
 
 .region-row[data-selected=true] .region-row__bar-fill{background:rgb(85 167 247 / 76%)}
+
+.region-row[data-hovered=true]:not([data-selected=true]) .region-row__button{background:rgb(255 255 255 / 7%)}
+
+.region-row[data-hovered=true] .region-row__swatch{filter:brightness(1.22) saturate(1.12)}
 
 .region-row[data-missing=true] .region-row__identity{opacity:.68}
 

@@ -201,13 +201,15 @@ test('region hover is linked across all anatomical projections', async ({ page }
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
 
   const source = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
+  const sourceFill = await source.evaluate((node) => getComputedStyle(node).fill);
   await source.dispatchEvent('pointermove');
+  await expect(page.locator('.region-row[data-region-id="-362"]')).toHaveAttribute('data-hovered', 'true');
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
     const highlighted = page.locator(`[data-view="${axis}"] path[data-allen-id="-362"]`).first();
     await expect(highlighted).toHaveClass(/is-highlighted/);
     await expect(highlighted).not.toHaveClass(/is-selected/);
-    await expect(highlighted).toHaveCSS('fill', 'rgb(85, 167, 247)');
-    await expect(highlighted).toHaveCSS('fill-opacity', '0.62');
+    if (axis === 'coronal') await expect(highlighted).toHaveCSS('fill', sourceFill);
+    await expect(highlighted).toHaveCSS('filter', 'brightness(1.22) saturate(1.12)');
   }
 
   await page.locator('[data-view="coronal"] .view-frame__slice-figure').dispatchEvent('pointerleave');
@@ -225,8 +227,7 @@ test('region-list hover previews the region in all anatomical projections', asyn
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
     const highlighted = page.locator(`[data-view="${axis}"] path[data-allen-id="-362"]`).first();
     await expect(highlighted).toHaveClass(/is-highlighted/);
-    await expect(highlighted).toHaveCSS('fill', 'rgb(85, 167, 247)');
-    await expect(highlighted).toHaveCSS('fill-opacity', '0.62');
+    await expect(highlighted).toHaveCSS('filter', 'brightness(1.22) saturate(1.12)');
   }
 
   await page.getByLabel('Search brain regions').hover();

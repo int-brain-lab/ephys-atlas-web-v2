@@ -42,3 +42,28 @@ test('reduced mappings expose real Allen ancestors as non-selectable containers'
   await expect(page.locator('.region-row[data-region-id="-315"]')).toHaveAttribute('data-parent-id', '-695');
   await expect(page.locator('.region-row[data-region-id="-315"]')).toHaveAttribute('data-mapping-member', 'true');
 });
+
+test('ontology branches disclose accessibly and missing feature values stay visually blank', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+
+  const root = page.locator('.region-row[data-region-id="-997"]');
+  const rootButton = root.locator('.region-row__button');
+  const rootToggle = root.locator('.region-row__toggle');
+  await expect(root).toHaveAttribute('aria-expanded', 'true');
+  await expect(rootToggle).toHaveAttribute('aria-label', 'Collapse root');
+  await expect(page.getByText('no value', { exact: true })).toHaveCount(0);
+
+  await rootToggle.click();
+  await expect(root).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('.region-row:not([hidden])')).toHaveCount(1);
+
+  await rootButton.focus();
+  await rootButton.press('ArrowRight');
+  await expect(root).toHaveAttribute('aria-expanded', 'true');
+  await rootButton.press('ArrowRight');
+  await expect(page.locator('.region-row[data-region-id="-8"] .region-row__button')).toBeFocused();
+  await page.locator('.region-row[data-region-id="-8"] .region-row__button').press('ArrowLeft');
+  await page.locator('.region-row[data-region-id="-8"] .region-row__button').press('ArrowLeft');
+  await expect(rootButton).toBeFocused();
+});
