@@ -281,7 +281,7 @@ def _pack_id(
             "sagittal_orientation": "posterior-to-anterior",
         }
     )
-    tolerance = str(tolerance_um).replace(".", "p")
+    tolerance = f"{float(tolerance_um):g}".replace(".", "p")
     return f"allen-ccfv3-25um-left-t{tolerance}-{sha256_bytes(identity)[:12]}"
 
 
