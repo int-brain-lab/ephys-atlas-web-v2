@@ -46,7 +46,7 @@ Current canonical source prefix:
 
     s3://ibl-brain-wide-map-private/aggregates/atlas/encoding_volumes/ea_active/
 
-The private paper/source documentation describes files of the form:
+The producer/source layout uses files of the form:
 
     encoding_volumes/{project}/{label}/brainwide_ephys_atlas_25um.npz
 
@@ -59,7 +59,11 @@ For the documented `2026_W12` release, the NPZ contains:
 - `res_um = 25`;
 - `N = 41` features for that vintage.
 
-The stored feature values are not pre-normalized; mean/std metadata can support an optional z-score transform if a product requirement explicitly selects it.
+The archive alone does not establish whether stored values are final feature
+units, normalized model values, or values requiring another producer-defined
+transform. The names `mean_per_feature` and `std_per_feature` are insufficient
+to select z-scoring or denormalization semantics. That choice remains part of
+Q4 until it is traced to authoritative producer code or metadata.
 
 A project collaborator recommends using the latest available encoding volumes from this source during development and switching to the public bucket when released. An HTTP object interface is expected to be available.
 
@@ -117,7 +121,9 @@ This is evidence, not automatic authority for the v2 scientific population/QC re
 
 See `docs/IMPLEMENTATION_PLAN.md` for execution order. The highest-value source-validation tasks are currently:
 
-1. resolve Q1-Q3 before building a production channel release;
+1. freeze the paper channel vintage under Q2 and publish the already-validated
+   development release to a non-production origin;
 2. resolve Q4 from authoritative atlas/producer evidence;
-3. benchmark real encoding-volume browser transports for Q5;
+3. benchmark real encoding-volume browser transports for Q5 using the pulled,
+   header-inspected `2026_W12` object;
 4. re-test the final public object origin for CORS/Range/cache behavior when available.

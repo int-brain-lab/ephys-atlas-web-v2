@@ -1,7 +1,7 @@
 # Encoding-volume HTTP validation
 
-Validated on 2026-08-19 against the current IBL S3 endpoints and the documented
-`2026_W12` encoding-volume layout.
+Validated on 2026-08-19 against the current IBL S3 endpoints. The canonical
+`2026_W12` object was then pulled and inspected locally on 2026-08-20.
 
 ## Source under test
 
@@ -9,12 +9,21 @@ Canonical scientific source:
 
     s3://ibl-brain-wide-map-private/aggregates/atlas/encoding_volumes/ea_active/<YYYY_Www>/brainwide_ephys_atlas_25um.npz
 
-The private paper repository documents `2026_W12` as a 25 um NPZ containing
+The `2026_W12` object is a 25 um NPZ containing
 `ephys_atlas_vol` with shape `(456, 528, 320, 41)` and dtype `float16`, plus
 `feature_names`, `mean_per_feature`, `std_per_feature`, `grid_shape`, and
-`res_um`. The stored feature values are already in their final units;
-`mean_per_feature` and `std_per_feature` are optional z-scoring metadata, not a
-denormalization recipe.
+`res_um`. Those member names do not establish whether stored values are final
+feature units, normalized values, or require another producer-defined transform.
+That scientific semantic remains blocked under Q4.
+
+The pulled object is exactly 1,636,734,203 bytes with SHA-256
+`61987870fb1d0e3574f63c4b75f119b65778ef8a4521e592317b3aab9dcbe052`.
+The header-only inspection is reproducible without decoding the main array:
+
+```bash
+just data-inspect-volume \
+  data/source/ephys_atlas_volumes/2026_W12/brainwide_ephys_atlas_25um.npz
+```
 
 ## HTTP observations
 
@@ -48,30 +57,23 @@ For `2026_W12`:
 - uncompressed float16 payload: 6,317,752,320 bytes (5.88 GiB)
 - one feature volume: 154,091,520 bytes (146.95 MiB)
 
-The logical feature axis is last, but the NPY header of the private object could
-not be inspected, so its `fortran_order` flag must not be guessed. If the array
-is C-contiguous, values for one feature are interleaved with the other 40
-features and contiguous Range reads incur roughly 41x overfetch. If it is
-Fortran-contiguous, one complete feature could be contiguous, but it is still
-154,091,520 bytes (146.95 MiB) before compression, far too large for the desired
-fast feature-switching path.
+The main NPY header records C order (`fortran_order=False`). With the feature
+axis last, every voxel's 41 feature values are contiguous and values for one
+feature are interleaved across the full array. A contiguous source read for one
+feature would therefore incur roughly 41x overfetch even without compression.
 
-The published NPZ is documented as approximately 500 MB, far smaller than the
-6.32 GB raw main array. That strongly suggests compression of the large NPY
-member. With ordinary ZIP/NPZ compression there is no independent random access
-to arbitrary interior voxels of a deflated member: the compressed member must be
-streamed/inflated from its beginning. The exact ZIP member compression method of
-the canonical object could not be inspected without authenticated access, so
-this compression detail is an inference rather than a measured property.
+All six ZIP members use DEFLATE. The main `ephys_atlas_vol.npy` member is
+6,317,752,448 bytes including its NPY header and compresses to 1,636,732,282
+bytes (25.9%). Arbitrary interior voxels are not independently addressable: the
+member must be streamed/inflated from its beginning. This is measured from the
+canonical archive rather than inferred from a reported size.
 
 Either physical case is poor for the required interaction model:
 
-- uncompressed member: at best a complete feature is about 147 MiB; depending on
-  the recorded NPY memory order, slice/feature access may additionally be
-  strided and require large overfetch;
-- compressed member: switching to one feature requires substantial compressed
-  transfer/decompression and the decoded full array is far beyond a reasonable
-  browser memory budget.
+- the measured compressed member requires substantial transfer/decompression
+  from its beginning;
+- after decoding, one feature is about 147 MiB but is interleaved with the other
+  40 features in the 5.88 GiB main-array payload.
 
 `feature_names` is also an object array in the documented NPZ and is loaded by
 the Python examples with `allow_pickle=True`, which is not a useful browser

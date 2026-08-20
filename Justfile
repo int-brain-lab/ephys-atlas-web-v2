@@ -58,6 +58,10 @@ data-build dataset release="latest":
 data-validate path:
     PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli validate {{path}}
 
+# Inspect NPZ/NPY container metadata without decoding the full volume.
+data-inspect-volume path:
+    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli inspect-volume {{path}}
+
 golden:
     PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli golden fixtures/golden-v0.1
 

@@ -8,6 +8,7 @@ from .channels import ChannelBuildConfig, build_channels_from_snapshot
 from .clusters import DATASET_ID as CLUSTERS_DATASET_ID
 from .clusters import ClusterBuildConfig, build_clusters_from_snapshot
 from .fixture import generate_golden
+from .npz import inspect_volume_npz
 from .package import package_release
 from .sources import pull, resolve_source_release
 from .validate import ValidationError, validate_release
@@ -141,6 +142,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("release_dir", type=Path)
     p.add_argument("output", type=Path)
 
+    p = sub.add_parser(
+        "inspect-volume",
+        help="report ZIP/NPY physical metadata without materializing volume arrays",
+    )
+    p.add_argument("npz", type=Path)
+
     args = parser.parse_args(argv)
     try:
         if args.cmd == "validate":
@@ -217,6 +224,10 @@ def main(argv: list[str] | None = None) -> int:
         elif args.cmd == "package":
             info = package_release(args.release_dir, args.output)
             print(f"{info['sha256']}  {info['bytes']}  {info['path']}")
+        elif args.cmd == "inspect-volume":
+            import json
+
+            print(json.dumps(inspect_volume_npz(args.npz), indent=2, sort_keys=True))
     except (ValidationError, RuntimeError, ValueError) as e:
         parser.error(str(e))
     return 0

@@ -53,7 +53,11 @@ Status: **BLOCKER** for the production `ephys_atlas_volumes` release.
 
 Current source documentation establishes a 25 um volume and known array shape/feature metadata, but shape alone is not a scientific coordinate transform. The browser implementation deliberately requires an explicit `index_to_world_um` transform.
 
-Resolution needed: authoritative axis order, origin/affine, handedness/directions, and outside-brain/missing-value semantics from the atlas/producer code or release metadata.
+Resolution needed: authoritative scientific axis mapping, origin/affine,
+handedness/directions, outside-brain/missing-value semantics, and the intended
+interpretation of stored values versus `mean_per_feature`/`std_per_feature` from
+the atlas/producer code or release metadata. The measured C-order storage layout
+is a transport fact and does not resolve the scientific axis mapping.
 
 Blocks: scientifically valid volume navigation and production volume release.
 

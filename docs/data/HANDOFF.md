@@ -40,9 +40,11 @@
 - known public IBL object: HTTP Range works (`206` with exact byte range);
 - current public bucket: no matching browser CORS headers for atlas/localhost;
 - current private encoding-volume URL: unsigned HEAD/Range/OPTIONS return 403;
-- documented `2026_W12` main array: `(456, 528, 320, 41)` float16 = 6.32 GB raw;
-  one raw feature alone is about 147 MiB and the approximately 500 MB NPZ size
-  strongly suggests compression; exact NPY memory order remains unmeasured.
+- pulled `2026_W12` object: 1,636,734,203 bytes with SHA-256
+  `61987870fb1d0e3574f63c4b75f119b65778ef8a4521e592317b3aab9dcbe052`;
+- measured main member: `(456, 528, 320, 41)` C-order float16, DEFLATE-compressed
+  from 6,317,752,448 to 1,636,732,282 bytes; one raw feature is about
+  147 MiB but features are interleaved on the last axis.
 
 The future public bucket/CDN must be re-tested when the encoding volumes are
 published. A future directly addressable canonical layout may supersede the
@@ -68,19 +70,18 @@ chunk transform.
 
 ## Unresolved scientific/data questions
 
-1. `ephys_atlas_channels`: approve raw vs denoised source values, exact
-   vintage/PID/snippet inclusion, outlier handling, QC population, regional
-   summary statistic, and units for columns where `ibleatools` does not declare
-   one.
-2. `ephys_atlas_clusters`: approve all vs good cluster population, exact QC
-   rule, project and source-object snapshot/version policy, scalar feature list,
-   and whether large waveform/ACG/STPC/STLFP arrays are launch downloads only.
+1. `ephys_atlas_channels`: freeze the exact paper vintage/PID/snippet population
+   under Q2 and select the publication origin/alias. Both source variants,
+   `inside`, no additional QC/outlier replacement, left folding, and regional
+   mean are resolved.
+2. `ephys_atlas_clusters`: select the exact project/source snapshot and scalar
+   launch feature catalog. The all-cluster population, no good-unit filter,
+   equal per-cluster regional weighting, left folding, and mean are resolved.
 3. `ephys_atlas_volumes`: identify and pin the producer/model/export recipe of
    `brainwide_ephys_atlas_25um.npz`; record scientific axis directions/origin/
-   affine rather than inferring from shape; confirm outside-brain semantics.
-   Value normalization is no longer unresolved: current paper documentation says
-   stored predictions are already in final units, with mean/std for optional
-   z-scoring only.
+   affine rather than inferring from shape; confirm outside-brain semantics and
+   the authoritative interpretation of stored values versus the included
+   per-feature mean/std arrays.
 4. `brainwide_map`: define the v2 launch product precisely. Current evidence
    distinguishes the paper selection freeze and aggregate tables from legacy
    website regional analysis files; treating them as one dataset would be a

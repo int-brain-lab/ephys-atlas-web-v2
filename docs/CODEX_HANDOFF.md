@@ -53,7 +53,9 @@ The repository instructions, not this example prompt, remain authoritative.
 
 ## Recommended first product work after handoff
 
-M1 (`ephys_atlas_channels`) has production machinery but is blocked on Q1-Q3 scientific choices.
+M1 (`ephys_atlas_channels`) has a pinned, deterministic real development build
+and a green real-value browser acceptance suite. Its remaining blockers are the
+paper vintage (Q2) and an authorized publication origin/catalog (Q8-Q9).
 
 The earliest useful independent work is therefore M2 volume preparation that does **not** require guessing the scientific affine:
 
@@ -64,7 +66,8 @@ The earliest useful independent work is therefore M2 volume preparation that doe
 5. do not select the production layout until the real evidence supports Q5;
 6. do not publish scientifically aligned production volumes until Q4 is resolved authoritatively.
 
-If authoritative channel answers arrive first, M1 becomes higher priority again.
+If the channel publication target or paper vintage is resolved first, finish
+that release path before broadening scope.
 
 ## Private data and credentials
 

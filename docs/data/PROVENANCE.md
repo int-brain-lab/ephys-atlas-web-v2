@@ -49,11 +49,12 @@ Reproducible v2 path:
    than a compiled frontend list;
 6. build v2 regional/statistics artifacts without recomputing raw ephys.
 
-**Do not guess:** raw vs denoised features; which PIDs/snippets define the
-vintage; QC/exclusion rules; whether outlier treatment from
-`read_features_from_disk()` is intended for the web release; feature units when
-not explicit in the scientific schema; primary regional summary (mean vs median
-or another statistic).
+The approved v0.1 recipe now publishes both raw and denoised variants, uses the
+`inside` population, performs no additional QC or alpha replacement, folds
+bilateral observations left, and uses the arithmetic mean as its primary
+regional summary. Do not silently change those decisions. The remaining paper
+blocker is the exact final vintage/PID/snippet population; feature units remain
+null when they are not explicit in the pinned scientific schema.
 
 ## `ephys_atlas_clusters`
 
@@ -92,10 +93,12 @@ The documented `2026_W12` vintage contains `ephys_atlas_vol` with shape
 `(456, 528, 320, 41)` and float16 values, feature names, per-feature mean/std,
 grid shape, and 25 um resolution.
 
-The private paper repository resolves one previous ambiguity explicitly: the
-stored prediction values are **not normalized**. `mean_per_feature` and
-`std_per_feature` are provided only for optional z-scoring. The web builder must
-therefore not apply `value * std + mean` as a denormalization step.
+The NPZ contains `mean_per_feature` and `std_per_feature`, but the inspected
+archive and currently available producer documentation do not establish whether
+the stored prediction values are final feature units, normalized values, or
+values requiring another producer-defined transform. The web builder must not
+apply z-scoring or `value * std + mean` until that semantic is traced to
+authoritative producer code or metadata.
 
 The current v1 conversion tool establishes another behavioral fact: its website
 payload does not assume the NPZ axis order from shape alone; it checks against
@@ -103,7 +106,7 @@ the Allen atlas, transposes for the current file, and masks outside-brain voxels
 Those operations are behavioral evidence, not a substitute for scientific
 geometry metadata.
 
-The inspected public `ibleatools` and private paper archive expose the NPZ and
+The inspected public `ibleatools` and available paper sources expose the NPZ and
 loaders but not the script that generated this exact published NPZ. Until that
 producer is identified, the NPZ itself is the canonical v2 input snapshot and
 its SHA-256 must be recorded.
