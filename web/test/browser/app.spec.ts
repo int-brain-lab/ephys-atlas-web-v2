@@ -247,16 +247,44 @@ test('Allen anatomy mode shows actual regions and official ontology colors', asy
   await expect(page.locator('.region-row__swatch').first()).toBeVisible();
 });
 
-test('data and color controls are driven by the loaded release', async ({ page }) => {
+test('scientific context menus and color controls are driven by the loaded release', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
 
+  const dataset = page.locator('[data-context-field="dataset"]');
+  const datasetTrigger = dataset.locator('.context-menu__trigger');
+  await expect(datasetTrigger).toHaveAttribute('aria-expanded', 'false');
+  await datasetTrigger.click();
+  await expect(dataset.locator('.context-menu__panel')).toHaveAttribute('data-open', 'true');
+  await expect(dataset.getByRole('option', { selected: true })).toContainText('golden-v0.3');
+  await page.keyboard.press('Escape');
+  await expect(datasetTrigger).toBeFocused();
+
+  const feature = page.locator('[data-context-field="feature"]');
+  await feature.locator('.context-menu__trigger').click();
+  const featureSearch = feature.getByLabel('Search features, units, or IDs');
+  await expect(featureSearch).toBeFocused();
+  await featureSearch.fill('rms_ap');
+  await expect(feature.getByRole('option')).toHaveCount(1);
+  await expect(feature.getByRole('option', { selected: true })).toContainText('AP RMS (golden fixture)');
+  await expect(feature.getByRole('option', { selected: true })).toContainText('dB rel. V');
+  await featureSearch.fill('does not exist');
+  await expect(feature.locator('.context-menu__list')).toHaveAttribute('data-empty', 'true');
+  await page.keyboard.press('Escape');
+
+  const representation = page.locator('[data-context-field="representation"]');
+  await representation.locator('.context-menu__trigger').click();
+  await expect(representation.getByRole('listbox')).toHaveAttribute('aria-multiselectable', 'true');
+  await expect(representation.locator('[data-context-group="Representation"]')).toBeVisible();
+  await expect(representation.locator('[data-context-group="Parcellation"]')).toBeVisible();
+  await expect(representation.getByRole('option', { selected: true })).toHaveCount(2);
+  await expect(representation.getByRole('option', { name: /Regional/ })).toHaveAttribute('aria-selected', 'true');
+  await expect(representation.getByRole('option', { name: /Allen/ })).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('Escape');
+
   await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.getByLabel('Dataset and release')).toHaveValue('ephys_atlas_channels::golden-v0.3');
-  await expect(page.getByLabel('Feature', { exact: true })).toHaveValue('rms_ap');
-  await expect(page.getByLabel('Representation')).toHaveValue('regional');
-  await expect(page.getByLabel('Parcellation')).toHaveValue('allen');
-  await expect(page.getByLabel('Parcellation')).toBeDisabled();
+  const settings = page.getByRole('complementary', { name: 'Visualization settings' });
+  await expect(settings.getByRole('heading', { name: 'Data' })).toHaveCount(0);
   await expect(page.getByLabel('Regional statistic').locator('option')).toHaveCount(5);
   await expect(page.getByLabel('Feature color legend')).toBeVisible();
   await expect(page.locator('.color-legend__unit')).toHaveText('dB rel. V');
@@ -271,6 +299,29 @@ test('data and color controls are driven by the loaded release', async ({ page }
 
   await page.getByLabel('Color range mode').selectOption('auto');
   await expect.poll(() => new URL(page.url()).searchParams.get('range')).toBeNull();
+});
+
+test('scientific context picker becomes a bounded phone sheet', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+
+  const feature = page.locator('[data-context-field="feature"]');
+  await feature.locator('.context-menu__trigger').click();
+  const panel = feature.locator('.context-menu__panel');
+  await expect(panel).toBeVisible();
+  await expect(panel).toHaveCSS('position', 'fixed');
+  await expect.poll(async () => (await panel.boundingBox())?.y).toBeGreaterThan(0);
+  const bounds = await panel.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
+  await expect.poll(async () => {
+    const settled = await panel.boundingBox();
+    return settled ? settled.y + settled.height : Number.POSITIVE_INFINITY;
+  }).toBeLessThanOrEqual(844);
+
+  await page.getByRole('button', { name: 'Coronal', exact: true }).click();
+  await expect(feature.locator('.context-menu__trigger')).toHaveAttribute('aria-expanded', 'false');
 });
 
 test('share, download and info expose the immutable scientific context', async ({ page }) => {
