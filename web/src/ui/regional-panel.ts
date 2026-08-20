@@ -54,9 +54,11 @@ export class RegionalPanelController {
   private readonly resultCount: HTMLElement;
   private readonly list: HTMLUListElement;
   private readonly selectedList: HTMLUListElement;
+  private readonly selectedSection: HTMLElement;
   private readonly clearSelectionButton: HTMLButtonElement;
   private readonly distribution: HTMLElement;
   private readonly analysis: HTMLElement;
+  private readonly analysisPanel: HTMLElement;
   private currentRegions: readonly RegionMetadata[] = [];
   private lastFeature: FeaturePayload | null = null;
   private lastRegions: readonly RegionMetadata[] | null = null;
@@ -79,9 +81,11 @@ export class RegionalPanelController {
     this.list = required(root, '.region-list');
     this.list.setAttribute('role', 'tree');
     this.selectedList = required(root, '.selected-regions__list');
+    this.selectedSection = required(root, '.region-pane__selected');
     this.clearSelectionButton = required(root, '.selected-regions__clear');
     this.distribution = required(root, '.distribution-band__surface');
     this.analysis = required(root, '.analysis-panel__surface');
+    this.analysisPanel = required(root, '.analysis-panel');
 
     this.search.addEventListener('input', this.filterRegions);
     this.searchClear.addEventListener('click', this.clearSearch);
@@ -134,6 +138,7 @@ export class RegionalPanelController {
       });
     }
     const selected = new Set(model.state.view.selection);
+    this.analysisPanel.dataset.empty = String(selected.size === 0);
     const range = feature ? regionalColorRange(feature, model.state.view.coloring) : null;
     const unit = descriptor?.unit ?? null;
 
@@ -179,12 +184,14 @@ export class RegionalPanelController {
     this.rowById.clear();
     this.rovingButton = null;
     this.lastHoveredRegionId = null;
+    this.selectedSection.dataset.empty = 'true';
+    this.analysisPanel.dataset.empty = 'true';
     const item = html('li', 'selected-regions__empty');
     item.textContent = model.state.view.representation === 'volume'
       ? 'Region values are unavailable in volume mode'
       : 'Regional data is loading or unavailable';
     this.list.replaceChildren(item.cloneNode(true));
-    this.selectedList.replaceChildren(item);
+    this.selectedList.replaceChildren();
     this.clearSelectionButton.disabled = true;
     this.source.textContent = 'No regional values';
     this.resultCount.textContent = '0 regions';
@@ -210,7 +217,7 @@ export class RegionalPanelController {
     item.dataset.mappingMember = String(region.mappingMember !== false);
     item.dataset.missing = String(value === undefined || !Number.isFinite(value));
     item.dataset.selected = String(selected.has(region.id));
-    item.style.setProperty('--region-indent', `${(depth * 0.58).toFixed(2)}rem`);
+    item.style.setProperty('--region-indent', `${(depth * 0.42).toFixed(2)}rem`);
     item.setAttribute('role', 'treeitem');
     item.setAttribute('aria-level', String(depth + 1));
     item.setAttribute('aria-selected', String(selected.has(region.id)));
@@ -318,11 +325,7 @@ export class RegionalPanelController {
       item.append(identity, remove);
       return item;
     });
-    if (!items.length) {
-      const empty = html('li', 'selected-regions__empty');
-      empty.textContent = 'No regions selected';
-      items.push(empty);
-    }
+    this.selectedSection.dataset.empty = String(items.length === 0);
     this.selectedList.replaceChildren(...items);
     this.clearSelectionButton.disabled = selected.size === 0;
   }
@@ -393,8 +396,7 @@ export class RegionalPanelController {
       wrap.append(badge);
     }
     if (!selected.size) {
-      wrap.append(this.message('Select one or more regions to compare with the global distribution'));
-      this.analysis.replaceChildren(wrap);
+      this.analysis.replaceChildren();
       return;
     }
     const byId = new Map(regions.map((region) => [region.id, region]));

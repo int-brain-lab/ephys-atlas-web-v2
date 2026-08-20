@@ -113,7 +113,7 @@ export class AppShell {
 
     this.datasetContext = this.createContextField('Dataset', 'dataset', true);
     this.featureContext = this.createContextField('Feature', 'feature');
-    this.representationContext = this.createContextField('Representation', 'representation');
+    this.representationContext = this.createContextField('Representation', 'representation', true);
 
     this.regionPane = this.createRegionPane();
     this.settingsPane = this.createSettingsPane();
@@ -146,7 +146,7 @@ export class AppShell {
 
     this.setContextValue(this.datasetContext, datasetLabel, releaseLabel);
     this.setContextValue(this.featureContext, featureLabel);
-    this.setContextValue(this.representationContext, representationLabel);
+    this.setContextValue(this.representationContext, representationLabel, 'Allen CCFv3 · 10 µm');
     this.colorModeSelect.value = view.coloring.mode ?? 'feature';
     this.statisticSelect.value = view.coloring.statistic;
     this.colormapSelect.value = view.coloring.colormap;
@@ -509,6 +509,7 @@ export class AppShell {
     const retainsAnatomy = view.representation !== 'volume'
       && nodes.target.dataset.sliceAsset?.startsWith('generated-anatomy-') === true;
     nodes.frame.dataset.state = retainsAnatomy ? 'ready' : 'loading';
+    nodes.status.removeAttribute('aria-label');
     nodes.status.textContent = retainsAnatomy ? 'Updating' : 'Loading';
     const stateMessage = nodes.frame.querySelector<HTMLElement>('.view-frame__state-message');
     if (stateMessage) {
@@ -532,7 +533,8 @@ export class AppShell {
     Promise.resolve(pending).then(() => {
       if (nodes.renderToken !== token) return;
       nodes.frame.dataset.state = 'ready';
-      nodes.status.textContent = view.representation === 'volume' ? 'Scientific volume' : 'Allen CCFv3 · 10 µm';
+      nodes.status.textContent = '';
+      nodes.status.setAttribute('aria-label', view.representation === 'volume' ? 'Scientific volume ready' : 'Registered anatomy ready');
     }).catch((error: unknown) => {
       if (nodes.renderToken !== token) return;
       if (retainsAnatomy) {
