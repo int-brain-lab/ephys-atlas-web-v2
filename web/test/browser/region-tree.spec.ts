@@ -57,10 +57,13 @@ test('ontology branches disclose accessibly and missing feature values stay visu
   await rootToggle.click();
   await expect(root).toHaveAttribute('aria-expanded', 'false');
   await expect(page.locator('.region-row:not([hidden])')).toHaveCount(1);
+  await expect(page.locator('.region-row:visible')).toHaveCount(1);
+  await expect(page.locator('.region-row[data-region-id="-8"]')).toBeHidden();
 
   await rootButton.focus();
   await rootButton.press('ArrowRight');
   await expect(root).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('.region-row[data-region-id="-8"]')).toBeVisible();
   await rootButton.press('ArrowRight');
   await expect(page.locator('.region-row[data-region-id="-8"] .region-row__button')).toBeFocused();
   await page.locator('.region-row[data-region-id="-8"] .region-row__button').press('ArrowLeft');

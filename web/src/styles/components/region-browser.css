@@ -28,6 +28,8 @@
 
 .region-row{min-width:0;display:grid;grid-template-columns:1rem minmax(0,1fr);align-items:center;padding-left:calc(var(--space-2) + var(--region-indent,0rem))}
 
+.region-row[hidden]{display:none}
+
 .region-row__button{width:100%;min-height:2.28rem;display:grid;grid-template-columns:1rem minmax(0,1fr) 3.9rem;align-items:center;gap:.34rem;padding:.23rem var(--space-2) .23rem .15rem;border:0;border-radius:0;background:transparent;text-align:left}
 
 .region-row__button:hover{background:var(--color-surface-hover)}
