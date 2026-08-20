@@ -54,17 +54,8 @@ test('ontology branches disclose accessibly and missing feature values stay visu
   await expect(rootToggle).toHaveAttribute('aria-label', 'Collapse root');
   await expect(page.getByText('no value', { exact: true })).toHaveCount(0);
 
-  const foldMotion = await rootToggle.evaluate((toggle) => {
-    (toggle as HTMLButtonElement).click();
-    const list = toggle.ownerDocument.querySelector('.region-list');
-    const firstChild = list?.querySelector<HTMLElement>('.region-row[data-region-id="-8"]');
-    return {
-      active: list?.getAttribute('data-fold-motion'),
-      transitionDuration: firstChild ? getComputedStyle(firstChild).transitionDuration : '',
-    };
-  });
+  await rootToggle.click();
   await expect(root).toHaveAttribute('aria-expanded', 'false');
-  expect(foldMotion).toEqual({ active: 'true', transitionDuration: '0.13s, 0.13s, 0.13s' });
   await expect(page.locator('.region-row:not([hidden])')).toHaveCount(1);
   await expect(page.locator('.region-row:visible')).toHaveCount(1);
   await expect(page.locator('.region-row[data-region-id="-8"]')).toBeHidden();
@@ -78,4 +69,27 @@ test('ontology branches disclose accessibly and missing feature values stay visu
   await page.locator('.region-row[data-region-id="-8"] .region-row__button').press('ArrowLeft');
   await page.locator('.region-row[data-region-id="-8"] .region-row__button').press('ArrowLeft');
   await expect(rootButton).toBeFocused();
+});
+
+test('collapsing a branch smoothly moves the following rows into place', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+
+  const frontalPoleToggle = page.locator('.region-row[data-region-id="-184"] .region-row__toggle');
+  const somatomotor = page.locator('.region-row[data-region-id="-500"]');
+  const motion = await frontalPoleToggle.evaluate((toggle) => {
+    const following = toggle.ownerDocument.querySelector<HTMLElement>('.region-row[data-region-id="-500"]');
+    const beforeTop = following?.getBoundingClientRect().top ?? 0;
+    (toggle as HTMLButtonElement).click();
+    const animation = following?.getAnimations()[0];
+    const firstFrame = animation?.effect instanceof KeyframeEffect
+      ? animation.effect.getKeyframes()[0]
+      : undefined;
+    return { beforeTop, firstTransform: String(firstFrame?.transform ?? '') };
+  });
+
+  expect(motion.firstTransform).toMatch(/^translateY\([1-9]\d*(?:\.\d+)?px\)$/);
+  await page.waitForTimeout(180);
+  const finalTop = (await somatomotor.boundingBox())?.y ?? motion.beforeTop;
+  expect(finalTop).toBeLessThan(motion.beforeTop - 100);
 });
