@@ -11,6 +11,10 @@ bootstrap:
 bootstrap-scientific:
     uv sync --project builder --python 3.12 --extra scientific --locked
 
+# Install the pinned atlas/vectorization benchmark environment (no sudo required).
+bootstrap-anatomy:
+    uv sync --project builder --python 3.12 --extra anatomy --extra scientific --extra test --locked
+
 # Run the browser app locally.
 dev:
     cd web && npm run dev
@@ -36,6 +40,14 @@ test-web:
 # User-observable browser regression suite.
 test-browser:
     cd web && npm run test:browser
+
+# Exercise the deterministic synthetic anatomy-vectorization cases.
+test-anatomy:
+    uv run --project builder --extra anatomy --extra scientific --extra test --locked python -m pytest -q tests/test_anatomy_compare.py
+
+# Generate the ignored, fully offline anatomy comparison lab.
+anatomy-compare resolution="25":
+    uv run --project builder --extra anatomy --extra scientific --extra test --locked python tools/anatomy_compare/build.py --resolution {{resolution}}
 
 # Full local completion gate. Keep this aligned with .github/workflows/ci.yml.
 check: test-python test-web test-browser

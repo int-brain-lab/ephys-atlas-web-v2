@@ -41,6 +41,11 @@ This uses Python 3.12 and the committed `builder/uv.lock`; it does not require
 sudo. The first real development build and its exact source/code pins are
 recorded in [`docs/data/DEVELOPMENT_RELEASE.md`](docs/data/DEVELOPMENT_RELEASE.md).
 
+To compare the legacy curated SVGs with annotation-derived candidates in a
+fully offline report, run `just bootstrap-anatomy` and `just anatomy-compare`.
+The methodology and scientific limits are documented in
+[`docs/rendering/ANATOMY_COMPARISON.md`](docs/rendering/ANATOMY_COMPARISON.md).
+
 ## Launch scope
 
 Launch-critical datasets:
