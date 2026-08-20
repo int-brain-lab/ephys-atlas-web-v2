@@ -1,0 +1,11 @@
+.view-frame__volume-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.view-frame__renderer[data-slice-asset='schema-volume-v0.1'] {
+  background: #071019;
+}
