@@ -14,7 +14,11 @@ export function parseLegacyRegionCrosswalk(raw: unknown, mapping: MappingName): 
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     throw new Error('Invalid legacy region table');
   }
-  const entries = (raw as Record<string, unknown>)[mapping];
+  const root = raw as Record<string, unknown>;
+  const mappings = root.mappings && typeof root.mappings === 'object' && !Array.isArray(root.mappings)
+    ? root.mappings as Record<string, unknown>
+    : root;
+  const entries = mappings[mapping];
   if (!Array.isArray(entries)) throw new Error(`Legacy region table has no ${mapping} mapping`);
 
   const atlasIdToLegacyIndex = new Map<number, number>();

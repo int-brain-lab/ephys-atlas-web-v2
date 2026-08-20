@@ -1,5 +1,6 @@
 import type {
   ColorRange,
+  ColorMode,
   ColorScale,
   CursorState,
   DatasetRef,
@@ -21,6 +22,7 @@ export type AppAction =
   | { type: 'cursor/set'; cursor: CursorState }
   | { type: 'slice/set'; axis: SliceAxis; index: number }
   | { type: 'color/statistic'; statistic: StatisticId }
+  | { type: 'color/mode'; mode: ColorMode }
   | { type: 'color/colormap'; colormap: string }
   | { type: 'color/range'; range: ColorRange }
   | { type: 'color/scale'; scale: ColorScale }

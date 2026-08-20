@@ -101,6 +101,13 @@ Independent request/render generations prevent stale feature, parcellation, or
 volume-slice results from overwriting newer state, and renderer failures reach
 visible runtime error status.
 
+A pinned Allen Mouse CCF 2017 metadata asset supplies the full curated-SVG
+region inventory, official ontology RGB, names, parents, depths, and legacy row
+crosswalk. The settings panel exposes URL-persisted `Feature values` and
+`Allen anatomy` fill modes. Anatomy mode shows the canonical left inventory and
+color swatches in the region browser; both curated and generated anatomy
+renderers consume the shared color presentation without owning state (D022).
+
 The five deployed v1 curated bundles are pinned by identity/inventory in `docs/frontend/LEGACY_CURATED_ASSETS.md`. Orthogonal bundles contain even display indices; scientific navigation remains on full 10 um domains and the display layer chooses the nearest available curated slice.
 
 ## Volume viewer vertical slice

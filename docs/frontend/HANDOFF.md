@@ -18,6 +18,11 @@ UX, quota/eviction requirements, and ordered follow-up work are specified in
 
 Rendering remains behind the frontend-owned `SliceRenderer` / `SliceRenderModel` facade. `LegacyCuratedSvgSliceRenderer` is the application adapter for curated anatomy and delegates actual SVG region rendering/interactions to the lower-level `SvgSliceRenderer` integrated from the rendering workstream.
 
+Allen ontology identity is a separate pinned browser asset. The shared renderer
+presentation supports URL-persisted `Feature values` and `Allen anatomy` fill
+modes, so curated and generated anatomy providers receive the same colors and
+selection state. See `docs/frontend/ALLEN_REGION_METADATA.md` and D022.
+
 ## UX Phase 1 — responsive empty shell
 
 Implemented the accepted `docs/ux/layout-implementation-spec.md` Phase 1. The five browser layouts were visually approved on 2026-08-19.
@@ -100,17 +105,13 @@ The previous frontend provisional schema has been removed from the active path. 
 
 ## Current next work
 
-1. Replace representative Phase-3 rows with real region metadata/value arrays from the golden schema-v0.1 release, then the chosen real `ephys_atlas_channels` release.
-2. Wire region hover/selection through `RendererInteractionSink` and application state/URL state.
-3. Color curated SVG paths from real regional feature values for Allen/Beryl/Cosmos.
-4. Drive distribution/histogram/comparison UI from the schema-v0.1 statistics resources.
-5. Publish the five pinned curated bundles to an immutable v2 asset location and remove the runtime dependency on the legacy host.
-6. Benchmark real encoding-volume layouts before selecting the launch physical representation; keep volume scientific geometry independent of SVG display calibration.
-7. Keep 3-D behind the regional and volume launch-critical vertical slices.
+1. Publish the validated real channel development release through an authorized non-production catalog; `just dev-real` already provides the local equivalent.
+2. Publish the five pinned curated bundles or the accepted generated anatomy pack to an immutable v2 asset location and remove the remaining slice-bundle dependency on the legacy host.
+3. Benchmark real encoding-volume layouts before selecting the launch physical representation; keep volume scientific geometry independent of SVG display calibration.
+4. Keep 3-D behind the regional and volume launch-critical vertical slices.
 
 ## Remaining decisions / external inputs
 
-- canonical region key for persisted selection (numeric Allen IDs versus another stable identifier);
 - exact scientific feature/QC/unit choices for real channel and cluster releases;
 - authoritative encoding-volume index-to-world affine and outside-brain semantics;
 - production public object-storage/domain arrangement;

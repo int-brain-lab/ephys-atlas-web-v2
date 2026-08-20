@@ -61,6 +61,8 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       };
     case 'color/statistic':
       return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, statistic: action.statistic } } };
+    case 'color/mode':
+      return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, mode: action.mode } } };
     case 'color/colormap':
       return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, colormap: action.colormap } } };
     case 'color/range':

@@ -12,6 +12,7 @@ export type ParcellationId = 'allen' | 'beryl' | 'cosmos';
 export type RepresentationKind = 'regional' | 'volume';
 export type SliceAxis = 'coronal' | 'sagittal' | 'horizontal';
 export type ColorScale = 'linear' | 'log';
+export type ColorMode = 'feature' | 'anatomy';
 export type StatisticId = 'mean' | 'median' | 'min' | 'max' | 'count';
 
 export interface DatasetRef {
@@ -32,6 +33,7 @@ export type ColorRange =
   | { mode: 'fixed'; min: number; max: number };
 
 export interface ColoringState {
+  mode: ColorMode;
   statistic: StatisticId;
   colormap: string;
   range: ColorRange;

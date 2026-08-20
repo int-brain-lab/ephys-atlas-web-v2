@@ -1,5 +1,5 @@
 import type { ColoringState, CursorState, ParcellationId, SliceAxis, SliceState } from '../domain/types.js';
-import type { FeaturePayload } from '../data/contracts.js';
+import type { FeaturePayload, RegionMetadata } from '../data/contracts.js';
 
 export interface SliceRenderModel {
   axis: SliceAxis;
@@ -13,6 +13,7 @@ export interface SliceRenderModel {
 
 export interface RendererPresentation {
   feature: FeaturePayload | null;
+  regions?: readonly RegionMetadata[];
   coloring: ColoringState;
   selectedRegionIds: readonly string[];
   hoveredRegionId: string | null;

@@ -1,5 +1,6 @@
 import type { ColoringState } from '../domain/types.js';
 import type { RegionalFeaturePayload } from '../data/contracts.js';
+import type { RegionMetadata } from '../data/contracts.js';
 
 const PALETTES: Record<string, readonly [number, number, number][]> = {
   viridis: [
@@ -67,4 +68,8 @@ export function regionalColorMap(feature: RegionalFeaturePayload, coloring: Colo
     colors.set(regionId, paletteColor(coloring.colormap, normalized));
   }
   return colors;
+}
+
+export function atlasRegionColorMap(regions: readonly RegionMetadata[]): ReadonlyMap<number, string> {
+  return new Map(regions.flatMap((region) => region.colorHex ? [[region.atlasId, region.colorHex] as const] : []));
 }

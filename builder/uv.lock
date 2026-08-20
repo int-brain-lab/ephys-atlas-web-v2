@@ -851,6 +851,7 @@ scientific = [
 ]
 test = [
     { name = "pytest" },
+    { name = "shapely" },
 ]
 
 [package.metadata]
@@ -865,6 +866,7 @@ requires-dist = [
     { name = "referencing", specifier = ">=0.32" },
     { name = "scikit-image", marker = "extra == 'anatomy'", specifier = ">=0.26,<0.27" },
     { name = "shapely", marker = "extra == 'anatomy'", specifier = ">=2.1,<2.2" },
+    { name = "shapely", marker = "extra == 'test'", specifier = ">=2.1,<2.2" },
 ]
 provides-extras = ["test", "scientific", "anatomy"]
 

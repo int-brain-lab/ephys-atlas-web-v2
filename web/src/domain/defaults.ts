@@ -13,6 +13,7 @@ export const DEFAULT_VIEW_STATE: ViewState = {
   cursor: { xUm: 0, yUm: 0, zUm: 0 },
   slices: { coronal: 660, sagittal: 550, horizontal: 400 },
   coloring: {
+    mode: 'feature',
     statistic: 'mean',
     colormap: 'viridis',
     range: { mode: 'auto' },

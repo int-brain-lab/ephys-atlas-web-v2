@@ -6,7 +6,7 @@ import type {
   SliceRenderModel,
   SliceRenderer,
 } from './interfaces.js';
-import { regionalColorMap } from './scalar-colormap.js';
+import { atlasRegionColorMap, regionalColorMap } from './scalar-colormap.js';
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
 import type { AnatomySlice, AnatomySliceSource, RegionalSliceFrame, SliceRegionPointerEvent } from './types.js';
 
@@ -34,7 +34,8 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
   private interactionSink: RendererInteractionSink | null = null;
   private presentation: RendererPresentation = {
     feature: null,
-    coloring: { statistic: 'mean', colormap: 'viridis', range: { mode: 'auto' }, scale: 'linear' },
+    regions: [],
+    coloring: { mode: 'feature', statistic: 'mean', colormap: 'viridis', range: { mode: 'auto' }, scale: 'linear' },
     selectedRegionIds: [],
     hoveredRegionId: null,
   };
@@ -104,9 +105,11 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     }
     const hovered = this.presentation.hoveredRegionId == null ? null : Number(this.presentation.hoveredRegionId);
     const feature = this.presentation.feature;
-    const regionColors = feature?.representation === 'regional' && feature.parcellation === frame.mapping
-      ? regionalColorMap(feature, this.presentation.coloring)
-      : undefined;
+    const regionColors = this.presentation.coloring.mode === 'anatomy'
+      ? atlasRegionColorMap(this.presentation.regions ?? [])
+      : feature?.representation === 'regional' && feature.parcellation === frame.mapping
+        ? regionalColorMap(feature, this.presentation.coloring)
+        : undefined;
     return {
       ...frame,
       ...(regionColors ? { regionColors } : {}),

@@ -98,3 +98,15 @@ good-cluster subset. Every finite cluster contributes equal weight to its
 left-folded region; there is no insertion balancing or hidden unit-QC filter.
 The project/source snapshot and feature catalog remain explicit production
 inputs and must not be defaulted by the builder.
+
+## D022 — Atlas identity colors versus feature colors
+
+Treat Allen ontology identity and scientific feature encoding as two explicit,
+URL-persisted region-fill modes. `Allen anatomy` uses RGB, names, hierarchy, and
+stable atlas IDs from the pinned `iblatlas` ontology metadata. `Feature values`
+uses the selected statistic, colormap, scale, and range. Geometry providers do
+not own this choice, and selection/hover styling remains independent of both.
+
+The legacy SVG BrainRegions row crosswalk is a versioned display-domain input,
+not the authority for names or colors. See
+`docs/frontend/ALLEN_REGION_METADATA.md`.

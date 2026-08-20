@@ -1,4 +1,5 @@
 import type { DatasetCatalog, DatasetManifest, FeaturePayload, RegionMetadata } from './data/contracts.js';
+import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
 import { HttpDatasetSource } from './data/http-source.js';
 import { LocalDatasetSource } from './data/local-source.js';
 import { PrefetchQueue } from './data/prefetch.js';
@@ -14,6 +15,7 @@ import { UrlStateController } from './url/url-state.js';
 
 export interface AppOptions {
   catalogUrl?: string;
+  atlasRegionsUrl?: string;
   renderer?: SliceRenderer;
 }
 
@@ -30,12 +32,13 @@ export class AtlasApp {
   private manifest: DatasetManifest | null = null;
   private feature: FeaturePayload | null = null;
   private regions: readonly RegionMetadata[] = [];
+  private atlasRegions: AtlasRegionCatalog | null = null;
   private hoveredRegionId: string | null = null;
   private loadGeneration = 0;
   private regionsLoadGeneration = 0;
   private featureLoadGeneration = 0;
 
-  constructor(root: HTMLElement, options: AppOptions = {}) {
+  constructor(root: HTMLElement, private readonly options: AppOptions = {}) {
     const catalogUrl = options.catalogUrl ?? new URL('/fixtures/catalog.json', window.location.href).toString();
     const published = new HttpDatasetSource(catalogUrl);
     this.repository = new DatasetRepository(published, this.localSource);
@@ -46,6 +49,7 @@ export class AtlasApp {
       setFeature: (featureId, representation) => this.store.dispatch({ type: 'feature/set', featureId, ...(representation ? { representation } : {}) }),
       setParcellation: (parcellation) => this.store.dispatch({ type: 'parcellation/set', parcellation }),
       setStatistic: (statistic) => this.store.dispatch({ type: 'color/statistic', statistic }),
+      setColorMode: (mode) => this.store.dispatch({ type: 'color/mode', mode }),
       setColormap: (colormap) => this.store.dispatch({ type: 'color/colormap', colormap }),
       setSlice: (axis, index) => this.setSlice(axis, index),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
@@ -78,6 +82,10 @@ export class AtlasApp {
       }
     });
     this.render();
+    void loadAtlasRegionCatalog(this.options.atlasRegionsUrl).then((catalog) => {
+      this.atlasRegions = catalog;
+      this.render();
+    }).catch((error: unknown) => this.reportRuntimeError(error));
     await this.loadCatalog();
     await this.loadDataset(this.store.getState().view.dataset);
   }
@@ -94,8 +102,12 @@ export class AtlasApp {
 
   private render(): void {
     const state = this.store.getState();
+    const visibleRegions = state.view.coloring.mode === 'anatomy'
+      ? this.atlasRegions?.mappings[state.view.parcellation] ?? this.regions
+      : this.regions;
     this.renderer.updatePresentation?.({
       feature: this.feature,
+      regions: visibleRegions,
       coloring: state.view.coloring,
       selectedRegionIds: state.view.selection,
       hoveredRegionId: this.hoveredRegionId,
@@ -111,7 +123,8 @@ export class AtlasApp {
       state,
       manifest: this.manifest,
       feature: this.feature,
-      regions: this.regions,
+      regions: visibleRegions,
+      anatomyAtlas: state.view.coloring.mode === 'anatomy' ? this.atlasRegions?.atlas ?? null : null,
     });
   }
 
