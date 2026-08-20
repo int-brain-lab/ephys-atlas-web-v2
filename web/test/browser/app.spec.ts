@@ -199,9 +199,14 @@ test('generated anatomy renderer uses direct mapping IDs and affine-derived guid
   await page.goto('/');
   await page.evaluate(async () => {
     const { GeneratedAnatomySliceRenderer } = await import('/src/rendering/generated-anatomy-renderer.ts');
-    const target = document.createElement('div');
-    target.id = 'generated-anatomy-test';
-    document.body.append(target);
+    const axes = ['coronal', 'sagittal', 'horizontal'] as const;
+    const targets = new Map(axes.map((axis) => {
+      const target = document.createElement('div');
+      target.id = axis === 'coronal' ? 'generated-anatomy-test' : `generated-anatomy-test-${axis}`;
+      document.body.append(target);
+      return [axis, target] as const;
+    }));
+    const target = targets.get('coronal')!;
     const source = {
       async loadSlice(axis: 'coronal' | 'sagittal' | 'horizontal', sliceIndex: number) {
         return {
@@ -222,27 +227,30 @@ test('generated anatomy renderer uses direct mapping IDs and affine-derived guid
       },
     };
     const renderer = new GeneratedAnatomySliceRenderer(source);
+    const presentation = {
+      feature: {
+        schemaVersion: '0.1' as const, featureId: 'fixture', representation: 'regional' as const, parcellation: 'beryl' as const,
+        regionIds: ['-20'], statistics: { mean: [1] },
+      },
+      regions: [{ id: '-20', atlasId: -20, index: 0, acronym: 'R', name: 'Region', colorHex: '#123456' }],
+      selectedRegionIds: ['-20'], hoveredRegionId: null as string | null,
+      coloring: { mode: 'feature' as const, statistic: 'mean' as const, colormap: 'viridis', range: { mode: 'auto' as const }, scale: 'linear' as const },
+    };
     renderer.setInteractionSink({
-      hover: () => undefined,
+      hover: (hit) => renderer.updatePresentation({ ...presentation, hoveredRegionId: hit?.regionId ?? null }),
       toggleSelection: (hit) => { target.dataset.hit = hit.regionId; },
       stepSlice: () => undefined,
       moveCursor: () => undefined,
       reportError: () => undefined,
     });
-    await renderer.render(target, {
-      axis: 'coronal', sliceIndex: 2, slices: { coronal: 2, sagittal: 1, horizontal: 3 },
+    await Promise.all(axes.map((axis) => renderer.render(targets.get(axis)!, {
+      axis, sliceIndex: axis === 'coronal' ? 2 : axis === 'sagittal' ? 1 : 3,
+      slices: { coronal: 2, sagittal: 1, horizontal: 3 },
       cursor: { xUm: 25, yUm: 50, zUm: 75 }, parcellation: 'beryl',
       selectedRegionIds: ['-20'], feature: null,
-    });
-    renderer.updatePresentation({
-      feature: {
-        schemaVersion: '0.1', featureId: 'fixture', representation: 'regional', parcellation: 'beryl',
-        regionIds: ['-20'], statistics: { mean: [1] },
-      },
-      regions: [{ id: '-20', atlasId: -20, index: 0, acronym: 'R', name: 'Region', colorHex: '#123456' }],
-      selectedRegionIds: ['-20'], hoveredRegionId: '-20',
-      coloring: { mode: 'feature', statistic: 'mean', colormap: 'viridis', range: { mode: 'auto' }, scale: 'linear' },
-    });
+    })));
+    renderer.updatePresentation(presentation);
+    target.querySelector('path[data-beryl-id="20"]')?.dispatchEvent(new PointerEvent('pointermove', { bubbles: true }));
     target.querySelector('path[data-beryl-id="20"]')?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
   });
 
@@ -259,6 +267,11 @@ test('generated anatomy renderer uses direct mapping IDs and affine-derived guid
   for (const path of [leftPath, rightPath]) {
     await expect(path).toHaveClass(/is-selected/);
     await expect(path).toHaveClass(/is-highlighted/);
+  }
+  for (const axis of ['sagittal', 'horizontal'] as const) {
+    const projection = page.locator(`#generated-anatomy-test-${axis}`);
+    await expect(projection.locator('path[data-beryl-id="-20"]')).toHaveClass(/is-highlighted/);
+    await expect(projection.locator('path[data-beryl-id="20"]')).toHaveClass(/is-highlighted/);
   }
   await expect(target.locator('.slice-guide[data-source-axis="sagittal"]')).toHaveAttribute('x1', '1');
   await expect(target.locator('.slice-guide[data-source-axis="horizontal"]')).toHaveAttribute('y1', '2');
