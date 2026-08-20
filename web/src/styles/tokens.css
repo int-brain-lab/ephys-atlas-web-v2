@@ -31,6 +31,6 @@
 
   --header-height: 3.5rem;
   --analysis-height: 8rem;
-  --region-pane-width: clamp(15.625rem, 17vw, 18.25rem);
+  --region-pane-width: clamp(19rem, 20vw, 21rem);
   --settings-pane-width: clamp(17.875rem, 19vw, 20.375rem);
 }
