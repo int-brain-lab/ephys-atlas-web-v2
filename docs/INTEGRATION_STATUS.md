@@ -110,6 +110,12 @@ crosswalk. The settings panel exposes URL-persisted `Feature values` and
 color swatches in the region browser; geometry providers consume the shared
 color presentation without owning state (D022).
 
+The region browser constructs its preorder and depth from the signed Allen
+parent IDs. Allen uses the complete hierarchy; Beryl and Cosmos include the
+small set of real Allen ancestor containers needed to make their reduced
+mapping inventories parent-closed. Arbitrary ontology depth is displayed, and
+container-only rows remain visibly distinct from selectable mapping regions.
+
 The runtime anatomy is
 `allen-ccfv3-25um-left-t15-4a565958b938`: 1,078 left-hemisphere 25 µm slices
 in 68 lazy depth-16 gzip packs (18,768,176 compressed bytes). Full-corpus gates

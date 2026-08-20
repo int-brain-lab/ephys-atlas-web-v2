@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import urllib.request
 from pathlib import Path
@@ -12,18 +13,23 @@ from typing import Any
 
 IBLATLAS_COMMIT = "52083adf44825d0622a503705e095699a5957587"
 LEGACY_REGIONS_URL = "https://atlas.internationalbrainlab.org/data/json/regions.json"
-LEGACY_REGIONS_SHA256 = "9fca5fe4feeb368c715853c25a97667cb199d5a7ce160385771833ba61cedfc8"
+LEGACY_REGIONS_SHA256 = (
+    "9fca5fe4feeb368c715853c25a97667cb199d5a7ce160385771833ba61cedfc8"
+)
 HEX_COLOR = re.compile(r"^#[0-9a-f]{6}$")
 
 
 def canonical_json(value: Any) -> bytes:
-    return json.dumps(
-        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-    ).encode("utf-8") + b"\n"
+    return (
+        json.dumps(
+            value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
+        + b"\n"
+    )
 
 
 def _download_legacy_crosswalk() -> dict[str, Any]:
-    with urllib.request.urlopen(LEGACY_REGIONS_URL) as response:  # noqa: S310 - pinned HTTPS input
+    with urllib.request.urlopen(LEGACY_REGIONS_URL) as response:
         payload = response.read()
     digest = hashlib.sha256(payload).hexdigest()
     if digest != LEGACY_REGIONS_SHA256:
@@ -32,18 +38,20 @@ def _download_legacy_crosswalk() -> dict[str, Any]:
         )
     value = json.loads(payload)
     if not isinstance(value, dict):
-        raise ValueError("legacy region crosswalk must be an object")
+        raise TypeError("legacy region crosswalk must be an object")
     return value
 
 
 def build_document(regions: Any, legacy: dict[str, Any]) -> dict[str, Any]:
     """Join the pinned SVG row domain to authoritative iblatlas ontology fields."""
+    index_by_id = {int(atlas_id): index for index, atlas_id in enumerate(regions.id)}
     mappings: dict[str, list[dict[str, Any]]] = {}
     for mapping in ("allen", "beryl", "cosmos"):
         raw_rows = legacy.get(mapping)
         if not isinstance(raw_rows, list):
-            raise ValueError(f"legacy crosswalk has no {mapping} rows")
-        rows: list[dict[str, Any]] = []
+            raise TypeError(f"legacy crosswalk has no {mapping} rows")
+        mapping_indexes: set[int] = set()
+        hierarchy_indexes: set[int] = set()
         for raw in raw_rows:
             atlas_id = int(raw["atlas_id"])
             index = int(raw["idx"])
@@ -53,6 +61,30 @@ def build_document(regions: Any, legacy: dict[str, Any]) -> dict[str, Any]:
                 raise ValueError(
                     f"{mapping} atlas id {atlas_id} does not match iblatlas row {index}"
                 )
+            if index in mapping_indexes:
+                raise ValueError(f"{mapping} legacy index {index} is duplicated")
+            mapping_indexes.add(index)
+
+            # Beryl and Cosmos are subsets of Allen ontology nodes. Include their
+            # actual Allen ancestors as non-mapping containers so the browser gets
+            # a parent-closed hierarchy rather than orphaned rows with missing IDs.
+            ancestor_index = index
+            while True:
+                hierarchy_indexes.add(ancestor_index)
+                parent = regions.parent[ancestor_index]
+                if math.isnan(float(parent)):
+                    break
+                parent_id = int(parent)
+                try:
+                    ancestor_index = index_by_id[parent_id]
+                except KeyError as exc:
+                    raise ValueError(
+                        f"{mapping} region {atlas_id} has unknown Allen parent {parent_id}"
+                    ) from exc
+
+        rows: list[dict[str, Any]] = []
+        for index in sorted(hierarchy_indexes):
+            atlas_id = int(regions.id[index])
             rgb = [int(channel) for channel in regions.rgb[index]]
             color_hex = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
             if not HEX_COLOR.fullmatch(color_hex):
@@ -64,8 +96,9 @@ def build_document(regions: Any, legacy: dict[str, Any]) -> dict[str, Any]:
                 "color_hex": color_hex,
                 "depth": int(regions.level[index]),
                 "idx": index,
+                "mapping_member": index in mapping_indexes,
                 "name": str(regions.name[index]),
-                "parent_id": None if parent != parent else int(parent),
+                "parent_id": None if math.isnan(float(parent)) else int(parent),
             }
             rows.append(row)
         mappings[mapping] = rows

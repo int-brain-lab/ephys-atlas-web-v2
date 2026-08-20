@@ -46,15 +46,6 @@ interface ViewFrameNodes {
   renderToken: number;
 }
 
-interface PrototypeRegion {
-  id: string;
-  acronym: string;
-  name: string;
-  depth: 0 | 1 | 2;
-  value: number | null;
-  hasChildren?: boolean;
-}
-
 const VIEW_LABELS: ReadonlyArray<{ id: WorkspaceView; label: string }> = [
   { id: 'coronal', label: 'Coronal' },
   { id: 'sagittal', label: 'Sagittal' },
@@ -67,25 +58,6 @@ const ACTION_ICONS: Record<HeaderAction, string> = {
   download: '↓',
   info: 'i',
 };
-
-// Phase 3 UX-only representative content. These labels and normalized bars are not
-// loaded from, or written to, the scientific dataset/domain state.
-const PROTOTYPE_REGIONS: readonly PrototypeRegion[] = [
-  { id: 'CTX', acronym: 'CTX', name: 'Cerebral cortex', depth: 0, value: 72, hasChildren: true },
-  { id: 'VIS', acronym: 'VIS', name: 'Visual areas', depth: 1, value: 66, hasChildren: true },
-  { id: 'VISp', acronym: 'VISp', name: 'Primary visual area', depth: 2, value: 81 },
-  { id: 'VISrl', acronym: 'VISrl', name: 'Rostrolateral visual area', depth: 2, value: 47 },
-  { id: 'SSp-bfd', acronym: 'SSp-bfd', name: 'Primary somatosensory area, barrel field', depth: 1, value: 58 },
-  { id: 'MOs', acronym: 'MOs', name: 'Secondary motor area', depth: 1, value: 39 },
-  { id: 'HPF', acronym: 'HPF', name: 'Hippocampal formation', depth: 0, value: 54, hasChildren: true },
-  { id: 'CA1', acronym: 'CA1', name: 'Field CA1', depth: 1, value: 62 },
-  { id: 'DG', acronym: 'DG', name: 'Dentate gyrus', depth: 1, value: 44 },
-  { id: 'TH', acronym: 'TH', name: 'Thalamus', depth: 0, value: 35, hasChildren: true },
-  { id: 'LGd', acronym: 'LGd', name: 'Dorsal lateral geniculate complex', depth: 1, value: 69 },
-  { id: 'POL', acronym: 'POL', name: 'Posterior limiting nucleus of the thalamus', depth: 1, value: null },
-  { id: 'STR', acronym: 'STR', name: 'Striatum', depth: 0, value: 31, hasChildren: true },
-  { id: 'CP', acronym: 'CP', name: 'Caudoputamen', depth: 1, value: 28 },
-];
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -121,19 +93,11 @@ export class AppShell {
   private readonly datasetContext: ContextFieldNodes;
   private readonly featureContext: ContextFieldNodes;
   private readonly representationContext: ContextFieldNodes;
-  private readonly regionButtons = new Map<string, HTMLButtonElement>();
-  private readonly selectedPrototypeRegions = new Set<string>(['VISp', 'MOs']);
   private overflowActions: HTMLDetailsElement | null = null;
   private regionSearch!: HTMLInputElement;
-  private regionSearchClear!: HTMLButtonElement;
-  private regionResultCount!: HTMLElement;
-  private regionList!: HTMLUListElement;
-  private selectedRegionList!: HTMLUListElement;
-  private clearPrototypeSelection!: HTMLButtonElement;
   private colorModeSelect!: HTMLSelectElement;
   private statisticSelect!: HTMLSelectElement;
   private colormapSelect!: HTMLSelectElement;
-  private activePrototypeRegion = 'CA1';
   private activeView: WorkspaceView = 'coronal';
   private maximizedView: SliceAxis | null = null;
 
@@ -167,7 +131,6 @@ export class AppShell {
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('resize', this.onResize);
     this.syncLayoutMode();
-    this.updatePrototypeRegionState();
   }
 
   render(model: ShellModel): void {
@@ -336,177 +299,37 @@ export class AppShell {
     this.regionSearch.spellcheck = false;
     this.regionSearch.placeholder = 'Search regions';
     this.regionSearch.setAttribute('aria-label', 'Search brain regions');
-    this.regionSearch.addEventListener('input', () => this.filterPrototypeRegions());
-    this.regionSearchClear = element('button', 'region-search__clear');
-    this.regionSearchClear.type = 'button';
-    this.regionSearchClear.textContent = '×';
-    this.regionSearchClear.setAttribute('aria-label', 'Clear region search');
-    this.regionSearchClear.hidden = true;
-    this.regionSearchClear.addEventListener('click', () => {
-      this.regionSearch.value = '';
-      this.filterPrototypeRegions();
-      this.regionSearch.focus();
-    });
-    inputWrap.append(searchIcon, this.regionSearch, this.regionSearchClear);
+    const searchClear = element('button', 'region-search__clear');
+    searchClear.type = 'button';
+    searchClear.textContent = '×';
+    searchClear.setAttribute('aria-label', 'Clear region search');
+    searchClear.hidden = true;
+    inputWrap.append(searchIcon, this.regionSearch, searchClear);
 
     const meta = element('div', 'region-search__meta');
     const source = element('span', 'region-search__source');
-    source.textContent = 'Representative hierarchy';
-    this.regionResultCount = element('span', 'region-search__count');
-    this.regionResultCount.setAttribute('role', 'status');
-    this.regionResultCount.setAttribute('aria-live', 'polite');
-    meta.append(source, this.regionResultCount);
+    source.textContent = 'Loading regional catalog';
+    const resultCount = element('span', 'region-search__count');
+    resultCount.setAttribute('role', 'status');
+    resultCount.setAttribute('aria-live', 'polite');
+    meta.append(source, resultCount);
     search.append(inputWrap, meta);
 
     const browser = element('div', 'region-pane__browser');
-    browser.setAttribute('aria-label', 'Representative region browser');
-    this.regionList = element('ul', 'region-list');
-    for (const region of PROTOTYPE_REGIONS) this.regionList.append(this.createRegionRow(region));
-    browser.append(this.regionList);
+    browser.setAttribute('aria-label', 'Region browser');
+    browser.append(element('ul', 'region-list'));
 
     const selected = element('section', 'region-pane__selected');
     const selectedHeader = element('div', 'selected-regions__header');
     selectedHeader.append(heading('Selected regions', 3));
-    this.clearPrototypeSelection = element('button', 'selected-regions__clear');
-    this.clearPrototypeSelection.type = 'button';
-    this.clearPrototypeSelection.textContent = 'Clear';
-    this.clearPrototypeSelection.addEventListener('click', () => {
-      this.selectedPrototypeRegions.clear();
-      this.updatePrototypeRegionState();
-    });
-    selectedHeader.append(this.clearPrototypeSelection);
-    this.selectedRegionList = element('ul', 'selected-regions__list');
-    selected.append(selectedHeader, this.selectedRegionList);
+    const clearSelection = element('button', 'selected-regions__clear');
+    clearSelection.type = 'button';
+    clearSelection.textContent = 'Clear';
+    selectedHeader.append(clearSelection);
+    selected.append(selectedHeader, element('ul', 'selected-regions__list'));
 
     pane.append(panelHeader, search, browser, selected);
     return pane;
-  }
-
-  private createRegionRow(region: PrototypeRegion): HTMLLIElement {
-    const item = element('li', 'region-row');
-    item.dataset.regionId = region.id;
-    item.dataset.depth = String(region.depth);
-    item.dataset.missing = String(region.value === null);
-
-    const button = element('button', 'region-row__button');
-    button.type = 'button';
-    button.dataset.regionButton = region.id;
-    button.setAttribute('aria-pressed', 'false');
-    button.setAttribute('aria-label', `${region.acronym}, ${region.name}`);
-
-    const disclosure = element('span', 'region-row__disclosure');
-    disclosure.textContent = region.hasChildren ? '▾' : '·';
-    disclosure.setAttribute('aria-hidden', 'true');
-
-    const identity = element('span', 'region-row__identity');
-    const acronym = element('span', 'region-row__acronym');
-    acronym.textContent = region.acronym;
-    const name = element('span', 'region-row__name');
-    name.textContent = region.name;
-    name.title = region.name;
-    identity.append(acronym, name);
-
-    const value = element('span', 'region-row__value');
-    if (region.value === null) {
-      const missing = element('span', 'region-row__missing');
-      missing.textContent = 'no value';
-      value.append(missing);
-    } else {
-      const bar = element('span', 'region-row__bar');
-      const fill = element('span', 'region-row__bar-fill');
-      fill.style.setProperty('--region-value', `${region.value}%`);
-      bar.append(fill);
-      value.append(bar);
-      value.setAttribute('aria-label', 'Representative relative value');
-    }
-
-    button.append(disclosure, identity, value);
-    button.addEventListener('click', () => this.togglePrototypeRegion(region.id));
-    button.addEventListener('keydown', (event) => this.navigatePrototypeRegions(event, button));
-    this.regionButtons.set(region.id, button);
-    item.append(button);
-    return item;
-  }
-
-  private togglePrototypeRegion(regionId: string): void {
-    this.activePrototypeRegion = regionId;
-    if (this.selectedPrototypeRegions.has(regionId)) this.selectedPrototypeRegions.delete(regionId);
-    else this.selectedPrototypeRegions.add(regionId);
-    this.updatePrototypeRegionState();
-  }
-
-  private removePrototypeRegion(regionId: string): void {
-    this.selectedPrototypeRegions.delete(regionId);
-    this.updatePrototypeRegionState();
-    this.regionButtons.get(regionId)?.focus();
-  }
-
-  private updatePrototypeRegionState(): void {
-    for (const region of PROTOTYPE_REGIONS) {
-      const button = this.regionButtons.get(region.id);
-      const row = button?.closest<HTMLElement>('.region-row');
-      if (!button || !row) continue;
-      const selected = this.selectedPrototypeRegions.has(region.id);
-      row.dataset.selected = String(selected);
-      row.dataset.active = String(this.activePrototypeRegion === region.id);
-      button.setAttribute('aria-pressed', String(selected));
-    }
-
-    const selectedRegions = PROTOTYPE_REGIONS.filter((region) => this.selectedPrototypeRegions.has(region.id));
-    const selectedItems = selectedRegions.map((region) => {
-      const item = element('li', 'selected-region');
-      const identity = element('span', 'selected-region__identity');
-      const acronym = element('strong', 'selected-region__acronym');
-      acronym.textContent = region.acronym;
-      const name = element('span', 'selected-region__name');
-      name.textContent = region.name;
-      identity.append(acronym, name);
-      const remove = element('button', 'selected-region__remove');
-      remove.type = 'button';
-      remove.textContent = '×';
-      remove.setAttribute('aria-label', `Remove ${region.acronym} from selected regions`);
-      remove.addEventListener('click', () => this.removePrototypeRegion(region.id));
-      item.append(identity, remove);
-      return item;
-    });
-    if (!selectedItems.length) {
-      const empty = element('li', 'selected-regions__empty');
-      empty.textContent = 'No regions selected';
-      selectedItems.push(empty);
-    }
-    this.selectedRegionList.replaceChildren(...selectedItems);
-    this.clearPrototypeSelection.disabled = selectedRegions.length === 0;
-    this.filterPrototypeRegions();
-  }
-
-  private filterPrototypeRegions(): void {
-    if (!this.regionSearch || !this.regionResultCount) return;
-    const query = this.regionSearch.value.trim().toLocaleLowerCase();
-    let visible = 0;
-    for (const region of PROTOTYPE_REGIONS) {
-      const matches = !query || region.acronym.toLocaleLowerCase().includes(query) || region.name.toLocaleLowerCase().includes(query);
-      const row = this.regionButtons.get(region.id)?.closest<HTMLLIElement>('.region-row');
-      if (row) row.hidden = !matches;
-      if (matches) visible += 1;
-    }
-    this.regionSearchClear.hidden = !query;
-    this.regionResultCount.textContent = `${visible} ${visible === 1 ? 'region' : 'regions'}`;
-  }
-
-  private navigatePrototypeRegions(event: KeyboardEvent, current: HTMLButtonElement): void {
-    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
-    const visible = [...this.regionList.querySelectorAll<HTMLButtonElement>('.region-row:not([hidden]) .region-row__button')];
-    if (!visible.length) return;
-    const index = visible.indexOf(current);
-    let target = index;
-    if (event.key === 'ArrowDown') target = Math.min(visible.length - 1, index + 1);
-    if (event.key === 'ArrowUp') target = Math.max(0, index - 1);
-    if (event.key === 'Home') target = 0;
-    if (event.key === 'End') target = visible.length - 1;
-    if (target !== index) {
-      event.preventDefault();
-      visible[target]?.focus();
-    }
   }
 
   private createSettingsPane(): HTMLElement {

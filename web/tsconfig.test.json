@@ -13,6 +13,8 @@
     "src/data/contracts.ts",
     "src/data/validate.ts",
     "src/data/regional-data.ts",
+    "src/data/atlas-regions.ts",
+    "src/data/region-hierarchy.ts",
     "src/data/repository.ts",
     "src/data/prefetch.ts",
     "src/rendering/scalar-colormap.ts",

@@ -64,6 +64,8 @@ export interface RegionMetadata {
   depth?: number;
   /** Official atlas ontology color, independent of scientific feature coloring. */
   colorHex?: string;
+  /** False for ontology ancestors included only to make a reduced mapping parent-closed. */
+  mappingMember?: boolean;
   /** Numeric region domain embedded in the pinned legacy SVG assets. */
   legacyIndex?: number;
 }
