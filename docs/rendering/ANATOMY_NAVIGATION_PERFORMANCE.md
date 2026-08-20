@@ -76,11 +76,18 @@ same-pack commit latency to 0.9–1.6 ms and retained-revisit commit latency to
 ms, with one horizontal p95 trial reaching 23.5 ms. This isolates the remaining
 cache-miss problem from warm SVG navigation.
 
+The verified compressed pack is now transferred to a persistent module worker
+for gzip, UTF-8/JSON parsing, and structural/affine validation. With that worker,
+the maximum animation-frame gap across these benchmark cases fell from 33.3 ms
+to 17.6 ms. Median cold commits rose to 17–21.1 ms because the JSON representation
+still requires a structured clone of the complete decoded pack back to the main
+thread. This improves interaction continuity but confirms that a compact indexed
+SVG response is needed to reduce both wait time and cross-thread allocation.
+
 The next implementation should:
 
-1. move cold-pack decompression and validation off the main thread;
-2. benchmark the indexed UTF-8 SVG pack in that worker path—the prototype can
+1. benchmark the indexed UTF-8 SVG pack in the worker path—the prototype can
    remove UTF-8/JSON object parsing, validation allocation, and fragment
    serialization, but gzip cost remains unless transport changes;
-3. repeat this benchmark against the deployed origin with network throttling
+2. repeat this benchmark against the deployed origin with network throttling
    and a visible wheel-burst scenario before selecting prefetch distance.

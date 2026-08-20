@@ -154,6 +154,7 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     }
     this.mounts.clear();
     this.requestedIndices.clear();
+    this.source.dispose?.();
   }
 
   private scheduleGeometryRender(target: HTMLElement, model: SliceRenderModel, token: number): Promise<void> {

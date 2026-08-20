@@ -75,6 +75,8 @@ export interface AnatomySliceSource {
   guidesForWorld(axis: SliceAxis, world: import('./coordinate-space.js').WorldCoordinateUm): Promise<readonly SliceGuide[]>;
   /** Opportunistically warm one immutable pack in the active navigation direction. */
   prefetchNextPack?(axis: SliceAxis, index: number, direction: -1 | 1): void;
+  /** Release transport resources such as persistent decoding workers. */
+  dispose?(): void;
 }
 
 export interface Renderer3DState {

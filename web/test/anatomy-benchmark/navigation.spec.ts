@@ -179,6 +179,7 @@ test('cold anatomy packs expose browser pipeline timings', async ({ page, browse
     expect(result.samples.every((sample) => sample.samePack.finalSliceIndex === result.samePackIndex)).toBe(true);
     expect(result.samples.every((sample) => sample.retainedRevisit.finalSliceIndex === result.sliceIndex)).toBe(true);
     expect(result.samples.every((sample) => sample.samePack.source.length === 0)).toBe(true);
+    expect(result.samples.every((sample) => sample.coldPack.source.some((event) => event.phase === 'worker-roundtrip'))).toBe(true);
     expect(result.samples.every((sample) => !sample.retainedRevisit.svg.some((event) => event.phase === 'svg-parse'))).toBe(true);
   }
   if (output) await writeFile(output, `${JSON.stringify(report, null, 2)}\n`);
