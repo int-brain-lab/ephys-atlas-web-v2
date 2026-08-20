@@ -80,7 +80,22 @@ function fixture() {
         voxel_centers: 'integer-indices', voxel_edges: 'half-integer-indices', matrix_order: 'row-major',
       },
       projections,
-      provenance: { generator: 'fixture' }, validation: { topology: true },
+      provenance: {
+        iblatlas: { repository: 'int-brain-lab/iblatlas', commit: '52083ad' },
+        generator: { repository: 'fixture', commit: '0123456', dirty: false },
+        shapely_version: '2.1.1', geos_version: '3.13.1',
+        simplification: {
+          algorithm: 'GEOS coverage_simplify', tolerance_um: 12.5,
+          boundary_sampling_interval_voxels: 0.25, boundary_error_bound_um: 3.125,
+        },
+      },
+      validation: {
+        topology_valid: true, coverage_valid: true, uncovered_voxels: 0, multiply_covered_voxels: 0,
+        adjacency_mismatches: 0, invalid_geometries: 0, missing_atlas_ids: [], source_slices: 3, emitted_slices: 3,
+        boundary_error_um: { worst_slice_median: 0, worst_slice_p95: 0, max_upper_bound: 0 },
+        accepted_max_boundary_error_um: 12.5, minimum_eligible_region_iou: 1,
+        accepted_minimum_region_iou: 0.98, coordinate_tolerance_um: 1e-6, sentinel_max_error_um: 0,
+      },
       synchronization_sentinels: [{
         name: 'origin', world_um: [0, 0, 0],
         projection_indices: { coronal: [0, 0, 0], sagittal: [0, 0, 0], horizontal: [0, 0, 0] },
