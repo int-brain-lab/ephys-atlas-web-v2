@@ -3,6 +3,26 @@
   grid-template-rows: auto minmax(0, 1fr);
 }
 
+.analysis-panel[data-empty='true'] {
+  grid-template-rows: auto;
+}
+
+.analysis-panel[data-empty='true'] .analysis-panel__surface {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .workspace:has(.analysis-panel[data-empty='true']) {
+    grid-template-rows: minmax(17rem, 1fr) clamp(9rem, 21vh, 12rem) 2.25rem;
+  }
+}
+
+@media (max-width: 1099px) {
+  .workspace:has(.analysis-panel[data-empty='true']) {
+    grid-template-rows: 2.75rem minmax(0, 1fr) 2.25rem;
+  }
+}
+
 .analysis-panel__surface {
   min-width: 0;
   min-height: 0;

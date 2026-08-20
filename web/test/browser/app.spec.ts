@@ -23,7 +23,8 @@ for (const viewport of reviewViewports) {
     await expect(page.locator('[data-view="sagittal"]')).toHaveAttribute('data-state', 'ready');
     await expect(page.locator('[data-view="horizontal"]')).toHaveAttribute('data-state', 'ready');
     await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.20 mm');
-    await expect(page.locator('[data-view="coronal"] .view-frame__status')).toHaveText('Allen CCFv3 · 10 µm');
+    await expect(page.locator('[data-context-field="representation"] .context-field__release')).toHaveText('Allen CCFv3 · 10 µm');
+    await expect(page.locator('[data-view="coronal"] .view-frame__status')).toHaveText('');
     await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
     await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');
     await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v2"]')).toHaveAttribute('data-asset-index', '660');
@@ -92,7 +93,7 @@ test('an existing anatomy slice stays visible while an adjacent pack loads', asy
 
   releasePack();
   await expect(target).toHaveAttribute('data-asset-index', '672');
-  await expect(frame.locator('.view-frame__status')).toHaveText('Allen CCFv3 · 10 µm');
+  await expect(frame.locator('.view-frame__status')).toHaveText('');
 });
 
 test('linked guides project one slice coordinate into both other views', async ({ page }) => {
@@ -157,7 +158,10 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.region-row')).toHaveCount(1097);
   await expect(page.locator('.region-row').first()).toContainText('root');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
-  await expect(page.locator('.regional-comparison__fixture')).toHaveText('Synthetic integration fixture');
+  await expect(page.locator('.region-pane__selected')).toHaveAttribute('data-empty', 'true');
+  await expect(page.locator('.selected-regions__list')).toBeEmpty();
+  await expect(page.locator('.analysis-panel')).toHaveAttribute('data-empty', 'true');
+  await expect(page.locator('.analysis-panel__surface')).toBeHidden();
 
   const path = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
   const rightPath = page.locator('[data-view="coronal"] path[data-allen-id="362"]').first();
@@ -165,6 +169,9 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(rightPath).toHaveCSS('fill', 'rgb(255, 144, 159)');
 
   await page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ }).click();
+  await expect(page.locator('.region-pane__selected')).toHaveAttribute('data-empty', 'false');
+  await expect(page.locator('.analysis-panel')).toHaveAttribute('data-empty', 'false');
+  await expect(page.locator('.regional-comparison__fixture')).toHaveText('Synthetic integration fixture');
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
   await expect(page.locator('.selected-region')).toContainText('MD');
   await expect(page.locator('.regional-comparison__list')).toContainText('mean: 1 dB rel. V');

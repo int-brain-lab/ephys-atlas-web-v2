@@ -19,8 +19,8 @@ test('region sidebar renders parent-closed Allen hierarchies at their real depth
   await expect(motorLayer.locator('.region-row__swatch')).toHaveCSS('background-color', 'rgb(31, 157, 90)');
 
   await expect(root).toHaveCSS('--region-indent', '0.00rem');
-  await expect(cortex).toHaveCSS('--region-indent', '1.74rem');
-  await expect(motorLayer).toHaveCSS('--region-indent', '4.64rem');
+  await expect(cortex).toHaveCSS('--region-indent', '1.26rem');
+  await expect(motorLayer).toHaveCSS('--region-indent', '3.36rem');
 });
 
 test('reduced mappings expose real Allen ancestors as non-selectable containers', async ({ page }) => {
