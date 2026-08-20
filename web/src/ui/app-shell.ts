@@ -26,6 +26,8 @@ export interface AppShellCallbacks {
   setColorScale(scale: ColorScale): void;
   setSlice(axis: SliceAxis, index: number): void;
   clearSelection(): void;
+  shareCurrentView(): Promise<void>;
+  downloadCurrentFeature(): void;
   importLocal(files: FileList): Promise<void>;
   reportError(error: unknown): void;
 }
@@ -103,8 +105,11 @@ export class AppShell {
   private readonly regionPane: HTMLElement;
   private readonly settingsPane: HTMLElement;
   private readonly backdrop: HTMLButtonElement;
+  private readonly infoDialog: HTMLDialogElement;
+  private readonly infoContent: HTMLElement;
   private readonly viewButtons = new Map<WorkspaceView, HTMLButtonElement>();
   private readonly viewFrames = new Map<SliceAxis, ViewFrameNodes>();
+  private readonly headerActionButtons = new Map<HeaderAction, HTMLButtonElement[]>();
   private readonly datasetContext: ContextFieldNodes;
   private readonly featureContext: ContextFieldNodes;
   private readonly representationContext: ContextFieldNodes;
@@ -147,13 +152,16 @@ export class AppShell {
     this.regionPane = this.createRegionPane();
     this.settingsPane = this.createSettingsPane();
     this.backdrop = this.createBackdrop();
+    const info = this.createInfoDialog();
+    this.infoDialog = info.dialog;
+    this.infoContent = info.content;
 
     const header = this.createHeader();
     const body = element('main', 'app-body');
     const workspace = this.createWorkspace();
     body.append(this.regionPane, workspace, this.settingsPane);
 
-    this.app.append(header, body, this.backdrop);
+    this.app.append(header, body, this.backdrop, this.infoDialog);
     root.append(this.app);
 
     this.backdrop.addEventListener('click', () => this.closeDrawers());
@@ -178,6 +186,10 @@ export class AppShell {
     this.setContextValue(this.representationContext, representationLabel, 'Allen CCFv3 · 10 µm');
     this.renderDataSettings(model);
     this.renderColorSettings(model);
+    this.renderInfo(model);
+    this.setHeaderActionDisabled('share', false);
+    this.setHeaderActionDisabled('info', manifest === null);
+    this.setHeaderActionDisabled('download', model.feature?.representation !== 'regional');
 
     for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
       this.renderViewFrame(axis, model);
@@ -213,9 +225,9 @@ export class AppShell {
 
     const desktopActions = element('div', 'app-header__desktop-actions');
     desktopActions.append(
-      this.placeholderActionButton('Share', 'share'),
-      this.placeholderActionButton('Download', 'download'),
-      this.placeholderActionButton('Info', 'info'),
+      this.headerActionButton('Share', 'share'),
+      this.headerActionButton('Download', 'download'),
+      this.headerActionButton('Info', 'info'),
     );
     actions.append(desktopActions, this.createOverflowActions());
 
@@ -262,15 +274,56 @@ export class AppShell {
     return button;
   }
 
-  private placeholderActionButton(label: string, action: HeaderAction): HTMLButtonElement {
+  private headerActionButton(label: string, action: HeaderAction): HTMLButtonElement {
     const button = element('button', 'app-header__action');
     button.type = 'button';
     button.dataset.headerAction = action;
-    button.setAttribute('aria-disabled', 'true');
-    button.title = `${label} will be implemented in a later phase`;
     button.append(this.actionIcon(ACTION_ICONS[action]), this.actionLabel(label));
-    button.addEventListener('click', (event) => event.preventDefault());
+    button.addEventListener('click', () => void this.runHeaderAction(action, button));
+    const buttons = this.headerActionButtons.get(action) ?? [];
+    buttons.push(button);
+    this.headerActionButtons.set(action, buttons);
     return button;
+  }
+
+  private async runHeaderAction(action: HeaderAction, button: HTMLButtonElement): Promise<void> {
+    if (action === 'info') {
+      if (!this.infoDialog.open) this.infoDialog.showModal();
+      if (this.overflowActions) this.overflowActions.open = false;
+      return;
+    }
+    if (action === 'download') {
+      this.callbacks.downloadCurrentFeature();
+      if (this.overflowActions) this.overflowActions.open = false;
+      return;
+    }
+    try {
+      await this.callbacks.shareCurrentView();
+      this.showActionFeedback('share', 'Copied', 'Link copied to clipboard');
+    } catch (error) {
+      button.title = 'Could not copy link';
+      this.callbacks.reportError(error);
+    }
+    if (this.overflowActions) this.overflowActions.open = false;
+  }
+
+  private showActionFeedback(action: HeaderAction, label: string, title: string): void {
+    for (const button of this.headerActionButtons.get(action) ?? []) {
+      const text = button.querySelector<HTMLElement>('.app-header__action-label');
+      if (text) text.textContent = label;
+      button.title = title;
+    }
+    window.setTimeout(() => {
+      for (const button of this.headerActionButtons.get(action) ?? []) {
+        const text = button.querySelector<HTMLElement>('.app-header__action-label');
+        if (text) text.textContent = action === 'share' ? 'Share' : action === 'download' ? 'Download' : 'Info';
+        button.removeAttribute('title');
+      }
+    }, 1600);
+  }
+
+  private setHeaderActionDisabled(action: HeaderAction, disabled: boolean): void {
+    for (const button of this.headerActionButtons.get(action) ?? []) button.disabled = disabled;
   }
 
   private actionIcon(text: string): HTMLSpanElement {
@@ -293,13 +346,116 @@ export class AppShell {
     summary.append(this.actionIcon('⋯'));
     const menu = element('div', 'app-header__overflow-menu');
     menu.append(
-      this.placeholderActionButton('Share', 'share'),
-      this.placeholderActionButton('Download', 'download'),
-      this.placeholderActionButton('Info', 'info'),
+      this.headerActionButton('Share', 'share'),
+      this.headerActionButton('Download', 'download'),
+      this.headerActionButton('Info', 'info'),
     );
     details.append(summary, menu);
     this.overflowActions = details;
     return details;
+  }
+
+  private createInfoDialog(): { dialog: HTMLDialogElement; content: HTMLElement } {
+    const dialog = element('dialog', 'info-dialog');
+    dialog.setAttribute('aria-labelledby', 'info-dialog-title');
+    const header = element('header', 'info-dialog__header');
+    const title = heading('Dataset information', 2);
+    title.id = 'info-dialog-title';
+    const close = element('button', 'info-dialog__close');
+    close.type = 'button';
+    close.textContent = 'Close';
+    close.addEventListener('click', () => dialog.close());
+    header.append(title, close);
+    const content = element('div', 'info-dialog__content');
+    dialog.append(header, content);
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    return { dialog, content };
+  }
+
+  private renderInfo(model: ShellModel): void {
+    const { manifest, state } = model;
+    if (!manifest) {
+      this.infoContent.replaceChildren();
+      return;
+    }
+    const feature = manifest.features.find((item) => item.id === state.view.featureId);
+    const releaseStatus = manifest.release.paperSnapshot
+      ? 'Frozen paper snapshot'
+      : manifest.dataset.fixture ? 'Synthetic test fixture' : 'Immutable development release';
+    const summary = element('section', 'info-dialog__section');
+    const status = element('span', 'info-dialog__status');
+    status.dataset.fixture = String(Boolean(manifest.dataset.fixture));
+    status.textContent = releaseStatus;
+    summary.append(status, heading(manifest.dataset.title, 3));
+    if (manifest.dataset.description) summary.append(this.infoParagraph(manifest.dataset.description));
+    summary.append(this.infoList([
+      ['Dataset', manifest.dataset.id],
+      ['Release', manifest.release.releaseId],
+      ['Created', new Date(manifest.release.createdAt).toLocaleString()],
+      ['Parcellation', titleCaseToken(state.view.parcellation)],
+    ]));
+
+    const sections: HTMLElement[] = [summary];
+    if (feature) {
+      const featureSection = element('section', 'info-dialog__section');
+      featureSection.append(heading(feature.label, 3));
+      if (feature.description) featureSection.append(this.infoParagraph(feature.description));
+      featureSection.append(this.infoList([
+        ['Feature ID', feature.id],
+        ...(feature.unit ? [['Unit', feature.unit] as const] : []),
+        ['Quantity', feature.valueSemantics.quantity],
+        ['Transform', feature.valueSemantics.transform],
+        ['Population', feature.valueSemantics.sourcePopulation],
+        ['Missing values', feature.valueSemantics.missingValues],
+        ...(feature.valueSemantics.qcFilter ? [['QC filter', feature.valueSemantics.qcFilter] as const] : []),
+      ]));
+      sections.push(featureSection);
+    }
+
+    const provenance = element('section', 'info-dialog__section');
+    provenance.append(heading('Provenance', 3), this.infoList([
+      ['Recipe', String(manifest.provenance.recipe.id)],
+      ['Builder', `${manifest.provenance.builder.name} ${manifest.provenance.builder.version}`.trim()],
+      ['Command', manifest.provenance.builder.command],
+      ...(manifest.provenance.builder.commit ? [['Builder commit', manifest.provenance.builder.commit] as const] : []),
+    ]));
+    if (manifest.provenance.sources.length) {
+      const sources = element('ul', 'info-dialog__sources');
+      for (const source of manifest.provenance.sources) {
+        const item = element('li');
+        item.append(document.createTextNode(source.description));
+        const identity = source.release ?? source.commit ?? source.sha256;
+        if (identity) {
+          const code = element('code');
+          code.textContent = identity;
+          item.append(document.createTextNode(' '), code);
+        }
+        sources.append(item);
+      }
+      provenance.append(sources);
+    }
+    sections.push(provenance);
+    this.infoContent.replaceChildren(...sections);
+  }
+
+  private infoParagraph(text: string): HTMLParagraphElement {
+    const paragraph = element('p');
+    paragraph.textContent = text;
+    return paragraph;
+  }
+
+  private infoList(rows: readonly (readonly [string, string])[]): HTMLDListElement {
+    const list = element('dl', 'info-dialog__list');
+    for (const [labelText, value] of rows) {
+      const label = element('dt');
+      label.textContent = labelText;
+      const data = element('dd');
+      data.textContent = value;
+      list.append(label, data);
+    }
+    return list;
   }
 
   private createRegionPane(): HTMLElement {
