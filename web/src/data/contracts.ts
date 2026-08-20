@@ -53,6 +53,54 @@ export interface ParcellationDescriptor {
   metadata?: string;
 }
 
+export interface ReleasePublication {
+  doi?: string;
+  label?: string;
+}
+
+export interface ReleaseMetadata {
+  releaseId: string;
+  immutable: true;
+  createdAt: string;
+  paperSnapshot: boolean;
+  publication?: ReleasePublication;
+}
+
+export type ProvenanceSourceRole =
+  | 'scientific-code'
+  | 'canonical-data'
+  | 'selection-freeze'
+  | 'publication-input'
+  | 'user-input';
+
+export interface ProvenanceSource {
+  role: ProvenanceSourceRole;
+  description: string;
+  repository?: string;
+  commit?: string;
+  path?: string;
+  release?: string;
+  uri?: string;
+  sha256?: string;
+}
+
+export interface ProvenanceBuilder {
+  name: string;
+  version: string;
+  command: string;
+  repository?: string;
+  commit?: string;
+}
+
+export type JsonValue = null | boolean | number | string | readonly JsonValue[] | { readonly [key: string]: JsonValue };
+
+export interface DatasetProvenance {
+  sources: readonly ProvenanceSource[];
+  builder: ProvenanceBuilder;
+  recipe: Readonly<Record<string, JsonValue>> & { readonly id: string };
+  notes: readonly string[];
+}
+
 export interface RegionMetadata {
   /** Stable atlas ID used by scientific payloads, browser selection, and URLs. */
   id: string;
@@ -75,14 +123,19 @@ export interface DatasetManifestDocument {
   datasetId: string;
   title: string;
   description: string;
-  release: {
-    releaseId: string;
-    immutable: boolean;
-    createdAt: string;
-    paperSnapshot: boolean;
-  };
+  release: ReleaseMetadata;
+  provenance: DatasetProvenance;
   parcellations: readonly ParcellationDescriptor[];
   featureRefs: readonly FeatureReference[];
+}
+
+export interface FeatureValueSemantics {
+  quantity: string;
+  transform: string;
+  sourcePopulation: string;
+  missingValues: string;
+  sourceColumn?: string;
+  qcFilter?: string;
 }
 
 export interface RegionalParcellationDescriptor {
@@ -131,6 +184,7 @@ export interface FeatureDescriptor {
   label: string;
   description: string;
   unit: string | null;
+  valueSemantics: FeatureValueSemantics;
   statistics: readonly StatisticId[];
   representations: {
     regional?: RegionalRepresentationDescriptor;
@@ -145,9 +199,11 @@ export interface DatasetManifest {
     id: DatasetId;
     release: string;
     title: string;
-    description?: string;
+    description: string;
     fixture?: boolean;
   };
+  release: ReleaseMetadata;
+  provenance: DatasetProvenance;
   parcellations: readonly ParcellationId[];
   parcellationDescriptors: Partial<Record<ParcellationId, ParcellationDescriptor>>;
   features: readonly FeatureDescriptor[];

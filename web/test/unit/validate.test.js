@@ -5,7 +5,10 @@ import {
   decodeBinaryArray,
   localDatasetReleaseId,
   parseBinaryArray,
+  parseDatasetManifestDocument,
+  parseFeatureDescriptor,
   parseFeaturePayload,
+  resolveDatasetManifest,
   sha256Hex,
   validateLocalDatasetFiles,
 } from '../../.test-dist/data/validate.js';
@@ -61,7 +64,11 @@ async function localDatasetFiles() {
     title: 'Local fixture',
     description: 'Local import fixture',
     release: { release_id: 'weekly@1', immutable: true, created_at: '2026-08-20T00:00:00Z', paper_snapshot: false },
-    provenance: {},
+    provenance: {
+      sources: [{ role: 'user-input', description: 'Local test files' }],
+      builder: { name: 'unit-test', version: '1', command: 'unit-test' },
+      recipe: { id: 'local-test' },
+    },
     parcellations: [{
       id: 'allen',
       region_index: {
@@ -130,6 +137,53 @@ test('local import validates a complete regional resource graph', async () => {
   assert.equal(validated.document.datasetId, 'dataset_a');
   assert.equal(validated.document.release.releaseId, 'weekly@1');
   assert.deepEqual(validated.features.map((feature) => feature.id), ['x']);
+});
+
+test('resolved manifest preserves release, provenance, dataset, and feature context', () => {
+  const root = new URL('../../../fixtures/golden-v0.3/', import.meta.url);
+  const document = parseDatasetManifestDocument(JSON.parse(readFileSync(new URL('manifest.json', root), 'utf8')));
+  const feature = parseFeatureDescriptor(
+    JSON.parse(readFileSync(new URL('features/rms_ap/feature.json', root), 'utf8')),
+    'features/rms_ap/feature.json',
+  );
+  const manifest = resolveDatasetManifest(document, [feature]);
+
+  assert.equal(manifest.dataset.description, 'Small deterministic non-scientific dataset used to exercise the v0.1 browser contract.');
+  assert.deepEqual(manifest.release, {
+    releaseId: 'golden-v0.3', immutable: true, createdAt: '2026-08-20T00:00:00Z', paperSnapshot: false,
+  });
+  assert.equal(manifest.provenance.sources[0].description, 'Deterministic synthetic fixture seed');
+  assert.equal(manifest.provenance.builder.command, 'ephys-atlas-data golden fixtures/golden-v0.3');
+  assert.equal(manifest.provenance.recipe.id, 'golden-fixture-v0.3');
+  assert.match(feature.description, /Synthetic feature/);
+  assert.equal(feature.unit, 'dB rel. V');
+  assert.deepEqual(feature.valueSemantics, {
+    quantity: 'synthetic AP RMS-like scalar',
+    transform: 'identity; fixture values are already display values',
+    sourcePopulation: 'synthetic fixture observations',
+    missingValues: 'non-finite observations are excluded from summaries and histograms',
+    sourceColumn: 'rms_ap',
+    qcFilter: 'none; synthetic fixture',
+  });
+});
+
+test('manifest metadata validation rejects invalid release dates and provenance', () => {
+  const root = new URL('../../../fixtures/golden-v0.3/', import.meta.url);
+  const valid = JSON.parse(readFileSync(new URL('manifest.json', root), 'utf8'));
+  assert.throws(
+    () => parseDatasetManifestDocument({ ...valid, release: { ...valid.release, created_at: '2026-02-30T00:00:00Z' } }),
+    /RFC 3339 date-time/,
+  );
+  assert.throws(
+    () => parseDatasetManifestDocument({ ...valid, provenance: { ...valid.provenance, sources: [] } }),
+    /sources must not be empty/,
+  );
+});
+
+test('feature metadata validation rejects a missing or non-string unit', () => {
+  const root = new URL('../../../fixtures/golden-v0.3/', import.meta.url);
+  const valid = JSON.parse(readFileSync(new URL('features/rms_ap/feature.json', root), 'utf8'));
+  assert.throws(() => parseFeatureDescriptor({ ...valid, unit: 10 }, 'feature.json'), /feature.json.unit must be a string/);
 });
 
 test('local import validates the checked-in regional and volume golden graph', async () => {
