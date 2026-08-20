@@ -19,6 +19,7 @@ anatomy = [
     "brotli>=1.1,<2",
     "iblatlas @ git+https://github.com/int-brain-lab/iblatlas.git@52083adf44825d0622a503705e095699a5957587",
     "scikit-image>=0.26,<0.27",
+    "shapely>=2.1,<2.2",
 ]
 
 [project.scripts]
