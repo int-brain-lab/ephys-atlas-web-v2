@@ -79,12 +79,10 @@ Blocked by: Q4 and Q5.
 
 Unblocked preparation work Codex may do before scientific resolution:
 
-1. exercise the implemented slice-pack adapter against generated real pack
-   artifacts over HTTP and record decode, cache, and paint measurements,
-   prioritizing 4/8-slice packs while retaining 32³/64³ cubes as comparison
-   baselines;
-2. record request/bytes/decode/memory metrics in `benchmarks/` without selecting
-   the winner prematurely;
+1. extend the green real-`rms_ap` Chromium slice-pack benchmark to the other
+   representative feature distributions and the eventual HTTP/CDN origin;
+2. compare the current depth-4 recommendation against depth 8 under production
+   cache headers/network profiles without selecting the winner prematurely;
 3. keep renderer failures explicit for invalid transforms and resource layouts.
 
 After Q4/Q5 resolution:
