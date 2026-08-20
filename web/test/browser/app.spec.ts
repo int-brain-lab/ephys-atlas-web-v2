@@ -193,11 +193,15 @@ test('region hover is linked across all anatomical projections', async ({ page }
   await page.setViewportSize({ width: 1280, height: 800 });
   await mockCuratedSlices(page);
   await page.goto('/');
+  await expect(page.locator('.region-search__source')).toHaveText('Synthetic schema-v0.1 fixture');
 
   const source = page.locator('[data-view="coronal"] path.allen_region_835').first();
   await source.dispatchEvent('pointermove');
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
-    await expect(page.locator(`[data-view="${axis}"] path.allen_region_835`).first()).toHaveClass(/is-highlighted/);
+    const highlighted = page.locator(`[data-view="${axis}"] path.allen_region_835`).first();
+    await expect(highlighted).toHaveClass(/is-highlighted/);
+    await expect(highlighted).not.toHaveClass(/is-selected/);
+    await expect(highlighted).toHaveCSS('fill', 'rgb(85, 167, 247)');
   }
 
   await page.locator('[data-view="coronal"] .view-frame__slice-figure').dispatchEvent('pointerleave');
