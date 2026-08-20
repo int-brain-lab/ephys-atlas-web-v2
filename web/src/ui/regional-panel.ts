@@ -20,6 +20,7 @@ export interface RegionalPanelModel {
   feature: FeaturePayload | null;
   regions: readonly RegionMetadata[];
   anatomyAtlas: string | null;
+  hoveredRegionId: string | null;
 }
 
 function required<T extends Element>(root: ParentNode, selector: string): T {
@@ -63,6 +64,11 @@ export class RegionalPanelController {
   private lastSelectionKey = '';
   private lastFixture = false;
   private lastAnatomyAtlas: string | null = null;
+  private lastHoveredRegionId: string | null = null;
+  private readonly collapsedRegionIds = new Set<string>();
+  private readonly rowById = new Map<string, HTMLLIElement>();
+  private readonly regionById = new Map<string, RegionMetadata>();
+  private rovingButton: HTMLButtonElement | null = null;
 
   constructor(root: ParentNode, private readonly callbacks: RegionalPanelCallbacks) {
     this.pane = required(root, '.region-pane');
@@ -94,7 +100,10 @@ export class RegionalPanelController {
       selectionKey === this.lastSelectionKey &&
       fixture === this.lastFixture &&
       model.anatomyAtlas === this.lastAnatomyAtlas
-    ) return;
+    ) {
+      this.updateHoveredRegion(model.hoveredRegionId);
+      return;
+    }
 
     this.lastFeature = feature;
     this.lastRegions = model.regions;
@@ -103,6 +112,8 @@ export class RegionalPanelController {
     this.lastFixture = fixture;
     this.lastAnatomyAtlas = model.anatomyAtlas;
     this.currentRegions = model.regions;
+    this.regionById.clear();
+    model.regions.forEach((region) => this.regionById.set(region.id, region));
     this.pane.dataset.phase = feature || model.anatomyAtlas ? 'regional-data' : 'empty';
     this.pane.dataset.fixture = String(fixture);
 
@@ -132,9 +143,22 @@ export class RegionalPanelController {
       ? 'Synthetic schema-v0.1 fixture'
       : `${model.state.view.parcellation.toUpperCase()} regional values`;
 
+    const rovingRegionId = this.rovingButton?.dataset.regionButton;
+    const restoreFocus = document.activeElement === this.rovingButton;
     const rows = buildRegionHierarchy(model.regions).map(({ region, depth, hasChildren }) =>
       this.regionRow(region, depth, hasChildren, valueById.get(region.id), statistic, unit, range, selected));
     this.list.replaceChildren(...rows);
+    this.rowById.clear();
+    rows.forEach((row) => {
+      if (row.dataset.regionId) this.rowById.set(row.dataset.regionId, row);
+    });
+    this.rovingButton = (rovingRegionId
+      ? this.rowById.get(rovingRegionId)?.querySelector<HTMLButtonElement>('.region-row__button')
+      : null) ?? rows[0]?.querySelector<HTMLButtonElement>('.region-row__button') ?? null;
+    if (this.rovingButton) this.rovingButton.tabIndex = 0;
+    if (restoreFocus) this.rovingButton?.focus();
+    this.lastHoveredRegionId = null;
+    this.updateHoveredRegion(model.hoveredRegionId);
     this.renderSelected(model.regions, selected, valueById, statistic, unit);
     if (feature) {
       this.renderDistribution(feature, selected, model.regions, statistic, unit, fixture);
@@ -152,6 +176,9 @@ export class RegionalPanelController {
   }
 
   private renderEmpty(model: RegionalPanelModel): void {
+    this.rowById.clear();
+    this.rovingButton = null;
+    this.lastHoveredRegionId = null;
     const item = html('li', 'selected-regions__empty');
     item.textContent = model.state.view.representation === 'volume'
       ? 'Region values are unavailable in volume mode'
@@ -186,9 +213,28 @@ export class RegionalPanelController {
     item.style.setProperty('--region-indent', `${(depth * 0.58).toFixed(2)}rem`);
     item.setAttribute('role', 'treeitem');
     item.setAttribute('aria-level', String(depth + 1));
+    item.setAttribute('aria-selected', String(selected.has(region.id)));
+    if (hasChildren) item.setAttribute('aria-expanded', String(!this.collapsedRegionIds.has(region.id)));
+
+    const toggle = hasChildren ? html('button', 'region-row__toggle') : html('span', 'region-row__toggle-placeholder');
+    if (toggle instanceof HTMLButtonElement) {
+      toggle.type = 'button';
+      toggle.tabIndex = -1;
+      toggle.dataset.regionToggle = region.id;
+      toggle.textContent = '›';
+      toggle.setAttribute('aria-label', `${this.collapsedRegionIds.has(region.id) ? 'Expand' : 'Collapse'} ${region.acronym}`);
+      toggle.setAttribute('aria-expanded', String(!this.collapsedRegionIds.has(region.id)));
+      toggle.addEventListener('click', (event) => {
+        event.stopPropagation();
+        this.toggleBranch(region.id);
+      });
+    } else {
+      toggle.setAttribute('aria-hidden', 'true');
+    }
 
     const button = html('button', 'region-row__button');
     button.type = 'button';
+    button.tabIndex = -1;
     button.dataset.regionButton = region.id;
     button.setAttribute('aria-pressed', String(selected.has(region.id)));
     button.setAttribute('aria-label', `${region.acronym}, ${region.name}`);
@@ -200,7 +246,10 @@ export class RegionalPanelController {
     button.addEventListener('keydown', (event) => this.navigateRegions(event, button));
     button.addEventListener('pointerenter', () => this.callbacks.hoverRegion(selectable ? region.id : null));
     button.addEventListener('pointerleave', () => this.callbacks.hoverRegion(null));
-    button.addEventListener('focus', () => this.callbacks.hoverRegion(selectable ? region.id : null));
+    button.addEventListener('focus', () => {
+      this.setRovingButton(button);
+      this.callbacks.hoverRegion(selectable ? region.id : null);
+    });
     button.addEventListener('blur', () => this.callbacks.hoverRegion(null));
 
     const disclosure = html('span', 'region-row__disclosure');
@@ -224,9 +273,7 @@ export class RegionalPanelController {
     if (!selectable) {
       valueNode.setAttribute('aria-hidden', 'true');
     } else if (value === undefined || !Number.isFinite(value)) {
-      const missing = html('span', 'region-row__missing');
-      missing.textContent = 'no value';
-      valueNode.append(missing);
+      valueNode.setAttribute('aria-label', 'Value unavailable');
     } else {
       const formatted = formatValue(value, statistic, unit);
       valueNode.title = `${statistic}: ${formatted}`;
@@ -239,7 +286,7 @@ export class RegionalPanelController {
       valueNode.append(bar);
     }
     button.append(disclosure, identity, valueNode);
-    item.append(button);
+    item.append(toggle, button);
     return item;
   }
 
@@ -360,7 +407,7 @@ export class RegionalPanelController {
       const value = values.get(id);
       description.textContent = value !== undefined && Number.isFinite(value)
         ? `${statistic}: ${formatValue(value, statistic, unit)}`
-        : `${statistic}: no value`;
+        : '';
       list.append(term, description);
     }
     if (feature.global) {
@@ -386,11 +433,16 @@ export class RegionalPanelController {
         region.acronym.toLocaleLowerCase().includes(query) ||
         region.name.toLocaleLowerCase().includes(query)
       );
-      row.hidden = !matches;
-      if (matches) visible += 1;
+      const hiddenByCollapsedAncestor = !query && this.hasCollapsedAncestor(row.dataset.regionId ?? '');
+      row.hidden = !matches || hiddenByCollapsedAncestor;
+      if (matches && !hiddenByCollapsedAncestor) visible += 1;
     }
     this.searchClear.hidden = !query;
     this.resultCount.textContent = `${visible} ${visible === 1 ? 'region' : 'regions'}`;
+    if (this.rovingButton?.closest<HTMLLIElement>('.region-row')?.hidden) {
+      const firstVisible = this.list.querySelector<HTMLButtonElement>('.region-row:not([hidden]) .region-row__button');
+      if (firstVisible) this.setRovingButton(firstVisible);
+    }
   };
 
   private readonly clearSearch = (): void => {
@@ -400,7 +452,29 @@ export class RegionalPanelController {
   };
 
   private navigateRegions(event: KeyboardEvent, current: HTMLButtonElement): void {
-    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    if (!['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const row = current.closest<HTMLLIElement>('.region-row');
+    const regionId = row?.dataset.regionId;
+    if (regionId && event.key === 'ArrowRight') {
+      event.preventDefault();
+      if (row.dataset.branch === 'true' && this.collapsedRegionIds.has(regionId)) {
+        this.toggleBranch(regionId);
+      } else {
+        const child = [...this.list.querySelectorAll<HTMLLIElement>('.region-row:not([hidden])')]
+          .find((candidate) => candidate.dataset.parentId === regionId);
+        this.focusRegionButton(child?.querySelector<HTMLButtonElement>('.region-row__button') ?? null);
+      }
+      return;
+    }
+    if (regionId && event.key === 'ArrowLeft') {
+      event.preventDefault();
+      if (row.dataset.branch === 'true' && !this.collapsedRegionIds.has(regionId)) {
+        this.toggleBranch(regionId);
+      } else if (row.dataset.parentId) {
+        this.focusRegionButton(this.rowById.get(row.dataset.parentId)?.querySelector<HTMLButtonElement>('.region-row__button') ?? null);
+      }
+      return;
+    }
     const visible = [...this.list.querySelectorAll<HTMLButtonElement>('.region-row:not([hidden]) .region-row__button')];
     if (!visible.length) return;
     const index = visible.indexOf(current);
@@ -411,8 +485,55 @@ export class RegionalPanelController {
     if (event.key === 'End') target = visible.length - 1;
     if (target !== index) {
       event.preventDefault();
-      visible[target]?.focus();
+      this.focusRegionButton(visible[target] ?? null);
     }
+  }
+
+  private toggleBranch(regionId: string): void {
+    const row = this.rowById.get(regionId);
+    if (!row || row.dataset.branch !== 'true') return;
+    if (this.collapsedRegionIds.has(regionId)) this.collapsedRegionIds.delete(regionId);
+    else this.collapsedRegionIds.add(regionId);
+    const expanded = !this.collapsedRegionIds.has(regionId);
+    row.setAttribute('aria-expanded', String(expanded));
+    const toggle = row.querySelector<HTMLButtonElement>('.region-row__toggle');
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', String(expanded));
+      const acronym = this.regionById.get(regionId)?.acronym ?? regionId;
+      toggle.setAttribute('aria-label', `${expanded ? 'Collapse' : 'Expand'} ${acronym}`);
+    }
+    this.filterRegions();
+  }
+
+  private hasCollapsedAncestor(regionId: string): boolean {
+    let parentId = this.regionById.get(regionId)?.parentId;
+    const visited = new Set<string>();
+    while (parentId !== undefined && parentId !== null && !visited.has(parentId)) {
+      if (this.collapsedRegionIds.has(parentId)) return true;
+      visited.add(parentId);
+      parentId = this.regionById.get(parentId)?.parentId;
+    }
+    return false;
+  }
+
+  private updateHoveredRegion(regionId: string | null): void {
+    if (regionId === this.lastHoveredRegionId) return;
+    if (this.lastHoveredRegionId) this.rowById.get(this.lastHoveredRegionId)?.removeAttribute('data-hovered');
+    if (regionId) this.rowById.get(regionId)?.setAttribute('data-hovered', 'true');
+    this.lastHoveredRegionId = regionId;
+  }
+
+  private setRovingButton(button: HTMLButtonElement): void {
+    if (this.rovingButton === button) return;
+    if (this.rovingButton) this.rovingButton.tabIndex = -1;
+    button.tabIndex = 0;
+    this.rovingButton = button;
+  }
+
+  private focusRegionButton(button: HTMLButtonElement | null): void {
+    if (!button) return;
+    this.setRovingButton(button);
+    button.focus();
   }
 
   private message(text: string): HTMLElement {

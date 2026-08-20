@@ -125,6 +125,7 @@ export class AtlasApp {
       feature: this.feature,
       regions: anatomyRegions,
       anatomyAtlas: this.atlasRegions?.atlas ?? null,
+      hoveredRegionId: this.hoveredRegionId,
     });
   }
 
