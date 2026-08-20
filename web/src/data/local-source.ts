@@ -183,7 +183,16 @@ export class LocalDatasetSource implements DatasetSource {
     if (representation === 'volume') {
       const descriptor = feature.representations.volume;
       if (!descriptor) throw new Error(`Feature ${featureId} has no volume representation`);
-      return { schemaVersion: SCHEMA_VERSION, featureId, representation: 'volume', descriptor };
+      return {
+        schemaVersion: SCHEMA_VERSION,
+        featureId,
+        representation: 'volume',
+        descriptor,
+        loadResource: async (path) => {
+          const blob = await this.readResource(ref.releaseId!, resolvePath(feature.path, path));
+          return blob.arrayBuffer();
+        },
+      };
     }
 
     if (!parcellation) throw new Error(`Parcellation required for regional feature ${feature.id}`);
