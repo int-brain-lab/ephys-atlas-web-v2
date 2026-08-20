@@ -10,6 +10,7 @@ from ephys_atlas_builder.channels import (
     build_channels_release_from_arrays,
     discover_channel_table_dir,
     fold_region_ids_left,
+    _feature_info,
 )
 from ephys_atlas_builder.validate import validate_release
 
@@ -197,3 +198,22 @@ def test_both_mode_produces_explicit_variant_catalog(tmp_path):
 def test_snapshot_build_requires_reproducibility_pins():
     with pytest.raises(ValueError, match="reproducibility pins"):
         _config().require_scientific_pins()
+
+
+def test_channel_feature_metadata_prefers_transformed_then_raw_units():
+    class Column:
+        description = "Schema description"
+        metadata = {"raw_unit": "V", "transformed_unit": "dB rel. V"}
+
+    class Schema:
+        columns = {"rms_ap": Column()}
+
+    class Model:
+        @staticmethod
+        def to_schema():
+            return Schema()
+
+    info = _feature_info(Model, "rms_ap", "raw")
+    assert info.unit == "dB rel. V"
+    assert info.source_column == "rms_ap"
+    assert info.variant == "raw"
