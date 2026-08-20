@@ -7,27 +7,19 @@ on:
 
 permissions:
   contents: read
-  statuses: write
 
 jobs:
   python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
       - run: python -m pip install -e 'builder[test]' pytest
       - run: python -m pytest -q tests
       - run: python -m pip install -e publishing
       - run: python -m pytest -q publishing/tests
-      - name: Report Python status
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
-            await github.rest.repos.createCommitStatus({ owner: context.repo.owner, repo: context.repo.repo, sha: context.sha, state, context: 'CI / python' });
 
   web:
     runs-on: ubuntu-latest
@@ -35,58 +27,14 @@ jobs:
       run:
         working-directory: web
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
       - run: npm ci
-      - id: typecheck
-        continue-on-error: true
-        run: npm run typecheck
-      - id: unit
-        continue-on-error: true
-        run: npm run test:unit
-      - id: rendering
-        continue-on-error: true
-        run: npm run test:rendering
-      - id: build
-        continue-on-error: true
-        run: npm run build
-      - id: browser-install
-        continue-on-error: true
-        run: npx playwright install --with-deps chromium
-      - id: browser
-        if: always() && steps.browser-install.outcome == 'success'
-        continue-on-error: true
-        run: npm run test:browser
-      - name: Report web statuses
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const outcomes = {
-              'CI / web typecheck': '${{ steps.typecheck.outcome }}',
-              'CI / web unit': '${{ steps.unit.outcome }}',
-              'CI / web rendering': '${{ steps.rendering.outcome }}',
-              'CI / web build': '${{ steps.build.outcome }}',
-              'CI / web browser': '${{ steps.browser.outcome }}',
-            };
-            for (const [contextName, outcome] of Object.entries(outcomes)) {
-              await github.rest.repos.createCommitStatus({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                sha: context.sha,
-                state: outcome === 'success' ? 'success' : 'failure',
-                context: contextName,
-              });
-            }
-            const state = Object.values(outcomes).every((value) => value === 'success') ? 'success' : 'failure';
-            await github.rest.repos.createCommitStatus({ owner: context.repo.owner, repo: context.repo.repo, sha: context.sha, state, context: 'CI / web' });
-      - name: Fail failed web checks
-        if: always()
-        run: |
-          test '${{ steps.typecheck.outcome }}' = success
-          test '${{ steps.unit.outcome }}' = success
-          test '${{ steps.rendering.outcome }}' = success
-          test '${{ steps.build.outcome }}' = success
-          test '${{ steps.browser.outcome }}' = success
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run test:rendering
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
