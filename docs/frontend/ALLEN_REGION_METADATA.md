@@ -48,6 +48,13 @@ left structural inventory and color swatches in the region browser. The mode
 is persisted as `colors=anatomy` in URL state. Selection and hover remain
 independent outlines/states and never replace either color source.
 
+The pinned metadata and tree swatches retain the official RGB values exactly.
+On the dark anatomical canvas only, achromatic near-white entries such as
+`root` (`#ffffff`) and `fiber tracts` (`#cccccc`) are mapped to muted slate
+display colors. Chromatic Allen colors are unchanged. This presentation-only
+mapping avoids large white regions dominating the view without changing atlas
+identity or scientific feature colors.
+
 The browser orders rows from `parent_id`, derives hierarchy depth rather than
 trusting display metadata, and supports the full Allen depth instead of
 clamping all descendants below `grey` to one indentation level.
