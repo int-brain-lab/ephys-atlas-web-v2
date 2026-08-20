@@ -87,13 +87,16 @@ claim to test production-origin CORS/cache headers.
 For interactive local review, run:
 
 ```bash
-just dev-real release=2026_W32
+just dev-real release=2026_W32 feature=rms_ap.denoised
 ```
 
-Vite then exposes a development-only catalog and immutable release bytes under
-one local origin. This exercises the normal `HttpDatasetSource`; it does not
-copy the ignored real release into `web/public`, transform it, or label it as
-the paper snapshot. Standard `just dev` remains fixture-backed.
+Vite validates the immutable manifest and requested feature before startup,
+then exposes a development-only catalog and release bytes under one local
+origin. The root URL opens that release with `rms_ap.denoised` selected, while
+explicit share-URL parameters still take precedence. This exercises the normal
+`HttpDatasetSource`; it does not copy the ignored real release into
+`web/public`, transform it, or label it as the paper snapshot. Standard
+`just dev` remains fixture-backed and keeps the deterministic synthetic default.
 
 ## Remaining step
 

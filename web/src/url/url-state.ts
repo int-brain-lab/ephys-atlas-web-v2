@@ -167,10 +167,11 @@ export class UrlStateController {
   constructor(
     private readonly store: AppStore,
     private readonly win: Pick<Window, 'location' | 'history' | 'addEventListener' | 'removeEventListener'> = window,
+    private readonly defaults: ViewState = DEFAULT_VIEW_STATE,
   ) {}
 
   start(): void {
-    const initial = parseViewState(this.win.location.search);
+    const initial = parseViewState(this.win.location.search, this.defaults);
     this.store.dispatch({ type: 'view/hydrate', view: initial });
 
     this.stopStore = this.store.subscribe((state, action) => {
@@ -196,7 +197,7 @@ export class UrlStateController {
     this.cancelScheduledWrite();
     this.applyingPopState = true;
     try {
-      this.store.dispatch({ type: 'view/hydrate', view: parseViewState(this.win.location.search) });
+      this.store.dispatch({ type: 'view/hydrate', view: parseViewState(this.win.location.search, this.defaults) });
     } finally {
       this.applyingPopState = false;
     }
@@ -221,7 +222,7 @@ export class UrlStateController {
   }
 
   private writeUrl(view: ViewState): void {
-    const query = serializeViewState(view);
+    const query = serializeViewState(view, this.defaults);
     const url = `${this.win.location.pathname}${query ? `?${query}` : ''}${this.win.location.hash}`;
     this.win.history.replaceState(null, '', url);
   }

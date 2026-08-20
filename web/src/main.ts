@@ -1,5 +1,6 @@
 import './styles.css';
 import { AtlasApp } from './app.js';
+import { DEFAULT_VIEW_STATE } from './domain/defaults.js';
 import { GeneratedAnatomySliceRenderer } from './rendering/generated-anatomy-renderer.js';
 import { GeneratedAnatomySliceSource } from './rendering/generated-anatomy-source.js';
 import { HybridSliceRenderer } from './rendering/hybrid-slice-renderer.js';
@@ -19,5 +20,19 @@ const renderer = new HybridSliceRenderer(
   new SchemaVolumeSliceRenderer(),
 );
 const catalogUrl = import.meta.env.VITE_DATASET_CATALOG_URL as string | undefined;
-const app = new AtlasApp(root, { renderer, ...(catalogUrl ? { catalogUrl } : {}) });
+const developmentDatasetId = import.meta.env.VITE_DEFAULT_DATASET_ID as string | undefined;
+const developmentReleaseId = import.meta.env.VITE_DEFAULT_RELEASE_ID as string | undefined;
+const developmentFeatureId = import.meta.env.VITE_DEFAULT_FEATURE_ID as string | undefined;
+const developmentDefaultView = developmentDatasetId === 'ephys_atlas_channels' && developmentReleaseId && developmentFeatureId
+  ? {
+    ...DEFAULT_VIEW_STATE,
+    dataset: { datasetId: 'ephys_atlas_channels' as const, releaseId: developmentReleaseId },
+    featureId: developmentFeatureId,
+  }
+  : undefined;
+const app = new AtlasApp(root, {
+  renderer,
+  ...(catalogUrl ? { catalogUrl } : {}),
+  ...(developmentDefaultView ? { defaultView: developmentDefaultView } : {}),
+});
 void app.start();

@@ -15,10 +15,48 @@ function mediaType(filePath: string): string {
   return 'application/octet-stream';
 }
 
-function realReleasePlugin(releasePath: string): Plugin {
+interface RealDevelopmentRelease {
+  releaseRoot: string;
+  datasetId: 'ephys_atlas_channels';
+  releaseId: string;
+  featureId: string;
+}
+
+async function loadRealDevelopmentRelease(releasePath: string, featureId: string): Promise<RealDevelopmentRelease> {
   const releaseRoot = path.resolve(releasePath);
-  const releaseId = path.basename(releaseRoot);
-  const datasetId = path.basename(path.dirname(releaseRoot));
+  const manifestPath = path.join(releaseRoot, 'manifest.json');
+  let document: unknown;
+  try {
+    document = JSON.parse(await readFile(manifestPath, 'utf8')) as unknown;
+  } catch (error) {
+    throw new Error(`Cannot read real development release manifest at ${manifestPath}`, { cause: error });
+  }
+  if (!document || typeof document !== 'object') throw new Error(`Invalid release manifest at ${manifestPath}`);
+  const manifest = document as {
+    dataset_id?: unknown;
+    features?: unknown;
+    release?: { immutable?: unknown; release_id?: unknown };
+  };
+  if (manifest.dataset_id !== 'ephys_atlas_channels') {
+    throw new Error(`dev-real requires an ephys_atlas_channels release; found ${String(manifest.dataset_id)}`);
+  }
+  if (manifest.release?.immutable !== true || typeof manifest.release.release_id !== 'string') {
+    throw new Error(`dev-real requires an immutable release identity in ${manifestPath}`);
+  }
+  if (!Array.isArray(manifest.features)
+    || !manifest.features.some((feature) => feature && typeof feature === 'object' && (feature as { id?: unknown }).id === featureId)) {
+    throw new Error(`Default feature ${featureId} is not present in ${manifestPath}`);
+  }
+  return {
+    releaseRoot,
+    datasetId: manifest.dataset_id,
+    releaseId: manifest.release.release_id,
+    featureId,
+  };
+}
+
+function realReleasePlugin(release: RealDevelopmentRelease): Plugin {
+  const { releaseRoot, datasetId, releaseId } = release;
   return {
     name: 'ephys-atlas-real-development-release',
     configureServer(server) {
@@ -101,7 +139,19 @@ function anatomyPackPlugin(): Plugin {
   };
 }
 
-export default defineConfig(() => {
+export default defineConfig(async () => {
   const releasePath = process.env.EPHYS_ATLAS_REAL_RELEASE;
-  return { plugins: [anatomyPackPlugin(), ...(releasePath ? [realReleasePlugin(releasePath)] : [])] };
+  if (!releasePath) return { plugins: [anatomyPackPlugin()] };
+  const release = await loadRealDevelopmentRelease(
+    releasePath,
+    process.env.EPHYS_ATLAS_REAL_FEATURE ?? 'rms_ap.denoised',
+  );
+  return {
+    define: {
+      'import.meta.env.VITE_DEFAULT_DATASET_ID': JSON.stringify(release.datasetId),
+      'import.meta.env.VITE_DEFAULT_RELEASE_ID': JSON.stringify(release.releaseId),
+      'import.meta.env.VITE_DEFAULT_FEATURE_ID': JSON.stringify(release.featureId),
+    },
+    plugins: [anatomyPackPlugin(), realReleasePlugin(release)],
+  };
 });
