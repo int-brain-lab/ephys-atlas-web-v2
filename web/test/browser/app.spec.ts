@@ -242,6 +242,32 @@ test('Allen anatomy mode shows actual regions and official ontology colors', asy
   await expect(page.locator('.region-row__swatch').first()).toBeVisible();
 });
 
+test('data and color controls are driven by the loaded release', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.getByLabel('Dataset and release')).toHaveValue('ephys_atlas_channels::golden-v0.3');
+  await expect(page.getByLabel('Feature', { exact: true })).toHaveValue('rms_ap');
+  await expect(page.getByLabel('Representation')).toHaveValue('regional');
+  await expect(page.getByLabel('Parcellation')).toHaveValue('allen');
+  await expect(page.getByLabel('Parcellation')).toBeDisabled();
+  await expect(page.getByLabel('Regional statistic').locator('option')).toHaveCount(5);
+  await expect(page.getByLabel('Feature color legend')).toBeVisible();
+  await expect(page.locator('.color-legend__unit')).toHaveText('dB rel. V');
+
+  await page.getByLabel('Color range mode').selectOption('fixed');
+  await page.getByLabel('Minimum color value').fill('-2');
+  await page.getByLabel('Maximum color value').fill('8');
+  await page.getByLabel('Maximum color value').blur();
+  await expect.poll(() => new URL(page.url()).searchParams.get('range')).toBe('-2,8');
+  await expect(page.locator('.color-legend__minimum')).toHaveText('-2');
+  await expect(page.locator('.color-legend__maximum')).toHaveText('8');
+
+  await page.getByLabel('Color range mode').selectOption('auto');
+  await expect.poll(() => new URL(page.url()).searchParams.get('range')).toBeNull();
+});
+
 test('renderer region selection flows back into shared URL state', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');

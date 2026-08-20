@@ -1,6 +1,18 @@
 import type { DatasetCatalog, DatasetManifest, FeaturePayload } from '../data/contracts.js';
-import type { AppState, ColorMode, DatasetRef, ParcellationId, RepresentationKind, SliceAxis, StatisticId } from '../domain/types.js';
+import type {
+  AppState,
+  ColorMode,
+  ColorRange,
+  ColorScale,
+  DatasetId,
+  DatasetRef,
+  ParcellationId,
+  RepresentationKind,
+  SliceAxis,
+  StatisticId,
+} from '../domain/types.js';
 import type { SliceRenderer } from '../rendering/interfaces.js';
+import { regionalColorRange } from '../rendering/scalar-colormap.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
 
 export interface AppShellCallbacks {
@@ -10,6 +22,8 @@ export interface AppShellCallbacks {
   setStatistic(statistic: StatisticId): void;
   setColorMode(mode: ColorMode): void;
   setColormap(colormap: string): void;
+  setColorRange(range: ColorRange): void;
+  setColorScale(scale: ColorScale): void;
   setSlice(axis: SliceAxis, index: number): void;
   clearSelection(): void;
   importLocal(files: FileList): Promise<void>;
@@ -96,9 +110,23 @@ export class AppShell {
   private readonly representationContext: ContextFieldNodes;
   private overflowActions: HTMLDetailsElement | null = null;
   private regionSearch!: HTMLInputElement;
+  private datasetSelect!: HTMLSelectElement;
+  private featureSelect!: HTMLSelectElement;
+  private representationSelect!: HTMLSelectElement;
+  private parcellationSelect!: HTMLSelectElement;
   private colorModeSelect!: HTMLSelectElement;
   private statisticSelect!: HTMLSelectElement;
   private colormapSelect!: HTMLSelectElement;
+  private scaleSelect!: HTMLSelectElement;
+  private rangeModeSelect!: HTMLSelectElement;
+  private rangeMinInput!: HTMLInputElement;
+  private rangeMaxInput!: HTMLInputElement;
+  private legend!: HTMLElement;
+  private legendBar!: HTMLElement;
+  private legendMin!: HTMLElement;
+  private legendMax!: HTMLElement;
+  private legendUnit!: HTMLElement;
+  private currentFeatureId: string | null = null;
   private activeView: WorkspaceView = 'coronal';
   private maximizedView: SliceAxis | null = null;
 
@@ -148,12 +176,8 @@ export class AppShell {
     this.setContextValue(this.datasetContext, datasetLabel, releaseLabel);
     this.setContextValue(this.featureContext, featureLabel);
     this.setContextValue(this.representationContext, representationLabel, 'Allen CCFv3 · 10 µm');
-    this.colorModeSelect.value = view.coloring.mode ?? 'feature';
-    this.statisticSelect.value = view.coloring.statistic;
-    this.colormapSelect.value = view.coloring.colormap;
-    const featureColors = (view.coloring.mode ?? 'feature') === 'feature';
-    this.statisticSelect.disabled = !featureColors;
-    this.colormapSelect.disabled = !featureColors;
+    this.renderDataSettings(model);
+    this.renderColorSettings(model);
 
     for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
       this.renderViewFrame(axis, model);
@@ -340,19 +364,44 @@ export class AppShell {
     pane.dataset.open = 'false';
     const panelHeader = this.panelHeader('Visualization settings', () => this.closeDrawers());
     const content = element('div', 'settings-pane__content');
-    content.append(this.createSettingsGroup('Data interpretation', 3), this.createColorSettings(), this.createSettingsGroup('Display', 2));
+    content.append(this.createDataSettings(), this.createColorSettings());
     pane.append(panelHeader, content);
     return pane;
   }
 
-  private createSettingsGroup(labelText: string, rows: number): HTMLElement {
-    const group = element('section', 'settings-placeholder');
-    group.append(heading(labelText, 3));
-    for (let i = 0; i < rows; i += 1) {
-      const row = element('div', 'settings-placeholder__row');
-      row.append(placeholderLine(i % 2 ? 'medium' : 'short'), placeholderLine('medium'));
-      group.append(row);
-    }
+  private createDataSettings(): HTMLElement {
+    const group = element('section', 'settings-placeholder settings-controls');
+    group.append(heading('Data', 3));
+    const dataset = this.settingsSelect('Dataset / release', []);
+    this.datasetSelect = dataset.select;
+    this.datasetSelect.setAttribute('aria-label', 'Dataset and release');
+    this.datasetSelect.addEventListener('change', () => {
+      const option = this.datasetSelect.selectedOptions[0];
+      const datasetId = option?.dataset.datasetId as DatasetId | undefined;
+      const releaseId = option?.dataset.releaseId;
+      if (datasetId && releaseId) this.callbacks.setDataset({ datasetId, releaseId });
+    });
+    const feature = this.settingsSelect('Feature', []);
+    this.featureSelect = feature.select;
+    this.featureSelect.setAttribute('aria-label', 'Feature');
+    this.featureSelect.addEventListener('change', () => {
+      const option = this.featureSelect.selectedOptions[0];
+      const representation = option?.dataset.representation as RepresentationKind | undefined;
+      this.callbacks.setFeature(this.featureSelect.value || null, representation);
+    });
+    const representation = this.settingsSelect('Representation', []);
+    this.representationSelect = representation.select;
+    this.representationSelect.setAttribute('aria-label', 'Representation');
+    this.representationSelect.addEventListener('change', () => {
+      if (this.currentFeatureId) this.callbacks.setFeature(this.currentFeatureId, this.representationSelect.value as RepresentationKind);
+    });
+    const parcellation = this.settingsSelect('Parcellation', []);
+    this.parcellationSelect = parcellation.select;
+    this.parcellationSelect.setAttribute('aria-label', 'Parcellation');
+    this.parcellationSelect.addEventListener('change', () => {
+      this.callbacks.setParcellation(this.parcellationSelect.value as ParcellationId);
+    });
+    group.append(dataset.row, feature.row, representation.row, parcellation.row);
     return group;
   }
 
@@ -376,8 +425,195 @@ export class AppShell {
     this.colormapSelect = colormap.select;
     this.colormapSelect.setAttribute('aria-label', 'Feature colormap');
     this.colormapSelect.addEventListener('change', () => this.callbacks.setColormap(this.colormapSelect.value));
-    group.append(colorMode.row, statistic.row, colormap.row);
+    const scale = this.settingsSelect('Scale', [['linear', 'Linear'], ['log', 'Logarithmic']]);
+    this.scaleSelect = scale.select;
+    this.scaleSelect.setAttribute('aria-label', 'Color scale');
+    this.scaleSelect.addEventListener('change', () => this.callbacks.setColorScale(this.scaleSelect.value as ColorScale));
+    const rangeMode = this.settingsSelect('Range', [['auto', 'Robust auto'], ['fixed', 'Manual']]);
+    this.rangeModeSelect = rangeMode.select;
+    this.rangeModeSelect.setAttribute('aria-label', 'Color range mode');
+    this.rangeModeSelect.addEventListener('change', () => this.onRangeModeChanged());
+    const rangeInputs = element('div', 'settings-range');
+    this.rangeMinInput = this.rangeInput('Minimum color value');
+    this.rangeMaxInput = this.rangeInput('Maximum color value');
+    this.rangeMinInput.addEventListener('change', () => this.commitFixedRange());
+    this.rangeMaxInput.addEventListener('change', () => this.commitFixedRange());
+    rangeInputs.append(this.rangeMinInput, this.rangeMaxInput);
+    const rangeRow = element('div', 'settings-control settings-control--range');
+    const rangeLabel = element('span', 'settings-control__label');
+    rangeLabel.textContent = 'Limits';
+    rangeRow.append(rangeLabel, rangeInputs);
+
+    this.legend = element('figure', 'color-legend');
+    this.legend.setAttribute('aria-label', 'Feature color legend');
+    this.legendBar = element('div', 'color-legend__bar');
+    const legendLabels = element('figcaption', 'color-legend__labels');
+    this.legendMin = element('span', 'color-legend__minimum');
+    this.legendUnit = element('span', 'color-legend__unit');
+    this.legendMax = element('span', 'color-legend__maximum');
+    legendLabels.append(this.legendMin, this.legendUnit, this.legendMax);
+    this.legend.append(this.legendBar, legendLabels);
+
+    group.append(colorMode.row, statistic.row, colormap.row, scale.row, rangeMode.row, rangeRow, this.legend);
     return group;
+  }
+
+  private rangeInput(label: string): HTMLInputElement {
+    const input = element('input', 'settings-range__input');
+    input.type = 'number';
+    input.step = 'any';
+    input.setAttribute('aria-label', label);
+    return input;
+  }
+
+  private renderDataSettings(model: ShellModel): void {
+    const { catalog, manifest, state } = model;
+    const datasetOptions = catalog?.datasets.flatMap((dataset) => dataset.releases.map((release) => ({
+      value: `${dataset.id}::${release.id}`,
+      label: `${dataset.title} — ${release.label}`,
+      dataset: { datasetId: dataset.id, releaseId: release.id },
+    }))) ?? [];
+    const datasetValue = state.view.dataset.releaseId
+      ? `${state.view.dataset.datasetId}::${state.view.dataset.releaseId}`
+      : '';
+    this.syncOptions(this.datasetSelect, datasetOptions, datasetValue);
+    for (const option of this.datasetSelect.options) {
+      const source = datasetOptions.find((item) => item.value === option.value);
+      if (!source) continue;
+      option.dataset.datasetId = source.dataset.datasetId;
+      option.dataset.releaseId = source.dataset.releaseId;
+    }
+
+    const featureOptions = manifest?.features.map((feature) => {
+      const representations = this.featureRepresentations(feature);
+      const preferred = representations.includes(state.view.representation) ? state.view.representation : representations[0];
+      return {
+        value: feature.id,
+        label: feature.unit ? `${feature.label} · ${feature.unit}` : feature.label,
+        representation: preferred,
+      };
+    }) ?? [];
+    this.syncOptions(this.featureSelect, featureOptions, state.view.featureId ?? '');
+    for (const option of this.featureSelect.options) {
+      const source = featureOptions.find((item) => item.value === option.value);
+      if (source?.representation) option.dataset.representation = source.representation;
+    }
+    this.currentFeatureId = state.view.featureId;
+    const selectedFeature = manifest?.features.find((feature) => feature.id === state.view.featureId);
+    const representations = selectedFeature ? this.featureRepresentations(selectedFeature) : [];
+    this.syncOptions(this.representationSelect, representations.map((value) => ({
+      value,
+      label: value === 'regional' ? 'Regional' : 'Volume',
+    })), state.view.representation);
+    const availableParcellations = selectedFeature?.representations.regional && state.view.representation === 'regional'
+      ? Object.keys(selectedFeature.representations.regional.parcellations) as ParcellationId[]
+      : manifest?.parcellations ?? [];
+    this.syncOptions(this.parcellationSelect, availableParcellations.map((value) => ({
+      value,
+      label: value === 'allen' ? 'Allen' : value === 'beryl' ? 'Beryl' : 'Cosmos',
+    })), state.view.parcellation);
+
+    this.datasetSelect.disabled = datasetOptions.length === 0;
+    this.featureSelect.disabled = featureOptions.length === 0;
+    this.representationSelect.disabled = representations.length < 2;
+    this.parcellationSelect.disabled = state.view.representation !== 'regional' || availableParcellations.length < 2;
+  }
+
+  private renderColorSettings(model: ShellModel): void {
+    const { state, manifest, feature } = model;
+    const view = state.view;
+    const descriptor = manifest?.features.find((item) => item.id === view.featureId);
+    this.colorModeSelect.value = view.coloring.mode ?? 'feature';
+    const statistics = feature?.representation === 'regional'
+      ? (['mean', 'median', 'min', 'max', 'count'] as const).filter((statistic) => feature.statistics[statistic] !== undefined)
+      : descriptor?.statistics ?? [];
+    this.syncOptions(this.statisticSelect, statistics.map((value) => ({ value, label: titleCaseToken(value) })), view.coloring.statistic);
+    this.colormapSelect.value = view.coloring.colormap;
+    this.scaleSelect.value = view.coloring.scale;
+    this.rangeModeSelect.value = view.coloring.range.mode;
+    const featureColors = (view.coloring.mode ?? 'feature') === 'feature' && feature !== null;
+    this.statisticSelect.disabled = !featureColors || statistics.length < 2;
+    this.colormapSelect.disabled = !featureColors;
+    this.scaleSelect.disabled = !featureColors;
+    this.rangeModeSelect.disabled = !featureColors;
+
+    const range = feature?.representation === 'regional'
+      ? regionalColorRange(feature, view.coloring)
+      : feature?.descriptor.valueRange?.every((value) => value !== null)
+        ? feature.descriptor.valueRange as readonly [number, number]
+        : null;
+    if (view.coloring.range.mode === 'fixed') {
+      this.rangeMinInput.value = String(view.coloring.range.min);
+      this.rangeMaxInput.value = String(view.coloring.range.max);
+    } else if (range) {
+      this.rangeMinInput.value = String(range[0]);
+      this.rangeMaxInput.value = String(range[1]);
+    } else {
+      this.rangeMinInput.value = '';
+      this.rangeMaxInput.value = '';
+    }
+    const fixed = view.coloring.range.mode === 'fixed';
+    this.rangeMinInput.disabled = !featureColors || !fixed;
+    this.rangeMaxInput.disabled = !featureColors || !fixed;
+    this.legend.hidden = !featureColors || !range;
+    if (range) {
+      this.legendBar.dataset.colormap = view.coloring.colormap;
+      this.legendMin.textContent = this.formatScalar(range[0]);
+      this.legendMax.textContent = this.formatScalar(range[1]);
+      this.legendUnit.textContent = descriptor?.unit ?? '';
+    }
+  }
+
+  private featureRepresentations(feature: DatasetManifest['features'][number]): RepresentationKind[] {
+    const representations: RepresentationKind[] = [];
+    if (feature.representations.regional) representations.push('regional');
+    if (feature.representations.volume) representations.push('volume');
+    return representations;
+  }
+
+  private syncOptions(
+    select: HTMLSelectElement,
+    options: readonly { value: string; label: string }[],
+    selectedValue: string,
+  ): void {
+    const signature = JSON.stringify(options.map(({ value, label }) => [value, label]));
+    if (select.dataset.options !== signature) {
+      select.replaceChildren(...options.map(({ value, label }) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        return option;
+      }));
+      select.dataset.options = signature;
+    }
+    select.value = options.some((option) => option.value === selectedValue) ? selectedValue : options[0]?.value ?? '';
+  }
+
+  private onRangeModeChanged(): void {
+    if (this.rangeModeSelect.value === 'auto') {
+      this.callbacks.setColorRange({ mode: 'auto' });
+      return;
+    }
+    this.commitFixedRange();
+  }
+
+  private commitFixedRange(): void {
+    const min = this.rangeMinInput.valueAsNumber;
+    const max = this.rangeMaxInput.valueAsNumber;
+    if (!Number.isFinite(min) || !Number.isFinite(max) || min >= max) {
+      this.rangeMinInput.setCustomValidity('Minimum must be smaller than maximum');
+      this.rangeMaxInput.setCustomValidity('Maximum must be larger than minimum');
+      return;
+    }
+    this.rangeMinInput.setCustomValidity('');
+    this.rangeMaxInput.setCustomValidity('');
+    this.callbacks.setColorRange({ mode: 'fixed', min, max });
+  }
+
+  private formatScalar(value: number): string {
+    const magnitude = Math.abs(value);
+    if (magnitude !== 0 && (magnitude >= 100_000 || magnitude < 0.001)) return value.toExponential(2);
+    return new Intl.NumberFormat(undefined, { maximumSignificantDigits: 5 }).format(value);
   }
 
   private settingsSelect(labelText: string, options: readonly (readonly [string, string])[]): { row: HTMLLabelElement; select: HTMLSelectElement } {
