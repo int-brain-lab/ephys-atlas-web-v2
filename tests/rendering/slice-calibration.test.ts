@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
-  ANATOMY_25UM_CALIBRATION,
+  ANATOMY_10UM_CALIBRATION,
   LEGACY_VIEW_BOXES,
   REGIONAL_10UM_CALIBRATION,
   indexToCoordinateUm,
@@ -41,25 +41,25 @@ test('legacy 10 um indices reproduce v1 coordinate labels', () => {
   assert.deepEqual(legacyRegionalIndicesToWorld(fixture.indices), { ml: -39, ap: -1200, dv: -3668 });
 });
 
-test('generated anatomy navigation uses the native 25 um left-hemisphere grid', () => {
-  assert.equal(ANATOMY_25UM_CALIBRATION.coronal.indexCount, 528);
-  assert.equal(ANATOMY_25UM_CALIBRATION.sagittal.indexCount, 230);
-  assert.equal(ANATOMY_25UM_CALIBRATION.horizontal.indexCount, 320);
-  assert.equal(regionalIndexToCoordinateUm('coronal', 264), -1200);
-  assert.equal(regionalIndexToCoordinateUm('sagittal', 228), -39);
-  assert.equal(regionalIndexToCoordinateUm('horizontal', 160), -3668);
+test('generated anatomy navigation uses the native 10 um bilateral grid', () => {
+  assert.equal(ANATOMY_10UM_CALIBRATION.coronal.indexCount, 1320);
+  assert.equal(ANATOMY_10UM_CALIBRATION.sagittal.indexCount, 1140);
+  assert.equal(ANATOMY_10UM_CALIBRATION.horizontal.indexCount, 800);
+  assert.equal(regionalIndexToCoordinateUm('coronal', 660), -1200);
+  assert.equal(regionalIndexToCoordinateUm('sagittal', 570), -39);
+  assert.equal(regionalIndexToCoordinateUm('horizontal', 400), -3668);
 });
 
-test('25 um anatomy and volume grids share Allen coordinates', () => {
+test('10 um anatomy and 25 um volume grids map through Allen coordinates', () => {
   assert.equal(volumeIndexToCoordinateUm('coronal', 0), 5400);
   assert.equal(volumeIndexToCoordinateUm('sagittal', 0), -5739);
   assert.equal(volumeIndexToCoordinateUm('horizontal', 0), 332);
-  assert.equal(regionalIndexToVolumeIndex('coronal', 264), 264);
-  assert.equal(regionalIndexToVolumeIndex('sagittal', 228), 228);
-  assert.equal(regionalIndexToVolumeIndex('horizontal', 160), 160);
-  assert.equal(regionalIndexToLegacyIndex('coronal', 264), 660);
-  assert.equal(regionalIndexToLegacyIndex('sagittal', 228), 570);
-  assert.equal(regionalIndexToLegacyIndex('horizontal', 160), 400);
+  assert.equal(regionalIndexToVolumeIndex('coronal', 660), 264);
+  assert.equal(regionalIndexToVolumeIndex('sagittal', 570), 228);
+  assert.equal(regionalIndexToVolumeIndex('horizontal', 400), 160);
+  assert.equal(regionalIndexToLegacyIndex('coronal', 660), 660);
+  assert.equal(regionalIndexToLegacyIndex('sagittal', 570), 570);
+  assert.equal(regionalIndexToLegacyIndex('horizontal', 400), 400);
 });
 
 test('guide registration maps scientific axis endpoints to projection view boxes', () => {
@@ -80,7 +80,7 @@ test('guide registration maps scientific axis endpoints to projection view boxes
 test('all linked guides stay inside the registered target view box', () => {
   const endpointSets = [
     { coronal: 0, sagittal: 0, horizontal: 0 },
-    { coronal: 527, sagittal: 229, horizontal: 319 },
+    { coronal: 1319, sagittal: 1139, horizontal: 799 },
   ];
   for (const indices of endpointSets) {
     for (const targetAxis of ['coronal', 'sagittal', 'horizontal'] as const) {
@@ -96,7 +96,7 @@ test('all linked guides stay inside the registered target view box', () => {
 });
 
 test('linked fixture produces two guides per view and exact v1 view boxes', () => {
-  const indices = { coronal: 264, sagittal: 228, horizontal: 160 };
+  const indices = { coronal: 660, sagittal: 570, horizontal: 400 };
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
     const guides = linkedGuides(indices, axis);
     assert.equal(guides.length, 2);
@@ -107,7 +107,7 @@ test('linked fixture produces two guides per view and exact v1 view boxes', () =
 });
 
 test('all projections share one explicit ML/AP/DV world cursor', () => {
-  const indices = { coronal: 264, sagittal: 228, horizontal: 160 };
+  const indices = { coronal: 660, sagittal: 570, horizontal: 400 };
   const world = regionalIndicesToWorld(indices);
   assert.deepEqual(world, { ml: -39, ap: -1200, dv: -3668 });
   assert.deepEqual(worldToRegionalIndices(world), indices);
@@ -116,26 +116,26 @@ test('all projections share one explicit ML/AP/DV world cursor', () => {
 
 test('projection affines round-trip a scientific cursor', () => {
   const indexToWorld: Matrix4 = [
-    0, 25, 0, -5739,
-    -25, 0, 0, 5400,
-    0, 0, -25, 332,
+    0, 10, 0, -5739,
+    -10, 0, 0, 5400,
+    0, 0, -10, 332,
     0, 0, 0, 1,
   ];
   const worldToIndex: Matrix4 = [
-    0, -0.04, 0, 216,
-    0.04, 0, 0, 229.56,
-    0, 0, -0.04, 13.28,
+    0, -0.1, 0, 540,
+    0.1, 0, 0, 573.9,
+    0, 0, -0.1, 33.2,
     0, 0, 0, 1,
   ];
   assertInverseAffines(indexToWorld, worldToIndex);
-  const plane = { slice: 264, u: 228, v: 160 };
+  const plane = { slice: 660, u: 570, v: 400 };
   const world = planeToWorld(indexToWorld, plane);
   assert.deepEqual(world, { ml: -39, ap: -1200, dv: -3668 });
   const roundTrip = worldToPlane(worldToIndex, world);
   assert.ok(Math.abs(roundTrip.slice - plane.slice) < 1e-9);
   assert.ok(Math.abs(roundTrip.u - plane.u) < 1e-9);
   assert.ok(Math.abs(roundTrip.v - plane.v) < 1e-9);
-  assert.deepEqual(applyAffine(indexToWorld, [264, 228, 160]), [-39, -1200, -3668]);
+  assert.deepEqual(applyAffine(indexToWorld, [660, 570, 400]), [-39, -1200, -3668]);
 });
 
 test('region id extraction follows v1 mapping class convention', () => {
@@ -149,7 +149,7 @@ test('generated anatomy exposes direct stable IDs for every parcellation', () =>
   assert.equal(regionIdFromAtlasAttributes('beryl', (name) => attributes.get(name) ?? null), -20);
   assert.equal(regionIdFromAtlasAttributes('cosmos', (name) => attributes.get(name) ?? null), -30);
   const fragment = anatomySliceSvgFragment({
-    axis: 'coronal', sliceIndex: 0, worldCoordinateUm: 0,
+    packFormat: 'anatomy-pack-v2', axis: 'coronal', sliceIndex: 0, worldCoordinateUm: 0,
     viewBox: { x: -0.5, y: -0.5, width: 2, height: 2 },
     paths: [
       { atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: 'M0 0L1 0Z' },

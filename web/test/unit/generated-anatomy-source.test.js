@@ -164,6 +164,7 @@ test('generated anatomy source validates, verifies, decodes, and caches immutabl
   const first = await source.loadSlice('coronal', 0);
   const second = await source.loadSlice('coronal', 0);
   assert.deepEqual(first.paths, [{ atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: 'M0 0L1 0L1 1Z' }]);
+  assert.equal(first.packFormat, 'anatomy-pack-v1');
   assert.deepEqual(first.viewBox, { x: -0.5, y: -0.5, width: 3, height: 2 });
   assert.deepEqual(second, first);
   assert.equal(requests.get('https://example.test/anatomy/packs/coronal/0000.json.gz'), 1);
@@ -186,6 +187,7 @@ test('generated anatomy source consumes bilateral v2 packs with signed hemispher
     },
   });
   const slice = await source.loadSlice('coronal', 0);
+  assert.equal(slice.packFormat, 'anatomy-pack-v2');
   assert.deepEqual(slice.paths.map((path) => path.atlasIds), [
     { allen: -10, beryl: -20, cosmos: -30 },
     { allen: 10, beryl: 20, cosmos: 30 },

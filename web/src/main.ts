@@ -9,7 +9,7 @@ const root = document.querySelector<HTMLElement>('#app');
 if (!root) throw new Error('Missing #app root element');
 
 const defaultAnatomyManifestUrl =
-  '/atlas/anatomy/allen-ccfv3-25um-left-t15-4a565958b938/manifest.json';
+  '/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/manifest.json';
 const anatomyManifestUrl = import.meta.env.VITE_ANATOMY_MANIFEST_URL as string | undefined;
 const renderer = new HybridSliceRenderer(
   new GeneratedAnatomySliceRenderer(new GeneratedAnatomySliceSource({

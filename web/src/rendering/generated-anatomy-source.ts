@@ -484,7 +484,7 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
     const pack = await this.loadPack(manifest, axis, packSet.packDepth, artifact, signal);
     const slice = pack.slices[index - artifact.firstSliceIndex];
     if (!slice || slice.sliceIndex !== index) throw new Error(`${artifact.path} does not contain ${axis} slice ${index}`);
-    return { axis, ...slice, viewBox: projection.viewBox };
+    return { packFormat: manifest.format, axis, ...slice, viewBox: projection.viewBox };
   }
 
   async worldFromSliceIndices(indices: SliceIndices): Promise<WorldCoordinateUm> {

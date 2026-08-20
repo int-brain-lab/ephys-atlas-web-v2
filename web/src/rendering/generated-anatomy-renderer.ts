@@ -73,7 +73,9 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     };
     mount.frame = frame;
     mount.renderer.render(this.withPresentation(frame));
-    target.dataset.sliceAsset = 'generated-anatomy-v1';
+    target.dataset.sliceAsset = slice.packFormat === 'anatomy-pack-v2'
+      ? 'generated-anatomy-v2'
+      : 'generated-anatomy-v1';
     target.dataset.assetIndex = String(slice.sliceIndex);
     target.dataset.worldCoordinateUm = String(slice.worldCoordinateUm);
   }
@@ -113,11 +115,12 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
       highlightedRegionIds.add(Math.abs(hovered));
     }
     const feature = this.presentation.feature;
-    const atlasColors = bilateralAtlasRegionColorMap(this.presentation.regions ?? []);
+    const anatomyRegions = this.presentation.anatomyRegions ?? this.presentation.regions ?? [];
+    const atlasColors = bilateralAtlasRegionColorMap(anatomyRegions);
     const regionColors = this.presentation.coloring.mode === 'anatomy'
       ? atlasColors
       : feature?.representation === 'regional' && feature.parcellation === frame.mapping
-        ? bilateralFeatureColorMap(feature, this.presentation.coloring, this.presentation.regions ?? [])
+        ? bilateralFeatureColorMap(feature, this.presentation.coloring, anatomyRegions)
         : new Map([...atlasColors].filter(([atlasId]) => atlasId > 0));
     return {
       ...frame,

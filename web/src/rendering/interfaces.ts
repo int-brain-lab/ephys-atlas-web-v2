@@ -14,6 +14,8 @@ export interface SliceRenderModel {
 export interface RendererPresentation {
   feature: FeaturePayload | null;
   regions?: readonly RegionMetadata[];
+  /** Ontology metadata used for anatomical reference colors, independent of feature-region labels. */
+  anatomyRegions?: readonly RegionMetadata[];
   coloring: ColoringState;
   selectedRegionIds: readonly string[];
   hoveredRegionId: string | null;
