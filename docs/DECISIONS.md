@@ -129,3 +129,20 @@ and a conservative 3.125 µm boundary-error upper bound. The legacy renderer
 remains modular source code and the pinned v1 bundles remain documented, but
 neither is active or fetched by default. Reversion is a normal code/config
 revert, not a user-facing provider switch.
+
+## D024 — Bilateral 10 µm anatomy and bounded navigation work
+
+Supersede D023's active pack and navigation grid with the exact bilateral
+`anatomy-pack-v2` artifact
+`allen-ccfv3-10um-bilateral-exact-599b5e0bbab1`. URL v3 and the linked cursor
+use its native 10 µm affines; URL v1 10 µm and URL v2 25 µm links migrate by
+world coordinate. The signed atlas IDs preserve physical left and right
+hemispheres while folded regional feature values continue to color the left
+hemisphere and use ontology color as the right reference.
+
+Ordinary navigation must keep work proportional to the interaction. Initial
+display fetches only the three visible depth-16 packs. Wheel events are
+coalesced to animation frames, unchanged projections update guides without
+reloading or restyling geometry, URL writes are deferred during navigation,
+and idle prefetch loads at most one pack in the active direction. Decoded
+anatomy packs use a byte-bounded LRU; immutable pack URLs use browser caching.

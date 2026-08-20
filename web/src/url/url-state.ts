@@ -22,6 +22,7 @@ import {
 } from '../rendering/slice-calibration.js';
 
 const URL_VERSION = 3;
+const NAVIGATION_URL_DEBOUNCE_MS = 120;
 const PARCELLATIONS = new Set<ParcellationId>(['allen', 'beryl', 'cosmos']);
 const REPRESENTATIONS = new Set<RepresentationKind>(['regional', 'volume']);
 const STATISTICS = new Set<StatisticId>(['mean', 'median', 'min', 'max', 'count']);
@@ -160,6 +161,8 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
 export class UrlStateController {
   private stopStore: (() => void) | null = null;
   private applyingPopState = false;
+  private pendingView: ViewState | null = null;
+  private urlWriteTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly store: AppStore,
@@ -172,20 +175,25 @@ export class UrlStateController {
 
     this.stopStore = this.store.subscribe((state, action) => {
       if (this.applyingPopState || !isViewAction(action)) return;
-      const query = serializeViewState(state.view);
-      const url = `${this.win.location.pathname}${query ? `?${query}` : ''}${this.win.location.hash}`;
-      this.win.history.replaceState(null, '', url);
+      if (action.type === 'slice/set' || action.type === 'cursor/set') {
+        this.scheduleUrlWrite(state.view);
+      } else {
+        this.cancelScheduledWrite();
+        this.writeUrl(state.view);
+      }
     });
     this.win.addEventListener('popstate', this.onPopState);
   }
 
   stop(): void {
+    this.flushScheduledWrite();
     this.stopStore?.();
     this.stopStore = null;
     this.win.removeEventListener('popstate', this.onPopState);
   }
 
   private readonly onPopState = (): void => {
+    this.cancelScheduledWrite();
     this.applyingPopState = true;
     try {
       this.store.dispatch({ type: 'view/hydrate', view: parseViewState(this.win.location.search) });
@@ -193,4 +201,28 @@ export class UrlStateController {
       this.applyingPopState = false;
     }
   };
+
+  private scheduleUrlWrite(view: ViewState): void {
+    this.pendingView = view;
+    if (this.urlWriteTimer !== null) clearTimeout(this.urlWriteTimer);
+    this.urlWriteTimer = setTimeout(() => this.flushScheduledWrite(), NAVIGATION_URL_DEBOUNCE_MS);
+  }
+
+  private flushScheduledWrite(): void {
+    const view = this.pendingView;
+    this.cancelScheduledWrite();
+    if (view) this.writeUrl(view);
+  }
+
+  private cancelScheduledWrite(): void {
+    if (this.urlWriteTimer !== null) clearTimeout(this.urlWriteTimer);
+    this.urlWriteTimer = null;
+    this.pendingView = null;
+  }
+
+  private writeUrl(view: ViewState): void {
+    const query = serializeViewState(view);
+    const url = `${this.win.location.pathname}${query ? `?${query}` : ''}${this.win.location.hash}`;
+    this.win.history.replaceState(null, '', url);
+  }
 }

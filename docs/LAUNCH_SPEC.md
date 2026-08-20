@@ -28,7 +28,7 @@ Acceptance criteria:
 
 - Desktop is the primary layout; tablet remains usable; phone may use a reduced composition.
 - Coronal, sagittal, and horizontal views remain linked through one scientific navigation state.
-- All three projections use one ML/AP/DV cursor and the generated pack's native 25 µm affine grid.
+- All three projections use one ML/AP/DV cursor and the generated pack's native bilateral 10 µm affine grid.
 - Slice state, dataset/release, feature, representation, parcellation, coloring, and region selection are serializable into a shareable URL.
 - Maximized views, drawers, and responsive composition remain keyboard-reversible and covered by browser tests.
 - Current Chrome/Edge, Firefox, and Safari are the launch browser targets. Chromium CI is necessary but not sufficient for final release QA.
@@ -157,7 +157,7 @@ Acceptance criteria:
 - the production `anatomy-pack-v1` is derived from pinned Allen annotation and LUT bytes by a clean pinned generator;
 - every compressed pack is immutable, byte-sized, SHA-256 verified, and explicitly decompressed by the browser;
 - topology, source-voxel coverage, signed ID, boundary-error, IoU, and synchronization gates pass for all 1,078 slices;
-- the three projection affines define native 25 µm navigation and guide placement without hand-tuned display formulas;
+- the three projection affines define native bilateral 10 µm navigation and guide placement without hand-tuned display formulas;
 - production delivery serves `.json.gz` pack bytes without HTTP `Content-Encoding`, preserving compressed-byte verification;
 - the legacy host and curated bundles are not runtime dependencies; their pinned inventory remains available for historical fallback.
 

@@ -57,9 +57,23 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     const token = (this.renderTokens.get(target) ?? 0) + 1;
     this.renderTokens.set(target, token);
     this.requestedIndices.set(model.axis, model.sliceIndex);
-    const slice = await this.source.loadSlice(model.axis, model.sliceIndex);
     const world = cursorStateToWorld(model.cursor);
-    const guides = await this.source.guidesForWorld(model.axis, world);
+    const existing = this.mounts.get(target);
+    if (existing?.frame?.axis === model.axis
+      && existing.frame.index === model.sliceIndex
+      && existing.frame.mapping === model.parcellation) {
+      const guides = await this.source.guidesForWorld(model.axis, world);
+      if (this.renderTokens.get(target) !== token) return;
+      existing.frame = { ...existing.frame, guides };
+      existing.renderer.updateGuides(existing.frame);
+      return;
+    }
+
+    const previousIndex = existing?.frame?.axis === model.axis ? existing.frame.index : null;
+    const [slice, guides] = await Promise.all([
+      this.source.loadSlice(model.axis, model.sliceIndex),
+      this.source.guidesForWorld(model.axis, world),
+    ]);
     if (this.renderTokens.get(target) !== token) return;
 
     const mount = this.ensureMount(target);
@@ -78,7 +92,9 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
       : 'generated-anatomy-v1';
     target.dataset.assetIndex = String(slice.sliceIndex);
     target.dataset.worldCoordinateUm = String(slice.worldCoordinateUm);
-    this.source.prefetchAdjacentPacks?.(model.axis, model.sliceIndex);
+    if (previousIndex !== null && previousIndex !== model.sliceIndex) {
+      this.source.prefetchNextPack?.(model.axis, model.sliceIndex, model.sliceIndex > previousIndex ? 1 : -1);
+    }
   }
 
   clear(target: HTMLElement): void {

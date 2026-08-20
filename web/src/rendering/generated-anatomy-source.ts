@@ -77,7 +77,7 @@ export interface GeneratedAnatomySliceSourceOptions {
   manifestUrl: string;
   packDepth?: 16 | 32;
   fetchImpl?: typeof fetch;
-  maxCachedPacks?: number;
+  maxCachedBytes?: number;
   scheduleIdle?: (callback: () => void) => void;
 }
 
@@ -451,21 +451,23 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
   private readonly cacheMode: RequestCache;
   private readonly packDepth: 16 | 32 | undefined;
   private readonly manifestUrl: string;
-  private readonly maxCachedPacks: number;
+  private readonly maxCachedBytes: number;
   private readonly scheduleIdle: (callback: () => void) => void;
   private manifestPromise: Promise<AnatomyPackManifest> | null = null;
   private readonly packs = new Map<string, Promise<SlicePack>>();
+  private readonly packDecodedBytes = new Map<string, number>();
   private readonly settledPackKeys = new Set<string>();
   private readonly packLru: string[] = [];
-  private readonly queuedPrefetchIndices = new Map<SliceAxis, number>();
+  private readonly queuedPrefetches = new Map<SliceAxis, { index: number; direction: -1 | 1 }>();
+  private cachedBytes = 0;
   private prefetchScheduled = false;
 
   constructor(options: GeneratedAnatomySliceSourceOptions) {
     this.fetchImpl = options.fetchImpl ?? fetch.bind(globalThis);
     this.packDepth = options.packDepth;
-    this.maxCachedPacks = options.maxCachedPacks ?? 9;
-    if (!Number.isInteger(this.maxCachedPacks) || this.maxCachedPacks < 3) {
-      throw new RangeError('maxCachedPacks must be an integer >= 3');
+    this.maxCachedBytes = options.maxCachedBytes ?? 32 * 1024 * 1024;
+    if (!Number.isInteger(this.maxCachedBytes) || this.maxCachedBytes <= 0) {
+      throw new RangeError('maxCachedBytes must be a positive integer');
     }
     this.scheduleIdle = options.scheduleIdle ?? ((callback) => {
       if (typeof globalThis.requestIdleCallback === 'function') {
@@ -476,8 +478,7 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
     });
     const baseUrl = typeof globalThis.location?.href === 'string' ? globalThis.location.href : 'http://localhost/';
     this.manifestUrl = new URL(options.manifestUrl, baseUrl).toString();
-    const hostname = new URL(this.manifestUrl).hostname;
-    this.cacheMode = hostname === 'localhost' || hostname === '127.0.0.1' ? 'no-store' : 'force-cache';
+    this.cacheMode = 'force-cache';
   }
 
   loadManifest(): Promise<AnatomyPackManifest> {
@@ -532,15 +533,15 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
     }));
   }
 
-  prefetchAdjacentPacks(axis: SliceAxis, index: number): void {
-    this.queuedPrefetchIndices.set(axis, index);
+  prefetchNextPack(axis: SliceAxis, index: number, direction: -1 | 1): void {
+    this.queuedPrefetches.set(axis, { index, direction });
     if (this.prefetchScheduled) return;
     this.prefetchScheduled = true;
     this.scheduleIdle(() => {
       this.prefetchScheduled = false;
-      const queued = [...this.queuedPrefetchIndices];
-      this.queuedPrefetchIndices.clear();
-      void this.prefetchQueuedAdjacentPacks(queued).catch(() => {});
+      const queued = [...this.queuedPrefetches];
+      this.queuedPrefetches.clear();
+      void this.prefetchQueuedNextPacks(queued).catch(() => {});
     });
   }
 
@@ -560,6 +561,8 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
       void pending.then(
         () => {
           this.settledPackKeys.add(key);
+          this.packDecodedBytes.set(key, artifact.uncompressedBytes);
+          this.cachedBytes += artifact.uncompressedBytes;
           this.trimPackCache();
         },
         () => this.deletePack(key),
@@ -570,10 +573,10 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
     return pending;
   }
 
-  private async prefetchQueuedAdjacentPacks(entries: readonly (readonly [SliceAxis, number])[]): Promise<void> {
+  private async prefetchQueuedNextPacks(entries: readonly (readonly [SliceAxis, { index: number; direction: -1 | 1 }])[]): Promise<void> {
     const manifest = await this.loadManifest();
     const pending: Promise<SlicePack>[] = [];
-    for (const [axis, index] of entries) {
+    for (const [axis, { index, direction }] of entries) {
       const projection = manifest.projections[axis];
       if (!Number.isInteger(index) || index < 0 || index >= projection.sliceCount) continue;
       const packSet = this.packDepth == null
@@ -584,10 +587,8 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
         index >= artifact.firstSliceIndex && index < artifact.firstSliceIndex + artifact.sliceCount
       ));
       if (!current) continue;
-      for (const neighborIndex of [current.packIndex - 1, current.packIndex + 1]) {
-        const neighbor = packSet.packs[neighborIndex];
-        if (neighbor) pending.push(this.loadPack(manifest, axis, packSet.packDepth, neighbor));
-      }
+      const neighbor = packSet.packs[current.packIndex + direction];
+      if (neighbor) pending.push(this.loadPack(manifest, axis, packSet.packDepth, neighbor));
     }
     await Promise.allSettled(pending);
   }
@@ -599,19 +600,23 @@ export class GeneratedAnatomySliceSource implements AnatomySliceSource {
   }
 
   private trimPackCache(): void {
-    while (this.packs.size > this.maxCachedPacks) {
+    while (this.cachedBytes > this.maxCachedBytes && this.settledPackKeys.size > 1) {
       const candidateIndex = this.packLru.findIndex((key) => this.settledPackKeys.has(key));
       if (candidateIndex < 0) return;
       const [candidate] = this.packLru.splice(candidateIndex, 1);
       if (candidate) {
+        this.cachedBytes -= this.packDecodedBytes.get(candidate) ?? 0;
         this.packs.delete(candidate);
+        this.packDecodedBytes.delete(candidate);
         this.settledPackKeys.delete(candidate);
       }
     }
   }
 
   private deletePack(key: string): void {
+    this.cachedBytes -= this.packDecodedBytes.get(key) ?? 0;
     this.packs.delete(key);
+    this.packDecodedBytes.delete(key);
     this.settledPackKeys.delete(key);
     const index = this.packLru.indexOf(key);
     if (index >= 0) this.packLru.splice(index, 1);

@@ -18,7 +18,9 @@ export interface SvgSliceRendererOptions {
   onSliceStep?: (axis: SliceAxis, delta: number) => void;
 }
 
-const WHEEL_STEP_SLICES = 12;
+const WHEEL_PIXELS_PER_SLICE = 50;
+const WHEEL_LINE_HEIGHT_PX = 16;
+const WHEEL_PAGE_HEIGHT_PX = 800;
 
 export class SvgSliceRenderer implements RegionalSliceRenderer {
   private currentAxis: SliceAxis | null = null;
@@ -29,6 +31,8 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   private hoveredRegionId: number | null = null;
   private readonly pathIndex = new Map<number, SVGPathElement[]>();
   private readonly abortController = new AbortController();
+  private wheelPixels = 0;
+  private wheelFrame: number | null = null;
 
   constructor(
     private readonly mount: SvgSliceRendererMount,
@@ -63,9 +67,15 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
 
   dispose(): void {
     this.abortController.abort();
+    if (this.wheelFrame !== null) cancelAnimationFrame(this.wheelFrame);
     this.pathIndex.clear();
     this.mount.figureLayer.replaceChildren();
     this.mount.guideLayer.replaceChildren();
+  }
+
+  updateGuides(frame: RegionalSliceFrame): void {
+    this.currentAxis = frame.axis;
+    this.drawGuides(frame);
   }
 
   private rebuildPathIndex(): void {
@@ -147,7 +157,19 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   private readonly onWheel = (event: WheelEvent): void => {
     if (this.currentAxis == null || event.deltaY === 0) return;
     event.preventDefault();
-    const delta = event.deltaY < 0 ? WHEEL_STEP_SLICES : -WHEEL_STEP_SLICES;
-    this.options.onSliceStep?.(this.currentAxis, delta);
+    const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE
+      ? WHEEL_LINE_HEIGHT_PX
+      : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+        ? WHEEL_PAGE_HEIGHT_PX
+        : 1;
+    this.wheelPixels -= event.deltaY * unit;
+    if (this.wheelFrame !== null) return;
+    this.wheelFrame = requestAnimationFrame(() => {
+      this.wheelFrame = null;
+      const slices = Math.trunc(this.wheelPixels / WHEEL_PIXELS_PER_SLICE);
+      if (slices === 0) return;
+      this.wheelPixels -= slices * WHEEL_PIXELS_PER_SLICE;
+      if (this.currentAxis != null) this.options.onSliceStep?.(this.currentAxis, slices);
+    });
   };
 }

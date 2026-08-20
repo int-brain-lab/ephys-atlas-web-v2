@@ -92,9 +92,9 @@ The regional schema-v0.1 path is implemented end-to-end using the golden fixture
 7. SVG and list interactions sharing one selection state;
 8. selection persisted in URL state.
 
-The default regional renderer consumes the immutable generated
-`anatomy-pack-v1` under the application `SliceRenderer` facade. The legacy
-adapter remains modular source code but is not active.
+The default regional renderer consumes the immutable bilateral 10 µm generated
+`anatomy-pack-v2` under the application `SliceRenderer` facade. The 25 µm v1
+pack and legacy adapter remain available for rollback but are not active.
 
 Generated paths carry negative signed Allen/Beryl/Cosmos atlas IDs directly,
 matching folded ephys releases without a row-index crosswalk. The legacy
@@ -116,25 +116,25 @@ small set of real Allen ancestor containers needed to make their reduced
 mapping inventories parent-closed. Arbitrary ontology depth is displayed, and
 container-only rows remain visibly distinct from selectable mapping regions.
 
-The runtime anatomy is
-`allen-ccfv3-25um-left-t15-4a565958b938`: 1,078 left-hemisphere 25 µm slices
-in 68 lazy depth-16 gzip packs (18,768,176 compressed bytes). Full-corpus gates
-record topology/coverage true, zero uncovered/multiply-covered voxels, zero
-adjacency/geometry/missing-ID failures, minimum eligible-region IoU 1.0, and a
-3.125 µm conservative boundary bound. Its affines synchronize all projections
-through one native ML/AP/DV cursor; URL v2 uses native indices and migrates v1
-10 µm links by world coordinate.
-
-A byte-identical, validated bilateral 10 µm successor is now registered under
+The runtime anatomy is the byte-identical, validated bilateral 10 µm pack under
 `web/public/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/`,
-while the v1 pack remains available for rollback. The v2 pack contains all
+while the v1 pack remains available for rollback. It contains all
 3,260 source slices in 205 lazy depth-16 packs (44,424,303 compressed bytes),
 preserves negative-left/positive-right Allen, Beryl, and Cosmos IDs, and
 retains all 4,653 enclosed background components. Its exact collinear-only
 serialization has eligible-region IoU 1.0 and a 0 µm boundary-error upper
-bound. Browser runtime selection and calibration are intentionally left to the
-separate renderer integration unit; this asset-registration commit does not
-change the active anatomy URL.
+bound. Its affines synchronize all projections through one native ML/AP/DV
+cursor; URL v3 uses native indices and migrates v1 10 µm and v2 25 µm links by
+world coordinate.
+
+Slice navigation coalesces wheel bursts to one update per animation frame and
+uses 50 normalized wheel pixels per 10 µm slice. A slice change reloads geometry
+only in its own projection; the other projections update their guide layers.
+Presentation styling is skipped when feature/color/selection/hover state is
+unchanged, and URL replacement is deferred for 120 ms during navigation. The
+initial view fetches only its three current depth-16 packs. Subsequent idle
+prefetch is latest-wins and loads one pack in the active direction into a
+32 MiB decoded-byte LRU shared across projections.
 
 ## Volume viewer vertical slice
 
