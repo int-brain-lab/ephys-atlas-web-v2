@@ -88,15 +88,17 @@ The regional schema-v0.1 path is implemented end-to-end using the golden fixture
 3. regional values, descriptive-statistic matrix, global/regional histograms;
 4. browser regional payload;
 5. real region list/search and selected/global comparison;
-6. statistic/colormap coloring of curated SVG regions;
+6. statistic/colormap coloring of registered anatomy regions;
 7. SVG and list interactions sharing one selection state;
 8. selection persisted in URL state.
 
-The lower-level curated SVG renderer remains under the application `SliceRenderer` facade.
+The default regional renderer consumes the immutable generated
+`anatomy-pack-v1` under the application `SliceRenderer` facade. The legacy
+adapter remains modular source code but is not active.
 
-The renderer now explicitly translates scientific atlas IDs to the legacy
-BrainRegions row indices embedded in curated SVG class names. Negative folded
-atlas IDs are supported; browser selection and URL state remain atlas-ID based.
+Generated paths carry negative signed Allen/Beryl/Cosmos atlas IDs directly,
+matching folded ephys releases without a row-index crosswalk. The legacy
+adapter alone retains its explicit BrainRegions row translation.
 Independent request/render generations prevent stale feature, parcellation, or
 volume-slice results from overwriting newer state, and renderer failures reach
 visible runtime error status.
@@ -105,10 +107,17 @@ A pinned Allen Mouse CCF 2017 metadata asset supplies the full curated-SVG
 region inventory, official ontology RGB, names, parents, depths, and legacy row
 crosswalk. The settings panel exposes URL-persisted `Feature values` and
 `Allen anatomy` fill modes. Anatomy mode shows the canonical left inventory and
-color swatches in the region browser; both curated and generated anatomy
-renderers consume the shared color presentation without owning state (D022).
+color swatches in the region browser; geometry providers consume the shared
+color presentation without owning state (D022).
 
-The five deployed v1 curated bundles are pinned by identity/inventory in `docs/frontend/LEGACY_CURATED_ASSETS.md`. Orthogonal bundles contain even display indices; scientific navigation remains on full 10 um domains and the display layer chooses the nearest available curated slice.
+The runtime anatomy is
+`allen-ccfv3-25um-left-t15-4a565958b938`: 1,078 left-hemisphere 25 µm slices
+in 68 lazy depth-16 gzip packs (18,768,176 compressed bytes). Full-corpus gates
+record topology/coverage true, zero uncovered/multiply-covered voxels, zero
+adjacency/geometry/missing-ID failures, minimum eligible-region IoU 1.0, and a
+3.125 µm conservative boundary bound. Its affines synchronize all projections
+through one native ML/AP/DV cursor; URL v2 uses native indices and migrates v1
+10 µm links by world coordinate.
 
 ## Volume viewer vertical slice
 

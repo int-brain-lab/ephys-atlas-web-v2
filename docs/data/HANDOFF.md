@@ -57,7 +57,7 @@ chunk transform.
 - `builder/ephys_atlas_builder/` — deterministic JSON/binary writers, descriptive
   statistics, chunked volume writer, source pull/snapshot adapters,
   schema+payload validator, deterministic packager, CLI, and golden generator.
-- `fixtures/golden-v0.1/` — deterministic synthetic release with one regional +
+- `fixtures/golden-v0.3/` — deterministic synthetic release with one regional +
   volume feature and download artifact.
 - `tests/` — schema/fixture, determinism, chunk decoding, tamper detection,
   source-snapshot identity, alias, and volume-vintage-resolution tests.

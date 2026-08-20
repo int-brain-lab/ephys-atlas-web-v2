@@ -46,6 +46,12 @@ fully offline report, run `just bootstrap-anatomy` and `just anatomy-compare`.
 The methodology and scientific limits are documented in
 [`docs/rendering/ANATOMY_COMPARISON.md`](docs/rendering/ANATOMY_COMPARISON.md).
 
+The default viewer now serves the accepted immutable 25 µm left-hemisphere
+anatomy pack from the repository. Run `just test-anatomy` to exercise its
+contract, generator, integrity, and comparison gates. A clean reproducible
+rebuild is available through `just anatomy-pack`; existing output is never
+overwritten.
+
 ## Launch scope
 
 Launch-critical datasets:

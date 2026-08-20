@@ -163,19 +163,18 @@ Acceptance reference: sections 8 and 9 of the launch spec.
 
 ## M6 — Production assets, catalog, publishing, deployment
 
-Status: **architecture implemented; deployment decisions open**.
+Status: **registered anatomy integrated; catalog/deployment decisions open**.
 
 Blocked in part by: Q8, Q9, Q10.
 
 Actions:
 
-1. copy the five pinned curated SVG bundles byte-for-byte to the selected immutable v2 asset origin;
-2. switch runtime URLs after verifying hashes/inventory and browser behavior;
-3. finalize static public catalog/default aliases for the frozen release set;
-4. configure production CORS/cache policy;
-5. deploy or explicitly waive the remote publishing service for launch;
-6. if deployed, configure validator command, secrets, storage, backups, and TLS/reverse proxy;
-7. verify public release URLs from the production origin.
+1. deploy the committed immutable anatomy pack and preserve opaque gzip bytes without HTTP `Content-Encoding`;
+2. finalize static public catalog/default aliases for the frozen scientific release set;
+3. configure production CORS/cache policy;
+4. deploy or explicitly waive the remote publishing service for launch;
+5. if deployed, configure validator command, secrets, storage, backups, and TLS/reverse proxy;
+6. verify anatomy and scientific release URLs from the production origin.
 
 Acceptance reference: sections 10, 11, and 13.
 

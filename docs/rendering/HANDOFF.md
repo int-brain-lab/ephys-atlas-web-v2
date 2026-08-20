@@ -52,7 +52,7 @@ Two coordinate systems are now explicit and separate:
 
 Never use display calibration for scientific lookup. Exact constants and tests are in `slice-calibration.ts`; rationale is in `SVG_CALIBRATION.md`.
 
-V1 preloads all slice JSON for all views. V2 should lazy-load current/neighbor curated fragments through an immutable asset index/cache. The renderer intentionally does not prescribe physical SVG packing.
+V1 preloads all slice JSON for all views. The active v2 renderer instead lazy-loads immutable depth-16 generated anatomy packs and verifies compressed bytes before explicit decompression. The legacy renderer remains an inactive fallback.
 
 ## Volume findings and benchmark decision
 

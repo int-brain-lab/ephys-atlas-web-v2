@@ -14,7 +14,7 @@ generator commit:
 just bootstrap-anatomy
 uv run --project builder --extra anatomy --extra scientific --extra test --locked \
   python -m tools.anatomy_pack.build \
-  --tolerance-um 10 \
+  --tolerance-um 15 \
   --pack-depth 16 \
   --created-at 2026-08-20T00:00:00Z
 ```
@@ -65,7 +65,16 @@ the observed maximum. The manifest also records worst-slice median and p95
 sample errors; their names deliberately avoid presenting them as pooled-corpus
 percentiles.
 
-At the tested central coronal, sagittal, and horizontal planes, 20 µm fails the
-0.98 eligible-region IoU gate. A 10 µm tolerance passes and is therefore the
-conservative starting point for the complete-corpus build. The complete pack
-manifest, not the three-slice pilot, is the production acceptance record.
+The accepted complete-corpus build uses 15 µm tolerance. Its immutable ID is
+`allen-ccfv3-25um-left-t15-4a565958b938`; its manifest SHA-256 is
+`7ef9179d3d219aa96fe0a0cdebcda9a4329d6195be118e1701c05480d18a82c5`.
+All 1,078 slices passed with minimum eligible-region IoU 1.0, zero source-voxel
+coverage or topology failures, and a 3.125 µm conservative boundary bound.
+The 68 depth-16 gzip packs occupy 18,768,176 bytes. A 20 µm candidate failed
+the IoU gate and is not a release option.
+
+The committed browser copy lives under the pack-ID-qualified path
+`web/public/atlas/anatomy/allen-ccfv3-25um-left-t15-4a565958b938/`.
+Gzip files are opaque application resources: hosts must not attach HTTP
+`Content-Encoding`, because the client verifies the compressed bytes before
+explicit decompression.

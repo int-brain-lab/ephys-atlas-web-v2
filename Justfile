@@ -45,9 +45,13 @@ test-web:
 test-browser:
     cd web && npm run test:browser
 
-# Exercise the deterministic synthetic anatomy-vectorization cases.
+# Exercise the anatomy contract, generator, artifact validator, and comparison cases.
 test-anatomy:
-    uv run --project builder --extra anatomy --extra scientific --extra test --locked python -m pytest -q tests/test_anatomy_compare.py
+    uv run --project builder --extra anatomy --extra scientific --extra test --locked python -m pytest -q tests/test_anatomy_pack.py tests/test_anatomy_pack_schema.py tests/test_anatomy_compare.py
+
+# Build a new immutable anatomy pack from a clean commit. Existing output is never replaced.
+anatomy-pack tolerance="15" depth="16" output="artifacts/anatomy-pack-v1":
+    uv run --project builder --extra anatomy --extra scientific --extra test --locked python -m tools.anatomy_pack.build --tolerance-um {{tolerance}} --pack-depth {{depth}} --created-at 2026-08-20T00:00:00Z --output {{output}}
 
 # Generate the ignored, fully offline anatomy comparison lab.
 anatomy-compare resolution="25":

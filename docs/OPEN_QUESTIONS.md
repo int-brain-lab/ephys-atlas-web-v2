@@ -127,13 +127,12 @@ Blocks: final production catalog/defaults and publication reproducibility statem
 
 ## Q10 — Curated SVG v2 asset location
 
-Status: **DECISION**.
+Status: **RESOLVED by D023**.
 
-The exact legacy bytes are pinned and must be reused. Production v2 should not depend on `atlas.internationalbrainlab.org/data/json/` indefinitely.
-
-Resolution needed: immutable/versioned v2 asset URL under the selected production origin. Copy bytes exactly; do not regenerate.
-
-Blocks: removing the legacy-host runtime dependency.
+The registered generated pack is committed under its immutable pack ID and is
+the default provider. Production v2 no longer contacts the legacy atlas host.
+The legacy bytes remain pinned historical fallback inputs and need not be
+copied for the default launch path.
 
 ## Q11 — Cross-browser release gate depth
 

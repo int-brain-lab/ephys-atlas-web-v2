@@ -47,9 +47,10 @@ Scientific provenance is part of the product contract, not optional metadata.
 ## Rendering invariants
 
 - `SliceRenderer` is the application rendering boundary. Keep SVG, Canvas, volume, and future 3-D implementation details below it.
-- Scientific coordinates and curated SVG display calibration are separate systems. Never derive a scientific volume transform from the hand-tuned legacy SVG alignment.
-- The five curated v1 SVG bundles are authoritative display assets. Do not regenerate, simplify, reorder, or resample them. Their pinned identity is documented in `docs/frontend/LEGACY_CURATED_ASSETS.md`.
-- Orthogonal SVG assets are display-downsampled. Scientific navigation and URL state stay on the full-resolution coordinate domains.
+- The immutable generated anatomy pack is the canonical regional display geometry. Its declared affines, not display tuning, synchronize the three projections.
+- Navigation and URL v2 use the native 25 µm Allen grid and one left-hemisphere ML/AP/DV cursor. Keep v1 10 µm URL migration covered.
+- Do not hand-edit generated anatomy manifests or packs. Regeneration requires the pinned source annotation/LUT, a clean generator commit, and every topology/coverage/error gate in `docs/rendering/ANATOMY_PACK_CONTRACT.md`.
+- The five curated v1 SVG bundles remain pinned historical fallback assets only. Their identity and calibration are documented in `docs/frontend/LEGACY_CURATED_ASSETS.md`.
 - Volume storage layout (`chunks3d` versus `orthogonal_slice_packs`) is independent of scientific grid geometry. Choose the production layout from measured real-data browser benchmarks, not convenience.
 
 ## Frontend constraints

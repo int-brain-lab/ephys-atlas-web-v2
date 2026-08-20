@@ -1,5 +1,10 @@
 # SVG slice reuse and calibration
 
+Status: **legacy fallback only**. D023 replaces these hand-registered assets in
+the default v2 runtime with a generated pack whose per-projection affines are
+scientific contract data. This note remains the calibration record required to
+re-enable the modular legacy provider.
+
 ## What is being reused
 
 V1's regional slices are curated SVG path sets produced from Allen meshes and then simplified manually/tool-by-tool. The historical processing notes in `int-brain-lab/ephys-atlas-web/tools/process.py` describe MATLAB slice generation, RDP simplification, Inkscape simplification, SVGO cleanup, and later manual processing of the generated slice JSON. This work should be treated as a display asset, not regenerated casually for v2.

@@ -28,7 +28,7 @@ Acceptance criteria:
 
 - Desktop is the primary layout; tablet remains usable; phone may use a reduced composition.
 - Coronal, sagittal, and horizontal views remain linked through one scientific navigation state.
-- Scientific slice indices and coordinates remain independent from the downsampled curated SVG display inventory.
+- All three projections use one ML/AP/DV cursor and the generated pack's native 25 µm affine grid.
 - Slice state, dataset/release, feature, representation, parcellation, coloring, and region selection are serializable into a shareable URL.
 - Maximized views, drawers, and responsive composition remain keyboard-reversible and covered by browser tests.
 - Current Chrome/Edge, Firefox, and Safari are the launch browser targets. Chromium CI is necessary but not sufficient for final release QA.
@@ -41,7 +41,7 @@ For a schema-v0.1 regional feature, the viewer must:
 - load parcellation region metadata and the region index from the release;
 - search regions by loaded metadata rather than a hardcoded list;
 - display the selected statistic for each region;
-- color curated anatomical SVG regions from the selected statistic/colormap/range;
+- color registered anatomical regions from the selected statistic/colormap/range;
 - use one shared selection state for region-list and SVG interactions;
 - persist selection in URL state;
 - show global descriptive statistics and a distribution/histogram;
@@ -150,15 +150,16 @@ Acceptance criteria:
 
 Remote publishing is desirable but may not block viewer launch if static release deployment is operationally sufficient.
 
-## 11. Curated anatomical assets
+## 11. Registered anatomical assets
 
 Acceptance criteria:
 
-- the exact five pinned curated v1 JSON/SVG-fragment bundles are preserved byte-for-byte;
-- production v2 no longer depends on the legacy atlas host for these assets;
-- the v2 asset location is immutable/versioned and compatible with browser caching/CDN delivery;
-- asset identity remains documented by SHA-256, entry/path counts, and index coverage;
-- scientific navigation remains full-resolution even though orthogonal display assets are sampled at even indices.
+- the production `anatomy-pack-v1` is derived from pinned Allen annotation and LUT bytes by a clean pinned generator;
+- every compressed pack is immutable, byte-sized, SHA-256 verified, and explicitly decompressed by the browser;
+- topology, source-voxel coverage, signed ID, boundary-error, IoU, and synchronization gates pass for all 1,078 slices;
+- the three projection affines define native 25 µm navigation and guide placement without hand-tuned display formulas;
+- production delivery serves `.json.gz` pack bytes without HTTP `Content-Encoding`, preserving compressed-byte verification;
+- the legacy host and curated bundles are not runtime dependencies; their pinned inventory remains available for historical fallback.
 
 ## 12. Performance and reliability
 
