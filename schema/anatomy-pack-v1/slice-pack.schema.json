@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.internationalbrainlab.org/schema/anatomy-pack-v1/slice-pack.schema.json",
+  "title": "IBL anatomy slice pack v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schema_version",
+    "anatomy_pack_id",
+    "projection",
+    "pack_depth",
+    "pack_index",
+    "first_slice_index",
+    "slice_count",
+    "slices"
+  ],
+  "properties": {
+    "format": { "const": "anatomy-slice-pack-v1" },
+    "schema_version": { "const": "1.0" },
+    "anatomy_pack_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]+$"
+    },
+    "projection": { "enum": ["coronal", "sagittal", "horizontal"] },
+    "pack_depth": { "enum": [16, 32] },
+    "pack_index": { "type": "integer", "minimum": 0 },
+    "first_slice_index": { "type": "integer", "minimum": 0 },
+    "slice_count": { "type": "integer", "minimum": 1, "maximum": 32 },
+    "slices": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/slice" }
+    }
+  },
+  "$defs": {
+    "slice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slice_index", "world_coordinate_um", "paths"],
+      "properties": {
+        "slice_index": { "type": "integer", "minimum": 0 },
+        "world_coordinate_um": { "type": "number" },
+        "paths": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/path" }
+        }
+      }
+    },
+    "path": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["atlas_ids", "d"],
+      "properties": {
+        "atlas_ids": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["allen", "beryl", "cosmos"],
+          "properties": {
+            "allen": { "type": "integer", "maximum": -1 },
+            "beryl": { "type": "integer", "maximum": -1 },
+            "cosmos": { "type": "integer", "maximum": -1 }
+          }
+        },
+        "d": {
+          "type": "string",
+          "minLength": 4,
+          "pattern": "^[Mm][^<>]*$"
+        }
+      }
+    }
+  }
+}

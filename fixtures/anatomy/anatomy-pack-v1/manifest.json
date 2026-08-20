@@ -1,0 +1,297 @@
+{
+  "format": "anatomy-pack-v1",
+  "schema_version": "1.0",
+  "pack_id": "synthetic-left-25um-v1",
+  "immutable": true,
+  "created_at": "2026-08-20T00:00:00Z",
+  "source": {
+    "atlas": "Allen CCFv3",
+    "resolution_um": 25,
+    "hemisphere": "left",
+    "annotation": {
+      "path": "annotation_25_left.nrrd",
+      "bytes": 4913,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "region_lut": {
+      "path": "annotation_25_lut_v01.npz",
+      "bytes": 1024,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    "region_ids": {
+      "domain": "signed_allen_atlas_id",
+      "left_sign": "negative",
+      "background_id": 0
+    }
+  },
+  "coordinate_system": {
+    "name": "synthetic IBL Allen CCF coordinates; fixture only",
+    "units": "um",
+    "world_axes": ["ml", "ap", "dv"],
+    "voxel_centers": "integer-indices",
+    "voxel_edges": "half-integer-indices",
+    "matrix_order": "row-major"
+  },
+  "projections": {
+    "coronal": {
+      "fixed_world_axis": "ap",
+      "plane_axes": ["ml", "dv"],
+      "slice_count": 17,
+      "slice_shape": [17, 17],
+      "view_box": [-0.5, -0.5, 17, 17],
+      "plane_index_to_world_um": [
+        0, 25, 0, -400,
+        -25, 0, 0, 200,
+        0, 0, -25, 100,
+        0, 0, 0, 1
+      ],
+      "world_to_plane_index": [
+        0, -0.04, 0, 8,
+        0.04, 0, 0, 16,
+        0, 0, -0.04, 4,
+        0, 0, 0, 1
+      ],
+      "pack_sets": {
+        "16": {
+          "pack_depth": 16,
+          "path_template": "packs/16/coronal/{pack}.json.gz",
+          "packs": [
+            {
+              "pack_index": 0,
+              "first_slice_index": 0,
+              "slice_count": 16,
+              "path": "packs/16/coronal/0.json.gz",
+              "media_type": "application/json",
+              "compression": "gzip",
+              "bytes": 128,
+              "uncompressed_bytes": 1024,
+              "sha256": "2000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "pack_index": 1,
+              "first_slice_index": 16,
+              "slice_count": 1,
+              "path": "packs/16/coronal/1.json.gz",
+              "media_type": "application/json",
+              "compression": "gzip",
+              "bytes": 64,
+              "uncompressed_bytes": 256,
+              "sha256": "2100000000000000000000000000000000000000000000000000000000000000"
+            }
+          ]
+        },
+        "32": {
+          "pack_depth": 32,
+          "path_template": "packs/32/coronal/{pack}.json.gz",
+          "packs": [
+            {
+              "pack_index": 0,
+              "first_slice_index": 0,
+              "slice_count": 17,
+              "path": "packs/32/coronal/0.json.gz",
+              "media_type": "application/json",
+              "compression": "gzip",
+              "bytes": 160,
+              "uncompressed_bytes": 1280,
+              "sha256": "2200000000000000000000000000000000000000000000000000000000000000"
+            }
+          ]
+        }
+      }
+    },
+    "sagittal": {
+      "fixed_world_axis": "ml",
+      "plane_axes": ["ap", "dv"],
+      "slice_count": 17,
+      "slice_shape": [17, 17],
+      "view_box": [-0.5, -0.5, 17, 17],
+      "plane_index_to_world_um": [
+        25, 0, 0, -400,
+        0, -25, 0, 200,
+        0, 0, -25, 100,
+        0, 0, 0, 1
+      ],
+      "world_to_plane_index": [
+        0.04, 0, 0, 16,
+        0, -0.04, 0, 8,
+        0, 0, -0.04, 4,
+        0, 0, 0, 1
+      ],
+      "pack_sets": {
+        "16": {
+          "pack_depth": 16,
+          "path_template": "packs/16/sagittal/{pack}.json.gz",
+          "packs": [
+            {
+              "pack_index": 0,
+              "first_slice_index": 0,
+              "slice_count": 16,
+              "path": "packs/16/sagittal/0.json.gz",
+              "media_type": "application/json",
+              "compression": "gzip",
+              "bytes": 128,
+              "uncompressed_bytes": 1024,
+              "sha256": "3000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "pack_index": 1,
+              "first_slice_index": 16,
+              "slice_count": 1,
+              "path": "packs/16/sagittal/1.json.gz",
+              "media_type": "application/json",
+              "compression": "gzip",
+              "bytes": 64,
+              "uncompressed_bytes": 256,
+              "sha256": "3100000000000000000000000000000000000000000000000000000000000000"
+            }
+          ]
+        },
+        "32": {
+          "pack_depth": 32,
+          "path_template": "packs/32/sagittal/{pack}.json.gz",
+          "packs": [
+            {
+              "pack_index": 0,
+              "first_slice_index": 0,
+              "slice_count": 17,
+              "path": "packs/32/sagittal/0.json.gz",
+              "media_type": "application/json",
+              "compression": "gzip",
+              "bytes": 160,
+              "uncompressed_bytes": 1280,
+              "sha256": "3200000000000000000000000000000000000000000000000000000000000000"
+            }
+          ]
+        }
+      }
+    },
+    "horizontal": {
+      "fixed_world_axis": "dv",
+      "plane_axes": ["ml", "ap"],
+      "slice_count": 17,
+      "slice_shape": [17, 17],
+      "view_box": [-0.5, -0.5, 17, 17],
+      "plane_index_to_world_um": [
+        0, 25, 0, -400,
+        0, 0, -25, 200,
+        -25, 0, 0, 100,
+        0, 0, 0, 1
+      ],
+      "world_to_plane_index": [
+        0, 0, -0.04, 4,
+        0.04, 0, 0, 16,
+        0, -0.04, 0, 8,
+        0, 0, 0, 1
+      ],
+      "pack_sets": {
+        "16": {
+          "pack_depth": 16,
+          "path_template": "packs/16/horizontal/{pack}.json.gz",
+          "packs": [
+            {
+              "pack_index": 0,
+              "first_slice_index": 0,
+              "slice_count": 16,
+              "path": "packs/16/horizontal/0.json.gz",
+              "media_type": "application/json",
+              "compression": "gzip",
+              "bytes": 128,
+              "uncompressed_bytes": 1024,
+              "sha256": "4000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "pack_index": 1,
+              "first_slice_index": 16,
+              "slice_count": 1,
+              "path": "packs/16/horizontal/1.json.gz",
+              "media_type": "application/json",
+              "compression": "gzip",
+              "bytes": 64,
+              "uncompressed_bytes": 256,
+              "sha256": "4100000000000000000000000000000000000000000000000000000000000000"
+            }
+          ]
+        },
+        "32": {
+          "pack_depth": 32,
+          "path_template": "packs/32/horizontal/{pack}.json.gz",
+          "packs": [
+            {
+              "pack_index": 0,
+              "first_slice_index": 0,
+              "slice_count": 17,
+              "path": "packs/32/horizontal/0.json.gz",
+              "media_type": "application/json",
+              "compression": "gzip",
+              "bytes": 160,
+              "uncompressed_bytes": 1280,
+              "sha256": "4200000000000000000000000000000000000000000000000000000000000000"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "provenance": {
+    "iblatlas": {
+      "repository": "int-brain-lab/iblatlas",
+      "commit": "52083adf44825d0622a503705e095699a5957587"
+    },
+    "generator": {
+      "repository": "rossant/ibl-ephys-atlas-web-v2",
+      "commit": "0123456789abcdef0123456789abcdef01234567",
+      "dirty": false
+    },
+    "shapely_version": "2.1.1",
+    "geos_version": "3.13.1",
+    "simplification": {
+      "algorithm": "GEOS coverage_simplify",
+      "tolerance_um": 12.5,
+      "boundary_sampling_interval_voxels": 0.25,
+      "boundary_error_bound_um": 3.125
+    }
+  },
+  "validation": {
+    "topology_valid": true,
+    "coverage_valid": true,
+    "uncovered_voxels": 0,
+    "multiply_covered_voxels": 0,
+    "adjacency_mismatches": 0,
+    "invalid_geometries": 0,
+    "missing_atlas_ids": [],
+    "source_slices": 51,
+    "emitted_slices": 51,
+    "path_count": 12,
+    "ring_count": 12,
+    "vertices_before": 96,
+    "vertices_after": 48,
+    "boundary_error_um": {
+      "median": 0,
+      "p95": 6.25,
+      "max": 8.84
+    },
+    "accepted_max_boundary_error_um": 12.5,
+    "coordinate_tolerance_um": 0.000001,
+    "sentinel_max_error_um": 0
+  },
+  "synchronization_sentinels": [
+    {
+      "name": "synthetic-interior-a",
+      "world_um": [-300, 50, -100],
+      "projection_indices": {
+        "coronal": [6, 4, 8],
+        "sagittal": [4, 6, 8],
+        "horizontal": [8, 4, 6]
+      }
+    },
+    {
+      "name": "synthetic-interior-b",
+      "world_um": [-100, -50, 25],
+      "projection_indices": {
+        "coronal": [10, 12, 3],
+        "sagittal": [12, 10, 3],
+        "horizontal": [3, 12, 10]
+      }
+    }
+  ]
+}
