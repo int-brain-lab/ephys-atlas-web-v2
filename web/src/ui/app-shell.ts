@@ -14,6 +14,7 @@ import type {
 import type { SliceRenderer } from '../rendering/interfaces.js';
 import { regionalColorRange } from '../rendering/scalar-colormap.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
+import { ContextMenu, type ContextMenuOption } from './context-menu.js';
 
 export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
@@ -43,12 +44,6 @@ type LayoutMode = 'wide' | 'compact' | 'narrow' | 'phone';
 type DrawerName = 'regions' | 'settings';
 type WorkspaceView = SliceAxis | 'context';
 type HeaderAction = 'share' | 'download' | 'info';
-
-interface ContextFieldNodes {
-  field: HTMLElement;
-  value: HTMLElement;
-  release?: HTMLElement;
-}
 
 interface ViewFrameNodes {
   frame: HTMLElement;
@@ -110,15 +105,13 @@ export class AppShell {
   private readonly viewButtons = new Map<WorkspaceView, HTMLButtonElement>();
   private readonly viewFrames = new Map<SliceAxis, ViewFrameNodes>();
   private readonly headerActionButtons = new Map<HeaderAction, HTMLButtonElement[]>();
-  private readonly datasetContext: ContextFieldNodes;
-  private readonly featureContext: ContextFieldNodes;
-  private readonly representationContext: ContextFieldNodes;
+  private readonly datasetContext: ContextMenu;
+  private readonly featureContext: ContextMenu;
+  private readonly representationContext: ContextMenu;
+  private readonly contextMenus: readonly ContextMenu[];
+  private readonly featureRepresentation = new Map<string, RepresentationKind>();
   private overflowActions: HTMLDetailsElement | null = null;
   private regionSearch!: HTMLInputElement;
-  private datasetSelect!: HTMLSelectElement;
-  private featureSelect!: HTMLSelectElement;
-  private representationSelect!: HTMLSelectElement;
-  private parcellationSelect!: HTMLSelectElement;
   private colorModeSelect!: HTMLSelectElement;
   private statisticSelect!: HTMLSelectElement;
   private colormapSelect!: HTMLSelectElement;
@@ -132,7 +125,7 @@ export class AppShell {
   private legendMin!: HTMLElement;
   private legendMax!: HTMLElement;
   private legendUnit!: HTMLElement;
-  private currentFeatureId: string | null = null;
+  private featureId: string | null = null;
   private activeView: WorkspaceView = 'coronal';
   private maximizedView: SliceAxis | null = null;
 
@@ -146,9 +139,44 @@ export class AppShell {
     this.app = element('div', 'atlas-app');
     this.app.dataset.activeView = this.activeView;
 
-    this.datasetContext = this.createContextField('Dataset', 'dataset', true);
-    this.featureContext = this.createContextField('Feature', 'feature');
-    this.representationContext = this.createContextField('Representation', 'representation', true);
+    this.datasetContext = new ContextMenu({
+      fieldName: 'dataset',
+      label: 'Dataset',
+      onOpen: (menu) => {
+        this.closeDrawers();
+        this.closeContextMenus(menu);
+      },
+      onSelect: (option) => {
+        const [datasetId, releaseId] = JSON.parse(option.id) as [DatasetId, string];
+        this.callbacks.setDataset({ datasetId, releaseId });
+      },
+    });
+    this.featureContext = new ContextMenu({
+      fieldName: 'feature',
+      label: 'Feature',
+      searchable: true,
+      searchPlaceholder: 'Search features, units, or IDs',
+      onOpen: (menu) => {
+        this.closeDrawers();
+        this.closeContextMenus(menu);
+      },
+      onSelect: (option) => this.callbacks.setFeature(option.id, this.featureRepresentation.get(option.id)),
+    });
+    this.representationContext = new ContextMenu({
+      fieldName: 'representation',
+      label: 'Representation',
+      multiselectable: true,
+      onOpen: (menu) => {
+        this.closeDrawers();
+        this.closeContextMenus(menu);
+      },
+      onSelect: (option) => {
+        const [kind, id] = option.id.split(':', 2);
+        if (kind === 'representation') this.callbacks.setFeature(this.featureId, id as RepresentationKind);
+        if (kind === 'parcellation') this.callbacks.setParcellation(id as ParcellationId);
+      },
+    });
+    this.contextMenus = [this.datasetContext, this.featureContext, this.representationContext];
 
     this.regionPane = this.createRegionPane();
     this.settingsPane = this.createSettingsPane();
@@ -182,10 +210,10 @@ export class AppShell {
     const featureLabel = featureEntry?.label ?? (view.featureId ? titleCaseToken(view.featureId) : 'No feature selected');
     const representationLabel = view.representation === 'regional' ? 'Regional' : 'Volume';
 
-    this.setContextValue(this.datasetContext, datasetLabel, releaseLabel);
-    this.setContextValue(this.featureContext, featureLabel);
-    this.setContextValue(this.representationContext, representationLabel, 'Allen CCFv3 · 10 µm');
-    this.renderDataSettings(model);
+    this.datasetContext.setDisplay(datasetLabel, releaseLabel);
+    this.featureContext.setDisplay(featureLabel, featureEntry?.unit ?? '');
+    this.representationContext.setDisplay(`${representationLabel} · ${titleCaseToken(view.parcellation)}`, 'Allen CCFv3 · 10 µm');
+    this.renderContextMenus(model);
     this.renderColorSettings(model);
     this.renderInfo(model);
     this.setHeaderActionDisabled('share', false);
@@ -200,6 +228,7 @@ export class AppShell {
   destroy(): void {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('resize', this.onResize);
+    this.contextMenus.forEach((menu) => menu.destroy());
     this.renderer.destroy?.();
   }
 
@@ -234,34 +263,6 @@ export class AppShell {
 
     header.append(brand, context, actions);
     return header;
-  }
-
-  private createContextField(labelText: string, fieldName: string, withRelease = false): ContextFieldNodes {
-    const field = element('div', 'context-field');
-    field.dataset.contextField = fieldName;
-    const label = element('dt', 'context-field__label');
-    label.textContent = labelText;
-    const data = element('dd', 'context-field__data');
-    const value = element('span', 'context-field__value');
-    value.textContent = '—';
-    data.append(value);
-    let release: HTMLElement | undefined;
-    if (withRelease) {
-      release = element('span', 'context-field__release');
-      release.hidden = true;
-      data.append(release);
-    }
-    field.append(label, data);
-    return { field, value, ...(release ? { release } : {}) };
-  }
-
-  private setContextValue(nodes: ContextFieldNodes, value: string, release = ''): void {
-    nodes.value.textContent = value;
-    nodes.value.title = value;
-    if (!nodes.release) return;
-    nodes.release.textContent = release;
-    nodes.release.title = release;
-    nodes.release.hidden = !release;
   }
 
   private drawerButton(drawer: DrawerName, label: string, iconText: string): HTMLButtonElement {
@@ -521,45 +522,9 @@ export class AppShell {
     pane.dataset.open = 'false';
     const panelHeader = this.panelHeader('Visualization settings', () => this.closeDrawers());
     const content = element('div', 'settings-pane__content');
-    content.append(this.createDataSettings(), this.createColorSettings());
+    content.append(this.createColorSettings());
     pane.append(panelHeader, content);
     return pane;
-  }
-
-  private createDataSettings(): HTMLElement {
-    const group = element('section', 'settings-placeholder settings-controls');
-    group.append(heading('Data', 3));
-    const dataset = this.settingsSelect('Dataset / release', []);
-    this.datasetSelect = dataset.select;
-    this.datasetSelect.setAttribute('aria-label', 'Dataset and release');
-    this.datasetSelect.addEventListener('change', () => {
-      const option = this.datasetSelect.selectedOptions[0];
-      const datasetId = option?.dataset.datasetId as DatasetId | undefined;
-      const releaseId = option?.dataset.releaseId;
-      if (datasetId && releaseId) this.callbacks.setDataset({ datasetId, releaseId });
-    });
-    const feature = this.settingsSelect('Feature', []);
-    this.featureSelect = feature.select;
-    this.featureSelect.setAttribute('aria-label', 'Feature');
-    this.featureSelect.addEventListener('change', () => {
-      const option = this.featureSelect.selectedOptions[0];
-      const representation = option?.dataset.representation as RepresentationKind | undefined;
-      this.callbacks.setFeature(this.featureSelect.value || null, representation);
-    });
-    const representation = this.settingsSelect('Representation', []);
-    this.representationSelect = representation.select;
-    this.representationSelect.setAttribute('aria-label', 'Representation');
-    this.representationSelect.addEventListener('change', () => {
-      if (this.currentFeatureId) this.callbacks.setFeature(this.currentFeatureId, this.representationSelect.value as RepresentationKind);
-    });
-    const parcellation = this.settingsSelect('Parcellation', []);
-    this.parcellationSelect = parcellation.select;
-    this.parcellationSelect.setAttribute('aria-label', 'Parcellation');
-    this.parcellationSelect.addEventListener('change', () => {
-      this.callbacks.setParcellation(this.parcellationSelect.value as ParcellationId);
-    });
-    group.append(dataset.row, feature.row, representation.row, parcellation.row);
-    return group;
   }
 
   private createColorSettings(): HTMLElement {
@@ -624,57 +589,59 @@ export class AppShell {
     return input;
   }
 
-  private renderDataSettings(model: ShellModel): void {
+  private renderContextMenus(model: ShellModel): void {
     const { catalog, manifest, state } = model;
-    const datasetOptions = catalog?.datasets.flatMap((dataset) => dataset.releases.map((release) => ({
-      value: `${dataset.id}::${release.id}`,
-      label: `${dataset.title} — ${release.label}`,
-      dataset: { datasetId: dataset.id, releaseId: release.id },
+    this.featureId = state.view.featureId;
+    const datasetOptions: ContextMenuOption[] = catalog?.datasets.flatMap((dataset) => dataset.releases.map((release) => ({
+      id: JSON.stringify([dataset.id, release.id]),
+      label: release.label,
+      ...(dataset.description ? { description: dataset.description } : {}),
+      group: dataset.title,
+      keywords: `${dataset.id} ${release.id}`,
     }))) ?? [];
-    const datasetValue = state.view.dataset.releaseId
-      ? `${state.view.dataset.datasetId}::${state.view.dataset.releaseId}`
+    const datasetId = state.view.dataset.releaseId
+      ? JSON.stringify([state.view.dataset.datasetId, state.view.dataset.releaseId])
       : '';
-    this.syncOptions(this.datasetSelect, datasetOptions, datasetValue);
-    for (const option of this.datasetSelect.options) {
-      const source = datasetOptions.find((item) => item.value === option.value);
-      if (!source) continue;
-      option.dataset.datasetId = source.dataset.datasetId;
-      option.dataset.releaseId = source.dataset.releaseId;
-    }
+    this.datasetContext.setOptions(datasetOptions, [datasetId], datasetOptions.length === 0);
 
-    const featureOptions = manifest?.features.map((feature) => {
+    this.featureRepresentation.clear();
+    const featureOptions: ContextMenuOption[] = manifest?.features.map((feature) => {
       const representations = this.featureRepresentations(feature);
       const preferred = representations.includes(state.view.representation) ? state.view.representation : representations[0];
+      if (preferred) this.featureRepresentation.set(feature.id, preferred);
       return {
-        value: feature.id,
-        label: feature.unit ? `${feature.label} · ${feature.unit}` : feature.label,
-        representation: preferred,
+        id: feature.id,
+        label: feature.label,
+        description: [feature.unit, representations.map(titleCaseToken).join(' / ')].filter(Boolean).join(' · '),
+        keywords: `${feature.id} ${feature.description} ${feature.valueSemantics.quantity}`,
       };
     }) ?? [];
-    this.syncOptions(this.featureSelect, featureOptions, state.view.featureId ?? '');
-    for (const option of this.featureSelect.options) {
-      const source = featureOptions.find((item) => item.value === option.value);
-      if (source?.representation) option.dataset.representation = source.representation;
-    }
-    this.currentFeatureId = state.view.featureId;
+    this.featureContext.setOptions(featureOptions, state.view.featureId ? [state.view.featureId] : [], featureOptions.length === 0);
+
     const selectedFeature = manifest?.features.find((feature) => feature.id === state.view.featureId);
     const representations = selectedFeature ? this.featureRepresentations(selectedFeature) : [];
-    this.syncOptions(this.representationSelect, representations.map((value) => ({
-      value,
-      label: value === 'regional' ? 'Regional' : 'Volume',
-    })), state.view.representation);
     const availableParcellations = selectedFeature?.representations.regional && state.view.representation === 'regional'
       ? Object.keys(selectedFeature.representations.regional.parcellations) as ParcellationId[]
       : manifest?.parcellations ?? [];
-    this.syncOptions(this.parcellationSelect, availableParcellations.map((value) => ({
-      value,
+    const representationOptions: ContextMenuOption[] = representations.map((value) => ({
+      id: `representation:${value}`,
+      label: value === 'regional' ? 'Regional' : 'Volume',
+      description: value === 'regional' ? 'Region-level descriptive summaries' : 'Voxel-space scalar volume',
+      group: 'Representation',
+      disabled: representations.length < 2,
+    }));
+    const parcellationOptions: ContextMenuOption[] = availableParcellations.map((value) => ({
+      id: `parcellation:${value}`,
       label: value === 'allen' ? 'Allen' : value === 'beryl' ? 'Beryl' : 'Cosmos',
-    })), state.view.parcellation);
-
-    this.datasetSelect.disabled = datasetOptions.length === 0;
-    this.featureSelect.disabled = featureOptions.length === 0;
-    this.representationSelect.disabled = representations.length < 2;
-    this.parcellationSelect.disabled = state.view.representation !== 'regional' || availableParcellations.length < 2;
+      description: value === 'allen' ? 'Full Allen ontology' : `${titleCaseToken(value)} reduced mapping`,
+      group: 'Parcellation',
+      disabled: state.view.representation !== 'regional' || availableParcellations.length < 2,
+    }));
+    this.representationContext.setOptions(
+      [...representationOptions, ...parcellationOptions],
+      [`representation:${state.view.representation}`, `parcellation:${state.view.parcellation}`],
+      representationOptions.length + parcellationOptions.length === 0,
+    );
   }
 
   private renderColorSettings(model: ShellModel): void {
@@ -1030,6 +997,17 @@ export class AppShell {
     this.syncDrawerButtons(null);
   }
 
+  private closeContextMenus(except?: ContextMenu): boolean {
+    let closed = false;
+    for (const menu of this.contextMenus) {
+      if (menu !== except && menu.isOpen) {
+        menu.close();
+        closed = true;
+      }
+    }
+    return closed;
+  }
+
   private syncDrawerButtons(open: DrawerName | null): void {
     for (const button of this.app.querySelectorAll<HTMLButtonElement>('[data-drawer-trigger]')) {
       button.setAttribute('aria-expanded', button.dataset.drawerTrigger === open ? 'true' : 'false');
@@ -1048,7 +1026,8 @@ export class AppShell {
   private readonly onResize = (): void => this.syncLayoutMode();
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (event.key !== 'Escape') return;
+    if (event.key !== 'Escape' || event.defaultPrevented) return;
+    if (this.closeContextMenus()) return;
     if (this.maximizedView) {
       this.toggleMaximizedView(this.maximizedView);
       return;
