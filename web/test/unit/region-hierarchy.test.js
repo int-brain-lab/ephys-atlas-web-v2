@@ -5,7 +5,7 @@ import {
   loadAtlasRegionCatalog,
   parseAtlasRegionCatalog,
 } from '../../.test-dist/data/atlas-regions.js';
-import { buildRegionHierarchy } from '../../.test-dist/data/region-hierarchy.js';
+import { buildGreyMatterHierarchy, buildRegionHierarchy } from '../../.test-dist/data/region-hierarchy.js';
 
 function row(atlasId, acronym, parentId, depth, mappingMember = true, colorHex = '#123456') {
   return {
@@ -45,6 +45,27 @@ test('catalog hierarchy follows parent IDs at arbitrary depth and retains ontolo
   ]);
   assert.equal(hierarchy[2].region.colorHex, '#abcdef');
   assert.equal(hierarchy[1].region.mappingMember, false);
+});
+
+test('grey-matter projection promotes CH, BS, and CB while retaining the full catalog outside the view', () => {
+  const regions = parseAtlasRegionCatalog(document([
+    row(-997, 'root', null, 0),
+    row(-8, 'grey', -997, 1),
+    row(-567, 'CH', -8, 2),
+    row(-688, 'CTX', -567, 3),
+    row(-343, 'BS', -8, 2),
+    row(-512, 'CB', -8, 2),
+    row(-1009, 'fiber tracts', -997, 1),
+  ])).mappings.allen;
+
+  const hierarchy = buildGreyMatterHierarchy(regions);
+  assert.deepEqual(hierarchy.map(({ region, depth }) => [region.id, region.parentId, depth]), [
+    ['-567', null, 0],
+    ['-688', '-567', 1],
+    ['-343', null, 0],
+    ['-512', null, 0],
+  ]);
+  assert.equal(regions.length, 7);
 });
 
 test('catalog rejects missing ontology parents', () => {

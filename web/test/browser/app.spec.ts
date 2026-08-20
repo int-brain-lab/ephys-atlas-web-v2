@@ -195,8 +195,8 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await page.goto('/');
 
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
-  await expect(page.locator('.region-row')).toHaveCount(1097);
-  await expect(page.locator('.region-row').first()).toContainText('root');
+  await expect(page.locator('.region-row')).toHaveCount(874);
+  await expect(page.locator('.region-row').first()).toContainText('CH');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
   await expect(page.locator('.region-pane__selected')).toHaveAttribute('data-empty', 'true');
   await expect(page.locator('.selected-regions__list')).toBeEmpty();
@@ -386,7 +386,7 @@ test('region search filters loaded metadata rather than prototype rows', async (
   await expect(page.locator('.region-row:not([hidden])')).toHaveCount(1);
   await expect(page.locator('.region-row:not([hidden])')).toContainText('MD');
   await expect(page.locator('.region-row:visible')).toHaveCount(1);
-  await expect(page.locator('.region-row[data-region-id="-997"]')).toBeHidden();
+  await expect(page.locator('.region-row[data-region-id="-567"]')).toBeHidden();
 });
 
 test('view maximize is reversible with Escape', async ({ page }) => {

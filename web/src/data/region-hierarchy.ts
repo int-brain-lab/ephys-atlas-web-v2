@@ -61,3 +61,25 @@ export function buildRegionHierarchy(regions: readonly RegionMetadata[]): readon
   }
   return rows;
 }
+
+/**
+ * Project the complete Allen ontology onto the grey-matter subtree used by the
+ * browser. The catalog remains complete for provenance and lookup; only its UI
+ * presentation omits the root/grey wrappers and non-grey root branches.
+ */
+export function buildGreyMatterHierarchy(regions: readonly RegionMetadata[]): readonly RegionHierarchyRow[] {
+  const hierarchy = buildRegionHierarchy(regions);
+  const greyIndex = hierarchy.findIndex(({ region }) => region.acronym === 'grey' && Math.abs(region.atlasId) === 8);
+  if (greyIndex < 0) return hierarchy;
+  const greyDepth = hierarchy[greyIndex]?.depth ?? 0;
+  let end = greyIndex + 1;
+  while (end < hierarchy.length && (hierarchy[end]?.depth ?? 0) > greyDepth) end += 1;
+  return hierarchy.slice(greyIndex + 1, end).map((entry) => {
+    const depth = entry.depth - greyDepth - 1;
+    return {
+      ...entry,
+      depth,
+      region: depth === 0 ? { ...entry.region, parentId: null } : entry.region,
+    };
+  });
+}

@@ -4,7 +4,7 @@ import type {
   RegionMetadata,
   RegionalFeaturePayload,
 } from '../data/contracts.js';
-import { buildRegionHierarchy } from '../data/region-hierarchy.js';
+import { buildGreyMatterHierarchy } from '../data/region-hierarchy.js';
 import type { AppState, StatisticId } from '../domain/types.js';
 import { regionalColorRange } from '../rendering/scalar-colormap.js';
 
@@ -172,7 +172,7 @@ export class RegionalPanelController {
 
     const rovingRegionId = this.rovingButton?.dataset.regionButton;
     const restoreFocus = document.activeElement === this.rovingButton;
-    const rows = buildRegionHierarchy(model.regions).map(({ region, depth, hasChildren }) =>
+    const rows = buildGreyMatterHierarchy(model.regions).map(({ region, depth, hasChildren }) =>
       this.regionRow(region, depth, hasChildren, valueById.get(region.id), statistic, unit, range, selected));
     this.list.replaceChildren(...rows);
     this.rowById.clear();
