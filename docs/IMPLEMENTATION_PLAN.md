@@ -78,11 +78,12 @@ Blocked by: Q4 and Q5.
 
 Unblocked preparation work Codex may do before scientific resolution:
 
-1. make the real-volume benchmark harness reproducible from a local source object;
-2. measure 3-D chunk sizes such as 32 and 64 where practical;
-3. implement/measure orthogonal slice-pack candidates such as 4 and 8 consecutive slices;
-4. record request/bytes/decode/memory metrics in `benchmarks/` without selecting the winner prematurely;
-5. ensure volume renderer errors are explicit for unsupported transforms/layouts.
+1. extend the now-reproducible three-feature real storage benchmark to browser
+   HTTP, decode, cache, and paint measurements, prioritizing 4/8-slice packs
+   while retaining 32³/64³ cubes as comparison baselines;
+2. record request/bytes/decode/memory metrics in `benchmarks/` without selecting
+   the winner prematurely;
+3. ensure volume renderer errors are explicit for unsupported transforms/layouts.
 
 After Q4/Q5 resolution:
 

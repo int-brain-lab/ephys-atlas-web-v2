@@ -1,0 +1,182 @@
+{
+  "axis_semantics": "physical axis0/axis1/axis2 only; scientific mapping unresolved",
+  "benchmark": "real-ephys-volume-layout-v1",
+  "extraction": {
+    "bytes": 154091648,
+    "dtype": "float16",
+    "dtype_descriptor": "<f2",
+    "feature_index": 26,
+    "member": "ephys_atlas_vol.npy",
+    "output": "rms_ap.npy",
+    "output_shape": [
+      456,
+      528,
+      320
+    ],
+    "seconds": 5.288377708056942,
+    "sha256": "ccafdf9243722ef70e532b7f32bcc6d37f77687a00b236bc8ae26fa74f4bd61d",
+    "source": "data/source/ephys_atlas_volumes/2026_W12/brainwide_ephys_atlas_25um.npz",
+    "source_shape": [
+      456,
+      528,
+      320,
+      41
+    ]
+  },
+  "feature_id": "rms_ap",
+  "feature_index": 26,
+  "layouts": [
+    {
+      "center_planes": [
+        {
+          "axis": "axis0",
+          "gzip_bytes": 1739426,
+          "requests": 170
+        },
+        {
+          "axis": "axis1",
+          "gzip_bytes": 1597570,
+          "requests": 150
+        },
+        {
+          "axis": "axis2",
+          "gzip_bytes": 2705080,
+          "requests": 255
+        }
+      ],
+      "center_union": {
+        "gzip_bytes": 5467357,
+        "requests": 534
+      },
+      "edge": 32,
+      "encode_seconds": 2.567696416983381,
+      "grid": [
+        15,
+        17,
+        10
+      ],
+      "gzip_bytes": 18211937,
+      "gzip_ratio": 0.1181890930792298,
+      "layout": "chunks3d",
+      "objects": 2550,
+      "raw_bytes": 154091520
+    },
+    {
+      "center_planes": [
+        {
+          "axis": "axis0",
+          "gzip_bytes": 3931481,
+          "requests": 45
+        },
+        {
+          "axis": "axis1",
+          "gzip_bytes": 3372874,
+          "requests": 40
+        },
+        {
+          "axis": "axis2",
+          "gzip_bytes": 5550707,
+          "requests": 72
+        }
+      ],
+      "center_union": {
+        "gzip_bytes": 10317370,
+        "requests": 136
+      },
+      "edge": 64,
+      "encode_seconds": 2.6684743750374764,
+      "grid": [
+        8,
+        9,
+        5
+      ],
+      "gzip_bytes": 18609554,
+      "gzip_ratio": 0.12076948815872542,
+      "layout": "chunks3d",
+      "objects": 360,
+      "raw_bytes": 154091520
+    },
+    {
+      "axes": [
+        {
+          "axis": "axis0",
+          "center_pack_gzip_bytes": 242381,
+          "gzip_bytes": 20836379,
+          "objects": 114,
+          "raw_bytes": 154091520
+        },
+        {
+          "axis": "axis1",
+          "center_pack_gzip_bytes": 214264,
+          "gzip_bytes": 19112011,
+          "objects": 132,
+          "raw_bytes": 154091520
+        },
+        {
+          "axis": "axis2",
+          "center_pack_gzip_bytes": 408449,
+          "gzip_bytes": 21093103,
+          "objects": 80,
+          "raw_bytes": 154091520
+        }
+      ],
+      "center_planes": {
+        "gzip_bytes": 865094,
+        "requests": 3
+      },
+      "depth": 4,
+      "encode_seconds": 7.360428707906976,
+      "gzip_bytes": 61041493,
+      "gzip_ratio": 0.1320459706889343,
+      "layout": "orthogonal_slice_packs",
+      "objects": 326,
+      "raw_bytes": 462274560
+    },
+    {
+      "axes": [
+        {
+          "axis": "axis0",
+          "center_pack_gzip_bytes": 485933,
+          "gzip_bytes": 20842223,
+          "objects": 57,
+          "raw_bytes": 154091520
+        },
+        {
+          "axis": "axis1",
+          "center_pack_gzip_bytes": 425006,
+          "gzip_bytes": 19109279,
+          "objects": 66,
+          "raw_bytes": 154091520
+        },
+        {
+          "axis": "axis2",
+          "center_pack_gzip_bytes": 813955,
+          "gzip_bytes": 21091925,
+          "objects": 40,
+          "raw_bytes": 154091520
+        }
+      ],
+      "center_planes": {
+        "gzip_bytes": 1724894,
+        "requests": 3
+      },
+      "depth": 8,
+      "encode_seconds": 7.439504749840125,
+      "gzip_bytes": 61043427,
+      "gzip_ratio": 0.13205015434983053,
+      "layout": "orthogonal_slice_packs",
+      "objects": 163,
+      "raw_bytes": 462274560
+    }
+  ],
+  "machine": {
+    "numpy": "2.5.2",
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "python": "3.12.13"
+  },
+  "source": {
+    "bytes": 1636734203,
+    "path": "data/source/ephys_atlas_volumes/2026_W12/brainwide_ephys_atlas_25um.npz",
+    "sha256": "61987870fb1d0e3574f63c4b75f119b65778ef8a4521e592317b3aab9dcbe052"
+  }
+}

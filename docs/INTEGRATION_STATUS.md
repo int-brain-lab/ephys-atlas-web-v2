@@ -173,6 +173,13 @@ This resolves physical-container facts but not the authoritative scientific
 axis mapping/affine, outside semantics, or interpretation of stored values
 versus the included mean/std arrays.
 
+A bounded-memory real layout benchmark extracts `psd_lfp`, `rms_ap`, and
+`polarity` and measures 32³/64³ cubes against 4/8-slice packs. Packs reduce the
+three center-plane request count to 3 with 0.83–3.32 MiB gzip, versus 136–534
+cube requests with 5.21–21.77 MiB. The result prioritizes packs for browser
+measurement but does not resolve Q5 until browser/HTTP, cache, latency, and
+broader-feature evidence is recorded.
+
 ## Remaining launch work
 
 The active sequence is defined in `docs/IMPLEMENTATION_PLAN.md`. In summary:
