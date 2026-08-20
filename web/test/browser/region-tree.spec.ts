@@ -54,8 +54,17 @@ test('ontology branches disclose accessibly and missing feature values stay visu
   await expect(rootToggle).toHaveAttribute('aria-label', 'Collapse root');
   await expect(page.getByText('no value', { exact: true })).toHaveCount(0);
 
-  await rootToggle.click();
+  const foldMotion = await rootToggle.evaluate((toggle) => {
+    (toggle as HTMLButtonElement).click();
+    const list = toggle.ownerDocument.querySelector('.region-list');
+    const firstChild = list?.querySelector<HTMLElement>('.region-row[data-region-id="-8"]');
+    return {
+      active: list?.getAttribute('data-fold-motion'),
+      transitionDuration: firstChild ? getComputedStyle(firstChild).transitionDuration : '',
+    };
+  });
   await expect(root).toHaveAttribute('aria-expanded', 'false');
+  expect(foldMotion).toEqual({ active: 'true', transitionDuration: '0.13s, 0.13s, 0.13s' });
   await expect(page.locator('.region-row:not([hidden])')).toHaveCount(1);
   await expect(page.locator('.region-row:visible')).toHaveCount(1);
   await expect(page.locator('.region-row[data-region-id="-8"]')).toBeHidden();
