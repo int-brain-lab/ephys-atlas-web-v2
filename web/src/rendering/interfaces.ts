@@ -15,6 +15,7 @@ export interface RendererPresentation {
   feature: FeaturePayload | null;
   coloring: ColoringState;
   selectedRegionIds: readonly string[];
+  hoveredRegionId: string | null;
 }
 
 export interface SliceRenderer {

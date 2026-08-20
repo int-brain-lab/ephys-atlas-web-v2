@@ -159,6 +159,23 @@ test('renderer region selection flows back into shared URL state', async ({ page
   await expect(page.locator('.selected-region')).toContainText('R1');
 });
 
+test('region hover is linked across all anatomical projections', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockCuratedSlices(page);
+  await page.goto('/');
+
+  const source = page.locator('[data-view="coronal"] path.allen_region_835').first();
+  await source.dispatchEvent('pointermove');
+  for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
+    await expect(page.locator(`[data-view="${axis}"] path.allen_region_835`).first()).toHaveClass(/is-highlighted/);
+  }
+
+  await page.locator('[data-view="coronal"] .view-frame__slice-figure').dispatchEvent('pointerleave');
+  for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
+    await expect(page.locator(`[data-view="${axis}"] path.allen_region_835`).first()).not.toHaveClass(/is-highlighted/);
+  }
+});
+
 test('region search filters loaded metadata rather than prototype rows', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await mockCuratedSlices(page);

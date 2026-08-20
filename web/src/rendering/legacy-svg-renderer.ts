@@ -50,6 +50,7 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     feature: null,
     coloring: { statistic: 'mean', colormap: 'viridis', range: { mode: 'auto' }, scale: 'linear' },
     selectedRegionIds: [],
+    hoveredRegionId: null,
   };
 
   constructor(options: LegacySvgSliceRendererOptions = {}) {
@@ -127,6 +128,12 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
       const legacyIndex = crosswalk?.atlasIdToLegacyIndex.get(atlasId);
       if (legacyIndex != null) selectedRegionIds.add(legacyIndex);
     }
+    const hoveredAtlasId = this.presentation.hoveredRegionId == null
+      ? null
+      : Number(this.presentation.hoveredRegionId);
+    const highlightedRegionId = hoveredAtlasId == null || !Number.isFinite(hoveredAtlasId)
+      ? null
+      : crosswalk?.atlasIdToLegacyIndex.get(hoveredAtlasId) ?? null;
     const feature = this.presentation.feature;
     const atlasColors = feature?.representation === 'regional' && feature.parcellation === frame.mapping
       ? regionalColorMap(feature, this.presentation.coloring) : undefined;
@@ -141,6 +148,7 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
       ...frame,
       ...(regionColors ? { regionColors } : {}),
       selectedRegionIds,
+      highlightedRegionId,
     };
   }
 
