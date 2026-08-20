@@ -4,7 +4,7 @@ python := "python3"
 bootstrap:
     {{python}} -m pip install -e 'builder[test]'
     {{python}} -m pip install -e publishing
-    cd web && npm install
+    cd web && npm ci
     cd web && npx playwright install chromium
 
 # Run the browser app locally.
@@ -26,6 +26,7 @@ test-python: test-builder test-publishing
 test-web:
     cd web && npm run typecheck
     cd web && npm run test:unit
+    cd web && npm run test:rendering
     cd web && npm run build
 
 # User-observable browser regression suite.
@@ -43,8 +44,8 @@ data-pull dataset release="latest":
     PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli pull {{dataset}} {{release}} --dest data/source
 
 # Build the launch channel dataset. Raw/denoised and population are intentionally explicit.
-data-build-channels release feature_mode population created_at:
-    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli build-channels {{release}} --feature-mode {{feature_mode}} --population {{population}} --created-at {{created_at}}
+data-build-channels release feature_mode population created_at ibleatools_commit iblatlas_commit builder_commit:
+    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli build-channels {{release}} --feature-mode {{feature_mode}} --population {{population}} --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
 
 # Validate a dataset-specific build output. Scientific transforms stay explicit recipes.
 data-build dataset release="latest":

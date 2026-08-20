@@ -1,6 +1,10 @@
 # Integration status
 
-Status: local Codex handoff baseline complete on `main`. All accepted implementation work is consolidated there, GitHub lists no other branches, and the handoff baseline has passed Python, TypeScript, unit, production-build, and Playwright gates. `docs/IMPLEMENTATION_PLAN.md` is now the active execution plan and `docs/OPEN_QUESTIONS.md` contains unresolved choices that must not be guessed.
+Status: active local Codex implementation on `main`. The handoff baseline has
+been extended with explicit ephys channel/cluster recipes, corrected regional
+rendering identities, hardened local imports/publication, reproducible web
+dependencies, and stronger semantic validation. The full gate remains the
+completion criterion.
 
 ## Development and handoff state
 
@@ -29,6 +33,8 @@ The repository contains:
 - deterministic golden regional+volume fixtures;
 - builder validation and deterministic packaging;
 - source acquisition/provenance helpers.
+- semantic cross-resource validation for both supported volume layouts;
+- a committed npm lockfile and active unit/rendering/browser CI suites.
 
 The golden fixture is synthetic and has no scientific interpretation.
 
@@ -45,10 +51,29 @@ The builder makes scientifically material choices explicit rather than inheritin
 - dynamic source feature catalog;
 - Allen/Beryl/Cosmos regional outputs;
 - descriptive statistics/histograms and schema-v0.1 metadata/provenance.
+- distinct raw and denoised feature variants when mode `both` is selected;
+- left-hemisphere folding of bilateral atlas IDs;
+- preservation of source values without the upstream implicit alpha replacement;
+- pinned `ibleatools`, `iblatlas`, and builder commits plus the copied source manifest.
 
-A production scientific release is intentionally not frozen yet. Q1-Q3 in `docs/OPEN_QUESTIONS.md` must be resolved first.
+Q1 and Q3 are resolved: releases contain both raw and denoised variants and
+use the explicit `inside` population with no additional physiological QC. A
+paper-facing scientific release is not frozen because Q2 still requires the
+final immutable `ea_active` vintage.
 
-Important source ambiguity: the private paper example comments that `load_denoised=False` is the raw path, but its actual `read_features_from_disk(...)` call omits that parameter. The current `ibleatools` API defaults `load_denoised=True`. Therefore the effective paper-example behavior cannot be treated as an authoritative raw/denoised decision without explicit confirmation.
+## `ephys_atlas_clusters` builder
+
+A deterministic cluster release recipe is implemented:
+
+- source pull requires an explicit project and produces a content-derived immutable snapshot ID;
+- snapshot builds require an explicit nonempty scalar feature catalog and pinned code commits;
+- all rows of `clusters.table.pqt` are eligible; `clusters_good.table.pqt` is not used;
+- every finite cluster has equal weight within its left-folded Allen/Beryl/Cosmos region;
+- no insertion balancing or hidden good-unit/QC filter is applied;
+- schema-provided units are retained and absent units remain null.
+
+Production remains blocked on the remaining Q6 choices: exact project/source
+snapshot and launch feature catalog.
 
 ## Regional viewer vertical slice
 
@@ -64,6 +89,13 @@ The regional schema-v0.1 path is implemented end-to-end using the golden fixture
 8. selection persisted in URL state.
 
 The lower-level curated SVG renderer remains under the application `SliceRenderer` facade.
+
+The renderer now explicitly translates scientific atlas IDs to the legacy
+BrainRegions row indices embedded in curated SVG class names. Negative folded
+atlas IDs are supported; browser selection and URL state remain atlas-ID based.
+Independent request/render generations prevent stale feature, parcellation, or
+volume-slice results from overwriting newer state, and renderer failures reach
+visible runtime error status.
 
 The five deployed v1 curated bundles are pinned by identity/inventory in `docs/frontend/LEGACY_CURATED_ASSETS.md`. Orthogonal bundles contain even display indices; scientific navigation remains on full 10 um domains and the display layer chooses the nearest available curated slice.
 
@@ -90,7 +122,9 @@ The capability-based publishing implementation is integrated:
 - dataset ownership without a user/OAuth platform;
 - private resumable staged uploads;
 - byte-size/SHA checks;
-- optional external schema validator before atomic publication;
+- manifest dataset/release identity binding and bounded external validation;
+- serialized resumable appends under threaded deployment;
+- idempotent recovery when a process stops after the release-directory rename;
 - immutable public release directories and mutable aliases;
 - administrative API state kept separate from the static browser catalog;
 - public `catalog.json` emitted in the same v0.1 browser contract consumed by `HttpDatasetSource`.
@@ -104,6 +138,9 @@ Publishing prepares/distributes releases but never transforms scientific data.
 - Volume resource loading likewise uses one logical payload contract across HTTP and IndexedDB/local storage.
 - Curated SVG display inventory is validated before rendering.
 - Strict TypeScript indexing in the volume adapter is resolved without weakening compiler settings.
+- Local imports validate the complete supported regional/volume resource graph and every declared SHA-256 before opening a write transaction.
+- Local storage is namespaced by source dataset and release, preventing same-release collisions across datasets.
+- The 12 standalone rendering tests are compiled and run locally and in CI rather than remaining outside the package gate.
 
 ## Current canonical source evidence
 
@@ -112,7 +149,8 @@ Publishing prepares/distributes releases but never transforms scientific data.
 - project: `ea_active`;
 - private example vintage: `2025_W28` (not yet the final paper freeze);
 - feature loading is through current `ephysatlas.data` tooling;
-- raw/denoised effective behavior is unresolved as described above.
+- raw and denoised source tables are loaded explicitly as separate feature variants;
+- the final paper source vintage remains unresolved.
 
 ### Encoding volumes
 
@@ -130,9 +168,9 @@ This establishes contents/shape but not the authoritative scientific affine. Val
 
 The active sequence is defined in `docs/IMPLEMENTATION_PLAN.md`. In summary:
 
-1. resolve Q1-Q3 and build/validate a real immutable `ephys_atlas_channels` release;
+1. install the pinned scientific environment, build/validate a latest immutable development channel release, and freeze the paper release after Q2;
 2. benchmark the unblocked M2 volume transport candidates, then resolve Q4-Q5 and build the real volume release/transport;
-3. define/build `ephys_atlas_clusters` (Q6);
+3. resolve the remaining cluster project/catalog choices and build the production cluster release (Q6);
 4. define/build exact `brainwide_map` product (Q7);
 5. complete downloads/local-import production UX;
 6. relocate pinned curated assets and finalize catalog/origin/deployment/publishing choices (Q8-Q10);

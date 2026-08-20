@@ -10,7 +10,7 @@ Status labels:
 
 ## Q1 — Channel features: raw or denoised?
 
-Status: **BLOCKER** for the production `ephys_atlas_channels` release.
+Status: **RESOLVED (2026-08-20)**.
 
 Evidence currently available:
 
@@ -19,11 +19,12 @@ Evidence currently available:
 - the actual example call to `read_features_from_disk(...)` omits `load_denoised`;
 - the current `ibleatools` implementation defaults `load_denoised=True`, which loads `raw_ephys_features_denoised.pqt`; `False` loads `raw_ephys_features.pqt`.
 
-Therefore the example text and effective current default are ambiguous. Do not silently preserve either interpretation.
-
-Resolution needed: an authoritative scientific choice for the production/paper release, plus confirmation of the relevant `ibleatools` version if reproducing a historical run.
-
-Blocks: production channel build, paper-facing channel provenance.
+Resolution: publish raw and denoised source variants as separately identified
+features in the same immutable release, for example `rms_ap.raw` and
+`rms_ap.denoised`. Raw values remain the audit/reference layer; validated
+denoised values may be the default visualization. The builder reads the two
+source parquet files explicitly and records the variant, source column, and
+pinned tool commits rather than inheriting `read_features_from_disk()` defaults.
 
 ## Q2 — Channel source vintage
 
@@ -37,13 +38,14 @@ Blocks: paper-facing channel release and final catalog defaults.
 
 ## Q3 — Channel QC / source population
 
-Status: **BLOCKER** for the production `ephys_atlas_channels` release.
+Status: **RESOLVED (2026-08-20)**.
 
-The builder now requires an explicit population rather than guessing. The exact launch recipe still needs authoritative confirmation, including whether outside-brain rows are excluded and what channel/QC labels are applied before regional aggregation.
-
-Resolution needed: named, reproducible population/QC recipe with source columns and exclusion rules.
-
-Blocks: production regional values/statistics/histograms.
+Resolution: use the explicit `inside` population. Exclude rows marked outside
+the atlas by the source channel labels, then exclude non-finite observations
+independently per feature. Apply no additional physiological label/QC filter,
+clipping, winsorization, or silent alpha replacement. Fold bilateral atlas IDs
+onto the left representation before regional aggregation and record counts and
+the complete recipe in provenance.
 
 ## Q4 — Encoding-volume scientific transform and outside-brain semantics
 
@@ -67,11 +69,19 @@ Blocks: final browser volume transport and production packaging recipe.
 
 ## Q6 — Cluster launch population and feature set
 
-Status: **BLOCKER** for `ephys_atlas_clusters`.
+Status: **PARTIALLY RESOLVED; BLOCKER** for the production `ephys_atlas_clusters` release.
 
-Resolution needed: authoritative source snapshot, population/QC definition, launch feature catalog, units/transforms, and parcellation aggregation semantics.
+Resolved: use every row of `clusters.table.pqt`, not
+`clusters_good.table.pqt`. Apply no good-unit filter or insertion balancing.
+For every explicitly selected scalar feature, average all finite clusters in
+each left-folded Allen/Beryl/Cosmos region with one equal-weight observation per
+cluster; publish descriptive statistics, histograms, and counts.
 
-Blocks: cluster dataset builder and production release.
+Still needed: the authoritative project/source snapshot and the explicit
+launch feature catalog. Units/transforms must come from that pinned source
+schema and remain null rather than being guessed when absent.
+
+Blocks: production cluster source pull/release, not the deterministic builder machinery.
 
 ## Q7 — Exact `brainwide_map` launch product
 
