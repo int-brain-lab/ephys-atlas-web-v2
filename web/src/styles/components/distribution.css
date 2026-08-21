@@ -13,7 +13,7 @@
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   gap: .24rem;
   padding: .35rem .55rem .4rem;
 }
@@ -132,6 +132,26 @@
 
 .distribution-chart__hover-label[data-alignment='end'] {
   transform: translateX(-100%);
+}
+
+.distribution-chart__axis {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: .52rem;
+  line-height: 1;
+}
+
+.distribution-chart__axis-unit {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.distribution-chart__axis-max {
+  text-align: right;
 }
 
 .distribution-chart__legend {

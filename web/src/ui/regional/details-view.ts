@@ -218,6 +218,21 @@ export function renderDistribution(
   hoverLabel.setAttribute('aria-hidden', 'true');
   plot.append(svg, bins, hoverLabel);
 
+  const firstEdge = histogram.edges[0];
+  const lastEdge = histogram.edges.at(-1);
+  const axis = html('div', 'distribution-chart__axis');
+  const minimum = html('span', 'distribution-chart__axis-min');
+  const axisUnit = html('span', 'distribution-chart__axis-unit');
+  const maximum = html('span', 'distribution-chart__axis-max');
+  minimum.textContent = firstEdge === undefined ? '' : formatRegionalValue(firstEdge, 'mean', null);
+  axisUnit.textContent = unit ?? '';
+  maximum.textContent = lastEdge === undefined ? '' : formatRegionalValue(lastEdge, 'mean', null);
+  axis.setAttribute(
+    'aria-label',
+    `Histogram range ${minimum.textContent}${unit ? ` ${unit}` : ''} to ${maximum.textContent}${unit ? ` ${unit}` : ''}`,
+  );
+  axis.append(minimum, axisUnit, maximum);
+
   const legend = html('div', 'distribution-chart__legend');
   const globalLegend = html('span', 'distribution-chart__legend-item');
   globalLegend.dataset.series = 'global';
@@ -230,7 +245,7 @@ export function renderDistribution(
     item.textContent = `${regionById.get(distribution.regionId)?.acronym ?? distribution.regionId} · n=${distribution.total.toLocaleString('en-US')}`;
     legend.append(item);
   });
-  chart.append(meta, plot, legend);
+  chart.append(meta, plot, axis, legend);
   target.replaceChildren(chart);
 }
 

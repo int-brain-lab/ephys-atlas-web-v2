@@ -106,7 +106,8 @@ same immutable resource. Dataset/parcellation changes clear stale hover, and
 regional-tree rerenders preserve current hover presentation. Projection and
 region-list hover also place a transient labeled marker at the hovered region's
 current statistic on the global observation histogram when the statistic shares
-that histogram's value axis.
+that histogram's value axis. The histogram x-axis exposes its minimum and
+maximum bin edges together with the feature unit.
 
 The global keyboard layer opens feature search with `/`, moves to adjacent
 manifest-ordered features with `Shift + Down` / `Shift + Up`, and opens an

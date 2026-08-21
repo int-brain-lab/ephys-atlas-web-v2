@@ -230,6 +230,13 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.region-row').first()).toContainText('CH');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
   await expect(page.locator('.distribution-chart__meta')).toContainText('Observation distribution · dB rel. V');
+  await expect(page.locator('.distribution-chart__axis')).toHaveAttribute(
+    'aria-label',
+    'Histogram range -0.5 dB rel. V to 3.5 dB rel. V',
+  );
+  await expect(page.locator('.distribution-chart__axis-min')).toHaveText('-0.5');
+  await expect(page.locator('.distribution-chart__axis-unit')).toHaveText('dB rel. V');
+  await expect(page.locator('.distribution-chart__axis-max')).toHaveText('3.5');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-total', '11');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-probability-sum', '1');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('d', / C /);
