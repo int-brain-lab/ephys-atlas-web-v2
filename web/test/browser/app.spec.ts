@@ -348,21 +348,77 @@ test('scientific context menus and color controls are driven by the loaded relea
 
   await page.getByRole('button', { name: 'Settings' }).click();
   const settings = page.getByRole('complementary', { name: 'Visualization settings' });
+  await expect(settings).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
   await expect(settings.getByRole('heading', { name: 'Data' })).toHaveCount(0);
   await expect(page.getByLabel('Regional statistic').locator('option')).toHaveCount(5);
   await expect(page.getByLabel('Feature color legend')).toBeVisible();
   await expect(page.locator('.color-legend__unit')).toHaveText('dB rel. V');
+  await expect(page.locator('.color-range__histogram-bin')).toHaveCount(8);
+  await expect(page.getByRole('slider', { name: 'Minimum color value', exact: true })).toHaveValue('-0.25');
+  await expect(page.getByRole('slider', { name: 'Maximum color value', exact: true })).toHaveValue('3.25');
+  await expect(settings.getByRole('spinbutton')).toHaveCount(0);
 
-  await page.getByLabel('Color range mode').selectOption('fixed');
-  await page.getByLabel('Minimum color value').fill('-2');
-  await page.getByLabel('Maximum color value').fill('8');
-  await page.getByLabel('Maximum color value').blur();
+  const rangeBar = page.locator('.color-legend__bar');
+  const minimumBounds = await rangeBar.boundingBox();
+  expect(minimumBounds).not.toBeNull();
+  await page.mouse.move(
+    minimumBounds!.x + minimumBounds!.width * .0625,
+    minimumBounds!.y + minimumBounds!.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    minimumBounds!.x + minimumBounds!.width * .25,
+    minimumBounds!.y + minimumBounds!.height / 2,
+    { steps: 4 },
+  );
+  await page.mouse.up();
+  await expect(page.getByLabel('Color range mode')).toHaveValue('fixed');
+  await expect.poll(() => new URL(page.url()).searchParams.get('range')).not.toBeNull();
+  await expect(page.getByRole('button', { name: 'Reset' })).toBeVisible();
+  await expect(rangeBar).toHaveCSS('background-image', 'none');
+  await expect(page.locator('.color-range__selection')).toHaveCSS('background-image', /linear-gradient/);
+
+  const rangeBeforeWindowDrag = new URL(page.url()).searchParams.get('range')!.split(',').map(Number);
+  const selectionBounds = await page.locator('.color-range__selection').boundingBox();
+  expect(selectionBounds).not.toBeNull();
+  await page.mouse.move(
+    selectionBounds!.x + selectionBounds!.width / 2,
+    selectionBounds!.y + selectionBounds!.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    selectionBounds!.x + selectionBounds!.width / 2 + minimumBounds!.width * .05,
+    selectionBounds!.y + selectionBounds!.height / 2,
+    { steps: 3 },
+  );
+  await page.mouse.up();
+  await expect.poll(() => new URL(page.url()).searchParams.get('range')).not.toBe(rangeBeforeWindowDrag.join(','));
+  const rangeAfterWindowDrag = new URL(page.url()).searchParams.get('range')!.split(',').map(Number);
+  expect(rangeAfterWindowDrag[1]! - rangeAfterWindowDrag[0]!).toBeCloseTo(
+    rangeBeforeWindowDrag[1]! - rangeBeforeWindowDrag[0]!,
+    10,
+  );
+
+  await page.getByRole('button', { name: 'Enter exact minimum color value' }).click();
+  const exactMinimum = page.getByRole('spinbutton', { name: 'Exact minimum color value', exact: true });
+  await expect(exactMinimum).toBeFocused();
+  await exactMinimum.fill('-2');
+  await page.getByRole('button', { name: 'Apply' }).click();
+  await page.getByRole('button', { name: 'Enter exact maximum color value' }).click();
+  await page.getByRole('spinbutton', { name: 'Exact maximum color value', exact: true }).fill('8');
+  await page.getByRole('button', { name: 'Apply' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('range')).toBe('-2,8');
   await expect(page.locator('.color-legend__minimum')).toHaveText('-2');
   await expect(page.locator('.color-legend__maximum')).toHaveText('8');
 
-  await page.getByLabel('Color range mode').selectOption('auto');
+  await page.getByRole('button', { name: 'Reset' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('range')).toBeNull();
+  await expect(page.getByLabel('Color range mode')).toHaveValue('auto');
+
+  await page.getByRole('slider', { name: 'Maximum color value', exact: true }).focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByLabel('Color range mode')).toHaveValue('fixed');
+  await expect.poll(() => new URL(page.url()).searchParams.get('range')).not.toBeNull();
 });
 
 test('scientific context picker becomes a bounded phone sheet', async ({ page }) => {
@@ -386,6 +442,30 @@ test('scientific context picker becomes a bounded phone sheet', async ({ page })
 
   await page.getByRole('button', { name: 'Coronal', exact: true }).click();
   await expect(feature.locator('.context-menu__trigger')).toHaveAttribute('aria-expanded', 'false');
+});
+
+test('color range remains directly editable in the phone settings drawer', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Settings' }).click();
+
+  const settings = page.getByRole('complementary', { name: 'Visualization settings' });
+  await expect(settings).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+  const rangeBar = page.locator('.color-legend__bar');
+  const barBounds = await rangeBar.boundingBox();
+  const settingsBounds = await settings.boundingBox();
+  expect(barBounds).not.toBeNull();
+  expect(settingsBounds).not.toBeNull();
+  expect(barBounds!.x).toBeGreaterThanOrEqual(settingsBounds!.x);
+  expect(barBounds!.x + barBounds!.width).toBeLessThanOrEqual(settingsBounds!.x + settingsBounds!.width);
+
+  await rangeBar.click({ position: { x: barBounds!.width * .01, y: barBounds!.height / 2 } });
+  await expect(page.getByLabel('Color range mode')).toHaveValue('fixed');
+  await page.getByRole('button', { name: 'Enter exact minimum color value' }).click();
+  const editorBounds = await page.locator('.color-range__exact').boundingBox();
+  expect(editorBounds).not.toBeNull();
+  expect(editorBounds!.x).toBeGreaterThanOrEqual(settingsBounds!.x);
+  expect(editorBounds!.x + editorBounds!.width).toBeLessThanOrEqual(settingsBounds!.x + settingsBounds!.width);
 });
 
 test('share, download and info expose the immutable scientific context', async ({ page }) => {

@@ -14,8 +14,10 @@ import type {
 import type { RegionInspection, SliceRenderer } from '../rendering/interfaces.js';
 import { regionalColorRange } from '../rendering/scalar-colormap.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
+import { ColorRangeControl } from './color-range-control.js';
 import { ContextMenu, type ContextMenuOption } from './context-menu.js';
 import type { DisplaySliceInventory } from '../rendering/display-slice-inventory.js';
+import type { RegionTooltipModel } from './regional/model.js';
 
 export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
@@ -123,14 +125,7 @@ export class AppShell {
   private colormapSelect!: HTMLSelectElement;
   private scaleSelect!: HTMLSelectElement;
   private rangeModeSelect!: HTMLSelectElement;
-  private rangeMinInput!: HTMLInputElement;
-  private rangeMaxInput!: HTMLInputElement;
-  private legend!: HTMLElement;
-  private legendContext!: HTMLElement;
-  private legendBar!: HTMLElement;
-  private legendMin!: HTMLElement;
-  private legendMax!: HTMLElement;
-  private legendUnit!: HTMLElement;
+  private colorRangeControl!: ColorRangeControl;
   private featureId: string | null = null;
   private activeView: WorkspaceView = 'coronal';
   private maximizedView: SliceAxis | null = null;
@@ -288,6 +283,7 @@ export class AppShell {
   }
 
   destroy(): void {
+    this.colorRangeControl.destroy();
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('resize', this.onResize);
     this.contextMenus.forEach((menu) => menu.destroy());
@@ -617,38 +613,11 @@ export class AppShell {
     this.rangeModeSelect = rangeMode.select;
     this.rangeModeSelect.setAttribute('aria-label', 'Color range mode');
     this.rangeModeSelect.addEventListener('change', () => this.onRangeModeChanged());
-    const rangeInputs = element('div', 'settings-range');
-    this.rangeMinInput = this.rangeInput('Minimum color value');
-    this.rangeMaxInput = this.rangeInput('Maximum color value');
-    this.rangeMinInput.addEventListener('change', () => this.commitFixedRange());
-    this.rangeMaxInput.addEventListener('change', () => this.commitFixedRange());
-    rangeInputs.append(this.rangeMinInput, this.rangeMaxInput);
-    const rangeRow = element('div', 'settings-control settings-control--range');
-    const rangeLabel = element('span', 'settings-control__label');
-    rangeLabel.textContent = 'Limits';
-    rangeRow.append(rangeLabel, rangeInputs);
 
-    this.legend = element('figure', 'color-legend');
-    this.legend.setAttribute('aria-label', 'Feature color legend');
-    this.legendContext = element('div', 'color-legend__context');
-    this.legendBar = element('div', 'color-legend__bar');
-    const legendLabels = element('figcaption', 'color-legend__labels');
-    this.legendMin = element('span', 'color-legend__minimum');
-    this.legendUnit = element('span', 'color-legend__unit');
-    this.legendMax = element('span', 'color-legend__maximum');
-    legendLabels.append(this.legendMin, this.legendUnit, this.legendMax);
-    this.legend.append(this.legendContext, this.legendBar, legendLabels);
+    this.colorRangeControl = new ColorRangeControl((range) => this.callbacks.setColorRange(range));
 
-    group.append(colorMode.row, statistic.row, colormap.row, scale.row, rangeMode.row, rangeRow, this.legend);
+    group.append(colorMode.row, statistic.row, colormap.row, scale.row, rangeMode.row, this.colorRangeControl.element);
     return group;
-  }
-
-  private rangeInput(label: string): HTMLInputElement {
-    const input = element('input', 'settings-range__input');
-    input.type = 'number';
-    input.step = 'any';
-    input.setAttribute('aria-label', label);
-    return input;
   }
 
   private renderContextMenus(model: ShellModel): void {
@@ -729,33 +698,28 @@ export class AppShell {
       : feature?.descriptor.valueRange?.every((value) => value !== null)
         ? feature.descriptor.valueRange as readonly [number, number]
         : null;
-    if (view.coloring.range.mode === 'fixed') {
-      this.rangeMinInput.value = String(view.coloring.range.min);
-      this.rangeMaxInput.value = String(view.coloring.range.max);
-    } else if (range) {
-      this.rangeMinInput.value = String(range[0]);
-      this.rangeMaxInput.value = String(range[1]);
-    } else {
-      this.rangeMinInput.value = '';
-      this.rangeMaxInput.value = '';
-    }
-    const fixed = view.coloring.range.mode === 'fixed';
-    this.rangeMinInput.disabled = !featureColors || !fixed;
-    this.rangeMaxInput.disabled = !featureColors || !fixed;
-    this.legend.hidden = !featureColors || !range;
-    if (range) {
+    if (feature && range) {
       const usesRobustQuantiles = view.coloring.range.mode === 'auto'
-        && feature?.representation === 'regional'
+        && feature.representation === 'regional'
         && view.coloring.statistic !== 'count'
         && feature.global?.q05 !== undefined
         && feature.global.q95 !== undefined;
-      this.legendContext.textContent = view.coloring.range.mode === 'fixed'
-        ? 'Left hemisphere · manual range'
-        : usesRobustQuantiles ? 'Left hemisphere · robust 5–95%' : 'Left hemisphere · automatic range';
-      this.legendBar.dataset.colormap = view.coloring.colormap;
-      this.legendMin.textContent = this.formatScalar(range[0]);
-      this.legendMax.textContent = this.formatScalar(range[1]);
-      this.legendUnit.textContent = descriptor?.unit ?? '';
+      const scope = feature.representation === 'regional' ? 'Left hemisphere' : 'Volume';
+      const context = view.coloring.range.mode === 'fixed'
+        ? `${scope} · manual range`
+        : usesRobustQuantiles ? `${scope} · robust 5–95%` : `${scope} · automatic range`;
+      this.colorRangeControl.render({
+        feature,
+        statistic: view.coloring.statistic,
+        effectiveRange: range,
+        mode: view.coloring.range.mode,
+        colormap: view.coloring.colormap,
+        unit: descriptor?.unit ?? null,
+        context,
+        enabled: featureColors,
+      });
+    } else {
+      this.colorRangeControl.hide();
     }
   }
 
@@ -786,29 +750,10 @@ export class AppShell {
 
   private onRangeModeChanged(): void {
     if (this.rangeModeSelect.value === 'auto') {
-      this.callbacks.setColorRange({ mode: 'auto' });
+      this.colorRangeControl.setAutomaticRange();
       return;
     }
-    this.commitFixedRange();
-  }
-
-  private commitFixedRange(): void {
-    const min = this.rangeMinInput.valueAsNumber;
-    const max = this.rangeMaxInput.valueAsNumber;
-    if (!Number.isFinite(min) || !Number.isFinite(max) || min >= max) {
-      this.rangeMinInput.setCustomValidity('Minimum must be smaller than maximum');
-      this.rangeMaxInput.setCustomValidity('Maximum must be larger than minimum');
-      return;
-    }
-    this.rangeMinInput.setCustomValidity('');
-    this.rangeMaxInput.setCustomValidity('');
-    this.callbacks.setColorRange({ mode: 'fixed', min, max });
-  }
-
-  private formatScalar(value: number): string {
-    const magnitude = Math.abs(value);
-    if (magnitude !== 0 && (magnitude >= 100_000 || magnitude < 0.001)) return value.toExponential(2);
-    return new Intl.NumberFormat(undefined, { maximumSignificantDigits: 5 }).format(value);
+    this.colorRangeControl.commitCurrentRange();
   }
 
   private settingsSelect(labelText: string, options: readonly (readonly [string, string])[]): { row: HTMLLabelElement; select: HTMLSelectElement } {

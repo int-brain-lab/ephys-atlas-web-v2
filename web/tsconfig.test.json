@@ -28,7 +28,8 @@
     "src/rendering/display-slice-inventory.ts",
     "src/ui/regional/model.ts",
     "src/ui/regional/histogram-curve.ts",
-    "src/ui/regional/comparison-export.ts"
+    "src/ui/regional/comparison-export.ts",
+    "src/ui/color-range.ts"
   ],
   "exclude": [
     "test/browser/**/*.ts",

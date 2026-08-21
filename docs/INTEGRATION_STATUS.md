@@ -21,6 +21,12 @@ The region browser defaults to the expandable anatomical hierarchy and offers
 URL-persisted ascending or descending value rankings as a flat selectable list.
 Finite values rank globally, missing values remain last, and returning to
 anatomical order restores the prior expansion state.
+The feature color range is edited on a histogram-backed dual-handle colorbar.
+Pointer or keyboard interaction switches automatic bounds to a URL-persisted
+manual range, exact values remain available from the bound labels, and reset
+restores the robust automatic range without exposing permanent numeric fields.
+The colormap is confined to the selected interval, and dragging that interval
+translates both bounds together without changing its width.
 
 ## Anatomy rendering
 

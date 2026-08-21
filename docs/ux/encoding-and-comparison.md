@@ -16,11 +16,15 @@ from visual encoding:
 
 ## Color range control
 
-The primary range editor combines a compact histogram with two draggable range handles and precise numeric fields.
+The primary range editor combines a compact histogram with two draggable range handles and on-demand exact numeric entry.
 
 - The histogram provides context for clipping and saturation decisions.
-- Both endpoints are editable numerically.
-- A reset action restores the feature default.
+- The histogram's complete value extent is the stable drag domain; changing the selected interval must not continuously rescale the track beneath the pointer.
+- Dragging either handle, or clicking the track to move the nearest handle, switches an automatic range to manual while preserving the current bounds as the starting point.
+- The colormap gradient spans the selected interval between the handles; it does not remain stretched across the full histogram domain. Dragging the selected center band translates both bounds together while preserving `max - min` and clamping at the domain edges.
+- Bound values are compact clickable labels, not permanently visible text fields. Activating a label opens exact numeric entry for that endpoint.
+- Handles cannot cross. Pointer, touch, and keyboard interaction update the selected interval directly; arrow keys make fine adjustments and Shift+Arrow makes larger adjustments.
+- A reset action restores the active automatic range preset.
 - Robust-range presets such as full range, 1–99%, or 5–95% may be provided when their semantics are well defined.
 - Keyboard operation is required.
 
