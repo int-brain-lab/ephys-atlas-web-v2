@@ -82,6 +82,9 @@ export class AtlasApp {
   async start(): Promise<void> {
     this.urlController.start();
     this.store.subscribe((state, action) => {
+      if (action.type === 'dataset/set' || action.type === 'view/hydrate' || action.type === 'parcellation/set') {
+        this.hoveredRegionId = null;
+      }
       this.render();
       if (action.type === 'dataset/set' || action.type === 'view/hydrate') {
         void this.session.loadDataset(state.view.dataset);

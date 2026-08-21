@@ -32,13 +32,16 @@ class HttpResourceReader implements ResourceReader {
     return new URL(relative, base).toString();
   }
 
-  async readJson(location: string): Promise<unknown> {
-    const response = await this.fetcher.fetch(location, { immutable: this.immutable });
+  async readJson(location: string, signal?: AbortSignal): Promise<unknown> {
+    const response = await this.fetcher.fetch(
+      location,
+      { immutable: this.immutable, ...(signal ? { signal } : {}) },
+    );
     return response.json() as Promise<unknown>;
   }
 
-  async readArray(location: string, descriptor: BinaryArrayDescriptor): Promise<number[]> {
-    const bytes = await this.readBytes(location);
+  async readArray(location: string, descriptor: BinaryArrayDescriptor, signal?: AbortSignal): Promise<number[]> {
+    const bytes = await this.readBytes(location, signal);
     return decodeBinaryArray(bytes, descriptor);
   }
 
@@ -130,6 +133,7 @@ export class HttpDatasetSource implements DatasetSource {
     featureId: string,
     representation: RepresentationKind,
     parcellation?: ParcellationId,
+    signal?: AbortSignal,
   ): Promise<FeaturePayload> {
     const { entry, release } = await this.resolveRelease(ref);
     const manifest = await this.loadManifest(ref);
@@ -161,6 +165,7 @@ export class HttpDatasetSource implements DatasetSource {
       feature,
       parcellation,
       parcellationDescriptor: parcel,
+      ...(signal ? { signal } : {}),
     });
   }
 
@@ -169,8 +174,9 @@ export class HttpDatasetSource implements DatasetSource {
     featureId: string,
     representation: RepresentationKind,
     parcellation?: ParcellationId,
+    signal?: AbortSignal,
   ): Promise<void> {
-    await this.loadFeature(ref, featureId, representation, parcellation);
+    await this.loadFeature(ref, featureId, representation, parcellation, signal);
   }
 
   private reader(immutable: boolean): ResourceReader {

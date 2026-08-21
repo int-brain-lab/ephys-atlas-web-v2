@@ -37,10 +37,11 @@ export class DatasetRepository {
     featureId: string,
     representation: RepresentationKind,
     parcellation?: ParcellationId,
+    signal?: AbortSignal,
   ): Promise<void> {
     const source = this.sourceFor(ref);
-    if (source.prefetchFeature) await source.prefetchFeature(ref, featureId, representation, parcellation);
-    else await source.loadFeature(ref, featureId, representation, parcellation);
+    if (source.prefetchFeature) await source.prefetchFeature(ref, featureId, representation, parcellation, signal);
+    else await source.loadFeature(ref, featureId, representation, parcellation, signal);
   }
 
   private sourceFor(ref: DatasetRef): DatasetSource {

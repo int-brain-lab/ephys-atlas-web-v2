@@ -18,6 +18,8 @@ export class ResourceFetcher {
 
   async fetch(url: string, options: FetchOptions = {}): Promise<Response> {
     const key = new URL(url, globalThis.location?.href ?? 'http://localhost/').toString();
+    if (options.signal) return (await this.load(key, options)).clone();
+
     const existing = this.inFlight.get(key);
     if (existing) return (await existing).clone();
 

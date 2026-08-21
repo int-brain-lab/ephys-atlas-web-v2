@@ -428,6 +428,43 @@ test('region-list hover previews the region in all anatomical projections', asyn
   }
 });
 
+test('parcellation changes clear stale region hover', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+
+  await page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first().dispatchEvent('pointermove');
+  await expect(page.locator('.is-highlighted')).not.toHaveCount(0);
+  await page.evaluate(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('parcel', 'beryl');
+    window.history.pushState(null, '', url);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+
+  await expect.poll(() => new URL(page.url()).searchParams.get('parcel')).toBe('beryl');
+  await expect(page.locator('.is-highlighted')).toHaveCount(0);
+  await expect(page.locator('.region-row[data-hovered="true"]')).toHaveCount(0);
+});
+
+test('regional tree reapplies hover styling after its rows rerender', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+
+  const row = page.locator('.region-row[data-region-id="-362"]');
+  await row.locator('.region-row__button').dispatchEvent('pointerover');
+  await expect(row).toHaveAttribute('data-hovered', 'true');
+  await page.evaluate(() => {
+    const statistic = document.querySelector<HTMLSelectElement>('[aria-label="Regional statistic"]');
+    if (!statistic) throw new Error('Regional statistic control not found');
+    statistic.value = statistic.value === 'mean' ? 'median' : 'mean';
+    statistic.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+
+  await expect(page.locator('.region-row[data-region-id="-362"]')).toHaveAttribute('data-hovered', 'true');
+});
+
 test('generated anatomy renderer uses direct mapping IDs and affine-derived guides', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
