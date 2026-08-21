@@ -39,8 +39,9 @@ export async function loadRegionalFeatureFromResources(options: {
   feature: FeatureDescriptor;
   parcellation: ParcellationId;
   parcellationDescriptor: ParcellationDescriptor;
+  signal?: AbortSignal;
 }): Promise<RegionalFeaturePayload> {
-  const { reader, manifestLocation, featureLocation, feature, parcellation, parcellationDescriptor } = options;
+  const { reader, manifestLocation, featureLocation, feature, parcellation, parcellationDescriptor, signal } = options;
   const regional = feature.representations.regional?.parcellations[parcellation];
   if (!regional) throw new Error(`Feature ${feature.id} has no ${parcellation} regional representation`);
 
@@ -48,9 +49,10 @@ export async function loadRegionalFeatureFromResources(options: {
     reader.readArray(
       reader.resolve(manifestLocation, parcellationDescriptor.regionIndex.path),
       parcellationDescriptor.regionIndex,
+      signal,
     ),
-    reader.readArray(reader.resolve(featureLocation, regional.values.path), regional.values),
-    reader.readJson(reader.resolve(featureLocation, regional.statistics)),
+    reader.readArray(reader.resolve(featureLocation, regional.values.path), regional.values, signal),
+    reader.readJson(reader.resolve(featureLocation, regional.statistics), signal),
   ]);
   if (regionIds.length !== values.length) {
     throw new Error(`${feature.id}/${parcellation} values do not match region index length`);
@@ -64,11 +66,12 @@ export async function loadRegionalFeatureFromResources(options: {
   const statsDocument = parseRegionalStatisticsResource(statisticsRaw);
   const statsLocation = reader.resolve(featureLocation, regional.statistics);
   const [matrix, histogramFlat] = await Promise.all([
-    reader.readArray(reader.resolve(statsLocation, statsDocument.values.path), statsDocument.values),
+    reader.readArray(reader.resolve(statsLocation, statsDocument.values.path), statsDocument.values, signal),
     statsDocument.histogram?.regionalCounts
       ? reader.readArray(
           reader.resolve(statsLocation, statsDocument.histogram.regionalCounts.path),
           statsDocument.histogram.regionalCounts,
+          signal,
         )
       : Promise.resolve(null),
   ]);

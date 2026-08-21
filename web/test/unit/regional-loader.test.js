@@ -6,13 +6,16 @@ class FixtureReader {
   constructor(json, arrays) {
     this.json = json;
     this.arrays = arrays;
+    this.signals = [];
   }
   resolve(base, relative) { return new URL(relative, `https://fixture.invalid/${base}`).pathname.slice(1); }
-  async readJson(path) {
+  async readJson(path, signal) {
+    this.signals.push(signal);
     if (!this.json.has(path)) throw new Error(`missing json ${path}`);
     return this.json.get(path);
   }
-  async readArray(path) {
+  async readArray(path, _descriptor, signal) {
+    this.signals.push(signal);
     if (!this.arrays.has(path)) throw new Error(`missing array ${path}`);
     return this.arrays.get(path);
   }
@@ -75,4 +78,21 @@ test('resource-independent regional loading materializes display statistics once
   assert.deepEqual(payload.statistics.mean, [1.5, 3.5]);
   assert.deepEqual(payload.statistics.count, [2, 2]);
   assert.equal(payload.global.mean, 2.5);
+});
+
+test('regional feature loading propagates cancellation to every resource read', async () => {
+  const reader = fixtureReader();
+  const signal = new AbortController().signal;
+  await loadRegionalFeatureFromResources({
+    reader,
+    manifestLocation: 'manifest.json',
+    featureLocation: 'features/example/feature.json',
+    feature,
+    parcellation: 'beryl',
+    parcellationDescriptor: parcellation,
+    signal,
+  });
+
+  assert.equal(reader.signals.length, 4);
+  assert.ok(reader.signals.every((received) => received === signal));
 });

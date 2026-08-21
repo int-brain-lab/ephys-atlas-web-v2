@@ -176,7 +176,11 @@ test('resolved manifest rejects mismatched dataset and feature identities', () =
   );
 
   assert.throws(
-    () => resolveDatasetManifest(document, [feature], 'different_dataset'),
+    () => resolveDatasetManifest(
+      { ...document, datasetId: 'declared_dataset' },
+      [feature],
+      'different_dataset',
+    ),
     /does not match requested dataset/,
   );
   assert.throws(

@@ -89,17 +89,23 @@ class LocalResourceReader implements ResourceReader {
     return resolvePath(base, relative);
   }
 
-  async readJson(location: string): Promise<unknown> {
-    return JSON.parse(await (await this.source.readResource(this.manifest, location)).text()) as unknown;
+  async readJson(location: string, signal?: AbortSignal): Promise<unknown> {
+    signal?.throwIfAborted();
+    const text = await (await this.source.readResource(this.manifest, location)).text();
+    signal?.throwIfAborted();
+    return JSON.parse(text) as unknown;
   }
 
-  async readArray(location: string, descriptor: BinaryArrayDescriptor): Promise<number[]> {
-    const bytes = await this.readBytes(location);
+  async readArray(location: string, descriptor: BinaryArrayDescriptor, signal?: AbortSignal): Promise<number[]> {
+    const bytes = await this.readBytes(location, signal);
     return decodeBinaryArray(bytes, { ...descriptor, path: location });
   }
 
-  async readBytes(location: string): Promise<ArrayBuffer> {
-    return (await this.source.readResource(this.manifest, location)).arrayBuffer();
+  async readBytes(location: string, signal?: AbortSignal): Promise<ArrayBuffer> {
+    signal?.throwIfAborted();
+    const bytes = await (await this.source.readResource(this.manifest, location)).arrayBuffer();
+    signal?.throwIfAborted();
+    return bytes;
   }
 }
 
@@ -195,6 +201,7 @@ export class LocalDatasetSource implements DatasetSource {
     featureId: string,
     representation: RepresentationKind,
     parcellation?: ParcellationId,
+    signal?: AbortSignal,
   ): Promise<FeaturePayload> {
     const manifest = await this.requireManifest(ref);
     const feature = this.findFeature(manifest, featureId);
@@ -208,7 +215,7 @@ export class LocalDatasetSource implements DatasetSource {
         featureId,
         representation: 'volume',
         descriptor,
-        loadResource: (path) => reader.readBytes(reader.resolve(feature.path, path)),
+        loadResource: (path, resourceSignal) => reader.readBytes(reader.resolve(feature.path, path), resourceSignal),
       };
     }
 
@@ -222,7 +229,18 @@ export class LocalDatasetSource implements DatasetSource {
       feature,
       parcellation,
       parcellationDescriptor: parcel,
+      ...(signal ? { signal } : {}),
     });
+  }
+
+  async prefetchFeature(
+    ref: DatasetRef,
+    featureId: string,
+    representation: RepresentationKind,
+    parcellation?: ParcellationId,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    await this.loadFeature(ref, featureId, representation, parcellation, signal);
   }
 
   private async requireManifest(ref: DatasetRef): Promise<DatasetManifest> {

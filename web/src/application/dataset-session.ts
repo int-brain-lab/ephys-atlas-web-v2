@@ -23,6 +23,7 @@ export interface DatasetRepositoryPort {
     featureId: string,
     representation: RepresentationKind,
     parcellation?: ParcellationId,
+    signal?: AbortSignal,
   ): Promise<void>;
 }
 
@@ -135,6 +136,7 @@ export class DatasetSession {
 
   async loadCurrentFeature(): Promise<void> {
     const requestGeneration = ++this.featureGeneration;
+    this.prefetch.cancel();
     const state = this.store.getState();
     const { featureId, representation, parcellation, dataset } = state.view;
     if (!featureId || !this.manifest) {
@@ -188,7 +190,7 @@ export class DatasetSession {
     const index = this.manifest.features.findIndex((item) => item.id === featureId);
     if (index < 0) return;
     const candidates = this.manifest.features.slice(index + 1, index + 3);
-    this.prefetch.schedule(candidates.map((feature) => async () => {
+    this.prefetch.schedule(candidates.map((feature) => async (signal) => {
       const nextRepresentation: RepresentationKind = feature.representations[representation]
         ? representation
         : feature.representations.regional ? 'regional' : 'volume';
@@ -197,6 +199,7 @@ export class DatasetSession {
         feature.id,
         nextRepresentation,
         nextRepresentation === 'regional' ? parcellation : undefined,
+        signal,
       );
     }));
   }

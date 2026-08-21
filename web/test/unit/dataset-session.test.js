@@ -67,3 +67,39 @@ test('stale dataset completions cannot replace the active dataset', async () => 
   await slow;
   assert.equal(session.snapshot().manifest.dataset.id, 'fast');
 });
+
+test('starting a feature load aborts active prefetch from the previous feature', async () => {
+  const store = createAppStore({ ...DEFAULT_APP_STATE, view: {
+    ...DEFAULT_APP_STATE.view,
+    dataset: { datasetId: 'custom_dataset', releaseId: 'r1' },
+    featureId: 'feature_a',
+  } });
+  const testManifest = manifest();
+  testManifest.features.push({ ...testManifest.features[0], id: 'feature_b' });
+  const feature = {
+    schemaVersion: '0.1', featureId: 'feature_a', representation: 'regional',
+    parcellation: 'beryl', regionIds: [], statistics: {},
+  };
+  let activeSignal;
+  let markStarted;
+  const started = new Promise((resolve) => { markStarted = resolve; });
+  const repository = {
+    async loadCatalog() { return { schemaVersion: '0.1', datasets: [] }; },
+    async loadManifest() { return testManifest; },
+    async loadRegions() { return []; },
+    async loadFeature() { return feature; },
+    async prefetchFeature(_ref, _featureId, _representation, _parcellation, signal) {
+      activeSignal = signal;
+      markStarted();
+      await new Promise((resolve) => signal.addEventListener('abort', resolve, { once: true }));
+    },
+  };
+  const session = new DatasetSession(repository, store, () => {});
+  await session.loadDataset(store.getState().view.dataset);
+  await started;
+
+  await session.loadCurrentFeature();
+
+  assert.equal(activeSignal.aborted, true);
+  session.stop();
+});

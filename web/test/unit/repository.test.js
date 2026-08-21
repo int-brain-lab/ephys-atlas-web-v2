@@ -35,3 +35,24 @@ test('repository merges published and local catalogs and routes local refs', asy
   const manifest = await repository.loadManifest({ datasetId: 'local', releaseId: 'r1' });
   assert.equal(manifest.dataset.id, 'local');
 });
+
+test('repository propagates cancellation to source prefetch', async () => {
+  const published = source('published', 'ephys_atlas_channels');
+  const local = source('local', 'local');
+  let receivedSignal;
+  published.prefetchFeature = async (_ref, _featureId, _representation, _parcellation, signal) => {
+    receivedSignal = signal;
+  };
+  const repository = new DatasetRepository(published, local);
+  const controller = new AbortController();
+
+  await repository.prefetchFeature(
+    { datasetId: 'ephys_atlas_channels', releaseId: 'r1' },
+    'feature_a',
+    'regional',
+    'allen',
+    controller.signal,
+  );
+
+  assert.equal(receivedSignal, controller.signal);
+});

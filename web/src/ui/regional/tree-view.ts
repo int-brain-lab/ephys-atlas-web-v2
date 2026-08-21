@@ -88,6 +88,7 @@ export class RegionalTreeView {
       const id = row.dataset.regionId;
       if (id) this.rowById.set(id, row);
     });
+    if (this.hoveredRegionId) this.rowById.get(this.hoveredRegionId)?.setAttribute('data-hovered', 'true');
     this.rovingButton = previousRovingId
       ? this.rowById.get(previousRovingId)?.querySelector<HTMLButtonElement>('.region-row__button') ?? null
       : null;
