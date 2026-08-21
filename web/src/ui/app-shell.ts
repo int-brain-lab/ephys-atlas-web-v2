@@ -177,7 +177,7 @@ export class AppShell {
       label: 'Feature',
       keyShortcuts: '/ Shift+ArrowUp Shift+ArrowDown',
       searchable: true,
-      searchPlaceholder: 'Search features, units, or IDs',
+      searchPlaceholder: 'Search features…',
       onOpen: (menu) => {
         this.closeDrawers();
         this.closeContextMenus(menu);

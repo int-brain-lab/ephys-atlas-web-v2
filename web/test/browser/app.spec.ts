@@ -414,7 +414,7 @@ test('scientific context menus and color controls are driven by the loaded relea
 
   const feature = page.locator('[data-context-field="feature"]');
   await feature.locator('.context-menu__trigger').click();
-  const featureSearch = feature.getByLabel('Search features, units, or IDs');
+  const featureSearch = feature.getByLabel('Search features…');
   await expect(featureSearch).toBeFocused();
   await featureSearch.fill('rms_ap');
   await expect(feature.getByRole('option')).toHaveCount(1);

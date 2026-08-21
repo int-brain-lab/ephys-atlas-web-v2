@@ -35,7 +35,7 @@ test('global shortcuts search and cycle the manifest feature catalogue', async (
 
   const featureField = page.locator('[data-context-field="feature"]');
   const featureTrigger = featureField.locator('.context-menu__trigger');
-  const featureSearch = featureField.getByLabel('Search features, units, or IDs');
+  const featureSearch = featureField.getByLabel('Search features…');
   const shortcutStatus = page.locator('.visually-hidden[role="status"]');
   await expect(featureTrigger).toHaveAttribute('aria-keyshortcuts', '/ Shift+ArrowUp Shift+ArrowDown');
   await expect(featureTrigger).toContainText('AP RMS (golden fixture)');
@@ -76,7 +76,7 @@ test('shortcuts stay out of text entry and expose the concise help guide', async
   await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', {
     key: '/', shiftKey: true, bubbles: true, cancelable: true,
   })));
-  await expect(featureField.getByLabel('Search features, units, or IDs')).toBeFocused();
+  await expect(featureField.getByLabel('Search features…')).toBeFocused();
   await page.keyboard.press('Escape');
 
   await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', {

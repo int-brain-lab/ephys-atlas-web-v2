@@ -59,7 +59,7 @@ test('loads real float64 alpha values and all launch parcellations', async ({ pa
 
   const feature = page.locator('[data-context-field="feature"]');
   await feature.locator('.context-menu__trigger').click();
-  await feature.getByLabel('Search features, units, or IDs').fill('alpha_mean.raw');
+  await feature.getByLabel('Search features…').fill('alpha_mean.raw');
   await expect(feature.getByRole('option')).toHaveCount(1);
   await feature.getByRole('option').click();
 
