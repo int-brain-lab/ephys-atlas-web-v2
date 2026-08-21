@@ -327,12 +327,18 @@ export class AppShell {
     logo.alt = 'IBL Core';
     logo.width = 240;
     logo.height = 209;
+    const logoLink = element('a', 'app-header__logo-link');
+    logoLink.href = 'https://iblcore.org/';
+    logoLink.target = '_blank';
+    logoLink.rel = 'noopener noreferrer';
+    logoLink.setAttribute('aria-label', 'Visit the IBL Core website (opens in a new tab)');
+    logoLink.append(logo);
     const brandText = element('div', 'app-header__brand-text');
     const title = heading('Ephys Atlas', 1);
     const version = element('span', 'app-header__version');
     version.textContent = 'v2';
     brandText.append(title, version);
-    brand.append(logo, brandText);
+    brand.append(logoLink, brandText);
 
     const context = element('dl', 'app-header__context');
     context.setAttribute('aria-label', 'Atlas context');
@@ -644,8 +650,30 @@ export class AppShell {
     shortcutSummary.textContent = 'Keyboard shortcuts';
     shortcutDetails.append(shortcutSummary, list);
 
+    const aboutDetails = element('details', 'help-guide__about');
+    const aboutSummary = element('summary');
+    aboutSummary.textContent = 'About & credits';
+    const aboutBody = element('div', 'help-guide__about-body');
+    const aboutIntro = this.infoParagraph('The Ephys Atlas is developed by ');
+    const iblCoreLink = element('a');
+    iblCoreLink.href = 'https://iblcore.org/';
+    iblCoreLink.target = '_blank';
+    iblCoreLink.rel = 'noopener noreferrer';
+    iblCoreLink.textContent = 'IBL Core';
+    iblCoreLink.setAttribute('aria-label', 'IBL Core website (opens in a new tab)');
+    aboutIntro.append(iblCoreLink, document.createTextNode('.'));
+    const credits = this.infoParagraph('Credits: Cyrille Rossant, Mayo Faulkner, Olivier Winter, Gaelle Chapuis, and Dan Birman.');
+    const futureLinks = element('div', 'help-guide__future-links');
+    const paper = element('span');
+    paper.textContent = 'Paper — forthcoming';
+    const dataRelease = element('span');
+    dataRelease.textContent = 'Data release — forthcoming';
+    futureLinks.append(paper, dataRelease);
+    aboutBody.append(aboutIntro, credits, futureLinks);
+    aboutDetails.append(aboutSummary, aboutBody);
+
     const content = element('div', 'info-dialog__content help-guide__content');
-    content.append(schematic, guideWrap, note, shortcutDetails);
+    content.append(schematic, guideWrap, note, aboutDetails, shortcutDetails);
     dialog.append(header, content);
     dialog.addEventListener('click', (event) => {
       if (event.target === dialog) dialog.close();

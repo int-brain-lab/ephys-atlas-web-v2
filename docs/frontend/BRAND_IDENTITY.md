@@ -20,7 +20,9 @@ extract the circular device as an unapproved icon.
 
 The colored-negative lockup is used on the viewer's dark header without a
 separate background block. The product name remains adjacent HTML text so it
-is legible and accessible at the viewer header's compact sizes.
+is legible and accessible at the viewer header's compact sizes. The complete
+lockup links to the official `https://iblcore.org/` homepage in a new tab so
+the viewer's scientific state remains in place.
 
 ## Institutional palette
 

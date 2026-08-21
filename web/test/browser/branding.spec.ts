@@ -9,6 +9,10 @@ test('header uses the official IBL Core negative lockup and palette', async ({ p
   await expect(logo).toHaveAttribute('src', '/brand/ibl-core-logo.svg');
   await expect(logo).toHaveAttribute('width', '240');
   await expect(logo).toHaveAttribute('height', '209');
+  const logoLink = page.getByRole('link', { name: 'Visit the IBL Core website (opens in a new tab)' });
+  await expect(logoLink).toHaveAttribute('href', 'https://iblcore.org/');
+  await expect(logoLink).toHaveAttribute('target', '_blank');
+  await expect(logoLink).toHaveAttribute('rel', 'noopener noreferrer');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Ephys Atlas');
 
   await expect.poll(() => logo.evaluate((node: HTMLImageElement) => ({

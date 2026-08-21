@@ -143,7 +143,10 @@ distributions and exports. The structure can accept future representation
 guidance without splitting Help into separate guides. App-specific definitions
 clarify dataset/release identity, features, representations, parcellations,
 populations, statistics, and presentation-only color mapping without attempting
-to teach general neuroscience. Keyboard shortcuts remain
+to teach general neuroscience. A collapsed About & credits section links to
+IBL Core, names Cyrille Rossant, Mayo Faulkner, Olivier Winter, Gaelle Chapuis,
+and Dan Birman, and reserves clearly non-clickable forthcoming entries for the
+paper and data release. Keyboard shortcuts remain
 available as a collapsed secondary reference. The
 global keyboard layer opens feature search with `/`, moves to adjacent
 manifest-ordered features with `Shift + Down` / `Shift + Up`, and opens Help

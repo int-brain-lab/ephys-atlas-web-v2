@@ -1,8 +1,8 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const RELEASE_PATH = '/fixtures/ephys_atlas_channels/golden-v0.3/';
 
-test.beforeEach(async ({ page }) => {
+async function installSecondFeatureFixture(page: Page): Promise<void> {
   await page.route(`**${RELEASE_PATH}**`, async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname.endsWith(`${RELEASE_PATH}manifest.json`)) {
@@ -27,9 +27,10 @@ test.beforeEach(async ({ page }) => {
     }
     await route.continue();
   });
-});
+}
 
 test('global shortcuts search and cycle the manifest feature catalogue', async ({ page }) => {
+  await installSecondFeatureFixture(page);
   await page.goto('/');
 
   const featureField = page.locator('[data-context-field="feature"]');
@@ -58,6 +59,7 @@ test('global shortcuts search and cycle the manifest feature catalogue', async (
 });
 
 test('shortcuts stay out of text entry and expose the concise help guide', async ({ page }) => {
+  await installSecondFeatureFixture(page);
   await page.goto('/');
 
   const featureField = page.locator('[data-context-field="feature"]');
@@ -117,6 +119,13 @@ test('shortcuts stay out of text entry and expose the concise help guide', async
 
   await page.getByRole('button', { name: 'Help' }).first().click();
   await expect(guide).toBeVisible();
+  await guide.getByText('About & credits').click();
+  const iblCoreLink = guide.getByRole('link', { name: 'IBL Core website (opens in a new tab)' });
+  await expect(iblCoreLink).toHaveAttribute('href', 'https://iblcore.org/');
+  await expect(guide).toContainText('Cyrille Rossant, Mayo Faulkner, Olivier Winter, Gaelle Chapuis, and Dan Birman');
+  await expect(guide).toContainText('Paper — forthcoming');
+  await expect(guide).toContainText('Data release — forthcoming');
+  await expect(guide.getByRole('link', { name: /Paper|Data release/ })).toHaveCount(0);
   await guide.getByText('Keyboard shortcuts').click();
   await expect(guide).toContainText('Next feature');
   await expect(guide).toContainText('Search features');
