@@ -121,7 +121,7 @@ export class RegionalPanelController {
     const unit = descriptor?.unit ?? null;
 
     this.tree.source.textContent = model.anatomyAtlas
-      ? `${model.anatomyAtlas} · official colors`
+      ? model.anatomyAtlas
       : fixture
         ? 'Synthetic schema-v0.1 fixture'
         : `${model.state.view.parcellation.toUpperCase()} regional values`;

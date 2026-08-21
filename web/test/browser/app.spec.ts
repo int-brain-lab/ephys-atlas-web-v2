@@ -119,7 +119,7 @@ test('a wheel burst is coalesced and only updates linked guides in other project
   await page.goto('/');
   await expect(page.locator('[data-slice-asset="generated-anatomy-v3"]')).toHaveCount(3);
   await expect(page.locator('.view-frame[data-state="ready"]')).toHaveCount(3);
-  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   const svg = page.locator('[data-view="coronal"] .view-frame__brain-svg');
   await page.evaluate(() => {
     const metrics = { sagittal: 0, horizontal: 0 };
@@ -225,7 +225,7 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
 
-  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   await expect(page.locator('.region-row')).toHaveCount(874);
   await expect(page.locator('.region-row').first()).toContainText('CH');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
@@ -313,7 +313,7 @@ test('Allen anatomy mode shows actual regions and dark-theme ontology colors', a
   await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByLabel('Region color mode').selectOption('anatomy');
   await expect.poll(() => new URL(page.url()).searchParams.get('colors')).toBe('anatomy');
-  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   await expect(page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ })).toBeAttached();
   await expect(page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first()).toHaveCSS('fill', 'rgb(255, 144, 159)');
   await expect(page.locator('[data-view="coronal"] path[data-allen-id="-1009"]').first()).toHaveCSS('fill', 'rgb(97, 111, 121)');
@@ -523,7 +523,7 @@ test('share, download and info expose the immutable scientific context', async (
 test('renderer region selection flows back into shared URL state', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
-  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   const path = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
   await path.dispatchEvent('pointerup');
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
@@ -546,7 +546,7 @@ test('renderer region selection flows back into shared URL state', async ({ page
 test('region hover is linked across all anatomical projections', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
-  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
 
   const source = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
   await expect(source).toHaveAttribute('style', /fill:/);
@@ -577,7 +577,7 @@ test('region hover is linked across all anatomical projections', async ({ page }
 test('slice hover tooltip shows current regional value and stays inside its viewport', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
-  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
 
   const viewport = page.locator('[data-view="coronal"] .view-frame__viewport');
@@ -617,7 +617,7 @@ test('slice hover tooltip shows current regional value and stays inside its view
 test('region-list hover previews the region in all anatomical projections', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
-  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
 
   await page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ }).hover();
   await expect(page.locator('.distribution-chart__hover-marker')).toHaveAttribute('data-region-id', '-362');
@@ -637,7 +637,7 @@ test('region-list hover previews the region in all anatomical projections', asyn
 test('parcellation changes clear stale region hover', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
-  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
 
   await page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first().dispatchEvent('pointermove');
   await expect(page.locator('.is-highlighted')).not.toHaveCount(0);
@@ -656,7 +656,7 @@ test('parcellation changes clear stale region hover', async ({ page }) => {
 test('regional tree reapplies hover styling after its rows rerender', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
-  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
 
   const row = page.locator('.region-row[data-region-id="-362"]');
   await row.locator('.region-row__button').dispatchEvent('pointerover');
@@ -854,7 +854,7 @@ test('generated anatomy renderer keeps one request in flight and starts only the
 test('region search filters loaded metadata rather than prototype rows', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
-  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   const search = page.getByLabel('Search brain regions');
   await search.fill('mediodorsal nucleus of thalamus');
   await expect(page.locator('.region-row:not([hidden])')).toHaveCount(1);

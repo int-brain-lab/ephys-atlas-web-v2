@@ -4,8 +4,21 @@ test('region sidebar renders parent-closed Allen hierarchies at their real depth
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/?colors=anatomy');
 
-  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   await expect(page.locator('.region-row')).toHaveCount(874);
+
+  const regionCount = page.locator('.region-search__count');
+  await expect(regionCount).toHaveText('874 regions');
+  const fullCountMetrics = await regionCount.evaluate((node) => ({
+    width: node.getBoundingClientRect().width,
+    clientWidth: node.clientWidth,
+    scrollWidth: node.scrollWidth,
+  }));
+  expect(fullCountMetrics.scrollWidth).toBeLessThanOrEqual(fullCountMetrics.clientWidth);
+  await page.getByLabel('Search brain regions').fill('mediodorsal');
+  await expect(regionCount).toHaveText('2 regions');
+  await expect.poll(() => regionCount.evaluate((node) => node.getBoundingClientRect().width)).toBe(fullCountMetrics.width);
+  await page.getByLabel('Search brain regions').fill('');
 
   const cerebrum = page.locator('.region-row[data-region-id="-567"]');
   const brainStem = page.locator('.region-row[data-region-id="-343"]');
@@ -81,7 +94,7 @@ test('ontology branches disclose accessibly and missing feature values stay visu
 test('collapsing a branch smoothly moves the following rows into place', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
-  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
 
   const frontalPoleToggle = page.locator('.region-row[data-region-id="-184"] .region-row__toggle');

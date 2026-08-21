@@ -40,7 +40,7 @@
 
 .region-tree-controls__button:disabled{opacity:.3;cursor:default}
 
-.region-search__count{flex:none;width:4.75rem;text-align:right;font-variant-numeric:tabular-nums}
+.region-search__count{box-sizing:border-box;flex:none;width:5.25rem;padding-right:.15rem;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 
 .region-pane__browser{min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:var(--space-1) 0}
 
