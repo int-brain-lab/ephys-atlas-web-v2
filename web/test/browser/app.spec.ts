@@ -366,6 +366,33 @@ test('Allen anatomy mode shows actual regions and dark-theme ontology colors', a
   await expect(page.locator('.region-row__swatch').first()).toBeVisible();
 });
 
+test('long feature menus scroll without option descriptions overlapping', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+
+  const feature = page.locator('[data-context-field="feature"]');
+  await feature.locator('.context-menu__trigger').click();
+  const list = feature.locator('.context-menu__list');
+  await list.evaluate((node) => {
+    const template = node.querySelector<HTMLButtonElement>('.context-menu__option');
+    if (!template) throw new Error('Expected a feature option');
+    for (let index = 1; index < 30; index += 1) {
+      const clone = template.cloneNode(true) as HTMLButtonElement;
+      clone.dataset.contextOption = `synthetic-layout-feature-${index}`;
+      node.append(clone);
+    }
+  });
+
+  expect(await list.evaluate((node) => node.scrollHeight > node.clientHeight)).toBe(true);
+  expect(await feature.locator('.context-menu__option').evaluateAll((options) => options.every((option) => {
+    const copy = option.querySelector<HTMLElement>('.context-menu__option-copy');
+    if (!copy) return false;
+    const optionBounds = option.getBoundingClientRect();
+    const copyBounds = copy.getBoundingClientRect();
+    return copyBounds.top >= optionBounds.top && copyBounds.bottom <= optionBounds.bottom;
+  }))).toBe(true);
+});
+
 test('scientific context menus and color controls are driven by the loaded release', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
