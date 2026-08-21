@@ -47,12 +47,23 @@ Persistently selected regions receive stable categorical identity colors indepen
 
 ## Default comparison visualization
 
+Histogram shapes are probability distributions: each global or regional series
+is divided by the sum of its own bin counts. This makes regions with different
+observation counts comparable without discarding sample size, which remains
+visible as `n`. Peak normalization is not used.
+
+The compact feature summary overlays selected-region distribution outlines on
+the muted global distribution. Every series uses the same feature-value x-axis
+and probability y-scale, with stable selection colors and a legend identifying
+region and sample size.
+
 The expanded comparison workspace uses aligned small-multiple distributions as the primary visualization.
 
 - Selected regions share the same quantitative x-axis.
 - Each selected region receives its own aligned row/panel using its stable categorical identity.
 - Mean, median, quartiles, or similar descriptive markers may be overlaid when available and scientifically appropriate.
 - A compact aligned table provides descriptive values such as `n`, mean, median, standard deviation, and range according to dataset availability.
+- The comparison can be downloaded as context-rich CSV with one row per selected region and histogram bin. It preserves immutable release, feature, parcellation, selected statistic, unit, population, region identity, descriptive summaries, raw bin counts, and normalized bin probabilities.
 - Violin or box representations may exist as alternatives but are not the primary launch layout.
 
 Rationale: aligned distributions compare location, spread, skew, and multimodality more directly than separated violins while scaling better to several selected regions.

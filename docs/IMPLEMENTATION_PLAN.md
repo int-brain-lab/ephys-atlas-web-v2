@@ -136,7 +136,7 @@ Acceptance reference: section 7 of the launch spec.
 
 ## M5 — Downloads and local import completion
 
-Status: **local import hardened; current regional export implemented; broader package/export UX remains**.
+Status: **local import hardened; regional and selected-comparison exports implemented; broader package/export UX remains**.
 
 Completed:
 
@@ -147,11 +147,12 @@ Completed:
 - immutable release, feature semantics, and provenance retained by the browser model and exposed through the contextual Info dialog;
 - share action copies the complete URL-persisted exploration state;
 - current regional statistic exports as CSV with dataset, immutable release, feature, representation, parcellation, statistic, unit, and region identity columns.
+- selected regions compare as independently sum-normalized distributions over a shared feature-value axis, with descriptive statistics and sample sizes;
+- selected comparison exports as CSV with scientific context, summaries, raw histogram bins, and normalized probabilities.
 
 Goals:
 
 - production-grade local import validation for regional and supported volume releases;
-- selected comparison export;
 - volume-feature download/navigation;
 - deterministic whole-release package path exposed/documented where practical;
 - visible provenance identifiers in exported data.
@@ -168,7 +169,7 @@ Acceptance reference: sections 8 and 9 of the launch spec.
 
 Status: **registered anatomy integrated; catalog/deployment decisions open**.
 
-Blocked in part by: Q8, Q9, Q10.
+Blocked in part by: Q8 and Q9.
 
 Actions:
 

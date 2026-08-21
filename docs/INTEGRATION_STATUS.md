@@ -76,9 +76,13 @@ launch feature catalog.
 The schema-v0.1 regional path is implemented end to end for published HTTP and
 browser-local releases: catalog, immutable manifest, feature descriptors,
 parcellation metadata/index, typed values/statistics/histograms, region
-search/tree, global and selected-region comparison, scalar coloring, shared
-SVG/list selection and hover, URL state, provenance, and current-statistic CSV
-export. Synthetic fixtures are visibly identified as non-scientific.
+search/tree, scalar coloring, shared SVG/list selection and hover, URL state,
+provenance, and CSV export. The compact distribution overlays independently
+sum-normalized selected-region shapes on the global distribution. The expanded
+comparison aligns the same probability distributions and descriptive summaries
+on common axes, and exports selected regions with context, raw bins, normalized
+probabilities, and sample sizes. Synthetic fixtures are visibly identified as
+non-scientific.
 
 `DatasetSession` owns asynchronous catalog/release/region/feature lifecycle,
 generation-based stale-work suppression, and cancellable idle prefetch. Active
@@ -131,9 +135,9 @@ namespaced by source dataset and immutable release, and the viewer distinguishes
 local from published content without a shadow scientific schema.
 
 Share copies complete URL state; Info exposes immutable release, feature
-semantics, and source/builder provenance; current regional statistics export as
-context-rich CSV. Selected-comparison export, volume-feature navigation/download,
-and broader whole-release/local-dataset UX remain in M5.
+semantics, and source/builder provenance; current regional statistics and
+selected-region comparisons export as context-rich CSV. Volume-feature
+navigation/download and broader whole-release/local-dataset UX remain in M5.
 
 ## Publishing
 
