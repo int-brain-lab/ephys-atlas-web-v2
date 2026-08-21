@@ -6,8 +6,21 @@ import {
   colorRangeDomain,
   rangePosition,
   rangeSliderStep,
+  placeRangeLabels,
   translateRangeWindow,
 } from '../../.test-dist/ui/color-range.js';
+
+test('range labels choose inward sides at the domain edges', () => {
+  assert.deepEqual(placeRangeLabels(200, [0, 200], [32, 32]), {
+    min: { left: 7, side: 'right' },
+    max: { left: 161, side: 'left' },
+    stacked: false,
+  });
+});
+
+test('range labels stack only when no in-bounds horizontal placement can separate them', () => {
+  assert.equal(placeRangeLabels(80, [10, 20], [60, 60]).stacked, true);
+});
 
 const regional = {
   schemaVersion: '0.1',

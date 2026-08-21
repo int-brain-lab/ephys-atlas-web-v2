@@ -3,6 +3,14 @@ import type { StatisticId } from '../domain/types.js';
 
 export type NumericRange = readonly [number, number];
 
+export type RangeLabelSide = 'left' | 'right';
+
+export interface RangeLabelPlacement {
+  min: { left: number; side: RangeLabelSide };
+  max: { left: number; side: RangeLabelSide };
+  stacked: boolean;
+}
+
 function validRange(min: number | null | undefined, max: number | null | undefined): NumericRange | null {
   return min !== null && min !== undefined && max !== null && max !== undefined
     && Number.isFinite(min) && Number.isFinite(max) && max > min
@@ -74,4 +82,52 @@ export function translateRangeWindow(range: NumericRange, delta: number, domain:
   if (width >= domain[1] - domain[0]) return [domain[0], domain[1]];
   const min = Math.max(domain[0], Math.min(range[0] + delta, domain[1] - width));
   return [min, min + width];
+}
+
+/** Places bound labels beside their handles while keeping them inside the track. */
+export function placeRangeLabels(
+  trackWidth: number,
+  handlePositions: NumericRange,
+  labelWidths: NumericRange,
+  handleGap = 7,
+  labelGap = 4,
+): RangeLabelPlacement {
+  const sides: readonly RangeLabelSide[] = ['left', 'right'];
+  const rawLeft = (handle: number, width: number, side: RangeLabelSide): number => (
+    side === 'left' ? handle - handleGap - width : handle + handleGap
+  );
+  const overflow = (left: number, width: number): number => (
+    Math.max(0, -left) + Math.max(0, left + width - trackWidth)
+  );
+  const separationShortfall = (minLeft: number, maxLeft: number): number => {
+    const minRight = minLeft + labelWidths[0];
+    const maxRight = maxLeft + labelWidths[1];
+    const separation = minRight <= maxLeft
+      ? maxLeft - minRight
+      : maxRight <= minLeft ? minLeft - maxRight : -Math.min(minRight, maxRight) + Math.max(minLeft, maxLeft);
+    return Math.max(0, labelGap - separation);
+  };
+
+  let best: { minSide: RangeLabelSide; maxSide: RangeLabelSide; minLeft: number; maxLeft: number; score: number } | null = null;
+  for (const minSide of sides) {
+    for (const maxSide of sides) {
+      const minLeft = rawLeft(handlePositions[0], labelWidths[0], minSide);
+      const maxLeft = rawLeft(handlePositions[1], labelWidths[1], maxSide);
+      const preferencePenalty = Number(minSide !== 'left') + Number(maxSide !== 'right');
+      const score = (overflow(minLeft, labelWidths[0]) + overflow(maxLeft, labelWidths[1])) * 1_000_000
+        + separationShortfall(minLeft, maxLeft) * 1_000
+        + preferencePenalty;
+      if (!best || score < best.score) best = { minSide, maxSide, minLeft, maxLeft, score };
+    }
+  }
+
+  const selected = best!;
+  const clampLeft = (left: number, width: number): number => Math.max(0, Math.min(trackWidth - width, left));
+  const minLeft = clampLeft(selected.minLeft, labelWidths[0]);
+  const maxLeft = clampLeft(selected.maxLeft, labelWidths[1]);
+  return {
+    min: { left: minLeft, side: selected.minSide },
+    max: { left: maxLeft, side: selected.maxSide },
+    stacked: separationShortfall(minLeft, maxLeft) > 0,
+  };
 }

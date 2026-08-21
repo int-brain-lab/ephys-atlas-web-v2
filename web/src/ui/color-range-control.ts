@@ -4,6 +4,7 @@ import { paletteCssGradient } from '../rendering/colormap-palettes.js';
 import {
   clampRangeHandle,
   colorRangeDomain,
+  placeRangeLabels,
   rangePosition,
   rangeSliderStep,
   translateRangeWindow,
@@ -44,6 +45,9 @@ export class ColorRangeControl {
   private readonly maxSlider = this.createSlider('max', 'Maximum color value');
   private readonly minLabel = this.createValueLabel('min');
   private readonly maxLabel = this.createValueLabel('max');
+  private readonly valueLabels = element('div', 'color-range__active-labels');
+  private readonly domainMinLabel = element('span', 'color-legend__domain-minimum');
+  private readonly domainMaxLabel = element('span', 'color-legend__domain-maximum');
   private readonly unit = element('span', 'color-legend__unit');
   private readonly exactEditor = element('form', 'color-range__exact');
   private readonly exactTitle = element('label', 'color-range__exact-label');
@@ -56,6 +60,7 @@ export class ColorRangeControl {
   private commitFrame: number | null = null;
   private histogramSignature = '';
   private domain: NumericRange | null = null;
+  private readonly labelResizeObserver = new ResizeObserver(() => this.positionValueLabels());
 
   constructor(private readonly setRange: (range: ColorRange) => void) {
     this.element.setAttribute('aria-label', 'Feature color legend');
@@ -75,8 +80,10 @@ export class ColorRangeControl {
     this.bar.addEventListener('pointercancel', this.endDrag);
     this.bar.append(this.histogram, selectedRange, this.minSlider, this.maxSlider, minHandle, maxHandle);
 
+    this.valueLabels.append(this.minLabel, this.maxLabel);
+    this.labelResizeObserver.observe(this.valueLabels);
     const labels = element('figcaption', 'color-legend__labels');
-    labels.append(this.minLabel, this.unit, this.maxLabel);
+    labels.append(this.domainMinLabel, this.unit, this.domainMaxLabel);
 
     this.exactEditor.hidden = true;
     this.exactEditor.addEventListener('submit', this.submitExactRange);
@@ -93,7 +100,7 @@ export class ColorRangeControl {
     cancel.addEventListener('click', this.closeExactEditor);
     this.exactEditor.append(this.exactTitle, apply, cancel);
 
-    this.element.append(header, this.bar, labels, this.exactEditor);
+    this.element.append(header, this.valueLabels, this.bar, labels, this.exactEditor);
   }
 
   render(model: ColorRangeControlModel): void {
@@ -143,6 +150,7 @@ export class ColorRangeControl {
 
   destroy(): void {
     this.cancelPendingCommit();
+    this.labelResizeObserver.disconnect();
   }
 
   private createSlider(bound: 'min' | 'max', label: string): HTMLInputElement {
@@ -333,6 +341,28 @@ export class ColorRangeControl {
     this.bar.style.setProperty('--range-high', `${rangePosition(max, this.domain) * 100}%`);
     this.minLabel.textContent = formatScalar(min);
     this.maxLabel.textContent = formatScalar(max);
+    this.domainMinLabel.textContent = formatScalar(this.domain[0]);
+    this.domainMaxLabel.textContent = formatScalar(this.domain[1]);
+    this.positionValueLabels();
+  }
+
+  private positionValueLabels(): void {
+    if (!this.domain) return;
+    const trackWidth = this.valueLabels.clientWidth;
+    if (!(trackWidth > 0)) return;
+    const placement = placeRangeLabels(
+      trackWidth,
+      [
+        rangePosition(this.minSlider.valueAsNumber, this.domain) * trackWidth,
+        rangePosition(this.maxSlider.valueAsNumber, this.domain) * trackWidth,
+      ],
+      [this.minLabel.offsetWidth, this.maxLabel.offsetWidth],
+    );
+    this.minLabel.style.left = `${placement.min.left}px`;
+    this.maxLabel.style.left = `${placement.max.left}px`;
+    this.minLabel.dataset.side = placement.min.side;
+    this.maxLabel.dataset.side = placement.max.side;
+    this.valueLabels.dataset.stacked = String(placement.stacked);
   }
 
   private scheduleCommit(): void {

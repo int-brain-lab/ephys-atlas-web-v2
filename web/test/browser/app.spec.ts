@@ -430,11 +430,21 @@ test('scientific context menus and color controls are driven by the loaded relea
   await expect(page.locator('.color-range__histogram-bin')).toHaveCount(8);
   await expect(page.getByRole('slider', { name: 'Minimum color value', exact: true })).toHaveValue('-0.25');
   await expect(page.getByRole('slider', { name: 'Maximum color value', exact: true })).toHaveValue('3.25');
+  await expect(page.locator('.color-legend__domain-minimum')).toHaveText('-0.5');
+  await expect(page.locator('.color-legend__domain-maximum')).toHaveText('3.5');
+  await expect(page.locator('.color-legend__minimum')).toHaveAttribute('data-side', 'right');
+  await expect(page.locator('.color-legend__maximum')).toHaveAttribute('data-side', 'left');
+  const activeLabelBounds = await page.locator('.color-range__value').evaluateAll((labels) => labels.map((label) => {
+    const bounds = label.getBoundingClientRect();
+    return { left: bounds.left, right: bounds.right, bottom: bounds.bottom };
+  }));
+  expect(activeLabelBounds[0]!.right).toBeLessThan(activeLabelBounds[1]!.left);
   await expect(settings.getByRole('spinbutton')).toHaveCount(0);
 
   const rangeBar = page.locator('.color-legend__bar');
   const minimumBounds = await rangeBar.boundingBox();
   expect(minimumBounds).not.toBeNull();
+  expect(activeLabelBounds[0]!.bottom).toBeLessThanOrEqual(minimumBounds!.y);
   await page.mouse.move(
     minimumBounds!.x + minimumBounds!.width * .0625,
     minimumBounds!.y + minimumBounds!.height / 2,
