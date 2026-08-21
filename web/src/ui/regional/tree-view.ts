@@ -5,6 +5,30 @@ import { html, required } from './dom.js';
 import { rankRegionsByValue, regionMatchesQuery } from './model.js';
 import { createRegionRow } from './row-view.js';
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function createOrderIcon(order: RegionOrder): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.classList.add('region-order__icon');
+  svg.setAttribute('viewBox', '0 0 16 16');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+
+  const path = document.createElementNS(SVG_NS, 'path');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', 'currentColor');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-linejoin', 'round');
+  path.setAttribute('stroke-width', '1.35');
+  path.setAttribute('d', {
+    anatomy: 'M8 2.25v3M3.25 7.5V5.25h9.5V7.5M3.25 7.5v2.25M8 5.25v4.5M12.75 7.5v2.25M1.75 9.75h3v3h-3zM6.5 9.75h3v3h-3zM11.25 9.75h3v3h-3z',
+    'value-asc': 'M3.25 12.5v-9m-2 2 2-2 2 2M7 4h2M7 8h4M7 12h6',
+    'value-desc': 'M3.25 3.5v9m-2-2 2 2 2-2M7 4h6M7 8h4M7 12h2',
+  }[order]);
+  svg.append(path);
+  return svg;
+}
+
 export interface RegionalTreeCallbacks {
   toggleSelection(regionId: string): void;
   setRegionOrder(order: RegionOrder): void;
@@ -197,12 +221,12 @@ export class RegionalTreeView {
       'value-desc': 'Anatomy',
     };
     this.orderButton.dataset.order = this.currentOrder;
-    this.orderButton.textContent = labels[this.currentOrder];
+    this.orderButton.replaceChildren(createOrderIcon(this.currentOrder));
     this.orderButton.setAttribute(
       'aria-label',
       `Region order: ${labels[this.currentOrder]}. Activate for ${nextLabels[this.currentOrder]}.`,
     );
-    this.orderButton.title = `Region order · next: ${nextLabels[this.currentOrder]}`;
+    this.orderButton.title = `Order: ${labels[this.currentOrder]} · Next: ${nextLabels[this.currentOrder]}`;
   }
 
   private readonly onTreeClick = (event: Event): void => {

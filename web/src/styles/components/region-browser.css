@@ -20,7 +20,9 @@
 
 .region-search__source{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.region-order{flex:none;min-width:4.65rem;height:1.45rem;padding:0 .38rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-view);color:var(--color-text-secondary);font-size:.62rem}
+.region-order{flex:none;width:1.45rem;height:1.45rem;display:grid;place-items:center;padding:0;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-view);color:var(--color-text-secondary)}
+
+.region-order__icon{width:1rem;height:1rem;display:block}
 
 .region-order:hover:not(:disabled){background:var(--color-surface-hover);color:var(--color-text)}
 

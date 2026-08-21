@@ -157,11 +157,14 @@ test('value ordering switches to a flat ranking and restores the anatomical tree
   await expect(frontalPole).toHaveAttribute('aria-expanded', 'false');
 
   const orderButton = page.getByRole('button', { name: /Region order:/ });
-  await expect(orderButton).toHaveText('Anatomy');
+  await expect(orderButton).toHaveAttribute('data-order', 'anatomy');
+  await expect(orderButton).toHaveAttribute('title', 'Order: Anatomy · Next: Value ascending');
+  await expect(orderButton.locator('.region-order__icon')).toHaveCount(1);
+  await expect(orderButton).toHaveText('');
   await orderButton.click();
-  await expect(orderButton).toHaveText('Value ↑');
+  await expect(orderButton).toHaveAttribute('data-order', 'value-asc');
   await orderButton.click();
-  await expect(orderButton).toHaveText('Value ↓');
+  await expect(orderButton).toHaveAttribute('data-order', 'value-desc');
   await expect.poll(() => new URL(page.url()).searchParams.get('order')).toBe('value-desc');
   await expect(page.locator('.region-list')).toHaveAttribute('data-order', 'value-desc');
   await expect(page.locator('.region-tree-controls')).toBeHidden();
@@ -174,7 +177,7 @@ test('value ordering switches to a flat ranking and restores the anatomical tree
 
   await orderButton.click();
   await orderButton.click();
-  await expect(orderButton).toHaveText('Value ↑');
+  await expect(orderButton).toHaveAttribute('data-order', 'value-asc');
   await expect(page.locator('.region-row').nth(0)).toHaveAttribute('data-region-id', '-477');
   await expect(page.locator('.region-row').nth(1)).toHaveAttribute('data-region-id', '-362');
   await expect(page.locator('.region-row').nth(2)).toHaveAttribute('data-region-id', '-382');
@@ -182,7 +185,7 @@ test('value ordering switches to a flat ranking and restores the anatomical tree
 
   await orderButton.click();
   await orderButton.click();
-  await expect(orderButton).toHaveText('Anatomy');
+  await expect(orderButton).toHaveAttribute('data-order', 'anatomy');
   await expect.poll(() => new URL(page.url()).searchParams.get('order')).toBeNull();
   await expect(page.locator('.region-row')).toHaveCount(874);
   await expect(frontalPole).toHaveAttribute('aria-expanded', 'false');
