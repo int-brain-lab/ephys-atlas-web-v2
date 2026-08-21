@@ -8,17 +8,11 @@ export class DatasetRepository {
   ) {}
 
   async loadCatalog(): Promise<DatasetCatalog> {
-    const [published, local] = await Promise.all([
-      this.published.loadCatalog(),
-      this.local.loadCatalog(),
-    ]);
+    const [published, local] = await Promise.all([this.published.loadCatalog(), this.local.loadCatalog()]);
     if (published.schemaVersion !== local.schemaVersion) {
       throw new Error(`Catalog schema mismatch: ${published.schemaVersion} vs ${local.schemaVersion}`);
     }
-    return {
-      schemaVersion: published.schemaVersion,
-      datasets: [...published.datasets, ...local.datasets],
-    };
+    return { schemaVersion: published.schemaVersion, datasets: [...published.datasets, ...local.datasets] };
   }
 
   loadManifest(ref: DatasetRef): Promise<DatasetManifest> {

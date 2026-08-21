@@ -1,9 +1,6 @@
-import type { DatasetRef, ParcellationId, RepresentationKind, StatisticId } from '../domain/types.js';
-import {
-  materializeRegionalHistogram,
-  parseRegionMetadata,
-  parseRegionalStatisticsResource,
-} from './regional-data.js';
+import type { DatasetRef, ParcellationId, RepresentationKind } from '../domain/types.js';
+import { loadRegionalFeatureFromResources, loadRegionsFromResources } from './regional-loader.js';
+import type { ResourceReader } from './resource-reader.js';
 import {
   decodeBinaryArray,
   localDatasetReleaseId,
@@ -19,14 +16,12 @@ import type {
   FeatureDescriptor,
   FeaturePayload,
   RegionMetadata,
-  RegionalFeaturePayload,
 } from './contracts.js';
 
 const DB_NAME = 'ibl-ephys-atlas-v2-local-v02';
 const DB_VERSION = 1;
 const MANIFESTS = 'manifests';
 const RESOURCES = 'resources';
-const DISPLAY_STATISTICS = new Set<StatisticId>(['mean', 'median', 'min', 'max', 'count']);
 
 interface StoredManifest {
   key: string;
@@ -84,6 +79,30 @@ function resolvePath(baseFile: string, relative: string): string {
   return new URL(relative, base).pathname.replace(/^\//, '');
 }
 
+class LocalResourceReader implements ResourceReader {
+  constructor(
+    private readonly source: LocalDatasetSource,
+    private readonly manifest: DatasetManifest,
+  ) {}
+
+  resolve(base: string, relative: string): string {
+    return resolvePath(base, relative);
+  }
+
+  async readJson(location: string): Promise<unknown> {
+    return JSON.parse(await (await this.source.readResource(this.manifest, location)).text()) as unknown;
+  }
+
+  async readArray(location: string, descriptor: BinaryArrayDescriptor): Promise<number[]> {
+    const bytes = await this.readBytes(location);
+    return decodeBinaryArray(bytes, { ...descriptor, path: location });
+  }
+
+  async readBytes(location: string): Promise<ArrayBuffer> {
+    return (await this.source.readResource(this.manifest, location)).arrayBuffer();
+  }
+}
+
 export class LocalDatasetSource implements DatasetSource {
   readonly kind = 'local' as const;
 
@@ -99,7 +118,6 @@ export class LocalDatasetSource implements DatasetSource {
 
     const { document, features } = await validateLocalDatasetFiles(byPath);
     const selector = localDatasetReleaseId(document.datasetId, document.release.releaseId);
-    const namespace = selector;
     const manifest = resolveDatasetManifest(document, features, 'local');
     const storedManifest = {
       ...manifest,
@@ -110,7 +128,7 @@ export class LocalDatasetSource implements DatasetSource {
     const transaction = db.transaction([MANIFESTS, RESOURCES], 'readwrite');
     try {
       transaction.objectStore(MANIFESTS).add({
-        key: namespace,
+        key: selector,
         selector,
         sourceDatasetId: document.datasetId,
         sourceReleaseId: document.release.releaseId,
@@ -118,10 +136,7 @@ export class LocalDatasetSource implements DatasetSource {
       } satisfies StoredManifest);
       for (const [path, file] of byPath) {
         if (path === 'manifest.json') continue;
-        transaction.objectStore(RESOURCES).put({
-          key: resourceKey(namespace, path),
-          blob: file,
-        } satisfies StoredResource);
+        transaction.objectStore(RESOURCES).put({ key: resourceKey(selector, path), blob: file } satisfies StoredResource);
       }
       await transactionDone(transaction);
     } catch (error) {
@@ -144,7 +159,6 @@ export class LocalDatasetSource implements DatasetSource {
       manifest: 'indexeddb://manifest.json',
       immutable: true,
     }));
-
     return {
       schemaVersion: SCHEMA_VERSION,
       datasets: releases.length ? [{
@@ -161,30 +175,19 @@ export class LocalDatasetSource implements DatasetSource {
     if (ref.datasetId !== 'local' || !ref.releaseId) throw new Error('A local release id is required');
     const db = await openDatabase();
     const transaction = db.transaction(MANIFESTS, 'readonly');
-    const stored = await requestValue(transaction.objectStore(MANIFESTS).get(ref.releaseId) as IDBRequest<StoredManifest | undefined>);
+    const stored = await requestValue(
+      transaction.objectStore(MANIFESTS).get(ref.releaseId) as IDBRequest<StoredManifest | undefined>,
+    );
     db.close();
     if (!stored) throw new Error(`Local release not found: ${ref.releaseId}`);
     return stored.manifest;
   }
 
   async loadRegions(ref: DatasetRef, parcellation: ParcellationId): Promise<readonly RegionMetadata[]> {
-    if (!ref.releaseId) throw new Error('A local release id is required');
-    const manifest = await this.loadManifest(ref);
+    const manifest = await this.requireManifest(ref);
     const parcel = manifest.parcellationDescriptors[parcellation];
     if (!parcel) throw new Error(`Dataset has no ${parcellation} parcellation`);
-    if (!parcel.metadata) throw new Error(`${parcellation} parcellation has no region metadata resource`);
-    const [metadataBlob, regionIds] = await Promise.all([
-      this.readResource(manifest, parcel.metadata),
-      this.readArray(manifest, parcel.regionIndex.path, parcel.regionIndex),
-    ]);
-    const regions = parseRegionMetadata(JSON.parse(await metadataBlob.text()) as unknown);
-    if (regions.length !== regionIds.length) throw new Error(`${parcellation} metadata does not match region index length`);
-    for (const region of regions) {
-      if (region.index < 0 || region.index >= regionIds.length || regionIds[region.index] !== region.atlasId) {
-        throw new Error(`${parcellation} metadata/index mismatch at region ${region.id}`);
-      }
-    }
-    return regions;
+    return loadRegionsFromResources(this.reader(manifest), 'manifest.json', parcellation, parcel);
   }
 
   async loadFeature(
@@ -193,9 +196,10 @@ export class LocalDatasetSource implements DatasetSource {
     representation: RepresentationKind,
     parcellation?: ParcellationId,
   ): Promise<FeaturePayload> {
-    if (!ref.releaseId) throw new Error('A local release id is required');
-    const manifest = await this.loadManifest(ref);
+    const manifest = await this.requireManifest(ref);
     const feature = this.findFeature(manifest, featureId);
+    const reader = this.reader(manifest);
+
     if (representation === 'volume') {
       const descriptor = feature.representations.volume;
       if (!descriptor) throw new Error(`Feature ${featureId} has no volume representation`);
@@ -204,59 +208,30 @@ export class LocalDatasetSource implements DatasetSource {
         featureId,
         representation: 'volume',
         descriptor,
-        loadResource: async (path) => {
-          const blob = await this.readResource(manifest, resolvePath(feature.path, path));
-          return blob.arrayBuffer();
-        },
+        loadResource: (path) => reader.readBytes(reader.resolve(feature.path, path)),
       };
     }
 
     if (!parcellation) throw new Error(`Parcellation required for regional feature ${feature.id}`);
-    const regional = feature.representations.regional?.parcellations[parcellation];
     const parcel = manifest.parcellationDescriptors[parcellation];
-    if (!regional || !parcel) throw new Error(`Feature ${feature.id} has no ${parcellation} regional representation`);
-
-    const regionIds = await this.readArray(manifest, parcel.regionIndex.path, parcel.regionIndex);
-    const values = await this.readArray(manifest, resolvePath(feature.path, regional.values.path), regional.values);
-    if (regionIds.length !== values.length) throw new Error(`${feature.id}/${parcellation} values do not match region index length`);
-    const statsPath = resolvePath(feature.path, regional.statistics);
-    const statsBlob = await this.readResource(manifest, statsPath);
-    const statsDocument = parseRegionalStatisticsResource(JSON.parse(await statsBlob.text()) as unknown);
-    const [matrix, histogramFlat] = await Promise.all([
-      this.readArray(manifest, resolvePath(statsPath, statsDocument.values.path), statsDocument.values),
-      statsDocument.histogram?.regionalCounts
-        ? this.readArray(
-            manifest,
-            resolvePath(statsPath, statsDocument.histogram.regionalCounts.path),
-            statsDocument.histogram.regionalCounts,
-          )
-        : Promise.resolve(null),
-    ]);
-    const fieldCount = statsDocument.fields.length;
-    if (statsDocument.values.shape.length !== 2 || statsDocument.values.shape[0] !== regionIds.length || statsDocument.values.shape[1] !== fieldCount) {
-      throw new Error(`${feature.id}/${parcellation} regional statistics shape is inconsistent`);
-    }
-
-    const statistics: RegionalFeaturePayload['statistics'] = {};
-    if (DISPLAY_STATISTICS.has(regional.summary as StatisticId)) statistics[regional.summary as StatisticId] = values;
-    for (let fieldIndex = 0; fieldIndex < fieldCount; fieldIndex += 1) {
-      const field = statsDocument.fields[fieldIndex];
-      if (!field || !DISPLAY_STATISTICS.has(field as StatisticId)) continue;
-      statistics[field as StatisticId] = regionIds.map((_, row) => matrix[row * fieldCount + fieldIndex] ?? NaN);
-    }
-    return {
-      schemaVersion: SCHEMA_VERSION,
-      featureId,
-      representation: 'regional',
+    if (!parcel) throw new Error(`Dataset has no ${parcellation} region index`);
+    return loadRegionalFeatureFromResources({
+      reader,
+      manifestLocation: 'manifest.json',
+      featureLocation: feature.path,
+      feature,
       parcellation,
-      regionIds: regionIds.map(String),
-      statistics,
-      ...(statsDocument.population ? { population: statsDocument.population } : {}),
-      ...(statsDocument.global ? { global: statsDocument.global } : {}),
-      ...(statsDocument.histogram
-        ? { histogram: materializeRegionalHistogram(statsDocument.histogram, histogramFlat, regionIds.length) }
-        : {}),
-    };
+      parcellationDescriptor: parcel,
+    });
+  }
+
+  private async requireManifest(ref: DatasetRef): Promise<DatasetManifest> {
+    if (!ref.releaseId) throw new Error('A local release id is required');
+    return this.loadManifest(ref);
+  }
+
+  private reader(manifest: DatasetManifest): ResourceReader {
+    return new LocalResourceReader(this, manifest);
   }
 
   private findFeature(manifest: DatasetManifest, featureId: string): FeatureDescriptor {
@@ -265,19 +240,16 @@ export class LocalDatasetSource implements DatasetSource {
     return feature;
   }
 
-  private async readResource(manifest: DatasetManifest, path: string): Promise<Blob> {
+  async readResource(manifest: DatasetManifest, path: string): Promise<Blob> {
     const db = await openDatabase();
     const transaction = db.transaction(RESOURCES, 'readonly');
     const namespace = manifest.dataset.release;
-    const stored = await requestValue(transaction.objectStore(RESOURCES).get(resourceKey(namespace, path)) as IDBRequest<StoredResource | undefined>);
+    const stored = await requestValue(
+      transaction.objectStore(RESOURCES).get(resourceKey(namespace, path)) as IDBRequest<StoredResource | undefined>,
+    );
     db.close();
     if (!stored) throw new Error(`Local resource not found: ${path}`);
     return stored.blob;
-  }
-
-  private async readArray(manifest: DatasetManifest, path: string, descriptor: BinaryArrayDescriptor): Promise<number[]> {
-    const blob = await this.readResource(manifest, path);
-    return decodeBinaryArray(await blob.arrayBuffer(), { ...descriptor, path });
   }
 
   private async listManifests(): Promise<StoredManifest[]> {
