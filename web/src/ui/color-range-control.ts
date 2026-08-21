@@ -30,10 +30,10 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, className: strin
 
 function formatScalar(value: number): string {
   const magnitude = Math.abs(value);
-  if (magnitude !== 0 && (magnitude >= 100_000 || magnitude < 0.001)) return value.toExponential(4);
+  if (magnitude !== 0 && (magnitude >= 100_000 || magnitude < 0.001)) return value.toExponential(2);
   return new Intl.NumberFormat(undefined, {
-    minimumSignificantDigits: 5,
-    maximumSignificantDigits: 5,
+    minimumSignificantDigits: 3,
+    maximumSignificantDigits: 3,
   }).format(value);
 }
 
