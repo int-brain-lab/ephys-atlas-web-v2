@@ -99,6 +99,27 @@ def test_duplicate_parcellation_ids_are_rejected(release: Path) -> None:
         validate_release(release, SCHEMA)
 
 
+@pytest.mark.parametrize(
+    "created_at",
+    [
+        "not-a-date",
+        "2026-02-30T00:00:00Z",
+        "2026-08-21T24:00:00Z",
+        "2026-08-21T00:00:00+25:00",
+    ],
+)
+def test_release_created_at_requires_a_valid_rfc3339_date_time(
+    release: Path, created_at: str
+) -> None:
+    path = release / "manifest.json"
+    manifest = load(path)
+    assert isinstance(manifest, dict)
+    manifest["release"]["created_at"] = created_at
+    save(path, manifest)
+    with pytest.raises(ValidationError, match="created_at"):
+        validate_release(release, SCHEMA)
+
+
 def test_region_metadata_must_match_dense_index(release: Path) -> None:
     path = release / "parcellations" / "allen" / "regions.json"
     regions = load(path)

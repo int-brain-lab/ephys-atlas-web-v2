@@ -1,4 +1,4 @@
-import type { DatasetId } from '../../domain/types.js';
+import type { DatasetId, ParcellationId } from '../../domain/types.js';
 import {
   SCHEMA_VERSION,
   type DatasetManifest,
@@ -150,6 +150,25 @@ export function resolveDatasetManifest(
 ): DatasetManifest {
   if (features.length !== document.featureRefs.length) {
     throw new Error('Resolved feature count does not match manifest feature references');
+  }
+  if (datasetId !== 'local' && datasetId !== document.datasetId) {
+    throw new Error(`Manifest dataset ${document.datasetId} does not match requested dataset ${datasetId}`);
+  }
+  for (const [index, feature] of features.entries()) {
+    const reference = document.featureRefs[index]!;
+    if (feature.id !== reference.id || feature.path !== reference.path) {
+      throw new Error(`Resolved feature ${feature.id} does not match manifest reference ${reference.id}`);
+    }
+  }
+  const declaredParcellations = new Set(document.parcellations.map((item) => item.id));
+  for (const feature of features) {
+    const regional = feature.representations.regional;
+    if (!regional) continue;
+    for (const parcellationId of Object.keys(regional.parcellations)) {
+      if (!declaredParcellations.has(parcellationId as ParcellationId)) {
+        throw new Error(`Feature ${feature.id} references undeclared ${parcellationId} parcellation`);
+      }
+    }
   }
   const parcellationDescriptors: DatasetManifest['parcellationDescriptors'] = {};
   for (const item of document.parcellations) parcellationDescriptors[item.id] = item;

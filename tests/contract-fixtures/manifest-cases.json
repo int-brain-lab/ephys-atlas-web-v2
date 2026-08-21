@@ -54,6 +54,87 @@
       }
     },
     {
+      "name": "invalid-release-date-time",
+      "valid": false,
+      "document": {
+        "schema_version": "0.1",
+        "dataset_id": "contract_fixture",
+        "title": "Contract fixture",
+        "description": "",
+        "release": {"release_id": "r1", "immutable": true, "created_at": "2026-02-30T00:00:00Z"},
+        "provenance": {
+          "sources": [{"role": "user-input", "description": "fixture"}],
+          "builder": {"name": "fixture", "version": "1", "command": "fixture"},
+          "recipe": {"id": "fixture"}
+        },
+        "parcellations": [],
+        "features": [{"id": "feature_a", "path": "features/feature_a/feature.json"}],
+        "artifacts": []
+      }
+    },
+    {
+      "name": "invalid-duplicate-feature-id",
+      "valid": false,
+      "document": {
+        "schema_version": "0.1",
+        "dataset_id": "contract_fixture",
+        "title": "Contract fixture",
+        "description": "",
+        "release": {"release_id": "r1", "immutable": true, "created_at": "2026-08-21T00:00:00Z"},
+        "provenance": {
+          "sources": [{"role": "user-input", "description": "fixture"}],
+          "builder": {"name": "fixture", "version": "1", "command": "fixture"},
+          "recipe": {"id": "fixture"}
+        },
+        "parcellations": [],
+        "features": [
+          {"id": "feature_a", "path": "features/feature_a/feature.json"},
+          {"id": "feature_a", "path": "features/feature_b/feature.json"}
+        ],
+        "artifacts": []
+      }
+    },
+    {
+      "name": "invalid-duplicate-parcellation-id",
+      "valid": false,
+      "document": {
+        "schema_version": "0.1",
+        "dataset_id": "contract_fixture",
+        "title": "Contract fixture",
+        "description": "",
+        "release": {"release_id": "r1", "immutable": true, "created_at": "2026-08-21T00:00:00Z"},
+        "provenance": {
+          "sources": [{"role": "user-input", "description": "fixture"}],
+          "builder": {"name": "fixture", "version": "1", "command": "fixture"},
+          "recipe": {"id": "fixture"}
+        },
+        "parcellations": [
+          {
+            "id": "beryl",
+            "region_index": {
+              "path": "parcellations/beryl/region_ids.i32",
+              "dtype": "int32",
+              "shape": [1],
+              "order": "C",
+              "endianness": "little"
+            }
+          },
+          {
+            "id": "beryl",
+            "region_index": {
+              "path": "parcellations/beryl-copy/region_ids.i32",
+              "dtype": "int32",
+              "shape": [1],
+              "order": "C",
+              "endianness": "little"
+            }
+          }
+        ],
+        "features": [{"id": "feature_a", "path": "features/feature_a/feature.json"}],
+        "artifacts": []
+      }
+    },
+    {
       "name": "invalid-schema-version",
       "valid": false,
       "document": {

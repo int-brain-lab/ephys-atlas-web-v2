@@ -167,6 +167,42 @@ test('resolved manifest preserves release, provenance, dataset, and feature cont
   });
 });
 
+test('resolved manifest rejects mismatched dataset and feature identities', () => {
+  const root = new URL('../../../fixtures/golden-v0.3/', import.meta.url);
+  const document = parseDatasetManifestDocument(JSON.parse(readFileSync(new URL('manifest.json', root), 'utf8')));
+  const feature = parseFeatureDescriptor(
+    JSON.parse(readFileSync(new URL('features/rms_ap/feature.json', root), 'utf8')),
+    'features/rms_ap/feature.json',
+  );
+
+  assert.throws(
+    () => resolveDatasetManifest(document, [feature], 'different_dataset'),
+    /does not match requested dataset/,
+  );
+  assert.throws(
+    () => resolveDatasetManifest(document, [{ ...feature, id: 'different_feature' }]),
+    /does not match manifest reference/,
+  );
+  assert.throws(
+    () => resolveDatasetManifest(document, [{
+      ...feature,
+      representations: {
+        ...feature.representations,
+        regional: {
+          ...feature.representations.regional,
+          parcellations: {
+            beryl: {
+              ...feature.representations.regional.parcellations.allen,
+              parcellationId: 'beryl',
+            },
+          },
+        },
+      },
+    }]),
+    /references undeclared beryl parcellation/,
+  );
+});
+
 test('manifest metadata validation rejects invalid release dates and provenance', () => {
   const root = new URL('../../../fixtures/golden-v0.3/', import.meta.url);
   const valid = JSON.parse(readFileSync(new URL('manifest.json', root), 'utf8'));
@@ -184,6 +220,10 @@ test('feature metadata validation rejects a missing or non-string unit', () => {
   const root = new URL('../../../fixtures/golden-v0.3/', import.meta.url);
   const valid = JSON.parse(readFileSync(new URL('features/rms_ap/feature.json', root), 'utf8'));
   assert.throws(() => parseFeatureDescriptor({ ...valid, unit: 10 }, 'feature.json'), /feature.json.unit must be a string/);
+  assert.throws(
+    () => parseFeatureDescriptor({ ...valid, display: { range: [0, 'high'] } }, 'feature.json'),
+    /display.range must contain 2 finite numbers/,
+  );
 });
 
 test('local import validates the checked-in regional and volume golden graph', async () => {

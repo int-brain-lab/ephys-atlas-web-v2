@@ -3,12 +3,14 @@ from __future__ import annotations
 import gzip
 import json
 import math
+import re
+from datetime import date
 from itertools import product
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 
 from .io import DTYPES, sha256_file
@@ -16,6 +18,27 @@ from .io import DTYPES, sha256_file
 
 class ValidationError(RuntimeError):
     pass
+
+
+_RFC3339_DATE_TIME = re.compile(
+    r"^(\d{4})-(\d{2})-(\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d"
+    r"(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$"
+)
+FORMAT_CHECKER = FormatChecker()
+
+
+@FORMAT_CHECKER.checks("date-time")
+def _is_rfc3339_date_time(value: object) -> bool:
+    if not isinstance(value, str):
+        return True
+    match = _RFC3339_DATE_TIME.fullmatch(value)
+    if match is None:
+        return False
+    try:
+        date(*(int(part) for part in match.groups()))
+    except ValueError:
+        return False
+    return True
 
 
 def _schema_registry(schema_dir: Path) -> tuple[Registry, dict[str, dict]]:
@@ -29,7 +52,9 @@ def _schema_registry(schema_dir: Path) -> tuple[Registry, dict[str, dict]]:
 
 
 def _validate_json(instance: Any, schema_name: str, schemas: dict[str, dict], registry: Registry) -> None:
-    validator = Draft202012Validator(schemas[schema_name], registry=registry)
+    validator = Draft202012Validator(
+        schemas[schema_name], registry=registry, format_checker=FORMAT_CHECKER
+    )
     errors = sorted(validator.iter_errors(instance), key=lambda error: list(error.absolute_path))
     if errors:
         lines = [f"{schema_name}: {'.'.join(map(str, error.absolute_path))}: {error.message}" for error in errors]

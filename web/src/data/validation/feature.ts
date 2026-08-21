@@ -32,6 +32,11 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
   array(root.artifacts, `${path}.artifacts`);
   const featureId = string(root.id, `${path}.id`);
   if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(featureId)) throw new Error(`${path}.id has an invalid format`);
+  if (root.display !== undefined) {
+    const display = object(root.display, `${path}.display`);
+    if (display.colormap !== undefined) plainString(display.colormap, `${path}.display.colormap`);
+    if (display.range !== undefined) numberArray(display.range, 2, `${path}.display.range`);
+  }
   const descriptor: FeatureDescriptor = {
     id: featureId,
     path,

@@ -31,3 +31,30 @@ test('browser accepts the static catalog emitted by publishing service', () => {
     './datasets/ephys_atlas_channels/releases/2026_W12/manifest.json',
   );
 });
+
+test('catalog rejects duplicate dataset and release identities', () => {
+  const release = {
+    id: '2026_W12',
+    label: '2026_W12',
+    manifest: './datasets/channels/releases/2026_W12/manifest.json',
+    immutable: true,
+  };
+  const dataset = {
+    id: 'channels',
+    title: 'Channels',
+    releases: [release],
+    defaultRelease: release.id,
+  };
+
+  assert.throws(
+    () => parseDatasetCatalog({ schemaVersion: '0.1', datasets: [dataset, dataset] }),
+    /dataset ids must not contain duplicates/,
+  );
+  assert.throws(
+    () => parseDatasetCatalog({
+      schemaVersion: '0.1',
+      datasets: [{ ...dataset, releases: [release, release] }],
+    }),
+    /release ids must not contain duplicates/,
+  );
+});
