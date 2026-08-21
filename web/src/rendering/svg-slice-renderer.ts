@@ -188,6 +188,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   }
 
   private applyRegionState(frame: RegionalSliceFrame): void {
+    this.mount.svg.classList.toggle('has-region-selection', (frame.selectedRegionIds?.size ?? 0) > 0);
     for (const [regionId, paths] of this.pathIndex) {
       const fill = frame.regionColors?.get(regionId);
       const selected = frame.selectedRegionIds?.has(regionId) ?? false;

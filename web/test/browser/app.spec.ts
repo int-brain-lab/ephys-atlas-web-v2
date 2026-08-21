@@ -521,6 +521,18 @@ test('renderer region selection flows back into shared URL state', async ({ page
   await path.dispatchEvent('pointerup');
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
   await expect(page.locator('.selected-region')).toContainText('MD');
+
+  const projection = page.locator('[data-view="coronal"] .view-frame__brain-svg');
+  const unselected = projection.locator('path[data-allen-id="-1009"]').first();
+  await expect(projection).toHaveClass(/has-region-selection/);
+  await expect(path).toHaveCSS('opacity', '1');
+  await expect(unselected).toHaveCSS('opacity', '0.3');
+
+  await unselected.dispatchEvent('pointermove');
+  await expect(unselected).toHaveClass(/is-highlighted/);
+  await expect(unselected).toHaveCSS('opacity', '1');
+  await page.locator('[data-view="coronal"] .view-frame__slice-figure').dispatchEvent('pointerleave');
+  await expect(unselected).toHaveCSS('opacity', '0.3');
 });
 
 test('region hover is linked across all anatomical projections', async ({ page }) => {
