@@ -244,6 +244,11 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await page.getByRole('button', { name: 'Expand selected-region comparison' }).click();
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'true');
   await expect(page.locator('.analysis-panel__surface')).toBeVisible();
+  const surfaceBounds = await page.locator('.analysis-panel__surface').boundingBox();
+  const comparisonBounds = await page.locator('.regional-comparison').boundingBox();
+  expect(surfaceBounds).not.toBeNull();
+  expect(comparisonBounds).not.toBeNull();
+  expect(surfaceBounds!.y + surfaceBounds!.height - comparisonBounds!.y - comparisonBounds!.height).toBeLessThanOrEqual(13);
   expect(await page.locator('[data-view="coronal"]').boundingBox()).toEqual(coronalBeforeSelection);
   await page.getByRole('button', { name: 'Collapse selected-region comparison' }).click();
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'false');
