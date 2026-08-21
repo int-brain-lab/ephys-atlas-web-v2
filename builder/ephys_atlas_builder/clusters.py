@@ -9,17 +9,16 @@ from typing import Mapping, Sequence
 
 import numpy as np
 
-from .channels import (
+from .io import sha256_file, write_json
+from .regional_release import (
     DEFAULT_PARCELLATIONS,
     FeatureInfo,
     RegionInfo,
-    _histogram_edges,
-    _write_feature_parcellation,
-    _write_parcellation,
     fold_region_ids_left,
+    histogram_edges,
+    write_feature_parcellation,
+    write_parcellation,
 )
-from .io import sha256_file, write_json
-
 
 DATASET_ID = "ephys_atlas_clusters"
 _COMMIT_RE = re.compile(r"^[0-9a-f]{7,40}$")
@@ -43,15 +42,11 @@ class ClusterBuildConfig:
         if not self.release_id:
             raise ValueError("release_id is required")
         if not self.created_at:
-            raise ValueError(
-                "created_at is required for deterministic release metadata"
-            )
+            raise ValueError("created_at is required for deterministic release metadata")
         if not self.project:
             raise ValueError("project is required and must identify the source cohort")
         if self.population != "all":
-            raise ValueError(
-                "cluster population must be 'all'; no implicit good-unit or other QC filter is approved"
-            )
+            raise ValueError("cluster population must be 'all'; no implicit good-unit or other QC filter is approved")
         if self.histogram_bins < 2:
             raise ValueError("histogram_bins must be >= 2")
         unknown = sorted(set(self.parcellations) - set(DEFAULT_PARCELLATIONS))
@@ -65,9 +60,7 @@ class ClusterBuildConfig:
             ("builder_commit", self.builder_commit),
         ):
             if value is not None and not _COMMIT_RE.fullmatch(value):
-                raise ValueError(
-                    f"{name} must be a 7-40 character lowercase Git commit"
-                )
+                raise ValueError(f"{name} must be a 7-40 character lowercase Git commit")
 
     def require_scientific_pins(self) -> None:
         missing = [
@@ -80,15 +73,11 @@ class ClusterBuildConfig:
             if value is None
         ]
         if missing:
-            raise ValueError(
-                f"snapshot builds require reproducibility pins: {', '.join(missing)}"
-            )
+            raise ValueError(f"snapshot builds require reproducibility pins: {', '.join(missing)}")
 
     def require_feature_catalog(self) -> None:
         if not self.features:
-            raise ValueError(
-                "snapshot builds require an explicit nonempty cluster feature catalog"
-            )
+            raise ValueError("snapshot builds require an explicit nonempty cluster feature catalog")
 
 
 def build_clusters_release_from_arrays(
@@ -100,13 +89,7 @@ def build_clusters_release_from_arrays(
     provenance_sources: Sequence[dict],
     feature_metadata: Mapping[str, FeatureInfo] | None = None,
 ) -> Path:
-    """Build regional summaries with one equal-weight observation per cluster.
-
-    The caller supplies one row per cluster. No insertion balancing, good-unit
-    selection, or other hidden QC is performed. For each feature independently,
-    all finite cluster values assigned to a region enter its arithmetic mean and
-    descriptive statistics.
-    """
+    """Build regional summaries with one equal-weight observation per cluster."""
     config.validate()
     release_dir = release_dir.resolve()
     if release_dir.exists() and any(release_dir.iterdir()):
@@ -115,11 +98,7 @@ def build_clusters_release_from_arrays(
 
     if not feature_values:
         raise ValueError("at least one cluster feature is required")
-    missing_parcellations = [
-        parcellation
-        for parcellation in config.parcellations
-        if parcellation not in parcellation_ids
-    ]
+    missing_parcellations = [p for p in config.parcellations if p not in parcellation_ids]
     if missing_parcellations:
         raise ValueError(f"missing region ids for: {', '.join(missing_parcellations)}")
     lengths = {len(np.asarray(values)) for values in feature_values.values()}
@@ -133,7 +112,7 @@ def build_clusters_release_from_arrays(
         metadata = region_metadata.get(parcellation)
         if metadata is None:
             raise ValueError(f"missing {parcellation} region metadata")
-        entry, groups = _write_parcellation(
+        entry, groups = write_parcellation(
             release_dir,
             parcellation,
             np.asarray(parcellation_ids[parcellation]),
@@ -147,10 +126,10 @@ def build_clusters_release_from_arrays(
     features = []
     for feature_id in sorted(feature_values):
         values = np.asarray(feature_values[feature_id], dtype=np.float64)
-        edges = _histogram_edges(values, config.histogram_bins)
+        edges = histogram_edges(values, config.histogram_bins)
         feature_root = release_dir / "features" / feature_id
         regional = [
-            _write_feature_parcellation(
+            write_feature_parcellation(
                 feature_root,
                 parcellation,
                 values,
@@ -166,11 +145,7 @@ def build_clusters_release_from_arrays(
             "schema_version": "0.1",
             "id": feature_id,
             "label": info.label if info else feature_id.replace("_", " "),
-            "description": (
-                info.description
-                if info
-                else f"Cluster feature {source_column} aggregated regionally over all finite clusters."
-            ),
+            "description": info.description if info else f"Cluster feature {source_column} aggregated regionally over all finite clusters.",
             "unit": info.unit if info else None,
             "value_semantics": {
                 "quantity": source_column,
@@ -189,22 +164,12 @@ def build_clusters_release_from_arrays(
             "artifacts": [],
         }
         write_json(feature_root / "feature.json", feature_doc)
-        features.append(
-            {"id": feature_id, "path": f"features/{feature_id}/feature.json"}
-        )
+        features.append({"id": feature_id, "path": f"features/{feature_id}/feature.json"})
 
     scientific_sources = []
     for description, repository, commit in (
-        (
-            "ephysatlas cluster table schema and cell feature definitions",
-            "int-brain-lab/ibleatools",
-            config.ibleatools_commit,
-        ),
-        (
-            "IBL atlas parcellation mappings",
-            "int-brain-lab/iblatlas",
-            config.iblatlas_commit,
-        ),
+        ("ephysatlas cluster table schema and cell feature definitions", "int-brain-lab/ibleatools", config.ibleatools_commit),
+        ("IBL atlas parcellation mappings", "int-brain-lab/iblatlas", config.iblatlas_commit),
     ):
         if commit:
             scientific_sources.append(
@@ -234,10 +199,7 @@ def build_clusters_release_from_arrays(
                 "version": "0.1.0",
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 **({"commit": config.builder_commit} if config.builder_commit else {}),
-                "command": (
-                    f"ephys-atlas-data build-clusters {config.release_id} "
-                    f"--project {config.project} --population all"
-                ),
+                "command": f"ephys-atlas-data build-clusters {config.release_id} --project {config.project} --population all",
             },
             "recipe": {
                 "id": "ephys-atlas-clusters-regional-v0.1",
@@ -247,17 +209,8 @@ def build_clusters_release_from_arrays(
                 "features": sorted(feature_values),
                 "regional_summary": "arithmetic mean of all finite clusters in each region",
                 "regional_statistics": [
-                    "count",
-                    "missing_count",
-                    "min",
-                    "max",
-                    "mean",
-                    "std",
-                    "median",
-                    "q05",
-                    "q25",
-                    "q75",
-                    "q95",
+                    "count", "missing_count", "min", "max", "mean", "std",
+                    "median", "q05", "q25", "q75", "q95",
                 ],
                 "histogram_bins": config.histogram_bins,
                 "hemisphere": "bilateral observations folded onto left atlas ids using -abs(id)",
@@ -307,10 +260,8 @@ def _cluster_scientific_inputs(source_snapshot: Path, config: ClusterBuildConfig
     assert config.features is not None
     requested = list(config.features)
     missing = [feature for feature in requested if feature not in frame.columns]
-    if config.features is not None and missing:
-        raise RuntimeError(
-            f"requested cluster features are missing: {', '.join(missing)}"
-        )
+    if missing:
+        raise RuntimeError(f"requested cluster features are missing: {', '.join(missing)}")
     features = [feature for feature in requested if feature in frame.columns]
     if not features:
         raise RuntimeError("no canonical scalar cluster features are present")
@@ -324,16 +275,10 @@ def _cluster_scientific_inputs(source_snapshot: Path, config: ClusterBuildConfig
     for feature in features:
         column = model_columns.get(feature)
         metadata = getattr(column, "metadata", None) or {}
-        unit = (
-            metadata.get("transformed_unit")
-            or metadata.get("raw_unit")
-            or metadata.get("unit")
-        )
+        unit = metadata.get("transformed_unit") or metadata.get("raw_unit") or metadata.get("unit")
         if unit in {"N/A", "n/a", ""}:
             unit = None
-        description = (
-            getattr(column, "description", None) or f"Cluster feature {feature}"
-        )
+        description = getattr(column, "description", None) or f"Cluster feature {feature}"
         feature_metadata[feature] = FeatureInfo(
             source_column=feature,
             label=metadata.get("label") or feature.replace("_", " "),
@@ -357,9 +302,7 @@ def _cluster_scientific_inputs(source_snapshot: Path, config: ClusterBuildConfig
 
     atlas_lookup = {
         int(region_id): RegionInfo(int(region_id), str(acronym), str(name))
-        for region_id, acronym, name in zip(
-            atlas.regions.id, atlas.regions.acronym, atlas.regions.name
-        )
+        for region_id, acronym, name in zip(atlas.regions.id, atlas.regions.acronym, atlas.regions.name)
     }
     region_metadata = {}
     for parcellation in config.parcellations:
@@ -386,9 +329,7 @@ def build_clusters_from_snapshot(
         raise RuntimeError(f"missing source snapshot metadata: {source_json}")
     source = json.loads(source_json.read_text())
     if source.get("dataset_id") != DATASET_ID:
-        raise RuntimeError(
-            f"source snapshot is not {DATASET_ID}: {source.get('dataset_id')}"
-        )
+        raise RuntimeError(f"source snapshot is not {DATASET_ID}: {source.get('dataset_id')}")
     if str(source.get("resolved_release")) != config.release_id:
         raise RuntimeError(
             f"source release {source.get('resolved_release')} does not match requested release {config.release_id}"
