@@ -41,15 +41,22 @@ Local-only preferences include drawer widths, whether a settings panel was left 
 
 Use semantic HTML and standard keyboard interaction first, augmented by a small discoverable shortcut set.
 
-Suggested launch shortcuts:
+Implemented launch shortcuts:
 
-- `/`: focus the relevant search surface.
+- `Shift + Down` / `Shift + Up`: select the next/previous feature in manifest order without wrapping.
+- `/`: open the feature catalogue and focus its search field.
 - `Esc`: close transient UI or leave focus/maximized mode.
 - Arrow keys: move through slices while an anatomical view has keyboard focus.
 - `Enter` / `Space`: standard activation/selection behavior.
 - `?`: show keyboard-shortcut help.
 
-All important actions must remain available without keyboard shortcuts.
+Global shortcuts do not fire while the user is editing text or another form
+control, or while a modal dialog is open. Feature changes retain their normal
+URL persistence, representation fallback, stale-load cancellation, and bounded
+adjacent-feature prefetch behavior. Feature boundaries do not wrap. The help
+dialog is also available from the visible Shortcuts header action.
+
+All important actions remain available without keyboard shortcuts.
 
 ## UX-031 — Scientific accessibility
 

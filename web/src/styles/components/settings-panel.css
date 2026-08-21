@@ -416,3 +416,39 @@
   font-size: .64rem;
   overflow-wrap: anywhere;
 }
+
+.shortcuts-dialog {
+  width: min(32rem, calc(100vw - 2rem));
+}
+
+.shortcuts-dialog__list {
+  display: grid;
+  grid-template-columns: minmax(7rem, auto) minmax(0, 1fr);
+  gap: var(--space-3) var(--space-4);
+  align-items: center;
+  margin: 0;
+  font-size: .72rem;
+}
+
+.shortcuts-dialog__list dt,
+.shortcuts-dialog__list dd {
+  margin: 0;
+}
+
+.shortcuts-dialog__list dd {
+  color: var(--color-text-secondary);
+}
+
+.shortcuts-dialog kbd {
+  display: inline-block;
+  min-width: 1.8rem;
+  padding: .2rem .42rem;
+  border: 1px solid var(--color-border-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font: inherit;
+  font-size: .68rem;
+  text-align: center;
+}

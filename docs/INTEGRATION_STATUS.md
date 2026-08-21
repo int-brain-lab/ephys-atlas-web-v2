@@ -104,6 +104,13 @@ and regional materialization without poisoning a foreground request for the
 same immutable resource. Dataset/parcellation changes clear stale hover, and
 regional-tree rerenders preserve current hover presentation.
 
+The global keyboard layer opens feature search with `/`, moves to adjacent
+manifest-ordered features with `Shift + Down` / `Shift + Up`, and opens an
+in-product shortcut guide with `?`. It is suppressed during text/form entry and
+modal dialogs, does not wrap feature boundaries, announces feature position,
+and keeps every action available through visible controls. Feature loading
+prefetches the immediate next and previous catalogue neighbours.
+
 The active anatomy display is the immutable 80 µm `anatomy-pack-v3`: 165
 coronal, 142 sagittal, and 100 horizontal display planes in 52 depth-eight
 indexed packs totaling 5,604,696 compressed bytes. It is derived byte-for-byte

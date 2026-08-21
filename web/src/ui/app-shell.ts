@@ -47,7 +47,7 @@ export interface ShellModel {
 type LayoutMode = 'wide' | 'compact' | 'narrow' | 'phone';
 type DrawerName = 'regions' | 'settings';
 type WorkspaceView = SliceAxis | 'context';
-type HeaderAction = 'share' | 'download' | 'info';
+type HeaderAction = 'share' | 'download' | 'info' | 'help';
 
 interface ViewFrameNodes {
   frame: HTMLElement;
@@ -80,7 +80,21 @@ const ACTION_ICONS: Record<HeaderAction, string> = {
   share: '↗',
   download: '↓',
   info: 'i',
+  help: '?',
 };
+
+const ACTION_LABELS: Record<HeaderAction, string> = {
+  share: 'Share',
+  download: 'Download',
+  info: 'Info',
+  help: 'Shortcuts',
+};
+
+function blocksGlobalShortcut(event: KeyboardEvent): boolean {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || target.matches('input, textarea, select, [role="textbox"]');
+}
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -113,6 +127,8 @@ export class AppShell {
   private readonly backdrop: HTMLButtonElement;
   private readonly infoDialog: HTMLDialogElement;
   private readonly infoContent: HTMLElement;
+  private readonly shortcutsDialog: HTMLDialogElement;
+  private readonly shortcutStatus: HTMLElement;
   private readonly viewButtons = new Map<WorkspaceView, HTMLButtonElement>();
   private readonly viewFrames = new Map<SliceAxis, ViewFrameNodes>();
   private readonly headerActionButtons = new Map<HeaderAction, HTMLButtonElement[]>();
@@ -158,6 +174,7 @@ export class AppShell {
     this.featureContext = new ContextMenu({
       fieldName: 'feature',
       label: 'Feature',
+      keyShortcuts: '/ Shift+ArrowUp Shift+ArrowDown',
       searchable: true,
       searchPlaceholder: 'Search features, units, or IDs',
       onOpen: (menu) => {
@@ -188,13 +205,17 @@ export class AppShell {
     const info = this.createInfoDialog();
     this.infoDialog = info.dialog;
     this.infoContent = info.content;
+    this.shortcutsDialog = this.createShortcutsDialog();
+    this.shortcutStatus = element('div', 'visually-hidden');
+    this.shortcutStatus.setAttribute('role', 'status');
+    this.shortcutStatus.setAttribute('aria-live', 'polite');
 
     const header = this.createHeader();
     const body = element('main', 'app-body');
     const workspace = this.createWorkspace();
     body.append(this.regionPane, workspace, this.settingsPane);
 
-    this.app.append(header, body, this.backdrop, this.infoDialog);
+    this.app.append(header, body, this.backdrop, this.infoDialog, this.shortcutsDialog, this.shortcutStatus);
     root.append(this.app);
 
     this.backdrop.addEventListener('click', () => this.closeDrawers());
@@ -322,6 +343,7 @@ export class AppShell {
       this.headerActionButton('Share', 'share'),
       this.headerActionButton('Download', 'download'),
       this.headerActionButton('Info', 'info'),
+      this.headerActionButton('Shortcuts', 'help'),
     );
     actions.append(desktopActions, this.createOverflowActions());
 
@@ -353,6 +375,10 @@ export class AppShell {
   }
 
   private async runHeaderAction(action: HeaderAction, button: HTMLButtonElement): Promise<void> {
+    if (action === 'help') {
+      this.openShortcutsDialog();
+      return;
+    }
     if (action === 'info') {
       if (!this.infoDialog.open) this.infoDialog.showModal();
       if (this.overflowActions) this.overflowActions.open = false;
@@ -382,7 +408,7 @@ export class AppShell {
     window.setTimeout(() => {
       for (const button of this.headerActionButtons.get(action) ?? []) {
         const text = button.querySelector<HTMLElement>('.app-header__action-label');
-        if (text) text.textContent = action === 'share' ? 'Share' : action === 'download' ? 'Download' : 'Info';
+        if (text) text.textContent = ACTION_LABELS[action];
         button.removeAttribute('title');
       }
     }, 1600);
@@ -415,6 +441,7 @@ export class AppShell {
       this.headerActionButton('Share', 'share'),
       this.headerActionButton('Download', 'download'),
       this.headerActionButton('Info', 'info'),
+      this.headerActionButton('Shortcuts', 'help'),
     );
     details.append(summary, menu);
     this.overflowActions = details;
@@ -438,6 +465,54 @@ export class AppShell {
       if (event.target === dialog) dialog.close();
     });
     return { dialog, content };
+  }
+
+  private createShortcutsDialog(): HTMLDialogElement {
+    const dialog = element('dialog', 'info-dialog shortcuts-dialog');
+    dialog.setAttribute('aria-labelledby', 'shortcuts-dialog-title');
+    const header = element('header', 'info-dialog__header');
+    const title = heading('Keyboard shortcuts', 2);
+    title.id = 'shortcuts-dialog-title';
+    const close = element('button', 'info-dialog__close');
+    close.type = 'button';
+    close.textContent = 'Close';
+    close.addEventListener('click', () => dialog.close());
+    header.append(title, close);
+
+    const shortcuts: readonly (readonly [string, string])[] = [
+      ['Shift + ↓', 'Next feature'],
+      ['Shift + ↑', 'Previous feature'],
+      ['/', 'Search features'],
+      ['Arrow keys', 'Adjust a focused slice or control'],
+      ['Esc', 'Close transient UI or restore a maximized view'],
+      ['?', 'Show this shortcut guide'],
+    ];
+    const list = element('dl', 'shortcuts-dialog__list');
+    for (const [keys, description] of shortcuts) {
+      const term = element('dt');
+      const key = element('kbd');
+      key.textContent = keys;
+      term.append(key);
+      const detail = element('dd');
+      detail.textContent = description;
+      list.append(term, detail);
+    }
+    const content = element('div', 'info-dialog__content');
+    const section = element('section', 'info-dialog__section');
+    section.append(list);
+    content.append(section);
+    dialog.append(header, content);
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    return dialog;
+  }
+
+  private openShortcutsDialog(): void {
+    this.closeContextMenus();
+    this.closeDrawers();
+    if (this.overflowActions) this.overflowActions.open = false;
+    if (!this.shortcutsDialog.open) this.shortcutsDialog.showModal();
   }
 
   private renderInfo(model: ShellModel): void {
@@ -1083,16 +1158,62 @@ export class AppShell {
   };
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (event.key !== 'Escape' || event.defaultPrevented) return;
-    if (this.closeContextMenus()) return;
-    if (this.maximizedView) {
-      this.toggleMaximizedView(this.maximizedView);
+    if (event.defaultPrevented) return;
+    if (event.key === 'Escape') {
+      if (this.infoDialog.open || this.shortcutsDialog.open) return;
+      if (this.closeContextMenus()) return;
+      if (this.maximizedView) {
+        this.toggleMaximizedView(this.maximizedView);
+        return;
+      }
+      if (this.app.dataset.drawerOpen) {
+        this.closeDrawers();
+        return;
+      }
+      if (this.overflowActions?.open) this.overflowActions.open = false;
       return;
     }
-    if (this.app.dataset.drawerOpen) {
-      this.closeDrawers();
+    if (blocksGlobalShortcut(event) || this.infoDialog.open || this.shortcutsDialog.open) return;
+    if (event.key === '/' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
+      event.preventDefault();
+      this.featureContext.open();
       return;
     }
-    if (this.overflowActions?.open) this.overflowActions.open = false;
+    if (
+      (event.key === '?' || (event.key === '/' && event.shiftKey))
+      && !event.altKey
+      && !event.ctrlKey
+      && !event.metaKey
+    ) {
+      event.preventDefault();
+      this.openShortcutsDialog();
+      return;
+    }
+    if (
+      event.shiftKey
+      && !event.altKey
+      && !event.ctrlKey
+      && !event.metaKey
+      && (event.key === 'ArrowDown' || event.key === 'ArrowUp')
+    ) {
+      this.stepFeature(event.key === 'ArrowDown' ? 1 : -1);
+      event.preventDefault();
+    }
   };
+
+  private stepFeature(direction: -1 | 1): void {
+    const model = this.currentModel;
+    const features = model?.manifest?.features ?? [];
+    if (features.length === 0) return;
+    const currentIndex = features.findIndex((feature) => feature.id === model?.state.view.featureId);
+    const baseIndex = currentIndex >= 0 ? currentIndex : direction > 0 ? -1 : features.length;
+    const nextIndex = baseIndex + direction;
+    const feature = features[nextIndex];
+    if (!feature) {
+      this.shortcutStatus.textContent = direction > 0 ? 'Last feature' : 'First feature';
+      return;
+    }
+    this.callbacks.setFeature(feature.id, this.featureRepresentation.get(feature.id));
+    this.shortcutStatus.textContent = `Feature ${nextIndex + 1} of ${features.length}: ${feature.label}`;
+  }
 }

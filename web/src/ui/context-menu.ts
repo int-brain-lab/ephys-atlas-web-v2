@@ -10,6 +10,7 @@ export interface ContextMenuOption {
 export interface ContextMenuConfig {
   fieldName: string;
   label: string;
+  keyShortcuts?: string;
   searchable?: boolean;
   searchPlaceholder?: string;
   multiselectable?: boolean;
@@ -49,6 +50,7 @@ export class ContextMenu {
     this.trigger.setAttribute('aria-haspopup', 'listbox');
     this.trigger.setAttribute('aria-expanded', 'false');
     this.trigger.setAttribute('aria-controls', panelId);
+    if (config.keyShortcuts) this.trigger.setAttribute('aria-keyshortcuts', config.keyShortcuts);
     this.value = element('span', 'context-field__value');
     this.value.textContent = '—';
     this.meta = element('span', 'context-field__release');
@@ -204,6 +206,7 @@ export class ContextMenu {
   };
 
   private readonly onTriggerKeyDown = (event: KeyboardEvent): void => {
+    if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     event.preventDefault();
     this.open(true);
