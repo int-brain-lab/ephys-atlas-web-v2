@@ -9,6 +9,7 @@ test('URL state round-trips common shareable state', () => {
     dataset: { datasetId: 'brainwide_map', releaseId: 'paper-2026-09' },
     featureId: 'wheel_speed',
     parcellation: 'beryl',
+    regionOrder: 'value-desc',
     selection: ['CA1', 'VISp'],
     cursor: { xUm: -5539, yUm: 5300, zUm: 32 },
     slices: { coronal: 10, sagittal: 20, horizontal: 30 },
@@ -25,6 +26,7 @@ test('URL state round-trips common shareable state', () => {
   assert.match(query, /dataset=brainwide_map/);
   assert.match(query, /feature=wheel_speed/);
   assert.match(query, /colors=anatomy/);
+  assert.match(query, /order=value-desc/);
   assert.deepEqual(parseViewState(`?${query}`), view);
 });
 

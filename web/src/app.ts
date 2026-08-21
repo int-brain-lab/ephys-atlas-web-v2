@@ -68,6 +68,7 @@ export class AtlasApp {
     }, this.renderer);
     this.regionalPanel = new RegionalPanelController(root, {
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
+      setRegionOrder: (order) => this.store.dispatch({ type: 'regions/order', order }),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       hoverRegion: (regionId) => this.setHoveredRegion(regionId),
       downloadComparison: () => this.downloadSelectedComparison(),

@@ -41,6 +41,8 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         ...state,
         view: { ...state.view, parcellation: action.parcellation, selection: [] },
       };
+    case 'regions/order':
+      return { ...state, view: { ...state.view, regionOrder: action.order } };
     case 'selection/toggle': {
       const current = new Set(state.view.selection);
       if (current.has(action.regionId)) current.delete(action.regionId);

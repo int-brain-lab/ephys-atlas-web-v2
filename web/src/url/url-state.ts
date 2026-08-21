@@ -17,6 +17,7 @@ import type {
   ColorRange,
   DatasetId,
   ParcellationId,
+  RegionOrder,
   RepresentationKind,
   StatisticId,
   ViewState,
@@ -27,6 +28,7 @@ const NAVIGATION_URL_DEBOUNCE_MS = 120;
 const PARCELLATIONS = new Set<ParcellationId>(['allen', 'beryl', 'cosmos']);
 const REPRESENTATIONS = new Set<RepresentationKind>(['regional', 'volume']);
 const STATISTICS = new Set<StatisticId>(['mean', 'median', 'min', 'max', 'count']);
+const REGION_ORDERS = new Set<RegionOrder>(['anatomy', 'value-asc', 'value-desc']);
 
 function finiteNumber(value: string | null, fallback: number): number {
   if (value === null || value.trim() === '') return fallback;
@@ -79,6 +81,9 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
   const statistic = STATISTICS.has(params.get('stat') as StatisticId)
     ? params.get('stat') as StatisticId
     : defaults.coloring.statistic;
+  const regionOrder = REGION_ORDERS.has(params.get('order') as RegionOrder)
+    ? params.get('order') as RegionOrder
+    : defaults.regionOrder;
   const isV1Url = version === 1 || (!params.has('v') && params.has('slices'));
   const isV2Url = version === 2;
   const fallbackSlices = isV1Url
@@ -121,6 +126,7 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
     featureId,
     representation,
     parcellation,
+    regionOrder,
     // Preserve the encoded selection order because it determines identity colors.
     selection: [...new Set(selection)],
     cursor,
@@ -149,6 +155,7 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   if (view.featureId) params.set('feature', view.featureId);
   if (view.representation !== defaults.representation) params.set('repr', view.representation);
   if (view.parcellation !== defaults.parcellation) params.set('parcel', view.parcellation);
+  if (view.regionOrder !== defaults.regionOrder) params.set('order', view.regionOrder);
   if (view.coloring.statistic !== defaults.coloring.statistic) params.set('stat', view.coloring.statistic);
   if (view.coloring.mode === 'anatomy' && defaults.coloring.mode !== 'anatomy') params.set('colors', 'anatomy');
   if (view.coloring.colormap !== defaults.coloring.colormap) params.set('cmap', view.coloring.colormap);

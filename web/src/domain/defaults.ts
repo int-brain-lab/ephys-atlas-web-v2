@@ -9,6 +9,7 @@ export const DEFAULT_VIEW_STATE: ViewState = {
   featureId: null,
   representation: 'regional',
   parcellation: 'allen',
+  regionOrder: 'anatomy',
   selection: [],
   cursor: { xUm: -239, yUm: -1200, zUm: -3668 },
   slices: { coronal: 660, sagittal: 550, horizontal: 400 },

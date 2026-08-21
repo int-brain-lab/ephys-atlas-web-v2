@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   buildRegionalValueMap,
   histogramDistribution,
+  rankRegionsByValue,
   regionMatchesQuery,
   selectedHistogramCounts,
   selectedRegionHistogramDistributions,
@@ -31,6 +32,23 @@ test('regional search is case insensitive across acronym and name', () => {
   assert.equal(regionMatchesQuery(region, 'visp'), true);
   assert.equal(regionMatchesQuery(region, 'VISUAL'), true);
   assert.equal(regionMatchesQuery(region, 'motor'), false);
+});
+
+test('value ranking is global, deterministic, selectable-only, and missing-last', () => {
+  const regions = [
+    { id: 'parent', atlasId: 10, acronym: 'P', name: 'Parent', mappingMember: false },
+    { id: 'missing', atlasId: 11, acronym: 'M', name: 'Missing' },
+    { id: 'low', atlasId: 12, acronym: 'L', name: 'Low' },
+    { id: 'high-a', atlasId: 13, acronym: 'HA', name: 'High A' },
+    { id: 'high-b', atlasId: 14, acronym: 'HB', name: 'High B' },
+  ];
+  const values = new Map([['low', -2], ['high-a', 5], ['high-b', 5], ['missing', Number.NaN]]);
+  assert.deepEqual(rankRegionsByValue(regions, values, 'value-asc').map(({ id }) => id), [
+    'low', 'high-a', 'high-b', 'missing',
+  ]);
+  assert.deepEqual(rankRegionsByValue(regions, values, 'value-desc').map(({ id }) => id), [
+    'high-a', 'high-b', 'low', 'missing',
+  ]);
 });
 
 test('regional histogram selection sums rows deterministically', () => {

@@ -16,6 +16,7 @@ export type RepresentationKind = 'regional' | 'volume';
 export type ColorScale = 'linear' | 'log';
 export type ColorMode = 'feature' | 'anatomy';
 export type StatisticId = 'mean' | 'median' | 'min' | 'max' | 'count';
+export type RegionOrder = 'anatomy' | 'value-asc' | 'value-desc';
 
 export interface DatasetRef {
   datasetId: DatasetId;
@@ -40,6 +41,7 @@ export interface ViewState {
   featureId: string | null;
   representation: RepresentationKind;
   parcellation: ParcellationId;
+  regionOrder: RegionOrder;
   selection: readonly string[];
   cursor: CursorState;
   slices: SliceState;

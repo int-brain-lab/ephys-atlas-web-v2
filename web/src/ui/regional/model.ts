@@ -1,5 +1,5 @@
 import type { RegionMetadata, RegionalFeaturePayload } from '../../data/contracts.js';
-import type { StatisticId } from '../../domain/types.js';
+import type { RegionOrder, StatisticId } from '../../domain/types.js';
 
 const SELECTION_COLORS = ['#55a7f7', '#ef6f61', '#73c991', '#c38cf5', '#f2b84b', '#4dc6c6', '#f08cc2', '#a5b95c'] as const;
 
@@ -46,6 +46,27 @@ export function regionMatchesQuery(region: RegionMetadata, query: string): boole
   if (!normalized) return true;
   return region.acronym.toLocaleLowerCase().includes(normalized)
     || region.name.toLocaleLowerCase().includes(normalized);
+}
+
+export function rankRegionsByValue(
+  regions: readonly RegionMetadata[],
+  values: ReadonlyMap<string, number>,
+  order: Exclude<RegionOrder, 'anatomy'>,
+): readonly RegionMetadata[] {
+  const anatomyIndex = new Map(regions.map((region, index) => [region.id, index]));
+  return regions
+    .filter((region) => region.mappingMember !== false)
+    .map((region) => ({ region, value: values.get(region.id) }))
+    .sort((left, right) => {
+      const leftFinite = left.value !== undefined && Number.isFinite(left.value);
+      const rightFinite = right.value !== undefined && Number.isFinite(right.value);
+      if (leftFinite !== rightFinite) return leftFinite ? -1 : 1;
+      if (leftFinite && rightFinite && left.value !== right.value) {
+        return order === 'value-asc' ? left.value! - right.value! : right.value! - left.value!;
+      }
+      return (anatomyIndex.get(left.region.id) ?? 0) - (anatomyIndex.get(right.region.id) ?? 0);
+    })
+    .map(({ region }) => region);
 }
 
 export function selectedHistogramCounts(

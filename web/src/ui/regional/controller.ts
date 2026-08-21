@@ -1,5 +1,5 @@
 import type { DatasetManifest, FeaturePayload, RegionMetadata } from '../../data/contracts.js';
-import type { AppState, StatisticId } from '../../domain/types.js';
+import type { AppState, RegionOrder, StatisticId } from '../../domain/types.js';
 import { regionalColorRange } from '../../rendering/scalar-colormap.js';
 import { required, message } from './dom.js';
 import {
@@ -13,6 +13,7 @@ import { RegionalTreeView } from './tree-view.js';
 
 export interface RegionalPanelCallbacks {
   toggleSelection(regionId: string): void;
+  setRegionOrder(order: RegionOrder): void;
   clearSelection(): void;
   hoverRegion(regionId: string | null): void;
   downloadComparison(): void;
@@ -43,6 +44,7 @@ export class RegionalPanelController {
   private lastFeature: FeaturePayload | null = null;
   private lastRegions: readonly RegionMetadata[] | null = null;
   private lastStatistic: StatisticId | null = null;
+  private lastRegionOrder: RegionOrder | null = null;
   private lastSelectionKey = '';
   private lastFixture = false;
   private lastAnatomyAtlas: string | null = null;
@@ -67,12 +69,14 @@ export class RegionalPanelController {
   render(model: RegionalPanelModel): void {
     const feature = model.feature?.representation === 'regional' ? model.feature : null;
     const statistic = model.state.view.coloring.statistic;
+    const regionOrder = model.state.view.regionOrder;
     const fixture = model.manifest?.dataset.fixture === true;
     const selectionKey = model.state.view.selection.join(',');
     if (
       feature === this.lastFeature
       && model.regions === this.lastRegions
       && statistic === this.lastStatistic
+      && regionOrder === this.lastRegionOrder
       && selectionKey === this.lastSelectionKey
       && fixture === this.lastFixture
       && model.anatomyAtlas === this.lastAnatomyAtlas
@@ -83,6 +87,7 @@ export class RegionalPanelController {
     this.lastFeature = feature;
     this.lastRegions = model.regions;
     this.lastStatistic = statistic;
+    this.lastRegionOrder = regionOrder;
     this.lastSelectionKey = selectionKey;
     this.lastFixture = fixture;
     this.lastAnatomyAtlas = model.anatomyAtlas;
@@ -108,7 +113,7 @@ export class RegionalPanelController {
       : fixture
         ? 'Synthetic schema-v0.1 fixture'
         : `${model.state.view.parcellation.toUpperCase()} regional values`;
-    this.tree.render(model.regions, values, statistic, unit, range, selected);
+    this.tree.render(model.regions, values, statistic, unit, range, selected, regionOrder);
     renderSelectedRegions(this.detailsTargets(), model.regions, selected, values, statistic, unit);
     if (feature) {
       renderFeatureSummary(this.summary, feature, unit);

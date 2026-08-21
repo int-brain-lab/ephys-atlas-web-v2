@@ -146,3 +146,36 @@ test('multi-region selection keeps first-selection order and identity colors', a
   await expect(selectedRegions.nth(1)).toHaveCSS('--selection-color', '#ef6f61');
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-68,-526157192');
 });
+
+test('value ordering switches to a flat ranking and restores the anatomical tree', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
+
+  const frontalPole = page.locator('.region-row[data-region-id="-184"]');
+  await frontalPole.locator('.region-row__toggle').click();
+  await expect(frontalPole).toHaveAttribute('aria-expanded', 'false');
+
+  await page.getByLabel('Region order').selectOption('value-desc');
+  await expect.poll(() => new URL(page.url()).searchParams.get('order')).toBe('value-desc');
+  await expect(page.locator('.region-list')).toHaveAttribute('data-order', 'value-desc');
+  await expect(page.locator('.region-tree-controls')).toBeHidden();
+  await expect(page.locator('.region-row').nth(0)).toHaveAttribute('data-region-id', '-803');
+  await expect(page.locator('.region-row').nth(1)).toHaveAttribute('data-region-id', '-382');
+  await expect(page.locator('.region-row').nth(2)).toHaveAttribute('data-region-id', '-362');
+  await expect(page.locator('.region-row').nth(3)).toHaveAttribute('data-region-id', '-477');
+  await expect(page.locator('.region-row').nth(4)).toHaveAttribute('data-missing', 'true');
+  await expect(page.locator('.region-row').nth(0)).toHaveAttribute('data-depth', '0');
+
+  await page.getByLabel('Region order').selectOption('value-asc');
+  await expect(page.locator('.region-row').nth(0)).toHaveAttribute('data-region-id', '-477');
+  await expect(page.locator('.region-row').nth(1)).toHaveAttribute('data-region-id', '-362');
+  await expect(page.locator('.region-row').nth(2)).toHaveAttribute('data-region-id', '-382');
+  await expect(page.locator('.region-row').nth(3)).toHaveAttribute('data-region-id', '-803');
+
+  await page.getByLabel('Region order').selectOption('anatomy');
+  await expect.poll(() => new URL(page.url()).searchParams.get('order')).toBeNull();
+  await expect(page.locator('.region-row')).toHaveCount(874);
+  await expect(frontalPole).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('.region-row[data-region-id="-68"]')).toBeHidden();
+});

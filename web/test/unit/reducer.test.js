@@ -39,6 +39,11 @@ test('atlas anatomy color mode is explicit application state', () => {
   assert.equal(next.view.coloring.mode, 'anatomy');
 });
 
+test('region ordering is explicit application state', () => {
+  const next = reduceAppState(DEFAULT_APP_STATE, { type: 'regions/order', order: 'value-desc' });
+  assert.equal(next.view.regionOrder, 'value-desc');
+});
+
 test('slice movement updates the canonical world cursor', () => {
   const next = reduceAppState(DEFAULT_APP_STATE, { type: 'slice/set', axis: 'coronal', index: 661 });
   assert.equal(next.view.slices.coronal, 661);

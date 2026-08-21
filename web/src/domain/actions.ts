@@ -5,6 +5,7 @@ import type {
   CursorState,
   DatasetRef,
   ParcellationId,
+  RegionOrder,
   RepresentationKind,
   SliceAxis,
   StatisticId,
@@ -16,6 +17,7 @@ export type AppAction =
   | { type: 'dataset/set'; dataset: DatasetRef }
   | { type: 'feature/set'; featureId: string | null; representation?: RepresentationKind }
   | { type: 'parcellation/set'; parcellation: ParcellationId }
+  | { type: 'regions/order'; order: RegionOrder }
   | { type: 'selection/toggle'; regionId: string }
   | { type: 'selection/set'; regionIds: readonly string[] }
   | { type: 'selection/clear' }

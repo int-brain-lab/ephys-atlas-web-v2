@@ -17,6 +17,10 @@ Dataset IDs are runtime identifiers rather than a fixed launch enum. Dataset, fe
 HTTP and local datasets share the same regional materializer through a transport-independent resource-reader interface. The validation implementation is split by contract concern behind the existing public validation facade.
 
 The regional UI keeps DOM concerns in its controller while region search/value/statistics derivation is pure/testable. Large dynamic tree interaction uses delegated events.
+The region browser defaults to the expandable anatomical hierarchy and offers
+URL-persisted ascending or descending value rankings as a flat selectable list.
+Finite values rank globally, missing values remain last, and returning to
+anatomical order restores the prior expansion state.
 
 ## Anatomy rendering
 
