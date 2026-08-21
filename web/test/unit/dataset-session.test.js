@@ -1,0 +1,69 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { DatasetSession } from '../../.test-dist/application/dataset-session.js';
+import { DEFAULT_APP_STATE } from '../../.test-dist/domain/defaults.js';
+import { createAppStore } from '../../.test-dist/domain/store.js';
+
+function manifest(id = 'custom_dataset') {
+  return {
+    schemaVersion: '0.1',
+    dataset: { id, release: 'r1', title: id, description: '' },
+    release: { releaseId: 'r1', immutable: true, createdAt: '2026-08-21T00:00:00Z', paperSnapshot: false },
+    provenance: { sources: [], builder: { name: '', version: '', command: '' }, recipe: { id: 'test' }, notes: [] },
+    parcellations: ['beryl'],
+    parcellationDescriptors: {},
+    features: [{
+      id: 'feature_a', path: 'feature.json', label: 'A', description: '', unit: null,
+      valueSemantics: { quantity: 'a', transform: 'identity', sourcePopulation: 'all', missingValues: 'excluded' },
+      statistics: ['mean'],
+      representations: { regional: { kind: 'regional', format: 'ephys-atlas-regional-v0.1', parcellations: {} } },
+    }],
+  };
+}
+
+function deferred() {
+  let resolve;
+  const promise = new Promise((done) => { resolve = done; });
+  return { promise, resolve };
+}
+
+test('dataset session owns manifest/feature lifecycle outside the UI', async () => {
+  const store = createAppStore({ ...DEFAULT_APP_STATE, view: {
+    ...DEFAULT_APP_STATE.view,
+    dataset: { datasetId: 'custom_dataset', releaseId: 'r1' },
+    featureId: 'feature_a',
+  } });
+  const feature = { schemaVersion: '0.1', featureId: 'feature_a', representation: 'regional', parcellation: 'beryl', regionIds: [], statistics: {} };
+  const repository = {
+    async loadCatalog() { return { schemaVersion: '0.1', datasets: [] }; },
+    async loadManifest() { return manifest(); },
+    async loadRegions() { return []; },
+    async loadFeature() { return feature; },
+    async prefetchFeature() {},
+  };
+  let changes = 0;
+  const session = new DatasetSession(repository, store, () => { changes += 1; });
+  await session.loadDataset(store.getState().view.dataset);
+  assert.equal(session.snapshot().manifest.dataset.id, 'custom_dataset');
+  assert.equal(session.snapshot().feature, feature);
+  assert.ok(changes >= 2);
+});
+
+test('stale dataset completions cannot replace the active dataset', async () => {
+  const store = createAppStore({ ...DEFAULT_APP_STATE });
+  const first = deferred();
+  const repository = {
+    async loadCatalog() { return { schemaVersion: '0.1', datasets: [] }; },
+    loadManifest(ref) { return ref.datasetId === 'slow' ? first.promise : Promise.resolve(manifest('fast')); },
+    async loadRegions() { return []; },
+    async loadFeature() { throw new Error('not used'); },
+    async prefetchFeature() {},
+  };
+  const session = new DatasetSession(repository, store, () => {});
+  const slow = session.loadDataset({ datasetId: 'slow', releaseId: 'r1' });
+  store.dispatch({ type: 'dataset/set', dataset: { datasetId: 'fast', releaseId: 'r1' } });
+  await session.loadDataset({ datasetId: 'fast', releaseId: 'r1' });
+  first.resolve(manifest('slow'));
+  await slow;
+  assert.equal(session.snapshot().manifest.dataset.id, 'fast');
+});

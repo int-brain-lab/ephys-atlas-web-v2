@@ -8,11 +8,15 @@
     "moduleResolution": "Bundler"
   },
   "include": [
+    "src/application/**/*.ts",
+    "src/core/**/*.ts",
     "src/domain/**/*.ts",
     "src/url/**/*.ts",
     "src/data/contracts.ts",
     "src/data/validate.ts",
     "src/data/regional-data.ts",
+    "src/data/regional-loader.ts",
+    "src/data/resource-reader.ts",
     "src/data/atlas-regions.ts",
     "src/data/region-hierarchy.ts",
     "src/data/repository.ts",
@@ -20,7 +24,11 @@
     "src/rendering/scalar-colormap.ts",
     "src/rendering/chunked-volume-source.ts",
     "src/rendering/generated-anatomy-source.ts",
-    "src/rendering/display-slice-inventory.ts"
+    "src/rendering/display-slice-inventory.ts",
+    "src/ui/regional/model.ts"
   ],
-  "exclude": ["test/browser/**/*.ts", "playwright.config.ts"]
+  "exclude": [
+    "test/browser/**/*.ts",
+    "playwright.config.ts"
+  ]
 }
