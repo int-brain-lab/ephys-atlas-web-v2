@@ -8,7 +8,10 @@ from .auth import CredentialRegistry
 from .core import Forbidden, OffsetConflict, PublicationStore, PublishingError
 from .locks import MutationLock
 
-DEFAULT_MAX_JSON_BYTES = 2 * 1024 * 1024
+# A representative 100,000-artifact volume inventory serializes to roughly
+# 17 MiB. Keep enough headroom for release metadata and longer feature names
+# while retaining a bounded request body.
+DEFAULT_MAX_JSON_BYTES = 32 * 1024 * 1024
 DEFAULT_MAX_CHUNK_BYTES = 16 * 1024 * 1024
 
 _STATUS_TEXT = {
