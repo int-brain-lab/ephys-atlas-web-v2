@@ -457,8 +457,10 @@ test('scientific context menus and color controls are driven by the loaded relea
   await expect(page.locator('.color-range__histogram-bin')).toHaveCount(8);
   await expect(page.getByRole('slider', { name: 'Minimum color value', exact: true })).toHaveValue('-0.25');
   await expect(page.getByRole('slider', { name: 'Maximum color value', exact: true })).toHaveValue('3.25');
-  await expect(page.locator('.color-legend__domain-minimum')).toHaveText('-0.5');
-  await expect(page.locator('.color-legend__domain-maximum')).toHaveText('3.5');
+  await expect(page.locator('.color-legend__minimum')).toHaveText('-0.25000');
+  await expect(page.locator('.color-legend__maximum')).toHaveText('3.2500');
+  await expect(page.locator('.color-legend__domain-minimum')).toHaveText('-0.50000');
+  await expect(page.locator('.color-legend__domain-maximum')).toHaveText('3.5000');
   await expect(page.locator('.color-legend__minimum')).toHaveAttribute('data-side', 'right');
   await expect(page.locator('.color-legend__maximum')).toHaveAttribute('data-side', 'left');
   const activeLabelBounds = await page.locator('.color-range__value').evaluateAll((labels) => labels.map((label) => {
@@ -528,8 +530,8 @@ test('scientific context menus and color controls are driven by the loaded relea
   await page.getByRole('spinbutton', { name: 'Exact maximum color value', exact: true }).fill('8');
   await page.getByRole('button', { name: 'Apply' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('range')).toBe('-2,8');
-  await expect(page.locator('.color-legend__minimum')).toHaveText('-2');
-  await expect(page.locator('.color-legend__maximum')).toHaveText('8');
+  await expect(page.locator('.color-legend__minimum')).toHaveText('-2.0000');
+  await expect(page.locator('.color-legend__maximum')).toHaveText('8.0000');
   await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '-2');
   await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '8');
 
