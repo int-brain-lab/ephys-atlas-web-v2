@@ -1174,13 +1174,13 @@ export class AppShell {
       return;
     }
     if (blocksGlobalShortcut(event) || this.infoDialog.open || this.shortcutsDialog.open) return;
-    if (event.key === '/' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
+    if (event.key === '/' && !event.altKey && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
       this.featureContext.open();
       return;
     }
     if (
-      (event.key === '?' || (event.key === '/' && event.shiftKey))
+      event.key === '?'
       && !event.altKey
       && !event.ctrlKey
       && !event.metaKey

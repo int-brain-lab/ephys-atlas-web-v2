@@ -71,7 +71,15 @@ test('shortcuts stay out of text entry and expose an in-product guide', async ({
   await expect(featureField.locator('.context-menu__trigger')).toContainText('AP RMS (golden fixture)');
 
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-  await page.keyboard.press('Shift+/');
+  await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', {
+    key: '/', shiftKey: true, bubbles: true, cancelable: true,
+  })));
+  await expect(featureField.getByLabel('Search features, units, or IDs')).toBeFocused();
+  await page.keyboard.press('Escape');
+
+  await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', {
+    key: '?', shiftKey: true, bubbles: true, cancelable: true,
+  })));
   const guide = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
   await expect(guide).toBeVisible();
   await expect(guide).toContainText('Next feature');
