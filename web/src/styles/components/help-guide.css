@@ -372,8 +372,31 @@
   line-height: 1.5;
 }
 
-.help-guide__section p {
+.help-guide__section-body {
+  display: grid;
+  gap: var(--space-3);
   padding: 0 2.8rem var(--space-3);
+}
+
+.help-guide__definitions {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: .4rem var(--space-3);
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  font-size: .66rem;
+  line-height: 1.45;
+}
+
+.help-guide__definitions dt {
+  color: var(--color-text);
+  font-weight: 650;
+}
+
+.help-guide__definitions dd {
+  margin: 0;
+  color: var(--color-text-secondary);
 }
 
 .help-guide__note {
@@ -494,7 +517,11 @@
     inset: auto -.35rem -.35rem auto;
   }
 
-  .help-guide__section p {
+  .help-guide__section-body {
     padding-inline: var(--space-3);
+  }
+
+  .help-guide__definitions {
+    grid-template-columns: 5.7rem minmax(0, 1fr);
   }
 }

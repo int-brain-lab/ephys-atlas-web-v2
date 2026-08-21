@@ -140,7 +140,10 @@ faithful map of the actual viewer layout. Five concise expandable sections
 cover the top-bar scientific context, region search/ranking/selection, linked
 slice navigation, visualization parameters, and global/selected-region
 distributions and exports. The structure can accept future representation
-guidance without splitting Help into separate guides. Keyboard shortcuts remain
+guidance without splitting Help into separate guides. App-specific definitions
+clarify dataset/release identity, features, representations, parcellations,
+populations, statistics, and presentation-only color mapping without attempting
+to teach general neuroscience. Keyboard shortcuts remain
 available as a collapsed secondary reference. The
 global keyboard layer opens feature search with `/`, moves to adjacent
 manifest-ordered features with `Shift + Down` / `Shift + Up`, and opens Help

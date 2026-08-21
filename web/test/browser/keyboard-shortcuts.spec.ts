@@ -96,10 +96,19 @@ test('shortcuts stay out of text entry and expose the concise help guide', async
   await expect(guide).toContainText('Data and feature');
   await expect(guide).toContainText('Read distributions and comparisons');
   await expect(guide).toContainText('Consult Info before interpreting or citing them');
+  const dataSection = guide.locator('.help-guide__section').filter({ hasText: 'Data and feature' });
+  await dataSection.getByText('Data and feature').click();
+  await expect(dataSection).toContainText('Parcellation');
+  await expect(dataSection).toContainText('changes the regions and their summaries, not only their labels');
+  await expect(dataSection).toContainText('The observations included by the release’s scientific recipe');
   const visualizationSection = guide.locator('.help-guide__section').filter({ hasText: 'Set the visualization' });
   await visualizationSection.getByText('Set the visualization').click();
   await expect(visualizationSection).toHaveAttribute('open', '');
-  await expect(visualizationSection).toContainText('do not modify the underlying observations');
+  await expect(visualizationSection).toContainText('not the underlying or downloaded values');
+  const distributionSection = guide.locator('.help-guide__section').filter({ hasText: 'Read distributions and comparisons' });
+  await distributionSection.getByText('Read distributions and comparisons').click();
+  await expect(distributionSection).toContainText('normalized independently');
+  await expect(distributionSection).toContainText('sample counts separately');
 
   await page.keyboard.press('Shift+ArrowDown');
   await expect(featureField.locator('.context-menu__trigger')).toContainText('AP RMS (golden fixture)');

@@ -550,30 +550,45 @@ export class AppShell {
     schematicBody.append(schematicRegions, schematicWorkspace, schematicSettings);
     schematic.append(schematicHeader, schematicBody);
 
-    const sections: readonly (readonly [string, string])[] = [
-      [
-        'Data and feature',
-        'Use the top bar to choose the dataset and immutable release, feature, representation, and parcellation. Info gives the units, population, processing, and provenance; Share preserves the complete view and Download exports the current regional values.',
-      ],
-      [
-        'Find and select regions',
-        'Search the active parcellation or browse its anatomical hierarchy. Change the ordering to rank regions by the displayed value, then select regions from the list or brain views to add them to the comparison.',
-      ],
-      [
-        'Navigate the brain',
-        'Use the three equal slice controls or scroll over a view. Coronal, sagittal, and horizontal views share one atlas location, and the guide lines show that location in the other projections.',
-      ],
-      [
-        'Set the visualization',
-        'Choose feature-value or Allen-anatomy coloring, the regional statistic, colormap, scale, and display range. These controls change the regional summary or its presentation; they do not modify the underlying observations.',
-      ],
-      [
-        'Read distributions and comparisons',
-        'The bottom panels show the global summary and feature-value distribution. Selected regions add normalized distribution shapes and descriptive statistics; use sample counts when interpreting them, and open the comparison to inspect or export the selected-region data.',
-      ],
+    const sections: readonly {
+      readonly title: string;
+      readonly description: string;
+      readonly definitions?: readonly (readonly [string, string])[];
+    }[] = [
+      {
+        title: 'Data and feature',
+        description: 'Use the top bar to choose the scientific context. Info provides complete feature semantics and provenance; Share preserves the complete view and Download exports the current regional values.',
+        definitions: [
+          ['Dataset / release', 'The scientific product and the immutable snapshot being explored.'],
+          ['Feature', 'The measured or derived quantity displayed by the viewer.'],
+          ['Representation', 'How the feature is organized, such as regional summaries or a voxel volume.'],
+          ['Parcellation', 'The atlas region grouping used to aggregate and display regional data. Changing it changes the regions and their summaries, not only their labels.'],
+          ['Population', 'The observations included by the release’s scientific recipe. Check Info before interpreting results.'],
+        ],
+      },
+      {
+        title: 'Find and select regions',
+        description: 'Search the active parcellation or browse its anatomical hierarchy. Change the ordering to rank regions by the displayed value, then select regions from the list or brain views to add them to the comparison.',
+      },
+      {
+        title: 'Navigate the brain',
+        description: 'Use the three equal slice controls or scroll over a view. Coronal, sagittal, and horizontal views share one atlas location, and the guide lines show that location in the other projections.',
+      },
+      {
+        title: 'Set the visualization',
+        description: 'Choose feature-value or Allen-anatomy coloring, the regional statistic, colormap, scale, and display range.',
+        definitions: [
+          ['Statistic', 'The regional summary used for coloring, such as the mean or median.'],
+          ['Scale / range', 'How values map to colors. These settings change the presentation, not the underlying or downloaded values.'],
+        ],
+      },
+      {
+        title: 'Read distributions and comparisons',
+        description: 'The global histogram describes the release population. Selected-region curves are normalized independently to compare distribution shape, so consider their sample counts separately. Open the comparison to inspect descriptive statistics or export selected-region data.',
+      },
     ];
     const guide = element('div', 'help-guide__sections');
-    sections.forEach(([sectionTitle, description], index) => {
+    sections.forEach(({ title: sectionTitle, description, definitions }, index) => {
       const section = element('details', 'help-guide__section');
       const summary = element('summary');
       const number = element('span', 'help-guide__section-number');
@@ -581,7 +596,20 @@ export class AppShell {
       const label = element('span');
       label.textContent = sectionTitle;
       summary.append(number, label);
-      section.append(summary, this.infoParagraph(description));
+      const body = element('div', 'help-guide__section-body');
+      body.append(this.infoParagraph(description));
+      if (definitions) {
+        const definitionList = element('dl', 'help-guide__definitions');
+        for (const [term, definition] of definitions) {
+          const definitionTerm = element('dt');
+          definitionTerm.textContent = term;
+          const definitionDescription = element('dd');
+          definitionDescription.textContent = definition;
+          definitionList.append(definitionTerm, definitionDescription);
+        }
+        body.append(definitionList);
+      }
+      section.append(summary, body);
       guide.append(section);
     });
 
