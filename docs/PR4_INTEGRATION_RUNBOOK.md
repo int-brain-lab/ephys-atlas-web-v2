@@ -99,8 +99,10 @@ gh pr view 4 --repo rossant/ibl-ephys-atlas-web-v2 \
   --json state,isDraft,mergeable,mergeStateStatus,statusCheckRollup,headRefOid
 ```
 
-Expected relationship while `main` remains unchanged: `0 22` after the commit
-adding this runbook. Record the actual base and tip SHAs in the working notes.
+Expected relationship while `main` remains unchanged: a zero left count and at
+least 22 commits on the right after the commit adding this runbook. The right
+count increases with each forward fix. Record the actual base and tip SHAs in
+the working notes.
 
 Run `git diff --check origin/main...HEAD`. Stop and investigate any unexpected
 worktree changes or remote divergence before editing.
@@ -174,16 +176,16 @@ subsequent early return can leave the recreated row without its hover marker.
 Reset/reapply the rendered hover presentation when rows are replaced and add a
 focused regression test.
 
-### Required fix: deterministic regional-tree animation gate
+### Resolved prerequisite: deterministic regional-tree animation gate
 
 While writing this runbook, the focused collapse-animation Playwright test
 passed alone, but two consecutive `just check` runs failed the same assertion
-under the four-worker browser suite because the first sampled transform was
-empty. Treat this as a real integration-gate failure. Determine whether the
-animation setup needs to become observable earlier or the test needs to wait
-for the defined animation state. Preserve the row-reflow behavior and
-`prefers-reduced-motion` support; do not mask the problem with an unconditional
-sleep or remove the behavioral assertion.
+under the parallel browser suite because the test acted before both asynchronous
+initialization streams had settled. A focused test fix waits for the final Allen
+metadata source and fixture distribution before triggering the collapse. It
+passed 20 focused repetitions, three repetitions of the complete region-tree
+spec, and the full browser suite. Preserve this readiness gate, row-reflow
+behavior, and `prefers-reduced-motion` support during subsequent changes.
 
 ### Required fix or explicit simplification: active prefetch cancellation
 
