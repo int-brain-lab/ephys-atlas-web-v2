@@ -14,6 +14,7 @@ export type DatasetId = string;
 export type ParcellationId = 'allen' | 'beryl' | 'cosmos';
 export type RepresentationKind = 'regional' | 'volume';
 export type ColorScale = 'linear' | 'log';
+export type ColorScaleSelection = 'auto' | ColorScale;
 export type ColorMode = 'feature' | 'anatomy';
 export type StatisticId = 'mean' | 'median' | 'min' | 'max' | 'count';
 export type RegionOrder = 'anatomy' | 'value-asc' | 'value-desc';
@@ -32,8 +33,10 @@ export interface ColoringState {
   statistic: StatisticId;
   colormap: string;
   range: ColorRange;
-  scale: ColorScale;
+  scale: ColorScaleSelection;
 }
+
+export type EffectiveColoringState = Omit<ColoringState, 'scale'> & { scale: ColorScale };
 
 export interface ViewState {
   urlVersion: 3;

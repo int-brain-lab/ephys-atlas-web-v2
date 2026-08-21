@@ -1,7 +1,7 @@
 import type {
   ColorRange,
   ColorMode,
-  ColorScale,
+  ColorScaleSelection,
   CursorState,
   DatasetRef,
   ParcellationId,
@@ -27,7 +27,7 @@ export type AppAction =
   | { type: 'color/mode'; mode: ColorMode }
   | { type: 'color/colormap'; colormap: string }
   | { type: 'color/range'; range: ColorRange }
-  | { type: 'color/scale'; scale: ColorScale }
+  | { type: 'color/scale'; scale: ColorScaleSelection }
   | { type: 'runtime/catalog'; status: 'idle' | 'loading' | 'ready' | 'error'; error?: string | null }
   | { type: 'runtime/dataset'; status: 'idle' | 'loading' | 'ready' | 'error'; error?: string | null };
 

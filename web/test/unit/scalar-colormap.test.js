@@ -8,6 +8,7 @@ import {
   regionalColorMap,
   regionalColorRange,
 } from '../../.test-dist/rendering/scalar-colormap.js';
+import { resolveColoringState } from '../../.test-dist/domain/color-scale.js';
 
 const feature = {
   schemaVersion: '0.1',
@@ -35,6 +36,22 @@ test('regional colors are keyed by numeric atlas ids', () => {
   assert.equal(colors.size, 3);
   assert.match(colors.get(10), /^rgb\(/);
   assert.notEqual(colors.get(10), colors.get(30));
+});
+
+test('automatic color scale resolves from the feature display default', () => {
+  assert.equal(resolveColoringState({ ...coloring, scale: 'auto' }, 'log').scale, 'log');
+  assert.equal(resolveColoringState({ ...coloring, scale: 'auto' }, undefined).scale, 'linear');
+  assert.equal(resolveColoringState({ ...coloring, scale: 'linear' }, 'log').scale, 'linear');
+});
+
+test('log color mapping rejects an invalid domain and omits non-positive values', () => {
+  const invalidRange = { ...coloring, range: { mode: 'fixed', min: 0, max: 2 }, scale: 'log' };
+  assert.equal(regionalColorMap(feature, invalidRange).size, 0);
+  const positiveRange = { ...coloring, range: { mode: 'fixed', min: 0.5, max: 2 }, scale: 'log' };
+  const colors = regionalColorMap(feature, positiveRange);
+  assert.equal(colors.has(10), false);
+  assert.equal(colors.has(20), true);
+  assert.equal(colors.has(30), true);
 });
 
 test('atlas colors are keyed by scientific atlas ids', () => {

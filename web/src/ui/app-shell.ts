@@ -3,7 +3,7 @@ import type {
   AppState,
   ColorMode,
   ColorRange,
-  ColorScale,
+  ColorScaleSelection,
   DatasetId,
   DatasetRef,
   ParcellationId,
@@ -27,7 +27,7 @@ export interface AppShellCallbacks {
   setColorMode(mode: ColorMode): void;
   setColormap(colormap: string): void;
   setColorRange(range: ColorRange): void;
-  setColorScale(scale: ColorScale): void;
+  setColorScale(scale: ColorScaleSelection): void;
   setSlice(axis: SliceAxis, index: number): void;
   clearSelection(): void;
   shareCurrentView(): Promise<void>;
@@ -321,14 +321,18 @@ export class AppShell {
     const header = element('header', 'app-header');
 
     const brand = element('div', 'app-header__brand');
-    const mark = element('span', 'app-header__mark');
-    mark.setAttribute('aria-hidden', 'true');
+    const logo = document.createElement('img');
+    logo.className = 'app-header__logo';
+    logo.src = '/brand/ibl-core-logo.svg';
+    logo.alt = 'IBL Core';
+    logo.width = 240;
+    logo.height = 209;
     const brandText = element('div', 'app-header__brand-text');
-    const title = heading('IBL Ephys Atlas', 1);
+    const title = heading('Ephys Atlas', 1);
     const version = element('span', 'app-header__version');
     version.textContent = 'v2';
     brandText.append(title, version);
-    brand.append(mark, brandText);
+    brand.append(logo, brandText);
 
     const context = element('dl', 'app-header__context');
     context.setAttribute('aria-label', 'Atlas context');
@@ -686,10 +690,10 @@ export class AppShell {
     this.colormapSelect = colormap.select;
     this.colormapSelect.setAttribute('aria-label', 'Feature colormap');
     this.colormapSelect.addEventListener('change', () => this.callbacks.setColormap(this.colormapSelect.value));
-    const scale = this.settingsSelect('Scale', [['linear', 'Linear'], ['log', 'Logarithmic']]);
+    const scale = this.settingsSelect('Scale', [['auto', 'Auto (Linear)'], ['linear', 'Linear'], ['log', 'Logarithmic']]);
     this.scaleSelect = scale.select;
     this.scaleSelect.setAttribute('aria-label', 'Color scale');
-    this.scaleSelect.addEventListener('change', () => this.callbacks.setColorScale(this.scaleSelect.value as ColorScale));
+    this.scaleSelect.addEventListener('change', () => this.callbacks.setColorScale(this.scaleSelect.value as ColorScaleSelection));
     const rangeMode = this.settingsSelect('Range', [['auto', 'Robust auto'], ['fixed', 'Manual']]);
     this.rangeModeSelect = rangeMode.select;
     this.rangeModeSelect.setAttribute('aria-label', 'Color range mode');
@@ -766,7 +770,12 @@ export class AppShell {
       : descriptor?.statistics ?? [];
     this.syncOptions(this.statisticSelect, statistics.map((value) => ({ value, label: titleCaseToken(value) })), view.coloring.statistic);
     this.colormapSelect.value = view.coloring.colormap;
-    this.scaleSelect.value = view.coloring.scale;
+    const automaticScale = descriptor?.display?.scale ?? 'linear';
+    this.syncOptions(this.scaleSelect, [
+      { value: 'auto', label: `Auto (${automaticScale === 'log' ? 'Logarithmic' : 'Linear'})` },
+      { value: 'linear', label: 'Linear' },
+      { value: 'log', label: 'Logarithmic' },
+    ], view.coloring.scale);
     this.rangeModeSelect.value = view.coloring.range.mode;
     const featureColors = (view.coloring.mode ?? 'feature') === 'feature' && feature !== null;
     this.statisticSelect.disabled = !featureColors || statistics.length < 2;

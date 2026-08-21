@@ -5,6 +5,7 @@ import { HttpDatasetSource } from './data/http-source.js';
 import { LocalDatasetSource } from './data/local-source.js';
 import { DatasetRepository } from './data/repository.js';
 import { DEFAULT_APP_STATE, DEFAULT_VIEW_STATE } from './domain/defaults.js';
+import { resolveColoringState } from './domain/color-scale.js';
 import { createAppStore, type AppStore } from './domain/store.js';
 import type { SliceAxis, ViewState } from './domain/types.js';
 import type { DisplaySliceInventory } from './rendering/display-slice-inventory.js';
@@ -127,11 +128,12 @@ export class AtlasApp {
     const data = this.session.snapshot();
     const anatomyRegions = this.atlasRegions?.mappings[state.view.parcellation] ?? data.regions;
     const rendererRegions = state.view.coloring.mode === 'anatomy' ? anatomyRegions : data.regions;
+    const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
     const presentation: RendererPresentation = {
       feature: data.feature,
       regions: rendererRegions,
       anatomyRegions,
-      coloring: state.view.coloring,
+      coloring: resolveColoringState(state.view.coloring, descriptor?.display?.scale),
       selectedRegionIds: state.view.selection,
       hoveredRegionId: this.hoveredRegionId,
     };
@@ -164,7 +166,11 @@ export class AtlasApp {
       || previous.feature !== next.feature
       || previous.regions !== next.regions
       || previous.anatomyRegions !== next.anatomyRegions
-      || previous.coloring !== next.coloring
+      || previous.coloring.mode !== next.coloring.mode
+      || previous.coloring.statistic !== next.coloring.statistic
+      || previous.coloring.colormap !== next.coloring.colormap
+      || previous.coloring.range !== next.coloring.range
+      || previous.coloring.scale !== next.coloring.scale
       || previous.selectedRegionIds !== next.selectedRegionIds
       || previous.hoveredRegionId !== next.hoveredRegionId;
   }

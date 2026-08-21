@@ -1,4 +1,4 @@
-import type { ColoringState, CursorState, ParcellationId, SliceAxis, SliceState } from '../domain/types.js';
+import type { CursorState, EffectiveColoringState, ParcellationId, SliceAxis, SliceState } from '../domain/types.js';
 import type { FeaturePayload, RegionMetadata } from '../data/contracts.js';
 import type { DisplaySliceInventory } from './display-slice-inventory.js';
 
@@ -17,7 +17,7 @@ export interface RendererPresentation {
   regions?: readonly RegionMetadata[];
   /** Ontology metadata used for anatomical reference colors, independent of feature-region labels. */
   anatomyRegions?: readonly RegionMetadata[];
-  coloring: ColoringState;
+  coloring: EffectiveColoringState;
   selectedRegionIds: readonly string[];
   hoveredRegionId: string | null;
 }

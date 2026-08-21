@@ -136,7 +136,9 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
       statistic,
       colormap: params.get('cmap') || defaults.coloring.colormap,
       range: parseRange(params.get('range'), defaults.coloring.range),
-      scale: params.get('scale') === 'log' ? 'log' : 'linear',
+      scale: params.get('scale') === 'log' || params.get('scale') === 'linear'
+        ? params.get('scale') as 'linear' | 'log'
+        : 'auto',
     },
   };
 }
@@ -160,7 +162,7 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   if (view.coloring.mode === 'anatomy' && defaults.coloring.mode !== 'anatomy') params.set('colors', 'anatomy');
   if (view.coloring.colormap !== defaults.coloring.colormap) params.set('cmap', view.coloring.colormap);
   if (view.coloring.range.mode === 'fixed') params.set('range', `${view.coloring.range.min},${view.coloring.range.max}`);
-  if (view.coloring.scale !== defaults.coloring.scale) params.set('scale', view.coloring.scale);
+  if (view.coloring.scale !== 'auto') params.set('scale', view.coloring.scale);
 
   const slices = [view.slices.coronal, view.slices.sagittal, view.slices.horizontal];
   const defaultSlices = [defaults.slices.coronal, defaults.slices.sagittal, defaults.slices.horizontal];

@@ -18,7 +18,7 @@ export const DEFAULT_VIEW_STATE: ViewState = {
     statistic: 'mean',
     colormap: 'viridis',
     range: { mode: 'auto' },
-    scale: 'linear',
+    scale: 'auto',
   },
 };
 

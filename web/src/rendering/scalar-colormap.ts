@@ -1,4 +1,4 @@
-import type { ColoringState } from '../domain/types.js';
+import type { ColoringState, EffectiveColoringState } from '../domain/types.js';
 import type { RegionalFeaturePayload } from '../data/contracts.js';
 import type { RegionMetadata } from '../data/contracts.js';
 
@@ -48,11 +48,12 @@ export function regionalColorRange(feature: RegionalFeaturePayload, coloring: Co
   return max > min ? [min, max] : [min, min + 1];
 }
 
-export function regionalColorMap(feature: RegionalFeaturePayload, coloring: ColoringState): ReadonlyMap<number, string> {
+export function regionalColorMap(feature: RegionalFeaturePayload, coloring: EffectiveColoringState): ReadonlyMap<number, string> {
   const values = feature.statistics[coloring.statistic] ?? feature.statistics.mean;
   const range = regionalColorRange(feature, coloring);
   if (!values || !range) return new Map();
   const [min, max] = range;
+  if (coloring.scale === 'log' && !(min > 0 && max > min)) return new Map();
   const span = max - min;
   const colors = new Map<number, string>();
   for (let index = 0; index < feature.regionIds.length; index += 1) {
@@ -60,7 +61,8 @@ export function regionalColorMap(feature: RegionalFeaturePayload, coloring: Colo
     const value = values[index];
     if (!Number.isInteger(regionId) || value === undefined || !Number.isFinite(value)) continue;
     let normalized: number;
-    if (coloring.scale === 'log' && min > 0 && value > 0 && max > min) {
+    if (coloring.scale === 'log') {
+      if (value <= 0) continue;
       normalized = (Math.log(value) - Math.log(min)) / (Math.log(max) - Math.log(min));
     } else {
       normalized = (value - min) / span;
@@ -106,7 +108,7 @@ export function bilateralAtlasRegionColorMap(regions: readonly RegionMetadata[])
 /** Feature colors on folded-left IDs, with right anatomy retained as reference. */
 export function bilateralFeatureColorMap(
   feature: RegionalFeaturePayload,
-  coloring: ColoringState,
+  coloring: EffectiveColoringState,
   regions: readonly RegionMetadata[],
 ): ReadonlyMap<number, string> {
   const colors = new Map<number, string>();

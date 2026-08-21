@@ -36,6 +36,15 @@ test('URL state preserves selected-region order for stable identity colors', () 
   assert.equal(serializeViewState(parsed).includes('selected=-68%2C-526157192'), true);
 });
 
+test('color scale defaults are automatic while explicit overrides round-trip', () => {
+  assert.equal(parseViewState('?v=3').coloring.scale, 'auto');
+  for (const scale of ['linear', 'log']) {
+    const parsed = parseViewState(`?v=3&scale=${scale}`);
+    assert.equal(parsed.coloring.scale, scale);
+    assert.match(serializeViewState(parsed), new RegExp(`scale=${scale}`));
+  }
+});
+
 test('unknown URL version falls back to defaults', () => {
   assert.deepEqual(parseViewState('?v=999&dataset=local&feature=nope'), DEFAULT_VIEW_STATE);
 });

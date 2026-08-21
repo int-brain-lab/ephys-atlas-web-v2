@@ -1,4 +1,4 @@
-import type { ColoringState } from '../domain/types.js';
+import type { ColoringState, EffectiveColoringState } from '../domain/types.js';
 import type { VolumeFeaturePayload } from '../data/contracts.js';
 import { CanvasVolumeSliceRenderer } from './canvas-volume-renderer.js';
 import { SchemaChunks3dVolumeSource, regionalSliceToVolumeIndex } from './chunked-volume-source.js';
@@ -62,12 +62,13 @@ function displayRange(feature: VolumeFeaturePayload, slice: VolumeSlice, colorin
   return finiteRange(slice.data);
 }
 
-function rgbaForSlice(feature: VolumeFeaturePayload, slice: VolumeSlice, coloring: ColoringState): Uint8ClampedArray {
+function rgbaForSlice(feature: VolumeFeaturePayload, slice: VolumeSlice, coloring: EffectiveColoringState): Uint8ClampedArray {
   const range = displayRange(feature, slice, coloring);
   const rgba = new Uint8ClampedArray(slice.data.length * 4);
   if (!range) return rgba;
   const [min, max] = range;
-  const log = coloring.scale === 'log' && min > 0 && max > min;
+  if (coloring.scale === 'log' && !(min > 0 && max > min)) return rgba;
+  const log = coloring.scale === 'log';
   const lo = log ? Math.log(min) : min;
   const hi = log ? Math.log(max) : max;
   const span = hi - lo;
