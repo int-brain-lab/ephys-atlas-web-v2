@@ -1,287 +1,62 @@
 # Integration status
 
-Status: active local Codex implementation on `main`. The handoff baseline has
-been extended with explicit ephys channel/cluster recipes, corrected regional
-rendering identities, hardened local imports/publication, reproducible web
-dependencies, and stronger semantic validation. The full gate remains the
-completion criterion.
+Status: active pre-alpha implementation on `main`. The repository is being optimized for rapid future extension rather than compatibility with an installed user base.
 
-## Development and handoff state
+## Current architecture
 
-- `main` is the sole active product-development branch (D017).
-- Root `AGENTS.md` defines engineering/scientific guardrails.
-- `docs/LAUNCH_SPEC.md` defines launch acceptance criteria.
-- `docs/IMPLEMENTATION_PLAN.md` defines ordered milestones and next unblocked work.
-- `docs/OPEN_QUESTIONS.md` records launch-blocking scientific/operational choices.
-- `docs/AGENTIC_DEVELOPMENT.md` defines the autonomous local coding loop.
-- `docs/CODEX_HANDOFF.md` provides the fresh-checkout relay runbook and suggested first local task.
-- `Justfile` exposes `bootstrap`, `dev`, targeted gates, and the full `check` command aligned with CI.
-- Root `.gitignore` prevents routine bootstrap/test outputs from appearing as false worktree changes.
+The product is organized around five browser responsibilities:
 
-M0 is complete. Routine product implementation should continue with local Codex on `main`.
+- `core` / `domain`: renderer- and transport-independent state, atlas coordinates, slice calibration, actions, reducers;
+- `application`: asynchronous dataset/release/feature lifecycle and stale-work cancellation;
+- `data`: versioned contracts, validation, shared materialization, HTTP/local resource adapters, caching;
+- `rendering`: anatomy/volume/mesh rendering and format-specific runtime adapters behind application rendering boundaries;
+- `ui`: plain-DOM controllers and pure view models for complex data presentation.
 
-## Integrated data/schema foundation
+Dataset IDs are runtime identifiers rather than a fixed launch enum. Dataset, feature, parcellation, release, and representation availability are expected to come from catalogs/manifests.
 
-Schema v0.1 is the single contract for published HTTP releases and browser-imported local releases.
+HTTP and local datasets share the same regional materializer through a transport-independent resource-reader interface. The validation implementation is split by contract concern behind the existing public validation facade.
 
-The repository contains:
+The regional UI keeps DOM concerns in its controller while region search/value/statistics derivation is pure/testable. Large dynamic tree interaction uses delegated events.
 
-- immutable release/provenance schemas;
-- dynamic feature references rather than a hardcoded ephys feature enum;
-- typed binary regional arrays/statistics/histograms;
-- explicit volume geometry and discriminated physical layouts;
-- deterministic golden regional+volume fixtures;
-- builder validation and deterministic packaging;
-- source acquisition/provenance helpers.
-- semantic cross-resource validation for both supported volume layouts;
-- a committed npm lockfile and active unit/rendering/browser CI suites.
+## Anatomy rendering
 
-The golden fixture is synthetic and has no scientific interpretation.
+The active regional anatomy display is the immutable sparse `anatomy-pack-v3`, derived byte-for-byte from the validated bilateral 10 µm `anatomy-pack-v2` parent. Application/URL/cursor state remains in native 10 µm coordinates while display geometry uses the sparse 80 µm inventory.
 
-## `ephys_atlas_channels` builder
+Anatomy manifest/version validation is separate from runtime fetch/cache/worker behavior. The v1/v2 compatibility paths remain explicit where they are still useful for validation or rollback; format-specific code should not be unified merely to reduce file count.
 
-A deterministic channel-release recipe is implemented on `main`.
+## Scientific data/builders
 
-The builder makes scientifically material choices explicit rather than inheriting hidden defaults:
+Schema v0.1 is the current browser/publishing release contract. Regional release serialization is shared by channel and cluster builders; scientific source selection and computation remain dataset-specific.
 
-- source project/vintage;
-- raw versus denoised feature mode;
-- source population/QC recipe input;
-- release timestamp and paper-snapshot status;
-- dynamic source feature catalog;
-- Allen/Beryl/Cosmos regional outputs;
-- descriptive statistics/histograms and schema-v0.1 metadata/provenance.
-- distinct raw and denoised feature variants when mode `both` is selected;
-- left-hemisphere folding of bilateral atlas IDs;
-- preservation of source values without the upstream implicit alpha replacement;
-- pinned `ibleatools`, `iblatlas`, and builder commits plus the copied source manifest.
+Current launch-critical dataset families are:
 
-Q1 and Q3 are resolved: releases contain both raw and denoised variants and
-use the explicit `inside` population with no additional physiological QC. The
-real immutable `2026_W32` snapshot has been pulled and built as a validated
-development release with the pinned scientific environment. Its separate
-real-release Playwright suite passes through the production HTTP loader for all
-three parcellations, including the promoted raw alpha `float64` arrays; see
-`docs/data/DEVELOPMENT_RELEASE.md`. A paper-facing scientific release is not
-frozen because Q2 still requires the final immutable `ea_active` vintage.
+- `ephys_atlas_channels`
+- `ephys_atlas_clusters`
+- `ephys_atlas_volumes`
+- `brainwide_map`
 
-## `ephys_atlas_clusters` builder
+The final paper-facing source vintages and unresolved scientific choices remain governed by `docs/OPEN_QUESTIONS.md`, `docs/LAUNCH_SPEC.md`, and focused data/source documentation. The browser must not hard-code the eventual feature catalog.
 
-A deterministic cluster release recipe is implemented:
+## Publishing
 
-- source pull requires an explicit project and produces a content-derived immutable snapshot ID;
-- snapshot builds require an explicit nonempty scalar feature catalog and pinned code commits;
-- all rows of `clusters.table.pqt` are eligible; `clusters_good.table.pqt` is not used;
-- every finite cluster has equal weight within its left-folded Allen/Beryl/Cosmos region;
-- no insertion balancing or hidden good-unit/QC filter is applied;
-- schema-provided units are retained and absent units remain null.
+Publishing remains capability-token based with public reads and authenticated mutations. The implementation supports resumable staged uploads, byte-size/SHA verification, immutable releases, aliases, catalog generation, and external validation hooks.
 
-Production remains blocked on the remaining Q6 choices: exact project/source
-snapshot and launch feature catalog.
+Mutation handling is designed for multi-process WSGI deployment with a filesystem lock around state-changing requests. JSON metadata and binary upload chunks have independent request-size limits. No OAuth/user platform, database, or queue is required for the current launch architecture.
 
-## Regional viewer vertical slice
+## Quality gates
 
-The regional schema-v0.1 path is implemented end-to-end using the golden fixture:
+CI runs Python builder/publishing tests plus TypeScript typechecking, browser unit/rendering tests, a production build, and Playwright browser tests. Architectural tests protect important dependency directions so domain/core code cannot silently acquire renderer/UI dependencies.
 
-1. catalog -> immutable manifest -> feature metadata;
-2. parcellation region index + metadata;
-3. regional values, descriptive-statistic matrix, global/regional histograms;
-4. browser regional payload;
-5. real region list/search and selected/global comparison;
-6. statistic/colormap coloring of registered anatomy regions;
-7. SVG and list interactions sharing one selection state;
-8. selection persisted in URL state.
+## Source of truth
 
-The default regional renderer consumes the immutable bilateral 10 µm generated
-`anatomy-pack-v2` under the application `SliceRenderer` facade. The 25 µm v1
-pack and legacy adapter remain available for rollback but are not active.
+Use these documents in order when deciding what to build next:
 
-Generated paths carry negative signed Allen/Beryl/Cosmos atlas IDs directly,
-matching folded ephys releases without a row-index crosswalk. The legacy
-adapter alone retains its explicit BrainRegions row translation.
-Independent request/render generations prevent stale feature, parcellation, or
-volume-slice results from overwriting newer state, and renderer failures reach
-visible runtime error status.
+1. `AGENTS.md`
+2. `docs/LAUNCH_SPEC.md`
+3. `docs/IMPLEMENTATION_PLAN.md`
+4. `docs/OPEN_QUESTIONS.md`
+5. `docs/DECISIONS.md`
+6. `docs/ARCHITECTURE.md`
+7. this status document and focused implementation/source docs
 
-A pinned Allen Mouse CCF 2017 metadata asset supplies the full curated-SVG
-region inventory, official ontology RGB, names, parents, depths, and legacy row
-crosswalk. The settings panel exposes URL-persisted `Feature values` and
-`Allen anatomy` fill modes. Anatomy mode shows the canonical left inventory and
-color swatches in the region browser; geometry providers consume the shared
-color presentation without owning state (D022).
-
-The region browser constructs its preorder and depth from the signed Allen
-parent IDs. Allen uses the complete hierarchy; Beryl and Cosmos include the
-small set of real Allen ancestor containers needed to make their reduced
-mapping inventories parent-closed. Arbitrary ontology depth is displayed, and
-container-only rows remain visibly distinct from selectable mapping regions.
-
-The application shell now exposes manifest-driven dataset/release, feature,
-representation, and parcellation pickers directly from the corresponding top
-context fields. The searchable feature picker handles the 70-feature launch
-catalog without a native-select form, while the right visualization drawer is
-reserved for statistic, colormap, scale, and robust/manual range controls. The
-numerical legend identifies the left-hemisphere feature scale and its effective
-range. The former secondary placeholder is a compact global feature summary.
-Share copies the complete URL state, Info exposes the immutable release,
-feature semantics, and source/builder provenance, and Download exports the
-current regional statistic as CSV with immutable context columns. The synthetic
-golden release remains fixture-only and is visibly identified as such.
-
-`just dev-real` validates and opens the ignored immutable `2026_W32` channel
-release with `rms_ap.denoised` as its catalog-aware development default. Its
-Playwright suite exercises the actual Vite HTTP middleware, all 70 dynamic
-features, Allen/Beryl/Cosmos, and promoted `float64` alpha values. Ordinary
-`just dev` and CI continue to use the deterministic golden fixture.
-
-The scientific anatomy parent is the byte-identical, validated bilateral 10 µm pack under
-`web/public/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/`,
-while the v1 pack remains available for rollback. It contains all
-3,260 source slices in 205 lazy depth-16 packs (44,424,303 compressed bytes),
-preserves negative-left/positive-right Allen, Beryl, and Cosmos IDs, and
-retains all 4,653 enclosed background components. Its exact collinear-only
-serialization has eligible-region IoU 1.0 and a 0 µm boundary-error upper
-bound. Its affines synchronize all projections through one native ML/AP/DV
-cursor; URL v3 uses native indices and migrates v1 10 µm and v2 25 µm links by
-world coordinate.
-
-Slice navigation coalesces wheel bursts to one update per animation frame and
-uses 100 normalized wheel pixels per 80 µm display-plane step while preserving
-exact 10 µm indices in state and URLs. A slice change reloads geometry only in
-its own projection; the other projections update their guide layers.
-Presentation styling is skipped when feature/color/selection/hover state is
-unchanged, and URL replacement is deferred for 120 ms during navigation. The
-initial view fetches only its three current depth-eight packs. Subsequent idle
-prefetch is latest-wins and loads one pack in the active direction into a
-worker-owned 32 MiB decoded-byte LRU shared across projections. Each SVG view retains an
-eight-layer parsed-DOM LRU, including its per-slice path index, so reverse/warm
-navigation swaps the original nodes without parsing again. Geometry loading
-allows one request in flight per view with no artificial start delay; pending
-intermediate requests are replaced by the latest slice before source loading
-begins. After byte-size and SHA verification, compressed pack buffers transfer
-to a persistent module worker for gzip and indexed-structure validation. Only
-the requested UTF-8 SVG fragment returns to the main thread.
-
-The active regional display is now the immutable 80 µm `anatomy-pack-v3`
-derived byte-for-byte from the validated bilateral 10 µm v2 parent. It exposes
-165 coronal, 142 sagittal, and 100 horizontal SVG planes while preserving
-native 10 µm application/URL/cursor state and projection affines. Sliders use
-display ordinals and wheel input advances one display plane. Exact URL indices
-resolve to the nearest SVG only for geometry, with lower-index tie breaking.
-
-The v3 corpus uses 52 depth-eight ISVG packs totaling 5,604,696 compressed
-bytes versus 44,424,303 bytes for the complete v2 inventory. Fetch and SHA
-verification remain in the source; a persistent worker owns the 32 MiB decoded
-LRU and returns only one requested fragment. The reproducible Chromium
-benchmark (`just benchmark-anatomy`) measured 9.3–10.6 ms median cold commits,
-2.2–3.4 ms same-pack commits, no long tasks, and a 17.6 ms maximum frame gap.
-Detailed evidence is in `docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.
-
-## Volume viewer vertical slice
-
-A schema-v0.1 volume path is implemented and green on `main` using the golden `chunks3d` representation plus a tested `orthogonal_slice_packs` adapter:
-
-1. published/local volume payloads provide transport-independent resource callbacks;
-2. the `chunks3d` adapter decodes float16/float32 chunks (and optional gzip);
-3. the slice-pack adapter decodes float16/float32 packs, reuses neighboring slices in a 48 MiB LRU, and deduplicates in-flight resource loads;
-4. descriptor axis order is permuted into anatomical AP/ML/DV slice axes explicitly for both layouts;
-5. linked regional coordinates map to volume indices through the declared `index_to_world_um` transform;
-6. `VolumeSliceLoader` extracts orthogonal slices with bounded chunk caching;
-7. Canvas2D renders scalar slices;
-8. the hybrid application renderer switches between regional SVG and volume Canvas below the same `SliceRenderer` boundary;
-9. unit and Playwright coverage exercise the golden volume path, while rendering tests cover all slice-pack planes, permuted storage axes, cache reuse, and edge packs.
-
-This validates the reference browser architecture, not the final production science/transport. Q4 must supply authoritative scientific transform/outside semantics and Q5 must select production physical layout from real-data benchmark evidence.
-
-The first ten-trial real-`rms_ap` Chromium measurement is also committed. The
-optimized depth-4 adapter loads three current planes in 37.8/54.1 ms p50/p95,
-reuses a neighboring slice in 0.8/1.5 ms without another request, and prepares
-and paints six planes in 3.7/8.7 ms. Depth 4 is now the provisional transport
-recommendation, pending other feature distributions and the final origin.
-
-## Publishing/public catalog
-
-The capability-based publishing implementation is integrated:
-
-- revocable publisher credentials;
-- dataset ownership without a user/OAuth platform;
-- private resumable staged uploads;
-- byte-size/SHA checks;
-- manifest dataset/release identity binding and bounded external validation;
-- serialized resumable appends under threaded deployment;
-- idempotent recovery when a process stops after the release-directory rename;
-- immutable public release directories and mutable aliases;
-- administrative API state kept separate from the static browser catalog;
-- public `catalog.json` emitted in the same v0.1 browser contract consumed by `HttpDatasetSource`.
-
-Publishing prepares/distributes releases but never transforms scientific data.
-
-## Browser/data runtime fixes already integrated
-
-- Browser `fetch` is bound correctly before use through the resource fetcher; this fixed the Chromium `Illegal invocation` failure uncovered by the regional integration test.
-- Regional metadata/value/statistics/histogram loading uses one schema-v0.1 path for HTTP and local imports.
-- Volume resource loading likewise uses one logical payload contract across HTTP and IndexedDB/local storage.
-- Curated SVG display inventory is validated before rendering.
-- Strict TypeScript indexing in the volume adapter is resolved without weakening compiler settings.
-- Local imports validate the complete supported regional/volume resource graph and every declared SHA-256 before opening a write transaction.
-- Local storage is namespaced by source dataset and release, preventing same-release collisions across datasets.
-- The 12 standalone rendering tests are compiled and run locally and in CI rather than remaining outside the package gate.
-
-## Current canonical source evidence
-
-### Channel features
-
-- project: `ea_active`;
-- private example vintage: `2025_W28` (not yet the final paper freeze);
-- feature loading is through current `ephysatlas.data` tooling;
-- raw and denoised source tables are loaded explicitly as separate feature variants;
-- the final paper source vintage remains unresolved.
-
-### Encoding volumes
-
-Private source documentation describes `brainwide_ephys_atlas_25um.npz` with:
-
-- `ephys_atlas_vol` shape `(456, 528, 320, N)` float16;
-- `feature_names`;
-- per-feature mean/std;
-- 25 um resolution;
-- 41 features in the documented `2026_W12` vintage.
-
-The canonical `2026_W12` object is now checksummed and its ZIP/NPY headers are
-measured: 1,636,734,203 bytes; a DEFLATE-compressed C-order
-`(456, 528, 320, 41)` float16 main member; and a last, interleaved feature axis.
-This resolves physical-container facts but not the authoritative scientific
-axis mapping/affine, outside semantics, or interpretation of stored values
-versus the included mean/std arrays.
-
-A bounded-memory real layout benchmark extracts `psd_lfp`, `rms_ap`, and
-`polarity` and measures 32³/64³ cubes against 4/8-slice packs. Packs reduce the
-three center-plane request count to 3 with 0.83–3.32 MiB gzip, versus 136–534
-cube requests with 5.21–21.77 MiB. The result prioritizes packs for browser
-measurement but does not resolve Q5 until browser/HTTP, cache, latency, and
-broader-feature evidence is recorded.
-
-## Remaining launch work
-
-The active sequence is defined in `docs/IMPLEMENTATION_PLAN.md`. In summary:
-
-1. expose the validated immutable `2026_W32` development channel release through a non-production catalog, run real-value browser acceptance, and freeze the paper release after Q2;
-2. benchmark the unblocked M2 volume transport candidates, then resolve Q4-Q5 and build the real volume release/transport;
-3. resolve the remaining cluster project/catalog choices and build the production cluster release (Q6);
-4. define/build exact `brainwide_map` product (Q7);
-5. complete selected-comparison/volume/whole-release downloads and local-dataset management UX; current regional CSV export and hardened import are implemented;
-6. relocate pinned curated assets and finalize catalog/origin/deployment/publishing choices (Q8-Q10);
-7. run final real-data performance and cross-browser release QA (Q11).
-
-3-D, AGEA, MERFISH, large point-cloud workflows, advanced inferential statistics, full OAuth, and broad legacy custom-bucket compatibility remain deferred unless explicitly promoted.
-
-## Source of truth for future agents
-
-Do not reconstruct next steps from historical workstream chats. Use, in order:
-
-1. `AGENTS.md`;
-2. `docs/LAUNCH_SPEC.md`;
-3. `docs/IMPLEMENTATION_PLAN.md`;
-4. `docs/OPEN_QUESTIONS.md`;
-5. `docs/DECISIONS.md`;
-6. this file and focused implementation/source docs.
+Historical implementation detail remains available in Git history; this file intentionally records the current integrated state rather than an append-only development diary.
