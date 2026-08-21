@@ -400,62 +400,6 @@ export function renderAnalysis(
     badge.textContent = 'Synthetic integration fixture';
     wrap.append(badge);
   }
-  const byId = new Map(regions.map((region) => [region.id, region]));
-  const distributions = selectedRegionHistogramDistributions(feature, selected);
-  if (feature.histogram && distributions.length > 0) {
-    const global = histogramDistribution(feature.histogram.globalCounts);
-    const maxProbability = Math.max(
-      0,
-      ...global.probabilities,
-      ...distributions.flatMap((distribution) => distribution.probabilities),
-    );
-    const section = html('section', 'regional-comparison__distributions');
-    const heading = html('h3', 'regional-comparison__heading');
-    heading.textContent = 'Normalized distributions';
-    const note = html('p', 'regional-comparison__note');
-    note.textContent = 'Each curve is normalized within its own population; all rows share the feature-value axis and probability scale.';
-    section.append(heading, note);
-    distributions.forEach((distribution, selectionIndex) => {
-      const region = byId.get(distribution.regionId);
-      const row = html('div', 'regional-distribution');
-      row.dataset.regionId = distribution.regionId;
-      row.style.setProperty('--selection-color', selectionColor(selectionIndex));
-      const identity = html('div', 'regional-distribution__identity');
-      const acronym = html('strong');
-      acronym.textContent = region?.acronym ?? distribution.regionId;
-      const name = html('span');
-      name.textContent = `${region?.name ?? `Region ${distribution.regionId}`} · n=${distribution.total.toLocaleString('en-US')}`;
-      identity.append(acronym, name);
-      const plot = svgElement('svg');
-      plot.classList.add('regional-distribution__plot');
-      plot.setAttribute('viewBox', `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`);
-      plot.setAttribute('preserveAspectRatio', 'none');
-      plot.setAttribute('aria-label', `${region?.acronym ?? distribution.regionId} normalized distribution`);
-      const globalLine = svgElement('path');
-      globalLine.classList.add('regional-distribution__global');
-      globalLine.setAttribute('d', smoothHistogramPath(global.probabilities, maxProbability, false, CHART_WIDTH, CHART_HEIGHT));
-      const regionArea = svgElement('path');
-      regionArea.classList.add('regional-distribution__region');
-      regionArea.setAttribute('d', smoothHistogramPath(distribution.probabilities, maxProbability, true, CHART_WIDTH, CHART_HEIGHT));
-      regionArea.dataset.probabilitySum = probabilitySum(distribution.probabilities);
-      plot.append(globalLine, regionArea);
-      row.append(identity, plot);
-      section.append(row);
-    });
-    const axis = html('div', 'regional-distribution__axis');
-    const firstEdge = feature.histogram.edges[0];
-    const lastEdge = feature.histogram.edges.at(-1);
-    const start = html('span');
-    start.textContent = firstEdge === undefined ? '' : formatRegionalValue(firstEdge, 'mean', unit);
-    const axisLabel = html('span');
-    axisLabel.textContent = `Feature value${unit ? ` · ${unit}` : ''}`;
-    const end = html('span');
-    end.textContent = lastEdge === undefined ? '' : formatRegionalValue(lastEdge, 'mean', unit);
-    axis.append(start, axisLabel, end);
-    section.append(axis);
-    wrap.append(section);
-  }
-
   wrap.append(renderComparisonTable(feature, regions, selected, statistic, unit));
   target.replaceChildren(wrap);
 }
@@ -472,20 +416,33 @@ function renderComparisonTable(
   const section = html('section', 'regional-comparison__statistics');
   const headerRow = html('div', 'regional-comparison__section-header');
   const heading = html('h3', 'regional-comparison__heading');
-  heading.textContent = 'Descriptive statistics';
+  heading.textContent = 'Selected-region comparison';
   const download = html('button', 'regional-comparison__download');
   download.type = 'button';
   download.dataset.downloadComparison = 'true';
   download.textContent = 'Download comparison';
   headerRow.append(heading, download);
   const note = html('p', 'regional-comparison__note');
-  note.textContent = unit ? `Feature values are shown in ${unit}.` : 'Feature units are not declared for this release.';
+  const unitNote = unit ? `Feature values are shown in ${unit}.` : 'Feature units are not declared for this release.';
+  note.textContent = `Each curve is normalized within its own population; all rows share the feature-value axis and probability scale. ${unitNote}`;
   const scroller = html('div', 'regional-comparison__table-scroll');
   const table = html('table', 'regional-comparison__table');
+  const caption = document.createElement('caption');
+  caption.textContent = 'Normalized distributions and descriptive statistics for selected regions and the global population';
+  const distributions = new Map(
+    selectedRegionHistogramDistributions(feature, selected).map((distribution) => [distribution.regionId, distribution]),
+  );
+  const globalDistribution = feature.histogram ? histogramDistribution(feature.histogram.globalCounts) : null;
+  const maxProbability = Math.max(
+    0,
+    ...(globalDistribution?.probabilities ?? []),
+    ...[...distributions.values()].flatMap((distribution) => distribution.probabilities),
+  );
   const head = document.createElement('thead');
   const header = document.createElement('tr');
   const columns = [
     ['region', 'Region'],
+    ['distribution', 'Distribution'],
     ['count', 'n'],
     ['mean', 'Mean'],
     ['median', 'Median'],
@@ -508,11 +465,20 @@ function renderComparisonTable(
     const region = regionById.get(regionId);
     const row = document.createElement('tr');
     row.dataset.regionId = regionId;
+    row.classList.add('regional-distribution');
     row.style.setProperty('--selection-color', selectionColor(selectionIndex));
     const identity = document.createElement('th');
     identity.scope = 'row';
     identity.textContent = region ? `${region.acronym} · ${region.name}` : regionId;
     row.append(identity);
+    appendDistributionCell(
+      row,
+      distributions.get(regionId)?.probabilities,
+      globalDistribution?.probabilities,
+      maxProbability,
+      `${region?.acronym ?? regionId} normalized distribution`,
+      false,
+    );
     const value = (field: keyof RegionalFeaturePayload['statistics']): number | undefined => (
       rowIndex === undefined ? undefined : feature.statistics[field]?.[rowIndex]
     );
@@ -527,10 +493,19 @@ function renderComparisonTable(
   if (feature.global) {
     const row = document.createElement('tr');
     row.dataset.series = 'global';
+    row.classList.add('regional-distribution');
     const identity = document.createElement('th');
     identity.scope = 'row';
     identity.textContent = 'Global population';
     row.append(identity);
+    appendDistributionCell(
+      row,
+      globalDistribution?.probabilities,
+      undefined,
+      maxProbability,
+      'Global population normalized distribution',
+      true,
+    );
     appendStatisticCell(row, feature.global.count, 'count', 'count', unit, statistic === 'count');
     appendStatisticCell(row, feature.global.mean, 'mean', 'mean', null, statistic === 'mean');
     appendStatisticCell(row, feature.global.median, 'median', 'median', null, statistic === 'median');
@@ -539,10 +514,80 @@ function renderComparisonTable(
     appendRangeCell(row, feature.global.min, feature.global.max, null, statistic === 'min' || statistic === 'max');
     body.append(row);
   }
-  table.append(head, body);
+  table.append(caption, head, body);
+  if (feature.histogram) {
+    table.append(renderDistributionAxis(feature, unit, columns.length));
+  }
   scroller.append(table);
   section.append(headerRow, note, scroller);
   return section;
+}
+
+function appendDistributionCell(
+  row: HTMLTableRowElement,
+  probabilities: readonly number[] | undefined,
+  globalProbabilities: readonly number[] | undefined,
+  maxProbability: number,
+  accessibleLabel: string,
+  global: boolean,
+): void {
+  const cell = document.createElement('td');
+  cell.classList.add('regional-comparison__distribution-cell');
+  cell.dataset.statistic = 'distribution';
+  if (!probabilities || probabilities.length === 0) {
+    cell.textContent = '—';
+    row.append(cell);
+    return;
+  }
+  const plot = svgElement('svg');
+  plot.classList.add('regional-distribution__plot');
+  plot.setAttribute('viewBox', `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`);
+  plot.setAttribute('preserveAspectRatio', 'none');
+  plot.setAttribute('role', 'img');
+  plot.setAttribute('aria-label', accessibleLabel);
+  if (globalProbabilities) {
+    const globalLine = svgElement('path');
+    globalLine.classList.add('regional-distribution__global');
+    globalLine.setAttribute('d', smoothHistogramPath(globalProbabilities, maxProbability, false, CHART_WIDTH, CHART_HEIGHT));
+    plot.append(globalLine);
+  }
+  const populationArea = svgElement('path');
+  populationArea.classList.add(global ? 'regional-distribution__population' : 'regional-distribution__region');
+  populationArea.setAttribute('d', smoothHistogramPath(probabilities, maxProbability, true, CHART_WIDTH, CHART_HEIGHT));
+  populationArea.dataset.probabilitySum = probabilitySum(probabilities);
+  plot.append(populationArea);
+  cell.append(plot);
+  row.append(cell);
+}
+
+function renderDistributionAxis(
+  feature: RegionalFeaturePayload,
+  unit: string | null,
+  columnCount: number,
+): HTMLTableSectionElement {
+  const foot = document.createElement('tfoot');
+  const row = document.createElement('tr');
+  const label = document.createElement('th');
+  label.scope = 'row';
+  label.textContent = 'Feature value';
+  const cell = document.createElement('td');
+  const axis = html('div', 'regional-distribution__axis');
+  const firstEdge = feature.histogram?.edges[0];
+  const lastEdge = feature.histogram?.edges.at(-1);
+  axis.setAttribute('aria-label', `Feature-value axis${unit ? ` in ${unit}` : ''}`);
+  const start = html('span');
+  start.textContent = firstEdge === undefined ? '' : formatRegionalValue(firstEdge, 'mean', null);
+  const axisLabel = html('span');
+  axisLabel.textContent = unit ?? '';
+  const end = html('span');
+  end.textContent = lastEdge === undefined ? '' : formatRegionalValue(lastEdge, 'mean', null);
+  axis.append(start, axisLabel, end);
+  cell.append(axis);
+  const remainder = document.createElement('td');
+  remainder.colSpan = columnCount - 2;
+  row.append(label, cell, remainder);
+  foot.append(row);
+  return foot;
 }
 
 function appendStatisticCell(

@@ -109,9 +109,10 @@ parcellation metadata/index, typed values/statistics/histograms, region
 search/tree, scalar coloring, shared SVG/list selection and hover, URL state,
 provenance, and CSV export. The compact distribution overlays independently
 sum-normalized selected-region shapes on the global distribution. The expanded
-comparison aligns the same probability distributions and descriptive summaries
-on common axes, and exports selected regions with context, raw bins, normalized
-probabilities, and sample sizes. Histogram curves use presentation-only,
+comparison places each selected region's normalized distribution and
+descriptive statistics in one aligned table, with the global population as a
+distinct reference row on the same axes, and exports selected regions with
+context, raw bins, normalized probabilities, and sample sizes. Histogram curves use presentation-only,
 shape-preserving interpolation while bin hover/export retains exact values. The
 comparison remains collapsed on selection and expands to its content height,
 with a viewport cap for larger selections. Synthetic fixtures are visibly

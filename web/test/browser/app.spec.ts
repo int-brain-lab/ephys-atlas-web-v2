@@ -292,11 +292,20 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   const comparisonRow = page.locator('.regional-comparison__table tr[data-region-id="-362"]');
   await expect(comparisonRow).toContainText('MD · Mediodorsal nucleus of thalamus');
   await expect(comparisonRow).toContainText('3');
+  await expect(page.locator('.regional-comparison__table thead')).toContainText('Distribution');
+  await expect(comparisonRow.locator('.regional-distribution__plot')).toHaveAttribute(
+    'aria-label',
+    'MD normalized distribution',
+  );
   await expect(comparisonRow.locator('[data-statistic="mean"]')).toHaveText('1');
   await expect(page.locator('.regional-comparison__statistics')).toContainText('Feature values are shown in dB rel. V.');
   await expect(page.locator('.regional-distribution[data-region-id="-362"]')).toContainText('MD');
   await expect(page.locator('.regional-distribution__region')).toHaveAttribute('data-probability-sum', '1');
   await expect(page.locator('.regional-distribution__region')).toHaveAttribute('d', / C /);
+  const globalComparisonRow = page.locator('.regional-comparison__table tr[data-series="global"]');
+  await expect(globalComparisonRow).toContainText('Global population');
+  await expect(globalComparisonRow.locator('.regional-distribution__population')).toHaveAttribute('data-probability-sum', '1');
+  await expect(page.locator('.regional-comparison__table tfoot .regional-distribution__axis')).toContainText('dB rel. V');
   await page.getByRole('button', { name: 'Expand selected-region comparison' }).click();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download comparison' }).click();
