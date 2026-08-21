@@ -7,6 +7,7 @@ import {
   renderDistribution,
   renderFeatureSummary,
   renderSelectedRegions,
+  updateDistributionHover,
 } from './details-view.js';
 import { buildRegionalValueMap } from './model.js';
 import { RegionalTreeView } from './tree-view.js';
@@ -82,6 +83,17 @@ export class RegionalPanelController {
       && model.anatomyAtlas === this.lastAnatomyAtlas
     ) {
       this.tree.updateHoveredRegion(model.hoveredRegionId);
+      if (feature) {
+        const descriptor = model.manifest?.features.find((item) => item.id === feature.featureId);
+        updateDistributionHover(
+          this.distribution,
+          feature,
+          model.regions,
+          model.hoveredRegionId,
+          statistic,
+          descriptor?.unit ?? null,
+        );
+      }
       return;
     }
     this.lastFeature = feature;
@@ -118,6 +130,14 @@ export class RegionalPanelController {
     if (feature) {
       renderFeatureSummary(this.summary, feature, unit);
       renderDistribution(this.distribution, feature, selected, model.regions, statistic, unit, fixture);
+      updateDistributionHover(
+        this.distribution,
+        feature,
+        model.regions,
+        model.hoveredRegionId,
+        statistic,
+        unit,
+      );
       renderAnalysis(this.analysis, feature, model.regions, selected, values, statistic, unit, fixture);
     } else {
       this.summary.replaceChildren();

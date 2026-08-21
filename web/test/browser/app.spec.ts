@@ -546,6 +546,11 @@ test('region hover is linked across all anatomical projections', async ({ page }
   const sourceStyle = await source.getAttribute('style');
   await source.dispatchEvent('pointermove');
   await expect(page.locator('.region-row[data-region-id="-362"]')).toHaveAttribute('data-hovered', 'true');
+  const histogramMarker = page.locator('.distribution-chart__hover-marker');
+  await expect(histogramMarker).toHaveAttribute('data-visible', 'true');
+  await expect(histogramMarker).toHaveAttribute('data-region-id', '-362');
+  await expect(page.locator('.distribution-chart__hover-label')).toHaveText('MD · 1 dB rel. V');
+  await expect(page.locator('.distribution-chart__hover-dot')).toHaveAttribute('cx', '375');
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
     const highlighted = page.locator(`[data-view="${axis}"] path[data-allen-id="-362"]`).first();
     await expect(highlighted).toHaveClass(/is-highlighted/);
@@ -555,6 +560,8 @@ test('region hover is linked across all anatomical projections', async ({ page }
   }
 
   await page.locator('[data-view="coronal"] .view-frame__slice-figure').dispatchEvent('pointerleave');
+  await expect(histogramMarker).toHaveAttribute('data-visible', 'false');
+  await expect(page.locator('.distribution-chart__hover-label')).toBeHidden();
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
     await expect(page.locator(`[data-view="${axis}"] path[data-allen-id="-362"]`).first()).not.toHaveClass(/is-highlighted/);
   }
@@ -606,6 +613,7 @@ test('region-list hover previews the region in all anatomical projections', asyn
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
 
   await page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ }).hover();
+  await expect(page.locator('.distribution-chart__hover-marker')).toHaveAttribute('data-region-id', '-362');
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
     const highlighted = page.locator(`[data-view="${axis}"] path[data-allen-id="-362"]`).first();
     await expect(highlighted).toHaveClass(/is-highlighted/);
@@ -613,6 +621,7 @@ test('region-list hover previews the region in all anatomical projections', asyn
   }
 
   await page.getByLabel('Search brain regions').hover();
+  await expect(page.locator('.distribution-chart__hover-marker')).toHaveAttribute('data-visible', 'false');
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
     await expect(page.locator(`[data-view="${axis}"] path[data-allen-id="-362"]`).first()).not.toHaveClass(/is-highlighted/);
   }

@@ -103,7 +103,10 @@ generation-based stale-work suppression, and cancellable idle prefetch. Active
 prefetch aborts propagate through repositories, HTTP/local resource readers,
 and regional materialization without poisoning a foreground request for the
 same immutable resource. Dataset/parcellation changes clear stale hover, and
-regional-tree rerenders preserve current hover presentation.
+regional-tree rerenders preserve current hover presentation. Projection and
+region-list hover also place a transient labeled marker at the hovered region's
+current statistic on the global observation histogram when the statistic shares
+that histogram's value axis.
 
 The global keyboard layer opens feature search with `/`, moves to adjacent
 manifest-ordered features with `Shift + Down` / `Shift + Up`, and opens an

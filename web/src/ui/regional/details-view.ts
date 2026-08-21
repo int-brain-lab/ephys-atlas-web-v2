@@ -5,6 +5,7 @@ import {
   buildRegionalValueMap,
   formatRegionalValue,
   histogramDistribution,
+  regionalStatisticValues,
   selectedRegionHistogramDistributions,
   selectionColor,
 } from './model.js';
@@ -20,6 +21,13 @@ function probabilitySum(values: readonly number[]): string {
 
 function svgElement<K extends keyof SVGElementTagNameMap>(name: K): SVGElementTagNameMap[K] {
   return document.createElementNS(SVG_NS, name);
+}
+
+function histogramPosition(value: number, edges: readonly number[]): number | null {
+  const firstEdge = edges[0];
+  const lastEdge = edges.at(-1);
+  if (firstEdge === undefined || lastEdge === undefined || lastEdge <= firstEdge) return null;
+  return Math.max(0, Math.min(CHART_WIDTH, ((value - firstEdge) / (lastEdge - firstEdge)) * CHART_WIDTH));
 }
 
 export interface RegionalDetailsTargets {
@@ -159,24 +167,40 @@ export function renderDistribution(
     svg.append(line);
 
     const markerValue = statistic === 'count' ? undefined : values.get(distribution.regionId);
-    const firstEdge = histogram.edges[0];
-    const lastEdge = histogram.edges.at(-1);
-    if (markerValue !== undefined && Number.isFinite(markerValue) && firstEdge !== undefined && lastEdge !== undefined && lastEdge > firstEdge) {
+    const numericMarkerValue = markerValue ?? Number.NaN;
+    const x = !Number.isFinite(numericMarkerValue)
+      ? null
+      : histogramPosition(numericMarkerValue, histogram.edges);
+    if (x !== null) {
       const marker = svgElement('line');
       marker.classList.add('distribution-chart__marker');
       marker.dataset.regionId = distribution.regionId;
-      const x = Math.max(0, Math.min(CHART_WIDTH, ((markerValue - firstEdge) / (lastEdge - firstEdge)) * CHART_WIDTH));
       marker.setAttribute('x1', String(x));
       marker.setAttribute('x2', String(x));
       marker.setAttribute('y1', '0');
       marker.setAttribute('y2', String(CHART_HEIGHT));
       marker.style.setProperty('--selection-color', color);
       const markerTitle = svgElement('title');
-      markerTitle.textContent = `${region?.acronym ?? distribution.regionId} ${statistic}: ${formatRegionalValue(markerValue, statistic, unit)}`;
+      markerTitle.textContent = `${region?.acronym ?? distribution.regionId} ${statistic}: ${formatRegionalValue(numericMarkerValue, statistic, unit)}`;
       marker.append(markerTitle);
       svg.append(marker);
     }
   });
+
+  const hoverMarker = svgElement('g');
+  hoverMarker.classList.add('distribution-chart__hover-marker');
+  hoverMarker.dataset.visible = 'false';
+  const hoverLine = svgElement('line');
+  hoverLine.classList.add('distribution-chart__hover-line');
+  hoverLine.setAttribute('y1', '0');
+  hoverLine.setAttribute('y2', String(CHART_HEIGHT));
+  const hoverDot = svgElement('circle');
+  hoverDot.classList.add('distribution-chart__hover-dot');
+  hoverDot.setAttribute('cy', String(CHART_HEIGHT));
+  hoverDot.setAttribute('r', '4');
+  const hoverTitle = svgElement('title');
+  hoverMarker.append(hoverLine, hoverDot, hoverTitle);
+  svg.append(hoverMarker);
 
   const bins = html('div', 'distribution-chart__bins');
   histogram.globalCounts.forEach((count, bin) => {
@@ -189,7 +213,10 @@ export function renderDistribution(
     cell.title = `${histogram.edges[bin] ?? '?'}–${histogram.edges[bin + 1] ?? '?'}: global ${globalPercent.toFixed(1)}% (${count})${selectedText ? `; ${selectedText}` : ''}`;
     bins.append(cell);
   });
-  plot.append(svg, bins);
+  const hoverLabel = html('span', 'distribution-chart__hover-label');
+  hoverLabel.hidden = true;
+  hoverLabel.setAttribute('aria-hidden', 'true');
+  plot.append(svg, bins, hoverLabel);
 
   const legend = html('div', 'distribution-chart__legend');
   const globalLegend = html('span', 'distribution-chart__legend-item');
@@ -205,6 +232,61 @@ export function renderDistribution(
   });
   chart.append(meta, plot, legend);
   target.replaceChildren(chart);
+}
+
+export function updateDistributionHover(
+  target: HTMLElement,
+  feature: RegionalFeaturePayload,
+  regions: readonly RegionMetadata[],
+  hoveredRegionId: string | null,
+  statistic: StatisticId,
+  unit: string | null,
+): void {
+  const marker = target.querySelector<SVGGElement>('.distribution-chart__hover-marker');
+  const label = target.querySelector<HTMLElement>('.distribution-chart__hover-label');
+  if (!marker || !label) return;
+
+  const hide = (): void => {
+    marker.dataset.visible = 'false';
+    delete marker.dataset.regionId;
+    label.hidden = true;
+    delete label.dataset.regionId;
+  };
+  if (!hoveredRegionId || statistic === 'count' || !feature.histogram) {
+    hide();
+    return;
+  }
+
+  const row = feature.regionIds.indexOf(hoveredRegionId);
+  const value = row < 0 ? undefined : regionalStatisticValues(feature, statistic)?.[row];
+  const numericValue = value ?? Number.NaN;
+  const x = !Number.isFinite(numericValue)
+    ? null
+    : histogramPosition(numericValue, feature.histogram.edges);
+  if (x === null) {
+    hide();
+    return;
+  }
+
+  const line = marker.querySelector<SVGLineElement>('.distribution-chart__hover-line');
+  const dot = marker.querySelector<SVGCircleElement>('.distribution-chart__hover-dot');
+  const title = marker.querySelector<SVGTitleElement>('title');
+  if (!line || !dot || !title) return;
+  const region = regions.find(({ id }) => id === hoveredRegionId);
+  const text = `${region?.acronym ?? hoveredRegionId} · ${formatRegionalValue(numericValue, statistic, unit)}`;
+  line.setAttribute('x1', String(x));
+  line.setAttribute('x2', String(x));
+  dot.setAttribute('cx', String(x));
+  title.textContent = text;
+  marker.dataset.regionId = hoveredRegionId;
+  marker.dataset.visible = 'true';
+
+  const percentage = x / CHART_WIDTH * 100;
+  label.textContent = text;
+  label.dataset.regionId = hoveredRegionId;
+  label.dataset.alignment = percentage < 15 ? 'start' : percentage > 85 ? 'end' : 'center';
+  label.style.setProperty('--hover-position', `${percentage}%`);
+  label.hidden = false;
 }
 
 export function renderAnalysis(

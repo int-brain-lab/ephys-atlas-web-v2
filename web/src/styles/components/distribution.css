@@ -88,6 +88,52 @@
   vector-effect: non-scaling-stroke;
 }
 
+.distribution-chart__hover-marker[data-visible='false'] {
+  display: none;
+}
+
+.distribution-chart__hover-line {
+  stroke: var(--color-text);
+  stroke-dasharray: 3 2;
+  stroke-opacity: .9;
+  stroke-width: 1.25;
+  vector-effect: non-scaling-stroke;
+}
+
+.distribution-chart__hover-dot {
+  fill: var(--color-text);
+  stroke: var(--color-view);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.distribution-chart__hover-label {
+  position: absolute;
+  z-index: 3;
+  top: .12rem;
+  left: var(--hover-position);
+  max-width: min(10rem, 70%);
+  overflow: hidden;
+  padding: .08rem .24rem;
+  border: 1px solid rgb(255 255 255 / 13%);
+  border-radius: .18rem;
+  background: rgb(18 23 29 / 88%);
+  color: var(--color-text);
+  font-size: .52rem;
+  line-height: 1.2;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.distribution-chart__hover-label[data-alignment='center'] {
+  transform: translateX(-50%);
+}
+
+.distribution-chart__hover-label[data-alignment='end'] {
+  transform: translateX(-100%);
+}
+
 .distribution-chart__legend {
   min-width: 0;
   display: flex;
