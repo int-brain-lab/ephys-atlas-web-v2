@@ -114,9 +114,12 @@ descriptive statistics in one aligned table, with the global population as a
 distinct reference row on the same axes, and exports selected regions with
 context, raw bins, normalized probabilities, and sample sizes. Histogram curves use presentation-only,
 shape-preserving interpolation while bin hover/export retains exact values. The
-comparison remains collapsed on selection and expands to its content height,
-with a viewport cap for larger selections. Synthetic fixtures are visibly
-identified as non-scientific.
+comparison remains behind a compact launcher until opened as a native modal
+dialog. Desktop uses a dimmed, blurred backdrop and inset floating surface;
+phones use a bottom sheet. The dialog traps interaction, closes with its close
+control, backdrop, or Escape, restores focus to its launcher, and scrolls large
+comparisons internally. Synthetic fixtures are visibly identified as
+non-scientific.
 
 `DatasetSession` owns asynchronous catalog/release/region/feature lifecycle,
 generation-based stale-work suppression, and cancellable idle prefetch. Active

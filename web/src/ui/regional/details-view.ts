@@ -415,13 +415,11 @@ function renderComparisonTable(
   const indexById = new Map(feature.regionIds.map((id, index) => [id, index]));
   const section = html('section', 'regional-comparison__statistics');
   const headerRow = html('div', 'regional-comparison__section-header');
-  const heading = html('h3', 'regional-comparison__heading');
-  heading.textContent = 'Selected-region comparison';
   const download = html('button', 'regional-comparison__download');
   download.type = 'button';
   download.dataset.downloadComparison = 'true';
   download.textContent = 'Download comparison';
-  headerRow.append(heading, download);
+  headerRow.append(download);
   const note = html('p', 'regional-comparison__note');
   const unitNote = unit ? `Feature values are shown in ${unit}.` : 'Feature units are not declared for this release.';
   note.textContent = `Each curve is normalized within its own population; all rows share the feature-value axis and probability scale. ${unitNote}`;

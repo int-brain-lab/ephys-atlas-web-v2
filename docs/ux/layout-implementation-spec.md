@@ -16,7 +16,7 @@ Build from the outside inward:
 4. region browser and selected-region area using representative static content;
 5. generic anatomical view frame and three empty slice frames;
 6. secondary-view slot and compact global-distribution band;
-7. expandable analysis/comparison area;
+7. compact analysis launcher with a modal comparison surface;
 8. settings panel;
 9. feature catalogue and secondary drawers/popovers;
 10. replace representative content with real application state/data incrementally.
@@ -178,28 +178,28 @@ Sagittal is largest, coronal intermediate, horizontal narrowest. Tune these rati
 
 ### Workspace vertical structure
 
-In normal exploration, the slices dominate. The secondary view/global distribution row is smaller, and comparison is a compact band.
+In normal exploration, the slices dominate. The secondary view/global distribution row is smaller, and comparison is represented by a compact launcher band.
 
 A useful starting point is:
 
 ```css
 .workspace {
-  --analysis-height: 8rem;
   display: grid;
   grid-template-rows:
     minmax(17rem, 1fr)
-    clamp(9rem, 21vh, 12rem)
-    var(--analysis-height);
+    clamp(9rem, 21vh, 12rem);
   gap: var(--space-2);
   min-height: 0;
+  padding-bottom: calc(2.25rem + var(--space-2));
 }
 ```
 
 The exact row values must be tuned using 900px and 800px-high browser screenshots.
 
-When analysis expands, changing `--analysis-height` is preferable to replacing the entire page composition. Slices remain visible above. The implementation may reduce the context-strip height when analysis is very large if necessary.
-
-`--analysis-height` and resizable-pane widths are valid runtime CSS custom properties because they represent user-controlled geometry.
+Opening analysis uses a native modal dialog rather than resizing the workspace.
+The viewer remains visible as dimmed context behind an inset desktop surface;
+phones present the same dialog as a bottom sheet. Comparison content scrolls
+inside the modal without changing scientific view geometry.
 
 ## 5. Responsive composition regimes
 
@@ -213,7 +213,7 @@ The following breakpoints are **initial engineering values** and should be adjus
 - three linked slices visible;
 - settings pane visible;
 - secondary/global-distribution strip visible;
-- compact/expanded analysis visible.
+- compact analysis launcher visible; comparison opens as an inset modal.
 
 ### Regime B — compact desktop: `1100px–1479px`
 
@@ -221,7 +221,7 @@ The following breakpoints are **initial engineering values** and should be adjus
 - three linked slices remain visible;
 - settings becomes an overlay/drawer opened from the context bar;
 - center workspace gains the reclaimed width;
-- analysis behavior remains unchanged.
+- comparison retains the inset modal behavior.
 
 This regime is important for 1280px and 1440px laptop/desktop screens.
 
@@ -232,7 +232,7 @@ This regime is important for 1280px and 1440px laptop/desktop screens.
 - one anatomical slice is dominant at a time;
 - Coronal / Sagittal / Horizontal switching remains immediate;
 - secondary views are accessible through the same view-switching mechanism;
-- analysis remains available as an expandable lower panel;
+- analysis remains available through the compact launcher and modal;
 - controls use touch-appropriate target sizes.
 
 ### Regime D — phone: `< 760px`
@@ -242,6 +242,7 @@ This is intentionally a reduced explorer, not a compressed desktop application.
 - one anatomical/scientific view at a time;
 - compact header with dataset/feature context and overflow actions;
 - regions and settings are drawers/sheets;
+- comparison opens as a bounded bottom sheet;
 - search, value inspection, selection, and share remain available;
 - large comparison tables and dense multi-panel layouts are not required to appear simultaneously.
 
@@ -387,13 +388,12 @@ Desktop shell uses the viewport height and internal scrolling.
 - region list scrolls inside the region pane;
 - settings content scrolls inside the settings pane/drawer;
 - the anatomical canvases/SVGs do not create page scroll;
-- comparison content may scroll internally when expanded;
+- comparison content scrolls internally within its modal;
 - avoid nested scrolling regions unless the inner scroll has a clear scientific purpose.
 
 Resizable UI is intentionally limited:
 
 - region-pane width may be resized within min/max bounds;
-- analysis height may be resized between compact and expanded bounds;
 - settings width may be resizable later if useful;
 - no free docking or panel rearrangement.
 

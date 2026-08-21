@@ -127,6 +127,7 @@ export class AppShell {
   private readonly infoDialog: HTMLDialogElement;
   private readonly infoContent: HTMLElement;
   private readonly shortcutsDialog: HTMLDialogElement;
+  private analysisDialog!: HTMLDialogElement;
   private readonly shortcutStatus: HTMLElement;
   private readonly viewButtons = new Map<WorkspaceView, HTMLButtonElement>();
   private readonly viewFrames = new Map<SliceAxis, ViewFrameNodes>();
@@ -904,20 +905,35 @@ export class AppShell {
     const analysisHeader = element('div', 'analysis-panel__header view-frame__header');
     const analysisToggle = element('button', 'analysis-panel__toggle');
     analysisToggle.type = 'button';
-    analysisToggle.setAttribute('aria-controls', 'analysis-panel-surface');
+    analysisToggle.setAttribute('aria-controls', 'analysis-dialog');
     analysisToggle.setAttribute('aria-expanded', 'false');
-    analysisToggle.setAttribute('aria-label', 'Expand selected-region comparison');
+    analysisToggle.setAttribute('aria-label', 'Open selected-region comparison');
     const analysisTitle = element('span', 'analysis-panel__title');
     analysisTitle.textContent = 'Compare selected regions';
     const analysisChevron = element('span', 'analysis-panel__chevron');
-    analysisChevron.textContent = '⌃';
+    analysisChevron.textContent = '↗';
     analysisChevron.setAttribute('aria-hidden', 'true');
     analysisToggle.append(analysisTitle, analysisChevron);
     analysisHeader.append(analysisToggle);
+    const analysisDialog = element('dialog', 'analysis-dialog');
+    analysisDialog.id = 'analysis-dialog';
+    analysisDialog.setAttribute('aria-labelledby', 'analysis-dialog-title');
+    const analysisFrame = element('div', 'analysis-dialog__frame');
+    const dialogHeader = element('header', 'analysis-dialog__header');
+    const dialogTitle = heading('Compare selected regions', 2);
+    dialogTitle.id = 'analysis-dialog-title';
+    const dialogClose = element('button', 'analysis-dialog__close');
+    dialogClose.type = 'button';
+    dialogClose.textContent = '×';
+    dialogClose.setAttribute('aria-label', 'Close selected-region comparison');
+    dialogHeader.append(dialogTitle, dialogClose);
     const analysisSurface = element('div', 'analysis-panel__surface');
     analysisSurface.id = 'analysis-panel-surface';
     analysisSurface.append(placeholderLine('long'), placeholderLine('medium'));
-    analysis.append(analysisHeader, analysisSurface);
+    analysisFrame.append(dialogHeader, analysisSurface);
+    analysisDialog.append(analysisFrame);
+    analysis.append(analysisHeader, analysisDialog);
+    this.analysisDialog = analysisDialog;
     workspace.append(switcher, slices, context, analysis);
     return workspace;
   }
@@ -1168,6 +1184,7 @@ export class AppShell {
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (event.defaultPrevented) return;
+    if (this.analysisDialog.open) return;
     if (event.key === 'Escape') {
       if (this.infoDialog.open || this.shortcutsDialog.open) return;
       if (this.closeContextMenus()) return;

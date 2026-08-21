@@ -41,6 +41,8 @@ export class RegionalPanelController {
   private readonly analysis: HTMLElement;
   private readonly analysisPanel: HTMLElement;
   private readonly analysisToggle: HTMLButtonElement;
+  private readonly analysisDialog: HTMLDialogElement;
+  private readonly analysisClose: HTMLButtonElement;
   private analysisExpanded = false;
   private hasSelection = false;
   private lastFeature: FeaturePayload | null = null;
@@ -61,9 +63,14 @@ export class RegionalPanelController {
     this.analysis = required(root, '.analysis-panel__surface');
     this.analysisPanel = required(root, '.analysis-panel');
     this.analysisToggle = required(root, '.analysis-panel__toggle');
+    this.analysisDialog = required(root, '.analysis-dialog');
+    this.analysisClose = required(root, '.analysis-dialog__close');
     this.tree = new RegionalTreeView(root, callbacks);
     this.clearSelectionButton.addEventListener('click', this.clearSelection);
     this.analysisToggle.addEventListener('click', this.toggleAnalysis);
+    this.analysisClose.addEventListener('click', this.closeAnalysis);
+    this.analysisDialog.addEventListener('close', this.onAnalysisClose);
+    this.analysisDialog.addEventListener('click', this.onAnalysisBackdropClick);
     this.analysis.addEventListener('click', this.onAnalysisClick);
     this.selectedList.addEventListener('click', this.onSelectedClick);
   }
@@ -164,6 +171,9 @@ export class RegionalPanelController {
     this.tree.destroy();
     this.clearSelectionButton.removeEventListener('click', this.clearSelection);
     this.analysisToggle.removeEventListener('click', this.toggleAnalysis);
+    this.analysisClose.removeEventListener('click', this.closeAnalysis);
+    this.analysisDialog.removeEventListener('close', this.onAnalysisClose);
+    this.analysisDialog.removeEventListener('click', this.onAnalysisBackdropClick);
     this.analysis.removeEventListener('click', this.onAnalysisClick);
     this.selectedList.removeEventListener('click', this.onSelectedClick);
   }
@@ -204,8 +214,27 @@ export class RegionalPanelController {
 
   private readonly toggleAnalysis = (): void => {
     if (!this.hasSelection) return;
-    this.analysisExpanded = !this.analysisExpanded;
+    if (this.analysisDialog.open) {
+      this.analysisDialog.close();
+      return;
+    }
+    this.analysisExpanded = true;
+    this.analysisDialog.showModal();
     this.syncAnalysisDisclosure();
+    this.analysisClose.focus();
+  };
+
+  private readonly closeAnalysis = (): void => {
+    if (this.analysisDialog.open) this.analysisDialog.close();
+  };
+
+  private readonly onAnalysisClose = (): void => {
+    this.analysisExpanded = false;
+    this.syncAnalysisDisclosure();
+  };
+
+  private readonly onAnalysisBackdropClick = (event: MouseEvent): void => {
+    if (event.target === this.analysisDialog) this.analysisDialog.close();
   };
 
   private readonly onAnalysisClick = (event: Event): void => {
@@ -214,7 +243,10 @@ export class RegionalPanelController {
   };
 
   private updateAnalysisDisclosure(hasSelection: boolean): void {
-    if (!hasSelection) this.analysisExpanded = false;
+    if (!hasSelection) {
+      this.analysisExpanded = false;
+      if (this.analysisDialog.open) this.analysisDialog.close();
+    }
     this.hasSelection = hasSelection;
     this.syncAnalysisDisclosure();
   }
@@ -224,11 +256,11 @@ export class RegionalPanelController {
     this.analysisPanel.dataset.expanded = String(this.hasSelection && this.analysisExpanded);
     this.analysisToggle.disabled = !this.hasSelection;
     this.analysisToggle.setAttribute('aria-expanded', String(this.hasSelection && this.analysisExpanded));
-    this.analysisToggle.setAttribute('aria-label', `${this.analysisExpanded ? 'Collapse' : 'Expand'} selected-region comparison`);
+    this.analysisToggle.setAttribute('aria-label', 'Open selected-region comparison');
     const chevron = this.analysisToggle.querySelector<HTMLElement>('.analysis-panel__chevron');
     if (chevron) {
       chevron.hidden = !this.hasSelection;
-      chevron.textContent = this.analysisExpanded ? '⌄' : '⌃';
+      chevron.textContent = '↗';
     }
   }
 }
