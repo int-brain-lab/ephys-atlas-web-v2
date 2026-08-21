@@ -87,18 +87,17 @@ features or only downloads; source-object versioning policy.
 **Canonical scientific source:** weekly `ea_active` object in the current private
 IBL bucket:
 
-    s3://ibl-brain-wide-map-private/aggregates/atlas/encoding_volumes/ea_active/<YYYY_Www>/brainwide_ephys_atlas_25um.npz
+    s3://ibl-brain-wide-map-private/aggregates/atlas/encoding_volumes/ea_active/<YYYY_Www>/brainwide_ephys_atlas_<res_um>um.npz
 
-The documented `2026_W12` vintage contains `ephys_atlas_vol` with shape
+The current implementation input is the immutable `2026_W26` 50 um object at
+the exact URI recorded in `docs/DATA_SOURCES.md`. The official `ibleatools`
+guide documents shape `(228, 264, 160, 41)`, float16 raw/unnormalized values,
+optional non-pre-applied z-scoring metadata, and outside-brain value `0.0`.
+
+The older documented `2026_W12` vintage contains `ephys_atlas_vol` with shape
 `(456, 528, 320, 41)` and float16 values, feature names, per-feature mean/std,
-grid shape, and 25 um resolution.
-
-The NPZ contains `mean_per_feature` and `std_per_feature`, but the inspected
-archive and currently available producer documentation do not establish whether
-the stored prediction values are final feature units, normalized values, or
-values requiring another producer-defined transform. The web builder must not
-apply z-scoring or `value * std + mean` until that semantic is traced to
-authoritative producer code or metadata.
+grid shape, and 25 um resolution. It remains the source of the committed
+historical transport measurements.
 
 The current v1 conversion tool establishes another behavioral fact: its website
 payload does not assume the NPZ axis order from shape alone; it checks against
@@ -125,8 +124,8 @@ not reuse the channel-feature latest label because the two catalogs may have
 different vintages. The paper release pins an exact volume vintage.
 
 **Do not guess:** scientific axis directions/origin/affine from the `x/y/z`
-labels alone; outside-brain semantics; model/training commit and export recipe
-that produced the NPZ.
+labels alone; missing-value semantics beyond the documented outside-brain zero;
+model/training commit and export recipe that produced the NPZ.
 
 ## `brainwide_map`
 

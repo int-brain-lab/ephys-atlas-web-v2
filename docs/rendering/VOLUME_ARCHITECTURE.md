@@ -2,7 +2,10 @@
 
 ## Launch recommendation
 
-Use a dependency-free Canvas2D renderer for the three orthogonal 25 um volume slices behind a storage-neutral `VolumeSliceSource`. Do not download/materialize a full feature volume in the browser and do not make WebGPU a prerequisite for volume viewing.
+Use a dependency-free Canvas2D renderer for the three orthogonal volume slices
+behind a storage-neutral `VolumeSliceSource`. Do not download/materialize a full
+feature volume in the browser and do not make WebGPU a prerequisite for volume
+viewing.
 
 The browser boundary is deliberately layered:
 
@@ -15,7 +18,7 @@ The browser boundary is deliberately layered:
 
 This separation is intentional because the physical volume layout is still under cross-workstream review.
 
-## Real launch source dimensions and dtype
+## Historical 2026_W12 benchmark dimensions and dtype
 
 The private paper source documents vintage `2026_W12` as:
 
@@ -28,6 +31,10 @@ The private paper source documents vintage `2026_W12` as:
 A single 3-D feature therefore contains 77,045,760 voxels: **147.0 MiB raw float16**. Decoding an entire feature to float32 for browser computation would be **293.9 MiB**. The renderer prototype therefore normalizes decoded chunks to `Float32Array` but records the physical `storageDtype` separately.
 
 Eager full-feature loading is rejected: it leaves too little safety margin for typed-array copies, RGBA planes, regional assets, application state, browser internals, and tablet/Safari constraints.
+
+The current implementation input is now the `2026_W26` 50 um object documented
+in `docs/DATA_SOURCES.md`. The measurements below remain useful historical
+transport evidence, but new production work must repeat them against W26.
 
 ## 3-D cubic chunks: measured access-pattern problem
 

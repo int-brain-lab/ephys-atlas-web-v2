@@ -14,8 +14,8 @@
 - Regional values are dense typed binary arrays aligned to one dataset-level
   region-id index per parcellation. Statistics and histograms are separate
   browser-readable typed arrays plus small JSON metadata.
-- The current canonical 25 um NPZ was evaluated as a browser transport and does
-  not meet the launch access/performance requirements. v0.1 therefore derives
+- The historical `2026_W12` 25 um NPZ was evaluated as a browser transport and
+  did not meet the launch access/performance requirements. v0.1 therefore derives
   independent 3-D per-feature chunks with explicit dtype and geometry, while
   retaining the pinned/checksummed NPZ as scientific authority and download.
   This is a measured fallback under D010, not a blanket rule against direct S3.
@@ -35,6 +35,10 @@
 ## HTTP / volume validation
 
 `docs/data/VOLUME_HTTP_VALIDATION.md` records the 2026-08-19 empirical probe:
+
+These measurements describe the older `2026_W12` 25 um object. The current
+`2026_W26` 50 um implementation input and official access recipe are recorded
+in `docs/DATA_SOURCES.md` and require fresh measurements.
 
 - current public encoding-volume prefix: empty;
 - known public IBL object: HTTP Range works (`206` with exact byte range);
@@ -77,11 +81,11 @@ chunk transform.
 2. `ephys_atlas_clusters`: select the exact project/source snapshot and scalar
    launch feature catalog. The all-cluster population, no good-unit filter,
    equal per-cluster regional weighting, left folding, and mean are resolved.
-3. `ephys_atlas_volumes`: identify and pin the producer/model/export recipe of
-   `brainwide_ephys_atlas_25um.npz`; record scientific axis directions/origin/
-   affine rather than inferring from shape; confirm outside-brain semantics and
-   the authoritative interpretation of stored values versus the included
-   per-feature mean/std arrays.
+3. `ephys_atlas_volumes`: use the documented `2026_W26` 50 um object and access
+   recipe in `docs/DATA_SOURCES.md`; identify and pin its producer/model/export
+   recipe; record scientific axis directions/origin/affine rather than inferring
+   them from shape; confirm whether missing values have semantics distinct from
+   the documented outside-brain zero.
 4. `brainwide_map`: define the v2 launch product precisely. Current evidence
    distinguishes the paper selection freeze and aggregate tables from legacy
    website regional analysis files; treating them as one dataset would be a
@@ -100,8 +104,9 @@ chunk transform.
   release manifests/directories; paper aliases resolve only to pinned snapshots.
 - Require explicit volume geometry in every web release; rendering must not infer
   scientific orientation from array shape or v1 display calibration.
-- Treat the published 25 um NPZ as canonical input until its upstream generation
-  script/model export is identified; do not block frontend work on recomputing it.
+- Treat the documented `2026_W26` 50 um NPZ as the current canonical input until
+  its upstream generation script/model export is identified; retain the older
+  25 um object's measurements as historical evidence.
 - Permit a future direct-object volume representation if a later public source
   becomes independently feature/slice-addressable and passes the same Range,
   CORS, decode and memory checks.

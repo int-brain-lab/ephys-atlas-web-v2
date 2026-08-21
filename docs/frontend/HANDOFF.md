@@ -105,13 +105,17 @@ The previous frontend provisional schema has been removed from the active path. 
 
 1. Publish the validated real channel development release through an authorized non-production catalog; `just dev-real` validates and defaults to immutable `2026_W32` plus `rms_ap.denoised` locally.
 2. Deploy the committed generated anatomy pack with opaque gzip delivery and verify its immutable public URLs.
-3. Benchmark real encoding-volume layouts before selecting the launch physical representation; keep volume scientific geometry independent of SVG display calibration.
+3. Use the `2026_W26` 50 um object and official access recipe in
+   `docs/DATA_SOURCES.md` to repeat the real encoding-volume layout benchmarks
+   before selecting the launch physical representation; keep volume scientific
+   geometry independent of SVG display calibration.
 4. Keep 3-D behind the regional and volume launch-critical vertical slices.
 
 ## Remaining decisions / external inputs
 
 - exact scientific feature/QC/unit choices for real channel and cluster releases;
-- authoritative encoding-volume index-to-world affine and outside-brain semantics;
+- authoritative encoding-volume index-to-world affine/axis mapping and any
+  missing-value semantics beyond the documented outside-brain zero;
 - production public object-storage/domain arrangement;
 - cache/eviction budgets once real release sizes are measured.
 

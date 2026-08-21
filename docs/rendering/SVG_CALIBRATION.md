@@ -23,7 +23,10 @@ The regional SVG sequence is indexed at 10 um. V1's coordinate labels imply:
 | sagittal / ML | 1140 | -5739 um | +10 um |
 | horizontal / DV | 800 | +332 um | -10 um |
 
-The launch ephys-atlas volume uses the same origins at 25 um with axis counts 528, 456, and 320 respectively. Therefore SVG slice index -> physical coordinate -> volume voxel index is explicit and deterministic. This transform is suitable for data lookup.
+The historical `2026_W12` ephys-atlas volume used the same origins at 25 um
+with axis counts 528, 456, and 320 respectively. That mapping is historical
+evidence only. It must not be applied to the current `2026_W26` 50 um object
+without the authoritative affine/axis resolution tracked in Q4.
 
 ### Curated SVG display coordinates
 

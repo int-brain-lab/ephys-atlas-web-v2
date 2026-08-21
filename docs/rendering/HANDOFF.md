@@ -45,18 +45,25 @@ Reuse the curated v1 SVG slices; do not regenerate them casually.
 
 V1's historical processing pipeline includes MATLAB slice extraction, RDP simplification, Inkscape simplification, SVGO, region-id cleanup, and later additional manual processing. Source comments explicitly warn that the generated `slices.json` received further manual processing.
 
-Two coordinate systems are now explicit and separate:
+Two coordinate systems were identified for the historical W12/legacy path:
 
-1. **scientific coordinates**: regional slices at 10 um and volumes at 25 um share Allen origins (`AP +5400`, `ML -5739`, `DV +332` um) and can be mapped deterministically;
+1. **historical scientific coordinates**: regional slices at 10 um and the W12
+   volume at 25 um used Allen origins (`AP +5400`, `ML -5739`, `DV +332` um);
+   do not apply this mapping to the current W26 volume without authoritative
+   affine/axis evidence;
 2. **display registration**: one exact coronal/sagittal/horizontal SVG view-box envelope and orientation per curated v1 projection; slice indices first pass through the scientific Allen-coordinate calibration.
 
 Never use display calibration for scientific lookup. Exact constants and tests are in `slice-calibration.ts`; rationale is in `SVG_CALIBRATION.md`.
 
 V1 preloads all slice JSON for all views. The active v2 renderer instead lazy-loads immutable depth-16 generated anatomy packs and verifies compressed bytes before explicit decompression. The legacy renderer remains an inactive fallback.
 
-## Volume findings and benchmark decision
+## Historical W12 volume findings and benchmark decision
 
-The paper source resolves the launch volume shape/dtype for `2026_W12`: `(456, 528, 320, 41)`, float16, 25 um, 41 features. One feature is 147.0 MiB raw float16; a whole decoded float32 feature is 293.9 MiB. Eager full-feature materialization is rejected.
+The paper source documented `2026_W12` as `(456, 528, 320, 41)`, float16,
+25 um, 41 features. One feature is 147.0 MiB raw float16; a whole decoded
+float32 feature is 293.9 MiB. Eager full-feature materialization is rejected.
+The current implementation input is W26/50 um; see `docs/DATA_SOURCES.md` and
+repeat these measurements before making a production transport choice.
 
 Committed benchmark scripts/results:
 
@@ -82,7 +89,7 @@ Rendering evidence conflicts with freezing that as the only launch physical layo
 
 Requested resolution:
 
-1. run the data builder on several real `2026_W12` features;
+1. run the data builder on several real `2026_W26` features;
 2. compare 32^3 and 64^3 chunk URL layouts against orientation-specific 4/8-slice packs;
 3. measure actual gzip bytes, build/storage size, first-three-view transfer, request count, and adjacent navigation;
 4. either extend volume schema with an explicit physical `layout` (`chunks3d` vs `orthogonal_slice_packs`) or adopt an indexed/sharded scheme that demonstrably meets the same access budgets;
@@ -121,7 +128,9 @@ These require browser/network validation with real artifacts before launch.
 ## Unresolved questions
 
 1. **Volume physical layout** — blocking integration of a real volume source adapter; see conflict above.
-2. **Exact scientific affine/axis semantics** — data handoff still marks producer/origin/directions of `brainwide_ephys_atlas_25um.npz` as requiring confirmation. Rendering will consume schema geometry and must not infer it from SVGs.
+2. **Exact scientific affine/axis semantics** — producer/origin/directions of
+   the current `2026_W26` 50 um object still require authoritative confirmation.
+   Rendering will consume schema geometry and must not infer it from SVGs.
 3. **Curated SVG artifact publication** — actual v1 slice JSON is not in the source repo; integration/data build needs the deployed curated assets copied into a versioned immutable v2 asset release without regeneration.
 4. **3D mesh artifact metadata** — verify `meshes.glb` size/license/provenance and browser node naming before adding it to a v2 release.
 5. **3D dependency decision** — intentionally deferred until regional + volume vertical slices work. First empirical follow-up should use the exact same real GLB fixture across Three WebGL2, Three WebGPU, and Datoviz.

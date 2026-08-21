@@ -79,10 +79,16 @@ Already implemented and green on the handoff baseline:
 
 Blocked by: Q4 and Q5.
 
+Current implementation input: the private immutable `ea_active` `2026_W26`
+50 um object. Its exact S3 URI and the official `ibleatools` access recipe are
+recorded in `docs/DATA_SOURCES.md`. The older `2026_W12` 25 um measurements are
+historical transport evidence, not the default input for new implementation.
+
 Unblocked preparation work Codex may do before scientific resolution:
 
-1. extend the green real-`rms_ap` Chromium slice-pack benchmark to the other
-   representative feature distributions and the eventual HTTP/CDN origin;
+1. pull, checksum, and header-inspect the documented `2026_W26` object, then
+   repeat the real-feature slice-pack benchmarks on representative feature
+   distributions and the eventual HTTP/CDN origin;
 2. compare the current depth-4 recommendation against depth 8 under production
    cache headers/network profiles without selecting the winner prematurely;
 3. keep renderer failures explicit for invalid transforms and resource layouts.

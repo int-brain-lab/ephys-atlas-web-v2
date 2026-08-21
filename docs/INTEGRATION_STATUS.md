@@ -123,9 +123,15 @@ Published and local releases share the same transport-independent volume
 payload contract.
 
 This proves the browser architecture, not the production science. Q4 still
-blocks the authoritative affine/axis/outside/value interpretation. Q5 remains
+blocks the authoritative affine/axis mapping and any remaining missing-value
+semantics. Q5 remains
 open until representative features and the final HTTP/CDN origin confirm the
 transport choice.
+
+The current implementation input is the private immutable `ea_active`
+`2026_W26` 50 um object. Its exact URI and official `ibleatools` access recipe
+are recorded in `docs/DATA_SOURCES.md`; existing `2026_W12` 25 um results are
+historical transport evidence that must be repeated against the newer object.
 
 Current evidence favors depth-four orthogonal slice packs. Offline real-volume
 measurements for `psd_lfp`, `rms_ap`, and `polarity` require three center-plane

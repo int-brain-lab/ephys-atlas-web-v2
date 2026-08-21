@@ -3,6 +3,11 @@
 Validated on 2026-08-19 against the current IBL S3 endpoints. The canonical
 `2026_W12` object was then pulled and inspected locally on 2026-08-20.
 
+This report is historical benchmark evidence for the older 25 um object. New
+volume implementation should use the documented `2026_W26` 50 um object and
+official access recipe in `docs/DATA_SOURCES.md`, then repeat the relevant
+measurements rather than treating the values below as current-source facts.
+
 ## Source under test
 
 Canonical scientific source:

@@ -29,7 +29,12 @@ features.
 
 The scientific source remains the pinned/checksummed weekly object:
 
-    s3://ibl-brain-wide-map-private/aggregates/atlas/encoding_volumes/ea_active/<vintage>/brainwide_ephys_atlas_25um.npz
+    s3://ibl-brain-wide-map-private/aggregates/atlas/encoding_volumes/ea_active/<vintage>/brainwide_ephys_atlas_<res_um>um.npz
+
+The current implementation input is
+`2026_W26/brainwide_ephys_atlas_50um.npz`; see `docs/DATA_SOURCES.md` for the
+exact URI and official `ibleatools` access recipe. The measured `2026_W12`
+25 um object below remains historical transport evidence.
 
 The source object should remain available as a provenance/download artifact. It
 is not rewritten merely to make the scientific release look like the web

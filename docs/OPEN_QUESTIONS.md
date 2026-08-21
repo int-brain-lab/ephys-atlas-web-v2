@@ -51,13 +51,18 @@ the complete recipe in provenance.
 
 Status: **BLOCKER** for the production `ephys_atlas_volumes` release.
 
-Current source documentation establishes a 25 um volume and known array shape/feature metadata, but shape alone is not a scientific coordinate transform. The browser implementation deliberately requires an explicit `index_to_world_um` transform.
+Current official `ibleatools` documentation identifies the implementation input
+as the `ea_active/2026_W26/brainwide_ephys_atlas_50um.npz` object: a 50 um,
+`(228, 264, 160, 41)` float16 volume. It states that the stored values are raw
+and unnormalized, optional `mean_per_feature`/`std_per_feature` z-scoring is not
+pre-applied, and `0.0` denotes outside-brain voxels. Shape and resolution alone
+are still not a scientific coordinate transform. The browser implementation
+deliberately requires an explicit `index_to_world_um` transform.
 
 Resolution needed: authoritative scientific axis mapping, origin/affine,
-handedness/directions, outside-brain/missing-value semantics, and the intended
-interpretation of stored values versus `mean_per_feature`/`std_per_feature` from
-the atlas/producer code or release metadata. The measured C-order storage layout
-is a transport fact and does not resolve the scientific axis mapping.
+handedness/directions, and any missing-value semantics distinct from the
+documented outside-brain zero. The measured C-order storage layout is a
+transport fact and does not resolve the scientific axis mapping.
 
 Blocks: scientifically valid volume navigation and production volume release.
 

@@ -46,11 +46,46 @@ Current canonical source prefix:
 
     s3://ibl-brain-wide-map-private/aggregates/atlas/encoding_volumes/ea_active/
 
+The current development input, provided on 2026-08-21, is the immutable
+`2026_W26` 50 um object:
+
+    s3://ibl-brain-wide-map-private/aggregates/atlas/encoding_volumes/ea_active/2026_W26/brainwide_ephys_atlas_50um.npz
+
+Use the official
+[`ibleatools` loading guide](https://int-brain-lab.github.io/ibleatools/how-to/load-encoding-volume.html)
+rather than inventing an S3 access path or copying credentials into this
+repository.
+
+The documented Python path is `ephysatlas.data.download_encoding_volume` with
+a configured `one.api.ONE` instance. Pin both the vintage and resolution
+for implementation/release work:
+
+```python
+from ephysatlas.data import download_encoding_volume
+from one.api import ONE
+
+file_path = download_encoding_volume(
+    local_path,
+    label="2026_W26",
+    res_um=50,
+    one=ONE(),
+)
+```
+
+The guide documents this vintage as a `(228, 264, 160, 41)` float16 array on a
+50 um grid. It also states that `ephys_atlas_vol` stores raw, unnormalized
+feature values, that `mean_per_feature` and `std_per_feature` are optional
+z-scoring metadata and are not pre-applied, and that `0.0` denotes voxels
+outside the brain mask. These facts resolve the value-normalization and
+outside-brain parts of Q4, but not the authoritative axis-to-CCF mapping,
+origin/affine, or handedness.
+
 The producer/source layout uses files of the form:
 
-    encoding_volumes/{project}/{label}/brainwide_ephys_atlas_25um.npz
+    encoding_volumes/{project}/{label}/brainwide_ephys_atlas_{res_um}um.npz
 
-For the documented `2026_W12` release, the NPZ contains:
+The older `2026_W12` 25 um object remains the input for the committed historical
+transport benchmarks. It contains:
 
 - `ephys_atlas_vol` with shape `(456, 528, 320, N)` and float16 values;
 - `feature_names`;
@@ -59,17 +94,15 @@ For the documented `2026_W12` release, the NPZ contains:
 - `res_um = 25`;
 - `N = 41` features for that vintage.
 
-The archive alone does not establish whether stored values are final feature
-units, normalized model values, or values requiring another producer-defined
-transform. The names `mean_per_feature` and `std_per_feature` are insufficient
-to select z-scoring or denormalization semantics. That choice remains part of
-Q4 until it is traced to authoritative producer code or metadata.
-
 A project collaborator recommends using the latest available encoding volumes from this source during development and switching to the public bucket when released. An HTTP object interface is expected to be available.
 
 ### Scientific geometry is not implied by array shape
 
-The known shape/resolution is insufficient to establish a scientific affine, axis direction, or outside-brain semantics. Those must come from authoritative atlas/producer metadata or code. The browser/schema therefore requires explicit geometry rather than inferring it from the NPZ shape. See Q4 in `docs/OPEN_QUESTIONS.md`.
+The known shape/resolution is insufficient to establish a scientific affine or
+axis direction. Those must come from authoritative atlas/producer metadata or
+code. The browser/schema therefore requires explicit geometry rather than
+inferring it from the NPZ shape. Outside-brain value semantics are documented
+above, but do not determine geometry. See Q4 in `docs/OPEN_QUESTIONS.md`.
 
 ### Canonical object versus browser transport
 
@@ -124,6 +157,7 @@ See `docs/IMPLEMENTATION_PLAN.md` for execution order. The highest-value source-
 1. freeze the paper channel vintage under Q2 and publish the already-validated
    development release to a non-production origin;
 2. resolve Q4 from authoritative atlas/producer evidence;
-3. benchmark real encoding-volume browser transports for Q5 using the pulled,
-   header-inspected `2026_W12` object;
+3. inspect and checksum the `2026_W26` 50 um object, then repeat representative
+   encoding-volume browser transport benchmarks for Q5; retain `2026_W12`
+   results as explicitly historical evidence;
 4. re-test the final public object origin for CORS/Range/cache behavior when available.
