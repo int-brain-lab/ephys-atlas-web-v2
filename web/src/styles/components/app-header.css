@@ -260,6 +260,7 @@
 .context-menu__list {
   min-height: 0;
   display: grid;
+  grid-auto-rows: max-content;
   align-content: start;
   gap: 2px;
   padding: var(--space-1);
