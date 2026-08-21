@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
-import fcntl
 import json
-import os
-from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 from urllib.parse import unquote
 
 from .auth import CredentialRegistry
 from .core import Forbidden, OffsetConflict, PublicationStore, PublishingError
+from .locks import MutationLock
 
 DEFAULT_MAX_JSON_BYTES = 2 * 1024 * 1024
 DEFAULT_MAX_CHUNK_BYTES = 16 * 1024 * 1024
@@ -38,24 +35,6 @@ def _json(start_response, status: int, value: Any):
         [("Content-Type", "application/json"), ("Content-Length", str(len(body)))],
     )
     return [body]
-
-
-class MutationLock:
-    """Serialize publication mutations across threads and WSGI worker processes."""
-
-    def __init__(self, path: str | Path):
-        self.path = Path(path)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-
-    @contextmanager
-    def hold(self) -> Iterator[None]:
-        fd = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o600)
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX)
-            yield
-        finally:
-            fcntl.flock(fd, fcntl.LOCK_UN)
-            os.close(fd)
 
 
 class PublishingApplication:
@@ -137,7 +116,6 @@ class PublishingApplication:
     def _handle_mutation(self, method: str, path: list[str], env, data, body: bytes, start_response):
         if method == "POST" and path == ["api", "datasets"]:
             return self._create_dataset(env, data, start_response)
-
         if len(path) >= 3 and path[:2] == ["api", "datasets"]:
             dataset_id = path[2]
             if method == "POST" and path[3:] == ["uploads"]:
@@ -146,14 +124,12 @@ class PublishingApplication:
                 return self._archive_dataset(env, dataset_id, start_response)
             if method == "PUT" and len(path) == 5 and path[3] == "aliases":
                 return self._set_alias(env, dataset_id, path[4], data, start_response)
-
         if len(path) >= 3 and path[:2] == ["api", "uploads"]:
             upload_id = path[2]
             if method == "PUT" and len(path) >= 5 and path[3] == "files":
                 return self._append_artifact(env, upload_id, path[4:], body, start_response)
             if method == "POST" and path[3:] == ["publish"]:
                 return self._publish_upload(env, upload_id, data, start_response)
-
         return _json(start_response, 404, {"error": "not found"})
 
     def _create_dataset(self, env, data, start_response):
