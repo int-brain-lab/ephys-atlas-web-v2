@@ -9,12 +9,17 @@ from pathlib import Path
 
 import numpy as np
 
-from .channel_source import load_channel_scientific_inputs
+from .channel_source import (
+    _feature_info,
+    discover_channel_table_dir,
+    load_channel_scientific_inputs,
+)
 from .io import sha256_file, write_json
 from .regional_release import (
     DEFAULT_PARCELLATIONS,
     FeatureInfo,
     RegionInfo,
+    fold_region_ids_left,
     histogram_edges,
     write_feature_parcellation,
     write_parcellation,
