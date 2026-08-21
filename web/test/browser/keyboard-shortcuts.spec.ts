@@ -14,14 +14,14 @@ test.beforeEach(async ({ page }) => {
     }
     if (url.pathname.includes(`${RELEASE_PATH}features/rms_lf/`)) {
       const sourceUrl = url.toString().replace('/features/rms_lf/', '/features/rms_ap/');
-      const response = await route.fetch({ url: sourceUrl });
       if (url.pathname.endsWith('/feature.json')) {
+        const response = await route.fetch({ url: sourceUrl });
         const feature = await response.json();
         feature.id = 'rms_lf';
         feature.label = 'LFP RMS (shortcut fixture)';
         await route.fulfill({ response, json: feature });
       } else {
-        await route.fulfill({ response });
+        await route.continue({ url: sourceUrl });
       }
       return;
     }
