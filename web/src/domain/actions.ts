@@ -1,6 +1,7 @@
 import type {
   ColorRange,
   ColorMode,
+  ColorStatisticId,
   ColorScaleSelection,
   CursorState,
   DatasetRef,
@@ -8,7 +9,6 @@ import type {
   RegionOrder,
   RepresentationKind,
   SliceAxis,
-  StatisticId,
   ViewState,
 } from './types.js';
 
@@ -23,7 +23,7 @@ export type AppAction =
   | { type: 'selection/clear' }
   | { type: 'cursor/set'; cursor: CursorState }
   | { type: 'slice/set'; axis: SliceAxis; index: number }
-  | { type: 'color/statistic'; statistic: StatisticId }
+  | { type: 'color/statistic'; statistic: ColorStatisticId }
   | { type: 'color/mode'; mode: ColorMode }
   | { type: 'color/colormap'; colormap: string }
   | { type: 'color/range'; range: ColorRange }

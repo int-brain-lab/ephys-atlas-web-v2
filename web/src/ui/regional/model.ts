@@ -109,7 +109,7 @@ export function buildRegionTooltipModel(
       ? formatRegionalValue(value, coloring.statistic, descriptor?.unit ?? null)
       : 'Value unavailable';
     const count = row < 0 ? undefined : feature.statistics.count?.[row];
-    if (coloring.statistic !== 'count' && count !== undefined && Number.isFinite(count)) {
+    if (count !== undefined && Number.isFinite(count)) {
       meta.push(`n=${Math.round(count).toLocaleString('en-US')}`);
     }
   }

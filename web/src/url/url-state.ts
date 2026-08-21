@@ -15,11 +15,11 @@ import { DEFAULT_VIEW_STATE } from '../domain/defaults.js';
 import type { AppStore } from '../domain/store.js';
 import type {
   ColorRange,
+  ColorStatisticId,
   DatasetId,
   ParcellationId,
   RegionOrder,
   RepresentationKind,
-  StatisticId,
   ViewState,
 } from '../domain/types.js';
 
@@ -27,7 +27,7 @@ const URL_VERSION = 3;
 const NAVIGATION_URL_DEBOUNCE_MS = 120;
 const PARCELLATIONS = new Set<ParcellationId>(['allen', 'beryl', 'cosmos']);
 const REPRESENTATIONS = new Set<RepresentationKind>(['regional', 'volume']);
-const STATISTICS = new Set<StatisticId>(['mean', 'median', 'min', 'max', 'count']);
+const COLOR_STATISTICS = new Set<ColorStatisticId>(['mean', 'median', 'min', 'max']);
 const REGION_ORDERS = new Set<RegionOrder>(['anatomy', 'value-asc', 'value-desc']);
 
 function finiteNumber(value: string | null, fallback: number): number {
@@ -78,8 +78,8 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
   const parcellation = PARCELLATIONS.has(params.get('parcel') as ParcellationId)
     ? params.get('parcel') as ParcellationId
     : defaults.parcellation;
-  const statistic = STATISTICS.has(params.get('stat') as StatisticId)
-    ? params.get('stat') as StatisticId
+  const statistic = COLOR_STATISTICS.has(params.get('stat') as ColorStatisticId)
+    ? params.get('stat') as ColorStatisticId
     : defaults.coloring.statistic;
   const regionOrder = REGION_ORDERS.has(params.get('order') as RegionOrder)
     ? params.get('order') as RegionOrder

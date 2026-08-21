@@ -67,6 +67,12 @@ test('malformed fixed range is ignored', () => {
   assert.deepEqual(parsed.coloring.range, DEFAULT_VIEW_STATE.coloring.range);
 });
 
+test('legacy count coloring falls back to feature magnitude', () => {
+  const parsed = parseViewState('?v=3&stat=count');
+  assert.equal(parsed.coloring.statistic, DEFAULT_VIEW_STATE.coloring.statistic);
+  assert.equal(serializeViewState(parsed).includes('stat=count'), false);
+});
+
 test('a hand-edited dataset without release defers to that dataset default release', () => {
   const parsed = parseViewState('?v=3&dataset=brainwide_map');
   assert.equal(parsed.dataset.datasetId, 'brainwide_map');

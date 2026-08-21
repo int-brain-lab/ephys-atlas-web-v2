@@ -46,6 +46,7 @@ for (const viewport of reviewViewports) {
     await expect(page.getByLabel('coronal slice')).toHaveAttribute('min', '0');
     await expect(page.getByLabel('coronal slice')).toHaveAttribute('max', '164');
     await expect(page.getByLabel('coronal slice')).toHaveAttribute('step', '1');
+    await expect(page.getByLabel('coronal slice')).toHaveAttribute('aria-valuetext', 'AP -1.20 mm');
     await expect(page.getByLabel('sagittal slice')).toHaveAttribute('min', '0');
     await expect(page.getByLabel('sagittal slice')).toHaveAttribute('max', '141');
     await expect(page.getByLabel('horizontal slice')).toHaveAttribute('min', '0');
@@ -71,6 +72,8 @@ test('slice control updates calibrated coordinate and renderer request', async (
   const slider = page.getByLabel('coronal slice');
   await slider.fill('87');
   await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.60 mm');
+  await expect(slider).toHaveAttribute('aria-valuetext', 'AP -1.60 mm');
+  await expect(page.locator('[data-view="coronal"] .view-frame__footer output')).toHaveCount(0);
   await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('700,550,400');
   await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '700');
 });
@@ -365,7 +368,8 @@ test('scientific context menus and color controls are driven by the loaded relea
   const settings = page.getByRole('complementary', { name: 'Visualization settings' });
   await expect(settings).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
   await expect(settings.getByRole('heading', { name: 'Data' })).toHaveCount(0);
-  await expect(page.getByLabel('Regional statistic').locator('option')).toHaveCount(5);
+  await expect(page.getByLabel('Regional statistic').locator('option')).toHaveCount(4);
+  await expect(page.getByLabel('Regional statistic').locator('option', { hasText: 'Count' })).toHaveCount(0);
   await expect(page.getByLabel('Feature color legend')).toBeVisible();
   await expect(page.locator('.color-legend__unit')).toHaveText('dB rel. V');
   await expect(page.locator('.color-range__histogram-bin')).toHaveCount(8);

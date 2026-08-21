@@ -17,6 +17,7 @@ export type ColorScale = 'linear' | 'log';
 export type ColorScaleSelection = 'auto' | ColorScale;
 export type ColorMode = 'feature' | 'anatomy';
 export type StatisticId = 'mean' | 'median' | 'min' | 'max' | 'count';
+export type ColorStatisticId = Exclude<StatisticId, 'count'>;
 export type RegionOrder = 'anatomy' | 'value-asc' | 'value-desc';
 
 export interface DatasetRef {
@@ -30,7 +31,7 @@ export type ColorRange =
 
 export interface ColoringState {
   mode: ColorMode;
-  statistic: StatisticId;
+  statistic: ColorStatisticId;
   colormap: string;
   range: ColorRange;
   scale: ColorScaleSelection;

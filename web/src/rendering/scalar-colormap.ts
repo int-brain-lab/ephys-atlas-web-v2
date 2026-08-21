@@ -36,7 +36,7 @@ export function regionalColorRange(feature: RegionalFeaturePayload, coloring: Co
     return null;
   }
   const global = feature.global;
-  if (coloring.statistic !== 'count' && global?.q05 !== undefined && global.q95 !== undefined && global.q95 > global.q05) {
+  if (global?.q05 !== undefined && global.q95 !== undefined && global.q95 > global.q05) {
     return [global.q05, global.q95];
   }
   const values = feature.statistics[coloring.statistic] ?? feature.statistics.mean;

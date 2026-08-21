@@ -9,7 +9,7 @@ import type {
   ParcellationId,
   RepresentationKind,
   SliceAxis,
-  StatisticId,
+  ColorStatisticId,
 } from '../domain/types.js';
 import type { RegionInspection, SliceRenderer } from '../rendering/interfaces.js';
 import { regionalColorRange } from '../rendering/scalar-colormap.js';
@@ -23,7 +23,7 @@ export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
   setFeature(featureId: string | null, representation?: RepresentationKind): void;
   setParcellation(parcellation: ParcellationId): void;
-  setStatistic(statistic: StatisticId): void;
+  setStatistic(statistic: ColorStatisticId): void;
   setColorMode(mode: ColorMode): void;
   setColormap(colormap: string): void;
   setColorRange(range: ColorRange): void;
@@ -54,7 +54,6 @@ interface ViewFrameNodes {
   target: HTMLElement;
   coordinate: HTMLElement;
   slider: HTMLInputElement;
-  index: HTMLOutputElement;
   status: HTMLElement;
   maximize: HTMLButtonElement;
   tooltip: HTMLElement;
@@ -685,7 +684,7 @@ export class AppShell {
     ]);
     this.statisticSelect = statistic.select;
     this.statisticSelect.setAttribute('aria-label', 'Regional statistic');
-    this.statisticSelect.addEventListener('change', () => this.callbacks.setStatistic(this.statisticSelect.value as StatisticId));
+    this.statisticSelect.addEventListener('change', () => this.callbacks.setStatistic(this.statisticSelect.value as ColorStatisticId));
     const colormap = this.settingsSelect('Colormap', [['viridis', 'Viridis'], ['magma', 'Magma']]);
     this.colormapSelect = colormap.select;
     this.colormapSelect.setAttribute('aria-label', 'Feature colormap');
@@ -766,8 +765,8 @@ export class AppShell {
     const descriptor = manifest?.features.find((item) => item.id === view.featureId);
     this.colorModeSelect.value = view.coloring.mode ?? 'feature';
     const statistics = feature?.representation === 'regional'
-      ? (['mean', 'median', 'min', 'max', 'count'] as const).filter((statistic) => feature.statistics[statistic] !== undefined)
-      : descriptor?.statistics ?? [];
+      ? (['mean', 'median', 'min', 'max'] as const).filter((statistic) => feature.statistics[statistic] !== undefined)
+      : (descriptor?.statistics ?? []).filter((statistic): statistic is ColorStatisticId => statistic !== 'count');
     this.syncOptions(this.statisticSelect, statistics.map((value) => ({ value, label: titleCaseToken(value) })), view.coloring.statistic);
     this.colormapSelect.value = view.coloring.colormap;
     const automaticScale = descriptor?.display?.scale ?? 'linear';
@@ -791,7 +790,6 @@ export class AppShell {
     if (feature && range) {
       const usesRobustQuantiles = view.coloring.range.mode === 'auto'
         && feature.representation === 'regional'
-        && view.coloring.statistic !== 'count'
         && feature.global?.q05 !== undefined
         && feature.global.q95 !== undefined;
       const scope = feature.representation === 'regional' ? 'Left hemisphere' : 'Volume';
@@ -935,7 +933,8 @@ export class AppShell {
     header.append(heading(title, 3));
     const headerMeta = element('div', 'view-frame__header-meta');
     const coordinate = element('span', 'view-frame__coordinate');
-    coordinate.textContent = formatRegionalCoordinate(axis, 0);
+    const initialCoordinate = formatRegionalCoordinate(axis, 0);
+    coordinate.textContent = initialCoordinate;
     const status = element('span', 'view-frame__status');
     status.textContent = 'Waiting';
     const maximize = element('button', 'view-frame__maximize');
@@ -970,19 +969,18 @@ export class AppShell {
     slider.step = '1';
     slider.value = '0';
     slider.setAttribute('aria-label', `${axis} slice`);
+    slider.setAttribute('aria-valuetext', initialCoordinate);
     slider.addEventListener('input', () => {
       const model = this.currentModel;
       const inventory = model?.state.view.representation === 'regional' ? model.displaySliceInventories?.[axis] : undefined;
       this.callbacks.setSlice(axis, inventory?.nativeIndexAtOrdinal(slider.valueAsNumber) ?? slider.valueAsNumber);
     });
-    const index = element('output', 'view-frame__index');
-    index.htmlFor = slider.id = `${axis}-slice-slider`;
-    index.textContent = `0 / ${maxRegionalSliceIndex(axis)}`;
-    footer.append(slider, index);
+    slider.id = `${axis}-slice-slider`;
+    footer.append(slider);
 
     frame.append(header, viewport, footer);
     this.viewFrames.set(axis, {
-      frame, target, coordinate, slider, index, status, maximize,
+      frame, target, coordinate, slider, status, maximize,
       tooltip, tooltipIdentity, tooltipValue, tooltipMeta,
       renderKey: '', geometryKey: '', renderToken: 0, loadingNoticeTimer: null,
     });
@@ -999,10 +997,11 @@ export class AppShell {
     const sliceIndex = Math.min(maxRegionalSliceIndex(axis), Math.max(0, Math.round(view.slices[axis])));
     const displayOrdinal = inventory?.ordinalForNativeIndex(sliceIndex) ?? sliceIndex;
     const displayMax = inventory ? inventory.count - 1 : maxRegionalSliceIndex(axis);
-    nodes.coordinate.textContent = formatRegionalCoordinate(axis, sliceIndex);
+    const coordinate = formatRegionalCoordinate(axis, sliceIndex);
+    nodes.coordinate.textContent = coordinate;
     nodes.slider.max = String(displayMax);
     nodes.slider.value = String(displayOrdinal);
-    nodes.index.textContent = `${displayOrdinal} / ${displayMax}`;
+    nodes.slider.setAttribute('aria-valuetext', coordinate);
 
     const geometryKey = `${view.representation}:${view.parcellation}:${model.feature?.featureId ?? ''}:${sliceIndex}`;
     const renderKey = view.representation === 'volume'

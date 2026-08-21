@@ -27,7 +27,10 @@ Pointer or keyboard interaction switches automatic bounds to a URL-persisted
 manual range, exact values remain available from the bound labels, and reset
 restores the robust automatic range without exposing permanent numeric fields.
 The colormap is confined to the selected interval, and dragging that interval
-translates both bounds together without changing its width.
+translates both bounds together without changing its width. Feature magnitude
+statistics (`mean`, `median`, `min`, and `max`) are colorable; observation count
+remains supporting sample-size metadata in tooltips, comparisons, summaries,
+and exports rather than a feature-color statistic.
 Color scale selection defaults to `Auto`: the browser resolves optional
 feature-level `display.scale` metadata and otherwise uses linear color
 normalization. Explicit linear/logarithmic overrides persist in URLs, while
