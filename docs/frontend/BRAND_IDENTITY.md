@@ -18,9 +18,9 @@ recoloring, deletion, repositioning, or changing the proportions of logo
 elements. Layout must preserve clear space around the complete lockup; do not
 extract the circular device as an unapproved icon.
 
-The colored-negative lockup is used on the institutional blue header surface.
-The product name remains adjacent HTML text so it is legible and accessible at
-the viewer header's compact sizes.
+The colored-negative lockup is used on the viewer's dark header without a
+separate background block. The product name remains adjacent HTML text so it
+is legible and accessible at the viewer header's compact sizes.
 
 ## Institutional palette
 
@@ -33,9 +33,9 @@ The manual defines:
 | Magenta | `#CE2C97` |
 
 The frontend exposes these as brand tokens. Cyan is the primary interface
-accent, blue anchors the brand surface, and magenta is reserved for selective
-brand emphasis. Neutral surfaces, accessible text, focus treatment, and
-scientific color encodings remain separate concerns.
+accent, blue is available for selective brand use, and magenta is reserved for
+selective brand emphasis. Neutral surfaces, accessible text, focus treatment,
+and scientific color encodings remain separate concerns.
 
 In particular, do not replace Allen ontology colors, feature colormaps, or
 categorical region-selection colors with the institutional palette. Those

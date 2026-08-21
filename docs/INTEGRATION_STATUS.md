@@ -36,11 +36,12 @@ values, statistics, histograms, tooltips, and exports remain unchanged.
 ## Brand identity
 
 The application header uses the official 2026 IBL Core colored-negative SVG
-lockup on the institutional blue surface. The institutional cyan is the primary
-interface accent; magenta is retained as a reserved brand token. Scientific
-feature colormaps, Allen ontology colors, and categorical selection colors
-remain independent of branding. Asset identity and usage constraints are
-recorded in `docs/frontend/BRAND_IDENTITY.md` and D028.
+lockup directly on the dark header without a separate background block. The
+institutional cyan is the primary interface accent; blue and magenta remain
+brand tokens. Scientific feature colormaps, Allen ontology colors, and
+categorical selection colors remain independent of branding. Asset identity
+and usage constraints are recorded in `docs/frontend/BRAND_IDENTITY.md` and
+D028.
 
 ## Anatomy rendering
 

@@ -17,7 +17,7 @@ test('header uses the official IBL Core negative lockup and palette', async ({ p
     naturalHeight: node.naturalHeight,
   }))).toEqual({ complete: true, naturalWidth: 240, naturalHeight: 209 });
 
-  expect(await page.locator('.app-header__brand').evaluate((node) => getComputedStyle(node).backgroundColor)).toBe('rgb(0, 77, 137)');
+  expect(await page.locator('.app-header__brand').evaluate((node) => getComputedStyle(node).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
   expect(await page.locator(':root').evaluate((node) => ({
     accent: getComputedStyle(node).getPropertyValue('--color-accent').trim(),
     blue: getComputedStyle(node).getPropertyValue('--color-brand-blue').trim(),

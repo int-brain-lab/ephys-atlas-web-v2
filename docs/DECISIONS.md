@@ -230,9 +230,9 @@ than a dependency-injection framework or a second scientific schema.
 
 Use the official 2026 IBL Core identity for the viewer. Vendor the complete
 colored-negative SVG lockup from `iblcore.org` without editing its internal
-geometry, colors, gradient, or proportions, and present it on the institutional
-blue `#004D89` header surface with the required clear space. Keep the adjacent
-product name as accessible HTML rather than modifying the lockup.
+geometry, colors, gradient, or proportions. Present it with the required clear
+space on the viewer's dark header without a separate background block. Keep the
+adjacent product name as accessible HTML rather than modifying the lockup.
 
 Expose the institutional blue `#004D89`, cyan `#009FD7`, and magenta `#CE2C97`
 as explicit brand tokens. Cyan is the primary interface accent, while magenta

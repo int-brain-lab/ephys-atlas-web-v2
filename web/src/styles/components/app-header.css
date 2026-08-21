@@ -20,7 +20,6 @@
   padding: 0 var(--space-3);
   border-right: 1px solid rgb(var(--color-accent-rgb) / 24%);
   border-radius: calc(var(--radius-md) - 1px) 0 0 calc(var(--radius-md) - 1px);
-  background: var(--color-brand-blue);
 }
 
 .app-header__logo {
