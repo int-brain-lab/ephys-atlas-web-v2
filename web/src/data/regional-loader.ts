@@ -5,11 +5,21 @@ import type {
   ParcellationDescriptor,
   RegionMetadata,
   RegionalFeaturePayload,
+  RegionalStatisticId,
 } from './contracts.js';
 import { materializeRegionalHistogram, parseRegionMetadata, parseRegionalStatisticsResource } from './regional-data.js';
 import type { ResourceReader } from './resource-reader.js';
 
 const DISPLAY_STATISTICS = new Set<StatisticId>(['mean', 'median', 'min', 'max', 'count']);
+const REGIONAL_STATISTICS = new Set<RegionalStatisticId>([
+  ...DISPLAY_STATISTICS,
+  'missing_count',
+  'std',
+  'q05',
+  'q25',
+  'q75',
+  'q95',
+]);
 
 export async function loadRegionsFromResources(
   reader: ResourceReader,
@@ -86,8 +96,8 @@ export async function loadRegionalFeatureFromResources(options: {
   }
   for (let fieldIndex = 0; fieldIndex < fieldCount; fieldIndex += 1) {
     const field = statsDocument.fields[fieldIndex];
-    if (!field || !DISPLAY_STATISTICS.has(field as StatisticId)) continue;
-    statistics[field as StatisticId] = regionIds.map((_, row) => matrix[row * fieldCount + fieldIndex] ?? NaN);
+    if (!field || !REGIONAL_STATISTICS.has(field as RegionalStatisticId)) continue;
+    statistics[field as RegionalStatisticId] = regionIds.map((_, row) => matrix[row * fieldCount + fieldIndex] ?? NaN);
   }
 
   return {

@@ -30,7 +30,7 @@
   --radius-lg: 10px;
 
   --header-height: 3.5rem;
-  --analysis-height: 8rem;
+  --analysis-height: min(58vh, 32rem);
   --region-pane-width: clamp(19rem, 20vw, 21rem);
   --settings-pane-width: clamp(17.875rem, 19vw, 20.375rem);
 }

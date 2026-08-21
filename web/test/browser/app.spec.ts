@@ -225,7 +225,7 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-empty', 'true');
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'false');
   await expect(page.locator('.analysis-panel__surface')).toBeHidden();
-  await expect(page.locator('.analysis-panel__title')).toHaveText('Analysis / comparison');
+  await expect(page.locator('.analysis-panel__title')).toHaveText('Compare selected regions');
   await expect(page.locator('.analysis-panel__toggle')).toBeDisabled();
   const coronalBeforeSelection = await page.locator('[data-view="coronal"]').boundingBox();
 
@@ -240,7 +240,7 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'true');
   await expect(page.locator('.regional-comparison__fixture')).toHaveText('Synthetic integration fixture');
   expect(await page.locator('[data-view="coronal"]').boundingBox()).toEqual(coronalBeforeSelection);
-  await page.getByRole('button', { name: 'Collapse analysis and comparison' }).click();
+  await page.getByRole('button', { name: 'Collapse selected-region comparison' }).click();
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'false');
   await expect(page.locator('.analysis-panel__surface')).toBeHidden();
   expect(await page.locator('[data-view="coronal"]').boundingBox()).toEqual(coronalBeforeSelection);
@@ -248,7 +248,13 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.selected-region')).toContainText('MD');
   await expect(page.locator('.distribution-chart__region[data-region-id="-362"]')).toHaveAttribute('data-probability-sum', '1');
   await expect(page.locator('.distribution-chart__legend-item[data-region-id="-362"]')).toContainText('MD · n=3');
-  await expect(page.locator('.regional-comparison__list')).toContainText('mean: 1 dB rel. V');
+  const comparisonRow = page.locator('.regional-comparison__table tr[data-region-id="-362"]');
+  await expect(comparisonRow).toContainText('MD · Mediodorsal nucleus of thalamus');
+  await expect(comparisonRow).toContainText('3');
+  await expect(comparisonRow.locator('[data-statistic="mean"]')).toHaveText('1');
+  await expect(page.locator('.regional-comparison__statistics')).toContainText('Feature values are shown in dB rel. V.');
+  await expect(page.locator('.regional-distribution[data-region-id="-362"]')).toContainText('MD');
+  await expect(page.locator('.regional-distribution__region')).toHaveAttribute('data-probability-sum', '1');
   await expect(path).toHaveClass(/is-selected/);
   await expect(rightPath).toHaveClass(/is-selected/);
 });

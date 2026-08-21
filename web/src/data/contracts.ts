@@ -236,13 +236,15 @@ export interface RegionalHistogram {
   binRule?: string;
 }
 
+export type RegionalStatisticId = StatisticId | 'missing_count' | 'std' | 'q05' | 'q25' | 'q75' | 'q95';
+
 export interface RegionalFeaturePayload {
   schemaVersion: SchemaVersion;
   featureId: string;
   representation: 'regional';
   parcellation: ParcellationId;
   regionIds: readonly string[];
-  statistics: Partial<Record<StatisticId, readonly number[]>>;
+  statistics: Partial<Record<RegionalStatisticId, readonly number[]>>;
   population?: string;
   global?: GlobalStatistics;
   histogram?: RegionalHistogram;

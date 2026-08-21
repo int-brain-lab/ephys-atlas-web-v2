@@ -243,28 +243,171 @@ export function renderAnalysis(
     wrap.append(badge);
   }
   const byId = new Map(regions.map((region) => [region.id, region]));
-  const list = html('dl', 'regional-comparison__list');
-  for (const id of selected) {
-    const region = byId.get(id);
-    const term = html('dt');
-    term.textContent = region ? `${region.acronym} · ${region.name}` : `Region ${id}`;
-    const description = html('dd');
-    const value = values.get(id);
-    description.textContent = value !== undefined && Number.isFinite(value)
-      ? `${statistic}: ${formatRegionalValue(value, statistic, unit)}`
-      : '';
-    list.append(term, description);
+  const distributions = selectedRegionHistogramDistributions(feature, selected);
+  if (feature.histogram && distributions.length > 0) {
+    const global = histogramDistribution(feature.histogram.globalCounts);
+    const maxProbability = Math.max(
+      0,
+      ...global.probabilities,
+      ...distributions.flatMap((distribution) => distribution.probabilities),
+    );
+    const section = html('section', 'regional-comparison__distributions');
+    const heading = html('h3', 'regional-comparison__heading');
+    heading.textContent = 'Normalized distributions';
+    const note = html('p', 'regional-comparison__note');
+    note.textContent = 'Each curve is normalized within its own population; all rows share the feature-value axis and probability scale.';
+    section.append(heading, note);
+    distributions.forEach((distribution, selectionIndex) => {
+      const region = byId.get(distribution.regionId);
+      const row = html('div', 'regional-distribution');
+      row.dataset.regionId = distribution.regionId;
+      row.style.setProperty('--selection-color', selectionColor(selectionIndex));
+      const identity = html('div', 'regional-distribution__identity');
+      const acronym = html('strong');
+      acronym.textContent = region?.acronym ?? distribution.regionId;
+      const name = html('span');
+      name.textContent = `${region?.name ?? `Region ${distribution.regionId}`} · n=${distribution.total.toLocaleString('en-US')}`;
+      identity.append(acronym, name);
+      const plot = svgElement('svg');
+      plot.classList.add('regional-distribution__plot');
+      plot.setAttribute('viewBox', `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`);
+      plot.setAttribute('preserveAspectRatio', 'none');
+      plot.setAttribute('aria-label', `${region?.acronym ?? distribution.regionId} normalized distribution`);
+      const globalLine = svgElement('path');
+      globalLine.classList.add('regional-distribution__global');
+      globalLine.setAttribute('d', stepPath(global.probabilities, maxProbability, false));
+      const regionArea = svgElement('path');
+      regionArea.classList.add('regional-distribution__region');
+      regionArea.setAttribute('d', stepPath(distribution.probabilities, maxProbability, true));
+      regionArea.dataset.probabilitySum = probabilitySum(distribution.probabilities);
+      plot.append(globalLine, regionArea);
+      row.append(identity, plot);
+      section.append(row);
+    });
+    const axis = html('div', 'regional-distribution__axis');
+    const firstEdge = feature.histogram.edges[0];
+    const lastEdge = feature.histogram.edges.at(-1);
+    const start = html('span');
+    start.textContent = firstEdge === undefined ? '' : formatRegionalValue(firstEdge, 'mean', unit);
+    const axisLabel = html('span');
+    axisLabel.textContent = `Feature value${unit ? ` · ${unit}` : ''}`;
+    const end = html('span');
+    end.textContent = lastEdge === undefined ? '' : formatRegionalValue(lastEdge, 'mean', unit);
+    axis.append(start, axisLabel, end);
+    section.append(axis);
+    wrap.append(section);
   }
-  if (feature.global) {
-    const term = html('dt');
-    term.textContent = 'Global population';
-    const description = html('dd');
-    const globalValue = feature.global[statistic as keyof typeof feature.global];
-    description.textContent = typeof globalValue === 'number'
-      ? `${statistic}: ${formatRegionalValue(globalValue, statistic, unit)}`
-      : `${feature.global.count ?? 0} observations`;
-    list.append(term, description);
-  }
-  wrap.append(list);
+
+  wrap.append(renderComparisonTable(feature, regions, selected, statistic, unit));
   target.replaceChildren(wrap);
+}
+
+function renderComparisonTable(
+  feature: RegionalFeaturePayload,
+  regions: readonly RegionMetadata[],
+  selected: ReadonlySet<string>,
+  statistic: StatisticId,
+  unit: string | null,
+): HTMLElement {
+  const regionById = new Map(regions.map((region) => [region.id, region]));
+  const indexById = new Map(feature.regionIds.map((id, index) => [id, index]));
+  const section = html('section', 'regional-comparison__statistics');
+  const heading = html('h3', 'regional-comparison__heading');
+  heading.textContent = 'Descriptive statistics';
+  const note = html('p', 'regional-comparison__note');
+  note.textContent = unit ? `Feature values are shown in ${unit}.` : 'Feature units are not declared for this release.';
+  const scroller = html('div', 'regional-comparison__table-scroll');
+  const table = html('table', 'regional-comparison__table');
+  const head = document.createElement('thead');
+  const header = document.createElement('tr');
+  const columns = [
+    ['region', 'Region'],
+    ['count', 'n'],
+    ['mean', 'Mean'],
+    ['median', 'Median'],
+    ['std', 'Std'],
+    ['iqr', 'Q25–Q75'],
+    ['range', 'Min–Max'],
+  ] as const;
+  for (const [key, label] of columns) {
+    const cell = document.createElement('th');
+    cell.scope = 'col';
+    cell.dataset.statistic = key;
+    cell.dataset.active = String(key === statistic);
+    cell.textContent = label;
+    header.append(cell);
+  }
+  head.append(header);
+  const body = document.createElement('tbody');
+  [...selected].forEach((regionId, selectionIndex) => {
+    const rowIndex = indexById.get(regionId);
+    const region = regionById.get(regionId);
+    const row = document.createElement('tr');
+    row.dataset.regionId = regionId;
+    row.style.setProperty('--selection-color', selectionColor(selectionIndex));
+    const identity = document.createElement('th');
+    identity.scope = 'row';
+    identity.textContent = region ? `${region.acronym} · ${region.name}` : regionId;
+    row.append(identity);
+    const value = (field: keyof RegionalFeaturePayload['statistics']): number | undefined => (
+      rowIndex === undefined ? undefined : feature.statistics[field]?.[rowIndex]
+    );
+    appendStatisticCell(row, value('count'), 'count', 'count', unit, statistic === 'count');
+    appendStatisticCell(row, value('mean'), 'mean', 'mean', null, statistic === 'mean');
+    appendStatisticCell(row, value('median'), 'median', 'median', null, statistic === 'median');
+    appendStatisticCell(row, value('std'), 'std', 'mean', null, false);
+    appendRangeCell(row, value('q25'), value('q75'), null, false);
+    appendRangeCell(row, value('min'), value('max'), null, statistic === 'min' || statistic === 'max');
+    body.append(row);
+  });
+  if (feature.global) {
+    const row = document.createElement('tr');
+    row.dataset.series = 'global';
+    const identity = document.createElement('th');
+    identity.scope = 'row';
+    identity.textContent = 'Global population';
+    row.append(identity);
+    appendStatisticCell(row, feature.global.count, 'count', 'count', unit, statistic === 'count');
+    appendStatisticCell(row, feature.global.mean, 'mean', 'mean', null, statistic === 'mean');
+    appendStatisticCell(row, feature.global.median, 'median', 'median', null, statistic === 'median');
+    appendStatisticCell(row, feature.global.std, 'std', 'mean', null, false);
+    appendRangeCell(row, feature.global.q25, feature.global.q75, null, false);
+    appendRangeCell(row, feature.global.min, feature.global.max, null, statistic === 'min' || statistic === 'max');
+    body.append(row);
+  }
+  table.append(head, body);
+  scroller.append(table);
+  section.append(heading, note, scroller);
+  return section;
+}
+
+function appendStatisticCell(
+  row: HTMLTableRowElement,
+  value: number | undefined,
+  field: string,
+  formatStatistic: StatisticId,
+  unit: string | null,
+  active: boolean,
+): void {
+  const cell = document.createElement('td');
+  cell.dataset.statistic = field;
+  cell.dataset.active = String(active);
+  cell.textContent = value !== undefined && Number.isFinite(value) ? formatRegionalValue(value, formatStatistic, unit) : '—';
+  row.append(cell);
+}
+
+function appendRangeCell(
+  row: HTMLTableRowElement,
+  low: number | undefined,
+  high: number | undefined,
+  unit: string | null,
+  active: boolean,
+): void {
+  const cell = document.createElement('td');
+  cell.dataset.statistic = 'range';
+  cell.dataset.active = String(active);
+  cell.textContent = low !== undefined && high !== undefined && Number.isFinite(low) && Number.isFinite(high)
+    ? `${formatRegionalValue(low, 'mean', unit)}–${formatRegionalValue(high, 'mean', unit)}`
+    : '—';
+  row.append(cell);
 }

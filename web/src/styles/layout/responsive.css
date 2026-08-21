@@ -22,7 +22,7 @@
 
 @media (max-width: 1099px) {
   :root {
-    --analysis-height: 6.5rem;
+    --analysis-height: min(64vh, 32rem);
   }
 
   .app-body {
@@ -92,7 +92,7 @@
 @media (max-width: 759px) {
   :root {
     --header-height: 3.25rem;
-    --analysis-height: 5.25rem;
+    --analysis-height: min(72vh, 34rem);
   }
 
   body {

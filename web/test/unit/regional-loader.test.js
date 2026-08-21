@@ -25,7 +25,7 @@ class FixtureReader {
 const index = { path: 'parcellations/beryl/region_ids.i32', dtype: 'int32', shape: [2], order: 'C', endianness: 'little' };
 const parcellation = { id: 'beryl', regionIndex: index, metadata: 'parcellations/beryl/regions.json' };
 const valuesDescriptor = { path: 'beryl.values.f32', dtype: 'float32', shape: [2], order: 'C', endianness: 'little' };
-const matrixDescriptor = { path: 'beryl.summary.f64', dtype: 'float64', shape: [2, 2], order: 'C', endianness: 'little' };
+const matrixDescriptor = { path: 'beryl.summary.f64', dtype: 'float64', shape: [2, 4], order: 'C', endianness: 'little' };
 const feature = {
   id: 'example', path: 'features/example/feature.json', label: 'Example', description: '', unit: null,
   valueSemantics: { quantity: 'example', transform: 'identity', sourcePopulation: 'all', missingValues: 'excluded' },
@@ -46,13 +46,13 @@ function fixtureReader() {
         format: 'ephys-atlas-statistics-v0.1',
         population: 'all rows',
         global: { count: 4, mean: 2.5 },
-        regional_summary: { fields: ['mean', 'count'], values: matrixDescriptor },
+        regional_summary: { fields: ['mean', 'count', 'std', 'q25'], values: matrixDescriptor },
       }],
     ]),
     new Map([
       ['parcellations/beryl/region_ids.i32', [-1, -2]],
       ['features/example/beryl.values.f32', [1.5, 3.5]],
-      ['features/example/beryl.summary.f64', [1.5, 2, 3.5, 2]],
+      ['features/example/beryl.summary.f64', [1.5, 2, 0.5, 1.25, 3.5, 2, 0.25, 3.25]],
     ]),
   );
 }
@@ -77,6 +77,8 @@ test('resource-independent regional loading materializes display statistics once
   assert.deepEqual(payload.regionIds, ['-1', '-2']);
   assert.deepEqual(payload.statistics.mean, [1.5, 3.5]);
   assert.deepEqual(payload.statistics.count, [2, 2]);
+  assert.deepEqual(payload.statistics.std, [0.5, 0.25]);
+  assert.deepEqual(payload.statistics.q25, [1.25, 3.25]);
   assert.equal(payload.global.mean, 2.5);
 });
 

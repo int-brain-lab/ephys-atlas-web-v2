@@ -73,11 +73,13 @@
 .regional-comparison {
   min-width: 0;
   display: grid;
+  grid-template-columns: minmax(18rem, 1.25fr) minmax(24rem, 1fr);
   align-content: start;
-  gap: .4rem;
+  gap: .75rem 1rem;
 }
 
 .regional-comparison__fixture {
+  grid-column: 1 / -1;
   justify-self: start;
   padding: .16rem .38rem;
   border: 1px solid rgb(239 180 72 / 34%);
@@ -88,29 +90,153 @@
   letter-spacing: .025em;
 }
 
-.regional-comparison__list {
+.regional-comparison__distributions,
+.regional-comparison__statistics {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(7rem, 1fr) minmax(6rem, auto);
-  gap: .22rem .7rem;
-  margin: 0;
-  font-size: .64rem;
+  align-content: start;
+  gap: .38rem;
 }
 
-.regional-comparison__list dt {
-  min-width: 0;
-  overflow: hidden;
+.regional-comparison__heading {
+  margin: 0;
   color: var(--color-text-secondary);
+  font-size: .67rem;
+  font-weight: 650;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.regional-comparison__note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: .56rem;
+  line-height: 1.35;
+}
+
+.regional-distribution {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(8rem, 34%) minmax(0, 1fr);
+  align-items: center;
+  gap: .55rem;
+}
+
+.regional-distribution__identity {
+  min-width: 0;
+  display: grid;
+  padding-left: .42rem;
+  border-left: 2px solid var(--selection-color);
+}
+
+.regional-distribution__identity strong,
+.regional-distribution__identity span {
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.regional-comparison__list dd {
-  margin: 0;
+.regional-distribution__identity strong {
   color: var(--color-text);
+  font-size: .63rem;
+}
+
+.regional-distribution__identity span {
+  color: var(--color-text-muted);
+  font-size: .53rem;
+}
+
+.regional-distribution__plot {
+  width: 100%;
+  height: 2.55rem;
+  overflow: visible;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.regional-distribution__global {
+  fill: none;
+  stroke: rgb(156 175 191 / 38%);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.regional-distribution__region {
+  fill: var(--selection-color);
+  fill-opacity: .18;
+  stroke: var(--selection-color);
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.regional-distribution__axis {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  margin-left: calc(34% + .55rem);
+  color: var(--color-text-muted);
+  font-size: .5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.regional-distribution__axis span:nth-child(2) {
+  text-align: center;
+}
+
+.regional-distribution__axis span:last-child {
+  text-align: right;
+}
+
+.regional-comparison__table-scroll {
+  min-width: 0;
+  overflow: auto;
+}
+
+.regional-comparison__table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--color-text-secondary);
+  font-size: .56rem;
+  white-space: nowrap;
+}
+
+.regional-comparison__table th,
+.regional-comparison__table td {
+  padding: .3rem .42rem;
+  border-bottom: 1px solid var(--color-border);
   font-variant-numeric: tabular-nums;
   text-align: right;
-  white-space: nowrap;
+}
+
+.regional-comparison__table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.regional-comparison__table th:first-child {
+  max-width: 12rem;
+  overflow: hidden;
+  padding-left: .55rem;
+  border-left: 2px solid var(--selection-color, transparent);
+  text-align: left;
+  text-overflow: ellipsis;
+}
+
+.regional-comparison__table tbody tr[data-series='global'] {
+  background: rgb(156 175 191 / 5%);
+}
+
+.regional-comparison__table [data-active='true'] {
+  background: rgb(85 167 247 / 9%);
+  color: var(--color-text);
+}
+
+@media (max-width: 900px) {
+  .regional-comparison {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .analysis-panel__surface .regional-data-message {

@@ -179,7 +179,7 @@ export class RegionalPanelController {
     this.analysisPanel.dataset.expanded = String(this.hasSelection && this.analysisExpanded);
     this.analysisToggle.disabled = !this.hasSelection;
     this.analysisToggle.setAttribute('aria-expanded', String(this.hasSelection && this.analysisExpanded));
-    this.analysisToggle.setAttribute('aria-label', `${this.analysisExpanded ? 'Collapse' : 'Expand'} analysis and comparison`);
+    this.analysisToggle.setAttribute('aria-label', `${this.analysisExpanded ? 'Collapse' : 'Expand'} selected-region comparison`);
     const chevron = this.analysisToggle.querySelector<HTMLElement>('.analysis-panel__chevron');
     if (chevron) {
       chevron.hidden = !this.hasSelection;

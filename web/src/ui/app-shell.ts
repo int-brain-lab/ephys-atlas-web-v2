@@ -807,15 +807,15 @@ export class AppShell {
     const analysis = element('section', 'analysis-panel panel');
     analysis.dataset.empty = 'true';
     analysis.dataset.expanded = 'false';
-    analysis.setAttribute('aria-label', 'Analysis and comparison');
+    analysis.setAttribute('aria-label', 'Compare selected regions');
     const analysisHeader = element('div', 'analysis-panel__header view-frame__header');
     const analysisToggle = element('button', 'analysis-panel__toggle');
     analysisToggle.type = 'button';
     analysisToggle.setAttribute('aria-controls', 'analysis-panel-surface');
     analysisToggle.setAttribute('aria-expanded', 'false');
-    analysisToggle.setAttribute('aria-label', 'Expand analysis and comparison');
+    analysisToggle.setAttribute('aria-label', 'Expand selected-region comparison');
     const analysisTitle = element('span', 'analysis-panel__title');
-    analysisTitle.textContent = 'Analysis / comparison';
+    analysisTitle.textContent = 'Compare selected regions';
     const analysisChevron = element('span', 'analysis-panel__chevron');
     analysisChevron.textContent = '⌃';
     analysisChevron.setAttribute('aria-hidden', 'true');
