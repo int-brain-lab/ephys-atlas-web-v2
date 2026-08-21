@@ -1,5 +1,12 @@
 # Codex refactor handoff
 
+> **Integration notice:** the continuation priorities in this document are
+> superseded by `docs/PR4_INTEGRATION_RUNBOOK.md`. PR #4 is now frozen except
+> for concrete integration fixes, tests, documentation reconciliation, and
+> final validation. Follow the integration runbook to finish with one
+> authoritative `main` branch; this handoff must not remain active after the
+> integration.
+
 ## Purpose
 
 This document is the durable handoff for continuing the pre-alpha architectural refactor of IBL Ephys Atlas Web v2.
