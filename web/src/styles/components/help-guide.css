@@ -9,6 +9,8 @@
 }
 
 .help-guide__schematic {
+  position: relative;
+  isolation: isolate;
   overflow: hidden;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);

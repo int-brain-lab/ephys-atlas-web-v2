@@ -130,3 +130,37 @@ test('help guide stays readable within a phone viewport', async ({ page }) => {
   await expect(guide.locator('.help-schematic__callout')).toHaveCount(5);
   await expect(guide.locator('.help-guide__section')).toHaveCount(5);
 });
+
+test('schematic callouts stay behind the sticky help title while scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 500 });
+  await page.goto('/');
+  await page.keyboard.press('?');
+
+  const guide = page.getByRole('dialog', { name: 'Using the Ephys Atlas' });
+  await expect(guide).toBeVisible();
+  const layering = await guide.evaluate(async (dialog) => {
+    const header = dialog.querySelector<HTMLElement>('.info-dialog__header');
+    const callout = dialog.querySelector<HTMLElement>('.help-schematic__regions .help-schematic__callout');
+    if (!header || !callout) return null;
+    const initialCallout = callout.getBoundingClientRect();
+    const initialHeader = header.getBoundingClientRect();
+    dialog.scrollTop += initialCallout.top - (initialHeader.top + initialHeader.height / 2);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const calloutBounds = callout.getBoundingClientRect();
+    const headerBounds = header.getBoundingClientRect();
+    const point = {
+      x: calloutBounds.left + calloutBounds.width / 2,
+      y: calloutBounds.top + calloutBounds.height / 2,
+    };
+    return {
+      scrollTop: dialog.scrollTop,
+      overlaps: point.y >= headerBounds.top && point.y <= headerBounds.bottom,
+      headerIsOnTop: header.contains(document.elementFromPoint(point.x, point.y)),
+    };
+  });
+
+  expect(layering).not.toBeNull();
+  expect(layering!.scrollTop).toBeGreaterThan(0);
+  expect(layering!.overlaps).toBe(true);
+  expect(layering!.headerIsOnTop).toBe(true);
+});
