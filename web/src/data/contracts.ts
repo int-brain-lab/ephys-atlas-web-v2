@@ -145,6 +145,12 @@ export interface FeatureValueSemantics {
   qcFilter?: string;
 }
 
+export interface FeatureDisplay {
+  colormap?: string;
+  range?: readonly [number, number];
+  scale?: 'linear' | 'log';
+}
+
 export interface RegionalParcellationDescriptor {
   parcellationId: ParcellationId;
   summary: string;
@@ -192,6 +198,7 @@ export interface FeatureDescriptor {
   description: string;
   unit: string | null;
   valueSemantics: FeatureValueSemantics;
+  display?: FeatureDisplay;
   statistics: readonly StatisticId[];
   representations: {
     regional?: RegionalRepresentationDescriptor;

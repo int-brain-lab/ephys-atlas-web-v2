@@ -157,6 +157,7 @@ test('resolved manifest preserves release, provenance, dataset, and feature cont
   assert.equal(manifest.provenance.recipe.id, 'golden-fixture-v0.3');
   assert.match(feature.description, /Synthetic feature/);
   assert.equal(feature.unit, 'dB rel. V');
+  assert.equal(feature.display, undefined);
   assert.deepEqual(feature.valueSemantics, {
     quantity: 'synthetic AP RMS-like scalar',
     transform: 'identity; fixture values are already display values',
@@ -228,6 +229,21 @@ test('feature metadata validation rejects a missing or non-string unit', () => {
     () => parseFeatureDescriptor({ ...valid, display: { range: [0, 'high'] } }, 'feature.json'),
     /display.range must contain 2 finite numbers/,
   );
+  assert.throws(
+    () => parseFeatureDescriptor({ ...valid, display: { scale: 'symlog' } }, 'feature.json'),
+    /display.scale must be linear or log/,
+  );
+});
+
+test('feature metadata retains presentation-only color defaults', () => {
+  const root = new URL('../../../fixtures/golden-v0.3/', import.meta.url);
+  const valid = JSON.parse(readFileSync(new URL('features/rms_ap/feature.json', root), 'utf8'));
+  const feature = parseFeatureDescriptor({
+    ...valid,
+    display: { colormap: 'magma', range: [0.1, 10], scale: 'log' },
+  }, 'feature.json');
+  assert.deepEqual(feature.display, { colormap: 'magma', range: [0.1, 10], scale: 'log' });
+  assert.match(feature.valueSemantics.transform, /identity/);
 });
 
 test('local import validates the checked-in regional and volume golden graph', async () => {

@@ -32,10 +32,22 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
   array(root.artifacts, `${path}.artifacts`);
   const featureId = string(root.id, `${path}.id`);
   if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(featureId)) throw new Error(`${path}.id has an invalid format`);
+  let display: FeatureDescriptor['display'];
   if (root.display !== undefined) {
-    const display = object(root.display, `${path}.display`);
-    if (display.colormap !== undefined) plainString(display.colormap, `${path}.display.colormap`);
-    if (display.range !== undefined) numberArray(display.range, 2, `${path}.display.range`);
+    const rawDisplay = object(root.display, `${path}.display`);
+    const scale = rawDisplay.scale;
+    if (scale !== undefined && scale !== 'linear' && scale !== 'log') {
+      throw new Error(`${path}.display.scale must be linear or log`);
+    }
+    display = {
+      ...(rawDisplay.colormap !== undefined
+        ? { colormap: plainString(rawDisplay.colormap, `${path}.display.colormap`) }
+        : {}),
+      ...(rawDisplay.range !== undefined
+        ? { range: numberArray(rawDisplay.range, 2, `${path}.display.range`) as [number, number] }
+        : {}),
+      ...(scale !== undefined ? { scale } : {}),
+    };
   }
   const descriptor: FeatureDescriptor = {
     id: featureId,
@@ -43,6 +55,7 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
     label: string(root.label, `${path}.label`),
     description: plainString(root.description, `${path}.description`),
     unit: root.unit === null ? null : plainString(root.unit, `${path}.unit`),
+    ...(display !== undefined ? { display } : {}),
     valueSemantics: {
       quantity: string(valueSemantics.quantity, `${path}.value_semantics.quantity`),
       transform: string(valueSemantics.transform, `${path}.value_semantics.transform`),
