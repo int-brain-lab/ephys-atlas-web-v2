@@ -237,8 +237,13 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ }).click();
   await expect(page.locator('.region-pane__selected')).toHaveAttribute('data-empty', 'false');
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-empty', 'false');
-  await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'true');
+  await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'false');
+  await expect(page.locator('.analysis-panel__surface')).toBeHidden();
   await expect(page.locator('.regional-comparison__fixture')).toHaveText('Synthetic integration fixture');
+  expect(await page.locator('[data-view="coronal"]').boundingBox()).toEqual(coronalBeforeSelection);
+  await page.getByRole('button', { name: 'Expand selected-region comparison' }).click();
+  await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'true');
+  await expect(page.locator('.analysis-panel__surface')).toBeVisible();
   expect(await page.locator('[data-view="coronal"]').boundingBox()).toEqual(coronalBeforeSelection);
   await page.getByRole('button', { name: 'Collapse selected-region comparison' }).click();
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'false');

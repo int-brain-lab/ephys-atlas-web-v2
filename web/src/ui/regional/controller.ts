@@ -176,7 +176,6 @@ export class RegionalPanelController {
   };
 
   private updateAnalysisDisclosure(hasSelection: boolean): void {
-    if (hasSelection && !this.hasSelection) this.analysisExpanded = true;
     if (!hasSelection) this.analysisExpanded = false;
     this.hasSelection = hasSelection;
     this.syncAnalysisDisclosure();
