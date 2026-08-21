@@ -159,11 +159,9 @@ test('value ordering switches to a flat ranking and restores the anatomical tree
   const orderButton = page.getByRole('button', { name: /Region order:/ });
   await expect(page.locator('.region-search__meta > :last-child')).toHaveClass('region-order');
   await expect(orderButton).toHaveAttribute('data-order', 'anatomy');
-  await expect(orderButton).toHaveAttribute('title', 'Order: Anatomy · Next: Value ascending');
+  await expect(orderButton).toHaveAttribute('title', 'Order: Anatomy · Next: Value descending');
   await expect(orderButton.locator('.region-order__icon')).toHaveCount(1);
   await expect(orderButton).toHaveText('');
-  await orderButton.click();
-  await expect(orderButton).toHaveAttribute('data-order', 'value-asc');
   await orderButton.click();
   await expect(orderButton).toHaveAttribute('data-order', 'value-desc');
   await expect.poll(() => new URL(page.url()).searchParams.get('order')).toBe('value-desc');
@@ -177,14 +175,12 @@ test('value ordering switches to a flat ranking and restores the anatomical tree
   await expect(page.locator('.region-row').nth(0)).toHaveAttribute('data-depth', '0');
 
   await orderButton.click();
-  await orderButton.click();
   await expect(orderButton).toHaveAttribute('data-order', 'value-asc');
   await expect(page.locator('.region-row').nth(0)).toHaveAttribute('data-region-id', '-477');
   await expect(page.locator('.region-row').nth(1)).toHaveAttribute('data-region-id', '-362');
   await expect(page.locator('.region-row').nth(2)).toHaveAttribute('data-region-id', '-382');
   await expect(page.locator('.region-row').nth(3)).toHaveAttribute('data-region-id', '-803');
 
-  await orderButton.click();
   await orderButton.click();
   await expect(orderButton).toHaveAttribute('data-order', 'anatomy');
   await expect.poll(() => new URL(page.url()).searchParams.get('order')).toBeNull();

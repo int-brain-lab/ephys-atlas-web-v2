@@ -203,9 +203,9 @@ export class RegionalTreeView {
 
   private readonly cycleOrder = (): void => {
     const next: Record<RegionOrder, RegionOrder> = {
-      anatomy: 'value-asc',
-      'value-asc': 'value-desc',
-      'value-desc': 'anatomy',
+      anatomy: 'value-desc',
+      'value-asc': 'anatomy',
+      'value-desc': 'value-asc',
     };
     this.callbacks.setRegionOrder(next[this.currentOrder]);
   };
@@ -217,9 +217,9 @@ export class RegionalTreeView {
       'value-desc': 'Value ↓',
     };
     const nextLabels: Record<RegionOrder, string> = {
-      anatomy: 'Value ascending',
-      'value-asc': 'Value descending',
-      'value-desc': 'Anatomy',
+      anatomy: 'Value descending',
+      'value-asc': 'Anatomy',
+      'value-desc': 'Value ascending',
     };
     this.orderButton.dataset.order = this.currentOrder;
     this.orderButton.replaceChildren(createOrderIcon(this.currentOrder));
