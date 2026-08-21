@@ -62,3 +62,43 @@ export function selectedHistogramCounts(
   }
   return counts;
 }
+
+export interface HistogramDistribution {
+  counts: readonly number[];
+  probabilities: readonly number[];
+  total: number;
+}
+
+export interface RegionalHistogramDistribution extends HistogramDistribution {
+  regionId: string;
+}
+
+export function histogramDistribution(counts: readonly number[]): HistogramDistribution {
+  const total = counts.reduce((sum, count) => (
+    Number.isFinite(count) && count > 0 ? sum + count : sum
+  ), 0);
+  return {
+    counts,
+    probabilities: counts.map((count) => (
+      total > 0 && Number.isFinite(count) && count > 0 ? count / total : 0
+    )),
+    total,
+  };
+}
+
+export function selectedRegionHistogramDistributions(
+  feature: RegionalFeaturePayload,
+  selected: ReadonlySet<string>,
+): readonly RegionalHistogramDistribution[] {
+  const histogram = feature.histogram;
+  if (!histogram?.regionalCounts) return [];
+  const indexById = new Map(feature.regionIds.map((id, index) => [id, index]));
+  const result: RegionalHistogramDistribution[] = [];
+  for (const regionId of selected) {
+    const row = indexById.get(regionId);
+    const counts = row === undefined ? undefined : histogram.regionalCounts[row];
+    if (!counts) continue;
+    result.push({ regionId, ...histogramDistribution(counts) });
+  }
+  return result;
+}

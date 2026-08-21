@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   buildRegionalValueMap,
+  histogramDistribution,
   regionMatchesQuery,
   selectedHistogramCounts,
+  selectedRegionHistogramDistributions,
 } from '../../.test-dist/ui/regional/model.js';
 
 const feature = {
@@ -33,4 +35,32 @@ test('regional search is case insensitive across acronym and name', () => {
 
 test('regional histogram selection sums rows deterministically', () => {
   assert.deepEqual(selectedHistogramCounts(feature, new Set(['1', '2'])), [3, 7]);
+});
+
+test('histograms normalize by their own population rather than the global peak', () => {
+  assert.deepEqual(histogramDistribution([10, 30]), {
+    counts: [10, 30],
+    probabilities: [0.25, 0.75],
+    total: 40,
+  });
+  assert.deepEqual(histogramDistribution([0, Number.NaN, -1]), {
+    counts: [0, Number.NaN, -1],
+    probabilities: [0, 0, 0],
+    total: 0,
+  });
+});
+
+test('selected regional distributions retain separate normalized shapes and sample sizes', () => {
+  const unequal = {
+    ...feature,
+    histogram: {
+      ...feature.histogram,
+      globalCounts: [1000, 1000],
+      regionalCounts: [[1, 3], [30, 10]],
+    },
+  };
+  assert.deepEqual(selectedRegionHistogramDistributions(unequal, new Set(['1', '2'])), [
+    { regionId: '1', counts: [1, 3], probabilities: [0.25, 0.75], total: 4 },
+    { regionId: '2', counts: [30, 10], probabilities: [0.75, 0.25], total: 40 },
+  ]);
 });
