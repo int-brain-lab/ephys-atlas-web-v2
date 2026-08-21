@@ -257,11 +257,12 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
     if (!sink) return;
     if (event.type === 'leave') {
       sink.hover(null);
+      sink.inspect(null);
       return;
     }
     const mapping = this.requestedMappings.get(event.axis);
     const resolved = mapping ? this.resolvedCrosswalks.get(mapping) : undefined;
-    if (!resolved) return;
+    if (!mapping || !resolved) return;
     const atlasId = resolved.legacyIndexToAtlasId.get(event.regionId);
     if (atlasId == null) return;
     const hit = {
@@ -270,7 +271,14 @@ export class LegacyCuratedSvgSliceRenderer implements SliceRenderer {
       sliceIndex: this.requestedIndices.get(event.axis) ?? 0,
     };
     if (event.type === 'select') sink.toggleSelection(hit);
-    else sink.hover(hit);
+    else if (event.type === 'hover') sink.hover(hit);
+    else sink.inspect({
+      ...hit,
+      physicalRegionId: atlasId,
+      parcellation: mapping,
+      clientX: event.originalEvent.clientX,
+      clientY: event.originalEvent.clientY,
+    });
   }
 
   private ensureMount(target: HTMLElement): RendererMount {

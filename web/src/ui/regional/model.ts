@@ -1,5 +1,11 @@
-import type { RegionMetadata, RegionalFeaturePayload } from '../../data/contracts.js';
-import type { RegionOrder, StatisticId } from '../../domain/types.js';
+import type {
+  FeatureDescriptor,
+  FeaturePayload,
+  RegionMetadata,
+  RegionalFeaturePayload,
+} from '../../data/contracts.js';
+import type { ColoringState, RegionOrder, StatisticId } from '../../domain/types.js';
+import type { RegionInspection } from '../../rendering/interfaces.js';
 
 const SELECTION_COLORS = ['#55a7f7', '#ef6f61', '#73c991', '#c38cf5', '#f2b84b', '#4dc6c6', '#f08cc2', '#a5b95c'] as const;
 
@@ -67,6 +73,54 @@ export function rankRegionsByValue(
       return (anatomyIndex.get(left.region.id) ?? 0) - (anatomyIndex.get(right.region.id) ?? 0);
     })
     .map(({ region }) => region);
+}
+
+export interface RegionTooltipModel {
+  acronym: string;
+  name: string;
+  valueLabel?: string;
+  valueText?: string;
+  meta: string;
+}
+
+export function buildRegionTooltipModel(
+  inspection: RegionInspection,
+  regions: readonly RegionMetadata[],
+  feature: FeaturePayload | null,
+  descriptor: FeatureDescriptor | undefined,
+  coloring: ColoringState,
+): RegionTooltipModel | null {
+  const region = regions.find(({ id }) => id === inspection.regionId);
+  if (!region) return null;
+
+  const meta = [inspection.physicalRegionId < 0 ? 'Left hemisphere' : 'Right hemisphere'];
+  if (inspection.physicalRegionId > 0 && coloring.mode === 'feature') meta.push('anatomy reference');
+  let valueLabel: string | undefined;
+  let valueText: string | undefined;
+
+  if (feature?.representation === 'regional' && feature.parcellation === inspection.parcellation) {
+    const row = feature.regionIds.indexOf(inspection.regionId);
+    const values = regionalStatisticValues(feature, coloring.statistic);
+    const value = row < 0 ? undefined : values?.[row];
+    valueLabel = coloring.statistic.length
+      ? `${coloring.statistic[0]?.toUpperCase() ?? ''}${coloring.statistic.slice(1)}`
+      : coloring.statistic;
+    valueText = value !== undefined && Number.isFinite(value)
+      ? formatRegionalValue(value, coloring.statistic, descriptor?.unit ?? null)
+      : 'Value unavailable';
+    const count = row < 0 ? undefined : feature.statistics.count?.[row];
+    if (coloring.statistic !== 'count' && count !== undefined && Number.isFinite(count)) {
+      meta.push(`n=${Math.round(count).toLocaleString('en-US')}`);
+    }
+  }
+
+  return {
+    acronym: region.acronym,
+    name: region.name.replace(/\s+\(left\)$/i, ''),
+    ...(valueLabel ? { valueLabel } : {}),
+    ...(valueText ? { valueText } : {}),
+    meta: meta.join(' · '),
+  };
 }
 
 export function selectedHistogramCounts(

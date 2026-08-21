@@ -20,7 +20,11 @@
 
 .region-search__source{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.region-order{flex:none;height:1.45rem;max-width:5.1rem;padding:0 1.15rem 0 .35rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-view);color:var(--color-text-secondary);font-size:.62rem}
+.region-order{flex:none;min-width:4.65rem;height:1.45rem;padding:0 .38rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-view);color:var(--color-text-secondary);font-size:.62rem}
+
+.region-order:hover:not(:disabled){background:var(--color-surface-hover);color:var(--color-text)}
+
+.region-order:disabled{opacity:.4;cursor:default}
 
 .region-order:focus-visible{outline-offset:1px}
 

@@ -11,7 +11,7 @@ import type {
   SliceAxis,
   StatisticId,
 } from '../domain/types.js';
-import type { SliceRenderer } from '../rendering/interfaces.js';
+import type { RegionInspection, SliceRenderer } from '../rendering/interfaces.js';
 import { regionalColorRange } from '../rendering/scalar-colormap.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
 import { ContextMenu, type ContextMenuOption } from './context-menu.js';
@@ -55,6 +55,10 @@ interface ViewFrameNodes {
   index: HTMLOutputElement;
   status: HTMLElement;
   maximize: HTMLButtonElement;
+  tooltip: HTMLElement;
+  tooltipIdentity: HTMLElement;
+  tooltipValue: HTMLElement;
+  tooltipMeta: HTMLElement;
   renderKey: string;
   geometryKey: string;
   renderToken: number;
@@ -226,6 +230,61 @@ export class AppShell {
     for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
       this.renderViewFrame(axis, model);
     }
+  }
+
+  showRegionTooltip(inspection: RegionInspection, model: RegionTooltipModel): void {
+    const nodes = this.viewFrames.get(inspection.axis);
+    if (!nodes) return;
+    for (const [axis, frame] of this.viewFrames) {
+      if (axis !== inspection.axis) frame.tooltip.hidden = true;
+    }
+    const contentKey = `${inspection.regionId}\u0000${model.acronym}\u0000${model.name}\u0000${model.valueLabel ?? ''}\u0000${model.valueText ?? ''}\u0000${model.meta}`;
+    if (nodes.tooltip.dataset.contentKey !== contentKey) {
+      nodes.tooltip.dataset.contentKey = contentKey;
+      nodes.tooltip.dataset.regionId = inspection.regionId;
+      nodes.tooltipIdentity.replaceChildren();
+      const acronym = element('strong', 'region-tooltip__acronym');
+      acronym.textContent = model.acronym;
+      const name = element('span', 'region-tooltip__name');
+      name.textContent = model.name;
+      nodes.tooltipIdentity.append(acronym, name);
+      nodes.tooltipValue.hidden = !model.valueLabel || !model.valueText;
+      nodes.tooltipValue.replaceChildren();
+      if (model.valueLabel && model.valueText) {
+        const label = element('span', 'region-tooltip__value-label');
+        label.textContent = model.valueLabel;
+        const value = element('strong', 'region-tooltip__value-text');
+        value.textContent = model.valueText;
+        nodes.tooltipValue.append(label, value);
+      }
+      nodes.tooltipMeta.textContent = model.meta;
+    }
+    nodes.tooltip.hidden = false;
+    const viewport = nodes.tooltip.parentElement?.getBoundingClientRect();
+    if (!viewport) return;
+    const bounds = nodes.tooltip.getBoundingClientRect();
+    const gap = 12;
+    const padding = 8;
+    const localX = inspection.clientX - viewport.left;
+    const localY = inspection.clientY - viewport.top;
+    const preferredX = localX + gap + bounds.width <= viewport.width - padding
+      ? localX + gap
+      : localX - gap - bounds.width;
+    const preferredY = localY + gap + bounds.height <= viewport.height - padding
+      ? localY + gap
+      : localY - gap - bounds.height;
+    const x = Math.max(padding, Math.min(viewport.width - bounds.width - padding, preferredX));
+    const y = Math.max(padding, Math.min(viewport.height - bounds.height - padding, preferredY));
+    nodes.tooltip.style.transform = `translate3d(${Math.round(x)}px,${Math.round(y)}px,0)`;
+  }
+
+  hideRegionTooltip(axis?: SliceAxis): void {
+    if (axis) {
+      const tooltip = this.viewFrames.get(axis)?.tooltip;
+      if (tooltip) tooltip.hidden = true;
+      return;
+    }
+    for (const nodes of this.viewFrames.values()) nodes.tooltip.hidden = true;
   }
 
   destroy(): void {
@@ -859,7 +918,14 @@ export class AppShell {
     const stateText = element('div', 'view-frame__state-message');
     stateText.setAttribute('role', 'status');
     stateText.textContent = 'Loading registered anatomy…';
-    viewport.append(target, stateText);
+    const tooltip = element('div', 'region-tooltip');
+    tooltip.setAttribute('role', 'tooltip');
+    tooltip.hidden = true;
+    const tooltipIdentity = element('div', 'region-tooltip__identity');
+    const tooltipValue = element('div', 'region-tooltip__value');
+    const tooltipMeta = element('div', 'region-tooltip__meta');
+    tooltip.append(tooltipIdentity, tooltipValue, tooltipMeta);
+    viewport.append(target, stateText, tooltip);
 
     const footer = element('div', 'view-frame__footer');
     const slider = element('input', 'view-frame__slider');
@@ -880,7 +946,11 @@ export class AppShell {
     footer.append(slider, index);
 
     frame.append(header, viewport, footer);
-    this.viewFrames.set(axis, { frame, target, coordinate, slider, index, status, maximize, renderKey: '', geometryKey: '', renderToken: 0 });
+    this.viewFrames.set(axis, {
+      frame, target, coordinate, slider, index, status, maximize,
+      tooltip, tooltipIdentity, tooltipValue, tooltipMeta,
+      renderKey: '', geometryKey: '', renderToken: 0,
+    });
     return frame;
   }
 
@@ -912,6 +982,7 @@ export class AppShell {
       && nodes.target.dataset.sliceAsset?.startsWith('generated-anatomy-') === true;
     const stateMessage = nodes.frame.querySelector<HTMLElement>('.view-frame__state-message');
     if (geometryChanged) {
+      this.hideRegionTooltip(axis);
       nodes.frame.dataset.state = retainsAnatomy ? 'ready' : 'loading';
       nodes.status.removeAttribute('aria-label');
       nodes.status.textContent = retainsAnatomy ? 'Updating' : 'Loading';
@@ -1036,7 +1107,10 @@ export class AppShell {
     else if (mode === 'compact' && this.regionPane.dataset.open === 'true') this.closeDrawers();
   }
 
-  private readonly onResize = (): void => this.syncLayoutMode();
+  private readonly onResize = (): void => {
+    this.hideRegionTooltip();
+    this.syncLayoutMode();
+  };
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (event.key !== 'Escape' || event.defaultPrevented) return;

@@ -86,6 +86,19 @@ test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
   await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '652');
 });
 
+test('small pixel wheel deltas accumulate sensitively for smooth macOS scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+
+  await page.locator('[data-view="coronal"] .view-frame__brain-svg').evaluate((node) => {
+    for (let index = 0; index < 4; index += 1) {
+      node.dispatchEvent(new WheelEvent('wheel', { deltaY: 8, deltaMode: WheelEvent.DOM_DELTA_PIXEL, cancelable: true }));
+    }
+  });
+  await expect(page.getByLabel('coronal slice')).toHaveValue('81');
+  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('652,550,400');
+});
+
 test('initial anatomy display fetches only the three visible packs', async ({ page }) => {
   const packRequests: string[] = [];
   page.on('request', (request) => {
@@ -446,6 +459,46 @@ test('region hover is linked across all anatomical projections', async ({ page }
   }
 });
 
+test('slice hover tooltip shows current regional value and stays inside its viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
+
+  const viewport = page.locator('[data-view="coronal"] .view-frame__viewport');
+  const viewportBounds = await viewport.boundingBox();
+  expect(viewportBounds).not.toBeNull();
+  const leftPath = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
+  await leftPath.dispatchEvent('pointermove', {
+    clientX: viewportBounds!.x + viewportBounds!.width - 2,
+    clientY: viewportBounds!.y + viewportBounds!.height - 2,
+  });
+
+  const tooltip = page.locator('[data-view="coronal"] .region-tooltip');
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toHaveAttribute('data-region-id', '-362');
+  await expect(tooltip.locator('.region-tooltip__identity')).toContainText('MD');
+  await expect(tooltip.locator('.region-tooltip__identity')).toContainText('Mediodorsal nucleus of thalamus');
+  await expect(tooltip.locator('.region-tooltip__value-label')).toHaveText('Mean');
+  await expect(tooltip.locator('.region-tooltip__value-text')).toHaveText('1 dB rel. V');
+  await expect(tooltip.locator('.region-tooltip__meta')).toHaveText('Left hemisphere · n=3');
+  const tooltipBounds = await tooltip.boundingBox();
+  expect(tooltipBounds).not.toBeNull();
+  expect(tooltipBounds!.x).toBeGreaterThanOrEqual(viewportBounds!.x);
+  expect(tooltipBounds!.y).toBeGreaterThanOrEqual(viewportBounds!.y);
+  expect(tooltipBounds!.x + tooltipBounds!.width).toBeLessThanOrEqual(viewportBounds!.x + viewportBounds!.width);
+  expect(tooltipBounds!.y + tooltipBounds!.height).toBeLessThanOrEqual(viewportBounds!.y + viewportBounds!.height);
+
+  const rightPath = page.locator('[data-view="coronal"] path[data-allen-id="362"]').first();
+  await rightPath.dispatchEvent('pointermove', {
+    clientX: viewportBounds!.x + 20,
+    clientY: viewportBounds!.y + 20,
+  });
+  await expect(tooltip.locator('.region-tooltip__meta')).toHaveText('Right hemisphere · anatomy reference · n=3');
+  await page.locator('[data-view="coronal"] .view-frame__slice-figure').dispatchEvent('pointerleave');
+  await expect(tooltip).toBeHidden();
+});
+
 test('region-list hover previews the region in all anatomical projections', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
@@ -547,6 +600,7 @@ test('generated anatomy renderer uses direct mapping IDs and affine-derived guid
     };
     renderer.setInteractionSink({
       hover: (hit) => renderer.updatePresentation({ ...presentation, hoveredRegionId: hit?.regionId ?? null }),
+      inspect: () => undefined,
       toggleSelection: (hit) => { target.dataset.hit = hit.regionId; },
       stepSlice: () => undefined,
       moveCursor: () => undefined,

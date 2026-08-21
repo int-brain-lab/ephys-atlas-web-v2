@@ -36,6 +36,8 @@ export interface SvgSlicePerformanceEvent {
 }
 
 const WHEEL_PIXELS_PER_NAVIGATION_STEP = 100;
+const SMOOTH_WHEEL_PIXELS_PER_NAVIGATION_STEP = 32;
+const SMOOTH_WHEEL_DELTA_LIMIT = 50;
 const WHEEL_LINE_HEIGHT_PX = 16;
 const WHEEL_PAGE_HEIGHT_PX = 800;
 const MAX_PREPARED_SLICE_LAYERS = 8;
@@ -55,6 +57,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   private activeLayerKey: string | null = null;
   private readonly abortController = new AbortController();
   private wheelPixels = 0;
+  private wheelThreshold = WHEEL_PIXELS_PER_NAVIGATION_STEP;
   private wheelFrame: number | null = null;
 
   constructor(
@@ -233,10 +236,12 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
 
   private readonly onPointerMove = (event: PointerEvent): void => {
     const regionId = this.eventRegionId(event);
-    if (regionId === this.hoveredRegionId) return;
-    if (this.hoveredRegionId != null) this.emitRegion('leave', this.hoveredRegionId, event);
-    this.hoveredRegionId = regionId;
-    if (regionId != null) this.emitRegion('hover', regionId, event);
+    if (regionId !== this.hoveredRegionId) {
+      if (this.hoveredRegionId != null) this.emitRegion('leave', this.hoveredRegionId, event);
+      this.hoveredRegionId = regionId;
+      if (regionId != null) this.emitRegion('hover', regionId, event);
+    }
+    if (regionId != null) this.emitRegion('inspect', regionId, event);
   };
 
   private readonly onPointerLeave = (event: PointerEvent): void => {
@@ -257,13 +262,19 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
       : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
         ? WHEEL_PAGE_HEIGHT_PX
         : 1;
+    const threshold = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL && Math.abs(event.deltaY) < SMOOTH_WHEEL_DELTA_LIMIT
+      ? SMOOTH_WHEEL_PIXELS_PER_NAVIGATION_STEP
+      : WHEEL_PIXELS_PER_NAVIGATION_STEP;
+    this.wheelThreshold = Math.min(this.wheelThreshold, threshold);
     this.wheelPixels -= event.deltaY * unit;
     if (this.wheelFrame !== null) return;
     this.wheelFrame = requestAnimationFrame(() => {
       this.wheelFrame = null;
-      const steps = Math.trunc(this.wheelPixels / WHEEL_PIXELS_PER_NAVIGATION_STEP);
+      const threshold = this.wheelThreshold;
+      this.wheelThreshold = WHEEL_PIXELS_PER_NAVIGATION_STEP;
+      const steps = Math.trunc(this.wheelPixels / threshold);
       if (steps === 0) return;
-      this.wheelPixels -= steps * WHEEL_PIXELS_PER_NAVIGATION_STEP;
+      this.wheelPixels -= steps * threshold;
       if (this.currentAxis != null) this.options.onSliceStep?.(this.currentAxis, steps);
     });
   };

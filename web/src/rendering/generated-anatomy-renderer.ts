@@ -54,6 +54,7 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
   private readonly renderTokens = new WeakMap<HTMLElement, number>();
   private readonly geometrySchedules = new Map<HTMLElement, GeometryRenderSchedule>();
   private readonly requestedIndices = new Map<SliceAxis, number>();
+  private readonly requestedMappings = new Map<SliceAxis, SliceRenderModel['parcellation']>();
   private interactionSink: RendererInteractionSink | null = null;
   private presentation: RendererPresentation = {
     feature: null,
@@ -89,6 +90,7 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     const token = (this.renderTokens.get(target) ?? 0) + 1;
     this.renderTokens.set(target, token);
     this.requestedIndices.set(model.axis, model.sliceIndex);
+    this.requestedMappings.set(model.axis, model.parcellation);
     const world = cursorStateToWorld(model.cursor);
     const existing = this.mounts.get(target);
     if (existing?.frame?.axis === model.axis
@@ -167,6 +169,7 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     }
     this.mounts.clear();
     this.requestedIndices.clear();
+    this.requestedMappings.clear();
     this.source.dispose?.();
   }
 
@@ -246,6 +249,7 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
     if (!sink) return;
     if (event.type === 'leave') {
       sink.hover(null);
+      sink.inspect(null);
       return;
     }
     const hit = {
@@ -254,7 +258,14 @@ export class GeneratedAnatomySliceRenderer implements SliceRenderer {
       sliceIndex: this.requestedIndices.get(event.axis) ?? 0,
     };
     if (event.type === 'select') sink.toggleSelection(hit);
-    else sink.hover(hit);
+    else if (event.type === 'hover') sink.hover(hit);
+    else sink.inspect({
+      ...hit,
+      physicalRegionId: event.regionId,
+      parcellation: this.requestedMappings.get(event.axis) ?? 'allen',
+      clientX: event.originalEvent.clientX,
+      clientY: event.originalEvent.clientY,
+    });
   }
 
   private ensureMount(target: HTMLElement): RendererMount {

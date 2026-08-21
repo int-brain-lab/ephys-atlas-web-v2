@@ -137,6 +137,72 @@
   pointer-events: none;
 }
 
+.region-tooltip {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  max-width: min(18rem, calc(100% - 1rem));
+  display: grid;
+  gap: 0.24rem;
+  padding: 0.5rem 0.58rem;
+  border: 1px solid rgb(156 175 191 / 28%);
+  border-radius: var(--radius-sm);
+  background: rgb(8 18 28 / 92%);
+  box-shadow: 0 0.45rem 1.2rem rgb(0 0 0 / 32%);
+  color: var(--color-text);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.region-tooltip[hidden] {
+  display: none;
+}
+
+.region-tooltip__identity {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.38rem;
+}
+
+.region-tooltip__acronym {
+  flex: none;
+  font-size: 0.78rem;
+}
+
+.region-tooltip__name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.region-tooltip__value {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.7rem;
+}
+
+.region-tooltip__value-label,
+.region-tooltip__meta {
+  color: var(--color-text-muted);
+}
+
+.region-tooltip__value-text {
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.region-tooltip__meta {
+  font-size: 0.61rem;
+}
+
 .view-frame[data-state='loading'] .view-frame__state-message,
 .view-frame[data-state='error'] .view-frame__state-message {
   opacity: 1;

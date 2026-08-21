@@ -8,10 +8,16 @@ import { DEFAULT_APP_STATE, DEFAULT_VIEW_STATE } from './domain/defaults.js';
 import { createAppStore, type AppStore } from './domain/store.js';
 import type { SliceAxis, ViewState } from './domain/types.js';
 import type { DisplaySliceInventory } from './rendering/display-slice-inventory.js';
-import { NullSliceRenderer, type RendererPresentation, type SliceRenderer } from './rendering/interfaces.js';
+import {
+  NullSliceRenderer,
+  type RegionInspection,
+  type RendererPresentation,
+  type SliceRenderer,
+} from './rendering/interfaces.js';
 import { AppShell, type ShellModel } from './ui/app-shell.js';
 import { RegionalPanelController } from './ui/regional-panel.js';
 import { buildSelectedComparisonExport } from './ui/regional/comparison-export.js';
+import { buildRegionTooltipModel } from './ui/regional/model.js';
 import { UrlStateController } from './url/url-state.js';
 
 export interface AppOptions {
@@ -70,11 +76,15 @@ export class AtlasApp {
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
       setRegionOrder: (order) => this.store.dispatch({ type: 'regions/order', order }),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
-      hoverRegion: (regionId) => this.setHoveredRegion(regionId),
+      hoverRegion: (regionId) => {
+        this.shell.hideRegionTooltip();
+        this.setHoveredRegion(regionId);
+      },
       downloadComparison: () => this.downloadSelectedComparison(),
     });
     this.renderer.setInteractionSink?.({
       hover: (hit) => this.setHoveredRegion(hit?.regionId ?? null),
+      inspect: (inspection) => this.inspectRegion(inspection),
       toggleSelection: (hit) => this.store.dispatch({ type: 'selection/toggle', regionId: hit.regionId }),
       stepSlice: (axis, delta) => this.stepSlice(axis, delta),
       moveCursor: (cursor) => this.store.dispatch({ type: 'cursor/set', cursor }),
@@ -178,6 +188,24 @@ export class AtlasApp {
     if (regionId === this.hoveredRegionId) return;
     this.hoveredRegionId = regionId;
     this.render();
+  }
+
+  private inspectRegion(inspection: RegionInspection | null): void {
+    if (!inspection) {
+      this.shell.hideRegionTooltip();
+      return;
+    }
+    const state = this.store.getState();
+    const data = this.session.snapshot();
+    if (state.view.representation !== 'regional' || inspection.parcellation !== state.view.parcellation) {
+      this.shell.hideRegionTooltip();
+      return;
+    }
+    const regions = this.atlasRegions?.mappings[state.view.parcellation] ?? data.regions;
+    const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
+    const model = buildRegionTooltipModel(inspection, regions, data.feature, descriptor, state.view.coloring);
+    if (model) this.shell.showRegionTooltip(inspection, model);
+    else this.shell.hideRegionTooltip(inspection.axis);
   }
 
   private loadRendererInventory(): void {

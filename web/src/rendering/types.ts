@@ -20,7 +20,7 @@ export interface RegionalSliceFrame {
 export interface SliceRegionPointerEvent {
   axis: SliceAxis;
   regionId: number;
-  type: 'hover' | 'leave' | 'select';
+  type: 'hover' | 'inspect' | 'leave' | 'select';
   originalEvent: PointerEvent;
 }
 

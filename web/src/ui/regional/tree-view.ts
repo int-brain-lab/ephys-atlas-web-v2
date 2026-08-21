@@ -20,7 +20,7 @@ export class RegionalTreeView {
   private readonly collapseAllButton: HTMLButtonElement;
   private readonly expandAllButton: HTMLButtonElement;
   private readonly treeControls: HTMLElement;
-  private readonly orderSelect: HTMLSelectElement;
+  private readonly orderButton: HTMLButtonElement;
   private readonly list: HTMLUListElement;
   private readonly regionById = new Map<string, RegionMetadata>();
   private readonly rowById = new Map<string, HTMLLIElement>();
@@ -36,28 +36,18 @@ export class RegionalTreeView {
     this.source = required(root, '.region-search__source');
     this.resultCount = required(root, '.region-search__count');
     this.list = required(root, '.region-list');
-    this.orderSelect = html('select', 'region-order');
-    this.orderSelect.setAttribute('aria-label', 'Region order');
-    for (const [value, label] of [
-      ['anatomy', 'Anatomy'],
-      ['value-asc', 'Value ↑'],
-      ['value-desc', 'Value ↓'],
-    ] as const) {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = label;
-      this.orderSelect.append(option);
-    }
+    this.orderButton = html('button', 'region-order');
+    this.orderButton.type = 'button';
     this.treeControls = html('span', 'region-tree-controls');
     this.collapseAllButton = this.treeControl('⊟', 'Collapse all regions');
     this.expandAllButton = this.treeControl('⊞', 'Expand all regions');
     this.treeControls.append(this.collapseAllButton, this.expandAllButton);
-    this.resultCount.before(this.orderSelect, this.treeControls);
+    this.resultCount.before(this.orderButton, this.treeControls);
     this.list.setAttribute('role', 'tree');
 
     this.search.addEventListener('input', this.filterRegions);
     this.searchClear.addEventListener('click', this.clearSearch);
-    this.orderSelect.addEventListener('change', this.changeOrder);
+    this.orderButton.addEventListener('click', this.cycleOrder);
     this.collapseAllButton.addEventListener('click', this.collapseAllRegions);
     this.expandAllButton.addEventListener('click', this.expandAllRegions);
     this.list.addEventListener('click', this.onTreeClick);
@@ -72,7 +62,7 @@ export class RegionalTreeView {
   destroy(): void {
     this.search.removeEventListener('input', this.filterRegions);
     this.searchClear.removeEventListener('click', this.clearSearch);
-    this.orderSelect.removeEventListener('change', this.changeOrder);
+    this.orderButton.removeEventListener('click', this.cycleOrder);
     this.collapseAllButton.removeEventListener('click', this.collapseAllRegions);
     this.expandAllButton.removeEventListener('click', this.expandAllRegions);
     this.list.removeEventListener('click', this.onTreeClick);
@@ -100,7 +90,7 @@ export class RegionalTreeView {
   ): void {
     this.setRegions(regions);
     this.currentOrder = order;
-    this.orderSelect.value = order;
+    this.syncOrderButton();
     this.list.dataset.order = order;
     const previousRovingId = this.rovingButton?.dataset.regionButton;
     const restoreFocus = document.activeElement === this.rovingButton;
@@ -136,7 +126,7 @@ export class RegionalTreeView {
     this.hoveredRegionId = null;
     this.collapseAllButton.disabled = true;
     this.expandAllButton.disabled = true;
-    this.orderSelect.disabled = true;
+    this.orderButton.disabled = true;
     this.treeControls.hidden = true;
     const item = html('li', 'selected-regions__empty');
     item.textContent = text;
@@ -186,9 +176,34 @@ export class RegionalTreeView {
     this.search.focus();
   };
 
-  private readonly changeOrder = (): void => {
-    this.callbacks.setRegionOrder(this.orderSelect.value as RegionOrder);
+  private readonly cycleOrder = (): void => {
+    const next: Record<RegionOrder, RegionOrder> = {
+      anatomy: 'value-asc',
+      'value-asc': 'value-desc',
+      'value-desc': 'anatomy',
+    };
+    this.callbacks.setRegionOrder(next[this.currentOrder]);
   };
+
+  private syncOrderButton(): void {
+    const labels: Record<RegionOrder, string> = {
+      anatomy: 'Anatomy',
+      'value-asc': 'Value ↑',
+      'value-desc': 'Value ↓',
+    };
+    const nextLabels: Record<RegionOrder, string> = {
+      anatomy: 'Value ascending',
+      'value-asc': 'Value descending',
+      'value-desc': 'Anatomy',
+    };
+    this.orderButton.dataset.order = this.currentOrder;
+    this.orderButton.textContent = labels[this.currentOrder];
+    this.orderButton.setAttribute(
+      'aria-label',
+      `Region order: ${labels[this.currentOrder]}. Activate for ${nextLabels[this.currentOrder]}.`,
+    );
+    this.orderButton.title = `Region order · next: ${nextLabels[this.currentOrder]}`;
+  }
 
   private readonly onTreeClick = (event: Event): void => {
     const target = event.target instanceof Element ? event.target : null;
@@ -320,7 +335,7 @@ export class RegionalTreeView {
   }
 
   private syncTreeControls(filtering: boolean): void {
-    this.orderSelect.disabled = this.rowById.size === 0;
+    this.orderButton.disabled = this.rowById.size === 0;
     this.treeControls.hidden = this.currentOrder !== 'anatomy';
     if (this.currentOrder !== 'anatomy') {
       this.collapseAllButton.disabled = true;

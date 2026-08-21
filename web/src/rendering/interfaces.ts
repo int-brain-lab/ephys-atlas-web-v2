@@ -37,8 +37,16 @@ export interface RegionHit {
   sliceIndex: number;
 }
 
+export interface RegionInspection extends RegionHit {
+  physicalRegionId: number;
+  parcellation: ParcellationId;
+  clientX: number;
+  clientY: number;
+}
+
 export interface RendererInteractionSink {
   hover(hit: RegionHit | null): void;
+  inspect(inspection: RegionInspection | null): void;
   toggleSelection(hit: RegionHit): void;
   stepSlice(axis: SliceAxis, delta: number): void;
   moveCursor(cursor: CursorState): void;
