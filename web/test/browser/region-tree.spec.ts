@@ -81,6 +81,8 @@ test('ontology branches disclose accessibly and missing feature values stay visu
 test('collapsing a branch smoothly moves the following rows into place', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017 · official colors');
+  await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
 
   const frontalPoleToggle = page.locator('.region-row[data-region-id="-184"] .region-row__toggle');
   const somatomotor = page.locator('.region-row[data-region-id="-500"]');
