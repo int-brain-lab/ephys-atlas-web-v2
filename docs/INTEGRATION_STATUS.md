@@ -81,8 +81,11 @@ provenance, and CSV export. The compact distribution overlays independently
 sum-normalized selected-region shapes on the global distribution. The expanded
 comparison aligns the same probability distributions and descriptive summaries
 on common axes, and exports selected regions with context, raw bins, normalized
-probabilities, and sample sizes. Synthetic fixtures are visibly identified as
-non-scientific.
+probabilities, and sample sizes. Histogram curves use presentation-only,
+shape-preserving interpolation while bin hover/export retains exact values. The
+comparison remains collapsed on selection and expands to its content height,
+with a viewport cap for larger selections. Synthetic fixtures are visibly
+identified as non-scientific.
 
 `DatasetSession` owns asynchronous catalog/release/region/feature lifecycle,
 generation-based stale-work suppression, and cancellable idle prefetch. Active
