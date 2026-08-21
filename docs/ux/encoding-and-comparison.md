@@ -12,6 +12,9 @@ from visual encoding:
 
 - Statistic is visually prominent at the top; representation and parcellation remain in the header context picker.
 - Color controls form a distinct section containing colormap, value range, scale/transform, and related display parameters.
+- Scale defaults to `Auto`, resolving the active feature's presentation-only
+  `display.scale` recommendation while preserving explicit linear/logarithmic
+  user overrides in shared URLs.
 - Less common controls may be collapsible without hiding important non-default state.
 
 ## Color range control

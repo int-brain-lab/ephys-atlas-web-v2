@@ -28,6 +28,10 @@ manual range, exact values remain available from the bound labels, and reset
 restores the robust automatic range without exposing permanent numeric fields.
 The colormap is confined to the selected interval, and dragging that interval
 translates both bounds together without changing its width.
+Color scale selection defaults to `Auto`: the browser resolves optional
+feature-level `display.scale` metadata and otherwise uses linear color
+normalization. Explicit linear/logarithmic overrides persist in URLs, while
+values, statistics, histograms, tooltips, and exports remain unchanged.
 
 ## Anatomy rendering
 
@@ -64,7 +68,8 @@ The deterministic channel-release recipe is implemented with explicit source
 project/vintage, raw and denoised variants, `inside` source population, no
 additional physiological QC, left-folded Allen/Beryl/Cosmos aggregation,
 source-value preservation, dynamic feature discovery, descriptive
-statistics/histograms, and pinned source/tool/builder provenance.
+statistics/histograms, presentation-only log-color feature configuration, and
+pinned source/tool/builder provenance.
 
 The immutable `2026_W32` source snapshot has been pulled and built as a
 validated development release. Its real-release Playwright suite exercises all
@@ -79,8 +84,9 @@ The cluster builder accepts an explicit content-addressed project snapshot and
 nonempty scalar feature catalog. It aggregates every finite row of
 `clusters.table.pqt` with equal cluster weight after left folding; it does not
 use `clusters_good.table.pqt`, insertion balancing, or hidden good-unit/QC
-filters. Production remains blocked on Q6's authoritative project/snapshot and
-launch feature catalog.
+filters. Its build inputs can separately declare presentation-only log-color
+defaults. Production remains blocked on Q6's authoritative project/snapshot
+and launch feature catalog.
 
 ## Regional viewer
 

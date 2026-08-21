@@ -99,6 +99,16 @@ def test_duplicate_parcellation_ids_are_rejected(release: Path) -> None:
         validate_release(release, SCHEMA)
 
 
+def test_feature_display_scale_is_limited_to_supported_color_mappings(release: Path) -> None:
+    path = feature_path(release)
+    feature = load(path)
+    assert isinstance(feature, dict)
+    feature["display"] = {"scale": "symlog"}
+    save(path, feature)
+    with pytest.raises(ValidationError, match="display.scale"):
+        validate_release(release, SCHEMA)
+
+
 @pytest.mark.parametrize(
     "created_at",
     [

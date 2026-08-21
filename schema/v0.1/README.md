@@ -10,6 +10,19 @@ has no Ephys Atlas feature enum: ids, metadata, ordering and representation
 availability are discovered from the pinned release so a new `ea_active` vintage
 may add or remove features without a frontend build.
 
+## Display defaults
+
+Feature metadata may recommend presentation defaults under `display`. In
+particular, `display.scale` may be `linear` or `log` and affects only the
+value-to-colormap normalization. It does not transform stored values, change
+statistics or histograms, or alter downloads and scientific
+`value_semantics.transform` metadata. Missing `display.scale` remains linear
+for compatibility.
+
+The browser's automatic scale selection follows this release metadata. A URL
+may explicitly override it with `scale=linear` or `scale=log`; omitting the URL
+parameter retains automatic selection.
+
 ## Physical formats
 
 Small metadata uses JSON. Large numeric payloads do not.
