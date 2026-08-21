@@ -214,6 +214,9 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.region-row')).toHaveCount(874);
   await expect(page.locator('.region-row').first()).toContainText('CH');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
+  await expect(page.locator('.distribution-chart__meta')).toContainText('Observation distribution · dB rel. V');
+  await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-total', '11');
+  await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-probability-sum', '1');
   await expect(page.locator('.feature-summary__item')).toHaveCount(4);
   await expect(page.locator('.feature-summary')).toContainText('Observations');
   await expect(page.locator('.feature-summary')).toContainText('Mean');
@@ -243,6 +246,8 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   expect(await page.locator('[data-view="coronal"]').boundingBox()).toEqual(coronalBeforeSelection);
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
   await expect(page.locator('.selected-region')).toContainText('MD');
+  await expect(page.locator('.distribution-chart__region[data-region-id="-362"]')).toHaveAttribute('data-probability-sum', '1');
+  await expect(page.locator('.distribution-chart__legend-item[data-region-id="-362"]')).toContainText('MD · n=3');
   await expect(page.locator('.regional-comparison__list')).toContainText('mean: 1 dB rel. V');
   await expect(path).toHaveClass(/is-selected/);
   await expect(rightPath).toHaveClass(/is-selected/);

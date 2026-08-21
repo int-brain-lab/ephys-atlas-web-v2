@@ -1,7 +1,40 @@
 import type { RegionMetadata, RegionalFeaturePayload } from '../../data/contracts.js';
 import type { StatisticId } from '../../domain/types.js';
 import { html, message } from './dom.js';
-import { formatRegionalValue, selectedHistogramCounts } from './model.js';
+import {
+  buildRegionalValueMap,
+  formatRegionalValue,
+  histogramDistribution,
+  selectedRegionHistogramDistributions,
+  selectionColor,
+} from './model.js';
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const CHART_WIDTH = 1000;
+const CHART_HEIGHT = 100;
+
+function probabilitySum(values: readonly number[]): string {
+  return String(Math.round(values.reduce((sum, value) => sum + value, 0) * 1e12) / 1e12);
+}
+
+function svgElement<K extends keyof SVGElementTagNameMap>(name: K): SVGElementTagNameMap[K] {
+  return document.createElementNS(SVG_NS, name);
+}
+
+function stepPath(values: readonly number[], maxValue: number, close: boolean): string {
+  if (values.length === 0) return '';
+  const width = CHART_WIDTH / values.length;
+  const y = (value: number): number => CHART_HEIGHT - (maxValue > 0 ? value / maxValue : 0) * (CHART_HEIGHT - 5);
+  let path = close ? `M 0 ${CHART_HEIGHT} L 0 ${y(values[0] ?? 0)}` : `M 0 ${y(values[0] ?? 0)}`;
+  values.forEach((value, index) => {
+    const right = (index + 1) * width;
+    path += ` H ${right}`;
+    const next = values[index + 1];
+    if (next !== undefined) path += ` V ${y(next)}`;
+  });
+  if (close) path += ` L ${CHART_WIDTH} ${CHART_HEIGHT} Z`;
+  return path;
+}
 
 export interface RegionalDetailsTargets {
   selectedList: HTMLUListElement;
@@ -21,10 +54,11 @@ export function renderSelectedRegions(
   unit: string | null,
 ): void {
   const byId = new Map(regions.map((region) => [region.id, region]));
-  const items = [...selected].map((regionId) => {
+  const items = [...selected].map((regionId, selectionIndex) => {
     const region = byId.get(regionId);
     const item = html('li', 'selected-region');
     item.dataset.regionId = regionId;
+    item.style.setProperty('--selection-color', selectionColor(selectionIndex));
     const identity = html('span', 'selected-region__identity');
     const acronym = html('strong', 'selected-region__acronym');
     acronym.textContent = region?.acronym ?? regionId;
@@ -90,28 +124,100 @@ export function renderDistribution(
     target.replaceChildren(message('Histogram unavailable for this feature'));
     return;
   }
-  const selectedCounts = selectedHistogramCounts(feature, selected);
-  const maxCount = Math.max(1, ...histogram.globalCounts);
+  const global = histogramDistribution(histogram.globalCounts);
+  const selectedDistributions = selectedRegionHistogramDistributions(feature, selected);
+  const maxProbability = Math.max(
+    0,
+    ...global.probabilities,
+    ...selectedDistributions.flatMap((distribution) => distribution.probabilities),
+  );
+  const values = buildRegionalValueMap(feature, statistic);
+  const regionById = new Map(regions.map((region) => [region.id, region]));
   const chart = html('div', 'distribution-chart');
   chart.dataset.fixture = String(fixture);
   const meta = html('div', 'distribution-chart__meta');
   const label = html('span');
-  label.textContent = `${statistic}${unit && statistic !== 'count' ? ` · ${unit}` : ''}`;
+  label.textContent = `Observation distribution${unit ? ` · ${unit}` : ''}`;
   const population = html('span');
   population.textContent = feature.population ?? `${regions.length} regions`;
   meta.append(label, population);
+  const plot = html('div', 'distribution-chart__plot');
+  const svg = svgElement('svg');
+  svg.classList.add('distribution-chart__svg');
+  svg.setAttribute('viewBox', `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.setAttribute('aria-label', 'Normalized global and selected-region distributions');
+  const globalArea = svgElement('path');
+  globalArea.classList.add('distribution-chart__global');
+  globalArea.setAttribute('d', stepPath(global.probabilities, maxProbability, true));
+  globalArea.dataset.total = String(global.total);
+  globalArea.dataset.probabilitySum = probabilitySum(global.probabilities);
+  const globalTitle = svgElement('title');
+  globalTitle.textContent = `Global population · n=${global.total.toLocaleString('en-US')}`;
+  globalArea.append(globalTitle);
+  svg.append(globalArea);
+
+  selectedDistributions.forEach((distribution, selectionIndex) => {
+    const region = regionById.get(distribution.regionId);
+    const color = selectionColor(selectionIndex);
+    const line = svgElement('path');
+    line.classList.add('distribution-chart__region');
+    line.dataset.regionId = distribution.regionId;
+    line.dataset.total = String(distribution.total);
+    line.dataset.probabilitySum = probabilitySum(distribution.probabilities);
+    line.setAttribute('d', stepPath(distribution.probabilities, maxProbability, false));
+    line.style.setProperty('--selection-color', color);
+    const title = svgElement('title');
+    title.textContent = `${region?.acronym ?? distribution.regionId} · normalized within region · n=${distribution.total.toLocaleString('en-US')}`;
+    line.append(title);
+    svg.append(line);
+
+    const markerValue = statistic === 'count' ? undefined : values.get(distribution.regionId);
+    const firstEdge = histogram.edges[0];
+    const lastEdge = histogram.edges.at(-1);
+    if (markerValue !== undefined && Number.isFinite(markerValue) && firstEdge !== undefined && lastEdge !== undefined && lastEdge > firstEdge) {
+      const marker = svgElement('line');
+      marker.classList.add('distribution-chart__marker');
+      marker.dataset.regionId = distribution.regionId;
+      const x = Math.max(0, Math.min(CHART_WIDTH, ((markerValue - firstEdge) / (lastEdge - firstEdge)) * CHART_WIDTH));
+      marker.setAttribute('x1', String(x));
+      marker.setAttribute('x2', String(x));
+      marker.setAttribute('y1', '0');
+      marker.setAttribute('y2', String(CHART_HEIGHT));
+      marker.style.setProperty('--selection-color', color);
+      const markerTitle = svgElement('title');
+      markerTitle.textContent = `${region?.acronym ?? distribution.regionId} ${statistic}: ${formatRegionalValue(markerValue, statistic, unit)}`;
+      marker.append(markerTitle);
+      svg.append(marker);
+    }
+  });
+
   const bins = html('div', 'distribution-chart__bins');
   histogram.globalCounts.forEach((count, bin) => {
     const cell = html('div', 'distribution-chart__bin');
-    cell.title = `${histogram.edges[bin] ?? '?'}–${histogram.edges[bin + 1] ?? '?'}: global ${count}, selected ${selectedCounts[bin] ?? 0}`;
-    const globalBar = html('span', 'distribution-chart__global');
-    globalBar.style.setProperty('--hist-height', `${(count / maxCount) * 100}%`);
-    const selectedBar = html('span', 'distribution-chart__selected');
-    selectedBar.style.setProperty('--hist-height', `${((selectedCounts[bin] ?? 0) / maxCount) * 100}%`);
-    cell.append(globalBar, selectedBar);
+    const globalPercent = (global.probabilities[bin] ?? 0) * 100;
+    const selectedText = selectedDistributions.map((distribution) => {
+      const region = regionById.get(distribution.regionId);
+      return `${region?.acronym ?? distribution.regionId} ${((distribution.probabilities[bin] ?? 0) * 100).toFixed(1)}% (${distribution.counts[bin] ?? 0})`;
+    }).join('; ');
+    cell.title = `${histogram.edges[bin] ?? '?'}–${histogram.edges[bin + 1] ?? '?'}: global ${globalPercent.toFixed(1)}% (${count})${selectedText ? `; ${selectedText}` : ''}`;
     bins.append(cell);
   });
-  chart.append(meta, bins);
+  plot.append(svg, bins);
+
+  const legend = html('div', 'distribution-chart__legend');
+  const globalLegend = html('span', 'distribution-chart__legend-item');
+  globalLegend.dataset.series = 'global';
+  globalLegend.textContent = `Global · n=${global.total.toLocaleString('en-US')}`;
+  legend.append(globalLegend);
+  selectedDistributions.forEach((distribution, selectionIndex) => {
+    const item = html('span', 'distribution-chart__legend-item');
+    item.dataset.regionId = distribution.regionId;
+    item.style.setProperty('--selection-color', selectionColor(selectionIndex));
+    item.textContent = `${regionById.get(distribution.regionId)?.acronym ?? distribution.regionId} · n=${distribution.total.toLocaleString('en-US')}`;
+    legend.append(item);
+  });
+  chart.append(meta, plot, legend);
   target.replaceChildren(chart);
 }
 

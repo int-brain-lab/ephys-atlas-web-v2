@@ -1,6 +1,12 @@
 import type { RegionMetadata, RegionalFeaturePayload } from '../../data/contracts.js';
 import type { StatisticId } from '../../domain/types.js';
 
+const SELECTION_COLORS = ['#55a7f7', '#ef6f61', '#73c991', '#c38cf5', '#f2b84b', '#4dc6c6', '#f08cc2', '#a5b95c'] as const;
+
+export function selectionColor(index: number): string {
+  return SELECTION_COLORS[index % SELECTION_COLORS.length] ?? SELECTION_COLORS[0];
+}
+
 export function regionalStatisticValues(
   feature: RegionalFeaturePayload,
   statistic: StatisticId,
