@@ -447,7 +447,6 @@ function renderComparisonTable(
     ['mean', 'Mean'],
     ['median', 'Median'],
     ['std', 'Std'],
-    ['iqr', 'Q25–Q75'],
     ['range', 'Min–Max'],
   ] as const;
   for (const [key, label] of columns) {
@@ -486,7 +485,6 @@ function renderComparisonTable(
     appendStatisticCell(row, value('mean'), 'mean', 'mean', null, statistic === 'mean');
     appendStatisticCell(row, value('median'), 'median', 'median', null, statistic === 'median');
     appendStatisticCell(row, value('std'), 'std', 'mean', null, false);
-    appendRangeCell(row, value('q25'), value('q75'), null, false);
     appendRangeCell(row, value('min'), value('max'), null, statistic === 'min' || statistic === 'max');
     body.append(row);
   });
@@ -510,7 +508,6 @@ function renderComparisonTable(
     appendStatisticCell(row, feature.global.mean, 'mean', 'mean', null, statistic === 'mean');
     appendStatisticCell(row, feature.global.median, 'median', 'median', null, statistic === 'median');
     appendStatisticCell(row, feature.global.std, 'std', 'mean', null, false);
-    appendRangeCell(row, feature.global.q25, feature.global.q75, null, false);
     appendRangeCell(row, feature.global.min, feature.global.max, null, statistic === 'min' || statistic === 'max');
     body.append(row);
   }
