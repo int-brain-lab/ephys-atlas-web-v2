@@ -37,6 +37,13 @@ URL/shareable state includes dataset/release, feature, representation, coordinat
 
 Local-only preferences include drawer widths, whether a settings panel was left open, theme/density preferences, and similar non-scientific interface state.
 
+Browser history records changes of scientific context, not every shareable
+refinement. User-committed dataset/release, feature, representation, and
+parcellation changes create checkpoints. Coordinates, selected regions,
+ordering, statistics, and color controls refine the current checkpoint. Back
+and Forward restore the complete URL state; they are not a substitute for a
+general undo/redo system. See D029.
+
 ## UX-030 — Keyboard interaction
 
 Use semantic HTML and standard keyboard interaction first, augmented by a small discoverable shortcut set.

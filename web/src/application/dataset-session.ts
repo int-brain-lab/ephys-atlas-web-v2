@@ -97,7 +97,7 @@ export class DatasetSession {
         const first = manifest.features[0];
         if (!first) return;
         const representation: RepresentationKind = first.representations.regional ? 'regional' : 'volume';
-        this.store.dispatch({ type: 'feature/set', featureId: first.id, representation });
+        this.store.dispatch({ type: 'feature/set', featureId: first.id, representation, history: 'replace' });
       } else {
         await this.loadCurrentFeature();
       }

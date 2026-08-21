@@ -54,13 +54,18 @@ export class AtlasApp {
     this.urlController = new UrlStateController(this.store, window, defaultView);
     this.renderer = options.renderer ?? new NullSliceRenderer();
     this.shell = new AppShell(root, {
-      setDataset: (ref) => this.store.dispatch({ type: 'dataset/set', dataset: ref }),
+      setDataset: (ref) => this.store.dispatch({ type: 'dataset/set', dataset: ref, history: 'push' }),
       setFeature: (featureId, representation) => this.store.dispatch({
         type: 'feature/set',
         featureId,
+        history: 'push',
         ...(representation ? { representation } : {}),
       }),
-      setParcellation: (parcellation) => this.store.dispatch({ type: 'parcellation/set', parcellation }),
+      setParcellation: (parcellation) => this.store.dispatch({
+        type: 'parcellation/set',
+        parcellation,
+        history: 'push',
+      }),
       setStatistic: (statistic) => this.store.dispatch({ type: 'color/statistic', statistic }),
       setColorMode: (mode) => this.store.dispatch({ type: 'color/mode', mode }),
       setColormap: (colormap) => this.store.dispatch({ type: 'color/colormap', colormap }),
@@ -240,6 +245,7 @@ export class AtlasApp {
       this.store.dispatch({
         type: 'dataset/set',
         dataset: { datasetId: 'local', releaseId: manifest.dataset.release },
+        history: 'push',
       });
     } catch (error) {
       this.reportRuntimeError(error);

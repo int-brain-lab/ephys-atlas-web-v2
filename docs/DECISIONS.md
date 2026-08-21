@@ -245,3 +245,21 @@ brand typography when an approved local font is available; do not introduce a
 runtime font-CDN dependency.
 
 See `docs/frontend/BRAND_IDENTITY.md` for the asset identity and usage rules.
+
+## D029 — Browser history records scientific context checkpoints
+
+Keep the versioned URL as the authoritative shareable view state, but do not
+treat browser history as a general application undo stack. Explicit
+user-committed dataset/release, feature, representation, and parcellation
+changes create history entries. Cursor/slice navigation, region selection and
+ordering, and color/statistic refinements replace the current entry. Runtime
+loading state and local interface preferences do not write URL state.
+
+View actions carry explicit history intent so an asynchronous derived change,
+such as selecting the first valid feature after opening a dataset, can replace
+the user-created dataset checkpoint rather than adding a second entry. A
+context checkpoint first flushes pending debounced navigation into the prior
+entry. Startup normalization and v1/v2 migration replace the current entry;
+`popstate` hydrates the complete view without echoing another write. Back and
+Forward therefore traverse meaningful scientific contexts while every current
+URL remains reloadable and shareable.

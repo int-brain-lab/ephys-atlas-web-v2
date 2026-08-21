@@ -9,7 +9,7 @@ order remain `docs/INTEGRATION_STATUS.md` and `docs/IMPLEMENTATION_PLAN.md`.
 
 State uses an immutable `AppState` plus explicit `AppAction` values, a reducer, and direct store subscriptions. Shareable/view state is separated from runtime loading/error state.
 
-URL state is versioned (`v=3`) and human-readable. Common state is represented with named query parameters (`dataset`, `release`, `feature`, `repr`, `parcel`, `stat`, `cmap`, `range`, `scale`, `cursor`, `slices`, `selected`). URL updates use `history.replaceState`, and `popstate` is supported. Historical v1 10 µm and v2 25 µm slice links migrate through world coordinates.
+URL state is versioned (`v=3`) and human-readable. Common state is represented with named query parameters (`dataset`, `release`, `feature`, `repr`, `parcel`, `stat`, `cmap`, `range`, `scale`, `slices`, `selected`). The parser also accepts an explicit `cursor`; canonical output writes the equivalent native `slices` tuple, from which the snapped cursor is derived. User-committed dataset/release, feature, representation, and parcellation changes use `history.pushState`; navigation, selection, ordering, and color refinements use `history.replaceState`. `popstate` hydrates without echoing a write, and historical v1 10 µm and v2 25 µm slice links migrate through world coordinates before replacing the current URL with canonical v3 state. See D029.
 
 Data loading is behind `DatasetSource` and `DatasetRepository`. `HttpDatasetSource` handles published immutable releases. `LocalDatasetSource` persists imported directory contents in IndexedDB but exposes the same scientific resource graph. Both consume schema v0.1 rather than a frontend-specific provisional data format.
 

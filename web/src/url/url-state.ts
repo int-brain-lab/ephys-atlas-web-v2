@@ -187,14 +187,21 @@ export class UrlStateController {
   start(): void {
     const initial = parseViewState(this.win.location.search, this.defaults);
     this.store.dispatch({ type: 'view/hydrate', view: initial });
+    this.writeUrl(initial, 'replace');
 
     this.stopStore = this.store.subscribe((state, action) => {
       if (this.applyingPopState || !isViewAction(action)) return;
+      if (action.history === 'none') {
+        this.cancelScheduledWrite();
+        return;
+      }
       if (action.type === 'slice/set' || action.type === 'cursor/set') {
         this.scheduleUrlWrite(state.view);
       } else {
-        this.cancelScheduledWrite();
-        this.writeUrl(state.view);
+        const mode = action.history ?? 'replace';
+        if (mode === 'push') this.flushScheduledWrite();
+        else this.cancelScheduledWrite();
+        this.writeUrl(state.view, mode);
       }
     });
     this.win.addEventListener('popstate', this.onPopState);
@@ -226,7 +233,7 @@ export class UrlStateController {
   private flushScheduledWrite(): void {
     const view = this.pendingView;
     this.cancelScheduledWrite();
-    if (view) this.writeUrl(view);
+    if (view) this.writeUrl(view, 'replace');
   }
 
   private cancelScheduledWrite(): void {
@@ -235,9 +242,13 @@ export class UrlStateController {
     this.pendingView = null;
   }
 
-  private writeUrl(view: ViewState): void {
+  private writeUrl(view: ViewState, mode: 'push' | 'replace'): void {
     const query = serializeViewState(view, this.defaults);
     const url = `${this.win.location.pathname}${query ? `?${query}` : ''}${this.win.location.hash}`;
-    this.win.history.replaceState(null, '', url);
+    const current = `${this.win.location.pathname}${this.win.location.search}${this.win.location.hash}`;
+    if (url === current) return;
+    const state = { app: 'ibl-ephys-atlas', urlVersion: URL_VERSION };
+    if (mode === 'push') this.win.history.pushState(state, '', url);
+    else this.win.history.replaceState(state, '', url);
   }
 }
