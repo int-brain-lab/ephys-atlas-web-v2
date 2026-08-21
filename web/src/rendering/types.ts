@@ -1,28 +1,8 @@
-export const SLICE_AXES = ['coronal', 'sagittal', 'horizontal'] as const;
+import type { SliceAxis, SliceGuide, SliceIndices, ViewBox } from '../core/spatial.js';
+export { SLICE_AXES } from '../core/spatial.js';
+export type { GuideDimension, SliceAxis, SliceGuide, SliceIndices, ViewBox } from '../core/spatial.js';
 
-export type SliceAxis = (typeof SLICE_AXES)[number];
 export type MappingName = 'allen' | 'beryl' | 'cosmos';
-export type GuideDimension = 'x' | 'y';
-
-export interface ViewBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export interface SliceIndices {
-  coronal: number;
-  sagittal: number;
-  horizontal: number;
-}
-
-export interface SliceGuide {
-  sourceAxis: SliceAxis;
-  targetAxis: SliceAxis;
-  dimension: GuideDimension;
-  position: number;
-}
 
 export interface RegionalSliceFrame {
   axis: SliceAxis;
@@ -31,7 +11,6 @@ export interface RegionalSliceFrame {
   svgFragment: string;
   viewBox: ViewBox;
   guides: readonly SliceGuide[];
-  /** Numeric domain used by the concrete SVG asset (legacy assets use BrainRegions indices). */
   regionColors?: ReadonlyMap<number, string>;
   selectedRegionIds?: ReadonlySet<number>;
   highlightedRegionId?: number | null;
@@ -65,21 +44,16 @@ export interface AnatomySlice {
   sliceIndex: number;
   worldCoordinateUm: number;
   paths: readonly AnatomyRegionPath[];
-  /** Pre-serialized indexed-pack fragment, when supplied by anatomy-pack-v3. */
   svgFragment?: string;
   viewBox: ViewBox;
 }
 
-/** Transport-independent boundary between generated anatomy and its renderer. */
 export interface AnatomySliceSource {
   loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<AnatomySlice>;
-  worldFromSliceIndices(indices: SliceIndices): Promise<import('./coordinate-space.js').WorldCoordinateUm>;
-  guidesForWorld(axis: SliceAxis, world: import('./coordinate-space.js').WorldCoordinateUm): Promise<readonly SliceGuide[]>;
-  /** Opportunistically warm one immutable pack in the active navigation direction. */
+  worldFromSliceIndices(indices: SliceIndices): Promise<import('../core/spatial.js').WorldCoordinateUm>;
+  guidesForWorld(axis: SliceAxis, world: import('../core/spatial.js').WorldCoordinateUm): Promise<readonly SliceGuide[]>;
   prefetchNextPack?(axis: SliceAxis, index: number, direction: -1 | 1): void;
-  /** Optional sparse display inventory; values remain authoritative native slice indices. */
   getDisplaySliceIndices?(): Promise<Readonly<Record<SliceAxis, readonly number[]>> | null>;
-  /** Release transport resources such as persistent decoding workers. */
   dispose?(): void;
 }
 

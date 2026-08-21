@@ -1,12 +1,12 @@
 import type { AppAction } from './actions.js';
 import type { AppState } from './types.js';
-import { cursorStateToWorld, worldToCursorState } from '../rendering/coordinate-space.js';
+import { cursorStateToWorld, worldToCursorState } from '../core/spatial.js';
 import {
   maxRegionalSliceIndex,
   regionalIndexToCoordinateUm,
   regionalIndicesToWorld,
   worldToRegionalIndices,
-} from '../rendering/slice-calibration.js';
+} from '../core/slice-calibration.js';
 
 function normalizedSelection(regionIds: readonly string[]): readonly string[] {
   return [...new Set(regionIds.filter(Boolean))].sort();
