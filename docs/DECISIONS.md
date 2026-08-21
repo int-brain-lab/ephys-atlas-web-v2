@@ -201,3 +201,27 @@ UTF-8 SVG fragment to the main thread. Worker eviction is reported to the
 source so residency cannot become stale. The immutable v2 corpus remains the
 fallback and derivation authority; v3 changes display sampling and transport,
 not atlas geometry or scientific calibration.
+
+## D027 — Layered browser responsibilities and open dataset identity
+
+Organize browser dependencies inward around stable product concepts:
+
+- `core` contains transport-, DOM-, and renderer-independent primitives;
+- `domain` contains typed application state, actions, and reducers;
+- `application` owns asynchronous dataset/release/feature workflows and stale
+  work cancellation without depending on concrete UI or renderers;
+- `data` owns release contracts, validation, transport-neutral
+  materialization, caching, and resource adapters;
+- `rendering` and `ui` remain outer implementations composed by the
+  application root.
+
+Dataset identifiers are opaque published identifiers at runtime, not a closed
+frontend enum. The launch dataset list remains explicit product configuration,
+while catalogs and manifests drive available releases, features,
+representations, and parcellations.
+
+HTTP and local/IndexedDB sources share format-level materializers through a
+small resource-reader boundary. Transport adapters locate and read resources;
+they do not duplicate schema-v0.1 regional or volume semantics. Preserve these
+boundaries with focused dependency and cross-language contract tests rather
+than a dependency-injection framework or a second scientific schema.
