@@ -46,11 +46,13 @@ fully offline report, run `just bootstrap-anatomy` and `just anatomy-compare`.
 The methodology and scientific limits are documented in
 [`docs/rendering/ANATOMY_COMPARISON.md`](docs/rendering/ANATOMY_COMPARISON.md).
 
-The default viewer now serves the accepted immutable 25 µm left-hemisphere
-anatomy pack from the repository. Run `just test-anatomy` to exercise its
-contract, generator, integrity, and comparison gates. A clean reproducible
-rebuild is available through `just anatomy-pack`; existing output is never
-overwritten.
+The default viewer serves the immutable sparse 80 µm `anatomy-pack-v3`, derived
+byte-for-byte from the validated bilateral 10 µm `anatomy-pack-v2` parent.
+Scientific cursor, URL, affine, and guide state remain on the native bilateral
+10 µm grid. Run `just test-anatomy` to exercise the parent contract, generator,
+integrity, and comparison gates. Clean reproducible parent and sparse-display
+builds are available through `just anatomy-pack` and
+`just sampled-anatomy-pack`; existing output is never overwritten.
 
 ## Launch scope
 
