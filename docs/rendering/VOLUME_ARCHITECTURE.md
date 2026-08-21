@@ -16,7 +16,8 @@ The browser boundary is deliberately layered:
 - `scalarToRgba` applies the active scalar range/palette.
 - `CanvasVolumeSliceRenderer` paints prepared RGBA pixels only.
 
-This separation is intentional because the physical volume layout is still under cross-workstream review.
+This separation is intentional because schema v0.1 supports both physical
+layouts and Q5 still requires a benchmark-based production selection.
 
 ## Historical 2026_W12 benchmark dimensions and dtype
 
@@ -49,7 +50,11 @@ transport evidence, but new production work must repeat them against W26.
 
 This is the central launch issue. Small cubes reduce voxel overfetch but explode request count; large cubes reduce requests while loading tens of MiB for each cold slice.
 
-The current `work/data-schema` v0.1 draft uses one raw/gzip `path_template` per 3-D chunk and suggests ~64 voxels as a production starting point. The renderer benchmark does **not** support freezing that physical layout yet: the 64^3 candidate touches 157 chunk objects / 78.5 MiB summed across the three views before overlap, or 136 unique chunks / 68.0 MiB raw for their union.
+Schema v0.1 retains this `chunks3d` layout as the deterministic reference path,
+but also permits `orthogonal_slice_packs`. The renderer benchmark does **not**
+support selecting 64³ chunks for production: that candidate touches 157 chunk
+objects / 78.5 MiB summed across the three views before overlap, or 136 unique
+chunks / 68.0 MiB raw for their union.
 
 ## Simpler launch candidate: orientation-specific slice packs
 
@@ -68,14 +73,18 @@ An **8-slice pack** is the strongest launch candidate to benchmark on real data:
 
 This representation can use ordinary static gzip-compressed objects without range addressing because each requested pack is independently useful. It also keeps the browser implementation trivial.
 
-### Cross-workstream request to `work/data-schema`
+### Resolved schema boundary and remaining benchmark
 
-Do not freeze v0.1 as only one independently fetched 3-D chunk URL. Benchmark at least these two real-data candidates:
+Schema v0.1 now makes `layout` explicit and implements both candidate adapters.
+The remaining work is to benchmark at least these two real-data candidates:
 
 1. existing 32^3/64^3 cube chunks, including real browser request fan-out and three-plane startup transfer;
 2. orientation-specific packs, especially depth 4 and 8, including total stored bytes and gzip ratios.
 
-A compatible schema direction is to make physical `layout` explicit and allow either `chunks3d` or `orthogonal_slice_packs`, while keeping scientific grid/dtype/affine metadata common. Another acceptable direction is an indexed shard that empirically achieves comparable request and byte budgets. The renderer does not require a specific container.
+Scientific grid/dtype/affine metadata is common to both layouts. A future
+indexed shard remains acceptable if it empirically achieves comparable request
+and byte budgets, but would require a coherent schema/producer/consumer change.
+The renderer does not require a specific container.
 
 If 3-D chunks remain, the physical format needs a way to coalesce many logical chunks without 100+ independent round trips. Do not rely on whole-object HTTP `Content-Encoding` alone for byte-addressed shards; independently addressed payloads must remain independently decodable.
 

@@ -33,7 +33,10 @@ Shared contracts are changed once on `main`, with affected producers and consume
 
 The schema-v0.1 regional golden path is implemented end-to-end:
 
-regional feature -> typed binary artifacts -> published/local browser source -> region metadata/statistics/histograms -> linked curated SVG slices -> feature coloring -> list/SVG selection -> URL state -> selected/global comparison.
+regional feature -> typed binary artifacts -> published/local browser source ->
+region metadata/statistics/histograms -> linked sparse indexed-SVG anatomy ->
+feature coloring -> hierarchy/value-ranked list and SVG selection -> URL state ->
+selected/global comparison and CSV export.
 
 The fixture is synthetic; production channel science remains blocked on the explicit questions listed in `docs/OPEN_QUESTIONS.md`.
 
@@ -41,7 +44,10 @@ The fixture is synthetic; production channel science remains blocked on the expl
 
 The schema-v0.1 golden volume path is implemented through the shared renderer boundary:
 
-volume descriptor -> transport resource callback -> `chunks3d` adapter -> axis/coordinate mapping from declared scientific metadata -> bounded chunk cache -> orthogonal slice extraction -> Canvas rendering.
+volume descriptor -> transport resource callback -> `chunks3d` or
+`orthogonal_slice_packs` adapter -> axis/coordinate mapping from declared
+scientific metadata -> bounded decoded cache -> orthogonal slice extraction ->
+Canvas rendering.
 
 This proves the browser contract/reference implementation. It does not freeze production volume transport or establish the unresolved authoritative scientific affine.
 

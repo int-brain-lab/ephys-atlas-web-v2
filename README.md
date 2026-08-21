@@ -15,7 +15,9 @@ Before making changes, read:
 5. [`docs/AGENTIC_DEVELOPMENT.md`](docs/AGENTIC_DEVELOPMENT.md) — local autonomous coding workflow;
 6. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/DECISIONS.md`](docs/DECISIONS.md), and [`docs/INTEGRATION_STATUS.md`](docs/INTEGRATION_STATUS.md) for accepted architecture and current state.
 
-For the one-time transition from this project bootstrap to local Codex, see [`docs/CODEX_HANDOFF.md`](docs/CODEX_HANDOFF.md).
+For fresh-checkout and local Codex setup, see
+[`docs/CODEX_HANDOFF.md`](docs/CODEX_HANDOFF.md). It is an operating runbook,
+not a second product-priority list.
 
 Historical/focused documents under `docs/data/`, `docs/frontend/`, `docs/rendering/`, `docs/publishing/`, and `docs/ux/` remain supporting evidence but do not override the active launch spec or decision log.
 
@@ -51,8 +53,9 @@ byte-for-byte from the validated bilateral 10 µm `anatomy-pack-v2` parent.
 Scientific cursor, URL, affine, and guide state remain on the native bilateral
 10 µm grid. Run `just test-anatomy` to exercise the parent contract, generator,
 integrity, and comparison gates. Clean reproducible parent and sparse-display
-builds are available through `just anatomy-pack` and
-`just sampled-anatomy-pack`; existing output is never overwritten.
+builds are available through `just anatomy-pack-v2` and
+`just sampled-anatomy-pack`; existing output is never overwritten. The
+`just anatomy-pack` recipe retains the historical 25 µm v1 generator.
 
 ## Launch scope
 

@@ -32,4 +32,5 @@ public/
       _publication.json
 ```
 
-`_publication.json` is publishing metadata only; the scientific contract remains `manifest.json` and the schema owned by `work/data-schema`.
+`_publication.json` is publishing metadata only; the scientific contract remains
+`manifest.json` and schema v0.1 under `schema/v0.1/`.

@@ -118,7 +118,8 @@ Status: **DECISION**.
 
 Resolution needed: final domain, object-storage/CDN location, cache policy, CORS configuration, and whether the publishing service writes directly to that storage or to an intermediate filesystem/object-sync layer.
 
-Blocks: production-origin QA, final curated SVG relocation, deployment documentation.
+Blocks: production-origin QA, generated v3 anatomy-pack deployment, and
+deployment documentation.
 
 ## Q9 — Paper-facing release aliases/defaults
 

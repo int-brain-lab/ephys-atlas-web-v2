@@ -58,22 +58,26 @@ Current findings are sufficient to reject direct browser use of the present NPZ:
 
 Thus Range support alone does not make this NPZ incrementally browser-readable.
 
-### Web representation for the current product
+### Web representations for the current product
 
-v0.1 derives one independently addressable 3-D array per feature. Each array is
-split into C-order chunks of raw little-endian values, optionally gzip-compressed,
-with explicit dtype and geometry metadata. The transform is deterministic and
-its manifest provenance points back to the exact canonical NPZ vintage and
-checksum.
+Schema v0.1 separates explicit dtype/geometry metadata from physical `layout`
+and permits two deterministic per-feature transports:
 
-Chunk shape is deliberately release metadata, not a schema constant. Cubic
-chunks are a reasonable 3-D starting point but may overfetch for 2-D slices; the
-rendering workstream should benchmark realistic feature switching and linked
-slice navigation before the production shape/codec is frozen.
+- `chunks3d`: C-order chunks of raw little-endian values, optionally
+  gzip-compressed, with release-declared chunk shape;
+- `orthogonal_slice_packs`: independently addressable neighboring slices for
+  each of the three projections, with release-declared depth and codec.
+
+Both transformations record provenance back to the exact canonical NPZ vintage
+and checksum. `chunks3d` remains the deterministic golden/reference layout; it
+is not automatically the production selection. Existing real W12 measurements
+and the implemented browser adapter favor depth-four slice packs, but Q5 stays
+open until representative W26 features and the final HTTP/CDN origin are
+measured.
 
 Zarr remains a possible interoperability option, but it is not required for the
-launch reader. The small v0.1 contract needs only static URLs, explicit metadata,
-typed arrays, and a documented codec.
+launch reader. The small v0.1 contract needs only static URLs, explicit
+metadata, typed arrays, and a documented codec/layout.
 
 ### Re-evaluation gate
 

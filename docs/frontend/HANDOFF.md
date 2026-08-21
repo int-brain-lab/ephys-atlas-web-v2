@@ -1,4 +1,7 @@
-# Frontend handoff
+# Frontend status and handoff
+
+Status: current supporting summary. The authoritative product state and work
+order remain `docs/INTEGRATION_STATUS.md` and `docs/IMPLEMENTATION_PLAN.md`.
 
 ## Implemented architecture
 
@@ -16,7 +19,11 @@ The current storage layers, launch cache-header policy, local dataset management
 UX, quota/eviction requirements, and ordered follow-up work are specified in
 `docs/frontend/BROWSER_STORAGE_AND_CACHE.md`.
 
-Rendering remains behind the frontend-owned `SliceRenderer` / `SliceRenderModel` facade. `LegacyCuratedSvgSliceRenderer` is the application adapter for curated anatomy and delegates actual SVG region rendering/interactions to the lower-level `SvgSliceRenderer` integrated from the rendering workstream.
+Rendering remains behind the frontend-owned `SliceRenderer` /
+`SliceRenderModel` facade. `GeneratedAnatomySliceRenderer` is the active
+regional adapter and loads sparse indexed-SVG v3 fragments derived from the
+validated bilateral 10 µm v2 parent. `LegacyCuratedSvgSliceRenderer` remains a
+code-level historical fallback and is not fetched by default.
 
 Allen ontology identity is a separate pinned browser asset. The shared renderer
 presentation supports URL-persisted `Feature values` and `Allen anatomy` fill
@@ -58,6 +65,9 @@ Phase 3 was visually approved on 2026-08-19.
 
 - the real pinned Allen hierarchy covers nesting, long names, ontology colors, value bars, selection, missing values, hover, and keyboard focus;
 - local search, keyboard navigation, animated branch disclosure, and expand/collapse-all controls are implemented;
+- a URL-persisted order control cycles anatomy hierarchy, descending feature
+  value, and ascending feature value; ranked modes are flat and keep missing
+  values last;
 - one selection and hover state drives both the region tree and all anatomical projections;
 - narrow/tablet/phone reuse the same component in the region drawer.
 
@@ -65,15 +75,20 @@ Schema-v0.1 regional values come from the active dataset release. The pinned ont
 
 ## UX Phase 4 — anatomical view frames
 
-Phase 4's layout remains implemented, while D024 defines the active scientific
-geometry. The viewer uses the committed exact bilateral 10 µm pack with native
-ranges `1320/1140/800`, direct signed atlas IDs, and manifest affines for exact
-cross-projection synchronization.
+Phase 4's layout remains implemented. D024 defines the scientific geometry and
+D026 defines the active display transport. The viewer uses the committed sparse
+80 µm v3 inventory derived from the exact bilateral 10 µm v2 parent, whose
+native ranges `1320/1140/800`, signed atlas IDs, and manifest affines remain the
+authority for state and cross-projection synchronization.
 
-- three anatomical frames expose calibrated AP/ML/DV coordinates, full-resolution slice-index sliders, renderer status, and maximize/restore affordances;
+- three anatomical frames expose calibrated AP/ML/DV coordinates,
+  display-plane ordinal sliders mapped back to native indices, renderer status,
+  and maximize/restore affordances;
 - one ML/AP/DV cursor and the registered manifest affines drive slices and guides without visual calibration formulas;
 - feature mode colors folded feature values on the left and official Allen ontology colors on the right; anatomy mode colors both hemispheres by ontology identity;
-- pack bytes are lazy, integrity checked, explicitly decompressed, prefetched directionally, and held in bounded caches;
+- v3 pack bytes are lazy, integrity checked, explicitly decompressed in a
+  persistent worker, prefetched directionally, and held in bounded worker/DOM
+  caches;
 - view frames retain the previous valid anatomy while a replacement loads and report failures explicitly;
 - the generated and legacy providers remain modular below the shared `SliceRenderer`; legacy assets are code-level rollback inputs, not runtime dependencies.
 
@@ -113,7 +128,8 @@ The previous frontend provisional schema has been removed from the active path. 
 
 ## Remaining decisions / external inputs
 
-- exact scientific feature/QC/unit choices for real channel and cluster releases;
+- final channel paper vintage, plus the authoritative cluster source snapshot
+  and launch feature catalog;
 - authoritative encoding-volume index-to-world affine/axis mapping and any
   missing-value semantics beyond the documented outside-brain zero;
 - production public object-storage/domain arrangement;

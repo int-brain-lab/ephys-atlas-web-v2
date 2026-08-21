@@ -40,7 +40,11 @@ python -m ibl_ephys_atlas_publish serve \
   --validator-command 'ephys-atlas-data validate {release_dir}'
 ```
 
-For production, the example systemd unit uses one Gunicorn worker with threads behind nginx; the built-in `serve` command is for smoke testing/simple internal deployment.
+The example systemd unit conservatively uses one Gunicorn worker with threads
+behind nginx. Filesystem mutations are also serialized across WSGI processes by
+a process-wide file lock, so deployments may increase worker count after
+measuring their workload; public static reads remain outside the WSGI service.
+The built-in `serve` command is for smoke testing/simple internal deployment.
 
 Publish a directory already produced by the data builder:
 

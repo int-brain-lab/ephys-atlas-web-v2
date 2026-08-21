@@ -19,7 +19,8 @@ Use `docs/DATA_SOURCES.md`, `schema/v0.1/README.md`, and the focused documents u
 ## Branch and commit model
 
 - Work on `main`. Do not create persistent `work/*`, `agent/*`, or other parallel product branches unless the repository owner explicitly asks for an isolated experiment.
-- Pull/rebase from the current remote `main` before starting a new unit of work.
+- Fetch the current remote `main` before starting a new unit of work. Fast-forward
+  or rebase only from a clean worktree, and never overwrite unrelated local work.
 - Keep commits small enough to review and revert, but complete enough to leave the repository coherent.
 - Never intentionally leave a red commit as the handoff point. Run the relevant targeted tests while developing and `just check` before declaring a task complete.
 - Do not create pull requests for routine work unless explicitly requested. The current project workflow integrates directly on `main`.
@@ -47,9 +48,16 @@ Scientific provenance is part of the product contract, not optional metadata.
 ## Rendering invariants
 
 - `SliceRenderer` is the application rendering boundary. Keep SVG, Canvas, volume, and future 3-D implementation details below it.
-- The immutable generated anatomy pack is the canonical regional display geometry. Its declared affines, not display tuning, synchronize the three projections.
+- The immutable bilateral 10 µm `anatomy-pack-v2` is the canonical regional
+  geometry and affine authority. The active sparse `anatomy-pack-v3` copies
+  display planes from that parent without changing scientific navigation.
 - Navigation and URL v3 use the native bilateral 10 µm Allen grid and one ML/AP/DV cursor. Keep v1 10 µm and v2 25 µm URL migration covered.
-- Do not hand-edit generated anatomy manifests or packs. Regeneration requires the pinned source annotation/LUT, a clean generator commit, and every topology/coverage/error gate in `docs/rendering/ANATOMY_PACK_CONTRACT.md`.
+- Do not hand-edit generated anatomy manifests or packs. Parent regeneration
+  requires the pinned source annotation/LUT, a clean generator commit, and the
+  topology/coverage/error gates in
+  `docs/rendering/ANATOMY_PACK_CONTRACT.md` and
+  `docs/rendering/BILATERAL_ANATOMY_PACKS.md`; sparse display derivation must
+  satisfy `docs/rendering/ANATOMY_PACK_V3_CONTRACT.md`.
 - The five curated v1 SVG bundles remain pinned historical fallback assets only. Their identity and calibration are documented in `docs/frontend/LEGACY_CURATED_ASSETS.md`.
 - Volume storage layout (`chunks3d` versus `orthogonal_slice_packs`) is independent of scientific grid geometry. Choose the production layout from measured real-data browser benchmarks, not convenience.
 

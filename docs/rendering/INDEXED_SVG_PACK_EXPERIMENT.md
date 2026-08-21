@@ -1,7 +1,8 @@
 # Indexed SVG pack experiment
 
-Status: codec accepted by D026; production v3 integration and measurements are
-in progress. The normative sampling, manifest, and runtime contract is
+Status: experiment completed and accepted by D026; v3 is the active local
+runtime. Production-origin release QA remains. The normative sampling,
+manifest, and runtime contract is
 `docs/rendering/ANATOMY_PACK_V3_CONTRACT.md`.
 
 ## Goal
@@ -60,7 +61,7 @@ The experiment is therefore approximately transfer-neutral for these packs.
 Its expected benefit is eliminating JSON parsing, structured path allocation,
 and SVG reserialization—not reducing compressed bytes.
 
-## Adoption gate
+## Historical adoption gate
 
 Before replacing the active JSON pack transport:
 

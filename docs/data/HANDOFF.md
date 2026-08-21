@@ -1,116 +1,92 @@
-# Data / schema / reproducibility handoff
+# Data, schema, and reproducibility status
 
-## Implemented decisions
+Status: current supporting summary. Use `docs/IMPLEMENTATION_PLAN.md` for work
+order, `docs/OPEN_QUESTIONS.md` for choices an agent must not invent, and
+`docs/INTEGRATION_STATUS.md` for the integrated product state.
 
-- D010-D012 are incorporated: `ea_active` S3 channel/volume products are
-  canonical scientific inputs; direct object-store transport is preferred only
-  when measured browser requirements are met; manifests are dynamic feature
-  catalogs; development may track `latest` while paper releases pin exact
-  vintages.
-- Schema v0.1 uses a small JSON `manifest.json` entry point and one feature JSON
-  per feature. A feature may independently expose `regional` and/or `volume`.
-  The `features` array is a catalog, not an enum; no Ephys Atlas feature list is
-  hard-coded in the schema.
-- Regional values are dense typed binary arrays aligned to one dataset-level
-  region-id index per parcellation. Statistics and histograms are separate
-  browser-readable typed arrays plus small JSON metadata.
-- The historical `2026_W12` 25 um NPZ was evaluated as a browser transport and
-  did not meet the launch access/performance requirements. v0.1 therefore derives
-  independent 3-D per-feature chunks with explicit dtype and geometry, while
-  retaining the pinned/checksummed NPZ as scientific authority and download.
-  This is a measured fallback under D010, not a blanket rule against direct S3.
-- Missing/non-finite observations do not enter descriptive statistics or
-  histograms; missing counts are explicit. No inferential tests are modeled.
-- Immutable release ids live inside release manifests. Mutable aliases such as
-  `latest` live outside immutable release directories and use `alias.schema.json`.
-- Pulled scientific inputs get a `source.json` file list with SHA-256 checksums
-  and an explicit canonical S3 bucket/key or prefix. Volume `latest` is resolved
-  from the encoding-volume prefix itself rather than from the channel-feature
-  catalog. Cluster aggregates lack an upstream vintage label, so their source
-  snapshot id is content-derived rather than pretending `current` is immutable.
-- Whole-release downloads are deterministic ZIPs with their digest stored in an
-  external publication/index layer; embedding the archive digest in its own
-  manifest would be self-referential.
+## Shared contract
 
-## HTTP / volume validation
+Schema v0.1 is the implemented contract for builders, browser HTTP reads,
+browser-local IndexedDB imports, and publishing validation. It provides:
 
-`docs/data/VOLUME_HTTP_VALIDATION.md` records the 2026-08-19 empirical probe:
+- immutable dataset manifests and dynamic feature catalogs;
+- typed-binary regional values, descriptive statistics, histograms, and shared
+  parcellation region indices;
+- explicit volume geometry independent of physical layout;
+- `chunks3d` and `orthogonal_slice_packs` volume layouts;
+- provenance, artifact byte-size/SHA-256 identity, aliases, and deterministic
+  whole-release ZIP packaging.
 
-These measurements describe the older `2026_W12` 25 um object. The current
-`2026_W26` 50 um implementation input and official access recipe are recorded
-in `docs/DATA_SOURCES.md` and require fresh measurements.
+The Python validator and independent TypeScript validator share valid/invalid
+manifest fixtures. `fixtures/golden-v0.3` is the deterministic synthetic
+cross-implementation fixture; the browser-served copy must remain semantically
+identical and must never be labeled scientific.
 
-- current public encoding-volume prefix: empty;
-- known public IBL object: HTTP Range works (`206` with exact byte range);
-- current public bucket: no matching browser CORS headers for atlas/localhost;
-- current private encoding-volume URL: unsigned HEAD/Range/OPTIONS return 403;
-- pulled `2026_W12` object: 1,636,734,203 bytes with SHA-256
-  `61987870fb1d0e3574f63c4b75f119b65778ef8a4521e592317b3aab9dcbe052`;
-- measured main member: `(456, 528, 320, 41)` C-order float16, DEFLATE-compressed
-  from 6,317,752,448 to 1,636,732,282 bytes; one raw feature is about
-  147 MiB but features are interleaved on the last axis.
+## Channel releases
 
-The future public bucket/CDN must be re-tested when the encoding volumes are
-published. A future directly addressable canonical layout may supersede the
-chunk transform.
+The deterministic channel builder is implemented with explicit source project,
+immutable vintage, creation time, paper-snapshot flag, population, and source
+tool/builder commits. It discovers source features dynamically, publishes raw
+and denoised variants separately, uses the approved `inside` population,
+excludes non-finite observations per feature, preserves source values, folds
+bilateral IDs to the left representation, and builds Allen/Beryl/Cosmos
+statistics and histograms.
 
-## Files/code produced
+The pinned `ea_active/2026_W32` development snapshot has been built and
+validated across all 70 discovered features and all three parcellations. It is
+not the paper release. Q2 still blocks the final paper vintage and aliases. See
+`docs/data/CHANNELS_RECIPE.md` and `docs/data/DEVELOPMENT_RELEASE.md`.
 
-- `schema/v0.1/*.schema.json` — dataset, feature, regional, statistics, volume,
-  provenance, artifact, alias, and common physical-array contracts.
-- `builder/ephys_atlas_builder/` — deterministic JSON/binary writers, descriptive
-  statistics, chunked volume writer, source pull/snapshot adapters,
-  schema+payload validator, deterministic packager, CLI, and golden generator.
-- `fixtures/golden-v0.3/` — deterministic synthetic release with one regional +
-  volume feature and download artifact.
-- `tests/` — schema/fixture, determinism, chunk decoding, tamper detection,
-  source-snapshot identity, alias, and volume-vintage-resolution tests.
-- `docs/data/PROVENANCE.md` — source/reproduction mapping and explicit scientific
-  unknowns.
-- `docs/data/STORAGE_FORMATS.md` — physical-format rationale under D010.
-- `docs/data/VOLUME_HTTP_VALIDATION.md` — measured S3/HTTP/browser-access evidence.
-- `Justfile` — provisional `data-pull`, `data-build`, `data-validate`,
-  `data-package`, `golden`, and `test` workflow.
+## Cluster releases
 
-## Unresolved scientific/data questions
+The cluster builder accepts an explicit content-addressed project snapshot and
+nonempty scalar feature catalog. It aggregates every finite row from
+`clusters.table.pqt` with equal cluster weight after left folding, without a
+good-unit filter or insertion balancing. Q6 still blocks the authoritative
+project/source snapshot and launch feature catalog. See
+`docs/data/CLUSTERS_RECIPE.md`.
 
-1. `ephys_atlas_channels`: freeze the exact paper vintage/PID/snippet population
-   under Q2 and select the publication origin/alias. Both source variants,
-   `inside`, no additional QC/outlier replacement, left folding, and regional
-   mean are resolved.
-2. `ephys_atlas_clusters`: select the exact project/source snapshot and scalar
-   launch feature catalog. The all-cluster population, no good-unit filter,
-   equal per-cluster regional weighting, left folding, and mean are resolved.
-3. `ephys_atlas_volumes`: use the documented `2026_W26` 50 um object and access
-   recipe in `docs/DATA_SOURCES.md`; identify and pin its producer/model/export
-   recipe; record scientific axis directions/origin/affine rather than inferring
-   them from shape; confirm whether missing values have semantics distinct from
-   the documented outside-brain zero.
-4. `brainwide_map`: define the v2 launch product precisely. Current evidence
-   distinguishes the paper selection freeze and aggregate tables from legacy
-   website regional analysis files; treating them as one dataset would be a
-   semantic guess.
-5. Select the paper-facing immutable release ids/aliases after final source
-   vintages are frozen, and revalidate the production public HTTP URL/CORS
-   configuration at that time.
+## Volume releases
 
-## Proposed shared-architecture changes requiring Integration approval
+The canonical implementation input is the private immutable
+`ea_active/2026_W26/brainwide_ephys_atlas_50um.npz` object. Its exact URI and
+official `ibleatools` access recipe are recorded in `docs/DATA_SOURCES.md`.
+The older `2026_W12` 25 µm object remains historical transport evidence.
 
-- Adopt the v0.1 typed-binary regional contract and the derived chunked-volume
-  contract for the **current** encoding-volume product. This implements D010:
-  canonical S3 remains authoritative, while the measured NPZ is not used as the
-  browser wire format.
-- Keep mutable alias resolution (`latest`, paper default) outside immutable
-  release manifests/directories; paper aliases resolve only to pinned snapshots.
-- Require explicit volume geometry in every web release; rendering must not infer
-  scientific orientation from array shape or v1 display calibration.
-- Treat the documented `2026_W26` 50 um NPZ as the current canonical input until
-  its upstream generation script/model export is identified; retain the older
-  25 um object's measurements as historical evidence.
-- Permit a future direct-object volume representation if a later public source
-  becomes independently feature/slice-addressable and passes the same Range,
-  CORS, decode and memory checks.
+The builder/schema/browser machinery supports both physical layouts, but no
+production scientific volume release may be built until Q4 supplies the
+authoritative axis mapping, affine/origin/directions, and any missing-value
+semantics beyond documented outside-brain zero. Q5 separately requires
+representative W26 and final-origin measurements before selecting the launch
+transport. Current evidence favors depth-four orthogonal slice packs without
+yet resolving that decision.
 
-These are provisional where they cross another workstream. Schema fields can be
-extended compatibly before 0.1 is frozen; scientific semantics above must not be
-filled in by implementation convenience.
+## Source and provenance rules
+
+- Pulled inputs receive a `source.json` inventory with paths, byte sizes,
+  SHA-256 hashes, and canonical object identity.
+- Scientific choices are explicit builder inputs rather than inherited library
+  defaults.
+- Release provenance records source project/vintage, transformation mode,
+  population/QC recipe, builder/tool versions, command, and hashes wherever the
+  schema permits.
+- Immutable release contents never contain mutable aliases. Whole-release ZIP
+  digests live in the external publication/index layer to avoid self-reference.
+- Publishing consumes already-built releases and never performs scientific
+  transformation.
+
+## Verification and next work
+
+- `just test-python` covers builders, schemas, contract parity, packaging, and
+  publishing.
+- `just data-validate <path>` validates a built release.
+- `just dev-real` and the separate real-release Playwright configuration cover
+  the pinned channel development release.
+- Private source pulls and real benchmarks are explicit integration work and
+  are not required by a clean-checkout `just check`.
+
+The next data work is the earliest unblocked action in the implementation plan:
+publish the W32 channel development release to an authorized non-production
+origin, repeat W26 volume inspection/benchmarks without inventing Q4/Q5, then
+consume authoritative answers for the paper channel, cluster, and
+`brainwide_map` releases.

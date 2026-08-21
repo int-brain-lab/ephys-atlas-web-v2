@@ -154,12 +154,22 @@ Remote publishing is desirable but may not block viewer launch if static release
 
 Acceptance criteria:
 
-- the production `anatomy-pack-v1` is derived from pinned Allen annotation and LUT bytes by a clean pinned generator;
-- every compressed pack is immutable, byte-sized, SHA-256 verified, and explicitly decompressed by the browser;
-- topology, source-voxel coverage, signed ID, boundary-error, IoU, and synchronization gates pass for all 1,078 slices;
-- the three projection affines define native bilateral 10 µm navigation and guide placement without hand-tuned display formulas;
-- production delivery serves `.json.gz` pack bytes without HTTP `Content-Encoding`, preserving compressed-byte verification;
-- the legacy host and curated bundles are not runtime dependencies; their pinned inventory remains available for historical fallback.
+- the production bilateral 10 µm `anatomy-pack-v2` parent is derived from
+  pinned Allen annotation and LUT bytes by a clean pinned generator;
+- the active sparse `anatomy-pack-v3` display corpus is deterministically
+  derived from that validated parent and records the parent manifest identity;
+- every compressed parent and display pack is immutable, byte-sized, SHA-256
+  verified, and explicitly decompressed by the browser;
+- topology, source-voxel coverage, signed ID, boundary-error, IoU, and
+  synchronization gates pass for all 3,260 native parent slices; v3 copies its
+  407 selected SVG fragments byte-for-byte from that parent;
+- the parent projection affines define native bilateral 10 µm navigation and
+  guide placement without hand-tuned display formulas, while v3's 80 µm
+  inventory affects display-plane selection only;
+- production delivery serves parent `.json.gz` and active v3 `.isvg.gz` pack
+  bytes without HTTP `Content-Encoding`, preserving compressed-byte verification;
+- the legacy host and curated bundles are not runtime dependencies; their
+  pinned inventory and adapter remain available only as historical fallback.
 
 ## 12. Performance and reliability
 

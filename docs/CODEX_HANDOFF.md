@@ -1,6 +1,9 @@
 # Local Codex handoff
 
-This repository is ready to become the durable context for local Codex-based development once the handoff commit is green.
+This repository is the durable context for local Codex-based development.
+This file is the fresh-checkout/session runbook; current product priority and
+status live in `docs/IMPLEMENTATION_PLAN.md` and
+`docs/INTEGRATION_STATUS.md`.
 
 At handoff, GitHub has a single branch: `main`.
 
@@ -37,9 +40,12 @@ The root `AGENTS.md` already defines the required reading order. The essential d
 - `docs/LAUNCH_SPEC.md`
 - `docs/IMPLEMENTATION_PLAN.md`
 - `docs/OPEN_QUESTIONS.md`
-- `docs/AGENTIC_DEVELOPMENT.md`
+- `docs/ARCHITECTURE.md`
 - `docs/DECISIONS.md`
 - `docs/INTEGRATION_STATUS.md`
+
+Then use `docs/AGENTIC_DEVELOPMENT.md` for the work loop. This mirrors the
+required sequence in `AGENTS.md` rather than defining a competing order.
 
 There should be no need to provide the old ChatGPT Project conversations to a fresh agent.
 

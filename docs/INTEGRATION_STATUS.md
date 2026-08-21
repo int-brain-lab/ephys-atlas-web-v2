@@ -19,6 +19,7 @@ HTTP and local datasets share the same regional materializer through a transport
 The regional UI keeps DOM concerns in its controller while region search/value/statistics derivation is pure/testable. Large dynamic tree interaction uses delegated events.
 The region browser defaults to the expandable anatomical hierarchy and offers
 URL-persisted ascending or descending value rankings as a flat selectable list.
+Its compact icon control cycles anatomy, descending value, then ascending value.
 Finite values rank globally, missing values remain last, and returning to
 anatomical order restores the prior expansion state.
 The feature color range is edited on a histogram-backed dual-handle colorbar.

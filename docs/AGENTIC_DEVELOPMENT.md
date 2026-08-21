@@ -17,8 +17,9 @@ The objective is not maximum code throughput. It is continuous, reviewable progr
 At the start of a local Codex session:
 
 1. inspect `git status` and do not overwrite unrelated local work;
-2. update from remote `main` without rewriting shared history;
-3. read `AGENTS.md`, `docs/IMPLEMENTATION_PLAN.md`, and `docs/OPEN_QUESTIONS.md`;
+2. fetch remote `main`, then fast-forward or rebase only when the worktree is
+   clean and doing so will not overwrite unrelated work;
+3. read the complete required sequence in `AGENTS.md` before changing code;
 4. run `just check` or establish why the existing baseline is red before making product changes;
 5. inspect the code/tests relevant to the selected task rather than coding from the specification alone.
 
@@ -91,7 +92,10 @@ Use Playwright for user-observable contracts:
 - volume rendering path;
 - failure/error states.
 
-Mock the very large curated SVG HTTP assets with inventory-correct bundles unless a test specifically validates the deployed bytes/origin.
+Use the committed generated anatomy manifests and focused route interception for
+ordinary browser tests. Run the dedicated anatomy integrity tests when a change
+touches pack contracts, derivation, or runtime loading; reserve full-corpus and
+production-origin checks for the tests that explicitly require them.
 
 Do not assert fragile presentation details when a semantic selector/state assertion is available.
 

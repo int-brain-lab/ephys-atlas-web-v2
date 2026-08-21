@@ -1,86 +1,62 @@
-# Publishing handoff
+# Publishing status and handoff
 
-## v1 findings
+Status: current supporting summary. Launch priority and deployment decisions
+remain in `docs/IMPLEMENTATION_PLAN.md` and `docs/OPEN_QUESTIONS.md`.
 
-V1 is a compact Flask/file-backed bucket API. Reads are public; bucket creation uses one global bearer key; each bucket stores a bearer token in `_bucket.json`; mutation/deletion uses that bucket token. `FeatureUploader` stores the global key and bucket tokens in `~/.ibl/custom_features.json` and combines scientific transformation with remote upload.
+## Implemented model
 
-Security/operational weaknesses worth fixing rather than carrying forward:
+The stdlib WSGI service and Python client publish already-built releases; they
+do not transform scientific data. The implementation provides:
 
-- one universal global secret gates all bucket creation and is difficult to rotate selectively;
-- bucket bearer tokens are stored in cleartext server metadata and client JSON;
-- token generation uses `random.getrandbits()`/UUID rather than the `secrets` module;
-- token parsing/comparison is brittle, token normalization lowercases secrets, and comparison is not constant-time;
-- no explicit revocation list, publisher identity label, audit log, or least-privilege creation capability;
-- no staging/commit transaction: feature mutation changes the public file directly;
-- volume bytes are base64-embedded into JSON, making large/resumable uploads inefficient;
-- read requests mutate `last_access_date`, so the read path is not truly static/cacheable;
-- backend, storage, auth, tests and dev TLS live in one Flask file; production lifecycle assumptions are implicit;
-- deletion is destructive and releases are mutable, which is unsuitable for cited scientific snapshots.
+- independently revocable capability credentials stored as salted PBKDF2
+  hashes, with an explicit dataset-creation capability;
+- private resumable staging with contiguous offsets;
+- declared artifact byte-size and SHA-256 verification;
+- an external schema-validator hook that fails closed and has a timeout;
+- immutable release publication by same-filesystem atomic rename;
+- mutable aliases and browser-compatible public catalog/index generation kept
+  outside immutable release directories;
+- dataset archive rather than routine destructive deletion;
+- independent default request limits of 32 MiB for JSON metadata and 16 MiB for
+  binary chunks, configurable in CLI, WSGI, systemd, and nginx;
+- a process-wide filesystem lock shared by WSGI mutations and stale-staging
+  maintenance, making mutation safety independent of thread or worker count.
 
-## v2 design
+Public reads are static files under `STORAGE/public/` and should be served by
+nginx or object storage/CDN without authentication. The publishing API handles
+mutations only. See `docs/publishing/API.md` and `publishing/README.md`.
 
-The implemented skeleton treats scientific releases as opaque prepared directories:
+## Deployment contract
 
-```text
-builder -> validate/build release -> publishing client -> private staging
-                                             |              |
-                                             |       size/SHA + schema validator
-                                             v              v
-                                      publishing API -> atomic rename
-                                                        -> public static tree
-```
+- Terminate TLS at nginx or equivalent; never send bearer credentials over
+  plaintext networks.
+- Keep credentials, private staging, and service configuration readable only
+  by the service account. Do not commit tokens or deployment secrets.
+- Configure the validator as
+  `python -m ephys_atlas_builder.cli validate {release_dir}` (or the installed
+  `ephys-atlas-data validate` equivalent).
+- Keep staging and public roots on the same filesystem when using atomic rename.
+- Back up public releases, catalog/index/alias control state, credential
+  registry, and operational audit data if the service is deployed.
+- Serve immutable releases with long-lived cache headers and mutable
+  catalog/index/alias objects with revalidation; verify the exact policy from
+  the selected production origin.
 
-Dataset releases are immutable. Dataset indexes and aliases are mutable control metadata. `latest` may move; paper-facing URLs should use an immutable release ID.
+An object-storage backend can later replace filesystem rename with a unique
+staging prefix plus conditional publication of the small mutable index object.
+That is a deployment adapter change, not a scientific contract change.
 
-Authentication remains capability-based. Multiple publisher credentials are issued independently. Server storage contains salted PBKDF2 hashes, not bearer tokens. Credentials can be revoked independently. A boolean capability controls dataset creation; existing dataset mutation is limited to the credential that created it. This deliberately avoids OAuth/accounts/identity management.
+## Remaining decisions
 
-## Implemented pieces
+Q8 still requires the public domain, storage/CDN arrangement, cache/CORS policy,
+and publishing destination. Q9 still requires the frozen paper aliases and
+release set. Remote publishing may be explicitly waived for launch if static
+release deployment is operationally sufficient, as allowed by the launch spec.
 
-`publishing/` contains a stdlib-only WSGI service, filesystem publication store, credential registry, Python client, CLI, tests, nginx/systemd examples, and API documentation.
+Possible follow-ups that are not current launch requirements include delegated
+multi-credential ownership for one dataset, a database/object-store control
+plane if single-host filesystem deployment becomes insufficient, and a legacy
+v1 import adapter that builds normal immutable v2 releases.
 
-The upload protocol supports contiguous chunk append and resume from reported offsets. Every artifact declares path, byte size and SHA-256 before upload. Publication fails closed on incomplete/corrupt artifacts. A configured external validator is run before publication.
-
-The data-schema branch currently provides `ephys-atlas-data validate <release_dir>`. Deployment should configure:
-
-```text
---validator-command 'ephys-atlas-data validate {release_dir}'
-```
-
-Thus publishing does not invent or duplicate the scientific schema.
-
-## Security assumptions
-
-- TLS terminates at nginx (or equivalent); bearer tokens must never travel over plaintext networks.
-- credentials file and private state are readable only by the service account; generated credential files are mode `0600` on POSIX.
-- public releases contain no secrets.
-- publisher tokens should normally be supplied from an environment variable or secret manager, not committed to source control.
-- single-host filesystem mode assumes one mutation worker. For multi-process/object-storage deployment, replace the in-process lock and atomic rename with a DB/object-store conditional commit mechanism.
-- rate limiting, request-size limits, logging and IP controls belong at the reverse proxy.
-
-## Deployment assumptions
-
-For the four-week launch, one project-owned Linux server is sufficient:
-
-- nginx serves `/data/` from `STORAGE/public/` with long cache headers for immutable `/releases/` paths and short/no-cache headers for catalog/index aliases;
-- nginx proxies `/api/` to the WSGI publishing process on localhost;
-- systemd runs Gunicorn with one worker (threads are safe); keep one mutation process because filesystem locking is process-local;
-- staging/public reside on the same filesystem so final `rename(2)` is atomic;
-- volumes upload in chunks rather than one JSON request;
-- nightly backup should cover public releases, dataset indexes, credential registry, and audit log. Staging can be excluded or short-retention.
-
-Object storage/CDN is a natural next backend: upload to a unique staging prefix, validate, copy/compose to an immutable release prefix, then atomically/conditionally replace only the small catalog/index object. The browser architecture does not change.
-
-## Archive/deletion policy
-
-Default operation is archive, not delete. Archive removes a dataset from the active catalog but leaves releases addressable for provenance. Physical deletion should be an explicit operator procedure after retention/backups, not a routine publisher API endpoint.
-
-## Legacy migration
-
-Low priority. A future adapter can fetch each v1 bucket feature and build a valid v2 release through the normal data builder. V2 should not preserve mutable bucket semantics or base64-in-JSON volume transport.
-
-## Unresolved integration decisions
-
-- Integration should merge/rebase current `work/data-schema` before wiring the validator executable into production packaging; publishing intentionally references its CLI contract rather than copying code.
-- Decide the canonical public URL layout/domain and whether nginx or S3-compatible object storage owns `catalog.json` at launch.
-- Decide whether a second credential may be delegated access to an existing dataset. The launch skeleton uses single-creator ownership; a small per-dataset allow-list is the next extension if collaboration requires it.
-- Decide operational release-ID convention (date, semantic vintage, or source snapshot ID). Publishing validates syntax only.
+Run `just test-publishing` for the focused suite and `just check` for the
+repository gate.

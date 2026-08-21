@@ -27,7 +27,9 @@ Do not postpone responsive work until the end. Each block is complete only when 
 
 ## 2. Relationship to the current frontend foundation
 
-The current `work/frontend` branch already has the appropriate high-level separation: `app.ts`, domain/data/rendering modules, `ui/app-shell.ts`, Playwright, and a single `styles.css` entry point.
+The integrated `main` implementation has the intended high-level separation:
+`app.ts`, core/domain/application/data/rendering modules, `ui/app-shell.ts`,
+Playwright, and a single `styles.css` entry point.
 
 Do not rewrite the TypeScript architecture for this work. Evolve `AppShell` and split the existing stylesheet as the visual surface grows.
 

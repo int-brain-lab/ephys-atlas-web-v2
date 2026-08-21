@@ -1,6 +1,6 @@
 # Browser storage and cache policy
 
-Status: proposed launch policy and implementation roadmap.
+Status: implemented foundation plus launch follow-up roadmap.
 
 This document separates browser storage concerns that are easy to conflate:
 
@@ -45,11 +45,11 @@ aliases and release listings. `HttpDatasetSource` also keeps manifests, region
 metadata, and feature URL resolutions in memory for the lifetime of the app.
 
 The generated anatomy renderer uses browser `force-cache` requests for its
-immutable pack-ID URLs. It fetches only the three visible packs for initial
+immutable pack-ID URLs. It fetches only the three visible v3 packs for initial
 display, then schedules at most one pack ahead in the active navigation
-direction. Decoded JSON packs share a 32 MiB byte-bounded in-memory LRU across
-the three projections; the budget is based on declared decoded resource bytes
-and does not claim to measure JavaScript object overhead exactly.
+direction. A persistent module worker owns a 32 MiB byte-bounded LRU of decoded
+indexed packs and returns only requested SVG fragments; each view separately
+retains eight parsed DOM layers.
 
 ### Decoded volume data
 
@@ -80,7 +80,7 @@ lifecycle management, quota handling, recovery, and user-facing controls.
 
 ## HTTP and CDN policy
 
-Immutable release resources and versioned curated assets should be served with
+Immutable release resources and versioned generated anatomy assets should be served with
 a long lifetime, for example:
 
 ```http
@@ -201,7 +201,7 @@ No service worker is required for launch.
 ## Implementation sequence
 
 1. Verify and document production `Cache-Control`, ETag, CORS, and Range headers
-   for catalogs, aliases, immutable releases, and curated assets.
+   for catalogs, aliases, immutable releases, and generated anatomy assets.
 2. Add local-store inventory APIs: list release metadata, stored byte size, and
    atomic per-release deletion.
 3. Build the import preview and local dataset manager UI, including distinct
