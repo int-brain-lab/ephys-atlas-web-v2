@@ -49,6 +49,7 @@ export class RegionalTreeView {
     this.list.addEventListener('pointerout', this.onTreePointerOut);
     this.list.addEventListener('focusin', this.onTreeFocusIn);
     this.list.addEventListener('focusout', this.onTreeFocusOut);
+    this.pane.addEventListener('pointerover', this.onPanePointerOver);
   }
 
   destroy(): void {
@@ -62,6 +63,7 @@ export class RegionalTreeView {
     this.list.removeEventListener('pointerout', this.onTreePointerOut);
     this.list.removeEventListener('focusin', this.onTreeFocusIn);
     this.list.removeEventListener('focusout', this.onTreeFocusOut);
+    this.pane.removeEventListener('pointerover', this.onPanePointerOver);
   }
 
   setRegions(regions: readonly RegionMetadata[]): void {
@@ -184,6 +186,11 @@ export class RegionalTreeView {
     const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-region-button]') : null;
     if (!button || (event.relatedTarget instanceof Node && button.contains(event.relatedTarget))) return;
     this.callbacks.hoverRegion(null);
+  };
+
+  private readonly onPanePointerOver = (event: PointerEvent): void => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target?.closest('[data-region-button]')) this.callbacks.hoverRegion(null);
   };
 
   private readonly onTreeFocusIn = (event: FocusEvent): void => {

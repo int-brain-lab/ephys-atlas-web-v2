@@ -463,6 +463,8 @@ test('regional tree reapplies hover styling after its rows rerender', async ({ p
   });
 
   await expect(page.locator('.region-row[data-region-id="-362"]')).toHaveAttribute('data-hovered', 'true');
+  await page.getByLabel('Search brain regions').hover();
+  await expect(page.locator('.is-highlighted')).toHaveCount(0);
 });
 
 test('generated anatomy renderer uses direct mapping IDs and affine-derived guides', async ({ page }) => {
