@@ -157,8 +157,10 @@ test('an existing anatomy slice stays visible while an adjacent pack loads', asy
   await expect(page.getByLabel('coronal slice')).toHaveValue('88');
   await expect(target).toHaveAttribute('data-asset-index', '660');
   await expect(frame).toHaveAttribute('data-state', 'ready');
-  await expect(frame.locator('.view-frame__status')).toHaveText('Updating');
+  await expect(frame.locator('.view-frame__status')).toHaveText('');
   await expect(frame.locator('.view-frame__state-message')).toHaveCSS('opacity', '0');
+
+  await expect(frame.locator('.view-frame__status')).toHaveText('Loading slice…');
 
   releasePack();
   await expect(target).toHaveAttribute('data-asset-index', '708');

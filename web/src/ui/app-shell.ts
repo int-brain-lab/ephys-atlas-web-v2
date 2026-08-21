@@ -64,7 +64,10 @@ interface ViewFrameNodes {
   renderKey: string;
   geometryKey: string;
   renderToken: number;
+  loadingNoticeTimer: number | null;
 }
+
+const SLICE_LOADING_NOTICE_DELAY_MS = 400;
 
 const VIEW_LABELS: ReadonlyArray<{ id: WorkspaceView; label: string }> = [
   { id: 'coronal', label: 'Coronal' },
@@ -287,6 +290,9 @@ export class AppShell {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('resize', this.onResize);
     this.contextMenus.forEach((menu) => menu.destroy());
+    for (const nodes of this.viewFrames.values()) {
+      if (nodes.loadingNoticeTimer !== null) window.clearTimeout(nodes.loadingNoticeTimer);
+    }
     this.renderer.destroy?.();
   }
 
@@ -894,7 +900,7 @@ export class AppShell {
     this.viewFrames.set(axis, {
       frame, target, coordinate, slider, index, status, maximize,
       tooltip, tooltipIdentity, tooltipValue, tooltipMeta,
-      renderKey: '', geometryKey: '', renderToken: 0,
+      renderKey: '', geometryKey: '', renderToken: 0, loadingNoticeTimer: null,
     });
     return frame;
   }
@@ -926,11 +932,22 @@ export class AppShell {
     const retainsAnatomy = view.representation !== 'volume'
       && nodes.target.dataset.sliceAsset?.startsWith('generated-anatomy-') === true;
     const stateMessage = nodes.frame.querySelector<HTMLElement>('.view-frame__state-message');
+    if (nodes.loadingNoticeTimer !== null) {
+      window.clearTimeout(nodes.loadingNoticeTimer);
+      nodes.loadingNoticeTimer = null;
+    }
+    if (!geometryChanged && nodes.status.textContent === 'Loading slice…') nodes.status.textContent = '';
     if (geometryChanged) {
       this.hideRegionTooltip(axis);
       nodes.frame.dataset.state = retainsAnatomy ? 'ready' : 'loading';
       nodes.status.removeAttribute('aria-label');
-      nodes.status.textContent = retainsAnatomy ? 'Updating' : 'Loading';
+      nodes.status.textContent = retainsAnatomy ? '' : 'Loading';
+      if (retainsAnatomy) {
+        nodes.loadingNoticeTimer = window.setTimeout(() => {
+          nodes.loadingNoticeTimer = null;
+          if (nodes.renderToken === token) nodes.status.textContent = 'Loading slice…';
+        }, SLICE_LOADING_NOTICE_DELAY_MS);
+      }
       if (stateMessage) {
         stateMessage.textContent = retainsAnatomy
           ? ''
@@ -953,11 +970,19 @@ export class AppShell {
     Promise.resolve(pending).then(() => {
       if (nodes.renderToken !== token) return;
       if (!geometryChanged) return;
+      if (nodes.loadingNoticeTimer !== null) {
+        window.clearTimeout(nodes.loadingNoticeTimer);
+        nodes.loadingNoticeTimer = null;
+      }
       nodes.frame.dataset.state = 'ready';
       nodes.status.textContent = '';
       nodes.status.setAttribute('aria-label', view.representation === 'volume' ? 'Scientific volume ready' : 'Registered anatomy ready');
     }).catch((error: unknown) => {
       if (nodes.renderToken !== token) return;
+      if (nodes.loadingNoticeTimer !== null) {
+        window.clearTimeout(nodes.loadingNoticeTimer);
+        nodes.loadingNoticeTimer = null;
+      }
       if (!geometryChanged || retainsAnatomy) {
         nodes.frame.dataset.state = 'ready';
         if (geometryChanged) nodes.status.textContent = 'Previous slice';
