@@ -217,6 +217,8 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.distribution-chart__meta')).toContainText('Observation distribution · dB rel. V');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-total', '11');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-probability-sum', '1');
+  await expect(page.locator('.distribution-chart__global')).toHaveAttribute('d', / C /);
+  await expect(page.locator('.distribution-chart__global')).not.toHaveAttribute('d', /[HV]/);
   await expect(page.locator('.feature-summary__item')).toHaveCount(4);
   await expect(page.locator('.feature-summary')).toContainText('Observations');
   await expect(page.locator('.feature-summary')).toContainText('Mean');
@@ -265,6 +267,7 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.regional-comparison__statistics')).toContainText('Feature values are shown in dB rel. V.');
   await expect(page.locator('.regional-distribution[data-region-id="-362"]')).toContainText('MD');
   await expect(page.locator('.regional-distribution__region')).toHaveAttribute('data-probability-sum', '1');
+  await expect(page.locator('.regional-distribution__region')).toHaveAttribute('d', / C /);
   await page.getByRole('button', { name: 'Expand selected-region comparison' }).click();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download comparison' }).click();

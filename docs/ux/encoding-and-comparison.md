@@ -55,7 +55,10 @@ visible as `n`. Peak normalization is not used.
 The compact feature summary overlays selected-region distribution outlines on
 the muted global distribution. Every series uses the same feature-value x-axis
 and probability y-scale, with stable selection colors and a legend identifying
-region and sample size.
+region and sample size. Curves use shape-preserving interpolation through bin
+centers and return to zero at the declared histogram boundaries. This is a
+presentation treatment, not a kernel-density estimate: bin hover targets and
+exports retain the exact counts and probabilities.
 
 The expanded comparison workspace uses aligned small-multiple distributions as the primary visualization.
 

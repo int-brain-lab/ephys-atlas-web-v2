@@ -8,6 +8,7 @@ import {
   selectedRegionHistogramDistributions,
   selectionColor,
 } from './model.js';
+import { smoothHistogramPath } from './histogram-curve.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const CHART_WIDTH = 1000;
@@ -19,21 +20,6 @@ function probabilitySum(values: readonly number[]): string {
 
 function svgElement<K extends keyof SVGElementTagNameMap>(name: K): SVGElementTagNameMap[K] {
   return document.createElementNS(SVG_NS, name);
-}
-
-function stepPath(values: readonly number[], maxValue: number, close: boolean): string {
-  if (values.length === 0) return '';
-  const width = CHART_WIDTH / values.length;
-  const y = (value: number): number => CHART_HEIGHT - (maxValue > 0 ? value / maxValue : 0) * (CHART_HEIGHT - 5);
-  let path = close ? `M 0 ${CHART_HEIGHT} L 0 ${y(values[0] ?? 0)}` : `M 0 ${y(values[0] ?? 0)}`;
-  values.forEach((value, index) => {
-    const right = (index + 1) * width;
-    path += ` H ${right}`;
-    const next = values[index + 1];
-    if (next !== undefined) path += ` V ${y(next)}`;
-  });
-  if (close) path += ` L ${CHART_WIDTH} ${CHART_HEIGHT} Z`;
-  return path;
 }
 
 export interface RegionalDetailsTargets {
@@ -149,7 +135,7 @@ export function renderDistribution(
   svg.setAttribute('aria-label', 'Normalized global and selected-region distributions');
   const globalArea = svgElement('path');
   globalArea.classList.add('distribution-chart__global');
-  globalArea.setAttribute('d', stepPath(global.probabilities, maxProbability, true));
+  globalArea.setAttribute('d', smoothHistogramPath(global.probabilities, maxProbability, true, CHART_WIDTH, CHART_HEIGHT));
   globalArea.dataset.total = String(global.total);
   globalArea.dataset.probabilitySum = probabilitySum(global.probabilities);
   const globalTitle = svgElement('title');
@@ -165,7 +151,7 @@ export function renderDistribution(
     line.dataset.regionId = distribution.regionId;
     line.dataset.total = String(distribution.total);
     line.dataset.probabilitySum = probabilitySum(distribution.probabilities);
-    line.setAttribute('d', stepPath(distribution.probabilities, maxProbability, false));
+    line.setAttribute('d', smoothHistogramPath(distribution.probabilities, maxProbability, false, CHART_WIDTH, CHART_HEIGHT));
     line.style.setProperty('--selection-color', color);
     const title = svgElement('title');
     title.textContent = `${region?.acronym ?? distribution.regionId} · normalized within region · n=${distribution.total.toLocaleString('en-US')}`;
@@ -275,10 +261,10 @@ export function renderAnalysis(
       plot.setAttribute('aria-label', `${region?.acronym ?? distribution.regionId} normalized distribution`);
       const globalLine = svgElement('path');
       globalLine.classList.add('regional-distribution__global');
-      globalLine.setAttribute('d', stepPath(global.probabilities, maxProbability, false));
+      globalLine.setAttribute('d', smoothHistogramPath(global.probabilities, maxProbability, false, CHART_WIDTH, CHART_HEIGHT));
       const regionArea = svgElement('path');
       regionArea.classList.add('regional-distribution__region');
-      regionArea.setAttribute('d', stepPath(distribution.probabilities, maxProbability, true));
+      regionArea.setAttribute('d', smoothHistogramPath(distribution.probabilities, maxProbability, true, CHART_WIDTH, CHART_HEIGHT));
       regionArea.dataset.probabilitySum = probabilitySum(distribution.probabilities);
       plot.append(globalLine, regionArea);
       row.append(identity, plot);
