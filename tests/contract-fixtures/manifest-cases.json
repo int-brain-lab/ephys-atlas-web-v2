@@ -1,0 +1,201 @@
+{
+  "cases": [
+    {
+      "name": "valid-minimal-regional-manifest",
+      "valid": true,
+      "document": {
+        "schema_version": "0.1",
+        "dataset_id": "contract_fixture",
+        "title": "Contract fixture",
+        "description": "Shared Python/TypeScript manifest contract fixture.",
+        "release": {
+          "release_id": "r1",
+          "immutable": true,
+          "created_at": "2026-08-21T00:00:00Z",
+          "paper_snapshot": false
+        },
+        "provenance": {
+          "sources": [
+            {
+              "role": "user-input",
+              "description": "Contract parity fixture"
+            }
+          ],
+          "builder": {
+            "name": "fixture",
+            "version": "1",
+            "command": "fixture"
+          },
+          "recipe": {
+            "id": "contract-fixture"
+          },
+          "notes": []
+        },
+        "parcellations": [
+          {
+            "id": "beryl",
+            "region_index": {
+              "path": "parcellations/beryl/region_ids.i32",
+              "dtype": "int32",
+              "shape": [1],
+              "order": "C",
+              "endianness": "little"
+            },
+            "metadata": "parcellations/beryl/regions.json"
+          }
+        ],
+        "features": [
+          {
+            "id": "feature_a",
+            "path": "features/feature_a/feature.json"
+          }
+        ],
+        "artifacts": []
+      }
+    },
+    {
+      "name": "invalid-schema-version",
+      "valid": false,
+      "document": {
+        "schema_version": "9.9",
+        "dataset_id": "contract_fixture",
+        "title": "Contract fixture",
+        "description": "",
+        "release": {"release_id": "r1", "immutable": true, "created_at": "2026-08-21T00:00:00Z"},
+        "provenance": {
+          "sources": [{"role": "user-input", "description": "fixture"}],
+          "builder": {"name": "fixture", "version": "1", "command": "fixture"},
+          "recipe": {"id": "fixture"}
+        },
+        "parcellations": [],
+        "features": [{"id": "feature_a", "path": "features/feature_a/feature.json"}],
+        "artifacts": []
+      }
+    },
+    {
+      "name": "invalid-dataset-id",
+      "valid": false,
+      "document": {
+        "schema_version": "0.1",
+        "dataset_id": "Contract Fixture",
+        "title": "Contract fixture",
+        "description": "",
+        "release": {"release_id": "r1", "immutable": true, "created_at": "2026-08-21T00:00:00Z"},
+        "provenance": {
+          "sources": [{"role": "user-input", "description": "fixture"}],
+          "builder": {"name": "fixture", "version": "1", "command": "fixture"},
+          "recipe": {"id": "fixture"}
+        },
+        "parcellations": [],
+        "features": [{"id": "feature_a", "path": "features/feature_a/feature.json"}],
+        "artifacts": []
+      }
+    },
+    {
+      "name": "invalid-mutable-release",
+      "valid": false,
+      "document": {
+        "schema_version": "0.1",
+        "dataset_id": "contract_fixture",
+        "title": "Contract fixture",
+        "description": "",
+        "release": {"release_id": "r1", "immutable": false, "created_at": "2026-08-21T00:00:00Z"},
+        "provenance": {
+          "sources": [{"role": "user-input", "description": "fixture"}],
+          "builder": {"name": "fixture", "version": "1", "command": "fixture"},
+          "recipe": {"id": "fixture"}
+        },
+        "parcellations": [],
+        "features": [{"id": "feature_a", "path": "features/feature_a/feature.json"}],
+        "artifacts": []
+      }
+    },
+    {
+      "name": "invalid-empty-provenance-sources",
+      "valid": false,
+      "document": {
+        "schema_version": "0.1",
+        "dataset_id": "contract_fixture",
+        "title": "Contract fixture",
+        "description": "",
+        "release": {"release_id": "r1", "immutable": true, "created_at": "2026-08-21T00:00:00Z"},
+        "provenance": {
+          "sources": [],
+          "builder": {"name": "fixture", "version": "1", "command": "fixture"},
+          "recipe": {"id": "fixture"}
+        },
+        "parcellations": [],
+        "features": [{"id": "feature_a", "path": "features/feature_a/feature.json"}],
+        "artifacts": []
+      }
+    },
+    {
+      "name": "invalid-source-commit",
+      "valid": false,
+      "document": {
+        "schema_version": "0.1",
+        "dataset_id": "contract_fixture",
+        "title": "Contract fixture",
+        "description": "",
+        "release": {"release_id": "r1", "immutable": true, "created_at": "2026-08-21T00:00:00Z"},
+        "provenance": {
+          "sources": [{"role": "scientific-code", "description": "fixture", "commit": "NOT-A-COMMIT"}],
+          "builder": {"name": "fixture", "version": "1", "command": "fixture"},
+          "recipe": {"id": "fixture"}
+        },
+        "parcellations": [],
+        "features": [{"id": "feature_a", "path": "features/feature_a/feature.json"}],
+        "artifacts": []
+      }
+    },
+    {
+      "name": "invalid-unsafe-feature-path",
+      "valid": false,
+      "document": {
+        "schema_version": "0.1",
+        "dataset_id": "contract_fixture",
+        "title": "Contract fixture",
+        "description": "",
+        "release": {"release_id": "r1", "immutable": true, "created_at": "2026-08-21T00:00:00Z"},
+        "provenance": {
+          "sources": [{"role": "user-input", "description": "fixture"}],
+          "builder": {"name": "fixture", "version": "1", "command": "fixture"},
+          "recipe": {"id": "fixture"}
+        },
+        "parcellations": [],
+        "features": [{"id": "feature_a", "path": "../feature.json"}],
+        "artifacts": []
+      }
+    },
+    {
+      "name": "invalid-binary-order",
+      "valid": false,
+      "document": {
+        "schema_version": "0.1",
+        "dataset_id": "contract_fixture",
+        "title": "Contract fixture",
+        "description": "",
+        "release": {"release_id": "r1", "immutable": true, "created_at": "2026-08-21T00:00:00Z"},
+        "provenance": {
+          "sources": [{"role": "user-input", "description": "fixture"}],
+          "builder": {"name": "fixture", "version": "1", "command": "fixture"},
+          "recipe": {"id": "fixture"}
+        },
+        "parcellations": [
+          {
+            "id": "beryl",
+            "region_index": {
+              "path": "parcellations/beryl/region_ids.i32",
+              "dtype": "int32",
+              "shape": [1],
+              "order": "F",
+              "endianness": "little"
+            }
+          }
+        ],
+        "features": [{"id": "feature_a", "path": "features/feature_a/feature.json"}],
+        "artifacts": []
+      }
+    }
+  ]
+}
