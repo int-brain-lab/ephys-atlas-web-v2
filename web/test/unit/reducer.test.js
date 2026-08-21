@@ -17,13 +17,21 @@ test('dataset changes clear feature and region selection', () => {
   assert.equal(next.view.dataset.datasetId, 'brainwide_map');
 });
 
-test('selection toggles are unique and stable-sorted', () => {
+test('selection toggles are unique and preserve first-selection order', () => {
   let state = DEFAULT_APP_STATE;
   state = reduceAppState(state, { type: 'selection/toggle', regionId: 'VISp' });
   state = reduceAppState(state, { type: 'selection/toggle', regionId: 'CA1' });
-  assert.deepEqual(state.view.selection, ['CA1', 'VISp']);
+  assert.deepEqual(state.view.selection, ['VISp', 'CA1']);
   state = reduceAppState(state, { type: 'selection/toggle', regionId: 'VISp' });
   assert.deepEqual(state.view.selection, ['CA1']);
+});
+
+test('setting selection deduplicates without changing categorical color order', () => {
+  const state = reduceAppState(DEFAULT_APP_STATE, {
+    type: 'selection/set',
+    regionIds: ['-68', '-526157192', '-68'],
+  });
+  assert.deepEqual(state.view.selection, ['-68', '-526157192']);
 });
 
 test('atlas anatomy color mode is explicit application state', () => {

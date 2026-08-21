@@ -28,6 +28,12 @@ test('URL state round-trips common shareable state', () => {
   assert.deepEqual(parseViewState(`?${query}`), view);
 });
 
+test('URL state preserves selected-region order for stable identity colors', () => {
+  const parsed = parseViewState('?v=3&selected=-68,-526157192,-68');
+  assert.deepEqual(parsed.selection, ['-68', '-526157192']);
+  assert.equal(serializeViewState(parsed).includes('selected=-68%2C-526157192'), true);
+});
+
 test('unknown URL version falls back to defaults', () => {
   assert.deepEqual(parseViewState('?v=999&dataset=local&feature=nope'), DEFAULT_VIEW_STATE);
 });

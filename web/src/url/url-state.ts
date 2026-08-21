@@ -121,7 +121,8 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
     featureId,
     representation,
     parcellation,
-    selection: [...new Set(selection)].sort(),
+    // Preserve the encoded selection order because it determines identity colors.
+    selection: [...new Set(selection)],
     cursor,
     slices,
     coloring: {

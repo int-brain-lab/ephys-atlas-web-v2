@@ -8,8 +8,9 @@ import {
   worldToRegionalIndices,
 } from '../core/slice-calibration.js';
 
-function normalizedSelection(regionIds: readonly string[]): readonly string[] {
-  return [...new Set(regionIds.filter(Boolean))].sort();
+function uniqueSelection(regionIds: readonly string[]): readonly string[] {
+  // Order is meaningful: it assigns stable categorical colors to selected regions.
+  return [...new Set(regionIds.filter(Boolean))];
 }
 
 export function reduceAppState(state: AppState, action: AppAction): AppState {
@@ -46,13 +47,13 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       else current.add(action.regionId);
       return {
         ...state,
-        view: { ...state.view, selection: normalizedSelection([...current]) },
+        view: { ...state.view, selection: uniqueSelection([...current]) },
       };
     }
     case 'selection/set':
       return {
         ...state,
-        view: { ...state.view, selection: normalizedSelection(action.regionIds) },
+        view: { ...state.view, selection: uniqueSelection(action.regionIds) },
       };
     case 'selection/clear':
       return { ...state, view: { ...state.view, selection: [] } };

@@ -128,3 +128,21 @@ test('tree-wide controls collapse and expand every ontology branch', async ({ pa
   await expect(collapseAll).toBeDisabled();
   await expect(expandAll).toBeDisabled();
 });
+
+test('multi-region selection keeps first-selection order and identity colors', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'FRP1, Frontal pole layer 1 (left)' }).click();
+  const firstSelection = page.locator('.selected-region[data-region-id="-68"]');
+  await expect(firstSelection).toHaveCSS('--selection-color', '#55a7f7');
+
+  await page.getByRole('button', { name: 'FRP5, Frontal pole layer 5 (left)' }).click();
+  const selectedRegions = page.locator('.selected-region');
+  await expect(selectedRegions).toHaveCount(2);
+  await expect(selectedRegions.nth(0)).toHaveAttribute('data-region-id', '-68');
+  await expect(selectedRegions.nth(0)).toHaveCSS('--selection-color', '#55a7f7');
+  await expect(selectedRegions.nth(1)).toHaveAttribute('data-region-id', '-526157192');
+  await expect(selectedRegions.nth(1)).toHaveCSS('--selection-color', '#ef6f61');
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-68,-526157192');
+});
