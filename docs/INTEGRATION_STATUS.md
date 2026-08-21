@@ -135,11 +135,13 @@ color interval with boundary guides, a subtle selected-range tint, and dimmed
 out-of-range tails; colorbar dragging and reset update this read-only analytical
 view immediately.
 
-The header Help action opens one concise scientific-workflow guide with a
-responsive schematic of the actual viewer layout. Its four steps cover choosing
-the scientific context, exploring and ranking regions in linked slices,
-comparing selected regions, and exporting or sharing a reproducible result.
-Keyboard shortcuts remain available as a collapsed secondary reference. The
+The header Help action opens one scientific-workflow guide with a responsive,
+faithful map of the actual viewer layout. Five concise expandable sections
+cover the top-bar scientific context, region search/ranking/selection, linked
+slice navigation, visualization parameters, and global/selected-region
+distributions and exports. The structure can accept future representation
+guidance without splitting Help into separate guides. Keyboard shortcuts remain
+available as a collapsed secondary reference. The
 global keyboard layer opens feature search with `/`, moves to adjacent
 manifest-ordered features with `Shift + Down` / `Shift + Up`, and opens Help
 with `?`. It is suppressed during text/form entry and modal dialogs, does not

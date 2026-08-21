@@ -54,7 +54,7 @@ Phase 2 was visually approved on 2026-08-19.
 - each scientific context field is its own accessible custom picker: dataset releases are grouped by dataset, the feature catalogue is searchable by label/unit/ID/semantics, and representation plus parcellation share one compact picker;
 - anchored desktop popovers become bounded bottom sheets on phones; pointer-outside and Escape dismissal, focus restoration, listbox semantics, and arrow-key navigation are covered by browser tests;
 - Share copies the complete deep link; Download exports the current regional statistic as provenance-bearing CSV; Info shows immutable release, feature semantics, and source/builder provenance;
-- Help presents one short, responsive scientific-workflow guide with a schematic of the viewer and keeps keyboard shortcuts as secondary reference;
+- Help presents one responsive scientific-workflow guide with a faithful interface map and five expandable area explanations; keyboard shortcuts remain secondary reference;
 - the visualization drawer contains only statistic and color encoding controls; dataset/release, feature, representation, and parcellation are no longer duplicated as native selects there;
 - every option remains driven by the loaded catalog, manifest, and payload rather than a hardcoded feature list;
 - compact/tablet/phone compositions expose the appropriate drawer triggers and overflow behavior;

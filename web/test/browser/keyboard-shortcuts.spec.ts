@@ -83,10 +83,23 @@ test('shortcuts stay out of text entry and expose the concise help guide', async
   const guide = page.getByRole('dialog', { name: 'Using the Ephys Atlas' });
   await expect(guide).toBeVisible();
   await expect(guide.locator('.help-guide__schematic')).toBeVisible();
-  await expect(guide.locator('.help-guide__step')).toHaveCount(4);
-  await expect(guide).toContainText('Choose what to explore');
-  await expect(guide).toContainText('Compare regions');
+  await expect(guide.locator('.help-schematic__callout')).toHaveCount(5);
+  await expect(guide.locator('.help-schematic__slice-control')).toHaveCount(3);
+  const sliceControlWidths = await guide.locator('.help-schematic__slice-control').evaluateAll((controls) => (
+    controls.map((control) => control.getBoundingClientRect().width)
+  ));
+  expect(Math.max(...sliceControlWidths) - Math.min(...sliceControlWidths)).toBeLessThanOrEqual(1);
+  for (const projection of await guide.locator('.help-schematic__view i').all()) {
+    await expect(projection).toHaveCSS('transform', 'none');
+  }
+  await expect(guide.locator('.help-guide__section')).toHaveCount(5);
+  await expect(guide).toContainText('Data and feature');
+  await expect(guide).toContainText('Read distributions and comparisons');
   await expect(guide).toContainText('Consult Info before interpreting or citing them');
+  const visualizationSection = guide.locator('.help-guide__section').filter({ hasText: 'Set the visualization' });
+  await visualizationSection.getByText('Set the visualization').click();
+  await expect(visualizationSection).toHaveAttribute('open', '');
+  await expect(visualizationSection).toContainText('do not modify the underlying observations');
 
   await page.keyboard.press('Shift+ArrowDown');
   await expect(featureField.locator('.context-menu__trigger')).toContainText('AP RMS (golden fixture)');
@@ -114,5 +127,6 @@ test('help guide stays readable within a phone viewport', async ({ page }) => {
   expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
   expect(bounds!.y).toBeGreaterThanOrEqual(0);
   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(844);
-  await expect(guide.locator('.help-guide__step')).toHaveCount(4);
+  await expect(guide.locator('.help-schematic__callout')).toHaveCount(5);
+  await expect(guide.locator('.help-guide__section')).toHaveCount(5);
 });

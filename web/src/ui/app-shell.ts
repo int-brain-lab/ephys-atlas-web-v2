@@ -493,66 +493,102 @@ export class AppShell {
       this.helpSchematicChip('Dataset'),
       this.helpSchematicChip('Feature'),
       this.helpSchematicChip('Representation'),
-      this.helpCallout('1'),
     );
     const schematicActions = element('div', 'help-schematic__actions');
     schematicActions.append(
       this.helpSchematicChip('Share'),
       this.helpSchematicChip('Download'),
-      this.helpCallout('4'),
     );
-    schematicHeader.append(schematicBrand, schematicContext, schematicActions);
+    schematicHeader.append(schematicBrand, schematicContext, schematicActions, this.helpCallout('1'));
 
     const schematicBody = element('div', 'help-schematic__body');
     const schematicRegions = element('div', 'help-schematic__regions');
+    const regionTitle = element('strong', 'help-schematic__panel-title');
+    regionTitle.textContent = 'Brain regions';
     const regionSearch = element('span', 'help-schematic__search');
     regionSearch.textContent = 'Search regions';
     const regionRows = element('div', 'help-schematic__region-rows');
     for (let index = 0; index < 5; index += 1) regionRows.append(element('span'));
-    schematicRegions.append(regionSearch, regionRows, this.helpCallout('2'));
+    schematicRegions.append(regionTitle, regionSearch, regionRows, this.helpCallout('2'));
 
     const schematicWorkspace = element('div', 'help-schematic__workspace');
     const slices = element('div', 'help-schematic__slices');
     for (const label of ['Coronal', 'Sagittal', 'Horizontal']) {
       const view = element('div', 'help-schematic__view');
-      const viewLabel = element('span');
+      const viewLabel = element('span', 'help-schematic__view-label');
       viewLabel.textContent = label;
-      view.append(viewLabel, element('i'));
+      view.append(viewLabel, element('i'), element('b', 'help-schematic__slice-control'));
       slices.append(view);
     }
+    slices.append(this.helpCallout('3'));
+
+    const contextPanels = element('div', 'help-schematic__context-panels');
+    const histogram = element('div', 'help-schematic__histogram');
+    const histogramLabel = element('span');
+    histogramLabel.textContent = 'Feature distribution';
+    const histogramBars = element('i');
+    histogram.append(histogramLabel, histogramBars);
     const comparison = element('div', 'help-schematic__comparison');
-    comparison.append(element('span'), element('span'), element('span'));
-    schematicWorkspace.append(slices, comparison, this.helpCallout('3'));
+    const comparisonLabel = element('span');
+    comparisonLabel.textContent = 'Selected regions';
+    comparison.append(comparisonLabel, element('i'), element('i'));
+    contextPanels.append(histogram, comparison, this.helpCallout('5'));
+    schematicWorkspace.append(slices, contextPanels);
 
     const schematicSettings = element('div', 'help-schematic__settings');
-    schematicSettings.append(element('span'), element('span'), element('span'), element('span'));
+    const settingsTitle = element('strong', 'help-schematic__panel-title');
+    settingsTitle.textContent = 'Visualization';
+    for (const label of ['Color', 'Statistic', 'Scale']) {
+      const row = element('div', 'help-schematic__setting');
+      const settingLabel = element('span');
+      settingLabel.textContent = label;
+      row.append(settingLabel, element('i'));
+      schematicSettings.append(row);
+    }
+    schematicSettings.prepend(settingsTitle);
+    schematicSettings.append(element('div', 'help-schematic__colorbar'), this.helpCallout('4'));
     schematicBody.append(schematicRegions, schematicWorkspace, schematicSettings);
     schematic.append(schematicHeader, schematicBody);
 
-    const steps: readonly (readonly [string, string])[] = [
+    const sections: readonly (readonly [string, string])[] = [
       [
-        'Choose what to explore',
-        'Select the dataset, release, feature, representation, and parcellation. Use Info to check the feature definition, units, population, processing, and provenance.',
+        'Data and feature',
+        'Use the top bar to choose the dataset and immutable release, feature, representation, and parcellation. Info gives the units, population, processing, and provenance; Share preserves the complete view and Download exports the current regional values.',
       ],
       [
-        'Explore the brain',
-        'Move through the linked slices. Search or click a region, then rank regions by feature value to find high and low values.',
+        'Find and select regions',
+        'Search the active parcellation or browse its anatomical hierarchy. Change the ordering to rank regions by the displayed value, then select regions from the list or brain views to add them to the comparison.',
       ],
       [
-        'Compare regions',
-        'Select regions to compare their statistics and distributions with the global population. Check sample counts when interpreting differences.',
+        'Navigate the brain',
+        'Use the three equal slice controls or scroll over a view. Coronal, sagittal, and horizontal views share one atlas location, and the guide lines show that location in the other projections.',
       ],
       [
-        'Save or share the result',
-        'Share copies the complete view. Download exports the current regional values; the comparison view exports selected-region data.',
+        'Set the visualization',
+        'Choose feature-value or Allen-anatomy coloring, the regional statistic, colormap, scale, and display range. These controls change the regional summary or its presentation; they do not modify the underlying observations.',
+      ],
+      [
+        'Read distributions and comparisons',
+        'The bottom panels show the global summary and feature-value distribution. Selected regions add normalized distribution shapes and descriptive statistics; use sample counts when interpreting them, and open the comparison to inspect or export the selected-region data.',
       ],
     ];
-    const guide = element('ol', 'help-guide__steps');
-    for (const [stepTitle, description] of steps) {
-      const item = element('li', 'help-guide__step');
-      item.append(heading(stepTitle, 3), this.infoParagraph(description));
-      guide.append(item);
-    }
+    const guide = element('div', 'help-guide__sections');
+    sections.forEach(([sectionTitle, description], index) => {
+      const section = element('details', 'help-guide__section');
+      const summary = element('summary');
+      const number = element('span', 'help-guide__section-number');
+      number.textContent = String(index + 1);
+      const label = element('span');
+      label.textContent = sectionTitle;
+      summary.append(number, label);
+      section.append(summary, this.infoParagraph(description));
+      guide.append(section);
+    });
+
+    const guideLabel = heading('How to use each area', 3);
+    guideLabel.className = 'help-guide__section-title';
+    const guideWrap = element('section', 'help-guide__guide');
+    guideWrap.append(guideLabel, guide);
 
     const note = element('p', 'help-guide__note');
     note.textContent = 'Regional values are descriptive summaries of the population defined by the selected release. Consult Info before interpreting or citing them.';
@@ -581,7 +617,7 @@ export class AppShell {
     shortcutDetails.append(shortcutSummary, list);
 
     const content = element('div', 'info-dialog__content help-guide__content');
-    content.append(schematic, guide, note, shortcutDetails);
+    content.append(schematic, guideWrap, note, shortcutDetails);
     dialog.append(header, content);
     dialog.addEventListener('click', (event) => {
       if (event.target === dialog) dialog.close();
