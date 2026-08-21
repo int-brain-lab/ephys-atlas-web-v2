@@ -157,6 +157,7 @@ test('value ordering switches to a flat ranking and restores the anatomical tree
   await expect(frontalPole).toHaveAttribute('aria-expanded', 'false');
 
   const orderButton = page.getByRole('button', { name: /Region order:/ });
+  await expect(page.locator('.region-search__meta > :last-child')).toHaveClass('region-order');
   await expect(orderButton).toHaveAttribute('data-order', 'anatomy');
   await expect(orderButton).toHaveAttribute('title', 'Order: Anatomy · Next: Value ascending');
   await expect(orderButton.locator('.region-order__icon')).toHaveCount(1);

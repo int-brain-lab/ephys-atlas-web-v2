@@ -66,7 +66,8 @@ export class RegionalTreeView {
     this.collapseAllButton = this.treeControl('⊟', 'Collapse all regions');
     this.expandAllButton = this.treeControl('⊞', 'Expand all regions');
     this.treeControls.append(this.collapseAllButton, this.expandAllButton);
-    this.resultCount.before(this.orderButton, this.treeControls);
+    this.resultCount.before(this.treeControls);
+    this.resultCount.after(this.orderButton);
     this.list.setAttribute('role', 'tree');
 
     this.search.addEventListener('input', this.filterRegions);
