@@ -12,6 +12,14 @@ Minimal capability-based publishing service and Python client. It publishes prep
 - publisher tokens are independently revocable and only salted PBKDF2 hashes are stored server-side
 - dataset creation can be restricted to credentials carrying `can_create_datasets`
 - a dataset is owned by the credential that created it; no user/account system is required
+- JSON metadata requests are bounded at 32 MiB by default, enough for the
+  supported 100,000-artifact inventory with representative volume paths;
+  binary upload chunks have a separate 16 MiB default cap
+
+The built-in server accepts `--max-json-bytes` and `--max-chunk-bytes`.
+Gunicorn/WSGI deployments configure the same limits with
+`IBL_PUBLISH_MAX_JSON_BYTES` and `IBL_PUBLISH_MAX_CHUNK_BYTES`. Keep the reverse
+proxy request limit at least as large as the greater application limit.
 
 ## Local smoke test
 

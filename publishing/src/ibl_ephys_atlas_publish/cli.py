@@ -10,7 +10,7 @@ from .auth import CredentialRegistry, issue_credential, revoke_credential
 from .client import PublishingClient
 from .core import PublicationStore
 from .maintenance import cleanup_stale_uploads
-from .service import PublishingApplication
+from .service import DEFAULT_MAX_CHUNK_BYTES, DEFAULT_MAX_JSON_BYTES, PublishingApplication
 
 
 def _publisher_client(args: argparse.Namespace, parser: argparse.ArgumentParser) -> PublishingClient:
@@ -34,6 +34,18 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8080)
     serve.add_argument("--validator-command")
+    serve.add_argument(
+        "--max-json-bytes",
+        type=int,
+        default=DEFAULT_MAX_JSON_BYTES,
+        help=f"maximum JSON request body size (default: {DEFAULT_MAX_JSON_BYTES})",
+    )
+    serve.add_argument(
+        "--max-chunk-bytes",
+        type=int,
+        default=DEFAULT_MAX_CHUNK_BYTES,
+        help=f"maximum binary upload chunk size (default: {DEFAULT_MAX_CHUNK_BYTES})",
+    )
 
     create_credential = commands.add_parser("credential-create")
     create_credential.add_argument("--credentials", type=Path, required=True)
@@ -83,7 +95,12 @@ def main(argv=None) -> int:
 
     if args.cmd == "serve":
         store = PublicationStore(args.storage, validator_command=args.validator_command)
-        app = PublishingApplication(store, CredentialRegistry(args.credentials))
+        app = PublishingApplication(
+            store,
+            CredentialRegistry(args.credentials),
+            max_json_bytes=args.max_json_bytes,
+            max_chunk_bytes=args.max_chunk_bytes,
+        )
         make_server(args.host, args.port, app).serve_forever()
         return 0
 

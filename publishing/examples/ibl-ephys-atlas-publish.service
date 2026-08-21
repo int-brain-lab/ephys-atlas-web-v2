@@ -10,6 +10,8 @@ Environment=PYTHONPATH=/opt/ibl-ephys-atlas-web-v2/publishing/src:/opt/ibl-ephys
 Environment=IBL_PUBLISH_STORAGE=/srv/ephys-publish/storage
 Environment=IBL_PUBLISH_CREDENTIALS=/srv/ephys-publish/credentials.json
 Environment="IBL_PUBLISH_VALIDATOR=python -m ephys_atlas_builder.cli validate {release_dir}"
+Environment=IBL_PUBLISH_MAX_JSON_BYTES=33554432
+Environment=IBL_PUBLISH_MAX_CHUNK_BYTES=16777216
 ExecStart=/opt/ephys-publish-venv/bin/gunicorn --workers 1 --threads 4 --bind 127.0.0.1:8080 ibl_ephys_atlas_publish.wsgi:application
 Restart=on-failure
 UMask=0077
