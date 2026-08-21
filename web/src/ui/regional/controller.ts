@@ -15,6 +15,7 @@ export interface RegionalPanelCallbacks {
   toggleSelection(regionId: string): void;
   clearSelection(): void;
   hoverRegion(regionId: string | null): void;
+  downloadComparison(): void;
 }
 
 export interface RegionalPanelModel {
@@ -59,6 +60,7 @@ export class RegionalPanelController {
     this.tree = new RegionalTreeView(root, callbacks);
     this.clearSelectionButton.addEventListener('click', this.clearSelection);
     this.analysisToggle.addEventListener('click', this.toggleAnalysis);
+    this.analysis.addEventListener('click', this.onAnalysisClick);
     this.selectedList.addEventListener('click', this.onSelectedClick);
   }
 
@@ -124,6 +126,7 @@ export class RegionalPanelController {
     this.tree.destroy();
     this.clearSelectionButton.removeEventListener('click', this.clearSelection);
     this.analysisToggle.removeEventListener('click', this.toggleAnalysis);
+    this.analysis.removeEventListener('click', this.onAnalysisClick);
     this.selectedList.removeEventListener('click', this.onSelectedClick);
   }
 
@@ -165,6 +168,11 @@ export class RegionalPanelController {
     if (!this.hasSelection) return;
     this.analysisExpanded = !this.analysisExpanded;
     this.syncAnalysisDisclosure();
+  };
+
+  private readonly onAnalysisClick = (event: Event): void => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest('[data-download-comparison]')) this.callbacks.downloadComparison();
   };
 
   private updateAnalysisDisclosure(hasSelection: boolean): void {

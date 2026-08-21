@@ -312,8 +312,14 @@ function renderComparisonTable(
   const regionById = new Map(regions.map((region) => [region.id, region]));
   const indexById = new Map(feature.regionIds.map((id, index) => [id, index]));
   const section = html('section', 'regional-comparison__statistics');
+  const headerRow = html('div', 'regional-comparison__section-header');
   const heading = html('h3', 'regional-comparison__heading');
   heading.textContent = 'Descriptive statistics';
+  const download = html('button', 'regional-comparison__download');
+  download.type = 'button';
+  download.dataset.downloadComparison = 'true';
+  download.textContent = 'Download comparison';
+  headerRow.append(heading, download);
   const note = html('p', 'regional-comparison__note');
   note.textContent = unit ? `Feature values are shown in ${unit}.` : 'Feature units are not declared for this release.';
   const scroller = html('div', 'regional-comparison__table-scroll');
@@ -377,7 +383,7 @@ function renderComparisonTable(
   }
   table.append(head, body);
   scroller.append(table);
-  section.append(heading, note, scroller);
+  section.append(headerRow, note, scroller);
   return section;
 }
 

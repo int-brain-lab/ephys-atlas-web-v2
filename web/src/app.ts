@@ -11,6 +11,7 @@ import type { DisplaySliceInventory } from './rendering/display-slice-inventory.
 import { NullSliceRenderer, type RendererPresentation, type SliceRenderer } from './rendering/interfaces.js';
 import { AppShell, type ShellModel } from './ui/app-shell.js';
 import { RegionalPanelController } from './ui/regional-panel.js';
+import { buildSelectedComparisonExport } from './ui/regional/comparison-export.js';
 import { UrlStateController } from './url/url-state.js';
 
 export interface AppOptions {
@@ -69,6 +70,7 @@ export class AtlasApp {
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       hoverRegion: (regionId) => this.setHoveredRegion(regionId),
+      downloadComparison: () => this.downloadSelectedComparison(),
     });
     this.renderer.setInteractionSink?.({
       hover: (hit) => this.setHoveredRegion(hit?.regionId ?? null),
@@ -246,6 +248,28 @@ export class AtlasApp {
     const csv = [fields, ...rows].map((row) => row.map(csvCell).join(',')).join('\n') + '\n';
     const release = state.dataset.releaseId ?? manifest.release.releaseId;
     const filename = `${state.dataset.datasetId}-${release}-${state.featureId}-${state.parcellation}-${state.coloring.statistic}.csv`;
+    this.triggerCsvDownload(csv, filename);
+  }
+
+  private downloadSelectedComparison(): void {
+    const state = this.store.getState().view;
+    const { manifest, feature, regions: featureRegions } = this.session.snapshot();
+    if (!manifest || feature?.representation !== 'regional' || state.selection.length === 0) return;
+    const descriptor = manifest.features.find((item) => item.id === feature.featureId);
+    const regions = this.atlasRegions?.mappings[state.parcellation] ?? featureRegions;
+    const comparison = buildSelectedComparisonExport({
+      datasetId: state.dataset.datasetId,
+      releaseId: state.dataset.releaseId ?? manifest.release.releaseId,
+      feature,
+      ...(descriptor ? { descriptor } : {}),
+      regions,
+      selectedRegionIds: state.selection,
+      statistic: state.coloring.statistic,
+    });
+    this.triggerCsvDownload(comparison.csv, comparison.filename);
+  }
+
+  private triggerCsvDownload(csv: string, filename: string): void {
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url;

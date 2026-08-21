@@ -107,6 +107,29 @@
   text-transform: uppercase;
 }
 
+.regional-comparison__section-header {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.regional-comparison__download {
+  flex: none;
+  min-height: 1.65rem;
+  padding: 0 .55rem;
+  border-color: rgb(85 167 247 / 28%);
+  background: rgb(85 167 247 / 8%);
+  color: var(--color-text-secondary);
+  font-size: .56rem;
+}
+
+.regional-comparison__download:hover {
+  background: rgb(85 167 247 / 16%);
+  color: var(--color-text);
+}
+
 .regional-comparison__note {
   margin: 0;
   color: var(--color-text-muted);

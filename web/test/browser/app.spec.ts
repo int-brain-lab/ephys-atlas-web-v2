@@ -255,6 +255,18 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.regional-comparison__statistics')).toContainText('Feature values are shown in dB rel. V.');
   await expect(page.locator('.regional-distribution[data-region-id="-362"]')).toContainText('MD');
   await expect(page.locator('.regional-distribution__region')).toHaveAttribute('data-probability-sum', '1');
+  await page.getByRole('button', { name: 'Expand selected-region comparison' }).click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download comparison' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('ephys_atlas_channels-golden-v0.3-rms_ap-allen-selected-comparison.csv');
+  const downloadPath = await download.path();
+  expect(downloadPath).not.toBeNull();
+  const comparisonCsv = await readFile(downloadPath!, 'utf8');
+  expect(comparisonCsv).toContain('dataset_id,release_id,feature_id,representation,parcellation,selected_statistic,unit,population,region_id');
+  expect(comparisonCsv).toContain('ephys_atlas_channels,golden-v0.3,rms_ap,regional,allen,mean,dB rel. V');
+  expect(comparisonCsv.trim().split('\n')).toHaveLength(9);
+  expect(comparisonCsv).toContain(',-362,MD,Mediodorsal nucleus of thalamus (left),');
   await expect(path).toHaveClass(/is-selected/);
   await expect(rightPath).toHaveClass(/is-selected/);
 });
