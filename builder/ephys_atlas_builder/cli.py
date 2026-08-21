@@ -50,6 +50,12 @@ def main(argv: list[str] | None = None) -> int:
         help="explicit scalar cluster feature; repeat to define the complete release catalog",
     )
     p.add_argument(
+        "--log-color-feature",
+        action="append",
+        dest="log_color_features",
+        help="feature id whose presentation-only default color scale is logarithmic; repeat as needed",
+    )
+    p.add_argument(
         "--parcellation",
         action="append",
         choices=("allen", "beryl", "cosmos"),
@@ -105,6 +111,12 @@ def main(argv: list[str] | None = None) -> int:
         action="append",
         dest="features",
         help="explicit feature id; repeat as needed; omit to resolve current voltage_features_set()",
+    )
+    p.add_argument(
+        "--log-color-feature",
+        action="append",
+        dest="log_color_features",
+        help="output feature id whose presentation-only default color scale is logarithmic; repeat as needed",
     )
     p.add_argument(
         "--parcellation",
@@ -173,6 +185,7 @@ def main(argv: list[str] | None = None) -> int:
                 population=args.population,
                 parcellations=tuple(args.parcellations or ("allen", "beryl", "cosmos")),
                 features=tuple(args.features) if args.features else None,
+                log_color_features=tuple(args.log_color_features or ()),
                 histogram_bins=args.histogram_bins,
                 paper_snapshot=args.paper_snapshot,
                 ibleatools_commit=args.ibleatools_commit,
@@ -195,6 +208,7 @@ def main(argv: list[str] | None = None) -> int:
                 population=args.population,
                 parcellations=tuple(args.parcellations or ("allen", "beryl", "cosmos")),
                 features=tuple(args.features) if args.features else None,
+                log_color_features=tuple(args.log_color_features or ()),
                 histogram_bins=args.histogram_bins,
                 paper_snapshot=args.paper_snapshot,
                 ibleatools_commit=args.ibleatools_commit,

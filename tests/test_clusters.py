@@ -118,6 +118,29 @@ def test_cluster_recipe_is_deterministic(tmp_path):
         assert (a / rel).read_bytes() == (b / rel).read_bytes(), rel
 
 
+def test_cluster_recipe_emits_explicit_log_color_defaults(tmp_path):
+    features, ids, metadata = _inputs()
+    config = ClusterBuildConfig(
+        release_id="sha256-1234567890abcdef",
+        created_at="2026-08-20T00:00:00Z",
+        project="explicit-test-project",
+        log_color_features=("firing_rate",),
+    )
+    release = build_clusters_release_from_arrays(
+        tmp_path / "release",
+        config,
+        features,
+        ids,
+        metadata,
+        [{"role": "canonical-data", "description": "display metadata test"}],
+    )
+    validate_release(release, ROOT / "schema" / "v0.1")
+    firing_rate = json.loads((release / "features/firing_rate/feature.json").read_text())
+    amplitude = json.loads((release / "features/amp_median/feature.json").read_text())
+    assert firing_rate["display"] == {"scale": "log"}
+    assert "display" not in amplitude
+
+
 def test_cluster_recipe_rejects_implicit_qc_population():
     config = ClusterBuildConfig(
         release_id="release",

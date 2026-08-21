@@ -37,6 +37,7 @@ class ChannelBuildConfig:
     population: str
     parcellations: tuple[str, ...] = DEFAULT_PARCELLATIONS
     features: tuple[str, ...] | None = None
+    log_color_features: tuple[str, ...] = ()
     histogram_bins: int = 50
     paper_snapshot: bool = False
     ibleatools_commit: str | None = None
@@ -59,6 +60,8 @@ class ChannelBuildConfig:
             raise ValueError(f"unsupported parcellations: {', '.join(unknown)}")
         if not self.parcellations:
             raise ValueError("at least one parcellation is required")
+        if len(set(self.log_color_features)) != len(self.log_color_features):
+            raise ValueError("log_color_features must not contain duplicates")
         for name, value in (
             ("ibleatools_commit", self.ibleatools_commit),
             ("iblatlas_commit", self.iblatlas_commit),
@@ -99,6 +102,9 @@ def build_channels_release_from_arrays(
 
     if not feature_values:
         raise ValueError("at least one feature is required")
+    unknown_log_features = sorted(set(config.log_color_features) - set(feature_values))
+    if unknown_log_features:
+        raise ValueError(f"log color features are not in the release catalog: {', '.join(unknown_log_features)}")
     missing_parcellations = [p for p in config.parcellations if p not in parcellation_ids]
     if missing_parcellations:
         raise ValueError(f"missing region ids for: {', '.join(missing_parcellations)}")
@@ -158,6 +164,7 @@ def build_channels_release_from_arrays(
                 else f"Channel feature {source_column}{variant_label} aggregated regionally by arithmetic mean."
             ),
             "unit": info.unit if info else None,
+            **({"display": {"scale": "log"}} if feature_id in config.log_color_features else {}),
             "value_semantics": {
                 "quantity": source_column,
                 "transform": "identity from the selected source parquet; no outlier replacement or value clipping",
@@ -225,6 +232,7 @@ def build_channels_release_from_arrays(
                 "population": config.population,
                 "parcellations": list(config.parcellations),
                 "features": sorted(feature_values),
+                "log_color_features": sorted(config.log_color_features),
                 "regional_summary": "mean",
                 "histogram_bins": config.histogram_bins,
                 "hemisphere": "bilateral observations folded onto left atlas ids using -abs(id)",

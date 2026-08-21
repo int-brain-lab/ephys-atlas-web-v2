@@ -28,6 +28,8 @@ def test_build_channels_omitted_features_use_upstream_catalog(monkeypatch, tmp_p
             "both",
             "--population",
             "inside",
+            "--log-color-feature",
+            "rms_ap.raw",
             "--created-at",
             "2026-08-20T11:19:05Z",
             "--ibleatools-commit",
@@ -47,3 +49,4 @@ def test_build_channels_omitted_features_use_upstream_catalog(monkeypatch, tmp_p
     assert captured["source_snapshot"] == snapshot
     assert captured["release_dir"] == release_root / "ephys_atlas_channels" / "2026_W32"
     assert captured["config"].features is None
+    assert captured["config"].log_color_features == ("rms_ap.raw",)

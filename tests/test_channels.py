@@ -109,6 +109,52 @@ def test_channel_recipe_is_deterministic(tmp_path):
         assert (a / rel).read_bytes() == (b / rel).read_bytes(), rel
 
 
+def test_channel_recipe_emits_explicit_log_color_defaults(tmp_path):
+    features, ids, metadata = _inputs()
+    config = ChannelBuildConfig(
+        release_id="2026_W12",
+        created_at="2026-08-20T00:00:00Z",
+        feature_mode="denoised",
+        population="inside",
+        log_color_features=("rms_ap",),
+    )
+    release = build_channels_release_from_arrays(
+        tmp_path / "release",
+        config,
+        features,
+        ids,
+        metadata,
+        [{"role": "canonical-data", "description": "display metadata test"}],
+    )
+    validate_release(release, ROOT / "schema" / "v0.1")
+    rms = json.loads((release / "features/rms_ap/feature.json").read_text())
+    polarity = json.loads((release / "features/polarity/feature.json").read_text())
+    manifest = json.loads((release / "manifest.json").read_text())
+    assert rms["display"] == {"scale": "log"}
+    assert "display" not in polarity
+    assert manifest["provenance"]["recipe"]["log_color_features"] == ["rms_ap"]
+
+
+def test_channel_recipe_rejects_unknown_log_color_feature(tmp_path):
+    features, ids, metadata = _inputs()
+    config = ChannelBuildConfig(
+        release_id="2026_W12",
+        created_at="2026-08-20T00:00:00Z",
+        feature_mode="denoised",
+        population="inside",
+        log_color_features=("missing",),
+    )
+    with pytest.raises(ValueError, match="not in the release catalog"):
+        build_channels_release_from_arrays(
+            tmp_path / "release",
+            config,
+            features,
+            ids,
+            metadata,
+            [{"role": "canonical-data", "description": "display metadata test"}],
+        )
+
+
 def test_channel_recipe_requires_explicit_scientific_choices():
     with pytest.raises(ValueError, match="feature_mode"):
         ChannelBuildConfig(
