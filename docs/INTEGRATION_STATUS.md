@@ -135,12 +135,17 @@ color interval with boundary guides, a subtle selected-range tint, and dimmed
 out-of-range tails; colorbar dragging and reset update this read-only analytical
 view immediately.
 
-The global keyboard layer opens feature search with `/`, moves to adjacent
-manifest-ordered features with `Shift + Down` / `Shift + Up`, and opens an
-in-product shortcut guide with `?`. It is suppressed during text/form entry and
-modal dialogs, does not wrap feature boundaries, announces feature position,
-and keeps every action available through visible controls. Feature loading
-prefetches the immediate next and previous catalogue neighbours.
+The header Help action opens one concise scientific-workflow guide with a
+responsive schematic of the actual viewer layout. Its four steps cover choosing
+the scientific context, exploring and ranking regions in linked slices,
+comparing selected regions, and exporting or sharing a reproducible result.
+Keyboard shortcuts remain available as a collapsed secondary reference. The
+global keyboard layer opens feature search with `/`, moves to adjacent
+manifest-ordered features with `Shift + Down` / `Shift + Up`, and opens Help
+with `?`. It is suppressed during text/form entry and modal dialogs, does not
+wrap feature boundaries, announces feature position, and keeps every action
+available through visible controls. Feature loading prefetches the immediate
+next and previous catalogue neighbours.
 
 Release-provided scientific feature descriptions are visible during discovery
 and after selection. Feature-picker results retain compact unit/representation

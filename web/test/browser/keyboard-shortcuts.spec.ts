@@ -57,7 +57,7 @@ test('global shortcuts search and cycle the manifest feature catalogue', async (
   await expect.poll(() => new URL(page.url()).searchParams.get('feature')).toBe('rms_ap');
 });
 
-test('shortcuts stay out of text entry and expose an in-product guide', async ({ page }) => {
+test('shortcuts stay out of text entry and expose the concise help guide', async ({ page }) => {
   await page.goto('/');
 
   const featureField = page.locator('[data-context-field="feature"]');
@@ -80,16 +80,39 @@ test('shortcuts stay out of text entry and expose an in-product guide', async ({
   await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', {
     key: '?', shiftKey: true, bubbles: true, cancelable: true,
   })));
-  const guide = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
+  const guide = page.getByRole('dialog', { name: 'Using the Ephys Atlas' });
   await expect(guide).toBeVisible();
-  await expect(guide).toContainText('Next feature');
-  await expect(guide).toContainText('Search features');
+  await expect(guide.locator('.help-guide__schematic')).toBeVisible();
+  await expect(guide.locator('.help-guide__step')).toHaveCount(4);
+  await expect(guide).toContainText('Choose what to explore');
+  await expect(guide).toContainText('Compare regions');
+  await expect(guide).toContainText('Consult Info before interpreting or citing them');
 
   await page.keyboard.press('Shift+ArrowDown');
   await expect(featureField.locator('.context-menu__trigger')).toContainText('AP RMS (golden fixture)');
   await page.keyboard.press('Escape');
   await expect(guide).not.toBeVisible();
 
-  await page.getByRole('button', { name: 'Shortcuts' }).first().click();
+  await page.getByRole('button', { name: 'Help' }).first().click();
   await expect(guide).toBeVisible();
+  await guide.getByText('Keyboard shortcuts').click();
+  await expect(guide).toContainText('Next feature');
+  await expect(guide).toContainText('Search features');
+});
+
+test('help guide stays readable within a phone viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.locator('.app-header__overflow-trigger').click();
+  await page.locator('.app-header__overflow-menu').getByRole('button', { name: 'Help' }).click();
+
+  const guide = page.getByRole('dialog', { name: 'Using the Ephys Atlas' });
+  await expect(guide).toBeVisible();
+  const bounds = await guide.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
+  expect(bounds!.y).toBeGreaterThanOrEqual(0);
+  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(844);
+  await expect(guide.locator('.help-guide__step')).toHaveCount(4);
 });

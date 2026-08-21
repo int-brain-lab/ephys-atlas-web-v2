@@ -19,6 +19,7 @@
 @import './styles/components/distribution.css' layer(components);
 @import './styles/components/analysis.css' layer(components);
 @import './styles/components/settings-panel.css' layer(components);
+@import './styles/components/help-guide.css' layer(components);
 @import './styles/components/overlays.css' layer(components);
 
 @import './styles/utilities.css' layer(utilities);

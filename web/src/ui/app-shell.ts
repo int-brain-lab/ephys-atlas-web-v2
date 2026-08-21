@@ -86,7 +86,7 @@ const ACTION_LABELS: Record<HeaderAction, string> = {
   share: 'Share',
   download: 'Download',
   info: 'Info',
-  help: 'Shortcuts',
+  help: 'Help',
 };
 
 function blocksGlobalShortcut(event: KeyboardEvent): boolean {
@@ -126,7 +126,7 @@ export class AppShell {
   private readonly backdrop: HTMLButtonElement;
   private readonly infoDialog: HTMLDialogElement;
   private readonly infoContent: HTMLElement;
-  private readonly shortcutsDialog: HTMLDialogElement;
+  private readonly helpDialog: HTMLDialogElement;
   private analysisDialog!: HTMLDialogElement;
   private readonly shortcutStatus: HTMLElement;
   private readonly viewButtons = new Map<WorkspaceView, HTMLButtonElement>();
@@ -205,7 +205,7 @@ export class AppShell {
     const info = this.createInfoDialog();
     this.infoDialog = info.dialog;
     this.infoContent = info.content;
-    this.shortcutsDialog = this.createShortcutsDialog();
+    this.helpDialog = this.createHelpDialog();
     this.shortcutStatus = element('div', 'visually-hidden');
     this.shortcutStatus.setAttribute('role', 'status');
     this.shortcutStatus.setAttribute('aria-live', 'polite');
@@ -215,7 +215,7 @@ export class AppShell {
     const workspace = this.createWorkspace();
     body.append(this.regionPane, workspace, this.settingsPane);
 
-    this.app.append(header, body, this.backdrop, this.infoDialog, this.shortcutsDialog, this.shortcutStatus);
+    this.app.append(header, body, this.backdrop, this.infoDialog, this.helpDialog, this.shortcutStatus);
     root.append(this.app);
 
     this.backdrop.addEventListener('click', () => this.closeDrawers());
@@ -347,7 +347,7 @@ export class AppShell {
       this.headerActionButton('Share', 'share'),
       this.headerActionButton('Download', 'download'),
       this.headerActionButton('Info', 'info'),
-      this.headerActionButton('Shortcuts', 'help'),
+      this.headerActionButton('Help', 'help'),
     );
     actions.append(desktopActions, this.createOverflowActions());
 
@@ -380,7 +380,7 @@ export class AppShell {
 
   private async runHeaderAction(action: HeaderAction, button: HTMLButtonElement): Promise<void> {
     if (action === 'help') {
-      this.openShortcutsDialog();
+      this.openHelpDialog();
       return;
     }
     if (action === 'info') {
@@ -445,7 +445,7 @@ export class AppShell {
       this.headerActionButton('Share', 'share'),
       this.headerActionButton('Download', 'download'),
       this.headerActionButton('Info', 'info'),
-      this.headerActionButton('Shortcuts', 'help'),
+      this.headerActionButton('Help', 'help'),
     );
     details.append(summary, menu);
     this.overflowActions = details;
@@ -471,17 +471,91 @@ export class AppShell {
     return { dialog, content };
   }
 
-  private createShortcutsDialog(): HTMLDialogElement {
-    const dialog = element('dialog', 'info-dialog shortcuts-dialog');
-    dialog.setAttribute('aria-labelledby', 'shortcuts-dialog-title');
+  private createHelpDialog(): HTMLDialogElement {
+    const dialog = element('dialog', 'info-dialog help-dialog');
+    dialog.setAttribute('aria-labelledby', 'help-dialog-title');
     const header = element('header', 'info-dialog__header');
-    const title = heading('Keyboard shortcuts', 2);
-    title.id = 'shortcuts-dialog-title';
+    const title = heading('Using the Ephys Atlas', 2);
+    title.id = 'help-dialog-title';
     const close = element('button', 'info-dialog__close');
     close.type = 'button';
     close.textContent = 'Close';
     close.addEventListener('click', () => dialog.close());
     header.append(title, close);
+
+    const schematic = element('div', 'help-guide__schematic');
+    schematic.setAttribute('aria-hidden', 'true');
+    const schematicHeader = element('div', 'help-schematic__header');
+    const schematicBrand = element('span', 'help-schematic__brand');
+    schematicBrand.textContent = 'Ephys Atlas';
+    const schematicContext = element('div', 'help-schematic__context');
+    schematicContext.append(
+      this.helpSchematicChip('Dataset'),
+      this.helpSchematicChip('Feature'),
+      this.helpSchematicChip('Representation'),
+      this.helpCallout('1'),
+    );
+    const schematicActions = element('div', 'help-schematic__actions');
+    schematicActions.append(
+      this.helpSchematicChip('Share'),
+      this.helpSchematicChip('Download'),
+      this.helpCallout('4'),
+    );
+    schematicHeader.append(schematicBrand, schematicContext, schematicActions);
+
+    const schematicBody = element('div', 'help-schematic__body');
+    const schematicRegions = element('div', 'help-schematic__regions');
+    const regionSearch = element('span', 'help-schematic__search');
+    regionSearch.textContent = 'Search regions';
+    const regionRows = element('div', 'help-schematic__region-rows');
+    for (let index = 0; index < 5; index += 1) regionRows.append(element('span'));
+    schematicRegions.append(regionSearch, regionRows, this.helpCallout('2'));
+
+    const schematicWorkspace = element('div', 'help-schematic__workspace');
+    const slices = element('div', 'help-schematic__slices');
+    for (const label of ['Coronal', 'Sagittal', 'Horizontal']) {
+      const view = element('div', 'help-schematic__view');
+      const viewLabel = element('span');
+      viewLabel.textContent = label;
+      view.append(viewLabel, element('i'));
+      slices.append(view);
+    }
+    const comparison = element('div', 'help-schematic__comparison');
+    comparison.append(element('span'), element('span'), element('span'));
+    schematicWorkspace.append(slices, comparison, this.helpCallout('3'));
+
+    const schematicSettings = element('div', 'help-schematic__settings');
+    schematicSettings.append(element('span'), element('span'), element('span'), element('span'));
+    schematicBody.append(schematicRegions, schematicWorkspace, schematicSettings);
+    schematic.append(schematicHeader, schematicBody);
+
+    const steps: readonly (readonly [string, string])[] = [
+      [
+        'Choose what to explore',
+        'Select the dataset, release, feature, representation, and parcellation. Use Info to check the feature definition, units, population, processing, and provenance.',
+      ],
+      [
+        'Explore the brain',
+        'Move through the linked slices. Search or click a region, then rank regions by feature value to find high and low values.',
+      ],
+      [
+        'Compare regions',
+        'Select regions to compare their statistics and distributions with the global population. Check sample counts when interpreting differences.',
+      ],
+      [
+        'Save or share the result',
+        'Share copies the complete view. Download exports the current regional values; the comparison view exports selected-region data.',
+      ],
+    ];
+    const guide = element('ol', 'help-guide__steps');
+    for (const [stepTitle, description] of steps) {
+      const item = element('li', 'help-guide__step');
+      item.append(heading(stepTitle, 3), this.infoParagraph(description));
+      guide.append(item);
+    }
+
+    const note = element('p', 'help-guide__note');
+    note.textContent = 'Regional values are descriptive summaries of the population defined by the selected release. Consult Info before interpreting or citing them.';
 
     const shortcuts: readonly (readonly [string, string])[] = [
       ['Shift + ↓', 'Next feature'],
@@ -489,9 +563,9 @@ export class AppShell {
       ['/', 'Search features'],
       ['Arrow keys', 'Adjust a focused slice or control'],
       ['Esc', 'Close transient UI or restore a maximized view'],
-      ['?', 'Show this shortcut guide'],
+      ['?', 'Show this help guide'],
     ];
-    const list = element('dl', 'shortcuts-dialog__list');
+    const list = element('dl', 'help-guide__shortcut-list');
     for (const [keys, description] of shortcuts) {
       const term = element('dt');
       const key = element('kbd');
@@ -501,10 +575,13 @@ export class AppShell {
       detail.textContent = description;
       list.append(term, detail);
     }
-    const content = element('div', 'info-dialog__content');
-    const section = element('section', 'info-dialog__section');
-    section.append(list);
-    content.append(section);
+    const shortcutDetails = element('details', 'help-guide__shortcuts');
+    const shortcutSummary = element('summary');
+    shortcutSummary.textContent = 'Keyboard shortcuts';
+    shortcutDetails.append(shortcutSummary, list);
+
+    const content = element('div', 'info-dialog__content help-guide__content');
+    content.append(schematic, guide, note, shortcutDetails);
     dialog.append(header, content);
     dialog.addEventListener('click', (event) => {
       if (event.target === dialog) dialog.close();
@@ -512,11 +589,23 @@ export class AppShell {
     return dialog;
   }
 
-  private openShortcutsDialog(): void {
+  private helpSchematicChip(text: string): HTMLSpanElement {
+    const chip = element('span', 'help-schematic__chip');
+    chip.textContent = text;
+    return chip;
+  }
+
+  private helpCallout(text: string): HTMLSpanElement {
+    const callout = element('span', 'help-schematic__callout');
+    callout.textContent = text;
+    return callout;
+  }
+
+  private openHelpDialog(): void {
     this.closeContextMenus();
     this.closeDrawers();
     if (this.overflowActions) this.overflowActions.open = false;
-    if (!this.shortcutsDialog.open) this.shortcutsDialog.showModal();
+    if (!this.helpDialog.open) this.helpDialog.showModal();
   }
 
   private renderInfo(model: ShellModel): void {
@@ -1186,7 +1275,7 @@ export class AppShell {
     if (event.defaultPrevented) return;
     if (this.analysisDialog.open) return;
     if (event.key === 'Escape') {
-      if (this.infoDialog.open || this.shortcutsDialog.open) return;
+      if (this.infoDialog.open || this.helpDialog.open) return;
       if (this.closeContextMenus()) return;
       if (this.maximizedView) {
         this.toggleMaximizedView(this.maximizedView);
@@ -1199,7 +1288,7 @@ export class AppShell {
       if (this.overflowActions?.open) this.overflowActions.open = false;
       return;
     }
-    if (blocksGlobalShortcut(event) || this.infoDialog.open || this.shortcutsDialog.open) return;
+    if (blocksGlobalShortcut(event) || this.infoDialog.open || this.helpDialog.open) return;
     if (event.key === '/' && !event.altKey && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
       this.featureContext.open();
@@ -1212,7 +1301,7 @@ export class AppShell {
       && !event.metaKey
     ) {
       event.preventDefault();
-      this.openShortcutsDialog();
+      this.openHelpDialog();
       return;
     }
     if (
