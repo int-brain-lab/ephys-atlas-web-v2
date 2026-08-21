@@ -1,3 +1,15 @@
+import {
+  cursorStateToWorld,
+} from '../core/spatial.js';
+import {
+  ANATOMY_25UM_CALIBRATION,
+  legacyAnatomy25UmIndicesToWorld,
+  legacyRegionalIndicesToWorld,
+  maxRegionalSliceIndex,
+  REGIONAL_10UM_CALIBRATION,
+  regionalIndicesToWorld,
+  worldToRegionalIndices,
+} from '../core/slice-calibration.js';
 import { isViewAction } from '../domain/actions.js';
 import { DEFAULT_VIEW_STATE } from '../domain/defaults.js';
 import type { AppStore } from '../domain/store.js';
@@ -9,17 +21,6 @@ import type {
   StatisticId,
   ViewState,
 } from '../domain/types.js';
-import { LAUNCH_DATASET_IDS } from '../domain/types.js';
-import { cursorStateToWorld } from '../rendering/coordinate-space.js';
-import {
-  ANATOMY_25UM_CALIBRATION,
-  legacyAnatomy25UmIndicesToWorld,
-  legacyRegionalIndicesToWorld,
-  maxRegionalSliceIndex,
-  REGIONAL_10UM_CALIBRATION,
-  regionalIndicesToWorld,
-  worldToRegionalIndices,
-} from '../rendering/slice-calibration.js';
 
 const URL_VERSION = 3;
 const NAVIGATION_URL_DEBOUNCE_MS = 120;
@@ -54,8 +55,9 @@ function parseRange(value: string | null, fallback: ColorRange): ColorRange {
   return { mode: 'fixed', min, max };
 }
 
-function isDatasetId(value: string | null): value is DatasetId {
-  return value !== null && (LAUNCH_DATASET_IDS as readonly string[]).includes(value);
+function parseDatasetId(value: string | null, fallback: DatasetId): DatasetId {
+  const parsed = value?.trim();
+  return parsed ? parsed : fallback;
 }
 
 export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIEW_STATE): ViewState {
@@ -63,7 +65,7 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
   const version = Number(params.get('v'));
   if (params.has('v') && version !== 1 && version !== 2 && version !== URL_VERSION) return defaults;
 
-  const datasetId = isDatasetId(params.get('dataset')) ? params.get('dataset') as DatasetId : defaults.dataset.datasetId;
+  const datasetId = parseDatasetId(params.get('dataset'), defaults.dataset.datasetId);
   const releaseId = params.has('release')
     ? params.get('release') || null
     : datasetId === defaults.dataset.datasetId ? defaults.dataset.releaseId : null;
@@ -140,7 +142,9 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   const params = new URLSearchParams();
   params.set('v', String(URL_VERSION));
   if (view.dataset.datasetId !== defaults.dataset.datasetId) params.set('dataset', view.dataset.datasetId);
-  if (view.dataset.releaseId !== defaults.dataset.releaseId && view.dataset.releaseId) params.set('release', view.dataset.releaseId);
+  if (view.dataset.releaseId && (view.dataset.datasetId !== defaults.dataset.datasetId || view.dataset.releaseId !== defaults.dataset.releaseId)) {
+    params.set('release', view.dataset.releaseId);
+  }
   if (view.featureId) params.set('feature', view.featureId);
   if (view.representation !== defaults.representation) params.set('repr', view.representation);
   if (view.parcellation !== defaults.parcellation) params.set('parcel', view.parcellation);
