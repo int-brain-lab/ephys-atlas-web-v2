@@ -91,7 +91,7 @@ test('small pixel wheel deltas accumulate sensitively for smooth macOS scrolling
   await page.goto('/');
 
   await page.locator('[data-view="coronal"] .view-frame__brain-svg').evaluate((node) => {
-    for (let index = 0; index < 4; index += 1) {
+    for (let index = 0; index < 2; index += 1) {
       node.dispatchEvent(new WheelEvent('wheel', { deltaY: 8, deltaMode: WheelEvent.DOM_DELTA_PIXEL, cancelable: true }));
     }
   });
