@@ -6,7 +6,7 @@
 .secondary-view__surface {
   min-height: 0;
   background:
-    linear-gradient(145deg, rgb(85 167 247 / 2.5%), transparent 55%),
+    linear-gradient(145deg, rgb(var(--color-accent-rgb) / 2.5%), transparent 55%),
     var(--color-view);
 }
 

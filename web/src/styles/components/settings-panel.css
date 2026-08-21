@@ -373,7 +373,7 @@
 .info-dialog__status {
   width: fit-content;
   padding: .14rem .42rem;
-  border: 1px solid rgb(85 167 247 / 20%);
+  border: 1px solid rgb(var(--color-accent-rgb) / 20%);
   border-radius: 999px;
   background: var(--color-accent-soft);
   color: var(--color-text-secondary);

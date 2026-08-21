@@ -18,19 +18,16 @@
   align-items: center;
   gap: var(--space-2);
   padding: 0 var(--space-3);
-  border-right: 1px solid var(--color-border);
+  border-right: 1px solid rgb(var(--color-accent-rgb) / 24%);
+  border-radius: calc(var(--radius-md) - 1px) 0 0 calc(var(--radius-md) - 1px);
+  background: var(--color-brand-blue);
 }
 
-.app-header__mark {
+.app-header__logo {
   flex: none;
-  width: 1.6rem;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 1px solid var(--color-border-strong);
-  background:
-    linear-gradient(90deg, transparent 46%, rgb(85 167 247 / 55%) 47% 53%, transparent 54%),
-    repeating-linear-gradient(0deg, rgb(85 167 247 / 22%) 0 1px, transparent 1px 4px),
-    var(--color-surface-3);
+  width: auto;
+  height: 2.7rem;
+  display: block;
 }
 
 .app-header__brand-text {
@@ -41,8 +38,10 @@
 }
 
 .app-header__brand h1 {
+  font-family: "Ubuntu Sans Condensed", "Arial Narrow", Inter, ui-sans-serif, sans-serif;
   font-size: 0.82rem;
-  font-weight: 720;
+  font-stretch: condensed;
+  font-weight: 650;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -109,7 +108,7 @@
 .context-menu__trigger:hover,
 .context-menu[data-open="true"] .context-menu__trigger {
   border-color: var(--color-border);
-  background: rgb(85 167 247 / 5%);
+  background: rgb(var(--color-accent-rgb) / 5%);
 }
 
 .context-menu__trigger:focus-visible {
@@ -159,9 +158,9 @@
   max-width: 8.5rem;
   overflow: hidden;
   padding: 0.12rem 0.38rem;
-  border: 1px solid rgb(85 167 247 / 16%);
+  border: 1px solid rgb(var(--color-accent-rgb) / 16%);
   border-radius: 999px;
-  background: rgb(85 167 247 / 7%);
+  background: rgb(var(--color-accent-rgb) / 7%);
   color: var(--color-text-muted);
   font-size: 0.62rem;
   font-weight: 620;
@@ -245,7 +244,7 @@
 
 .context-menu__search:focus {
   border-color: var(--color-border-strong);
-  outline: 2px solid rgb(120 189 255 / 18%);
+  outline: 2px solid rgb(var(--color-focus-rgb) / 18%);
 }
 
 .context-menu__list {
@@ -297,7 +296,7 @@
 
 .context-menu__option:hover,
 .context-menu__option:focus-visible {
-  border-color: rgb(85 167 247 / 12%);
+  border-color: rgb(var(--color-accent-rgb) / 12%);
   background: var(--color-surface-hover);
   outline: 0;
 }
@@ -467,6 +466,10 @@
     padding-inline: var(--space-2);
   }
 
+  .app-header__logo {
+    height: 2.45rem;
+  }
+
   .app-header__context {
     grid-template-columns: minmax(8rem, 1fr) minmax(7.5rem, .9fr) minmax(7rem, .72fr);
     gap: var(--space-2);
@@ -512,7 +515,7 @@
 
 @media (max-width: 759px) {
   .app-header {
-    grid-template-columns: 2.05rem minmax(0, 1fr) max-content;
+    grid-template-columns: 2.85rem minmax(0, 1fr) max-content;
     gap: var(--space-1);
   }
 
@@ -534,8 +537,8 @@
     border: 0;
   }
 
-  .app-header__mark {
-    width: 1.45rem;
+  .app-header__logo {
+    height: 2.15rem;
   }
 
   .app-header__context {

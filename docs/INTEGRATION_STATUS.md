@@ -33,6 +33,15 @@ feature-level `display.scale` metadata and otherwise uses linear color
 normalization. Explicit linear/logarithmic overrides persist in URLs, while
 values, statistics, histograms, tooltips, and exports remain unchanged.
 
+## Brand identity
+
+The application header uses the official 2026 IBL Core colored-negative SVG
+lockup on the institutional blue surface. The institutional cyan is the primary
+interface accent; magenta is retained as a reserved brand token. Scientific
+feature colormaps, Allen ontology colors, and categorical selection colors
+remain independent of branding. Asset identity and usage constraints are
+recorded in `docs/frontend/BRAND_IDENTITY.md` and D028.
+
 ## Anatomy rendering
 
 The active regional anatomy display is the immutable sparse `anatomy-pack-v3`, derived byte-for-byte from the validated bilateral 10 µm `anatomy-pack-v2` parent. Application/URL/cursor state remains in native 10 µm coordinates while display geometry uses the sparse 80 µm inventory.

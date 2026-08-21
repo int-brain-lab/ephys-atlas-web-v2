@@ -14,9 +14,14 @@
 
   --color-border: rgb(163 194 216 / 12%);
   --color-border-strong: rgb(163 194 216 / 22%);
-  --color-accent: #55a7f7;
-  --color-accent-soft: rgb(85 167 247 / 14%);
-  --color-focus: #78bdff;
+  --color-brand-blue: #004d89;
+  --color-brand-cyan: #009fd7;
+  --color-brand-magenta: #ce2c97;
+  --color-accent-rgb: 0 159 215;
+  --color-accent: var(--color-brand-cyan);
+  --color-accent-soft: rgb(var(--color-accent-rgb) / 14%);
+  --color-focus: var(--color-brand-cyan);
+  --color-focus-rgb: var(--color-accent-rgb);
   --color-backdrop: rgb(2 8 13 / 68%);
 
   --space-1: 0.25rem;

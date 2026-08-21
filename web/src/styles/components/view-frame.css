@@ -45,7 +45,7 @@
 
 .view-frame[data-state='ready'] .view-frame__status::before {
   background: var(--color-accent);
-  box-shadow: 0 0 0 0.15rem rgb(85 167 247 / 10%);
+  box-shadow: 0 0 0 0.15rem rgb(var(--color-accent-rgb) / 10%);
 }
 
 .view-frame[data-state='error'] .view-frame__status::before {
@@ -79,7 +79,7 @@
   min-height: 0;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 43%, rgb(85 167 247 / 3.5%), transparent 55%),
+    radial-gradient(circle at 50% 43%, rgb(var(--color-accent-rgb) / 3.5%), transparent 55%),
     var(--color-view);
 }
 
@@ -115,7 +115,7 @@
 }
 
 .view-frame__guide-layer .slice-guide {
-  stroke: rgb(120 189 255 / 68%);
+  stroke: rgb(var(--color-focus-rgb) / 68%);
   stroke-width: 0.75;
   vector-effect: non-scaling-stroke;
 }

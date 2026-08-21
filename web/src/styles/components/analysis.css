@@ -120,14 +120,14 @@
   flex: none;
   min-height: 1.65rem;
   padding: 0 .55rem;
-  border-color: rgb(85 167 247 / 28%);
-  background: rgb(85 167 247 / 8%);
+  border-color: rgb(var(--color-accent-rgb) / 28%);
+  background: rgb(var(--color-accent-rgb) / 8%);
   color: var(--color-text-secondary);
   font-size: .56rem;
 }
 
 .regional-comparison__download:hover {
-  background: rgb(85 167 247 / 16%);
+  background: rgb(var(--color-accent-rgb) / 16%);
   color: var(--color-text);
 }
 
@@ -253,7 +253,7 @@
 }
 
 .regional-comparison__table [data-active='true'] {
-  background: rgb(85 167 247 / 9%);
+  background: rgb(var(--color-accent-rgb) / 9%);
   color: var(--color-text);
 }
 
