@@ -14,6 +14,7 @@ export class RegionalTreeView {
   readonly search: HTMLInputElement;
   readonly source: HTMLElement;
   readonly resultCount: HTMLElement;
+  private readonly pane: HTMLElement;
   private readonly searchClear: HTMLButtonElement;
   private readonly collapseAllButton: HTMLButtonElement;
   private readonly expandAllButton: HTMLButtonElement;
@@ -25,6 +26,7 @@ export class RegionalTreeView {
   private hoveredRegionId: string | null = null;
 
   constructor(root: ParentNode, private readonly callbacks: RegionalTreeCallbacks) {
+    this.pane = required(root, '.region-pane');
     this.search = required(root, '.region-search__input');
     this.searchClear = required(root, '.region-search__clear');
     this.source = required(root, '.region-search__source');
@@ -234,23 +236,25 @@ export class RegionalTreeView {
   private toggleBranch(regionId: string): void {
     const row = this.rowById.get(regionId);
     if (!row || row.dataset.branch !== 'true') return;
-    if (this.collapsedRegionIds.has(regionId)) this.collapsedRegionIds.delete(regionId);
-    else this.collapsedRegionIds.add(regionId);
-    this.syncBranchDisclosure(row);
-    this.filterRegions();
+    this.animateTreeMutation(() => {
+      if (this.collapsedRegionIds.has(regionId)) this.collapsedRegionIds.delete(regionId);
+      else this.collapsedRegionIds.add(regionId);
+      this.syncBranchDisclosure(row);
+    });
   }
 
   private readonly collapseAllRegions = (): void => this.setAllBranchesExpanded(false);
   private readonly expandAllRegions = (): void => this.setAllBranchesExpanded(true);
 
   private setAllBranchesExpanded(expanded: boolean): void {
-    for (const [id, row] of this.rowById) {
-      if (row.dataset.branch !== 'true') continue;
-      if (expanded) this.collapsedRegionIds.delete(id);
-      else this.collapsedRegionIds.add(id);
-      this.syncBranchDisclosure(row);
-    }
-    this.filterRegions();
+    this.animateTreeMutation(() => {
+      for (const [id, row] of this.rowById) {
+        if (row.dataset.branch !== 'true') continue;
+        if (expanded) this.collapsedRegionIds.delete(id);
+        else this.collapsedRegionIds.add(id);
+        this.syncBranchDisclosure(row);
+      }
+    });
   }
 
   private syncBranchDisclosure(row: HTMLLIElement): void {
@@ -264,10 +268,53 @@ export class RegionalTreeView {
     toggle.setAttribute('aria-label', `${expanded ? 'Collapse' : 'Expand'} ${this.regionById.get(regionId)?.acronym ?? regionId}`);
   }
 
+  private animateTreeMutation(mutation: () => void): void {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const before = reduceMotion ? new Map<string, number>() : this.captureVisibleRowTops();
+    mutation();
+    this.filterRegions();
+    if (!reduceMotion) this.animateVisibleRowReflow(before);
+  }
+
   private syncTreeControls(filtering: boolean): void {
     const branches = [...this.rowById].filter(([, row]) => row.dataset.branch === 'true');
     this.collapseAllButton.disabled = filtering || branches.length === 0 || branches.every(([id]) => this.collapsedRegionIds.has(id));
     this.expandAllButton.disabled = filtering || !branches.some(([id]) => this.collapsedRegionIds.has(id));
+  }
+
+  private captureVisibleRowTops(): Map<string, number> {
+    for (const row of this.rowById.values()) row.getAnimations().forEach((animation) => animation.finish());
+    const viewport = this.pane.querySelector<HTMLElement>('.region-pane__browser')?.getBoundingClientRect();
+    const tops = new Map<string, number>();
+    for (const [id, row] of this.rowById) {
+      if (row.hidden) continue;
+      const rect = row.getBoundingClientRect();
+      if (!viewport || (rect.bottom >= viewport.top - 40 && rect.top <= viewport.bottom + 40)) tops.set(id, rect.top);
+    }
+    return tops;
+  }
+
+  private animateVisibleRowReflow(before: ReadonlyMap<string, number>): void {
+    const viewport = this.pane.querySelector<HTMLElement>('.region-pane__browser')?.getBoundingClientRect();
+    for (const [id, row] of this.rowById) {
+      if (row.hidden) continue;
+      const rect = row.getBoundingClientRect();
+      if (viewport && (rect.bottom < viewport.top - 40 || rect.top > viewport.bottom + 40)) continue;
+      const previousTop = before.get(id);
+      if (previousTop === undefined) {
+        row.animate(
+          [{ opacity: 0, transform: 'translateY(-3px)' }, { opacity: 1, transform: 'translateY(0)' }],
+          { duration: 150, easing: 'cubic-bezier(.2,.8,.2,1)' },
+        );
+        continue;
+      }
+      const delta = previousTop - rect.top;
+      if (Math.abs(delta) < 0.5) continue;
+      row.animate(
+        [{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }],
+        { duration: 150, easing: 'cubic-bezier(.2,.8,.2,1)' },
+      );
+    }
   }
 
   private hasCollapsedAncestor(regionId: string): boolean {
