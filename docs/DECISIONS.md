@@ -189,10 +189,12 @@ Application state, URL state, cursor coordinates, guides, and projection
 affines remain on the exact native 10 µm grid. Interactive anatomy is a
 separate explicit inventory sampled every 80 µm. Its lattice is anchored at
 the native plane nearest fixed-axis world coordinate zero, so the inventory is
-deterministic and aligned across rebuilds. Sliders expose display ordinals;
-their values map back to native indices before changing application state.
-Exact native indices loaded from URLs resolve to the nearest displayed plane
-for geometry only, with the lower native index winning a tie.
+deterministic and aligned across rebuilds. Slider controls operate over display
+ordinals and map them back to native indices before changing application state,
+but the UI presents and announces the scientifically meaningful calibrated
+ML/AP/DV coordinate rather than the implementation ordinal. Exact native
+indices loaded from URLs resolve to the nearest displayed plane for geometry
+only, with the lower native index winning a tie.
 
 Use depth-eight gzip-compressed ISVG packs. Fetch and compressed-byte SHA
 verification stay in the browser source. A persistent module worker owns a

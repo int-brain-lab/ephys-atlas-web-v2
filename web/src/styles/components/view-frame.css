@@ -216,9 +216,8 @@
 .view-frame__footer {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: var(--space-3);
   padding: 0 var(--space-3);
   border-top: 1px solid var(--color-border);
 }
@@ -227,13 +226,6 @@
   width: 100%;
   min-width: 0;
   accent-color: var(--color-accent);
-}
-
-.view-frame__index {
-  min-width: 4.6rem;
-  color: var(--color-text-muted);
-  font-size: 0.62rem;
-  text-align: right;
 }
 
 .view-frame[data-maximized='true'] {
@@ -281,13 +273,7 @@
   }
 
   .view-frame__footer {
-    gap: var(--space-2);
     padding-inline: var(--space-2);
-  }
-
-  .view-frame__index {
-    min-width: 4rem;
-    font-size: 0.58rem;
   }
 
   .view-frame[data-maximized='true'] {
