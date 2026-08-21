@@ -7,6 +7,7 @@ import {
   renderDistribution,
   renderFeatureSummary,
   renderSelectedRegions,
+  updateDistributionColorRange,
   updateDistributionHover,
 } from './details-view.js';
 import { buildRegionalValueMap } from './model.js';
@@ -73,6 +74,7 @@ export class RegionalPanelController {
     const regionOrder = model.state.view.regionOrder;
     const fixture = model.manifest?.dataset.fixture === true;
     const selectionKey = model.state.view.selection.join(',');
+    const range = feature ? regionalColorRange(feature, model.state.view.coloring) : null;
     if (
       feature === this.lastFeature
       && model.regions === this.lastRegions
@@ -85,6 +87,12 @@ export class RegionalPanelController {
       this.tree.updateHoveredRegion(model.hoveredRegionId);
       if (feature) {
         const descriptor = model.manifest?.features.find((item) => item.id === feature.featureId);
+        updateDistributionColorRange(
+          this.distribution,
+          feature,
+          range,
+          model.state.view.coloring.range.mode,
+        );
         updateDistributionHover(
           this.distribution,
           feature,
@@ -117,7 +125,6 @@ export class RegionalPanelController {
     const values = feature ? buildRegionalValueMap(feature, statistic) : new Map<string, number>();
     const selected = new Set(model.state.view.selection);
     this.updateAnalysisDisclosure(selected.size > 0);
-    const range = feature ? regionalColorRange(feature, model.state.view.coloring) : null;
     const unit = descriptor?.unit ?? null;
 
     this.tree.source.textContent = model.anatomyAtlas
@@ -130,6 +137,12 @@ export class RegionalPanelController {
     if (feature) {
       renderFeatureSummary(this.summary, feature, unit);
       renderDistribution(this.distribution, feature, selected, model.regions, statistic, unit, fixture);
+      updateDistributionColorRange(
+        this.distribution,
+        feature,
+        range,
+        model.state.view.coloring.range.mode,
+      );
       updateDistributionHover(
         this.distribution,
         feature,

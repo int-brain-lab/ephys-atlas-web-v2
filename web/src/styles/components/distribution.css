@@ -72,6 +72,29 @@
   vector-effect: non-scaling-stroke;
 }
 
+.distribution-chart__color-range[data-visible='false'] {
+  display: none;
+}
+
+.distribution-chart__range-outside {
+  fill: rgb(2 8 13 / 30%);
+}
+
+.distribution-chart__range-selected {
+  fill: rgb(var(--color-accent-rgb) / 7%);
+}
+
+.distribution-chart__range-boundary {
+  stroke: rgb(var(--color-accent-rgb) / 82%);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.distribution-chart__color-range[data-mode='auto'] .distribution-chart__range-boundary {
+  stroke-dasharray: 3 3;
+  stroke-opacity: .72;
+}
+
 .distribution-chart__region {
   fill: none;
   stroke: var(--selection-color);

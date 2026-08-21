@@ -1,5 +1,5 @@
 import type { RegionMetadata, RegionalFeaturePayload } from '../../data/contracts.js';
-import type { StatisticId } from '../../domain/types.js';
+import type { ColorRange, StatisticId } from '../../domain/types.js';
 import { html, message } from './dom.js';
 import {
   buildRegionalValueMap,
@@ -151,6 +151,31 @@ export function renderDistribution(
   globalArea.append(globalTitle);
   svg.append(globalArea);
 
+  const colorRange = svgElement('g');
+  colorRange.classList.add('distribution-chart__color-range');
+  colorRange.dataset.visible = 'false';
+  colorRange.setAttribute('aria-hidden', 'true');
+  const leftOutsideRange = svgElement('rect');
+  leftOutsideRange.classList.add('distribution-chart__range-outside', 'distribution-chart__range-outside--left');
+  const selectedRange = svgElement('rect');
+  selectedRange.classList.add('distribution-chart__range-selected');
+  const rightOutsideRange = svgElement('rect');
+  rightOutsideRange.classList.add('distribution-chart__range-outside', 'distribution-chart__range-outside--right');
+  for (const rectangle of [leftOutsideRange, selectedRange, rightOutsideRange]) {
+    rectangle.setAttribute('y', '0');
+    rectangle.setAttribute('height', String(CHART_HEIGHT));
+  }
+  const minimumBoundary = svgElement('line');
+  minimumBoundary.classList.add('distribution-chart__range-boundary', 'distribution-chart__range-boundary--min');
+  const maximumBoundary = svgElement('line');
+  maximumBoundary.classList.add('distribution-chart__range-boundary', 'distribution-chart__range-boundary--max');
+  for (const boundary of [minimumBoundary, maximumBoundary]) {
+    boundary.setAttribute('y1', '0');
+    boundary.setAttribute('y2', String(CHART_HEIGHT));
+  }
+  colorRange.append(leftOutsideRange, selectedRange, rightOutsideRange, minimumBoundary, maximumBoundary);
+  svg.append(colorRange);
+
   selectedDistributions.forEach((distribution, selectionIndex) => {
     const region = regionById.get(distribution.regionId);
     const color = selectionColor(selectionIndex);
@@ -247,6 +272,48 @@ export function renderDistribution(
   });
   chart.append(meta, plot, axis, legend);
   target.replaceChildren(chart);
+}
+
+export function updateDistributionColorRange(
+  target: HTMLElement,
+  feature: RegionalFeaturePayload,
+  range: readonly [number, number] | null,
+  mode: ColorRange['mode'],
+): void {
+  const layer = target.querySelector<SVGGElement>('.distribution-chart__color-range');
+  if (!layer) return;
+  if (!range || !feature.histogram) {
+    layer.dataset.visible = 'false';
+    return;
+  }
+
+  const minimum = histogramPosition(range[0], feature.histogram.edges);
+  const maximum = histogramPosition(range[1], feature.histogram.edges);
+  if (minimum === null || maximum === null) {
+    layer.dataset.visible = 'false';
+    return;
+  }
+  const low = Math.min(minimum, maximum);
+  const high = Math.max(minimum, maximum);
+  const setRectangle = (selector: string, x: number, width: number): void => {
+    const rectangle = layer.querySelector<SVGRectElement>(selector);
+    rectangle?.setAttribute('x', String(x));
+    rectangle?.setAttribute('width', String(width));
+  };
+  const setBoundary = (selector: string, x: number): void => {
+    const boundary = layer.querySelector<SVGLineElement>(selector);
+    boundary?.setAttribute('x1', String(x));
+    boundary?.setAttribute('x2', String(x));
+  };
+  setRectangle('.distribution-chart__range-outside--left', 0, low);
+  setRectangle('.distribution-chart__range-selected', low, high - low);
+  setRectangle('.distribution-chart__range-outside--right', high, CHART_WIDTH - high);
+  setBoundary('.distribution-chart__range-boundary--min', low);
+  setBoundary('.distribution-chart__range-boundary--max', high);
+  layer.dataset.minimum = String(range[0]);
+  layer.dataset.maximum = String(range[1]);
+  layer.dataset.mode = mode;
+  layer.dataset.visible = 'true';
 }
 
 export function updateDistributionHover(

@@ -240,6 +240,10 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.distribution-chart__axis-min')).toHaveText('-0.5');
   await expect(page.locator('.distribution-chart__axis-unit')).toHaveText('dB rel. V');
   await expect(page.locator('.distribution-chart__axis-max')).toHaveText('3.5');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-visible', 'true');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-mode', 'auto');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '-0.25');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '3.25');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-total', '11');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-probability-sum', '1');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('d', / C /);
@@ -393,6 +397,10 @@ test('scientific context menus and color controls are driven by the loaded relea
   await page.mouse.up();
   await expect(page.getByLabel('Color range mode')).toHaveValue('fixed');
   await expect.poll(() => new URL(page.url()).searchParams.get('range')).not.toBeNull();
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-mode', 'fixed');
+  await expect.poll(async () => Number(
+    await page.locator('.distribution-chart__color-range').getAttribute('data-minimum'),
+  )).toBeCloseTo(Number(await page.getByRole('slider', { name: 'Minimum color value', exact: true }).inputValue()), 10);
   await expect(page.getByRole('button', { name: 'Reset' })).toBeVisible();
   await expect(rangeBar).toHaveCSS('background-image', 'none');
   await expect(page.locator('.color-range__selection')).toHaveCSS('background-image', /linear-gradient/);
@@ -429,10 +437,15 @@ test('scientific context menus and color controls are driven by the loaded relea
   await expect.poll(() => new URL(page.url()).searchParams.get('range')).toBe('-2,8');
   await expect(page.locator('.color-legend__minimum')).toHaveText('-2');
   await expect(page.locator('.color-legend__maximum')).toHaveText('8');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '-2');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '8');
 
   await page.getByRole('button', { name: 'Reset' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('range')).toBeNull();
   await expect(page.getByLabel('Color range mode')).toHaveValue('auto');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-mode', 'auto');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '-0.25');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '3.25');
 
   await page.getByRole('slider', { name: 'Maximum color value', exact: true }).focus();
   await page.keyboard.press('ArrowLeft');

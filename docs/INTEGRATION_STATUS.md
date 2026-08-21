@@ -126,7 +126,10 @@ regional-tree rerenders preserve current hover presentation. Projection and
 region-list hover also place a transient labeled marker at the hovered region's
 current statistic on the global observation histogram when the statistic shares
 that histogram's value axis. The histogram x-axis exposes its minimum and
-maximum bin edges together with the feature unit.
+maximum bin edges together with the feature unit. It also mirrors the effective
+color interval with boundary guides, a subtle selected-range tint, and dimmed
+out-of-range tails; colorbar dragging and reset update this read-only analytical
+view immediately.
 
 The global keyboard layer opens feature search with `/`, moves to adjacent
 manifest-ordered features with `Shift + Down` / `Shift + Up`, and opens an
