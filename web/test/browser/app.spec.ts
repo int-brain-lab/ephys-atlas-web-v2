@@ -318,7 +318,13 @@ test('scientific context menus and color controls are driven by the loaded relea
   const dataset = page.locator('[data-context-field="dataset"]');
   const datasetTrigger = dataset.locator('.context-menu__trigger');
   await expect(datasetTrigger).toHaveAttribute('aria-expanded', 'false');
-  await datasetTrigger.click();
+  const headerBounds = await page.locator('.app-header').boundingBox();
+  const triggerBounds = await datasetTrigger.boundingBox();
+  expect(headerBounds).not.toBeNull();
+  expect(triggerBounds).not.toBeNull();
+  expect(triggerBounds!.y).toBeLessThanOrEqual(headerBounds!.y + 2);
+  expect(triggerBounds!.y + triggerBounds!.height).toBeGreaterThanOrEqual(headerBounds!.y + headerBounds!.height - 2);
+  await datasetTrigger.click({ position: { x: triggerBounds!.width / 2, y: 2 } });
   await expect(dataset.locator('.context-menu__panel')).toHaveAttribute('data-open', 'true');
   await expect(dataset.getByRole('option', { selected: true })).toContainText('golden-v0.3');
   await page.keyboard.press('Escape');
