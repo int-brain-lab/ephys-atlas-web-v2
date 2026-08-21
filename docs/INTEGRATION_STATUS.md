@@ -35,6 +35,12 @@ Color scale selection defaults to `Auto`: the browser resolves optional
 feature-level `display.scale` metadata and otherwise uses linear color
 normalization. Explicit linear/logarithmic overrides persist in URLs, while
 values, statistics, histograms, tooltips, and exports remain unchanged.
+Regional SVGs, volume canvases, and the interactive color legend share one
+registry of full 256-step Matplotlib lookup tables. The concise sequential
+choice is Viridis, Cividis, or Magma; Cividis provides an accessibility- and
+grayscale-oriented alternative. A diverging palette remains intentionally
+unavailable until the coloring contract exposes an explicit scientifically
+meaningful center instead of inferring one from the displayed range.
 
 ## Brand identity
 

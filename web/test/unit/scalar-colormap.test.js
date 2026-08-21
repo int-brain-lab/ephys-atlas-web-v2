@@ -9,6 +9,12 @@ import {
   regionalColorRange,
 } from '../../.test-dist/rendering/scalar-colormap.js';
 import { resolveColoringState } from '../../.test-dist/domain/color-scale.js';
+import {
+  COLORMAPS,
+  paletteCssColor,
+  paletteCssGradient,
+  paletteRgb,
+} from '../../.test-dist/rendering/colormap-palettes.js';
 
 const feature = {
   schemaVersion: '0.1',
@@ -36,6 +42,24 @@ test('regional colors are keyed by numeric atlas ids', () => {
   assert.equal(colors.size, 3);
   assert.match(colors.get(10), /^rgb\(/);
   assert.notEqual(colors.get(10), colors.get(30));
+});
+
+test('shared colormap registry exposes official sequential lookup tables', () => {
+  assert.deepEqual(COLORMAPS.map(({ id }) => id), ['viridis', 'cividis', 'magma']);
+  assert.deepEqual(paletteRgb('cividis', 0), [0, 34, 78]);
+  assert.deepEqual(paletteRgb('cividis', 1), [254, 232, 56]);
+  assert.equal(paletteCssColor('unknown', 0), 'rgb(68 1 84)');
+  assert.match(paletteCssGradient('cividis'), /^linear-gradient\(90deg, rgb\(0 34 78\).+rgb\(254 232 56\)\)$/);
+});
+
+test('Cividis colors regional values through the shared lookup table', () => {
+  const colors = regionalColorMap(feature, {
+    ...coloring,
+    colormap: 'cividis',
+    range: { mode: 'fixed', min: 0, max: 2 },
+  });
+  assert.equal(colors.get(10), 'rgb(0 34 78)');
+  assert.equal(colors.get(30), 'rgb(254 232 56)');
 });
 
 test('automatic color scale resolves from the feature display default', () => {

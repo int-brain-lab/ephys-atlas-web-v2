@@ -424,6 +424,7 @@ test('scientific context menus and color controls are driven by the loaded relea
   await expect(settings.getByRole('heading', { name: 'Data' })).toHaveCount(0);
   await expect(page.getByLabel('Regional statistic').locator('option')).toHaveCount(4);
   await expect(page.getByLabel('Regional statistic').locator('option', { hasText: 'Count' })).toHaveCount(0);
+  await expect(page.getByLabel('Feature colormap').locator('option')).toHaveText(['Viridis', 'Cividis', 'Magma']);
   await expect(page.getByLabel('Feature color legend')).toBeVisible();
   await expect(page.locator('.color-legend__unit')).toHaveText('dB rel. V');
   await expect(page.locator('.color-range__histogram-bin')).toHaveCount(8);
@@ -454,6 +455,11 @@ test('scientific context menus and color controls are driven by the loaded relea
   await expect(page.getByRole('button', { name: 'Reset' })).toBeVisible();
   await expect(rangeBar).toHaveCSS('background-image', 'none');
   await expect(page.locator('.color-range__selection')).toHaveCSS('background-image', /linear-gradient/);
+
+  await page.getByLabel('Feature colormap').selectOption('cividis');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cmap')).toBe('cividis');
+  await expect(page.locator('.color-legend__bar')).toHaveAttribute('data-colormap', 'cividis');
+  await expect(page.locator('.color-range__selection')).toHaveCSS('background-image', /rgb\(0, 34, 78\)/);
 
   const rangeBeforeWindowDrag = new URL(page.url()).searchParams.get('range')!.split(',').map(Number);
   const selectionBounds = await page.locator('.color-range__selection').boundingBox();

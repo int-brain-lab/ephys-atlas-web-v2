@@ -11,6 +11,13 @@ State uses an immutable `AppState` plus explicit `AppAction` values, a reducer, 
 
 URL state is versioned (`v=3`) and human-readable. Common state is represented with named query parameters (`dataset`, `release`, `feature`, `repr`, `parcel`, `stat`, `cmap`, `range`, `scale`, `slices`, `selected`). The parser also accepts an explicit `cursor`; canonical output writes the equivalent native `slices` tuple, from which the snapped cursor is derived. User-committed dataset/release, feature, representation, and parcellation changes use `history.pushState`; navigation, selection, ordering, and color refinements use `history.replaceState`. `popstate` hydrates without echoing a write, and historical v1 10 µm and v2 25 µm slice links migrate through world coordinates before replacing the current URL with canonical v3 state. See D029.
 
+Feature coloring offers the small sequential set Viridis, Cividis, and Magma.
+One shared 256-step lookup-table registry drives regional SVG fills, volume
+canvas pixels, and the color-range legend, so their colors do not drift. Do not
+add a diverging palette until view state and normalization carry an explicit
+scientifically meaningful center; the current min/max linear/log contract is
+not sufficient.
+
 Data loading is behind `DatasetSource` and `DatasetRepository`. `HttpDatasetSource` handles published immutable releases. `LocalDatasetSource` persists imported directory contents in IndexedDB but exposes the same scientific resource graph. Both consume schema v0.1 rather than a frontend-specific provisional data format.
 
 Immutable HTTP resources have cache-first Cache Storage support plus in-flight request coalescing. `PrefetchQueue` provides small cancellable idle-time prefetch. No service worker is required.

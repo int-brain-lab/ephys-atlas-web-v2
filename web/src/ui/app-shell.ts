@@ -13,6 +13,7 @@ import type {
 } from '../domain/types.js';
 import type { RegionInspection, SliceRenderer } from '../rendering/interfaces.js';
 import { regionalColorRange } from '../rendering/scalar-colormap.js';
+import { COLORMAPS } from '../rendering/colormap-palettes.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
 import { ColorRangeControl } from './color-range-control.js';
 import { ContextMenu, type ContextMenuOption } from './context-menu.js';
@@ -867,7 +868,7 @@ export class AppShell {
     this.statisticSelect = statistic.select;
     this.statisticSelect.setAttribute('aria-label', 'Regional statistic');
     this.statisticSelect.addEventListener('change', () => this.callbacks.setStatistic(this.statisticSelect.value as ColorStatisticId));
-    const colormap = this.settingsSelect('Colormap', [['viridis', 'Viridis'], ['magma', 'Magma']]);
+    const colormap = this.settingsSelect('Colormap', COLORMAPS.map(({ id, label }) => [id, label]));
     this.colormapSelect = colormap.select;
     this.colormapSelect.setAttribute('aria-label', 'Feature colormap');
     this.colormapSelect.addEventListener('change', () => this.callbacks.setColormap(this.colormapSelect.value));

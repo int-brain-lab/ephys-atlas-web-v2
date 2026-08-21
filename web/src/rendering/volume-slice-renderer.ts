@@ -2,41 +2,17 @@ import type { ColoringState, EffectiveColoringState } from '../domain/types.js';
 import type { VolumeFeaturePayload } from '../data/contracts.js';
 import { CanvasVolumeSliceRenderer } from './canvas-volume-renderer.js';
 import { SchemaChunks3dVolumeSource, regionalSliceToVolumeIndex } from './chunked-volume-source.js';
+import { paletteRgb } from './colormap-palettes.js';
 import type { RendererPresentation, SliceRenderModel, SliceRenderer } from './interfaces.js';
 import { SchemaSlicePackVolumeSource } from './slice-pack-volume-source.js';
 import { VolumeSliceLoader, type VolumeSlice } from './volume.js';
 import type { VolumeSliceSource } from './volume.js';
-
-const PALETTES: Record<string, readonly [number, number, number][]> = {
-  viridis: [[68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37]],
-  magma: [[0, 0, 4], [81, 18, 124], [183, 55, 121], [252, 137, 97], [252, 253, 191]],
-};
 
 interface VolumeMount {
   canvas: HTMLCanvasElement;
   renderer: CanvasVolumeSliceRenderer;
   feature: VolumeFeaturePayload | null;
   slice: VolumeSlice | null;
-}
-
-function interpolate(a: number, b: number, t: number): number {
-  return Math.round(a + (b - a) * t);
-}
-
-function paletteColor(name: string, normalized: number): readonly [number, number, number] {
-  const palette = PALETTES[name] ?? PALETTES.viridis!;
-  const t = Math.max(0, Math.min(1, normalized));
-  const scaled = t * (palette.length - 1);
-  const lowerIndex = Math.floor(scaled);
-  const upperIndex = Math.min(palette.length - 1, lowerIndex + 1);
-  const local = scaled - lowerIndex;
-  const lower = palette[lowerIndex] ?? palette[0]!;
-  const upper = palette[upperIndex] ?? lower;
-  return [
-    interpolate(lower[0], upper[0], local),
-    interpolate(lower[1], upper[1], local),
-    interpolate(lower[2], upper[2], local),
-  ];
 }
 
 function finiteRange(values: Float32Array): readonly [number, number] | null {
@@ -82,7 +58,7 @@ function rgbaForSlice(feature: VolumeFeaturePayload, slice: VolumeSlice, colorin
     }
     const scalar = log ? Math.log(value) : value;
     const normalized = span > 0 ? (scalar - lo) / span : 0.5;
-    const [r, g, b] = paletteColor(coloring.colormap, normalized);
+    const [r, g, b] = paletteRgb(coloring.colormap, normalized);
     rgba[offset] = r;
     rgba[offset + 1] = g;
     rgba[offset + 2] = b;

@@ -1,32 +1,7 @@
 import type { ColoringState, EffectiveColoringState } from '../domain/types.js';
 import type { RegionalFeaturePayload } from '../data/contracts.js';
 import type { RegionMetadata } from '../data/contracts.js';
-
-const PALETTES: Record<string, readonly [number, number, number][]> = {
-  viridis: [
-    [68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37],
-  ],
-  magma: [
-    [0, 0, 4], [81, 18, 124], [183, 55, 121], [252, 137, 97], [252, 253, 191],
-  ],
-};
-
-function interpolateChannel(a: number, b: number, t: number): number {
-  return Math.round(a + (b - a) * t);
-}
-
-function paletteColor(name: string, t: number): string {
-  const palette = PALETTES[name] ?? PALETTES.viridis;
-  if (!palette) return 'rgb(128 128 128)';
-  const normalized = Math.max(0, Math.min(1, t));
-  const scaled = normalized * (palette.length - 1);
-  const lowerIndex = Math.floor(scaled);
-  const upperIndex = Math.min(palette.length - 1, lowerIndex + 1);
-  const local = scaled - lowerIndex;
-  const lower = palette[lowerIndex] ?? palette[0] ?? [128, 128, 128];
-  const upper = palette[upperIndex] ?? lower;
-  return `rgb(${interpolateChannel(lower[0], upper[0], local)} ${interpolateChannel(lower[1], upper[1], local)} ${interpolateChannel(lower[2], upper[2], local)})`;
-}
+import { paletteCssColor } from './colormap-palettes.js';
 
 export function regionalColorRange(feature: RegionalFeaturePayload, coloring: ColoringState): readonly [number, number] | null {
   if (coloring.range.mode === 'fixed') {
@@ -67,7 +42,7 @@ export function regionalColorMap(feature: RegionalFeaturePayload, coloring: Effe
     } else {
       normalized = (value - min) / span;
     }
-    colors.set(regionId, paletteColor(coloring.colormap, normalized));
+    colors.set(regionId, paletteCssColor(coloring.colormap, normalized));
   }
   return colors;
 }

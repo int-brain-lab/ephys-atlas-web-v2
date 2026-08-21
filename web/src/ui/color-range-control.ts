@@ -1,5 +1,6 @@
 import type { FeaturePayload } from '../data/contracts.js';
 import type { ColorRange, StatisticId } from '../domain/types.js';
+import { paletteCssGradient } from '../rendering/colormap-palettes.js';
 import {
   clampRangeHandle,
   colorRangeDomain,
@@ -120,6 +121,7 @@ export class ColorRangeControl {
     this.renderHistogram(model.feature, model.statistic);
     this.context.textContent = model.context;
     this.bar.dataset.colormap = model.colormap;
+    this.bar.style.setProperty('--color-range-gradient', paletteCssGradient(model.colormap));
     this.unit.textContent = model.unit ?? '';
   }
 
