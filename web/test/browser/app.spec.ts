@@ -354,9 +354,20 @@ test('scientific context menus and color controls are driven by the loaded relea
   await expect(feature.getByRole('option')).toHaveCount(1);
   await expect(feature.getByRole('option', { selected: true })).toContainText('AP RMS (golden fixture)');
   await expect(feature.getByRole('option', { selected: true })).toContainText('dB rel. V');
+  await expect(feature.getByRole('option', { selected: true })).toContainText(
+    'Synthetic feature exercising regional values, descriptive statistics, histogram, volume chunks and download metadata.',
+  );
+  await featureSearch.fill('download metadata');
+  await expect(feature.getByRole('option')).toHaveCount(1);
   await featureSearch.fill('does not exist');
   await expect(feature.locator('.context-menu__list')).toHaveAttribute('data-empty', 'true');
   await page.keyboard.press('Escape');
+
+  const featureSummary = page.locator('.secondary-view');
+  await expect(featureSummary.locator('.feature-summary__description')).toHaveText(
+    'Synthetic feature exercising regional values, descriptive statistics, histogram, volume chunks and download metadata.',
+  );
+  await expect(featureSummary.locator('.feature-summary')).toContainText('Observations');
 
   const representation = page.locator('[data-context-field="representation"]');
   await representation.locator('.context-menu__trigger').click();

@@ -2,6 +2,7 @@ export interface ContextMenuOption {
   id: string;
   label: string;
   description?: string;
+  detail?: string;
   group?: string;
   keywords?: string;
   disabled?: boolean;
@@ -171,7 +172,7 @@ export class ContextMenu {
       const button = element('button', 'context-menu__option');
       button.type = 'button';
       button.dataset.contextOption = option.id;
-      button.dataset.search = `${option.label} ${option.description ?? ''} ${option.keywords ?? ''}`.toLocaleLowerCase();
+      button.dataset.search = `${option.label} ${option.description ?? ''} ${option.detail ?? ''} ${option.keywords ?? ''}`.toLocaleLowerCase();
       button.dataset.group = option.group ?? '';
       button.disabled = option.disabled === true;
       button.setAttribute('role', 'option');
@@ -185,6 +186,11 @@ export class ContextMenu {
         const description = element('span', 'context-menu__option-description');
         description.textContent = option.description;
         copy.append(description);
+      }
+      if (option.detail) {
+        const detail = element('span', 'context-menu__option-detail');
+        detail.textContent = option.detail;
+        copy.append(detail);
       }
       const check = element('span', 'context-menu__option-check');
       check.textContent = this.selectedIds.has(option.id) ? '✓' : '';

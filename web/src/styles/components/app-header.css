@@ -317,20 +317,33 @@
 }
 
 .context-menu__option-label,
-.context-menu__option-description {
+.context-menu__option-description,
+.context-menu__option-detail {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .context-menu__option-label {
   font-size: .73rem;
   font-weight: 560;
+  white-space: nowrap;
 }
 
 .context-menu__option-description {
   color: var(--color-text-muted);
   font-size: .61rem;
+  white-space: nowrap;
+}
+
+.context-menu__option-detail {
+  display: -webkit-box;
+  max-height: 2.7em;
+  color: var(--color-text-secondary);
+  font-size: .62rem;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .context-menu__option-check {

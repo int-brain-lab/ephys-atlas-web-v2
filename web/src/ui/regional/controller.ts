@@ -135,7 +135,7 @@ export class RegionalPanelController {
     this.tree.render(model.regions, values, statistic, unit, range, selected, regionOrder);
     renderSelectedRegions(this.detailsTargets(), model.regions, selected, values, statistic, unit);
     if (feature) {
-      renderFeatureSummary(this.summary, feature, unit);
+      renderFeatureSummary(this.summary, feature, unit, descriptor?.description ?? '');
       renderDistribution(this.distribution, feature, selected, model.regions, statistic, unit, fixture);
       updateDistributionColorRange(
         this.distribution,

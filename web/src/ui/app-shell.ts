@@ -728,6 +728,7 @@ export class AppShell {
         id: feature.id,
         label: feature.label,
         description: [feature.unit, representations.map(titleCaseToken).join(' / ')].filter(Boolean).join(' · '),
+        detail: feature.description,
         keywords: `${feature.id} ${feature.description} ${feature.valueSemantics.quantity}`,
       };
     }) ?? [];

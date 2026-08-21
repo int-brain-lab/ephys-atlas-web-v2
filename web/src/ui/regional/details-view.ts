@@ -79,6 +79,7 @@ export function renderFeatureSummary(
   target: HTMLElement,
   feature: RegionalFeaturePayload,
   unit: string | null,
+  featureDescription: string,
 ): void {
   if (!feature.global) {
     target.replaceChildren();
@@ -101,7 +102,14 @@ export function renderFeatureSummary(
     card.append(term, description);
     list.append(card);
   }
-  target.replaceChildren(list);
+  const content = html('div', 'feature-summary-content');
+  if (featureDescription) {
+    const description = html('p', 'feature-summary__description');
+    description.textContent = featureDescription;
+    content.append(description);
+  }
+  content.append(list);
+  target.replaceChildren(content);
 }
 
 export function renderDistribution(
