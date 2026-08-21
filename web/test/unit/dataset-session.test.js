@@ -103,3 +103,40 @@ test('starting a feature load aborts active prefetch from the previous feature',
   assert.equal(activeSignal.aborted, true);
   session.stop();
 });
+
+test('feature loading prefetches the next and previous manifest neighbours', async () => {
+  const store = createAppStore({ ...DEFAULT_APP_STATE, view: {
+    ...DEFAULT_APP_STATE.view,
+    dataset: { datasetId: 'custom_dataset', releaseId: 'r1' },
+    featureId: 'feature_b',
+  } });
+  const testManifest = manifest();
+  testManifest.features = ['feature_a', 'feature_b', 'feature_c'].map((id) => ({
+    ...testManifest.features[0], id,
+  }));
+  const prefetched = [];
+  let resolvePrefetched;
+  const bothPrefetched = new Promise((resolve) => { resolvePrefetched = resolve; });
+  const repository = {
+    async loadCatalog() { return { schemaVersion: '0.1', datasets: [] }; },
+    async loadManifest() { return testManifest; },
+    async loadRegions() { return []; },
+    async loadFeature(_ref, featureId) {
+      return {
+        schemaVersion: '0.1', featureId, representation: 'regional',
+        parcellation: 'beryl', regionIds: [], statistics: {},
+      };
+    },
+    async prefetchFeature(_ref, featureId) {
+      prefetched.push(featureId);
+      if (prefetched.length === 2) resolvePrefetched();
+    },
+  };
+  const session = new DatasetSession(repository, store, () => {});
+
+  await session.loadDataset(store.getState().view.dataset);
+  await bothPrefetched;
+
+  assert.deepEqual(prefetched, ['feature_c', 'feature_a']);
+  session.stop();
+});

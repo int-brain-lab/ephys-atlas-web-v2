@@ -189,7 +189,10 @@ export class DatasetSession {
     if (!this.manifest) return;
     const index = this.manifest.features.findIndex((item) => item.id === featureId);
     if (index < 0) return;
-    const candidates = this.manifest.features.slice(index + 1, index + 3);
+    const candidates = [
+      this.manifest.features[index + 1],
+      this.manifest.features[index - 1],
+    ].filter((feature): feature is DatasetManifest['features'][number] => feature !== undefined);
     this.prefetch.schedule(candidates.map((feature) => async (signal) => {
       const nextRepresentation: RepresentationKind = feature.representations[representation]
         ? representation
