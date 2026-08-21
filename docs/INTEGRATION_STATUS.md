@@ -138,6 +138,17 @@ modal dialogs, does not wrap feature boundaries, announces feature position,
 and keeps every action available through visible controls. Feature loading
 prefetches the immediate next and previous catalogue neighbours.
 
+Release-provided scientific feature descriptions are visible during discovery
+and after selection. Feature-picker results retain compact unit/representation
+metadata and add a two-line description that participates in search. The
+selected regional feature repeats that description above its global summary,
+while the Info dialog remains the complete view of value semantics and
+provenance. The frontend does not maintain a feature-description dictionary.
+The pinned channel-development release has authoritative upstream descriptions
+for 25 of 35 source features; the ten unresolved waveform descriptions and
+units are audited in `docs/data/CHANNELS_RECIPE.md` and must not be guessed by
+the browser or builder.
+
 The active anatomy display is the immutable 80 µm `anatomy-pack-v3`: 165
 coronal, 142 sagittal, and 100 horizontal display planes in 52 depth-eight
 indexed packs totaling 5,604,696 compressed bytes. It is derived byte-for-byte

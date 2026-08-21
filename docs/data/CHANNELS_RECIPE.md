@@ -34,6 +34,40 @@ If no `--feature` arguments are supplied, the build resolves the current
 resolved feature list in the recipe. This keeps the website catalog-driven while
 allowing the upstream feature set to change before submission.
 
+## Feature descriptions and units
+
+Feature descriptions are scientific release metadata, not frontend copy. For
+each source column the builder reads the Pandera column returned by
+`ephysatlas.features.ModelRawFeatures.to_schema()`, copies its `description`,
+and selects `transformed_unit`, `raw_unit`, then `unit` in that order. The raw
+or denoised source variant is appended to the release description and label.
+The resulting values are stored in each immutable
+`features/<feature-id>/feature.json`; browser search and presentation consume
+that release metadata without a fixed feature dictionary.
+
+The pinned `2026_W32` development release audit found complete upstream
+descriptions for 25 of its 35 source features. These ten waveform columns fall
+back to the explicit but non-scientific `Channel feature <column>` placeholder
+because the pinned upstream schema provides neither a description nor a unit:
+
+- `depolarisation_slope`
+- `peak_time_secs`
+- `peak_val`
+- `recovery_slope`
+- `recovery_time_secs`
+- `repolarisation_slope`
+- `tip_time_secs`
+- `tip_val`
+- `trough_time_secs`
+- `trough_val`
+
+Do not infer definitions or units from their names. Prefer adding reviewed
+metadata to the authoritative `ibleatools` schema and rebuilding the immutable
+release. If that is not possible, any local metadata overlay must be a pinned,
+reviewed scientific input recorded in release provenance rather than a browser
+mapping. `alpha_mean`, `alpha_std`, and `channel_labels` also have null units,
+but they do have upstream descriptions and are not using the placeholder.
+
 ## Regional representation
 
 The website deliberately presents a single left hemisphere, matching the
