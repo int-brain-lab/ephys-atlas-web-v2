@@ -288,3 +288,5 @@ def test_channel_feature_metadata_prefers_transformed_then_raw_units():
     assert info.unit == "dB rel. V"
     assert info.source_column == "rms_ap"
     assert info.variant == "raw"
+    assert info.label == "rms ap (raw)"
+    assert info.description == "Schema description"

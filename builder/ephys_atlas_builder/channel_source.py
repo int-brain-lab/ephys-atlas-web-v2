@@ -95,7 +95,7 @@ def _feature_info(model, source_column: str, variant: str) -> FeatureInfo:
     return FeatureInfo(
         source_column=source_column,
         label=f"{label} ({variant})",
-        description=f"{description} Source variant: {variant}.",
+        description=description,
         unit=unit,
         variant=variant,
     )

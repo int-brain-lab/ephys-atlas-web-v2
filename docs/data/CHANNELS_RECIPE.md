@@ -40,10 +40,11 @@ Feature descriptions are scientific release metadata, not frontend copy. For
 each source column the builder reads the Pandera column returned by
 `ephysatlas.features.ModelRawFeatures.to_schema()`, copies its `description`,
 and selects `transformed_unit`, `raw_unit`, then `unit` in that order. The raw
-or denoised source variant is appended to the release description and label.
-The resulting values are stored in each immutable
-`features/<feature-id>/feature.json`; browser search and presentation consume
-that release metadata without a fixed feature dictionary.
+or denoised source variant is appended to the feature label and recorded in
+provenance; it is not repeated in the scientific description. The resulting
+values are stored in each immutable `features/<feature-id>/feature.json`;
+browser search and presentation consume that release metadata without a fixed
+feature dictionary.
 
 The pinned `2026_W32` development release audit found complete upstream
 descriptions for 25 of its 35 source features. These ten waveform columns fall
