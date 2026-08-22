@@ -19,6 +19,11 @@ Use `docs/DATA_SOURCES.md`, `schema/v0.1/README.md`, and the focused documents u
 ## Branch and commit model
 
 - Work on `main`. Do not create persistent `work/*`, `agent/*`, or other parallel product branches unless the repository owner explicitly asks for an isolated experiment.
+- The repository owner has explicitly authorized one short-lived isolated
+  worktree for the brain-mesh 3-D experiment described in
+  `docs/rendering/3D_EVALUATION.md`. Treat its branch as a disposable
+  development aid: rebase it frequently, land small reviewed green commits on
+  `main`, and do not let it become a second product branch or source of truth.
 - Fetch the current remote `main` before starting a new unit of work. Fast-forward
   or rebase only from a clean worktree, and never overwrite unrelated local work.
 - Keep commits small enough to review and revert, but complete enough to leave the repository coherent.
@@ -75,6 +80,12 @@ Scientific provenance is part of the product contract, not optional metadata.
   pinned Top/Swanson source bytes may be deterministic build inputs for static
   projection assets, with distinct provenance and no invented affine.
 - Volume storage layout (`chunks3d` versus `orthogonal_slice_packs`) is independent of scientific grid geometry. Choose the production layout from measured real-data browser benchmarks, not convenience.
+- The optional 3-D lab may progress independently of the 2-D cutover, but it
+  must consume the shared coordinate, regional-presentation, and workspace-view
+  contracts rather than fork application state or add another 2-D renderer
+  facade. Build web mesh packs from pinned inputs with deterministic provenance,
+  integrity, coverage, LOD, and visual-quality gates; do not serve the raw
+  monolithic source GLB as the production contract.
 
 ## Frontend constraints
 

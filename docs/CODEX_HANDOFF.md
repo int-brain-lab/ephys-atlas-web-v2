@@ -65,6 +65,16 @@ this handoff intentionally does not duplicate it. If an action reaches an
 unresolved item in `docs/OPEN_QUESTIONS.md`, leave the scientific choice open
 and continue with the next independent action permitted by the plan.
 
+## Parallel 3-D lab exception
+
+The repository owner has explicitly authorized the isolated P3D experiment in
+`docs/IMPLEMENTATION_PLAN.md` and `docs/rendering/3D_EVALUATION.md`. It may use
+one short-lived worktree branch while M2 proceeds. The branch is not a second
+source of truth: rebase it frequently, coordinate the shared dependency
+lockfile, and land small reviewed green slices on `main`. Do not use this
+exception for unrelated product work or integrate the lab by importing/forking
+the main application.
+
 ## Private data and credentials
 
 A clean checkout and `just check` must not require private S3/Alyx credentials.

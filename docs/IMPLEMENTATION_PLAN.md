@@ -99,7 +99,7 @@ historical transport evidence, not the default input for new implementation.
 
 Ordered next actions before scientific resolution:
 
-1. execute commits 1-9 in the focused cutover plan, keeping every handoff green;
+1. execute commits 1-8 in the focused cutover plan, keeping every handoff green;
 2. regenerate the canonical synthetic fixture and development releases under
    the new contract, without redundant `Source variant: raw/denoised` prose in
    feature descriptions;
@@ -121,6 +121,39 @@ After Q4/Q5 resolution:
 10. run linked-slice browser acceptance against it.
 
 Acceptance reference: `docs/LAUNCH_SPEC.md` sections 3 and 6.
+
+## P3D — Independent brain-mesh 3-D lab
+
+Status: **approved independent experiment; non-blocking for launch**.
+
+This lane may run concurrently with M2 in the explicitly authorized short-lived
+worktree described by `AGENTS.md`. It must not import or fork `AtlasApp`, the
+2-D projection viewport, URL state, or dataset sessions. The refactor owns the
+higher-level workspace-view and regional-presentation contracts; the lab owns
+only deterministic mesh-pack tooling, reusable 3-D runtime modules, and a
+standalone Vite entry with synthetic controls.
+
+Ordered slices:
+
+1. define `atlas-mesh-pack-v1`, pin and validate the source GLB and canonical
+   10 um annotation/LUT, and add a tiny synthetic bilateral fixture;
+2. build the measured default/high meshopt LODs with signed region IDs,
+   canonical centroids, deterministic hashes, and region-coverage gates;
+3. add `/3d-lab/` using Three.js WebGL2 with orbit, picking, mapping/color,
+   visibility, selection, bilateral presentation, and radial explode controls;
+4. measure transfer, decode, first frame, draw calls, memory, recoloring,
+   picking, and LOD swaps at representative viewport sizes and browsers;
+5. only after M2 exposes the shared workspace seam, integrate the lab as an
+   optional `scene-3d` view through a small adapter and add URL/responsive tests.
+
+The lab downloads one union default-LOD pack, not one file per region. It may
+prefetch that pack at low priority after launch-critical 2-D work, loads one
+optional high LOD on sustained/maximized use, and switches Allen/Beryl/Cosmos
+through tables without fetching geometry again. Full-resolution and future
+volume-rendering assets are separate follow-ups.
+
+Detailed evidence, contracts, budgets, and promotion gates:
+`docs/rendering/3D_EVALUATION.md`.
 
 ## M3 — `ephys_atlas_clusters`
 
@@ -227,9 +260,10 @@ Actions:
 
 ## Optional post-launch / non-blocking work
 
-Only start these when M1-M7 are no longer threatened:
+Only start these when M1-M7 are no longer threatened, except for the explicitly
+isolated P3D lab above:
 
-- richer 3-D rendering;
+- production promotion or richer 3-D rendering beyond P3D;
 - AGEA;
 - MERFISH;
 - large point-cloud workflows;

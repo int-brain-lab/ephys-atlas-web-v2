@@ -112,7 +112,23 @@ transforms and then into screen space through an explicit plane registration;
 coincident CSS dimensions are not proof of scientific alignment. Physical
 volume transport remains below a storage-neutral decoded-plane source.
 
-3D remains renderer-agnostic. Datoviz, custom WebGPU, Three.js/WebGPU/WebGL, or another suitable browser renderer can be evaluated without coupling the core application model to a specific 3D implementation.
+The application remains renderer-agnostic for 3-D, while the first isolated
+brain-mesh lab uses Three.js WebGL2 to minimize implementation and browser risk.
+The higher-level workspace registry distinguishes `projection-2d` from
+`scene-3d`; `ProjectionRegistry` and `ProjectionViewport` remain specifically
+2-D. A 3-D scene shares coordinate-space identity, regional presentation,
+selection, and hover through technology-neutral inputs, but owns camera,
+explode, GPU resources, and failure state. The standalone lab must not import
+or duplicate `AtlasApp`, dataset sessions, URL reducers, or projection layers.
+
+Production mesh geometry is an immutable derived web asset, not the raw source
+GLB. Its manifest records source hashes, coordinate axes/units/transform,
+canonical signed regional IDs, hemisphere, centroids, LOD parameters, resource
+sizes, and SHA-256. Geometry may be merged into a few GPU-friendly chunks with
+a per-vertex feature ID; colors, visibility, selection, hover, and explode
+vectors remain dynamic presentation data. Future volume rendering shares the
+coordinate-space contract and global download/cache budget, not the mesh
+transport or renderer implementation.
 
 ## UI
 

@@ -33,6 +33,13 @@ continue to block a purported production volume release. Synthetic fixtures
 may implement and test the new machinery without choosing those scientific or
 transport answers.
 
+An independent, non-production brain-mesh 3-D lab is also approved. It is not
+implemented and is not part of M2 or launch acceptance. It will use a standalone
+Vite entry and reusable technology-neutral scene inputs so mesh/interaction
+iteration can proceed in a short-lived worktree without importing or forking
+the main application. Integration waits for M2's higher-level workspace-view
+seam; `ProjectionRegistry` remains 2-D-specific.
+
 The regional UI keeps DOM concerns in its controller while region search/value/statistics derivation is pure/testable. Large dynamic tree interaction uses delegated events.
 The region browser defaults to the expandable anatomical hierarchy and offers
 URL-persisted ascending or descending value rankings as a flat selectable list.
@@ -286,9 +293,9 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
 7. run final production-origin, performance, responsive, and cross-browser QA,
    resolving Q11.
 
-3-D, AGEA, MERFISH, large point clouds, inferential statistics, full OAuth, and
-broad legacy custom-bucket compatibility remain deferred unless explicitly
-promoted.
+Production promotion of the independent 3-D lab, AGEA, MERFISH, large point
+clouds, inferential statistics, full OAuth, and broad legacy custom-bucket
+compatibility remain deferred unless explicitly promoted.
 
 ## Source of truth
 

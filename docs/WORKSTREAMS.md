@@ -65,4 +65,6 @@ Publishing stages/resumes/validates immutable releases and emits a browser-compa
 - Feature catalogs remain data-driven.
 - Published releases remain immutable; aliases resolve outside release contents.
 - Curated SVG display calibration is presentation metadata, never a canonical scientific coordinate transform.
-- 3-D remains lower priority than completing the launch-critical regional/volume/data/deployment path.
+- The isolated P3D lab may proceed concurrently under D032; production 3-D
+  promotion remains lower priority than the launch-critical
+  regional/volume/data/deployment path.

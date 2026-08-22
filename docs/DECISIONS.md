@@ -34,6 +34,10 @@ Reuse existing curated SVG assets where practical. Their manually tuned alignmen
 
 3D technology is undecided and explicitly renderer-agnostic. Datoviz is one candidate, not a requirement. 3D is lower priority than the regional/volume viewer and data pipeline.
 
+Refined by D032 for the approved independent lab: Three.js WebGL2 is selected
+for that prototype while the application-facing contract remains
+renderer-agnostic.
+
 ## D009 — Publishing auth
 
 Retain a capability-based publishing model for launch rather than introducing full user accounts/OAuth. Existing v1 auth should be studied and modernized rather than copied blindly.
@@ -57,6 +61,9 @@ Schema v0.1 keeps scientific volume geometry, dtype, axis order, and affine meta
 ## D014 — Frontend renderer boundary
 
 The frontend-owned `SliceRenderer` / `SliceRenderModel` interface is the application boundary. SVG, volume, Canvas2D, and future 3-D implementations live below that facade. The lower-level rendering workstream must not introduce a competing application state or renderer facade.
+
+Superseded by D031 for 2-D rendering and D032 for the higher-level 3-D
+workspace seam. `SliceRenderer` is not a future 3-D integration boundary.
 
 ## D015 — One dataset contract for published and local data
 
@@ -329,3 +336,54 @@ the URL-migration requirement in D029. Their scientific provenance,
 immutability, coordinate, performance, public/local parity, and history-intent
 principles remain in force. The complete execution and test plan is
 `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md`.
+
+## D032 — Independent 3-D brain-mesh lab and web asset direction
+
+Permit the brain-region 3-D view to iterate concurrently with D031 as an
+isolated, non-production lab. Use a short-lived worktree and standalone Vite
+entry, keep the lab outside `AtlasApp` and the 2-D projection viewport, and land
+small reviewed green commits on `main`. Integration occurs only through the
+higher-level `scene-3d` workspace-view discriminant, shared coordinate-space
+identity, and regional presentation inputs. `ProjectionRegistry` remains a
+2-D registry. This refines D008 without making 3-D launch-critical.
+
+Use Three.js `WebGLRenderer`/WebGL2 for the first lab. This selects a low-risk
+prototype implementation, not a renderer-specific application model; Datoviz
+or WebGPU may be benchmarked later behind the same inputs. Do not extend or
+embed the legacy Unity runtime.
+
+Derive an immutable `atlas-mesh-pack-v1` from the pinned public IBL
+`atlas/meshes.glb`, recording exact bytes/hash and validating identity,
+coordinates, hemispheres, centroids, colors, and coverage against the canonical
+bilateral 10 um Allen annotation/LUT. Split hemispheres offline using the
+canonical grid boundary. Preserve signed Allen presentation IDs and
+Allen/Beryl/Cosmos mappings; do not copy the hard-coded 25 um midline workaround
+from `ibl-datoviz`.
+
+The default web asset is deliberately lossy and screen-oriented: per-region
+triangle decimation with small-region retention, 14-bit position and 8-bit
+normal quantization, meshopt GPU-buffer compression, then deterministic gzip.
+Keep one conservative default LOD and one optional higher LOD. Merge geometry
+into a few chunks with per-vertex regional feature IDs; do not bake colors or
+ship one request/draw call per region. Region colors, visibility, selection,
+hover, bilateral feature/anatomy presentation, and explode vectors remain
+dynamic.
+
+Define genuine radial explode from canonical annotation centroids:
+`translation = explode * (region_centroid - whole_brain_centroid)`, with
+`explode` in `[0, 1]`. This deliberately differs from Unity's ten manually
+placed Cosmos-parent vectors. Mapping changes do not change fine geometry or
+require a download.
+
+Load a tiny manifest first, then one union default-LOD resource when 3-D opens;
+an optional low-priority prefetch may run only after critical 2-D work and must
+respect reduced-data/network signals. Load the higher LOD as one second
+immutable resource only on sustained or maximized use and swap atomically.
+Verify served bytes before decode/persistent caching. Do not use hundreds of
+region requests, and do not ship the full-resolution source GLB initially.
+
+Future volume rendering is a separate asset and renderer workstream. It may
+share coordinate-space identity and a global download/cache budget but does not
+change this mesh transport decision. Evidence, measured budgets, and promotion
+gates are in `docs/rendering/3D_EVALUATION.md`; final production promotion and
+LOD acceptance remain Q12.

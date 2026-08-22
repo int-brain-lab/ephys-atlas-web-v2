@@ -230,6 +230,12 @@ The following are not launch blockers unless later promoted by an explicit decis
 - full OAuth/user identity
 - broad compatibility with legacy custom-bucket URLs
 
+An isolated non-production 3-D brain-mesh lab may proceed concurrently with
+launch work. It remains optional, failure-isolated, and outside launch
+acceptance until it passes the promotion gates in
+`docs/rendering/3D_EVALUATION.md`; its existence must not delay or fork the
+launch-critical 2-D workspace.
+
 ## Definition of launch-ready
 
 The release is launch-ready when:

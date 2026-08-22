@@ -150,6 +150,24 @@ Resolution needed: decide whether to add automated Firefox/WebKit Playwright job
 
 Blocks: final browser QA sign-off, not ordinary implementation.
 
+## Q12 — 3-D production promotion and final LOD
+
+Status: **FOLLOW-UP**; does not block the independent lab or launch.
+
+D032 fixes the lab direction: Three.js WebGL2, a pinned derived mesh pack,
+14-bit position quantization, meshopt compression, a conservative default LOD,
+one optional higher LOD, dynamic regional presentation, and genuine radial
+explode. These are sufficient to implement and measure the experiment.
+
+Resolution needed before production promotion: visual review at representative
+320/480/800 px view sizes; Chrome/Edge, Firefox, and Safari transfer/decode/
+first-frame/memory/picking results; final per-region simplification thresholds;
+and a product decision to expose 3-D in the main workspace. Every active region,
+including Allen 545 (`RSPd4`) absent from the inspected source GLB, must have
+validated geometry or an explicit scientifically justified exclusion.
+
+Blocks: production 3-D asset publication and main-workspace promotion only.
+
 ## How to resolve an item
 
 When authoritative evidence arrives:

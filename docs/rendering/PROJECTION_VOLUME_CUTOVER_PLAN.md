@@ -29,9 +29,10 @@ Implement one extensible 2-D projection workspace in which:
 - obsolete schema, anatomy, renderer, legacy-host, and URL compatibility code
   is deleted after the cutover.
 
-Rich 3-D rendering is not part of this unit. A future 3-D view may share
-workspace selection and presentation state, but it must not distort the 2-D
-projection contract.
+Rich 3-D rendering is not part of this unit. The independently approved 3-D lab
+in `docs/rendering/3D_EVALUATION.md` may run concurrently, but integration waits
+for this cutover's workspace seam and must not distort the 2-D projection
+contract.
 
 ## Non-goals and scientific guardrails
 
@@ -74,6 +75,20 @@ type ProjectionDescriptor =
 
 Code branches on capabilities or the discriminant, never on names such as
 `top` or `swanson`.
+
+`ProjectionDescriptor`, `ProjectionRegistry`, and `ProjectionViewport` remain
+2-D-specific. A small higher-level registry makes the future composition seam
+explicit without forcing 3-D camera or scene concepts into projection code:
+
+```ts
+type WorkspaceViewDescriptor =
+  | { id: WorkspaceViewId; kind: 'projection-2d'; projection: ProjectionDescriptor }
+  | { id: WorkspaceViewId; kind: 'scene-3d' };
+```
+
+The cutover need not register or render a `scene-3d` view. It must keep view
+state open to that declared variation rather than assuming every focused or
+secondary view is a projection.
 
 ### The viewport owns retained layers
 
@@ -162,6 +177,8 @@ Names may be refined during implementation, but ownership should remain clear:
 
 - `ProjectionRegistry`: product/view metadata and capabilities, with no DOM or
   transport code;
+- `WorkspaceViewRegistry`: higher-level `projection-2d | scene-3d` composition
+  metadata, with only 2-D entries registered during this cutover;
 - `ProjectionViewportFactory`: creates one retained viewport per frame;
 - `ProjectionViewportController`: coordinates retained layers for one mount;
 - `RegionalGeometrySource`: loads normalized projection geometry;
@@ -285,13 +302,14 @@ domain state/actions:
 
 ```ts
 interface WorkspaceState {
-  secondaryPanel: 'summary' | ProjectionId;
-  focusedView: ProjectionId | null;
+  secondaryPanel: 'summary' | WorkspaceViewId;
+  focusedView: WorkspaceViewId | null;
 }
 ```
 
 `summary` is a secondary tab, not a projection ID. Prefer distinct
-`SecondaryTabId`, `OrthogonalProjectionId`, and `StaticProjectionId` types.
+`SecondaryTabId`, `WorkspaceViewId`, `ProjectionId`,
+`OrthogonalProjectionId`, and `StaticProjectionId` types.
 Keep one ML/AP/DV cursor as navigation authority and derive registered native
 indices, display ordinals, slider positions, guides, and volume indices. Do not
 persist a second independently mutable slice triple.
@@ -362,7 +380,8 @@ Targeted gates: deterministic fixture parity, local import, publishing,
 
 ### Commit 3 — Make projection and navigation state data-driven
 
-- add the discriminated projection registry and separate secondary-tab type;
+- add the discriminated 2-D projection registry, higher-level workspace-view
+  registry, and separate secondary-tab type;
 - make the world cursor the sole navigation authority and derive slice/display
   indices and guides;
 - move secondary/focused view state into domain actions/reducers;
@@ -390,7 +409,7 @@ and use synthetic static maps rather than publishing asserted production assets.
 Targeted gates: anatomy generator/contract/integrity tests and
 `just test-anatomy`; finish with `just check`.
 
-### Commit 5 — Introduce retained projection viewport primitives
+### Commit 5 — Atomically cut registered anatomy to retained viewports
 
 - add the viewport factory and atomic revisioned update model;
 - implement independently tested regional SVG, scalar Canvas, guide,
@@ -398,24 +417,18 @@ Targeted gates: anatomy generator/contract/integrity tests and
 - centralize regional presentation and common color normalization while keeping
   regional and voxel applicators specialized;
 - implement the common world-plane-to-screen registration contract;
-- keep the old facade active only as temporary staging until the atomic cutover.
-
-Targeted gates: strict typecheck, layer conformance tests, transform sentinels,
-cancellation/race tests, and DOM retention tests; finish with `just check`.
-
-### Commit 6 — Cut registered anatomy to the new viewport and pack
-
 - migrate all three orthogonal regional views and application composition;
 - preserve selection, hover, inspection, guides, sliders, sparse display,
   worker/LRU behavior, failure handling, and measured navigation performance;
 - switch the browser to the new projection pack;
-- delete superseded SVG/anatomy renderers and old pack parsers instead of
-  wrapping them indefinitely.
+- delete `SliceRenderer`, the hybrid switch, superseded SVG/anatomy renderers,
+  and old pack parsers in the same commit instead of staging a parallel facade.
 
-Targeted gates: rendering unit tests, anatomy integrity/navigation tests,
+Targeted gates: strict typecheck, layer conformance, transform sentinels,
+cancellation/race and DOM-retention tests, anatomy integrity/navigation,
 regional Playwright, and benchmark sanity run; finish with `just check`.
 
-### Commit 7 — Composite volume planes in registered world space
+### Commit 6 — Composite volume planes in registered world space
 
 - split volume loading, location, colorization, and Canvas paint;
 - map the shared world cursor independently through the volume transform and
@@ -434,7 +447,7 @@ Targeted gates: volume unit/contract tests, both layout adapters, browser volume
 suite, cache/memory assertions, layer-alignment sentinels, and benchmark sanity
 run; finish with `just check`.
 
-### Commit 8 — Expose Top and Swanson through shared workspace state
+### Commit 7 — Expose Top and Swanson through shared workspace state
 
 - replace hardcoded view construction with the registry;
 - add `Summary | Top | Swanson` in the existing secondary slot;
@@ -446,7 +459,7 @@ run; finish with `just check`.
 Targeted gates: domain/URL/UI unit tests and Playwright at desktop, compact, and
 narrow layouts; finish with `just check`.
 
-### Commit 9 — Delete residue and rebaseline evidence
+### Commit 8 — Delete residue and rebaseline evidence
 
 - delete remaining old schema, URL migration, legacy-host, crosswalk, anatomy
   parser, hybrid renderer, dead CSS, and stale compatibility tests/docs;
@@ -460,7 +473,7 @@ Run `rg` audits, `just check`, representative visual review, and the explicit
 anatomy/volume benchmarks. This commit is not complete if a compatibility path
 is merely renamed or left unused.
 
-### Commit 10 — Build and validate the production volume release
+### Commit 9 — Build and validate the production volume release
 
 This commit waits for Q4 and Q5. After authoritative resolution:
 
