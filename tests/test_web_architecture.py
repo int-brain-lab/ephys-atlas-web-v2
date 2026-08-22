@@ -73,3 +73,13 @@ def test_mesh_runtime_dependencies_stay_inside_rendering_3d() -> None:
     app = (ROOT / "app.ts").read_text()
     assert "MeshPackSource" not in app
     assert "meshoptimizer" not in app
+
+
+def test_three_runtime_stays_inside_rendering_3d() -> None:
+    violations: list[str] = []
+    for path in sorted(ROOT.rglob("*.ts")):
+        source = path.read_text()
+        if "from 'three'" in source or 'from "three"' in source:
+            if not path.relative_to(ROOT).as_posix().startswith("rendering/3d/"):
+                violations.append(path.relative_to(ROOT).as_posix())
+    assert not violations, "Three runtime dependency escaped rendering/3d:\n" + "\n".join(violations)

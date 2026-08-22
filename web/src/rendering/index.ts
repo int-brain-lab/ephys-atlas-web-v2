@@ -8,4 +8,4 @@ export * from './region-id.js';
 export * from './svg-slice-renderer.js';
 export * from './volume.js';
 export * from './canvas-volume-renderer.js';
-export * from './scene3d.js';
+export * from './3d/brain-scene-viewport.js';

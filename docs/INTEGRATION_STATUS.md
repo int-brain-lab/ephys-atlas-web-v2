@@ -102,7 +102,7 @@ explode. It has not been integrated on `main`, is not part of M2 or launch
 acceptance, and must not be bulk merged because it predates final projection
 cutover commits.
 
-The approved main-integration Commits 0-2 are complete. At main
+The approved main-integration Commits 0-3 are complete. At main
 `9624b05`, the full `just check` gate passed; at the unchanged donor
 `ba1e2d1`, the focused compiler (5), web unit (18), and Chromium lab (4) tests
 passed. No donor history changed. Main now has one strict snake_case
@@ -111,8 +111,15 @@ offline GLB/clipping/ontology/EAM3 primitives, complete graph validation, and
 a byte-reproducible tiny bilateral pack marked test-only. The browser now has
 verified manifest/LOD transport, shared consumer-safe cancellation, a real
 gzip/EAM3/meshopt module worker, strict malformed-input rejection, and a
-decoder-identity-keyed bounded CPU LRU. The retained renderer and thin
-standalone lab are next; production promotion remains blocked by Q12.
+decoder-identity-keyed bounded CPU LRU. A retained Three viewport now owns
+merged bilateral GPU resources, press-referenced arcball controls, lookup-
+texture presentation, shader-only explode, signed filtered picking, lazy atomic
+LOD replacement, demand-only frames, resize, WebGL context loss, and complete
+disposal. The thin `/3d-lab/` entry uses the canonical committed fixture through
+a development/test-only server route; it is covered by the ordinary Chromium
+gate and is not a production-data fallback. The obsolete exploratory renderer
+facade is gone. Shared regional presentation is next; production promotion
+remains blocked by Q12.
 
 The approved anatomy smoothing investigation has completed its first three
 implementation slices. A deterministic registry exposes exact geometry, GEOS
