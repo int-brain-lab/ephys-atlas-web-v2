@@ -1,6 +1,6 @@
 # 3-D main-application integration plan
 
-Status: **approved execution plan; implementation not started on `main`
+Status: **Commit 0 baseline complete on `main`; Commit 1 is next
 (2026-08-22)**.
 
 This document defines how to promote the completed independent brain-mesh lab
@@ -29,6 +29,35 @@ and reconstruct the vertical slices below directly on current `main`.
 Keep the donor worktree until the standalone lab on `main` has behavioral
 parity and the integrated path passes the full gate. Remove it only in the final
 cleanup slice.
+
+### Commit 0 baseline record
+
+The execution baseline was repeated on 2026-08-22 before any donor code was
+copied. Current `main` was
+`9624b05f7608b9c41b462534db5cd217e9fdffa9`, remote `main` was
+`4130809cef827f59a45f4b7914d6b4c5038a7873`, and the frozen donor remained
+`ba1e2d129753bdc459bca7b23fa896f41ee13536`. Their merge base was
+`266a4216f44a7773d3da9bc42c3e7224abadc49e`; `git rev-list --left-right
+--count main...experiment/brain-mesh-3d-lab` reported `13 30`.
+
+The following reproducible gates were green:
+
+- current `main`: `just check` (builder 172 passed/1 optional-real-input
+  skipped; publishing 25 passed; web unit 139 passed; rendering 23 passed;
+  browser 68 passed; typecheck and production build passed);
+- frozen donor compiler: `uv run --project builder --extra anatomy --extra
+  scientific --extra test --locked python -m pytest -q
+  tests/test_mesh_pack.py` (5 passed);
+- frozen donor web units: local TypeScript typecheck plus the five focused
+  compiled-manifest, compiled-pack, presentation, binary-pack, and ontology
+  suites (18 passed);
+- frozen donor Chromium lab: `npm run test:3d` (4 passed, including the
+  intentional missing-manifest fail-closed case).
+
+The initial focused web command accidentally invoked a nonexistent global
+`tsc` after the npm typecheck. Re-running through the donor's local npm
+toolchain passed; this was an invocation/environment error, not a product
+failure. The donor was neither modified nor rebased.
 
 ## Product boundary
 

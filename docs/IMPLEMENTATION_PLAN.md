@@ -194,8 +194,8 @@ scientific boundaries, and promotion stopping point are specified in
 
 ## P3D — Independent brain-mesh 3-D lab
 
-Status: **experiment implemented in frozen donor; main integration approved and
-not started; non-blocking for launch**.
+Status: **experiment implemented in frozen donor; main Commit 0 baseline
+complete; non-blocking for launch**.
 
 The explicitly authorized worktree described by `AGENTS.md` has completed its
 experimental purpose and now remains frozen as donor evidence. Its isolation
@@ -219,8 +219,10 @@ then complete Q12 evidence and cleanup. The existing secondary/context slot is
 the integration seam; the four workspace slots and 2-D projection registry do
 not gain a permanent fifth panel or 3-D projection.
 
-Next unblocked action: execute Commit 0 of that plan, then Commit 1 against
-deterministic tiny fixtures. Production asset promotion remains blocked by Q12.
+Commit 0 recorded green current-main and frozen-donor compiler, unit, and
+browser baselines without copying or rebasing donor code. Next unblocked
+action: execute Commit 1 against deterministic tiny fixtures. Production asset
+promotion remains blocked by Q12.
 
 Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 

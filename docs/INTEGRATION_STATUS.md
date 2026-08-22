@@ -102,6 +102,13 @@ explode. It has not been integrated on `main`, is not part of M2 or launch
 acceptance, and must not be bulk merged because it predates final projection
 cutover commits.
 
+The approved main-integration Commit 0 baseline is complete. At main
+`9624b05`, the full `just check` gate passed; at the unchanged donor
+`ba1e2d1`, the focused compiler (5), web unit (18), and Chromium lab (4) tests
+passed. No donor code was copied or history changed. Contract/compiler
+convergence against tiny deterministic test-only fixtures is the next slice;
+production promotion remains blocked by Q12.
+
 The approved anatomy smoothing investigation has completed its first three
 implementation slices. A deterministic registry exposes exact geometry, GEOS
 whole-coverage simplification with explicit outer-boundary policy, and a
