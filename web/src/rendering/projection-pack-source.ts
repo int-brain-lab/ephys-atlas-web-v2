@@ -35,6 +35,13 @@ export interface RegisteredProjectionSlice {
   readonly viewBox: ViewBox;
 }
 
+export interface RegisteredProjectionRegistration {
+  readonly axis: SliceAxis;
+  readonly referenceSpaceId: string;
+  readonly viewBox: ViewBox;
+  readonly worldToPlaneIndex: Matrix4;
+}
+
 export interface ProjectionPackSourceOptions {
   readonly manifestUrl: string;
   readonly fetchImpl?: typeof fetch;
@@ -43,6 +50,7 @@ export interface ProjectionPackSourceOptions {
 
 export interface RegisteredProjectionSource {
   getDisplaySliceInventories(): Promise<Readonly<Record<SliceAxis, DisplaySliceInventory>>>;
+  getRegistration(axis: SliceAxis): Promise<RegisteredProjectionRegistration>;
   loadSlice(axis: SliceAxis, nativeIndex: number, signal?: AbortSignal): Promise<RegisteredProjectionSlice>;
   guidesForWorld(axis: SliceAxis, world: WorldCoordinateUm): Promise<readonly SliceGuide[]>;
   prefetchNeighbor(axis: SliceAxis, nativeIndex: number, direction: -1 | 1): Promise<void>;
@@ -105,6 +113,17 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
     return createDisplaySliceInventories(Object.fromEntries(
       ORTHOGONAL_PROJECTIONS.map((axis) => [axis, this.projection(manifest, axis).display_slices]),
     ) as Record<SliceAxis, readonly number[]>);
+  }
+
+  async getRegistration(axis: SliceAxis): Promise<RegisteredProjectionRegistration> {
+    const projection = this.projection(await this.loadManifest(), axis);
+    if (!projection.world_to_plane_index) throw new Error(`${axis} projection has no inverse affine`);
+    return {
+      axis,
+      referenceSpaceId: projection.reference_space_id,
+      viewBox: viewBox(projection.view_box),
+      worldToPlaneIndex: matrix(projection.world_to_plane_index),
+    };
   }
 
   async loadSlice(axis: SliceAxis, nativeIndex: number, signal?: AbortSignal): Promise<RegisteredProjectionSlice> {

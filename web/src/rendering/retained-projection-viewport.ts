@@ -1,16 +1,21 @@
 import type { ColoringState, EffectiveColoringState, SliceAxis } from '../domain/types.js';
 import type { VolumeFeaturePayload } from '../data/contracts.js';
-import { cursorStateToWorld } from './coordinate-space.js';
+import { applyAffine, cursorStateToWorld, worldToPlane, type Matrix4, type ViewBox } from './coordinate-space.js';
 import { bilateralAtlasRegionColorMap, bilateralFeatureColorMap } from './scalar-colormap.js';
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
 import type { RegionalSliceFrame, SliceRegionPointerEvent } from './types.js';
 import { CanvasVolumeSliceRenderer } from './canvas-volume-renderer.js';
-import { SchemaChunks3dVolumeSource, locateVolumePlane } from './chunked-volume-source.js';
+import {
+  SchemaChunks3dVolumeSource,
+  locateVolumePlane,
+  volumeAxisDimension,
+} from './chunked-volume-source.js';
 import { SchemaSlicePackVolumeSource } from './slice-pack-volume-source.js';
 import { VolumeSliceLoader, type VolumeSlice, type VolumeSliceSource } from './volume.js';
 import { paletteRgb } from './colormap-palettes.js';
 import {
   ProjectionPackSource,
+  type RegisteredProjectionRegistration,
   type RegisteredProjectionSlice,
   type RegisteredProjectionSource,
 } from './projection-pack-source.js';
@@ -32,11 +37,89 @@ interface PendingRender {
 
 interface RetainedMount {
   readonly root: HTMLDivElement;
+  readonly scalar: SVGSVGElement;
+  readonly scalarHost: SVGForeignObjectElement;
   readonly canvas: HTMLCanvasElement;
   readonly volume: CanvasVolumeSliceRenderer;
   readonly svg: SVGSVGElement;
   readonly regional: SvgSliceRenderer;
   readonly error: HTMLDivElement;
+}
+
+export interface RegisteredVolumeCanvasPlacement {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly flipX: boolean;
+  readonly flipY: boolean;
+  readonly viewBox: ViewBox;
+}
+
+export function assertCompatibleReferenceSpace(
+  registration: RegisteredProjectionRegistration,
+  feature: VolumeFeaturePayload,
+): void {
+  const volumeReference = feature.descriptor.grid.referenceSpaceId;
+  if (registration.referenceSpaceId !== volumeReference) {
+    throw new Error(
+      `Cannot composite ${registration.referenceSpaceId} anatomy with ${volumeReference} volume`,
+    );
+  }
+}
+
+function volumeIndexToPlane(
+  feature: VolumeFeaturePayload,
+  registration: RegisteredProjectionRegistration,
+  index: readonly [number, number, number],
+) {
+  const affine = feature.descriptor.grid.indexToWorldUm;
+  if (affine.length !== 16) throw new Error('volume index_to_world_um must contain 16 values');
+  const [ml, ap, dv] = applyAffine(affine as Matrix4, index);
+  return worldToPlane(registration.worldToPlaneIndex, { ml, ap, dv });
+}
+
+/** Position a raw nearest-neighbor plane inside the registered anatomy viewBox. */
+export function registeredVolumeCanvasPlacement(
+  feature: VolumeFeaturePayload,
+  slice: VolumeSlice,
+  registration: RegisteredProjectionRegistration,
+): RegisteredVolumeCanvasPlacement {
+  assertCompatibleReferenceSpace(registration, feature);
+  if (slice.axis !== registration.axis) throw new Error('volume plane and projection axes differ');
+  const fixed = volumeAxisDimension(feature, slice.axis);
+  const width = volumeAxisDimension(feature, slice.widthAxis);
+  const height = volumeAxisDimension(feature, slice.heightAxis);
+  if (new Set([fixed, width, height]).size !== 3) throw new Error('volume plane axes are not independent');
+  const corner = (rawWidth: number, rawHeight: number) => {
+    const index = [0, 0, 0] as [number, number, number];
+    index[fixed] = slice.index;
+    index[width] = rawWidth;
+    index[height] = rawHeight;
+    return volumeIndexToPlane(feature, registration, index);
+  };
+  const low = corner(-0.5, -0.5);
+  const right = corner(slice.width - 0.5, -0.5);
+  const down = corner(-0.5, slice.height - 0.5);
+  const diagonal = corner(slice.width - 0.5, slice.height - 0.5);
+  const epsilon = 1e-7;
+  if (Math.abs(right.v - low.v) > epsilon || Math.abs(down.u - low.u) > epsilon) {
+    throw new Error('volume grid is not axis-aligned with the registered projection');
+  }
+  const x = Math.min(low.u, right.u, down.u, diagonal.u);
+  const y = Math.min(low.v, right.v, down.v, diagonal.v);
+  const projectedWidth = Math.max(low.u, right.u, down.u, diagonal.u) - x;
+  const projectedHeight = Math.max(low.v, right.v, down.v, diagonal.v) - y;
+  if (!(projectedWidth > 0 && projectedHeight > 0)) throw new Error('volume plane has an empty projected extent');
+  return {
+    x,
+    y,
+    width: projectedWidth,
+    height: projectedHeight,
+    flipX: right.u < low.u,
+    flipY: down.v < low.v,
+    viewBox: registration.viewBox,
+  };
 }
 
 const DEFAULT_PRESENTATION: ProjectionPresentation = {
@@ -269,6 +352,12 @@ class RetainedProjectionViewport implements ProjectionViewport {
       if (this.renderToken !== token) return;
       this.frame = { ...this.frame, guides };
       this.mount.regional.updateGuides(this.frame);
+      this.volumeFeature = null;
+      this.volumeSlice = null;
+      this.mount.root.dataset.mode = 'regional';
+      this.target.dataset.sliceAsset = 'projection-pack-v1';
+      delete this.target.dataset.volumeIndex;
+      delete this.target.dataset.volumeFeature;
       return;
     }
     const [slice, guides] = await Promise.all([
@@ -279,6 +368,8 @@ class RetainedProjectionViewport implements ProjectionViewport {
     const previous = this.previousNativeIndex;
     this.frame = regionalFrame(model, slice, guides, this.presentation());
     this.mount.regional.render(this.frame);
+    this.volumeFeature = null;
+    this.volumeSlice = null;
     this.mount.root.dataset.mode = 'regional';
     this.target.dataset.sliceAsset = 'projection-pack-v1';
     this.target.dataset.assetIndex = String(slice.sliceIndex);
@@ -296,7 +387,24 @@ class RetainedProjectionViewport implements ProjectionViewport {
   private async renderVolume(model: ProjectionRenderModel, token: number): Promise<void> {
     const feature = model.feature;
     if (!feature || feature.representation !== 'volume') throw new Error('Volume viewport requires a volume feature');
-    const location = locateVolumePlane(feature, model.axis, cursorStateToWorld(model.cursor));
+    const world = cursorStateToWorld(model.cursor);
+    const [registration, anatomySlice, guides] = await Promise.all([
+      this.source.getRegistration(model.axis),
+      this.source.loadSlice(model.axis, model.sliceIndex),
+      this.source.guidesForWorld(model.axis, world),
+    ]);
+    if (this.renderToken !== token) return;
+    this.frame = regionalFrame(model, anatomySlice, guides, this.presentation());
+    this.mount.regional.render(this.frame);
+    this.volumeFeature = null;
+    this.volumeSlice = null;
+    this.mount.root.dataset.mode = 'regional';
+    this.target.dataset.sliceAsset = 'projection-pack-v1';
+    this.target.dataset.assetIndex = String(anatomySlice.sliceIndex);
+    this.target.dataset.worldCoordinateUm = String(anatomySlice.worldCoordinateUm);
+    this.renderedRequestedIndex = model.sliceIndex;
+    assertCompatibleReferenceSpace(registration, feature);
+    const location = locateVolumePlane(feature, model.axis, world);
     if (location.status === 'out-of-grid') {
       throw new RangeError(`${model.axis} cursor is outside the declared volume extent`);
     }
@@ -304,16 +412,29 @@ class RetainedProjectionViewport implements ProjectionViewport {
     const loader = this.volumeSource(feature);
     const slice = await loader.loadSlice(model.axis, volumeIndex);
     if (this.renderToken !== token) return;
+    this.placeVolume(registeredVolumeCanvasPlacement(feature, slice, registration));
     this.paintVolume(feature, slice, this.presentation().coloring);
     this.volumeFeature = feature;
     this.volumeSlice = slice;
-    this.mount.root.dataset.mode = 'volume';
+    this.mount.root.dataset.mode = 'composite';
     this.target.dataset.sliceAsset = 'schema-volume-v1';
     this.target.dataset.volumeIndex = String(volumeIndex);
     this.target.dataset.volumeFeature = feature.featureId;
-    delete this.target.dataset.assetIndex;
-    delete this.target.dataset.worldCoordinateUm;
     void loader.prefetchAdjacent?.(model.axis, volumeIndex, 1)?.catch(() => undefined);
+  }
+
+  private placeVolume(placement: RegisteredVolumeCanvasPlacement): void {
+    const { scalar, scalarHost, canvas } = this.mount;
+    scalar.setAttribute(
+      'viewBox',
+      `${placement.viewBox.x} ${placement.viewBox.y} ${placement.viewBox.width} ${placement.viewBox.height}`,
+    );
+    scalarHost.setAttribute('x', String(placement.x));
+    scalarHost.setAttribute('y', String(placement.y));
+    scalarHost.setAttribute('width', String(placement.width));
+    scalarHost.setAttribute('height', String(placement.height));
+    canvas.dataset.flipX = String(placement.flipX);
+    canvas.dataset.flipY = String(placement.flipY);
   }
 
   private paintVolume(
@@ -358,10 +479,18 @@ class RetainedProjectionViewport implements ProjectionViewport {
     const root = document.createElement('div');
     root.className = 'projection-viewport';
     root.dataset.mode = 'empty';
+    const scalar = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    scalar.classList.add('projection-viewport__scalar');
+    scalar.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    scalar.setAttribute('aria-hidden', 'true');
+    const scalarHost = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+    scalarHost.classList.add('projection-viewport__scalar-host');
     const canvas = document.createElement('canvas');
-    canvas.className = 'projection-viewport__scalar view-frame__volume-canvas';
+    canvas.className = 'view-frame__volume-canvas';
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', 'Ephys atlas volume slice');
+    scalarHost.append(canvas);
+    scalar.append(scalarHost);
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.classList.add('projection-viewport__regional', 'view-frame__brain-svg');
     svg.setAttribute('role', 'img');
@@ -377,9 +506,11 @@ class RetainedProjectionViewport implements ProjectionViewport {
     error.className = 'projection-viewport__error';
     error.setAttribute('role', 'status');
     error.hidden = true;
-    root.append(canvas, svg, error);
+    root.append(scalar, svg, error);
     return {
       root,
+      scalar,
+      scalarHost,
       canvas,
       volume: new CanvasVolumeSliceRenderer(canvas),
       svg,

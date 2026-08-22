@@ -71,7 +71,7 @@ function chunks3dResource(feature: VolumeFeaturePayload): Chunks3dResource {
   };
 }
 
-function axisDimension(feature: VolumeFeaturePayload, axis: SliceAxis): number {
+export function volumeAxisDimension(feature: VolumeFeaturePayload, axis: SliceAxis): number {
   const name = AXIS_NAME[axis];
   const index = feature.descriptor.grid.axisOrder.findIndex((item) => item.toLowerCase() === name);
   if (index < 0) throw new Error(`volume axis_order does not contain ${name}`);
@@ -80,9 +80,9 @@ function axisDimension(feature: VolumeFeaturePayload, axis: SliceAxis): number {
 
 function anatomicalShape(feature: VolumeFeaturePayload, raw: readonly [number, number, number]): VolumeShape {
   return {
-    coronal: raw[axisDimension(feature, 'coronal')]!,
-    sagittal: raw[axisDimension(feature, 'sagittal')]!,
-    horizontal: raw[axisDimension(feature, 'horizontal')]!,
+    coronal: raw[volumeAxisDimension(feature, 'coronal')]!,
+    sagittal: raw[volumeAxisDimension(feature, 'sagittal')]!,
+    horizontal: raw[volumeAxisDimension(feature, 'horizontal')]!,
   };
 }
 
@@ -199,7 +199,7 @@ export function locateVolumePlane(
   axis: SliceAxis,
   world: WorldCoordinateUm,
 ): VolumePlaneLocation {
-  const rawDimension = axisDimension(feature, axis);
+  const rawDimension = volumeAxisDimension(feature, axis);
   const matrix = feature.descriptor.grid.worldToIndex;
   if (matrix.length !== 16) throw new Error('volume world_to_index must contain 16 values');
   const coordinates = [world.ml, world.ap, world.dv, 1] as const;

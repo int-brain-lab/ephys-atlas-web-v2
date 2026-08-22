@@ -49,17 +49,24 @@ navigation, failure display, and parsed-layer reuse. Existing schema-v1
 `chunks3d` and `orthogonal_slice_packs` sources still terminate at one decoded
 volume-plane boundary.
 
-Volume display is intentionally still exclusive in the current handoff. The
-next unit, Commit 6, must load anatomy and volume independently into the same
-viewport, require matching `reference_space_id`, register each through its own
-transform, preserve anatomy when volume fails, and implement the specified
-nearest-neighbor screen/world/voxel inspection path. Opacity and outline-only
-changes must repaint without fetching or decoding.
+Commit 6 compositing is implemented. Each volume render first retains the
+registered anatomy slice, requires exact anatomy/volume `reference_space_id`
+equality, and locates the scalar plane by applying the volume's declared
+`world_to_index` matrix to the shared cursor. Half-index voxel-edge bounds
+return explicit `out-of-grid`; no edge plane is clamped or fetched.
 
-The first Commit 6 slice is implemented: orthogonal volume planes are located
-by applying the declared `world_to_index` matrix to the shared world cursor.
-Voxel-edge bounds return an explicit `out-of-grid` result; the runtime no
-longer clamps an outside cursor to an edge plane or fetches that plane.
+The Canvas is hosted in a scalar SVG layer sharing the registered anatomy
+viewBox. Its four voxel-edge corners pass through `index_to_world_um` and the
+projection's `world_to_plane_index`; this positions and flips the raw plane
+without assuming equal grid resolutions. CSS nearest-neighbor paint is fixed,
+while the retained anatomy SVG supplies outlines, guides, picking, hover, and
+selection above it. A failed volume request leaves anatomy visible with an
+explicit error.
+
+The remaining Commit 6 work is the independent background-capable
+screen/world/voxel inspection chain, validity classification, URL-persisted
+opacity and outline controls, and global decoded-memory/cancellation evidence.
+Presentation-only changes must remain fetch- and decode-free.
 
 Q4 still blocks authoritative production volume geometry/outside semantics,
 and Q5 still blocks the production transport choice. Use synthetic fixtures
@@ -89,5 +96,6 @@ projection layers. See `docs/rendering/3D_EVALUATION.md`.
 - `just benchmark-anatomy` and `npm run benchmark:real-volume` are explicit
   measurements, not default CI gates.
 
-The immediate next action is Commit 6 in
+The immediate next action is to complete the remaining Commit 6 inspection,
+controls, and memory work in
 `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md`.

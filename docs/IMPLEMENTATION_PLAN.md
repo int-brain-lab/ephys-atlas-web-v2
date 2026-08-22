@@ -75,7 +75,7 @@ horizontal support registered anatomy plus volume layers; Top and Swanson are
 static regional projections using the same SVG presentation and interaction
 path. Backward compatibility with the pre-launch formats is not a requirement.
 
-Commits 1 through 5 are implemented. Schema v1 is now the sole builder,
+Commits 1 through 5 are implemented, and Commit 6 is in progress. Schema v1 is now the sole builder,
 publishing, HTTP/local browser, fixture, and download contract. It separates
 scientific reference-space identity from grid and asset identities, admits
 only the checked signed-permutation affine profile, verifies encoded bytes
@@ -94,8 +94,11 @@ hidden static fragments alongside the validated registered geometry. The
 browser now uses one retained `ProjectionViewport` per registered frame and
 the schema-v1 projection pack directly. The old `SliceRenderer` facade,
 hybrid switch, anatomy-pack readers, legacy renderer/crosswalk, URL migrations,
-and application-owned slice triple are deleted. The next unit is Commit 6's
-registered world-space volume composition and inspection path.
+and application-owned slice triple are deleted. Compatible schema-v1 volume
+planes now composite beneath retained anatomy after exact reference-space
+validation and affine-derived voxel-edge placement; an unavailable volume
+leaves the registered anatomy usable. Commit 6 next adds the complete
+screen/world/voxel inspection path and URL-persisted layer controls.
 
 This machinery is unblocked with deterministic synthetic fixtures. It must not
 resolve or conceal Q4/Q5.

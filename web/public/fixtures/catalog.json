@@ -13,7 +13,7 @@
             "path": "./ephys_atlas_channels/golden-v1/manifest.json",
             "media_type": "application/json",
             "bytes": 2465,
-            "sha256": "749a353772703b5beaf5b2a5a528a5d9f789fedc346974758672542d52547767",
+            "sha256": "912e2d3a5690fd6e6aaa05c3317a3959a9306dbff0b3f8bb697b24047d339baa",
             "codec": {"name": "none", "decoded_bytes": 2465}
           }
         }

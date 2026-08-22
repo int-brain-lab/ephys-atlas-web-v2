@@ -1220,9 +1220,7 @@ export class AppShell {
       model.feature?.featureId ?? '',
       sliceIndex,
     ].join(':');
-    const renderKey = view.representation === 'volume'
-      ? geometryKey
-      : `${geometryKey}:${view.cursor.xUm}:${view.cursor.yUm}:${view.cursor.zUm}`;
+    const renderKey = `${geometryKey}:${view.cursor.xUm}:${view.cursor.yUm}:${view.cursor.zUm}`;
     if (nodes.renderKey === renderKey) return;
     nodes.renderKey = renderKey;
     const geometryChanged = nodes.geometryKey !== geometryKey;
@@ -1280,9 +1278,11 @@ export class AppShell {
         window.clearTimeout(nodes.loadingNoticeTimer);
         nodes.loadingNoticeTimer = null;
       }
-      if (!geometryChanged || retainsAnatomy) {
+      const preservedAnatomy = nodes.target.dataset.sliceAsset === 'projection-pack-v1';
+      if (!geometryChanged || retainsAnatomy || preservedAnatomy) {
         nodes.frame.dataset.state = 'ready';
-        if (geometryChanged) nodes.status.textContent = 'Previous slice';
+        if (geometryChanged) nodes.status.textContent = preservedAnatomy ? 'Anatomy only' : 'Previous slice';
+        nodes.viewport.showError(error);
       } else {
         nodes.frame.dataset.state = 'error';
         nodes.status.textContent = 'Unavailable';

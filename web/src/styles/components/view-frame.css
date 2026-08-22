@@ -106,8 +106,7 @@
 }
 
 .projection-viewport[data-mode='regional'] .projection-viewport__scalar,
-.projection-viewport:not([data-mode='volume']) .projection-viewport__scalar,
-.projection-viewport[data-mode='volume'] .projection-viewport__regional {
+.projection-viewport:not([data-mode='composite']) .projection-viewport__scalar {
   visibility: hidden;
   pointer-events: none;
 }

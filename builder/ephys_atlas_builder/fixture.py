@@ -158,7 +158,7 @@ def generate_golden(out: Path) -> Path:
             "volume": {
                 "format": "ephys-atlas-volume-v1",
                 "grid": {
-                    "reference_space_id": "synthetic-reference-space",
+                    "reference_space_id": "allen-ccf-2017",
                     "grid_id": grid_id,
                     "world_axes": ["ml", "ap", "dv"],
                     "shape": list(volume.shape),

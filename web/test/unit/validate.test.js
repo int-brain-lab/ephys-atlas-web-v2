@@ -72,7 +72,7 @@ test('resolved manifest preserves schema-v1 release, provenance, dataset, and fe
   assert.equal(manifest.provenance.builder.command, 'ephys-atlas-data golden fixtures/golden-v1');
   assert.equal(manifest.provenance.recipe.id, 'golden-fixture-v1');
   assert.equal(feature.unit, 'dB rel. V');
-  assert.equal(feature.representations.volume.grid.referenceSpaceId, 'synthetic-reference-space');
+  assert.equal(feature.representations.volume.grid.referenceSpaceId, 'allen-ccf-2017');
 });
 
 test('resolved manifest rejects mismatched dataset, feature, and parcellation identities', () => {

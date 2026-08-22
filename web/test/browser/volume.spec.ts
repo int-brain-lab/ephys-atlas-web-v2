@@ -11,6 +11,11 @@ test('schema-v1 chunks3d volume renders all three orthogonal golden slices', asy
     await expect(target).toHaveAttribute('data-volume-feature', 'rms_ap');
     await expect(target).toHaveAttribute('data-volume-index', '0');
     await expect(target.locator('canvas.view-frame__volume-canvas')).toBeAttached();
+    await expect(target.locator('.projection-viewport')).toHaveAttribute('data-mode', 'composite');
+    await expect(target.locator('svg.projection-viewport__scalar')).toBeAttached();
+    await expect(target.locator('svg.projection-viewport__regional')).toBeAttached();
+    await expect(target.locator('.projection-viewport__scalar-host')).toHaveAttribute('width', /\d/);
+    await expect(target.locator('canvas.view-frame__volume-canvas')).toHaveAttribute('data-flip-y', 'true');
   }
 
   await expect(page.locator('[data-view="coronal"] canvas')).toHaveJSProperty('width', 6);
@@ -30,7 +35,9 @@ test('an out-of-grid world cursor fails explicitly without fetching a clamped ed
 
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
     const frame = page.locator(`[data-view="${axis}"]`);
-    await expect(frame).toHaveAttribute('data-state', 'error');
+    await expect(frame).toHaveAttribute('data-state', 'ready');
+    await expect(frame.locator('.view-frame__renderer')).toHaveAttribute('data-slice-asset', 'projection-pack-v1');
+    await expect(frame.locator('.view-frame__status')).toHaveText('Anatomy only');
     await expect(frame.locator('.projection-viewport__error')).toContainText(
       `${axis} cursor is outside the declared volume extent`,
     );
@@ -65,4 +72,9 @@ test('switching regional to volume preserves each retained layer stack', async (
     )];
     return state.__retainedProjectionNodes?.every((node, index) => node === current[index]);
   })).toBe(true);
+
+  await representation.locator('.context-menu__trigger').click();
+  await representation.getByRole('option', { name: /Regional/ }).click();
+  await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
+  await expect(page.locator('.projection-viewport[data-mode="regional"]')).toHaveCount(3);
 });

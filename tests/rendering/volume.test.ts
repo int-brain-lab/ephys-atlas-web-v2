@@ -4,6 +4,10 @@ import test from 'node:test';
 import type { VolumeFeaturePayload } from '../../web/src/data/contracts.js';
 import type { SliceAxis } from '../../web/src/domain/types.js';
 import { locateVolumePlane } from '../../web/src/rendering/chunked-volume-source.js';
+import {
+  assertCompatibleReferenceSpace,
+  registeredVolumeCanvasPlacement,
+} from '../../web/src/rendering/retained-projection-viewport.js';
 import { SchemaSlicePackVolumeSource } from '../../web/src/rendering/slice-pack-volume-source.js';
 import {
   VolumeChunkCache,
@@ -238,6 +242,50 @@ test('world-space volume plane location follows the declared inverse without cla
   assert.equal(locateVolumePlane(feature, 'coronal', { ...world, ap: -12.6 }).status, 'out-of-grid');
   assert.equal(locateVolumePlane(feature, 'coronal', { ...world, ap: 112.49 }).status, 'in-grid');
   assert.equal(locateVolumePlane(feature, 'coronal', { ...world, ap: 112.5 }).status, 'out-of-grid');
+});
+
+test('volume plane edges register into anatomy coordinates with declared orientation', () => {
+  const { feature } = makeSlicePackFeature();
+  feature.descriptor.grid.shape = [8, 6, 4];
+  feature.descriptor.grid.axisOrder = ['ap', 'ml', 'dv'];
+  feature.descriptor.grid.referenceSpaceId = 'allen-ccf-2017';
+  feature.descriptor.grid.indexToWorldUm = [
+    0, 25, 0, 0,
+    25, 0, 0, 0,
+    0, 0, 25, 0,
+    0, 0, 0, 1,
+  ];
+  const registration = {
+    axis: 'coronal' as const,
+    referenceSpaceId: 'allen-ccf-2017',
+    viewBox: { x: -20, y: -20, width: 40, height: 40 },
+    worldToPlaneIndex: [
+      0, 0.04, 0, 0,
+      0.1, 0, 0, 0,
+      0, 0, -0.1, 0,
+      0, 0, 0, 1,
+    ] as const,
+  };
+  const placement = registeredVolumeCanvasPlacement(feature, {
+    axis: 'coronal', index: 2, widthAxis: 'sagittal', heightAxis: 'horizontal',
+    width: 6, height: 4, data: new Float32Array(24),
+  }, registration);
+  assert.deepEqual(placement, {
+    x: -1.25,
+    y: -8.75,
+    width: 15,
+    height: 10,
+    flipX: false,
+    flipY: true,
+    viewBox: registration.viewBox,
+  });
+  assert.throws(
+    () => assertCompatibleReferenceSpace(
+      { ...registration, referenceSpaceId: 'different-space' },
+      feature,
+    ),
+    /Cannot composite different-space anatomy with allen-ccf-2017 volume/,
+  );
 });
 
 test('LRU cache respects a byte budget', () => {

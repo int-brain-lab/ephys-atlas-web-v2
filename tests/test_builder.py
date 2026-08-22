@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 
@@ -30,6 +31,13 @@ def test_checked_in_golden_and_browser_copy_match_generator(tmp_path):
         assert actual_files == expected_files
         for relative in expected_files:
             assert (copy / relative).read_bytes() == (generated / relative).read_bytes(), relative
+
+    catalog = json.loads((ROOT / "web/public/fixtures/catalog.json").read_text())
+    descriptor = catalog["datasets"][0]["releases"][0]["manifest"]
+    served_manifest = ROOT / "web/public/fixtures" / descriptor["path"]
+    manifest_bytes = served_manifest.read_bytes()
+    assert descriptor["bytes"] == len(manifest_bytes)
+    assert descriptor["sha256"] == hashlib.sha256(manifest_bytes).hexdigest()
 
 
 def test_volume_edge_chunk_decodes_to_declared_dtype(tmp_path):

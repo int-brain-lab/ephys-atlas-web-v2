@@ -23,9 +23,10 @@ implementation sequence. Schema v1 is the sole implemented data contract, and
 the browser now mounts one retained layered `ProjectionViewport` for each
 registered frame. `SliceRenderer`, the hybrid facade, v1/v2/v3 anatomy-pack
 readers, legacy renderer/crosswalk, and URL migrations have been removed. The
-remaining coordinated work will composite registered volume and anatomy
-layers, then expose static Top and Swanson views through the same regional SVG
-presentation and interaction path.
+viewport now composites reference-compatible volume and registered anatomy
+layers. The remaining coordinated work completes volume inspection and layer
+controls, then exposes static Top and Swanson views through the same regional
+SVG presentation and interaction path.
 
 Commits 1 through 5 of the plan are implemented: `schema/v1/` defines the strict dataset,
 resource, regional, volume, summary/index, and five-projection contracts plus
@@ -279,18 +280,25 @@ See
 The browser/golden volume path supports `chunks3d` and
 `orthogonal_slice_packs`, float16/float32 decoding, optional gzip, explicit
 storage-axis permutation, declared `index_to_world_um` mapping, bounded decoded
-caches and Canvas2D scalar slices inside the retained viewport. The current
-volume path is still exclusive with regional SVG; Commit 6 makes the two
-layers coexist through independent world-space registration and adds voxel
-inspection.
+caches and Canvas2D scalar slices inside the retained viewport. A scalar Canvas
+is hosted in an SVG coordinate layer beneath the retained registered anatomy
+SVG. The runtime requires exact `reference_space_id` equality before requesting
+volume bytes, transforms half-index voxel edges through the volume and
+projection affines, preserves signed display orientation, and uses pixelated
+nearest-neighbor paint. Anatomy outlines, guides, picking, and selection remain
+available above the scalar plane.
 Published and local releases share the same transport-independent volume
 payload contract.
 
-Volume plane selection now applies the declared inverse affine to the shared
-world cursor and checks half-index voxel-edge bounds. An outside cursor fails
+Volume plane selection applies the declared inverse affine to the shared world
+cursor and checks half-index voxel-edge bounds. An outside cursor fails
 explicitly before any plane resource request; it is never clamped to the
-nearest edge slice. Full layer registration and pointer inspection remain the
-next Commit 6 work.
+nearest edge slice. Volume failures preserve the loaded anatomy with an
+explicit error instead of clearing the frame. The golden fixture's synthetic
+values occupy an explicitly declared small Allen CCF 2017 subgrid solely to
+exercise compositing; they have no scientific interpretation. Pointer
+inspection and URL-persisted opacity/outline controls remain the next Commit 6
+work.
 
 This proves the browser architecture, not the production science. Q4 still
 blocks the authoritative affine/axis mapping and any remaining missing-value

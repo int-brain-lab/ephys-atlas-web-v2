@@ -468,3 +468,19 @@ The checked-in web fixture may combine validated registered geometry with
 deterministic synthetic Top/Swanson paths so the complete graph can be tested.
 Those static resources remain hidden until the shared static workspace work and
 must never be described as production, scientific, or licensing evidence.
+
+## D036 — Affine-registered volume composition preserves anatomy
+
+Composite scalar planes only when their volume grid and the registered anatomy
+projection declare the exact same `reference_space_id`; grid or asset identity
+is not compatibility evidence. Perform this check before fetching plane bytes.
+Map the raw plane's half-index voxel-edge corners through its
+`index_to_world_um` affine and the projection's `world_to_plane_index` affine,
+then place and orient a nearest-neighbor Canvas in an SVG layer sharing the
+anatomy viewBox. Keep the retained regional SVG above it for outlines, guides,
+picking, hover, and selection.
+
+Load anatomy independently and preserve it with an explicit error if volume
+compatibility, extent, integrity, or loading fails. The deterministic golden
+volume declares a small Allen CCF 2017 subgrid so the composition machinery is
+exercised, but its values remain synthetic and scientifically meaningless.
