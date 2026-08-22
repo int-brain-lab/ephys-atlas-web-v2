@@ -6,6 +6,7 @@ import type {
   SliceAxis,
   SliceRegionPointerEvent,
 } from './types.js';
+import type { ProjectionId } from '../domain/types.js';
 
 export interface SvgSliceRendererMount {
   svg: SVGSVGElement;
@@ -29,7 +30,7 @@ export type SvgSlicePerformancePhase =
 
 export interface SvgSlicePerformanceEvent {
   phase: SvgSlicePerformancePhase;
-  axis: SliceAxis;
+  axis: ProjectionId;
   sliceIndex: number;
   durationMs: number;
   pathCount?: number;
@@ -49,7 +50,7 @@ interface PreparedSliceLayer {
 }
 
 export class SvgSliceRenderer implements RegionalSliceRenderer {
-  private currentAxis: SliceAxis | null = null;
+  private currentAxis: ProjectionId | null = null;
   private mapping: MappingName = 'beryl';
   private hoveredRegionId: number | null = null;
   private pathIndex: ReadonlyMap<number, readonly SVGPathElement[]> = new Map();
@@ -282,7 +283,9 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
       const steps = Math.trunc(this.wheelPixels / threshold);
       if (steps === 0) return;
       this.wheelPixels -= steps * threshold;
-      if (this.currentAxis != null) this.options.onSliceStep?.(this.currentAxis, steps);
+      if (this.currentAxis === 'coronal' || this.currentAxis === 'sagittal' || this.currentAxis === 'horizontal') {
+        this.options.onSliceStep?.(this.currentAxis, steps);
+      }
     });
   };
 }

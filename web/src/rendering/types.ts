@@ -1,11 +1,12 @@
 import type { SliceAxis, SliceGuide, ViewBox } from '../core/spatial.js';
+import type { ProjectionId } from '../domain/types.js';
 export { SLICE_AXES } from '../core/spatial.js';
 export type { GuideDimension, SliceAxis, SliceGuide, SliceIndices, ViewBox } from '../core/spatial.js';
 
 export type MappingName = 'allen' | 'beryl' | 'cosmos';
 
 export interface RegionalSliceFrame {
-  axis: SliceAxis;
+  axis: ProjectionId;
   index: number;
   mapping: MappingName;
   svgFragment: string;
@@ -18,7 +19,7 @@ export interface RegionalSliceFrame {
 }
 
 export interface SliceRegionPointerEvent {
-  axis: SliceAxis;
+  axis: ProjectionId;
   regionId: number;
   type: 'hover' | 'inspect' | 'leave' | 'select';
   originalEvent: PointerEvent;

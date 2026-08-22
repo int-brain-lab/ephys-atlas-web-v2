@@ -563,6 +563,8 @@ run; finish with `just check`.
 
 ### Commit 7 — Expose Top and Swanson through shared workspace state
 
+Status: **implemented**.
+
 - replace hardcoded view construction with the registry;
 - add `Summary | Top | Swanson` in the existing secondary slot;
 - add responsive switching and generic focus/maximize behavior;
@@ -685,9 +687,9 @@ never merge an inferred scientific choice.
 
 ## First action for the next agent
 
-Execute Commit 7 from the green completed-volume baseline. Expose the synthetic
-Top and Swanson projections through the existing secondary workspace slot and
-shared regional presentation/interaction path, including responsive and
-maximize behavior. Keep volume-only semantics explicit on static maps, do not
-present the synthetic fragments as scientific assets, and do not select a
-production volume transport before Q5 evidence.
+Execute Commit 8 from the green five-projection baseline. Delete and prohibit
+remaining compatibility residue, re-run the architecture/reference audits,
+refresh affected performance and size evidence, and leave durable deployment
+and handoff documents describing only the shipped schema-v1/five-view retained
+viewport architecture. Do not select a production volume transport before Q5
+evidence.

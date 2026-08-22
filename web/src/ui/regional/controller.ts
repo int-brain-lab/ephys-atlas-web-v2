@@ -62,7 +62,7 @@ export class RegionalPanelController {
     this.selectedList = required(root, '.selected-regions__list');
     this.selectedSection = required(root, '.region-pane__selected');
     this.clearSelectionButton = required(root, '.selected-regions__clear');
-    this.summary = required(root, '.secondary-view__surface');
+    this.summary = required(root, '.secondary-view__summary');
     this.distribution = required(root, '.distribution-band__surface');
     this.analysis = required(root, '.analysis-panel__surface');
     this.analysisPanel = required(root, '.analysis-panel');

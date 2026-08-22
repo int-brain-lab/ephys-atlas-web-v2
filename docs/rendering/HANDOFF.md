@@ -10,7 +10,8 @@ decisions, and task order are `docs/INTEGRATION_STATUS.md`,
 boundary. `AtlasApp` provides a `ProjectionRenderModel` containing one axis,
 derived native slice, world cursor, parcellation, and active feature. A shared
 `ProjectionViewportFactory` owns presentation and interaction sinks and creates
-one retained `ProjectionViewport` per registered frame.
+one retained `ProjectionViewport` per registered frame plus affine-free static
+viewports for Top and Swanson in the secondary workspace slot.
 
 Each viewport mounts one stable Canvas/SVG/guide/error stack. Navigation uses
 revisioned latest-only scheduling: at most one geometry request is active,
@@ -30,8 +31,10 @@ tie breaking and derives guides from the manifest affine.
 The checked-in development fixture at
 `web/public/atlas/projections/synthetic-static-registered-v1/` combines the
 validated registered geometry with deterministic synthetic Top/Swanson paths.
-The static maps are deliberately hidden until Commit 7 and must never be
-presented as scientific or licensing evidence. Rebuild it with
+The static maps are exposed with an always-visible synthetic warning and must
+never be presented as scientific or licensing evidence. Their transport-opaque
+`.isvg.gz` names prevent HTTP hosts from decoding bytes before SHA verification.
+Rebuild the fixture with
 `tools/projection_pack/build_web_fixture.py` and validate it with
 `just projection-pack-validate <path>`.
 
@@ -63,10 +66,17 @@ while the retained anatomy SVG supplies outlines, guides, picking, hover, and
 selection above it. A failed volume request leaves anatomy visible with an
 explicit error.
 
-The remaining Commit 6 work is the independent background-capable
-screen/world/voxel inspection chain, validity classification, URL-persisted
-opacity and outline controls, and global decoded-memory/cancellation evidence.
-Presentation-only changes must remain fetch- and decode-free.
+Commit 6 is complete: background-capable screen/world/voxel inspection,
+sentinel/mask validity classification and transparency, URL-persisted opacity
+and outline controls, one active-feature decoded-memory budget, cancellation,
+and consumer-aware in-flight deduplication are implemented. Presentation-only
+changes remain fetch- and decode-free.
+
+Commit 7 is complete: Summary, Top, and Swanson are URL-persisted secondary
+tabs; the static maps share regional feature/anatomy coloring, all declared
+parcellation IDs, hover, selection, and tooltips. Responsive secondary switching
+and maximize/Escape restoration use the existing workspace state. Volume
+features are explicitly anatomy-only on affine-free maps.
 
 Q4 still blocks authoritative production volume geometry/outside semantics,
 and Q5 still blocks the production transport choice. Use synthetic fixtures
@@ -96,6 +106,5 @@ projection layers. See `docs/rendering/3D_EVALUATION.md`.
 - `just benchmark-anatomy` and `npm run benchmark:real-volume` are explicit
   measurements, not default CI gates.
 
-The immediate next action is to complete the remaining Commit 6 inspection,
-controls, and memory work in
-`docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md`.
+The immediate next action is Commit 8's residue audit, architecture guards, and
+evidence rebaseline in `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md`.

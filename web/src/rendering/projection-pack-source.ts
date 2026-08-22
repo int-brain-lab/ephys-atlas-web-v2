@@ -5,6 +5,8 @@ import type {
   ProjectionPackV1,
   RegisteredProjectionV1,
   RegisteredSvgResourceIndexV1,
+  StaticProjectionId,
+  StaticProjectionV1,
 } from '../data/schema-v1.js';
 import { validateSchemaV1Document } from '../data/validation/schema-v1.js';
 import {
@@ -43,6 +45,13 @@ export interface RegisteredProjectionRegistration {
   readonly worldToPlaneIndex: Matrix4;
 }
 
+export interface StaticProjectionFrame {
+  readonly projectionId: StaticProjectionId;
+  readonly svgFragment: string;
+  readonly viewBox: ViewBox;
+  readonly syntheticFixture: boolean;
+}
+
 export interface ProjectionPackSourceOptions {
   readonly manifestUrl: string;
   readonly fetchImpl?: typeof fetch;
@@ -55,6 +64,7 @@ export interface RegisteredProjectionSource {
   loadSlice(axis: SliceAxis, nativeIndex: number, signal?: AbortSignal): Promise<RegisteredProjectionSlice>;
   guidesForWorld(axis: SliceAxis, world: WorldCoordinateUm): Promise<readonly SliceGuide[]>;
   prefetchNeighbor(axis: SliceAxis, nativeIndex: number, direction: -1 | 1): Promise<void>;
+  loadStaticProjection?(projectionId: StaticProjectionId, signal?: AbortSignal): Promise<StaticProjectionFrame>;
   dispose(): void;
 }
 
@@ -83,6 +93,18 @@ async function gunzipJson(response: Response, resource: EncodedResourceV1): Prom
     throw new Error(`${resource.path} decoded length does not match its descriptor`);
   }
   return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(decoded));
+}
+
+async function gunzipText(response: Response, resource: EncodedResourceV1): Promise<string> {
+  if (resource.codec.name !== 'gzip') throw new Error(`${resource.path} must be gzip-compressed`);
+  if (typeof DecompressionStream !== 'function') throw new Error('This browser cannot decode gzip projection fragments');
+  const decoded = await new Response(
+    response.body!.pipeThrough(new DecompressionStream('gzip')),
+  ).arrayBuffer();
+  if (decoded.byteLength !== resource.codec.decoded_bytes) {
+    throw new Error(`${resource.path} decoded length does not match its descriptor`);
+  }
+  return new TextDecoder('utf-8', { fatal: true }).decode(decoded);
 }
 
 /** Schema-v1 registered geometry source with verified transport and worker-owned decoded LRU. */
@@ -125,6 +147,32 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
       viewBox: viewBox(projection.view_box),
       planeIndexToWorldUm: matrix(projection.plane_index_to_world_um),
       worldToPlaneIndex: matrix(projection.world_to_plane_index),
+    };
+  }
+
+  async loadStaticProjection(projectionId: StaticProjectionId, signal?: AbortSignal): Promise<StaticProjectionFrame> {
+    const manifest = await this.loadManifest();
+    const projection = this.staticProjection(manifest, projectionId);
+    const resource = projection.fragment.resource;
+    const response = await this.fetcher.fetch(new URL(resource.path, this.manifestUrl).toString(), {
+      immutable: true,
+      integrity: resource,
+      ...(signal ? { signal } : {}),
+    });
+    const svgFragment = await gunzipText(response, resource);
+    const pathCount = svgFragment.match(/<path(?=\s|>)/g)?.length ?? 0;
+    if (pathCount !== projection.path_count) {
+      throw new Error(`${resource.path} contains ${pathCount} paths, expected ${projection.path_count}`);
+    }
+    const recipe = manifest.provenance.recipe;
+    const syntheticFixture = Boolean(recipe && typeof recipe === 'object'
+      && 'static_source_mode' in recipe
+      && recipe.static_source_mode === 'synthetic-fixture');
+    return {
+      projectionId,
+      svgFragment,
+      viewBox: viewBox(projection.view_box),
+      syntheticFixture,
     };
   }
 
@@ -202,6 +250,14 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
     const projection = manifest.projections.find((candidate) => candidate.id === axis);
     if (!projection || projection.kind !== 'registered-slice-stack') {
       throw new Error(`Projection pack has no registered ${axis} projection`);
+    }
+    return projection;
+  }
+
+  private staticProjection(manifest: ProjectionPackV1, projectionId: StaticProjectionId): StaticProjectionV1 {
+    const projection = manifest.projections.find((candidate) => candidate.id === projectionId);
+    if (!projection || projection.kind !== 'static-regional-map') {
+      throw new Error(`Projection pack has no static ${projectionId} projection`);
     }
     return projection;
   }

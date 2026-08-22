@@ -12,6 +12,7 @@ import {
 } from './chunked-volume-source.js';
 import { SchemaSlicePackVolumeSource } from './slice-pack-volume-source.js';
 import { VolumeValiditySliceSource } from './volume-validity-source.js';
+import { RetainedStaticProjectionViewport } from './static-projection-viewport.js';
 import { VolumeSliceLoader, type VolumeSlice, type VolumeSliceSource } from './volume.js';
 import { paletteRgb } from './colormap-palettes.js';
 import { regionIdFromPath } from './region-id.js';
@@ -33,6 +34,7 @@ import type {
   ProjectionViewport,
   ProjectionViewportFactory,
   RegionHit,
+  StaticProjectionViewport,
 } from './projection-viewport.js';
 
 interface PendingRender {
@@ -487,7 +489,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
     }
     const hit: RegionHit = {
       regionId: String(-Math.abs(event.regionId)),
-      axis: event.axis,
+      projectionId: this.axis,
       sliceIndex: this.requestedIndex,
     };
     if (event.type === 'select') sink.toggleSelection(hit);
@@ -519,6 +521,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
       sink.inspect({
         kind: 'volume',
         axis: this.axis,
+        projectionId: this.axis,
         sliceIndex: this.requestedIndex,
         parcellation: this.requestedParcellation,
         clientX: event.clientX,
@@ -619,6 +622,7 @@ export function volumeScalarCacheBudget(
 export class RetainedProjectionViewportFactory implements ProjectionViewportFactory {
   private readonly source: RegisteredProjectionSource;
   private readonly viewports = new Set<RetainedProjectionViewport>();
+  private readonly staticViewports = new Set<RetainedStaticProjectionViewport>();
   private readonly maxVolumeDecodedBytes: number;
   private activeVolumeFeature: VolumeFeaturePayload | null = null;
   private activeVolumeSource: VolumeSliceSource | null = null;
@@ -654,9 +658,22 @@ export class RetainedProjectionViewportFactory implements ProjectionViewportFact
     return viewport;
   }
 
+  createStatic(target: HTMLElement, projectionId: import('../domain/types.js').StaticProjectionId): StaticProjectionViewport {
+    const viewport = new RetainedStaticProjectionViewport(
+      target,
+      projectionId,
+      this.source,
+      () => this.presentation,
+      () => this.sink,
+    );
+    this.staticViewports.add(viewport);
+    return viewport;
+  }
+
   updatePresentation(presentation: ProjectionPresentation): void {
     this.presentation = presentation;
     for (const viewport of this.viewports) viewport.updatePresentation();
+    for (const viewport of this.staticViewports) viewport.updatePresentation();
   }
 
   setInteractionSink(sink: ProjectionInteractionSink): void {
@@ -670,6 +687,8 @@ export class RetainedProjectionViewportFactory implements ProjectionViewportFact
   destroy(): void {
     for (const viewport of this.viewports) viewport.destroy();
     this.viewports.clear();
+    for (const viewport of this.staticViewports) viewport.destroy();
+    this.staticViewports.clear();
     this.activeVolumeSource?.dispose?.();
     this.activeVolumeSource = null;
     this.activeVolumeFeature = null;

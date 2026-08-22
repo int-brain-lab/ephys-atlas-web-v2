@@ -25,11 +25,12 @@ registered frame. `SliceRenderer`, the hybrid facade, v1/v2/v3 anatomy-pack
 readers, legacy renderer/crosswalk, and URL migrations have been removed. The
 viewport now composites reference-compatible volume and registered anatomy
 layers with background-capable voxel inspection, validity transparency, and
-URL-persisted layer controls. The remaining coordinated work exposes static Top
-and Swanson views through the same regional SVG presentation and interaction
-path, then removes transitional artifacts and completes the cutover audit.
+URL-persisted layer controls. Top and Swanson now use the same regional SVG
+presentation and interaction path in the secondary workspace slot. The
+remaining coordinated work removes transitional residue and completes the
+cutover audit.
 
-Commits 1 through 6 of the plan are implemented: `schema/v1/` defines the
+Commits 1 through 7 of the plan are implemented: `schema/v1/` defines the
 strict dataset, resource, regional, volume, summary/index, and five-projection
 contracts plus matching TypeScript types. Python and TypeScript semantic validators execute
 one deterministic valid/invalid corpus covering all top-level schemas, both
@@ -44,11 +45,13 @@ compatibility tests are removed. External development releases must be rebuilt
 under new release IDs before use. Q4 and Q5 remain unresolved and continue to
 block a purported production volume release.
 
-The enabled 2-D projection registry currently exposes only coronal, sagittal,
-and horizontal definitions, while the distinct workspace registry also owns
-the responsive secondary slot. `secondaryTab`, `activeCompactView`, and
-`maximizedView` are independent typed reducer state rather than `AppShell`
-fields. A single snapped ML/AP/DV cursor is stored; native indices, display
+The enabled 2-D projection registry exposes registered coronal, sagittal, and
+horizontal views plus affine-free Top and Swanson maps. The distinct workspace
+registry owns the three slice slots and responsive secondary slot; Summary,
+Top, and Swanson are secondary content rather than fake workspace or slice
+identities. `secondaryTab`, `activeCompactView`, and `maximizedView` are
+independent typed reducer state rather than `AppShell` fields. A single snapped
+ML/AP/DV cursor is stored; native indices, display
 ordinals, coordinate labels, renderer inputs, and guides are derived from it.
 URL v4 serializes the cursor and workspace state. Any non-current version is
 reset wholesale to the canonical current URL, with no partial legacy-field
@@ -72,9 +75,14 @@ production static asset has been asserted while that evidence remains open.
 The default development URL is a complete validated schema-v1 pack under
 `web/public/atlas/projections/synthetic-static-registered-v1/`. Its registered
 resources are the validated sparse bilateral geometry; its Top/Swanson inputs
-are deterministic synthetic test paths and remain unavailable in the UI until
-Commit 7. `tools/projection_pack/build_web_fixture.py` reproduces this fixture.
-It is neither a scientific release nor evidence that Q13 is resolved.
+are deterministic synthetic test paths exposed with an always-visible
+non-scientific warning. Static resources use transport-opaque `.isvg.gz` names
+so HTTP hosts do not transparently decode bytes before integrity verification.
+`tools/projection_pack/build_web_fixture.py` reproduces this fixture. It is
+neither a scientific release nor evidence that Q13 is resolved. Static maps
+share regional feature/anatomy coloring, Allen/Beryl/Cosmos identities, hover,
+selection, tooltips, responsive switching, and maximize/Escape restoration.
+Volume features remain explicitly anatomy-only on affine-free maps.
 
 The pre-Commit-1 contract is now explicit about separate reference-space,
 grid, and asset identities; verified-only persistent caching; independent

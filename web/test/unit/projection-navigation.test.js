@@ -1,13 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { deriveOrthogonalNavigation, deriveRegionalSliceIndices } from '../../.test-dist/domain/navigation.js';
-import { PROJECTION_REGISTRY, WORKSPACE_VIEW_REGISTRY } from '../../.test-dist/domain/projections.js';
+import {
+  ORTHOGONAL_PROJECTION_REGISTRY,
+  PROJECTION_REGISTRY,
+  WORKSPACE_VIEW_REGISTRY,
+} from '../../.test-dist/domain/projections.js';
 
 test('enabled projection and workspace registries keep projection and secondary identities distinct', () => {
   assert.deepEqual(PROJECTION_REGISTRY.map(({ kind, id }) => [kind, id]), [
     ['orthogonal', 'coronal'],
     ['orthogonal', 'sagittal'],
     ['orthogonal', 'horizontal'],
+    ['static', 'top'],
+    ['static', 'swanson'],
   ]);
   assert.deepEqual(WORKSPACE_VIEW_REGISTRY.map(({ kind, id }) => [kind, id]), [
     ['projection', 'coronal'],
@@ -24,7 +30,7 @@ test('one world cursor derives every native plane and each projection guide pair
     sagittal: 570,
     horizontal: 401,
   });
-  for (const projection of PROJECTION_REGISTRY) {
+  for (const projection of ORTHOGONAL_PROJECTION_REGISTRY) {
     const navigation = deriveOrthogonalNavigation(cursor, projection.id);
     assert.equal(navigation.nativeIndex, deriveRegionalSliceIndices(cursor)[projection.id]);
     assert.equal(navigation.guides.length, 2);

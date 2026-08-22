@@ -8,16 +8,23 @@ import type {
   DatasetRef,
   ParcellationId,
   RepresentationKind,
+  SecondaryTabId,
   SliceAxis,
+  StaticProjectionId,
   ColorStatisticId,
   WorkspaceViewId,
 } from '../domain/types.js';
 import { deriveOrthogonalNavigation } from '../domain/navigation.js';
-import { PROJECTION_REGISTRY, WORKSPACE_VIEW_REGISTRY } from '../domain/projections.js';
+import {
+  ORTHOGONAL_PROJECTION_REGISTRY,
+  STATIC_PROJECTION_REGISTRY,
+  WORKSPACE_VIEW_REGISTRY,
+} from '../domain/projections.js';
 import type {
   ProjectionViewport,
   ProjectionViewportFactory,
   RegionInspection,
+  StaticProjectionViewport,
   VolumeInspection,
 } from '../rendering/projection-viewport.js';
 import { regionalColorRange } from '../rendering/scalar-colormap.js';
@@ -41,6 +48,7 @@ export interface AppShellCallbacks {
   setAnatomyOutlines(visible: boolean): void;
   setSlice(axis: SliceAxis, index: number): void;
   setActiveCompactView(view: WorkspaceViewId): void;
+  setSecondaryTab(tab: SecondaryTabId): void;
   setMaximizedView(view: WorkspaceViewId | null): void;
   clearSelection(): void;
   shareCurrentView(): Promise<void>;
@@ -77,6 +85,22 @@ interface ViewFrameNodes {
   geometryKey: string;
   renderToken: number;
   loadingNoticeTimer: number | null;
+}
+
+interface ProjectionTooltipNodes {
+  tooltip: HTMLElement;
+  tooltipIdentity: HTMLElement;
+  tooltipValue: HTMLElement;
+  tooltipMeta: HTMLElement;
+}
+
+interface StaticFrameNodes extends ProjectionTooltipNodes {
+  frame: HTMLElement;
+  target: HTMLElement;
+  viewport: StaticProjectionViewport;
+  notice: HTMLElement;
+  renderKey: string;
+  renderToken: number;
 }
 
 const SLICE_LOADING_NOTICE_DELAY_MS = 400;
@@ -137,6 +161,10 @@ export class AppShell {
   private readonly shortcutStatus: HTMLElement;
   private readonly viewButtons = new Map<WorkspaceViewId, HTMLButtonElement>();
   private readonly viewFrames = new Map<SliceAxis, ViewFrameNodes>();
+  private readonly staticFrames = new Map<StaticProjectionId, StaticFrameNodes>();
+  private readonly secondaryTabButtons = new Map<SecondaryTabId, HTMLButtonElement>();
+  private secondaryFrame!: HTMLElement;
+  private secondaryMaximize!: HTMLButtonElement;
   private readonly headerActionButtons = new Map<HeaderAction, HTMLButtonElement[]>();
   private readonly datasetContext: ContextMenu;
   private readonly featureContext: ContextMenu;
@@ -255,8 +283,9 @@ export class AppShell {
     this.setHeaderActionDisabled('info', manifest === null);
     this.setHeaderActionDisabled('download', model.feature?.representation !== 'regional');
     this.syncWorkspaceState(view.workspace.activeCompactView, view.workspace.maximizedView);
+    this.renderSecondaryView(model);
 
-    for (const projection of PROJECTION_REGISTRY) {
+    for (const projection of ORTHOGONAL_PROJECTION_REGISTRY) {
       this.renderViewFrame(projection.id, model);
     }
   }
@@ -270,14 +299,17 @@ export class AppShell {
   }
 
   private showProjectionTooltip(
-    inspection: Pick<RegionInspection, 'axis' | 'clientX' | 'clientY'>,
+    inspection: Pick<RegionInspection, 'projectionId' | 'clientX' | 'clientY'>,
     model: RegionTooltipModel,
     regionId?: string,
   ): void {
-    const nodes = this.viewFrames.get(inspection.axis);
+    const nodes = this.projectionTooltip(inspection.projectionId);
     if (!nodes) return;
-    for (const [axis, frame] of this.viewFrames) {
-      if (axis !== inspection.axis) frame.tooltip.hidden = true;
+    for (const [projectionId, frame] of this.viewFrames) {
+      if (projectionId !== inspection.projectionId) frame.tooltip.hidden = true;
+    }
+    for (const [projectionId, frame] of this.staticFrames) {
+      if (projectionId !== inspection.projectionId) frame.tooltip.hidden = true;
     }
     const contentKey = `${regionId ?? ''}\u0000${model.acronym}\u0000${model.name}\u0000${model.valueLabel ?? ''}\u0000${model.valueText ?? ''}\u0000${model.meta}`;
     if (nodes.tooltip.dataset.contentKey !== contentKey) {
@@ -320,13 +352,14 @@ export class AppShell {
     nodes.tooltip.style.transform = `translate3d(${Math.round(x)}px,${Math.round(y)}px,0)`;
   }
 
-  hideRegionTooltip(axis?: SliceAxis): void {
-    if (axis) {
-      const tooltip = this.viewFrames.get(axis)?.tooltip;
+  hideRegionTooltip(except?: import('../domain/types.js').ProjectionId): void {
+    if (except) {
+      const tooltip = this.projectionTooltip(except)?.tooltip;
       if (tooltip) tooltip.hidden = true;
       return;
     }
     for (const nodes of this.viewFrames.values()) nodes.tooltip.hidden = true;
+    for (const nodes of this.staticFrames.values()) nodes.tooltip.hidden = true;
   }
 
   destroy(): void {
@@ -1139,11 +1172,40 @@ export class AppShell {
     }
     const slices = element('section', 'slice-strip');
     slices.setAttribute('aria-label', 'Orthogonal brain slices');
-    slices.append(...PROJECTION_REGISTRY.map(({ id }) => this.createViewFrame(id)));
+    slices.append(...ORTHOGONAL_PROJECTION_REGISTRY.map(({ id }) => this.createViewFrame(id)));
     const context = element('section', 'context-strip');
     context.setAttribute('aria-label', 'Secondary atlas context');
     const secondary = element('section', 'secondary-view panel');
-    secondary.append(this.frameHeader('Feature summary'), element('div', 'secondary-view__surface'));
+    secondary.dataset.view = 'secondary';
+    secondary.dataset.tab = 'summary';
+    secondary.dataset.maximized = 'false';
+    const secondaryHeader = element('div', 'view-frame__header secondary-view__header');
+    const secondaryTabs = element('div', 'secondary-view__tabs');
+    secondaryTabs.setAttribute('role', 'tablist');
+    for (const [tab, label] of [['summary', 'Summary'], ['top', 'Top'], ['swanson', 'Swanson']] as const) {
+      const button = element('button', 'secondary-view__tab');
+      button.type = 'button';
+      button.textContent = label;
+      button.dataset.secondaryTab = tab;
+      button.setAttribute('role', 'tab');
+      button.setAttribute('aria-selected', String(tab === 'summary'));
+      button.addEventListener('click', () => this.callbacks.setSecondaryTab(tab));
+      this.secondaryTabButtons.set(tab, button);
+      secondaryTabs.append(button);
+    }
+    this.secondaryMaximize = element('button', 'view-frame__maximize secondary-view__maximize');
+    this.secondaryMaximize.type = 'button';
+    this.secondaryMaximize.textContent = '↗';
+    this.secondaryMaximize.setAttribute('aria-label', 'Maximize secondary panel');
+    this.secondaryMaximize.setAttribute('aria-pressed', 'false');
+    this.secondaryMaximize.addEventListener('click', () => this.toggleMaximizedView('secondary'));
+    secondaryHeader.append(secondaryTabs, this.secondaryMaximize);
+    const secondaryBody = element('div', 'secondary-view__body');
+    const summary = element('div', 'secondary-view__surface secondary-view__summary');
+    summary.dataset.secondaryPanel = 'summary';
+    secondaryBody.append(summary, ...STATIC_PROJECTION_REGISTRY.map(({ id }) => this.createStaticFrame(id)));
+    secondary.append(secondaryHeader, secondaryBody);
+    this.secondaryFrame = secondary;
     const distribution = element('section', 'distribution-band panel');
     distribution.append(this.frameHeader('Global distribution'), element('div', 'distribution-band__surface'));
     context.append(secondary, distribution);
@@ -1260,7 +1322,79 @@ export class AppShell {
     return frame;
   }
 
+  private createStaticFrame(projectionId: StaticProjectionId): HTMLElement {
+    const frame = element('section', 'secondary-projection');
+    frame.dataset.secondaryPanel = projectionId;
+    frame.hidden = true;
+    const target = element('div', 'secondary-projection__renderer');
+    target.setAttribute('aria-label', `${projectionId} renderer target`);
+    const viewport = this.viewportFactory.createStatic(target, projectionId);
+    const notice = element('p', 'secondary-projection__notice');
+    notice.setAttribute('role', 'status');
+    notice.textContent = 'Loading static projection…';
+    const tooltip = element('div', 'region-tooltip');
+    tooltip.setAttribute('role', 'tooltip');
+    tooltip.hidden = true;
+    const tooltipIdentity = element('div', 'region-tooltip__identity');
+    const tooltipValue = element('div', 'region-tooltip__value');
+    const tooltipMeta = element('div', 'region-tooltip__meta');
+    tooltip.append(tooltipIdentity, tooltipValue, tooltipMeta);
+    frame.append(target, notice, tooltip);
+    this.staticFrames.set(projectionId, {
+      frame, target, viewport, notice, tooltip, tooltipIdentity, tooltipValue, tooltipMeta,
+      renderKey: '', renderToken: 0,
+    });
+    return frame;
+  }
+
   private currentModel: ShellModel | null = null;
+
+  private renderSecondaryView(model: ShellModel): void {
+    const tab = model.state.view.workspace.secondaryTab;
+    this.secondaryFrame.dataset.tab = tab;
+    for (const [candidate, button] of this.secondaryTabButtons) {
+      const active = candidate === tab;
+      button.setAttribute('aria-selected', String(active));
+      button.tabIndex = active ? 0 : -1;
+    }
+    const summary = this.secondaryFrame.querySelector<HTMLElement>('[data-secondary-panel="summary"]');
+    if (summary) summary.hidden = tab !== 'summary';
+    for (const [projectionId, nodes] of this.staticFrames) {
+      nodes.frame.hidden = projectionId !== tab;
+    }
+    if (tab === 'summary') return;
+    const nodes = this.staticFrames.get(tab);
+    if (!nodes) return;
+    const view = model.state.view;
+    const renderKey = [view.dataset.datasetId, view.dataset.releaseId ?? '', view.parcellation,
+      model.feature?.featureId ?? '', model.feature?.representation ?? ''].join(':');
+    if (renderKey === nodes.renderKey) return;
+    nodes.renderKey = renderKey;
+    const token = ++nodes.renderToken;
+    nodes.notice.textContent = 'Loading static projection…';
+    const pending = nodes.viewport.render({
+      projectionId: tab,
+      parcellation: view.parcellation,
+      feature: model.feature?.representation === 'regional' ? model.feature : null,
+    });
+    Promise.resolve(pending).then(() => {
+      if (nodes.renderToken !== token) return;
+      const fixture = nodes.target.querySelector<HTMLElement>('[data-synthetic-fixture="true"]') !== null;
+      nodes.notice.textContent = fixture
+        ? model.feature?.representation === 'volume'
+          ? 'Synthetic fixture — not scientific data · anatomy only; no volume scalars'
+          : 'Synthetic fixture map — not scientific data'
+        : model.feature?.representation === 'volume'
+          ? 'Anatomy only — volume scalars are not defined on this map'
+          : '';
+      nodes.notice.hidden = nodes.notice.textContent === '';
+    }).catch((error: unknown) => {
+      if (nodes.renderToken !== token) return;
+      nodes.notice.textContent = 'Static projection unavailable';
+      nodes.viewport.showError(error);
+      this.callbacks.reportError(error);
+    });
+  }
 
   private renderViewFrame(axis: SliceAxis, model: ShellModel): void {
     const nodes = this.viewFrames.get(axis);
@@ -1362,7 +1496,7 @@ export class AppShell {
     });
   }
 
-  private toggleMaximizedView(axis: SliceAxis): void {
+  private toggleMaximizedView(axis: WorkspaceViewId): void {
     const current = this.currentModel?.state.view.workspace.maximizedView ?? null;
     this.callbacks.setMaximizedView(current === axis ? null : axis);
   }
@@ -1379,6 +1513,11 @@ export class AppShell {
       nodes.maximize.setAttribute('aria-label', `${active ? 'Restore' : 'Maximize'} ${id} view`);
       nodes.maximize.textContent = active ? '↙' : '↗';
     }
+    const secondaryActive = maximizedView === 'secondary';
+    this.secondaryFrame.dataset.maximized = String(secondaryActive);
+    this.secondaryMaximize.setAttribute('aria-pressed', String(secondaryActive));
+    this.secondaryMaximize.setAttribute('aria-label', `${secondaryActive ? 'Restore' : 'Maximize'} secondary panel`);
+    this.secondaryMaximize.textContent = secondaryActive ? '↙' : '↗';
     for (const [id, button] of this.viewButtons) {
       button.setAttribute('aria-pressed', id === activeCompactView ? 'true' : 'false');
     }
@@ -1400,6 +1539,12 @@ export class AppShell {
 
   private setActiveView(view: WorkspaceViewId): void {
     this.callbacks.setActiveCompactView(view);
+  }
+
+  private projectionTooltip(projectionId: import('../domain/types.js').ProjectionId): ProjectionTooltipNodes | undefined {
+    return projectionId === 'top' || projectionId === 'swanson'
+      ? this.staticFrames.get(projectionId)
+      : this.viewFrames.get(projectionId);
   }
 
   private openDrawer(drawer: DrawerName): void {

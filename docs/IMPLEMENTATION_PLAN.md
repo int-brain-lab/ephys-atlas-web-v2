@@ -75,7 +75,7 @@ horizontal support registered anatomy plus volume layers; Top and Swanson are
 static regional projections using the same SVG presentation and interaction
 path. Backward compatibility with the pre-launch formats is not a requirement.
 
-Commits 1 through 6 are implemented, and Commit 7 is next. Schema v1 is now the
+Commits 1 through 7 are implemented, and Commit 8 is next. Schema v1 is now the
 sole builder, publishing, HTTP/local browser, fixture, and download contract.
 It separates scientific reference-space identity from grid and asset
 identities, admits only the checked signed-permutation affine profile, verifies
@@ -106,6 +106,13 @@ presentation changes repaint retained layers without resource requests. One
 96 MiB decoded-volume budget covers the active feature's mask and scalar cache;
 feature switches dispose the previous source, while consumer-aware in-flight
 deduplication preserves current loads across obsolete-render cancellation.
+The enabled projection registry now contains all five 2-D views. Top and
+Swanson occupy tabs in the existing secondary workspace slot, load verified
+affine-free gzip fragments on demand, and share regional coloring, parcellation
+identity, hover, selection, and tooltip behavior. Responsive switching and
+secondary maximize remain independent URL state. The checked-in static maps
+remain visibly labeled synthetic fixtures; volume features show anatomy only
+and never imply scalar values on those maps.
 
 This machinery is unblocked with deterministic synthetic fixtures. It must not
 resolve or conceal Q4/Q5.
@@ -136,7 +143,7 @@ historical transport evidence, not the default input for new implementation.
 
 Ordered next actions before scientific resolution:
 
-1. execute commits 7-8 in the focused cutover plan, keeping every handoff green;
+1. execute Commit 8 in the focused cutover plan, keeping the handoff green;
 2. rebuild external development releases under new schema-v1 release IDs
    before using the opt-in real-release suite; do not add a compatibility reader;
 3. verify the layered golden volume path, registered anatomy overlays, and

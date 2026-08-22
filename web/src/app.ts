@@ -78,6 +78,7 @@ export class AtlasApp {
       setAnatomyOutlines: (visible) => this.store.dispatch({ type: 'layers/anatomy-outlines', visible }),
       setSlice: (axis, index) => this.setSlice(axis, index),
       setActiveCompactView: (view) => this.store.dispatch({ type: 'workspace/compact-view', view }),
+      setSecondaryTab: (tab) => this.store.dispatch({ type: 'workspace/secondary-tab', tab }),
       setMaximizedView: (view) => this.store.dispatch({ type: 'workspace/maximized-view', view }),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       shareCurrentView: () => this.copyCurrentUrl(),
@@ -227,7 +228,7 @@ export class AtlasApp {
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
     const model = buildRegionTooltipModel(inspection, regions, data.feature, descriptor, state.view.coloring);
     if (model) this.shell.showRegionTooltip(inspection, model);
-    else this.shell.hideRegionTooltip(inspection.axis);
+    else this.shell.hideRegionTooltip(inspection.projectionId);
   }
 
   private inspectProjection(inspection: ProjectionInspection | null): void {
@@ -246,7 +247,7 @@ export class AtlasApp {
     const state = this.store.getState();
     const data = this.session.snapshot();
     if (state.view.representation !== 'volume' || data.feature?.representation !== 'volume') {
-      this.shell.hideRegionTooltip(inspection.axis);
+      this.shell.hideRegionTooltip(inspection.projectionId);
       return;
     }
     const regions = this.atlasRegions?.mappings[inspection.parcellation] ?? data.regions;

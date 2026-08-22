@@ -3,7 +3,9 @@ import type {
   CursorState,
   EffectiveColoringState,
   ParcellationId,
+  ProjectionId,
   SliceAxis,
+  StaticProjectionId,
 } from '../domain/types.js';
 import type { DisplaySliceInventory } from './display-slice-inventory.js';
 import type { VolumeValidityStatus } from './volume-inspection.js';
@@ -29,8 +31,8 @@ export interface ProjectionPresentation {
 
 export interface RegionHit {
   regionId: string;
-  axis: SliceAxis;
-  sliceIndex: number;
+  projectionId: ProjectionId;
+  sliceIndex: number | null;
 }
 
 export interface RegionInspection extends RegionHit {
@@ -43,6 +45,7 @@ export interface RegionInspection extends RegionHit {
 export interface VolumeInspection {
   readonly kind: 'volume';
   readonly axis: SliceAxis;
+  readonly projectionId: SliceAxis;
   readonly sliceIndex: number;
   readonly parcellation: ParcellationId;
   readonly clientX: number;
@@ -57,6 +60,12 @@ export interface VolumeInspection {
 }
 
 export type ProjectionInspection = RegionInspection | VolumeInspection;
+
+export interface StaticProjectionRenderModel {
+  readonly projectionId: StaticProjectionId;
+  readonly parcellation: ParcellationId;
+  readonly feature: FeaturePayload | null;
+}
 
 export interface ProjectionInteractionSink {
   hover(hit: RegionHit | null): void;
@@ -75,9 +84,17 @@ export interface ProjectionViewport {
   destroy(): void;
 }
 
+export interface StaticProjectionViewport {
+  render(model: StaticProjectionRenderModel): void | Promise<void>;
+  clear(): void;
+  showError(error: unknown): void;
+  destroy(): void;
+}
+
 /** Shared source/presentation boundary that creates retained projection views. */
 export interface ProjectionViewportFactory {
   create(target: HTMLElement, axis: SliceAxis): ProjectionViewport;
+  createStatic(target: HTMLElement, projectionId: StaticProjectionId): StaticProjectionViewport;
   updatePresentation(presentation: ProjectionPresentation): void;
   setInteractionSink(sink: ProjectionInteractionSink): void;
   getDisplaySliceInventories(): Promise<Readonly<Record<SliceAxis, DisplaySliceInventory>> | null>;
@@ -89,6 +106,19 @@ export class NullProjectionViewportFactory implements ProjectionViewportFactory 
     const message = document.createElement('p');
     message.className = 'renderer-placeholder';
     message.textContent = 'Projection viewport not connected';
+    target.replaceChildren(message);
+    return {
+      render: () => undefined,
+      clear: () => undefined,
+      showError: () => undefined,
+      destroy: () => target.replaceChildren(),
+    };
+  }
+
+  createStatic(target: HTMLElement): StaticProjectionViewport {
+    const message = document.createElement('p');
+    message.className = 'renderer-placeholder';
+    message.textContent = 'Static projection viewport not connected';
     target.replaceChildren(message);
     return {
       render: () => undefined,
