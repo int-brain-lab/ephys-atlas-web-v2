@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseLegacyRegionCrosswalk } from '../../src/rendering/legacy-region-crosswalk.ts';
-import { regionIdFromClassNames } from '../../src/rendering/region-id.ts';
+import { parseLegacyRegionCrosswalk } from '../../.test-dist/rendering/legacy-region-crosswalk.js';
+import { regionIdFromClassNames } from '../../.test-dist/rendering/region-id.js';
 
 // Real entries from the pinned v1 regions.json. In particular, atlas ID 997
 // is deliberately not SVG/BrainRegions index 997: its legacy index is 1.
