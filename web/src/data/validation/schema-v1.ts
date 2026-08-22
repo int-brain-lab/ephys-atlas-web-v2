@@ -296,6 +296,82 @@ function packSemantics(document: JsonObject): void {
   }
 }
 
+function meshPackSemantics(document: JsonObject): void {
+  expect(document.schema_version, '1.0', 'mesh-pack schema version');
+  expect(document.format, 'atlas-mesh-pack-v1', 'mesh-pack format');
+  expect(document.immutable, true, 'mesh-pack immutability');
+  if (typeof document.reference_space_id !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(document.reference_space_id)) fail('mesh reference space is invalid');
+  const coordinate = object(document.coordinate_system, 'mesh coordinate system');
+  const transform = numberArray(coordinate.source_to_world_um, 16, 'mesh source-to-world transform');
+  if (JSON.stringify(transform.slice(12)) !== JSON.stringify([0, 0, 0, 1])) fail('mesh source-to-world transform must be affine');
+  const determinant = transform[0]! * (transform[5]! * transform[10]! - transform[6]! * transform[9]!)
+    - transform[1]! * (transform[4]! * transform[10]! - transform[6]! * transform[8]!)
+    + transform[2]! * (transform[4]! * transform[9]! - transform[5]! * transform[8]!);
+  if (Math.abs(determinant) <= Number.EPSILON) fail('mesh source-to-world transform must be invertible');
+
+  const scope = object(document.geometry_scope, 'mesh geometry scope');
+  const active = integers(scope.active_allen_ids, 'mesh active Allen IDs');
+  const excluded = integers(scope.excluded_allen_ids, 'mesh excluded Allen IDs');
+  const sources = object(document.sources, 'mesh sources');
+  const sourceGlb = object(sources.source_glb, 'mesh source GLB');
+  const inventory = integers(sourceGlb.inventory_allen_ids, 'mesh source inventory');
+  for (const [values, label] of [[active, 'active Allen IDs'], [excluded, 'excluded Allen IDs'], [inventory, 'source inventory']] as const) {
+    if (values.some((value, index) => index > 0 && values[index - 1]! >= value)) fail(`mesh ${label} must be sorted and unique`);
+  }
+  if (active.some((id) => excluded.includes(id))) fail('mesh active and excluded Allen IDs overlap');
+
+  const groups = array(document.explode_groups, 'mesh explode groups').map((value) => object(value, 'mesh explode group'));
+  unique(groups.map((group) => group.signed_group_id), 'mesh explode group id');
+  const groupById = new Map(groups.map((group) => [Number(group.signed_group_id), group]));
+  const regions = array(document.regions, 'mesh regions').map((value) => object(value, 'mesh region'));
+  unique(regions.map((region) => region.feature_id), 'mesh feature id');
+  unique(regions.map((region) => region.signed_allen_id), 'mesh signed Allen id');
+  if (regions.some((region, index) => region.feature_id !== index)) fail('mesh feature IDs must be contiguous in manifest order');
+  const signsBySource = new Map<number, Set<number>>();
+  for (const region of regions) {
+    const sourceId = Number(region.source_allen_id);
+    const signedId = Number(region.signed_allen_id);
+    const sign = region.hemisphere === 'left' ? -1 : 1;
+    if (signedId !== sign * sourceId) fail(`mesh signed Allen identity is inconsistent for feature ${String(region.feature_id)}`);
+    if (!active.includes(sourceId) || !inventory.includes(sourceId) || excluded.includes(sourceId)) fail(`mesh region ${sourceId} is outside the declared source scope`);
+    const mappings = object(region.mappings, 'mesh mappings');
+    if (mappings.allen !== signedId) fail(`mesh Allen mapping differs from signed identity ${signedId}`);
+    for (const name of ['beryl', 'cosmos'] as const) {
+      const mapped = mappings[name];
+      if (mapped !== null && (typeof mapped !== 'number' || !Number.isInteger(mapped)
+        || mapped === sign * 997 || (mapped < 0) !== (sign < 0))) fail(`mesh ${name} mapping is invalid for signed identity ${signedId}`);
+    }
+    const groupId = Number(region.signed_explode_group_id);
+    const group = groupById.get(groupId);
+    if (!group || group.hemisphere !== region.hemisphere || (groupId < 0) !== (sign < 0)) fail(`mesh explode group is inconsistent for signed identity ${signedId}`);
+    const bounds = object(region.bounds, 'mesh bounds');
+    const minimum = numberArray(bounds.minimum_um, 3, 'mesh minimum bounds');
+    const maximum = numberArray(bounds.maximum_um, 3, 'mesh maximum bounds');
+    const centroid = numberArray(region.centroid_um, 3, 'mesh centroid');
+    if (minimum.some((low, axis) => low > maximum[axis]! || centroid[axis]! < low || centroid[axis]! > maximum[axis]!)) fail(`mesh centroid or bounds are invalid for signed identity ${signedId}`);
+    const signs = signsBySource.get(sourceId) ?? new Set<number>();
+    signs.add(sign);
+    signsBySource.set(sourceId, signs);
+  }
+  if (signsBySource.size !== active.length || [...signsBySource.values()].some((signs) => signs.size !== 2 || !signs.has(-1) || !signs.has(1))) fail('mesh region coverage differs from bilateral active Allen scope');
+
+  const lods = array(document.lods, 'mesh LODs').map((value) => object(value, 'mesh LOD'));
+  const lodIds = lods.map((lod) => lod.id);
+  unique(lodIds, 'mesh LOD id');
+  if (!lodIds.includes(document.default_lod_id)) fail('mesh default LOD is absent');
+  if (document.upgrade_lod_id !== null && (!lodIds.includes(document.upgrade_lod_id) || document.upgrade_lod_id === document.default_lod_id)) fail('mesh upgrade LOD is absent or duplicates the default');
+  const validation = object(document.validation, 'mesh validation');
+  unique([...lods.map((lod) => object(lod.resource, 'mesh resource').path), object(validation.report, 'mesh report').path], 'mesh resource path');
+  const sourceTriangles = regions.reduce((total, region) => total + Number(region.triangle_count), 0);
+  for (const lod of lods) {
+    const triangles = Number(lod.triangle_count);
+    if (triangles > sourceTriangles || !close(Number(lod.actual_triangle_ratio), triangles / sourceTriangles)) fail(`mesh LOD ${String(lod.id)} triangle ratio is inconsistent`);
+    const decoder = object(lod.decoder, 'mesh decoder');
+    if (decoder.encoding === 'raw-v1' && (decoder.position_bits !== 0 || decoder.normal_bits !== 0)) fail('raw mesh LOD cannot declare quantization bits');
+    if (decoder.encoding === 'meshopt-quantized-v1' && (decoder.position_bits !== 14 || decoder.normal_bits !== 8)) fail('meshopt mesh LOD must use the reviewed 14/8-bit quantization');
+  }
+}
+
 export function validateSchemaV1Document(value: unknown, schemaName: string): void {
   const document = object(value, schemaName);
   resourceSemantics(document);
@@ -362,6 +438,9 @@ export function validateSchemaV1Document(value: unknown, schemaName: string): vo
       break;
     case 'projection-pack.schema.json':
       packSemantics(document);
+      break;
+    case 'mesh-pack.schema.json':
+      meshPackSemantics(document);
       break;
     default:
       fail(`unknown schema ${schemaName}`);

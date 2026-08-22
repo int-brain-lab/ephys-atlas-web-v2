@@ -30,6 +30,13 @@ indexed-SVG packs and their exact native slice inventories. A complete
 projection-pack validator must verify the manifest, the three indexes, every
 transitive registered/static resource, and the absence of undeclared files.
 
+`mesh-pack.schema.json` is the only 3-D geometry asset contract. It uses
+signed bilateral Allen identities, nullable reduced mappings, an exact
+`reference_space_id`, explicit source-to-world evidence, manifest-selected
+default/upgrade LODs, and versioned EAM3 decoder contracts. Tiny committed
+packs are marked `test-only`; production promotion requires the separate Q12
+evidence gate.
+
 The shared valid/invalid corpus under `tests/contract-fixtures/v1/` is executed
 by both Python and TypeScript validators and covers every top-level schema plus
 the common binary/resource semantics.

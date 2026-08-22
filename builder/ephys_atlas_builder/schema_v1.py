@@ -283,6 +283,94 @@ def _projection_pack_semantics(document: dict[str, Any]) -> None:
             _static_semantics(projection)
 
 
+def _mesh_pack_semantics(document: dict[str, Any]) -> None:
+    coordinate = document["coordinate_system"]
+    transform = coordinate["source_to_world_um"]
+    if not all(math.isfinite(value) for value in transform):
+        _fail("mesh source-to-world transform must be finite")
+    if transform[12:] != [0, 0, 0, 1]:
+        _fail("mesh source-to-world transform must be affine")
+    determinant = (
+        transform[0] * (transform[5] * transform[10] - transform[6] * transform[9])
+        - transform[1] * (transform[4] * transform[10] - transform[6] * transform[8])
+        + transform[2] * (transform[4] * transform[9] - transform[5] * transform[8])
+    )
+    if math.isclose(determinant, 0):
+        _fail("mesh source-to-world transform must be invertible")
+
+    scope = document["geometry_scope"]
+    active = scope["active_allen_ids"]
+    excluded = scope["excluded_allen_ids"]
+    inventory = document["sources"]["source_glb"]["inventory_allen_ids"]
+    for values, label in ((active, "active Allen IDs"), (excluded, "excluded Allen IDs"), (inventory, "source inventory")):
+        if values != sorted(values):
+            _fail(f"mesh {label} must be sorted")
+    if set(active) & set(excluded):
+        _fail("mesh active and excluded Allen IDs overlap")
+
+    groups = document["explode_groups"]
+    _unique([group["signed_group_id"] for group in groups], "mesh explode group id")
+    group_by_id = {group["signed_group_id"]: group for group in groups}
+    regions = document["regions"]
+    _unique([region["feature_id"] for region in regions], "mesh feature id")
+    _unique([region["signed_allen_id"] for region in regions], "mesh signed Allen id")
+    if [region["feature_id"] for region in regions] != list(range(len(regions))):
+        _fail("mesh feature IDs must be contiguous in manifest order")
+    signed_by_source: dict[int, set[int]] = {}
+    for region in regions:
+        source_id = region["source_allen_id"]
+        signed_id = region["signed_allen_id"]
+        sign = -1 if region["hemisphere"] == "left" else 1
+        if signed_id != sign * source_id:
+            _fail(f"mesh signed Allen identity is inconsistent for feature {region['feature_id']}")
+        if source_id not in active or source_id not in inventory or source_id in excluded:
+            _fail(f"mesh region {source_id} is outside the declared source scope")
+        mappings = region["mappings"]
+        if mappings["allen"] != signed_id:
+            _fail(f"mesh Allen mapping differs from signed identity {signed_id}")
+        for name in ("beryl", "cosmos"):
+            mapped = mappings[name]
+            if mapped is not None and (mapped == sign * 997 or (mapped < 0) != (sign < 0)):
+                _fail(f"mesh {name} mapping is invalid for signed identity {signed_id}")
+        group_id = region["signed_explode_group_id"]
+        group = group_by_id.get(group_id)
+        if group is None or group["hemisphere"] != region["hemisphere"] or (group_id < 0) != (sign < 0):
+            _fail(f"mesh explode group is inconsistent for signed identity {signed_id}")
+        minimum = region["bounds"]["minimum_um"]
+        maximum = region["bounds"]["maximum_um"]
+        centroid = region["centroid_um"]
+        if any(not math.isfinite(value) for value in [*minimum, *maximum, *centroid]):
+            _fail("mesh bounds and centroids must be finite")
+        if any(low > high or center < low or center > high for low, high, center in zip(minimum, maximum, centroid)):
+            _fail(f"mesh centroid or bounds are invalid for signed identity {signed_id}")
+        signed_by_source.setdefault(source_id, set()).add(sign)
+    if any(signs != {-1, 1} for signs in signed_by_source.values()):
+        _fail("mesh source regions must have both signed hemispheres")
+    if set(signed_by_source) != set(active):
+        _fail("mesh region coverage differs from active Allen scope")
+
+    lods = document["lods"]
+    lod_ids = [lod["id"] for lod in lods]
+    _unique(lod_ids, "mesh LOD id")
+    if document["default_lod_id"] not in lod_ids:
+        _fail("mesh default LOD is absent")
+    upgrade = document["upgrade_lod_id"]
+    if upgrade is not None and (upgrade not in lod_ids or upgrade == document["default_lod_id"]):
+        _fail("mesh upgrade LOD is absent or duplicates the default")
+    _unique([lod["resource"]["path"] for lod in lods] + [document["validation"]["report"]["path"]], "mesh resource path")
+    source_triangles = sum(region["triangle_count"] for region in regions)
+    for lod in lods:
+        if lod["triangle_count"] > source_triangles:
+            _fail(f"mesh LOD {lod['id']} exceeds source triangle count")
+        if not math.isclose(lod["actual_triangle_ratio"], lod["triangle_count"] / source_triangles, rel_tol=1e-9):
+            _fail(f"mesh LOD {lod['id']} triangle ratio is inconsistent")
+        decoder = lod["decoder"]
+        if decoder["encoding"] == "raw-v1" and (decoder["position_bits"] != 0 or decoder["normal_bits"] != 0):
+            _fail("raw mesh LOD cannot declare quantization bits")
+        if decoder["encoding"] == "meshopt-quantized-v1" and (decoder["position_bits"] != 14 or decoder["normal_bits"] != 8):
+            _fail("meshopt mesh LOD must use the reviewed 14/8-bit quantization")
+
+
 def _document_semantics(document: dict[str, Any], schema_name: str) -> None:
     _resource_semantics(document)
     if schema_name == "catalog.schema.json":
@@ -322,6 +410,8 @@ def _document_semantics(document: dict[str, Any], schema_name: str) -> None:
         _static_semantics(document)
     elif schema_name == "projection-pack.schema.json":
         _projection_pack_semantics(document)
+    elif schema_name == "mesh-pack.schema.json":
+        _mesh_pack_semantics(document)
 
 
 def validate_schema_v1_document(

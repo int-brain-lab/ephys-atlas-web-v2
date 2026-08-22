@@ -56,6 +56,10 @@ benchmark-anatomy:
 test-anatomy:
     {{uv-anatomy}} python -m pytest -q tests/test_anatomy_pack.py tests/test_anatomy_pack_schema.py tests/test_anatomy_compare.py tests/test_anatomy_smoothing_lab.py tests/test_anatomy_pack_v2.py tests/test_anatomy_pack_v2_schema.py tests/test_svg_pack.py tests/test_sampled_svg_pack.py tests/test_projection_pack.py
 
+# Exercise the unified mesh-pack contract, compiler, binary, and graph gates.
+test-mesh-pack:
+    {{uv-test}} python -m pytest -q tests/test_mesh_pack.py tests/test_schema_v1_contract.py
+
 # Build a historical 25 um v1 anatomy pack from a clean commit.
 anatomy-pack tolerance="15" depth="16" output="artifacts/anatomy-pack-v1":
     {{uv-anatomy}} python -m tools.anatomy_pack.build --tolerance-um {{tolerance}} --pack-depth {{depth}} --created-at 2026-08-20T00:00:00Z --output {{output}}
@@ -71,6 +75,14 @@ sampled-anatomy-pack parent output spacing="80" depth="8":
 # Validate the complete files and checksums of one immutable v1 projection pack.
 projection-pack-validate path:
     {{uv-test}} python -m tools.projection_pack.validate {{path}}
+
+# Compile the tiny test-only mesh source; real inputs and outputs stay outside Git.
+mesh-pack-fixture output="artifacts/mesh-pack-v1-fixture":
+    {{uv-test}} python -m tools.mesh_pack.build --source-dir fixtures/mesh-pack-v1/source --output {{output}}
+
+# Validate schema, resources, decoder identity, and the complete file graph.
+mesh-pack-validate path:
+    {{uv-test}} python -m tools.mesh_pack.validate {{path}}
 
 # Generate the ignored, fully offline anatomy comparison lab.
 anatomy-compare resolution="25":

@@ -150,6 +150,14 @@ vectors remain dynamic presentation data. Future volume rendering shares the
 coordinate-space contract and global download/cache budget, not the mesh
 transport or renderer implementation.
 
+The sole implemented geometry asset contract is the snake_case
+`atlas-mesh-pack-v1` schema under `schema/v1/`. Its independent Python and
+TypeScript semantic validators share the release-contract corpus. Offline
+compiler primitives emit versioned merged EAM3 resources; complete-graph
+validation follows every declared resource and rejects undeclared files. The
+committed fixture is synthetic and test-only. No production mesh is selected
+until Q12 is closed.
+
 ## UI
 
 Large UI controllers should be decomposed by ownership, not by arbitrary file-size targets. Data shaping/search/statistics calculations should be pure and testable; DOM controllers own events, focus, accessibility, and mutation.

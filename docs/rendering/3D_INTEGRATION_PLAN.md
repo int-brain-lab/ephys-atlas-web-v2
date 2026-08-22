@@ -1,6 +1,6 @@
 # 3-D main-application integration plan
 
-Status: **Commit 0 baseline complete on `main`; Commit 1 is next
+Status: **Commits 0-1 complete on `main`; Commit 2 is next
 (2026-08-22)**.
 
 This document defines how to promote the completed independent brain-mesh lab
@@ -283,12 +283,33 @@ separate from the manifest version. The builder emits no undeclared files and
 graph validation follows every resource. The app uses only manifest-selected
 default/upgrade LODs. A changed choice creates a new immutable pack.
 
+### Commit 1 contract/compiler record
+
+Commit 1 landed the single snake_case `atlas-mesh-pack-v1` contract under
+`schema/v1/`; neither donor manifest was retained. Independent Python and
+TypeScript semantic validators run the shared v1 corpus. The contract records
+all identities, source evidence, affine, scope/exclusions, signed surfaces,
+nullable mappings, bounds/counts/centroids, selected LODs, encoded resources,
+decoder identity, builder identity, and content-addressed gate results required
+above.
+
+The offline Python machinery implements deterministic GLB parsing, deepest-
+active grey selection, exact ML half-space clipping, closed-loop caps,
+open-path evidence, mapping resolution, merged bilateral EAM3 raw encoding,
+and complete-file-graph validation. The tiny committed fixture is explicitly
+`test-only`, regenerates byte-for-byte, includes one intentional null Beryl
+mapping and one non-grey exclusion, and rejects missing, undeclared, size-
+mismatched, hash-mismatched, and decoder-inconsistent resources. Real inputs
+and outputs remain outside Git; no production asset or Q12 choice was made.
+
 ## Ordered implementation commits
 
 Each numbered item is one reviewable commit unless tests require a finer split.
 Run targeted tests and then `just check` for every commit; never hand off red.
 
 ### Commit 0 — Freeze evidence and establish baselines
+
+Status: complete in `25e1539`.
 
 - Fetch `main`, verify the worktree, and record changed ancestry.
 - Run current-main gates and donor-focused unit/browser gates.
@@ -298,6 +319,8 @@ Run targeted tests and then `just check` for every commit; never hand off red.
 Exit: both baselines are reproducible and the donor remains intact.
 
 ### Commit 1 — Converge contract and offline compiler
+
+Status: complete; exact landing commit is recorded by repository history.
 
 - Port only useful compiler/clipping/ontology/binary primitives.
 - Replace both donor manifests with the single v1 contract.

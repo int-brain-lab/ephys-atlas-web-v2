@@ -102,12 +102,15 @@ explode. It has not been integrated on `main`, is not part of M2 or launch
 acceptance, and must not be bulk merged because it predates final projection
 cutover commits.
 
-The approved main-integration Commit 0 baseline is complete. At main
+The approved main-integration Commits 0-1 are complete. At main
 `9624b05`, the full `just check` gate passed; at the unchanged donor
 `ba1e2d1`, the focused compiler (5), web unit (18), and Chromium lab (4) tests
-passed. No donor code was copied or history changed. Contract/compiler
-convergence against tiny deterministic test-only fixtures is the next slice;
-production promotion remains blocked by Q12.
+passed. No donor history changed. Main now has one strict snake_case
+`atlas-mesh-pack-v1` contract with Python/TypeScript parity, deterministic
+offline GLB/clipping/ontology/EAM3 primitives, complete graph validation, and
+a byte-reproducible tiny bilateral pack marked test-only. The verified browser
+source and decode worker are next; production promotion remains blocked by
+Q12.
 
 The approved anatomy smoothing investigation has completed its first three
 implementation slices. A deterministic registry exposes exact geometry, GEOS

@@ -1,0 +1,17 @@
+{
+  "format": "synthetic-allen-catalog-v1",
+  "mappings": {
+    "allen": [
+      {"atlas_id": 997, "parent_id": null, "acronym": "root"},
+      {"atlas_id": 8, "parent_id": 997, "acronym": "grey"},
+      {"atlas_id": 315, "parent_id": 8, "acronym": "ISO"},
+      {"atlas_id": 1009, "parent_id": 997, "acronym": "fiber tracts"}
+    ],
+    "beryl": [
+      {"atlas_id": 997, "mapping_member": false}
+    ],
+    "cosmos": [
+      {"atlas_id": 315, "mapping_member": true}
+    ]
+  }
+}
