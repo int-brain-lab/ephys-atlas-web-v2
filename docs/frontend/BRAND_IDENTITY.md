@@ -26,11 +26,12 @@ the viewer's scientific state remains in place.
 
 ## Product favicon
 
-`web/public/favicon.svg` is a separate Ephys Atlas product pictogram, not an
-extraction or modification of the official IBL Core lockup. Its abstract white
-bilateral slice and cyan-to-magenta probe use the institutional palette on the
-blue browser-theme background. The silhouette is illustrative branding rather
-than scientific atlas geometry.
+`web/public/favicon.png` is a favicon-specific crop of the official network
+device on the institutional blue browser-theme background. Its paths, colors,
+gradient, and proportions come directly from the committed lockup; only the
+adjacent IBL Core lettering is omitted at this scale. This is an explicit
+product-favicon exception to the logo manual's general prohibition on
+extracting the device.
 
 ## Institutional palette
 

@@ -47,11 +47,13 @@ test('document uses the Ephys Atlas product favicon', async ({ page, request }) 
   await page.goto('/');
 
   const favicon = page.locator('link[rel="icon"]');
-  await expect(favicon).toHaveAttribute('href', '/favicon.svg');
-  await expect(favicon).toHaveAttribute('type', 'image/svg+xml');
+  await expect(favicon).toHaveAttribute('href', '/favicon.png');
+  await expect(favicon).toHaveAttribute('type', 'image/png');
 
-  const response = await request.get('/favicon.svg');
+  const response = await request.get('/favicon.png');
   expect(response.ok()).toBe(true);
-  expect(response.headers()['content-type']).toContain('image/svg+xml');
-  expect(await response.text()).toContain('viewBox="0 0 64 64"');
+  expect(response.headers()['content-type']).toContain('image/png');
+  expect((await response.body()).subarray(0, 8)).toEqual(
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+  );
 });
