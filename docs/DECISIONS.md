@@ -263,3 +263,19 @@ entry. Startup normalization and v1/v2 migration replace the current entry;
 `popstate` hydrates the complete view without echoing another write. Back and
 Forward therefore traverse meaningful scientific contexts while every current
 URL remains reloadable and shareable.
+
+## D030 — Selected-region comparison is a responsive tray
+
+Present selected-region comparison as a nonmodal tray anchored above its
+persistent launcher on desktop and tablet. Comparison is part of atlas
+exploration rather than a blocking task: the region browser and scientific
+views remain available, the workspace does not resize, and global shortcuts
+remain active. Make the overlay state explicit through a distinct elevated
+surface, accented top edge, selected-region count, short slide-up transition,
+and visible minimize control. Preserve Escape dismissal and launcher focus
+restoration.
+
+On phones, present the same content as a modal bottom sheet with a backdrop,
+because the reduced viewport cannot support simultaneous comparison and atlas
+interaction reliably. Keep comparison data, export behavior, and selection
+state identical across presentations.

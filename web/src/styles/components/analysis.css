@@ -5,7 +5,19 @@
   bottom: 0;
   left: 0;
   height: 2.25rem;
-  box-shadow: 0 -.5rem 1.5rem rgb(2 8 13 / 18%);
+  overflow: visible;
+  border-top: 1px solid rgb(var(--color-accent-rgb) / 18%);
+  background: linear-gradient(180deg, rgb(13 31 44 / 98%), rgb(8 19 29 / 98%));
+  box-shadow: 0 -.5rem 1.5rem rgb(2 8 13 / 24%);
+}
+
+.analysis-panel[data-empty='false'] {
+  border-top-color: rgb(var(--color-accent-rgb) / 48%);
+  box-shadow: 0 -.6rem 1.8rem rgb(2 8 13 / 34%), 0 -1px 0 rgb(var(--color-accent-rgb) / 8%);
+}
+
+.analysis-panel[data-expanded='true'] {
+  border-top-color: rgb(var(--color-accent-rgb) / 68%);
 }
 
 .analysis-panel__header {
@@ -37,7 +49,20 @@
   text-transform: uppercase;
 }
 
+.analysis-panel__count {
+  min-width: 1.2rem;
+  padding: .08rem .35rem;
+  border: 1px solid rgb(var(--color-accent-rgb) / 38%);
+  border-radius: 999px;
+  background: rgb(var(--color-accent-rgb) / 12%);
+  color: var(--color-text-secondary);
+  font-size: .62rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
 .analysis-panel__chevron {
+  margin-left: auto;
   color: var(--color-text-muted);
   font-size: .88rem;
 }
@@ -47,9 +72,13 @@
 }
 
 .analysis-dialog {
-  width: min(90rem, calc(100vw - 3rem));
+  position: absolute;
+  inset: auto 0 100%;
+  width: 100%;
+  height: auto;
   max-width: none;
-  max-height: min(80dvh, 48rem);
+  max-height: min(var(--analysis-height), calc(100dvh - var(--header-height) - 5rem));
+  margin: 0;
   padding: 0;
   overflow: visible;
   border: 0;
@@ -57,20 +86,30 @@
   color: var(--color-text);
 }
 
+.analysis-dialog[open] {
+  animation: analysis-tray-enter 160ms ease-out;
+}
+
 .analysis-dialog::backdrop {
+  background: transparent;
+}
+
+.analysis-dialog:modal::backdrop {
   background: rgb(2 8 13 / 76%);
   backdrop-filter: blur(2px);
 }
 
 .analysis-dialog__frame {
-  max-height: min(80dvh, 48rem);
+  max-height: min(var(--analysis-height), calc(100dvh - var(--header-height) - 5rem));
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
-  border: 1px solid rgb(163 194 216 / 28%);
-  border-radius: var(--radius-lg);
+  border: 1px solid rgb(163 194 216 / 32%);
+  border-top: 2px solid rgb(var(--color-accent-rgb) / 78%);
+  border-bottom: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background: var(--color-surface-1);
-  box-shadow: 0 1.75rem 5.5rem rgb(0 0 0 / 68%), 0 0 0 1px rgb(0 159 215 / 5%);
+  box-shadow: 0 -1.5rem 4rem rgb(0 0 0 / 58%), 0 -1px 0 rgb(var(--color-accent-rgb) / 10%);
 }
 
 .analysis-dialog__header {
@@ -84,6 +123,13 @@
   background: linear-gradient(180deg, rgb(17 35 49 / 78%), rgb(10 22 33 / 96%));
 }
 
+.analysis-dialog__heading {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
 .analysis-dialog__header h2 {
   margin: 0;
   color: var(--color-text-secondary);
@@ -91,6 +137,12 @@
   font-weight: 680;
   letter-spacing: .055em;
   text-transform: uppercase;
+}
+
+.analysis-dialog__count {
+  color: var(--color-text-muted);
+  font-size: .64rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .analysis-dialog__close {
@@ -109,6 +161,24 @@
   border-color: var(--color-border-strong);
   background: var(--color-surface-hover);
   color: var(--color-text);
+}
+
+@keyframes analysis-tray-enter {
+  from {
+    opacity: 0;
+    transform: translateY(.75rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analysis-dialog[open] {
+    animation: none;
+  }
 }
 
 .analysis-panel__surface {
@@ -326,15 +396,16 @@
 
 @media (max-width: 759px) {
   .analysis-dialog {
+    position: fixed;
+    inset: auto 0 0;
     width: 100vw;
-    height: min(88dvh, 42rem);
+    height: auto;
     max-height: 88dvh;
-    margin: auto 0 0;
   }
 
   .analysis-dialog__frame {
-    height: 100%;
-    max-height: none;
+    height: auto;
+    max-height: 88dvh;
     border-right: 0;
     border-bottom: 0;
     border-left: 0;

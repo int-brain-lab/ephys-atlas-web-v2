@@ -43,8 +43,12 @@ export class RegionalPanelController {
   private readonly analysisToggle: HTMLButtonElement;
   private readonly analysisDialog: HTMLDialogElement;
   private readonly analysisClose: HTMLButtonElement;
+  private readonly analysisCount: HTMLElement;
+  private readonly analysisDialogCount: HTMLElement;
+  private readonly modalComparisonQuery: MediaQueryList;
   private analysisExpanded = false;
-  private hasSelection = false;
+  private selectionCount = 0;
+  private restoreAnalysisFocus = false;
   private lastFeature: FeaturePayload | null = null;
   private lastRegions: readonly RegionMetadata[] | null = null;
   private lastStatistic: StatisticId | null = null;
@@ -65,12 +69,17 @@ export class RegionalPanelController {
     this.analysisToggle = required(root, '.analysis-panel__toggle');
     this.analysisDialog = required(root, '.analysis-dialog');
     this.analysisClose = required(root, '.analysis-dialog__close');
+    this.analysisCount = required(root, '.analysis-panel__count');
+    this.analysisDialogCount = required(root, '.analysis-dialog__count');
+    this.modalComparisonQuery = this.analysisDialog.ownerDocument.defaultView?.matchMedia('(max-width: 759px)')
+      ?? window.matchMedia('(max-width: 759px)');
     this.tree = new RegionalTreeView(root, callbacks);
     this.clearSelectionButton.addEventListener('click', this.clearSelection);
     this.analysisToggle.addEventListener('click', this.toggleAnalysis);
     this.analysisClose.addEventListener('click', this.closeAnalysis);
     this.analysisDialog.addEventListener('close', this.onAnalysisClose);
     this.analysisDialog.addEventListener('click', this.onAnalysisBackdropClick);
+    this.analysisDialog.ownerDocument.addEventListener('keydown', this.onAnalysisKeyDown);
     this.analysis.addEventListener('click', this.onAnalysisClick);
     this.selectedList.addEventListener('click', this.onSelectedClick);
   }
@@ -131,7 +140,7 @@ export class RegionalPanelController {
       : undefined;
     const values = feature ? buildRegionalValueMap(feature, statistic) : new Map<string, number>();
     const selected = new Set(model.state.view.selection);
-    this.updateAnalysisDisclosure(selected.size > 0);
+    this.updateAnalysisDisclosure(selected.size);
     const unit = descriptor?.unit ?? null;
 
     this.tree.source.textContent = model.anatomyAtlas
@@ -174,13 +183,14 @@ export class RegionalPanelController {
     this.analysisClose.removeEventListener('click', this.closeAnalysis);
     this.analysisDialog.removeEventListener('close', this.onAnalysisClose);
     this.analysisDialog.removeEventListener('click', this.onAnalysisBackdropClick);
+    this.analysisDialog.ownerDocument.removeEventListener('keydown', this.onAnalysisKeyDown);
     this.analysis.removeEventListener('click', this.onAnalysisClick);
     this.selectedList.removeEventListener('click', this.onSelectedClick);
   }
 
   private renderEmpty(model: RegionalPanelModel): void {
     this.selectedSection.dataset.empty = 'true';
-    this.updateAnalysisDisclosure(false);
+    this.updateAnalysisDisclosure(0);
     this.tree.renderEmpty(
       model.state.view.representation === 'volume'
         ? 'Region values are unavailable in volume mode'
@@ -213,28 +223,41 @@ export class RegionalPanelController {
   };
 
   private readonly toggleAnalysis = (): void => {
-    if (!this.hasSelection) return;
+    if (this.selectionCount === 0) return;
     if (this.analysisDialog.open) {
-      this.analysisDialog.close();
+      this.closeAnalysisAndRestoreFocus();
       return;
     }
     this.analysisExpanded = true;
-    this.analysisDialog.showModal();
+    const isModal = this.modalComparisonQuery.matches;
+    this.analysisDialog.dataset.presentation = isModal ? 'modal-sheet' : 'tray';
+    this.analysisDialog.setAttribute('aria-modal', String(isModal));
+    if (isModal) this.analysisDialog.showModal();
+    else this.analysisDialog.show();
     this.syncAnalysisDisclosure();
     this.analysisClose.focus();
   };
 
   private readonly closeAnalysis = (): void => {
-    if (this.analysisDialog.open) this.analysisDialog.close();
+    this.closeAnalysisAndRestoreFocus();
   };
 
   private readonly onAnalysisClose = (): void => {
     this.analysisExpanded = false;
     this.syncAnalysisDisclosure();
+    if (this.restoreAnalysisFocus && !this.analysisToggle.disabled) this.analysisToggle.focus();
+    this.restoreAnalysisFocus = false;
   };
 
   private readonly onAnalysisBackdropClick = (event: MouseEvent): void => {
-    if (event.target === this.analysisDialog) this.analysisDialog.close();
+    if (event.target === this.analysisDialog) this.closeAnalysisAndRestoreFocus();
+  };
+
+  private readonly onAnalysisKeyDown = (event: KeyboardEvent): void => {
+    if (event.key !== 'Escape' || !this.analysisDialog.open) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.closeAnalysisAndRestoreFocus();
   };
 
   private readonly onAnalysisClick = (event: Event): void => {
@@ -242,25 +265,43 @@ export class RegionalPanelController {
     if (target?.closest('[data-download-comparison]')) this.callbacks.downloadComparison();
   };
 
-  private updateAnalysisDisclosure(hasSelection: boolean): void {
-    if (!hasSelection) {
+  private closeAnalysisAndRestoreFocus(): void {
+    if (!this.analysisDialog.open) return;
+    this.restoreAnalysisFocus = true;
+    this.analysisDialog.close();
+  }
+
+  private updateAnalysisDisclosure(selectionCount: number): void {
+    if (selectionCount === 0) {
       this.analysisExpanded = false;
+      this.restoreAnalysisFocus = false;
       if (this.analysisDialog.open) this.analysisDialog.close();
     }
-    this.hasSelection = hasSelection;
+    this.selectionCount = selectionCount;
     this.syncAnalysisDisclosure();
   }
 
   private syncAnalysisDisclosure(): void {
-    this.analysisPanel.dataset.empty = String(!this.hasSelection);
-    this.analysisPanel.dataset.expanded = String(this.hasSelection && this.analysisExpanded);
-    this.analysisToggle.disabled = !this.hasSelection;
-    this.analysisToggle.setAttribute('aria-expanded', String(this.hasSelection && this.analysisExpanded));
-    this.analysisToggle.setAttribute('aria-label', 'Open selected-region comparison');
+    const hasSelection = this.selectionCount > 0;
+    const selectionLabel = `${this.selectionCount} selected ${this.selectionCount === 1 ? 'region' : 'regions'}`;
+    this.analysisPanel.dataset.empty = String(!hasSelection);
+    this.analysisPanel.dataset.expanded = String(hasSelection && this.analysisExpanded);
+    this.analysisToggle.disabled = !hasSelection;
+    this.analysisToggle.setAttribute('aria-expanded', String(hasSelection && this.analysisExpanded));
+    this.analysisToggle.setAttribute(
+      'aria-label',
+      hasSelection
+        ? `${this.analysisExpanded ? 'Minimize' : 'Open'} comparison for ${selectionLabel}`
+        : 'Open selected-region comparison',
+    );
+    this.analysisCount.hidden = !hasSelection;
+    this.analysisCount.textContent = String(this.selectionCount);
+    this.analysisDialogCount.hidden = !hasSelection;
+    this.analysisDialogCount.textContent = selectionLabel;
     const chevron = this.analysisToggle.querySelector<HTMLElement>('.analysis-panel__chevron');
     if (chevron) {
-      chevron.hidden = !this.hasSelection;
-      chevron.textContent = '↗';
+      chevron.hidden = !hasSelection;
+      chevron.textContent = this.analysisExpanded ? '⌄' : '⌃';
     }
   }
 }

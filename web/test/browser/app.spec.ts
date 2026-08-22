@@ -272,29 +272,54 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   await expect(page.locator('.analysis-panel__surface')).toBeHidden();
   await expect(page.locator('.regional-comparison__fixture')).toHaveText('Synthetic integration fixture');
   expect(await page.locator('[data-view="coronal"]').boundingBox()).toEqual(coronalBeforeSelection);
-  const comparisonTrigger = page.getByRole('button', { name: 'Open selected-region comparison' });
+  const comparisonTrigger = page.getByRole('button', { name: 'Open comparison for 1 selected region' });
   await comparisonTrigger.click();
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'true');
   const comparisonDialog = page.getByRole('dialog', { name: 'Compare selected regions' });
   await expect(comparisonDialog).toBeVisible();
+  await expect(comparisonDialog).toHaveAttribute('data-presentation', 'tray');
+  await expect(comparisonDialog).toHaveAttribute('aria-modal', 'false');
+  await expect(page.locator('.analysis-panel__count')).toHaveText('1');
+  await expect(page.locator('.analysis-dialog__count')).toHaveText('1 selected region');
   await expect(page.locator('.analysis-panel__surface')).toBeVisible();
+  await comparisonDialog.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished));
+  });
   const dialogBounds = await comparisonDialog.boundingBox();
+  const workspaceBounds = await page.locator('.workspace').boundingBox();
+  const launcherBounds = await page.locator('.analysis-panel__header').boundingBox();
   const surfaceBounds = await page.locator('.analysis-panel__surface').boundingBox();
   const comparisonBounds = await page.locator('.regional-comparison').boundingBox();
   expect(dialogBounds).not.toBeNull();
+  expect(workspaceBounds).not.toBeNull();
+  expect(launcherBounds).not.toBeNull();
   expect(surfaceBounds).not.toBeNull();
   expect(comparisonBounds).not.toBeNull();
-  expect(dialogBounds!.x).toBeGreaterThan(16);
-  expect(dialogBounds!.y).toBeGreaterThan(16);
-  expect(1280 - dialogBounds!.x - dialogBounds!.width).toBeGreaterThan(16);
+  expect(Math.abs(dialogBounds!.x - workspaceBounds!.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(dialogBounds!.width - workspaceBounds!.width)).toBeLessThanOrEqual(2);
+  expect(Math.abs(dialogBounds!.y + dialogBounds!.height - launcherBounds!.y)).toBeLessThanOrEqual(1);
   expect(surfaceBounds!.y + surfaceBounds!.height - comparisonBounds!.y - comparisonBounds!.height).toBeLessThanOrEqual(17);
-  expect(await page.locator('[data-view="coronal"]').boundingBox()).toEqual(coronalBeforeSelection);
+  const coronalWhileOpen = await page.locator('[data-view="coronal"]').boundingBox();
+  expect(coronalWhileOpen).not.toBeNull();
+  expect(coronalWhileOpen!.width).toBe(coronalBeforeSelection!.width);
+  expect(coronalWhileOpen!.height).toBe(coronalBeforeSelection!.height);
+  expect(Math.abs(coronalWhileOpen!.x - coronalBeforeSelection!.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(coronalWhileOpen!.y - coronalBeforeSelection!.y)).toBeLessThanOrEqual(1);
+  await page.locator('.region-search__input').fill('MD');
+  await expect(comparisonDialog).toBeVisible();
+  await expect(page.locator('.region-search__count')).toHaveText(/region/);
+  await page.locator('.region-search__input').fill('');
   await page.keyboard.press('Escape');
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'false');
   await expect(comparisonDialog).toBeHidden();
   await expect(page.locator('.analysis-panel__surface')).toBeHidden();
   await expect(comparisonTrigger).toBeFocused();
-  expect(await page.locator('[data-view="coronal"]').boundingBox()).toEqual(coronalBeforeSelection);
+  const coronalAfterClose = await page.locator('[data-view="coronal"]').boundingBox();
+  expect(coronalAfterClose).not.toBeNull();
+  expect(coronalAfterClose!.width).toBe(coronalBeforeSelection!.width);
+  expect(coronalAfterClose!.height).toBe(coronalBeforeSelection!.height);
+  expect(Math.abs(coronalAfterClose!.x - coronalBeforeSelection!.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(coronalAfterClose!.y - coronalBeforeSelection!.y)).toBeLessThanOrEqual(1);
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
   await expect(page.locator('.selected-region')).toContainText('MD');
   await expect(page.locator('.distribution-chart__region[data-region-id="-362"]')).toHaveAttribute('data-probability-sum', '1');
@@ -328,7 +353,7 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   expect(comparisonCsv).toContain('ephys_atlas_channels,golden-v0.3,rms_ap,regional,allen,mean,dB rel. V');
   expect(comparisonCsv.trim().split('\n')).toHaveLength(9);
   expect(comparisonCsv).toContain(',-362,MD,Mediodorsal nucleus of thalamus (left),');
-  await page.getByRole('button', { name: 'Close selected-region comparison' }).click();
+  await page.getByRole('button', { name: 'Minimize selected-region comparison' }).click();
   await expect(comparisonDialog).toBeHidden();
   await expect(path).toHaveClass(/is-selected/);
   await expect(rightPath).toHaveClass(/is-selected/);
@@ -338,9 +363,14 @@ test('selected-region comparison becomes a dismissible phone bottom sheet', asyn
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?selected=-362');
 
-  await page.getByRole('button', { name: 'Open selected-region comparison' }).click();
+  await page.getByRole('button', { name: 'Open comparison for 1 selected region' }).click();
   const dialog = page.getByRole('dialog', { name: 'Compare selected regions' });
   await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute('data-presentation', 'modal-sheet');
+  await expect(dialog).toHaveAttribute('aria-modal', 'true');
+  await dialog.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished));
+  });
   const bounds = await dialog.boundingBox();
   expect(bounds).not.toBeNull();
   expect(bounds!.x).toBe(0);
@@ -349,7 +379,7 @@ test('selected-region comparison becomes a dismissible phone bottom sheet', asyn
 
   await page.mouse.click(10, 10);
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Open selected-region comparison' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Open comparison for 1 selected region' })).toBeFocused();
 });
 
 test('Allen anatomy mode shows actual regions and dark-theme ontology colors', async ({ page }) => {

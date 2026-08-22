@@ -121,12 +121,15 @@ descriptive statistics in one aligned table, with the global population as a
 distinct reference row on the same axes, and exports selected regions with
 context, raw bins, normalized probabilities, and sample sizes. Histogram curves use presentation-only,
 shape-preserving interpolation while bin hover/export retains exact values. The
-comparison remains behind a compact launcher until opened as a native modal
-dialog. Desktop uses a dimmed, blurred backdrop and inset floating surface;
-phones use a bottom sheet. The dialog traps interaction, closes with its close
-control, backdrop, or Escape, restores focus to its launcher, and scrolls large
-comparisons internally. Synthetic fixtures are visibly identified as
-non-scientific.
+comparison remains behind a compact launcher until opened. Desktop and tablet
+use a nonmodal tray anchored above that launcher, preserving interaction with
+the atlas and region browser while keeping scientific view geometry stable.
+The tray uses a strong top edge, elevation, selected-region count, slide-up
+motion, and an explicit minimize control to make the overlay state clear.
+Phones use a modal bottom sheet with a backdrop. Both presentations close with
+their minimize control or Escape, restore focus to the launcher, and scroll
+large comparisons internally; tapping the phone backdrop also closes the
+sheet. Synthetic fixtures are visibly identified as non-scientific.
 
 `DatasetSession` owns asynchronous catalog/release/region/feature lifecycle,
 generation-based stale-work suppression, and cancellable idle prefetch. Active

@@ -16,7 +16,7 @@ Build from the outside inward:
 4. region browser and selected-region area using representative static content;
 5. generic anatomical view frame and three empty slice frames;
 6. secondary-view slot and compact global-distribution band;
-7. compact analysis launcher with a modal comparison surface;
+7. compact analysis launcher with a responsive comparison tray/sheet;
 8. settings panel;
 9. feature catalogue and secondary drawers/popovers;
 10. replace representative content with real application state/data incrementally.
@@ -196,10 +196,14 @@ A useful starting point is:
 
 The exact row values must be tuned using 900px and 800px-high browser screenshots.
 
-Opening analysis uses a native modal dialog rather than resizing the workspace.
-The viewer remains visible as dimmed context behind an inset desktop surface;
-phones present the same dialog as a bottom sheet. Comparison content scrolls
-inside the modal without changing scientific view geometry.
+Opening analysis does not resize the workspace. Desktop and tablet use a
+nonmodal comparison tray anchored immediately above the persistent launcher,
+so the atlas and region browser remain interactive while the comparison is
+visible. Strong elevation, a cyan top edge, a distinct header, selected-region
+count, slide-up motion, and an explicit minimize control make its overlay state
+clear. Phones present the same content as a modal bottom sheet with a backdrop.
+Comparison content scrolls inside the tray or sheet without changing scientific
+view geometry.
 
 ## 5. Responsive composition regimes
 
@@ -213,7 +217,7 @@ The following breakpoints are **initial engineering values** and should be adjus
 - three linked slices visible;
 - settings pane visible;
 - secondary/global-distribution strip visible;
-- compact analysis launcher visible; comparison opens as an inset modal.
+- compact analysis launcher visible; comparison opens as an anchored nonmodal tray.
 
 ### Regime B — compact desktop: `1100px–1479px`
 
@@ -221,7 +225,7 @@ The following breakpoints are **initial engineering values** and should be adjus
 - three linked slices remain visible;
 - settings becomes an overlay/drawer opened from the context bar;
 - center workspace gains the reclaimed width;
-- comparison retains the inset modal behavior.
+- comparison retains the anchored nonmodal tray behavior.
 
 This regime is important for 1280px and 1440px laptop/desktop screens.
 
@@ -232,7 +236,7 @@ This regime is important for 1280px and 1440px laptop/desktop screens.
 - one anatomical slice is dominant at a time;
 - Coronal / Sagittal / Horizontal switching remains immediate;
 - secondary views are accessible through the same view-switching mechanism;
-- analysis remains available through the compact launcher and modal;
+- analysis remains available through the compact launcher and nonmodal tray;
 - controls use touch-appropriate target sizes.
 
 ### Regime D — phone: `< 760px`
@@ -388,7 +392,7 @@ Desktop shell uses the viewport height and internal scrolling.
 - region list scrolls inside the region pane;
 - settings content scrolls inside the settings pane/drawer;
 - the anatomical canvases/SVGs do not create page scroll;
-- comparison content scrolls internally within its modal;
+- comparison content scrolls internally within its tray or phone sheet;
 - avoid nested scrolling regions unless the inner scroll has a clear scientific purpose.
 
 Resizable UI is intentionally limited:

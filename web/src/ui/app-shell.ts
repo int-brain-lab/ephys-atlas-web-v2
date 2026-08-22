@@ -1092,23 +1092,29 @@ export class AppShell {
     analysisToggle.setAttribute('aria-label', 'Open selected-region comparison');
     const analysisTitle = element('span', 'analysis-panel__title');
     analysisTitle.textContent = 'Compare selected regions';
+    const analysisCount = element('span', 'analysis-panel__count');
+    analysisCount.hidden = true;
     const analysisChevron = element('span', 'analysis-panel__chevron');
     analysisChevron.textContent = '↗';
     analysisChevron.setAttribute('aria-hidden', 'true');
-    analysisToggle.append(analysisTitle, analysisChevron);
+    analysisToggle.append(analysisTitle, analysisCount, analysisChevron);
     analysisHeader.append(analysisToggle);
     const analysisDialog = element('dialog', 'analysis-dialog');
     analysisDialog.id = 'analysis-dialog';
     analysisDialog.setAttribute('aria-labelledby', 'analysis-dialog-title');
     const analysisFrame = element('div', 'analysis-dialog__frame');
     const dialogHeader = element('header', 'analysis-dialog__header');
+    const dialogHeading = element('div', 'analysis-dialog__heading');
     const dialogTitle = heading('Compare selected regions', 2);
     dialogTitle.id = 'analysis-dialog-title';
+    const dialogCount = element('span', 'analysis-dialog__count');
+    dialogCount.hidden = true;
+    dialogHeading.append(dialogTitle, dialogCount);
     const dialogClose = element('button', 'analysis-dialog__close');
     dialogClose.type = 'button';
-    dialogClose.textContent = '×';
-    dialogClose.setAttribute('aria-label', 'Close selected-region comparison');
-    dialogHeader.append(dialogTitle, dialogClose);
+    dialogClose.textContent = '⌄';
+    dialogClose.setAttribute('aria-label', 'Minimize selected-region comparison');
+    dialogHeader.append(dialogHeading, dialogClose);
     const analysisSurface = element('div', 'analysis-panel__surface');
     analysisSurface.id = 'analysis-panel-surface';
     analysisSurface.append(placeholderLine('long'), placeholderLine('medium'));
@@ -1366,7 +1372,7 @@ export class AppShell {
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (event.defaultPrevented) return;
-    if (this.analysisDialog.open) return;
+    if (this.analysisDialog.open && this.analysisDialog.dataset.presentation === 'modal-sheet') return;
     if (event.key === 'Escape') {
       if (this.infoDialog.open || this.helpDialog.open) return;
       if (this.closeContextMenus()) return;
