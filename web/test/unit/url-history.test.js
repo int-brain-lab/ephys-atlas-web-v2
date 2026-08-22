@@ -99,20 +99,33 @@ test('a context checkpoint first preserves a pending navigation refinement', () 
   store.dispatch({ type: 'feature/set', featureId: 'rms_ap', history: 'push' });
 
   assert.deepEqual(win.writes.map(({ mode }) => mode), ['replace', 'push']);
-  assert.match(win.writes[0].url, /slices=664%2C550%2C400/);
+  assert.match(win.writes[0].url, /cursor=-239%2C-1240%2C-3668/);
   assert.match(win.writes[1].url, /feature=rms_ap/);
   controller.stop();
 });
 
-test('legacy URLs canonicalize by replacement and popstate hydration does not echo', () => {
+test('unsupported URLs reset canonically and current popstate hydration does not echo', () => {
   const { store, win, controller } = setup('https://atlas.test/?v=2&slices=264,220,160');
   assert.equal(win.writes.length, 1);
   assert.equal(win.writes[0].mode, 'replace');
-  assert.match(win.location.search, /v=3/);
+  assert.equal(win.location.search, '?v=4');
 
   win.writes.length = 0;
-  win.dispatchPopState('/?v=3&parcel=beryl');
+  win.dispatchPopState('/?v=4&parcel=beryl');
   assert.equal(store.getState().view.parcellation, 'beryl');
   assert.equal(win.writes.length, 0);
+  controller.stop();
+});
+
+test('workspace refinements replace history and preserve independent dimensions', () => {
+  const { store, win, controller } = setup('https://atlas.test/');
+  win.writes.length = 0;
+  store.dispatch({ type: 'workspace/secondary-tab', tab: 'swanson' });
+  store.dispatch({ type: 'workspace/compact-view', view: 'secondary' });
+  store.dispatch({ type: 'workspace/maximized-view', view: 'horizontal' });
+  assert.deepEqual(win.writes.map(({ mode }) => mode), ['replace', 'replace', 'replace']);
+  assert.match(win.location.search, /secondary=swanson/);
+  assert.match(win.location.search, /compact=secondary/);
+  assert.match(win.location.search, /max=horizontal/);
   controller.stop();
 });

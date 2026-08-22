@@ -20,15 +20,15 @@ HTTP and local datasets share the same regional materializer through a transport
 
 D031 and `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` define the active
 implementation sequence. Schema v1 is now the sole implemented data contract.
-The current `SliceRenderer`/hybrid, anatomy-pack compatibility, legacy fallback, and URL-migration paths remain
-factual implementation state today; they are not long-term compatibility
-requirements. The remaining coordinated cutover will replace them with one
-current URL codec, one five-projection asset contract, and retained layered
+The current `SliceRenderer`/hybrid, anatomy-pack compatibility, and legacy
+fallback paths remain factual implementation state today; they are not
+long-term compatibility requirements. The URL migration stack has been
+removed. The remaining coordinated cutover will add one five-projection asset contract and retained layered
 projection viewports. It will add static Top and Swanson views through the same
 regional SVG presentation/interaction path used by the registered orthogonal
 views.
 
-Commits 1 and 2 of the plan are implemented: `schema/v1/` defines the strict dataset,
+Commits 1 through 3 of the plan are implemented: `schema/v1/` defines the strict dataset,
 resource, regional, volume, summary/index, and five-projection contracts plus
 matching TypeScript types. Python and TypeScript semantic validators execute
 one deterministic valid/invalid corpus covering all top-level schemas, both
@@ -42,6 +42,17 @@ contract rather than path. Schema-v0.1 runtime code, schemas, fixtures, and
 compatibility tests are removed. External development releases must be rebuilt
 under new release IDs before use. Q4 and Q5 remain unresolved and continue to
 block a purported production volume release.
+
+The enabled 2-D projection registry currently exposes only coronal, sagittal,
+and horizontal definitions, while the distinct workspace registry also owns
+the responsive secondary slot. `secondaryTab`, `activeCompactView`, and
+`maximizedView` are independent typed reducer state rather than `AppShell`
+fields. A single snapped ML/AP/DV cursor is stored; native indices, display
+ordinals, coordinate labels, renderer inputs, and guides are derived from it.
+URL v4 serializes the cursor and workspace state. Any non-current version is
+reset wholesale to the canonical current URL, with no partial legacy-field
+consumption. The existing renderer remains mounted until the planned atomic
+Commit 5/6 viewport cutover.
 
 The pre-Commit-1 contract is now explicit about separate reference-space,
 grid, and asset identities; verified-only persistent caching; independent

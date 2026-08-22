@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('region sidebar renders parent-closed Allen hierarchies at their real depth', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?colors=anatomy');
+  await page.goto('/?v=4&colors=anatomy');
 
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   await expect(page.locator('.region-row')).toHaveCount(874);
@@ -46,7 +46,7 @@ test('region sidebar renders parent-closed Allen hierarchies at their real depth
 
 test('reduced mappings expose real Allen ancestors as non-selectable containers', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?colors=anatomy&parcel=beryl');
+  await page.goto('/?v=4&colors=anatomy&parcel=beryl');
 
   await expect(page.locator('.region-row')).toHaveCount(391);
   const berylContainer = page.locator('.region-row[data-region-id="-500"]');
@@ -57,7 +57,7 @@ test('reduced mappings expose real Allen ancestors as non-selectable containers'
   await expect(berylRegion).toHaveAttribute('data-mapping-member', 'true');
   await expect(berylRegion).toHaveAttribute('data-parent-id', '-500');
 
-  await page.goto('/?colors=anatomy&parcel=cosmos');
+  await page.goto('/?v=4&colors=anatomy&parcel=cosmos');
   await expect(page.locator('.region-row')).toHaveCount(15);
   await expect(page.locator('.region-row[data-region-id="-695"]')).toHaveAttribute('data-mapping-member', 'false');
   await expect(page.locator('.region-row[data-region-id="-315"]')).toHaveAttribute('data-parent-id', '-695');

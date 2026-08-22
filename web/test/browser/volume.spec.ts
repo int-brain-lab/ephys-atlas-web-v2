@@ -30,7 +30,7 @@ async function mockCuratedSlices(page: Page): Promise<void> {
 test('schema-v1 chunks3d volume renders all three orthogonal golden slices', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await mockCuratedSlices(page);
-  await page.goto('/?v=1&feature=rms_ap&repr=volume&slices=540,574,33');
+  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=1,0,2');
 
   await expect.poll(() => new URL(page.url()).searchParams.get('repr')).toBe('volume');
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {

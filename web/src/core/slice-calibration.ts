@@ -167,7 +167,10 @@ export function projectLegacyGuide(sourceAxis: SliceAxis, targetAxis: SliceAxis,
 }
 
 export function linkedGuides(indices: SliceIndices, targetAxis: SliceAxis): readonly SliceGuide[] {
-  const world = regionalIndicesToWorld(indices);
+  return linkedGuidesForWorld(regionalIndicesToWorld(indices), targetAxis);
+}
+
+export function linkedGuidesForWorld(world: WorldCoordinateUm, targetAxis: SliceAxis): readonly SliceGuide[] {
   return PROJECTION_PLANE_AXES[targetAxis].map((worldAxis) => {
     const sourceAxis = (Object.keys(SLICE_WORLD_AXIS) as SliceAxis[])
       .find((candidate) => SLICE_WORLD_AXIS[candidate] === worldAxis);

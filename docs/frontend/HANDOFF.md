@@ -9,7 +9,18 @@ order remain `docs/INTEGRATION_STATUS.md` and `docs/IMPLEMENTATION_PLAN.md`.
 
 State uses an immutable `AppState` plus explicit `AppAction` values, a reducer, and direct store subscriptions. Shareable/view state is separated from runtime loading/error state.
 
-URL state is versioned (`v=3`) and human-readable. Common state is represented with named query parameters (`dataset`, `release`, `feature`, `repr`, `parcel`, `stat`, `cmap`, `range`, `scale`, `slices`, `selected`). The parser also accepts an explicit `cursor`; canonical output writes the equivalent native `slices` tuple, from which the snapped cursor is derived. User-committed dataset/release, feature, representation, and parcellation changes use `history.pushState`; navigation, selection, ordering, and color refinements use `history.replaceState`. `popstate` hydrates without echoing a write, and historical v1 10 µm and v2 25 µm slice links migrate through world coordinates before replacing the current URL with canonical v3 state. See D029.
+URL state is versioned (`v=4`) and human-readable. Common state is represented
+with named query parameters (`dataset`, `release`, `feature`, `repr`, `parcel`,
+`stat`, `cmap`, `range`, `scale`, `cursor`, `selected`, `secondary`, `compact`,
+`max`). The ML/AP/DV `cursor` is the sole stored navigation authority; native
+slice indices and sparse display ordinals are derived. The secondary tab,
+responsive compact view, and maximized view are independent URL-persisted
+state. User-committed dataset/release, feature, representation, and
+parcellation changes use `history.pushState`; navigation, workspace,
+selection, ordering, and color refinements use `history.replaceState`.
+`popstate` hydrates without echoing a write. Unsupported or missing versions
+with state parameters reset wholesale and are replaced by the canonical v4
+URL; there is no legacy URL migration runtime. See D031 and D033.
 
 Feature coloring offers the small sequential set Viridis, Cividis, and Magma.
 One shared 256-step lookup-table registry drives regional SVG fills, volume
@@ -127,8 +138,9 @@ The previous frontend provisional schema and schema-v0.1 compatibility path have
 
 ## Current next work
 
-1. Execute Commit 3 of the projection/volume cutover: data-driven projection,
-   navigation, and independent workspace-view state without adding a renderer facade.
+1. Execute Commit 4 of the projection/volume cutover: generate and validate the
+   unified five-projection pack, using synthetic Top/Swanson inputs if source
+   licensing remains unconfirmed.
 2. Rebuild the external `2026_W32` development release under a new schema-v1
    release ID before using or publishing it.
 3. Deploy the committed generated anatomy pack with opaque gzip delivery and verify its immutable public URLs.

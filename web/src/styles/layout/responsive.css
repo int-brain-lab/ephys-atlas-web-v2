@@ -80,11 +80,11 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
   }
 
-  .atlas-app[data-active-view="context"] .slice-strip {
+  .atlas-app[data-active-view="secondary"] .slice-strip {
     display: none;
   }
 
-  .atlas-app[data-active-view="context"] .context-strip {
+  .atlas-app[data-active-view="secondary"] .context-strip {
     display: grid;
   }
 }

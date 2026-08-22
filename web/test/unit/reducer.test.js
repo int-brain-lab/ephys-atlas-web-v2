@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DEFAULT_APP_STATE } from '../../.test-dist/domain/defaults.js';
+import { deriveRegionalSliceIndices } from '../../.test-dist/domain/navigation.js';
 import { reduceAppState } from '../../.test-dist/domain/reducer.js';
 
 test('dataset changes clear feature and region selection', () => {
@@ -46,17 +47,32 @@ test('region ordering is explicit application state', () => {
 
 test('slice movement updates the canonical world cursor', () => {
   const next = reduceAppState(DEFAULT_APP_STATE, { type: 'slice/set', axis: 'coronal', index: 661 });
-  assert.equal(next.view.slices.coronal, 661);
+  assert.equal(deriveRegionalSliceIndices(next.view.cursor).coronal, 661);
   assert.equal(next.view.cursor.yUm, -1210);
   assert.equal(next.view.cursor.xUm, DEFAULT_APP_STATE.view.cursor.xUm);
   assert.equal(next.view.cursor.zUm, DEFAULT_APP_STATE.view.cursor.zUm);
 });
 
-test('world cursor movement selects the nearest native anatomy slices', () => {
+test('world cursor movement snaps once while native indices remain derived', () => {
   const next = reduceAppState(DEFAULT_APP_STATE, {
     type: 'cursor/set',
     cursor: { xUm: -40, yUm: -1211, zUm: -3679 },
   });
-  assert.deepEqual(next.view.slices, { coronal: 661, sagittal: 570, horizontal: 401 });
+  assert.deepEqual(deriveRegionalSliceIndices(next.view.cursor), { coronal: 661, sagittal: 570, horizontal: 401 });
   assert.deepEqual(next.view.cursor, { xUm: -39, yUm: -1210, zUm: -3678 });
+});
+
+test('secondary tab, compact view, and maximized view update independently', () => {
+  let state = reduceAppState(DEFAULT_APP_STATE, { type: 'workspace/secondary-tab', tab: 'top' });
+  state = reduceAppState(state, { type: 'workspace/compact-view', view: 'secondary' });
+  state = reduceAppState(state, { type: 'workspace/maximized-view', view: 'sagittal' });
+  assert.deepEqual(state.view.workspace, {
+    secondaryTab: 'top',
+    activeCompactView: 'secondary',
+    maximizedView: 'sagittal',
+  });
+  state = reduceAppState(state, { type: 'workspace/maximized-view', view: null });
+  assert.equal(state.view.workspace.secondaryTab, 'top');
+  assert.equal(state.view.workspace.activeCompactView, 'secondary');
+  assert.equal(state.view.workspace.maximizedView, null);
 });

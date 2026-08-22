@@ -10,7 +10,10 @@ import type {
   RepresentationKind,
   SliceAxis,
   ColorStatisticId,
+  WorkspaceViewId,
 } from '../domain/types.js';
+import { deriveOrthogonalNavigation, deriveRegionalSliceIndices } from '../domain/navigation.js';
+import { PROJECTION_REGISTRY, WORKSPACE_VIEW_REGISTRY } from '../domain/projections.js';
 import type { RegionInspection, SliceRenderer } from '../rendering/interfaces.js';
 import { regionalColorRange } from '../rendering/scalar-colormap.js';
 import { COLORMAPS } from '../rendering/colormap-palettes.js';
@@ -30,6 +33,8 @@ export interface AppShellCallbacks {
   setColorRange(range: ColorRange): void;
   setColorScale(scale: ColorScaleSelection): void;
   setSlice(axis: SliceAxis, index: number): void;
+  setActiveCompactView(view: WorkspaceViewId): void;
+  setMaximizedView(view: WorkspaceViewId | null): void;
   clearSelection(): void;
   shareCurrentView(): Promise<void>;
   downloadCurrentFeature(): void;
@@ -47,7 +52,6 @@ export interface ShellModel {
 
 type LayoutMode = 'wide' | 'compact' | 'narrow' | 'phone';
 type DrawerName = 'regions' | 'settings';
-type WorkspaceView = SliceAxis | 'context';
 type HeaderAction = 'share' | 'download' | 'info' | 'help';
 
 interface ViewFrameNodes {
@@ -68,13 +72,6 @@ interface ViewFrameNodes {
 }
 
 const SLICE_LOADING_NOTICE_DELAY_MS = 400;
-
-const VIEW_LABELS: ReadonlyArray<{ id: WorkspaceView; label: string }> = [
-  { id: 'coronal', label: 'Coronal' },
-  { id: 'sagittal', label: 'Sagittal' },
-  { id: 'horizontal', label: 'Horizontal' },
-  { id: 'context', label: 'Context' },
-];
 
 const ACTION_ICONS: Record<HeaderAction, string> = {
   share: '↗',
@@ -130,7 +127,7 @@ export class AppShell {
   private readonly helpDialog: HTMLDialogElement;
   private analysisDialog!: HTMLDialogElement;
   private readonly shortcutStatus: HTMLElement;
-  private readonly viewButtons = new Map<WorkspaceView, HTMLButtonElement>();
+  private readonly viewButtons = new Map<WorkspaceViewId, HTMLButtonElement>();
   private readonly viewFrames = new Map<SliceAxis, ViewFrameNodes>();
   private readonly headerActionButtons = new Map<HeaderAction, HTMLButtonElement[]>();
   private readonly datasetContext: ContextMenu;
@@ -147,8 +144,6 @@ export class AppShell {
   private rangeModeSelect!: HTMLSelectElement;
   private colorRangeControl!: ColorRangeControl;
   private featureId: string | null = null;
-  private activeView: WorkspaceView = 'coronal';
-  private maximizedView: SliceAxis | null = null;
 
   constructor(
     root: HTMLElement,
@@ -158,7 +153,7 @@ export class AppShell {
     root.replaceChildren();
 
     this.app = element('div', 'atlas-app');
-    this.app.dataset.activeView = this.activeView;
+    this.app.dataset.activeView = 'coronal';
 
     this.datasetContext = new ContextMenu({
       fieldName: 'dataset',
@@ -246,9 +241,10 @@ export class AppShell {
     this.setHeaderActionDisabled('share', false);
     this.setHeaderActionDisabled('info', manifest === null);
     this.setHeaderActionDisabled('download', model.feature?.representation !== 'regional');
+    this.syncWorkspaceState(view.workspace.activeCompactView, view.workspace.maximizedView);
 
-    for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
-      this.renderViewFrame(axis, model);
+    for (const projection of PROJECTION_REGISTRY) {
+      this.renderViewFrame(projection.id, model);
     }
   }
 
@@ -1060,19 +1056,19 @@ export class AppShell {
     workspace.setAttribute('aria-label', 'Atlas workspace');
     const switcher = element('nav', 'view-switcher');
     switcher.setAttribute('aria-label', 'Workspace view');
-    for (const item of VIEW_LABELS) {
+    for (const item of WORKSPACE_VIEW_REGISTRY) {
       const button = element('button', 'view-switcher__button');
       button.type = 'button';
       button.textContent = item.label;
       button.dataset.viewTarget = item.id;
-      button.setAttribute('aria-pressed', item.id === this.activeView ? 'true' : 'false');
+      button.setAttribute('aria-pressed', 'false');
       button.addEventListener('click', () => this.setActiveView(item.id));
       this.viewButtons.set(item.id, button);
       switcher.append(button);
     }
     const slices = element('section', 'slice-strip');
     slices.setAttribute('aria-label', 'Orthogonal brain slices');
-    slices.append(this.createViewFrame('coronal'), this.createViewFrame('sagittal'), this.createViewFrame('horizontal'));
+    slices.append(...PROJECTION_REGISTRY.map(({ id }) => this.createViewFrame(id)));
     const context = element('section', 'context-strip');
     context.setAttribute('aria-label', 'Secondary atlas context');
     const secondary = element('section', 'secondary-view panel');
@@ -1199,7 +1195,9 @@ export class AppShell {
     if (!nodes) return;
     const view = model.state.view;
     const inventory = view.representation === 'regional' ? model.displaySliceInventories?.[axis] : undefined;
-    const sliceIndex = Math.min(maxRegionalSliceIndex(axis), Math.max(0, Math.round(view.slices[axis])));
+    const navigation = deriveOrthogonalNavigation(view.cursor, axis);
+    const sliceIndex = navigation.nativeIndex;
+    const slices = deriveRegionalSliceIndices(view.cursor);
     const displayOrdinal = inventory?.ordinalForNativeIndex(sliceIndex) ?? sliceIndex;
     const displayMax = inventory ? inventory.count - 1 : maxRegionalSliceIndex(axis);
     const coordinate = formatRegionalCoordinate(axis, sliceIndex);
@@ -1211,7 +1209,7 @@ export class AppShell {
     const geometryKey = `${view.representation}:${view.parcellation}:${model.feature?.featureId ?? ''}:${sliceIndex}`;
     const renderKey = view.representation === 'volume'
       ? geometryKey
-      : `${geometryKey}:${view.slices.coronal}:${view.slices.sagittal}:${view.slices.horizontal}`;
+      : `${geometryKey}:${slices.coronal}:${slices.sagittal}:${slices.horizontal}`;
     if (nodes.renderKey === renderKey) return;
     nodes.renderKey = renderKey;
     const geometryChanged = nodes.geometryKey !== geometryKey;
@@ -1248,7 +1246,7 @@ export class AppShell {
     const pending = this.renderer.render(nodes.target, {
       axis,
       sliceIndex,
-      slices: view.slices,
+      slices,
       cursor: view.cursor,
       parcellation: view.parcellation,
       selectedRegionIds: view.selection,
@@ -1287,16 +1285,24 @@ export class AppShell {
   }
 
   private toggleMaximizedView(axis: SliceAxis): void {
-    this.maximizedView = this.maximizedView === axis ? null : axis;
-    if (this.maximizedView) this.closeDrawers();
-    if (this.maximizedView) this.app.dataset.maximizedView = this.maximizedView;
+    const current = this.currentModel?.state.view.workspace.maximizedView ?? null;
+    this.callbacks.setMaximizedView(current === axis ? null : axis);
+  }
+
+  private syncWorkspaceState(activeCompactView: WorkspaceViewId, maximizedView: WorkspaceViewId | null): void {
+    this.app.dataset.activeView = activeCompactView;
+    if (maximizedView) this.closeDrawers();
+    if (maximizedView) this.app.dataset.maximizedView = maximizedView;
     else delete this.app.dataset.maximizedView;
     for (const [id, nodes] of this.viewFrames) {
-      const active = id === this.maximizedView;
+      const active = id === maximizedView;
       nodes.frame.dataset.maximized = String(active);
       nodes.maximize.setAttribute('aria-pressed', String(active));
       nodes.maximize.setAttribute('aria-label', `${active ? 'Restore' : 'Maximize'} ${id} view`);
       nodes.maximize.textContent = active ? '↙' : '↗';
+    }
+    for (const [id, button] of this.viewButtons) {
+      button.setAttribute('aria-pressed', id === activeCompactView ? 'true' : 'false');
     }
   }
 
@@ -1314,10 +1320,8 @@ export class AppShell {
     return backdrop;
   }
 
-  private setActiveView(view: WorkspaceView): void {
-    this.activeView = view;
-    this.app.dataset.activeView = view;
-    for (const [id, button] of this.viewButtons) button.setAttribute('aria-pressed', id === view ? 'true' : 'false');
+  private setActiveView(view: WorkspaceViewId): void {
+    this.callbacks.setActiveCompactView(view);
   }
 
   private openDrawer(drawer: DrawerName): void {
@@ -1376,8 +1380,9 @@ export class AppShell {
     if (event.key === 'Escape') {
       if (this.infoDialog.open || this.helpDialog.open) return;
       if (this.closeContextMenus()) return;
-      if (this.maximizedView) {
-        this.toggleMaximizedView(this.maximizedView);
+      const maximizedView = this.currentModel?.state.view.workspace.maximizedView ?? null;
+      if (maximizedView) {
+        this.callbacks.setMaximizedView(null);
         return;
       }
       if (this.app.dataset.drawerOpen) {

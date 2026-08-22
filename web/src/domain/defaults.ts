@@ -1,7 +1,7 @@
 import type { AppState, ViewState } from './types.js';
 
 export const DEFAULT_VIEW_STATE: ViewState = {
-  urlVersion: 3,
+  urlVersion: 4,
   dataset: {
     datasetId: 'ephys_atlas_channels',
     releaseId: 'golden-v1',
@@ -12,7 +12,11 @@ export const DEFAULT_VIEW_STATE: ViewState = {
   regionOrder: 'anatomy',
   selection: [],
   cursor: { xUm: -239, yUm: -1200, zUm: -3668 },
-  slices: { coronal: 660, sagittal: 550, horizontal: 400 },
+  workspace: {
+    secondaryTab: 'summary',
+    activeCompactView: 'coronal',
+    maximizedView: null,
+  },
   coloring: {
     mode: 'feature',
     statistic: 'mean',

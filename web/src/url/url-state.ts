@@ -2,16 +2,12 @@ import {
   cursorStateToWorld,
 } from '../core/spatial.js';
 import {
-  ANATOMY_25UM_CALIBRATION,
-  legacyAnatomy25UmIndicesToWorld,
-  legacyRegionalIndicesToWorld,
-  maxRegionalSliceIndex,
-  REGIONAL_10UM_CALIBRATION,
   regionalIndicesToWorld,
   worldToRegionalIndices,
 } from '../core/slice-calibration.js';
 import { isViewAction } from '../domain/actions.js';
 import { DEFAULT_VIEW_STATE } from '../domain/defaults.js';
+import { WORKSPACE_VIEW_IDS } from '../domain/projections.js';
 import type { AppStore } from '../domain/store.js';
 import type {
   ColorRange,
@@ -20,15 +16,18 @@ import type {
   ParcellationId,
   RegionOrder,
   RepresentationKind,
+  SecondaryTabId,
   ViewState,
+  WorkspaceViewId,
 } from '../domain/types.js';
 
-const URL_VERSION = 3;
+const URL_VERSION = 4;
 const NAVIGATION_URL_DEBOUNCE_MS = 120;
 const PARCELLATIONS = new Set<ParcellationId>(['allen', 'beryl', 'cosmos']);
 const REPRESENTATIONS = new Set<RepresentationKind>(['regional', 'volume']);
 const COLOR_STATISTICS = new Set<ColorStatisticId>(['mean', 'median', 'min', 'max']);
 const REGION_ORDERS = new Set<RegionOrder>(['anatomy', 'value-asc', 'value-desc']);
+const SECONDARY_TABS = new Set<SecondaryTabId>(['summary', 'top', 'swanson']);
 
 function finiteNumber(value: string | null, fallback: number): number {
   if (value === null || value.trim() === '') return fallback;
@@ -65,7 +64,7 @@ function parseDatasetId(value: string | null, fallback: DatasetId): DatasetId {
 export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIEW_STATE): ViewState {
   const params = new URLSearchParams(search);
   const version = Number(params.get('v'));
-  if (params.has('v') && version !== 1 && version !== 2 && version !== URL_VERSION) return defaults;
+  if (params.size > 0 && version !== URL_VERSION) return defaults;
 
   const datasetId = parseDatasetId(params.get('dataset'), defaults.dataset.datasetId);
   const releaseId = params.has('release')
@@ -84,41 +83,24 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
   const regionOrder = REGION_ORDERS.has(params.get('order') as RegionOrder)
     ? params.get('order') as RegionOrder
     : defaults.regionOrder;
-  const isV1Url = version === 1 || (!params.has('v') && params.has('slices'));
-  const isV2Url = version === 2;
-  const fallbackSlices = isV1Url
-    ? [660, 550, 400] as const
-    : isV2Url
-      ? [264, 220, 160] as const
-      : [defaults.slices.coronal, defaults.slices.sagittal, defaults.slices.horizontal] as const;
-  const [rawCoronal, rawSagittal, rawHorizontal] = parseTriple(params.get('slices'), fallbackSlices);
-  const parsedSlices = {
-    coronal: Math.trunc(rawCoronal),
-    sagittal: Math.trunc(rawSagittal),
-    horizontal: Math.trunc(rawHorizontal),
-  };
-  const migratedWorld = isV1Url
-    ? legacyRegionalIndicesToWorld({
-      coronal: Math.min(REGIONAL_10UM_CALIBRATION.coronal.indexCount - 1, Math.max(0, parsedSlices.coronal)),
-      sagittal: Math.min(REGIONAL_10UM_CALIBRATION.sagittal.indexCount - 1, Math.max(0, parsedSlices.sagittal)),
-      horizontal: Math.min(REGIONAL_10UM_CALIBRATION.horizontal.indexCount - 1, Math.max(0, parsedSlices.horizontal)),
-    })
-    : isV2Url
-      ? legacyAnatomy25UmIndicesToWorld({
-        coronal: Math.min(ANATOMY_25UM_CALIBRATION.coronal.indexCount - 1, Math.max(0, parsedSlices.coronal)),
-        sagittal: Math.min(ANATOMY_25UM_CALIBRATION.sagittal.indexCount - 1, Math.max(0, parsedSlices.sagittal)),
-        horizontal: Math.min(ANATOMY_25UM_CALIBRATION.horizontal.indexCount - 1, Math.max(0, parsedSlices.horizontal)),
-      })
-      : regionalIndicesToWorld({
-        coronal: Math.min(maxRegionalSliceIndex('coronal'), Math.max(0, parsedSlices.coronal)),
-        sagittal: Math.min(maxRegionalSliceIndex('sagittal'), Math.max(0, parsedSlices.sagittal)),
-        horizontal: Math.min(maxRegionalSliceIndex('horizontal'), Math.max(0, parsedSlices.horizontal)),
-      });
-  const [xUm, yUm, zUm] = parseTriple(params.get('cursor'), [migratedWorld.ml, migratedWorld.ap, migratedWorld.dv]);
+  const [xUm, yUm, zUm] = parseTriple(params.get('cursor'), [
+    defaults.cursor.xUm,
+    defaults.cursor.yUm,
+    defaults.cursor.zUm,
+  ]);
   const slices = worldToRegionalIndices(cursorStateToWorld({ xUm, yUm, zUm }));
   const canonicalWorld = regionalIndicesToWorld(slices);
   const cursor = { xUm: canonicalWorld.ml, yUm: canonicalWorld.ap, zUm: canonicalWorld.dv };
   const selection = params.get('selected')?.split(',').map(decodeURIComponent).filter(Boolean) ?? defaults.selection;
+  const secondaryTab = SECONDARY_TABS.has(params.get('secondary') as SecondaryTabId)
+    ? params.get('secondary') as SecondaryTabId
+    : defaults.workspace.secondaryTab;
+  const activeCompactView = WORKSPACE_VIEW_IDS.has(params.get('compact') as WorkspaceViewId)
+    ? params.get('compact') as WorkspaceViewId
+    : defaults.workspace.activeCompactView;
+  const maximizedView = WORKSPACE_VIEW_IDS.has(params.get('max') as WorkspaceViewId)
+    ? params.get('max') as WorkspaceViewId
+    : defaults.workspace.maximizedView;
 
   return {
     urlVersion: URL_VERSION,
@@ -130,7 +112,7 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
     // Preserve the encoded selection order because it determines identity colors.
     selection: [...new Set(selection)],
     cursor,
-    slices,
+    workspace: { secondaryTab, activeCompactView, maximizedView },
     coloring: {
       mode: params.get('colors') === 'anatomy' ? 'anatomy' : 'feature',
       statistic,
@@ -164,9 +146,17 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   if (view.coloring.range.mode === 'fixed') params.set('range', `${view.coloring.range.min},${view.coloring.range.max}`);
   if (view.coloring.scale !== 'auto') params.set('scale', view.coloring.scale);
 
-  const slices = [view.slices.coronal, view.slices.sagittal, view.slices.horizontal];
-  const defaultSlices = [defaults.slices.coronal, defaults.slices.sagittal, defaults.slices.horizontal];
-  if (!sameTriple(slices, defaultSlices)) params.set('slices', slices.join(','));
+  const cursor = [view.cursor.xUm, view.cursor.yUm, view.cursor.zUm];
+  const defaultCursor = [defaults.cursor.xUm, defaults.cursor.yUm, defaults.cursor.zUm];
+  if (!sameTriple(cursor, defaultCursor)) params.set('cursor', cursor.join(','));
+
+  if (view.workspace.secondaryTab !== defaults.workspace.secondaryTab) {
+    params.set('secondary', view.workspace.secondaryTab);
+  }
+  if (view.workspace.activeCompactView !== defaults.workspace.activeCompactView) {
+    params.set('compact', view.workspace.activeCompactView);
+  }
+  if (view.workspace.maximizedView !== null) params.set('max', view.workspace.maximizedView);
 
   if (view.selection.length) params.set('selected', view.selection.map(encodeURIComponent).join(','));
   return params.toString();

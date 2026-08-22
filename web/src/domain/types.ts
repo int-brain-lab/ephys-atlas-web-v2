@@ -19,6 +19,17 @@ export type ColorMode = 'feature' | 'anatomy';
 export type StatisticId = 'mean' | 'median' | 'min' | 'max' | 'count';
 export type ColorStatisticId = Exclude<StatisticId, 'count'>;
 export type RegionOrder = 'anatomy' | 'value-asc' | 'value-desc';
+export type OrthogonalProjectionId = SliceAxis;
+export type StaticProjectionId = 'top' | 'swanson';
+export type ProjectionId = OrthogonalProjectionId | StaticProjectionId;
+export type SecondaryTabId = 'summary' | StaticProjectionId;
+export type WorkspaceViewId = OrthogonalProjectionId | 'secondary';
+
+export interface WorkspaceState {
+  secondaryTab: SecondaryTabId;
+  activeCompactView: WorkspaceViewId;
+  maximizedView: WorkspaceViewId | null;
+}
 
 export interface DatasetRef {
   datasetId: DatasetId;
@@ -40,7 +51,7 @@ export interface ColoringState {
 export type EffectiveColoringState = Omit<ColoringState, 'scale'> & { scale: ColorScale };
 
 export interface ViewState {
-  urlVersion: 3;
+  urlVersion: 4;
   dataset: DatasetRef;
   featureId: string | null;
   representation: RepresentationKind;
@@ -48,7 +59,7 @@ export interface ViewState {
   regionOrder: RegionOrder;
   selection: readonly string[];
   cursor: CursorState;
-  slices: SliceState;
+  workspace: WorkspaceState;
   coloring: ColoringState;
 }
 

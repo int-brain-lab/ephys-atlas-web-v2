@@ -481,6 +481,8 @@ Targeted gates: deterministic fixture parity, local import, publishing,
 
 ### Commit 3 — Make projection and navigation state data-driven
 
+Status: **implemented**.
+
 - add the discriminated 2-D projection registry, higher-level workspace-view
   registry, and separate secondary-tab type;
 - make the world cursor the sole navigation authority and derive slice/display
@@ -677,8 +679,10 @@ never merge an inferred scientific choice.
 
 ## First action for the next agent
 
-Start Commit 3 from the green schema-v1-only runtime. Introduce the
-discriminated 2-D projection registry and the separate secondary-tab,
-compact-active-view, and maximized-view state without changing visible
-behavior. Keep the existing renderer mounted until the atomic Commit 5/6
-viewport cutover; do not add a parallel renderer facade.
+Start Commit 4 from the green schema-v1 and URL-v4 runtime. Implement the
+deterministic five-projection pack generator and complete validators, retaining
+the registered orthogonal geometry/evidence and using only licensed pinned
+Top/Swanson inputs. If licensing is still unresolved, keep production
+ingestion blocked and exercise the affine-free static-fragment path with
+synthetic fixtures. Keep the existing renderer mounted until the atomic Commit
+5/6 viewport cutover; do not add a parallel renderer facade.

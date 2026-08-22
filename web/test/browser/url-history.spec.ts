@@ -15,7 +15,7 @@ test('browser history checkpoints context changes but not slice refinements', as
   await expect.poll(() => page.evaluate(() => window.history.length)).toBe(initialHistoryLength + 1);
 
   await page.getByLabel('coronal slice').fill('83');
-  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).not.toBeNull();
+  await expect.poll(() => new URL(page.url()).searchParams.get('cursor')).not.toBeNull();
   await expect.poll(() => page.evaluate(() => window.history.length)).toBe(initialHistoryLength + 1);
 
   await page.goBack();

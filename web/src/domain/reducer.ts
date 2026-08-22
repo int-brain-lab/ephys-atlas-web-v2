@@ -62,11 +62,10 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
     case 'cursor/set': {
       const slices = worldToRegionalIndices(cursorStateToWorld(action.cursor));
       const cursor = worldToCursorState(regionalIndicesToWorld(slices));
-      return { ...state, view: { ...state.view, cursor, slices } };
+      return { ...state, view: { ...state.view, cursor } };
     }
     case 'slice/set': {
       const index = Math.min(maxRegionalSliceIndex(action.axis), Math.max(0, Math.trunc(action.index)));
-      const slices = { ...state.view.slices, [action.axis]: index };
       const coordinate = regionalIndexToCoordinateUm(action.axis, index);
       const world = cursorStateToWorld(state.view.cursor);
       world[action.axis === 'coronal' ? 'ap' : action.axis === 'sagittal' ? 'ml' : 'dv'] = coordinate;
@@ -75,10 +74,24 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         view: {
           ...state.view,
           cursor: worldToCursorState(world),
-          slices,
         },
       };
     }
+    case 'workspace/secondary-tab':
+      return {
+        ...state,
+        view: { ...state.view, workspace: { ...state.view.workspace, secondaryTab: action.tab } },
+      };
+    case 'workspace/compact-view':
+      return {
+        ...state,
+        view: { ...state.view, workspace: { ...state.view.workspace, activeCompactView: action.view } },
+      };
+    case 'workspace/maximized-view':
+      return {
+        ...state,
+        view: { ...state.view, workspace: { ...state.view.workspace, maximizedView: action.view } },
+      };
     case 'color/statistic':
       return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, statistic: action.statistic } } };
     case 'color/mode':

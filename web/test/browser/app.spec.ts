@@ -74,7 +74,7 @@ test('slice control updates calibrated coordinate and renderer request', async (
   await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.60 mm');
   await expect(slider).toHaveAttribute('aria-valuetext', 'AP -1.60 mm');
   await expect(page.locator('[data-view="coronal"] .view-frame__footer output')).toHaveCount(0);
-  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('700,550,400');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cursor')).toBe('-239,-1600,-3668');
   await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '700');
 });
 
@@ -85,7 +85,7 @@ test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
   await page.locator('[data-view="coronal"] .view-frame__brain-svg').dispatchEvent('wheel', { deltaY: 100 });
   await expect(page.getByLabel('coronal slice')).toHaveValue('81');
   await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.12 mm');
-  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('652,550,400');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cursor')).toBe('-239,-1120,-3668');
   await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '652');
 });
 
@@ -99,7 +99,7 @@ test('small pixel wheel deltas accumulate sensitively for smooth macOS scrolling
     }
   });
   await expect(page.getByLabel('coronal slice')).toHaveValue('81');
-  await expect.poll(() => new URL(page.url()).searchParams.get('slices')).toBe('652,550,400');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cursor')).toBe('-239,-1120,-3668');
 });
 
 test('initial anatomy display fetches only the three visible packs', async ({ page }) => {
@@ -187,34 +187,23 @@ test('linked guides project one slice coordinate into both other views', async (
   await expect(horizontalGuide).toHaveAttribute('y1', '1316');
 });
 
-test('v1 10 um URLs preserve world coordinates on the native registered anatomy grid', async ({ page }) => {
+test('unsupported historical URLs reset explicitly to the current canonical state', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=1&slices=661,551,401');
+  await page.goto('/?v=2&slices=264,220,160&parcel=beryl');
 
   await expect(page.getByLabel('coronal slice')).toHaveValue('82');
   await expect(page.getByLabel('sagittal slice')).toHaveValue('68');
   await expect(page.getByLabel('horizontal slice')).toHaveValue('50');
-  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.21 mm');
-  await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.23 mm');
-  await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.68 mm');
+  await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.20 mm');
+  await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
+  await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');
   await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '660');
-});
-
-test('v2 25 um URLs migrate through world coordinates to URL v3', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=2&slices=264,220,160');
-
-  await expect(page.getByLabel('coronal slice')).toHaveValue('82');
-  await expect(page.getByLabel('sagittal slice')).toHaveValue('68');
-  await expect(page.getByLabel('horizontal slice')).toHaveValue('50');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '660');
-  await page.getByLabel('coronal slice').fill('82');
-  await expect.poll(() => new URL(page.url()).searchParams.get('v')).toBe('3');
+  await expect.poll(() => new URL(page.url()).search).toBe('?v=4');
 });
 
 test('native bilateral anatomy exposes every scientific range endpoint', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=3&slices=0,1139,799');
+  await page.goto('/?v=4&cursor=5651,5400,-7658');
 
   await expect(page.getByLabel('coronal slice')).toHaveValue('0');
   await expect(page.getByLabel('sagittal slice')).toHaveValue('141');
@@ -361,7 +350,7 @@ test('schema v1 regional fixture drives values, coloring, selection and histogra
 
 test('selected-region comparison becomes a dismissible phone bottom sheet', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/?selected=-362');
+  await page.goto('/?v=4&selected=-362');
 
   await page.getByRole('button', { name: 'Open comparison for 1 selected region' }).click();
   const dialog = page.getByRole('dialog', { name: 'Compare selected regions' });
@@ -633,7 +622,7 @@ test('share, download and info expose the immutable scientific context', async (
     });
   });
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?feature=rms_ap&stat=median');
+  await page.goto('/?v=4&feature=rms_ap&stat=median');
   const actions = page.locator('.app-header__desktop-actions');
 
   await actions.getByRole('button', { name: 'Share' }).click();
@@ -1013,9 +1002,24 @@ test('view maximize is reversible with Escape', async ({ page }) => {
   await page.getByRole('button', { name: 'Maximize coronal view' }).click();
   await expect(frame).toHaveAttribute('data-maximized', 'true');
   await expect(page.locator('.atlas-app')).toHaveAttribute('data-maximized-view', 'coronal');
+  await expect.poll(() => new URL(page.url()).searchParams.get('max')).toBe('coronal');
   await page.keyboard.press('Escape');
   await expect(frame).toHaveAttribute('data-maximized', 'false');
   await expect(page.locator('.atlas-app')).not.toHaveAttribute('data-maximized-view', /.+/);
+  await expect.poll(() => new URL(page.url()).searchParams.get('max')).toBeNull();
+});
+
+test('compact workspace selection hydrates and persists independently', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto('/?v=4&compact=secondary');
+  await expect(page.locator('.context-strip')).toBeVisible();
+  await expect(page.locator('.slice-strip')).not.toBeVisible();
+  await expect(page.getByRole('button', { name: 'Context' })).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByRole('button', { name: 'Sagittal' }).click();
+  await expect(page.locator('[data-view="sagittal"]')).toBeVisible();
+  await expect.poll(() => new URL(page.url()).searchParams.get('compact')).toBe('sagittal');
+  await expect(new URL(page.url()).searchParams.get('max')).toBeNull();
 });
 
 test('generated anatomy pack failure is an explicit view-frame error state', async ({ page }) => {

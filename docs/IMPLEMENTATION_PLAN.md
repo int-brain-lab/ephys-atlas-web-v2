@@ -75,14 +75,18 @@ horizontal support registered anatomy plus volume layers; Top and Swanson are
 static regional projections using the same SVG presentation and interaction
 path. Backward compatibility with the pre-launch formats is not a requirement.
 
-Commits 1 and 2 are implemented. Schema v1 is now the sole builder,
+Commits 1 through 3 are implemented. Schema v1 is now the sole builder,
 publishing, HTTP/local browser, fixture, and download contract. It separates
 scientific reference-space identity from grid and asset identities, admits
 only the checked signed-permutation affine profile, verifies encoded bytes
 before persistent caching, and keys decoded resources by SHA plus decode
 contract. The newly identified `golden-v1` fixture is canonical; v0.1 schemas,
-fixtures, readers, and compatibility tests are deleted. The next unit is
-Commit 3's data-driven projection/navigation state.
+fixtures, readers, and compatibility tests are deleted. Projection and
+responsive workspace state are registry-driven; one world cursor is the only
+stored navigation authority; URL v4 persists that cursor plus independent
+secondary-tab, compact-view, and maximized-view state and explicitly resets
+unsupported versions. The next unit is Commit 4's unified five-projection pack
+generator.
 
 This machinery is unblocked with deterministic synthetic fixtures. It must not
 resolve or conceal Q4/Q5.
@@ -108,7 +112,7 @@ historical transport evidence, not the default input for new implementation.
 
 Ordered next actions before scientific resolution:
 
-1. execute commits 3-8 in the focused cutover plan, keeping every handoff green;
+1. execute commits 4-8 in the focused cutover plan, keeping every handoff green;
 2. rebuild external development releases under new schema-v1 release IDs
    before using the opt-in real-release suite; do not add a compatibility reader;
 3. verify the layered golden volume path, registered anatomy overlays, and

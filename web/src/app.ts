@@ -6,6 +6,7 @@ import { LocalDatasetSource } from './data/local-source.js';
 import { DatasetRepository } from './data/repository.js';
 import { DEFAULT_APP_STATE, DEFAULT_VIEW_STATE } from './domain/defaults.js';
 import { resolveColoringState } from './domain/color-scale.js';
+import { deriveRegionalSliceIndices } from './domain/navigation.js';
 import { createAppStore, type AppStore } from './domain/store.js';
 import type { SliceAxis, ViewState } from './domain/types.js';
 import type { DisplaySliceInventory } from './rendering/display-slice-inventory.js';
@@ -72,6 +73,8 @@ export class AtlasApp {
       setColorRange: (range) => this.store.dispatch({ type: 'color/range', range }),
       setColorScale: (scale) => this.store.dispatch({ type: 'color/scale', scale }),
       setSlice: (axis, index) => this.setSlice(axis, index),
+      setActiveCompactView: (view) => this.store.dispatch({ type: 'workspace/compact-view', view }),
+      setMaximizedView: (view) => this.store.dispatch({ type: 'workspace/maximized-view', view }),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       shareCurrentView: () => this.copyCurrentUrl(),
       downloadCurrentFeature: () => this.downloadCurrentFeature(),
@@ -188,7 +191,7 @@ export class AtlasApp {
   private stepSlice(axis: SliceAxis, delta: number): void {
     const view = this.store.getState().view;
     const inventory = view.representation === 'regional' ? this.displaySliceInventories?.[axis] : undefined;
-    const native = view.slices[axis];
+    const native = deriveRegionalSliceIndices(view.cursor)[axis];
     const next = inventory
       ? inventory.nativeIndexAtOrdinal(inventory.step(inventory.ordinalForNativeIndex(native), delta))
       : native + delta * 4;

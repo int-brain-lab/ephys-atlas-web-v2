@@ -8,8 +8,10 @@ import type {
   ParcellationId,
   RegionOrder,
   RepresentationKind,
+  SecondaryTabId,
   SliceAxis,
   ViewState,
+  WorkspaceViewId,
 } from './types.js';
 
 export type AppAction =
@@ -30,6 +32,9 @@ type ViewActionPayload =
   | { type: 'selection/clear' }
   | { type: 'cursor/set'; cursor: CursorState }
   | { type: 'slice/set'; axis: SliceAxis; index: number }
+  | { type: 'workspace/secondary-tab'; tab: SecondaryTabId }
+  | { type: 'workspace/compact-view'; view: WorkspaceViewId }
+  | { type: 'workspace/maximized-view'; view: WorkspaceViewId | null }
   | { type: 'color/statistic'; statistic: ColorStatisticId }
   | { type: 'color/mode'; mode: ColorMode }
   | { type: 'color/colormap'; colormap: string }

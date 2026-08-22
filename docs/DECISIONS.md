@@ -406,3 +406,23 @@ share coordinate-space identity and a global download/cache budget but does not
 change this mesh transport decision. Evidence, measured budgets, and promotion
 gates are in `docs/rendering/3D_EVALUATION.md`; final production promotion and
 LOD acceptance remain Q12.
+
+## D033 — URL v4 and independent workspace state
+
+Implement D031's pre-launch URL reset as one v4 codec. Persist the ML/AP/DV
+world cursor directly and derive native anatomy indices, sparse display
+ordinals, coordinates, guides, and renderer compatibility inputs. Do not store
+an independently mutable slice triple.
+
+Keep `secondaryTab`, `activeCompactView`, and `maximizedView` as three distinct
+typed state dimensions. A secondary tab is content within the secondary slot;
+the secondary slot is a workspace view; maximization does not change either
+selection. The enabled projection registry initially contains only coronal,
+sagittal, and horizontal so this state refactor does not expose unfinished
+Top/Swanson views.
+
+Treat any URL version other than v4 as unsupported and reset the complete view
+to current defaults before replacing the location with a canonical v4 URL. Do
+not partially consume old `slices` or other stale fields, and do not retain the
+v1/v2/v3 migration stack. This implements the URL portion of D031 and
+supersedes D029's migration behavior and D024's URL-v3 runtime requirement.
