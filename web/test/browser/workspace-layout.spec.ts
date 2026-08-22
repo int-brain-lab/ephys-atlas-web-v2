@@ -27,6 +27,18 @@ test('tall desktop workspace gives excess height to feature context', async ({ p
   expect(context!.height).toBeGreaterThanOrEqual(400);
 });
 
+test('low browser zoom keeps feature context from overwhelming projections', async ({ page }) => {
+  await page.setViewportSize({ width: 2560, height: 1600 });
+  await page.goto('/');
+
+  const projections = await page.locator('.slice-strip').boundingBox();
+  const context = await page.locator('.context-strip').boundingBox();
+
+  expect(projections).not.toBeNull();
+  expect(context).not.toBeNull();
+  expect(context!.height).toBeLessThanOrEqual(projections!.height);
+});
+
 test('feature summary balances description space with compact statistics', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
