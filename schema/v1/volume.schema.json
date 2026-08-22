@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.internationalbrainlab.org/schema/v1/volume.schema.json",
+  "title": "Volume representation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "grid", "array", "validity", "summary", "encoding"],
+  "properties": {
+    "format": {"const": "ephys-atlas-volume-v1"},
+    "grid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference_space_id", "grid_id", "world_axes", "shape", "index_to_world_um", "voxel_edge_extent_um", "index_convention"],
+      "properties": {
+        "reference_space_id": {"$ref": "common.schema.json#/$defs/identifier"},
+        "grid_id": {"$ref": "common.schema.json#/$defs/identifier"},
+        "world_axes": {"const": ["ml", "ap", "dv"]},
+        "shape": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "integer", "minimum": 1}},
+        "index_to_world_um": {"$ref": "common.schema.json#/$defs/matrix4"},
+        "world_to_index": {"$ref": "common.schema.json#/$defs/matrix4"},
+        "voxel_edge_extent_um": {"type": "array", "minItems": 6, "maxItems": 6, "items": {"type": "number"}},
+        "index_convention": {"const": "integer-centers-half-integer-edges"}
+      }
+    },
+    "array": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dtype", "order", "endianness"],
+      "properties": {
+        "dtype": {"enum": ["float16", "float32"]},
+        "order": {"const": "C"},
+        "endianness": {"const": "little"}
+      }
+    },
+    "validity": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "outside_value", "missing_values", "classification_order"],
+          "properties": {
+            "kind": {"const": "sentinel"},
+            "outside_value": {"type": "number"},
+            "missing_values": {"const": "nonfinite"},
+            "classification_order": {"const": ["outside", "missing", "valid"]}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "mask", "codes", "classification_order"],
+          "properties": {
+            "kind": {"const": "mask"},
+            "mask": {"$ref": "common.schema.json#/$defs/binaryArray"},
+            "codes": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["valid", "outside", "missing"],
+              "properties": {
+                "valid": {"type": "integer", "minimum": 0, "maximum": 255},
+                "outside": {"type": "integer", "minimum": 0, "maximum": 255},
+                "missing": {"type": "integer", "minimum": 0, "maximum": 255}
+              }
+            },
+            "classification_order": {"const": ["outside", "missing", "valid"]}
+          }
+        }
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "resource"],
+      "properties": {
+        "format": {"const": "ephys-atlas-volume-summary-v1"},
+        "resource": {"$ref": "common.schema.json#/$defs/encodedResource"}
+      }
+    },
+    "encoding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["layout", "resource_index"],
+      "properties": {
+        "layout": {"enum": ["chunks3d", "orthogonal_slice_packs"]},
+        "resource_index": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["format", "resource"],
+          "properties": {
+            "format": {"const": "ephys-atlas-volume-resource-index-v1"},
+            "resource": {"$ref": "common.schema.json#/$defs/encodedResource"}
+          }
+        }
+      }
+    }
+  }
+}

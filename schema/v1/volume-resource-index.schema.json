@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.internationalbrainlab.org/schema/v1/volume-resource-index.schema.json",
+  "title": "Immutable volume resource index v1",
+  "oneOf": [
+    {"$ref": "#/$defs/chunks3d"},
+    {"$ref": "#/$defs/orthogonalSlicePacks"}
+  ],
+  "$defs": {
+    "decodedBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dtype", "shape", "order", "endianness", "storage_axes"],
+      "properties": {
+        "dtype": {"enum": ["float16", "float32"]},
+        "shape": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "integer", "minimum": 1}},
+        "order": {"const": "C"},
+        "endianness": {"const": "little"},
+        "storage_axes": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {"enum": ["i0", "i1", "i2"]}
+        }
+      }
+    },
+    "chunks3d": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "format", "grid_id", "layout", "chunk_shape", "chunks"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "format": {"const": "ephys-atlas-volume-resource-index-v1"},
+        "grid_id": {"$ref": "common.schema.json#/$defs/identifier"},
+        "layout": {"const": "chunks3d"},
+        "chunk_shape": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "integer", "minimum": 1}},
+        "chunks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["origin", "decoded", "resource"],
+            "properties": {
+              "origin": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "integer", "minimum": 0}},
+              "decoded": {"$ref": "#/$defs/decodedBlock"},
+              "resource": {"$ref": "common.schema.json#/$defs/encodedResource"}
+            }
+          }
+        }
+      }
+    },
+    "orthogonalSlicePacks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "format", "grid_id", "layout", "pack_depth", "packs"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "format": {"const": "ephys-atlas-volume-resource-index-v1"},
+        "grid_id": {"$ref": "common.schema.json#/$defs/identifier"},
+        "layout": {"const": "orthogonal_slice_packs"},
+        "pack_depth": {"type": "integer", "minimum": 1},
+        "packs": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["axis", "first_slice", "slice_count", "decoded", "resource"],
+            "properties": {
+              "axis": {"enum": ["i0", "i1", "i2"]},
+              "first_slice": {"type": "integer", "minimum": 0},
+              "slice_count": {"type": "integer", "minimum": 1},
+              "decoded": {"$ref": "#/$defs/decodedBlock"},
+              "resource": {"$ref": "common.schema.json#/$defs/encodedResource"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

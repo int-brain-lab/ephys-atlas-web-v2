@@ -28,10 +28,15 @@ projection viewports. It will add static Top and Swanson views through the same
 regional SVG presentation/interaction path used by the registered orthogonal
 views.
 
-The plan is accepted but not yet implemented. Q4 and Q5 remain unresolved and
-continue to block a purported production volume release. Synthetic fixtures
-may implement and test the new machinery without choosing those scientific or
-transport answers.
+Commit 1 of the plan is implemented: `schema/v1/` now stages the strict dataset,
+resource, regional, volume, summary/index, and five-projection contracts plus
+matching TypeScript types. Python and TypeScript semantic validators execute
+one deterministic valid/invalid corpus covering all top-level schemas, both
+volume transports, sentinel/mask validity, asymmetric signed affines and
+derived extents/inverses, exact static-map evidence, and cache identity. The
+current runtime deliberately remains on v0.1 until Commit 2 atomically migrates
+all producers and consumers. Q4 and Q5 remain unresolved and continue to block
+a purported production volume release.
 
 The pre-Commit-1 contract is now explicit about separate reference-space,
 grid, and asset identities; verified-only persistent caching; independent

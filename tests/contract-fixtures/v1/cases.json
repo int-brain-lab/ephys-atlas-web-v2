@@ -1,0 +1,303 @@
+{
+  "fixture_format": "ephys-atlas-contract-corpus-v1",
+  "fixtures": {
+    "resource4": {
+      "path": "data/value.bin",
+      "media_type": "application/octet-stream",
+      "bytes": 4,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "codec": {"name": "none", "decoded_bytes": 4}
+    },
+    "jsonResource": {
+      "format": "example-json-v1",
+      "resource": {
+        "path": "metadata/example.json",
+        "media_type": "application/json",
+        "bytes": 2,
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "codec": {"name": "none", "decoded_bytes": 2}
+      }
+    },
+    "binaryU8": {
+      "format": "raw-binary-array-v1",
+      "resource": {"$fixture": "resource4"},
+      "dtype": "uint8",
+      "shape": [4],
+      "order": "C",
+      "endianness": "not-applicable"
+    },
+    "binaryI32": {
+      "format": "raw-binary-array-v1",
+      "resource": {"$fixture": "resource4"},
+      "dtype": "int32",
+      "shape": [1],
+      "order": "C",
+      "endianness": "little"
+    },
+    "binaryF32": {
+      "format": "raw-binary-array-v1",
+      "resource": {"$fixture": "resource4"},
+      "dtype": "float32",
+      "shape": [1],
+      "order": "C",
+      "endianness": "little"
+    },
+    "provenance": {
+      "sources": [{"role": "canonical-data", "description": "Synthetic contract input", "sha256": "2222222222222222222222222222222222222222222222222222222222222222"}],
+      "builder": {"name": "contract-fixture", "version": "1.0.0", "command": "build synthetic"},
+      "recipe": {"id": "synthetic-v1", "population": "synthetic"},
+      "notes": ["Not scientific data."]
+    },
+    "alias": {
+      "schema_version": "1.0",
+      "dataset_id": "synthetic-atlas",
+      "alias": "latest",
+      "release_id": "release-v1"
+    },
+    "artifact": {
+      "id": "values",
+      "role": "current-feature",
+      "resource": {"$fixture": "resource4"},
+      "description": "Synthetic values"
+    },
+    "catalog": {
+      "schema_version": "1.0",
+      "datasets": [{
+        "dataset_id": "synthetic-atlas",
+        "title": "Synthetic atlas",
+        "default_release": "release-v1",
+        "releases": [{
+          "release_id": "release-v1",
+          "manifest": {
+            "path": "releases/release-v1/manifest.json",
+            "media_type": "application/json",
+            "bytes": 2,
+            "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+            "codec": {"name": "none", "decoded_bytes": 2}
+          }
+        }]
+      }]
+    },
+    "regional": {
+      "format": "ephys-atlas-regional-v1",
+      "parcellations": [{
+        "parcellation_id": "allen",
+        "summary": "mean",
+        "values": {"$fixture": "binaryF32"},
+        "statistics": {"$fixture": "jsonResource"}
+      }]
+    },
+    "statistics": {
+      "schema_version": "1.0",
+      "format": "ephys-atlas-regional-statistics-v1",
+      "population": "synthetic",
+      "global": {"count": 4, "missing_count": 0, "min": 1, "max": 4, "mean": 2.5, "std": 1.118, "median": 2.5},
+      "regional_summary": {
+        "fields": ["count"],
+        "values": {
+          "format": "raw-binary-array-v1",
+          "resource": {"$fixture": "resource4"},
+          "dtype": "float32",
+          "shape": [1, 1],
+          "order": "C",
+          "endianness": "little"
+        }
+      },
+      "histogram": {
+        "edges": [0, 2, 5],
+        "global_counts": [1, 3],
+        "regional_counts": {
+          "format": "raw-binary-array-v1",
+          "resource": {
+            "path": "data/hist.bin",
+            "media_type": "application/octet-stream",
+            "bytes": 8,
+            "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+            "codec": {"name": "none", "decoded_bytes": 8}
+          },
+          "dtype": "uint32",
+          "shape": [1, 2],
+          "order": "C",
+          "endianness": "little"
+        },
+        "bin_rule": "left-closed-right-open-last-closed"
+      }
+    },
+    "volumeSummary": {
+      "schema_version": "1.0",
+      "format": "ephys-atlas-volume-summary-v1",
+      "grid_id": "synthetic-grid-20um",
+      "grid_shape": [2, 3, 4],
+      "total_voxel_count": 24,
+      "valid_voxel_count": 18,
+      "outside_voxel_count": 4,
+      "missing_voxel_count": 2,
+      "valid_statistics": {"min": -1, "max": 8, "mean": 2, "std": 1.5, "q05": -0.5, "q25": 1, "median": 2, "q75": 3, "q95": 7},
+      "histogram": {"edges": [-1, 0, 4, 8], "counts": [2, 12, 4], "bin_rule": "left-closed-right-open-last-closed"}
+    },
+    "chunkIndex": {
+      "schema_version": "1.0",
+      "format": "ephys-atlas-volume-resource-index-v1",
+      "grid_id": "synthetic-grid-20um",
+      "layout": "chunks3d",
+      "chunk_shape": [2, 3, 4],
+      "chunks": [{
+        "origin": [0, 0, 0],
+        "decoded": {"dtype": "float32", "shape": [2, 3, 4], "order": "C", "endianness": "little", "storage_axes": ["i0", "i1", "i2"]},
+        "resource": {
+          "path": "volume/chunk-0-0-0.f32.gz",
+          "media_type": "application/octet-stream",
+          "bytes": 45,
+          "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "codec": {"name": "gzip", "decoded_bytes": 96, "level": 9}
+        }
+      }]
+    },
+    "slicePackIndex": {
+      "schema_version": "1.0",
+      "format": "ephys-atlas-volume-resource-index-v1",
+      "grid_id": "synthetic-grid-20um",
+      "layout": "orthogonal_slice_packs",
+      "pack_depth": 1,
+      "packs": [
+        {
+          "axis": "i0", "first_slice": 0, "slice_count": 1,
+          "decoded": {"dtype": "float32", "shape": [1, 3, 4], "order": "C", "endianness": "little", "storage_axes": ["i0", "i1", "i2"]},
+          "resource": {"path": "volume/i0-0.f32.gz", "media_type": "application/octet-stream", "bytes": 30, "sha256": "6666666666666666666666666666666666666666666666666666666666666666", "codec": {"name": "gzip", "decoded_bytes": 48}}
+        },
+        {
+          "axis": "i1", "first_slice": 0, "slice_count": 1,
+          "decoded": {"dtype": "float32", "shape": [1, 2, 4], "order": "C", "endianness": "little", "storage_axes": ["i1", "i0", "i2"]},
+          "resource": {"path": "volume/i1-0.f32.gz", "media_type": "application/octet-stream", "bytes": 25, "sha256": "7777777777777777777777777777777777777777777777777777777777777777", "codec": {"name": "gzip", "decoded_bytes": 32}}
+        },
+        {
+          "axis": "i2", "first_slice": 0, "slice_count": 1,
+          "decoded": {"dtype": "float32", "shape": [1, 2, 3], "order": "C", "endianness": "little", "storage_axes": ["i2", "i0", "i1"]},
+          "resource": {"path": "volume/i2-0.f32.gz", "media_type": "application/octet-stream", "bytes": 20, "sha256": "8888888888888888888888888888888888888888888888888888888888888888", "codec": {"name": "gzip", "decoded_bytes": 24}}
+        }
+      ]
+    },
+    "volume": {
+      "format": "ephys-atlas-volume-v1",
+      "grid": {
+        "reference_space_id": "allen-ccf-2017",
+        "grid_id": "synthetic-grid-20um",
+        "world_axes": ["ml", "ap", "dv"],
+        "shape": [2, 3, 4],
+        "index_to_world_um": [0, 0, -10, 100, 20, 0, 0, -50, 0, 30, 0, 5, 0, 0, 0, 1],
+        "world_to_index": [0, 0.05, 0, 2.5, 0, 0, 0.03333333333333333, -0.16666666666666666, -0.1, 0, 0, 10, 0, 0, 0, 1],
+        "voxel_edge_extent_um": [65, 105, -60, -20, -10, 80],
+        "index_convention": "integer-centers-half-integer-edges"
+      },
+      "array": {"dtype": "float32", "order": "C", "endianness": "little"},
+      "validity": {"kind": "sentinel", "outside_value": -9999, "missing_values": "nonfinite", "classification_order": ["outside", "missing", "valid"]},
+      "summary": {
+        "format": "ephys-atlas-volume-summary-v1",
+        "resource": {"path": "volume/summary.json", "media_type": "application/json", "bytes": 2, "sha256": "9999999999999999999999999999999999999999999999999999999999999999", "codec": {"name": "none", "decoded_bytes": 2}}
+      },
+      "encoding": {
+        "layout": "chunks3d",
+        "resource_index": {"format": "ephys-atlas-volume-resource-index-v1", "resource": {"path": "volume/resources.json", "media_type": "application/json", "bytes": 2, "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "codec": {"name": "none", "decoded_bytes": 2}}}
+      }
+    },
+    "volumeMask": {
+      "$fixture": "volume"
+    },
+    "feature": {
+      "schema_version": "1.0",
+      "id": "synthetic-feature",
+      "label": "Synthetic feature",
+      "description": "Contract-only feature",
+      "unit": null,
+      "value_semantics": {"quantity": "synthetic", "transform": "none", "source_population": "synthetic", "missing_values": "declared by representation"},
+      "display": {"colormap": "viridis", "range": [-1, 8], "scale": "linear"},
+      "representations": {"regional": {"$fixture": "regional"}, "volume": {"$fixture": "volume"}},
+      "artifacts": [{"$fixture": "artifact"}]
+    },
+    "dataset": {
+      "schema_version": "1.0",
+      "dataset_id": "synthetic-atlas",
+      "title": "Synthetic atlas",
+      "description": "Contract-only dataset",
+      "release": {"release_id": "release-v1", "immutable": true, "created_at": "2026-08-22T12:00:00Z", "paper_snapshot": false},
+      "provenance": {"$fixture": "provenance"},
+      "parcellations": [{"id": "allen", "region_index": {"$fixture": "binaryI32"}, "metadata": {"$fixture": "jsonResource"}}],
+      "features": [{"id": "synthetic-feature", "descriptor": {"$fixture": "jsonResource"}}],
+      "artifacts": [{"$fixture": "artifact"}]
+    },
+    "coronal": {
+      "id": "coronal", "kind": "registered-slice-stack", "reference_space_id": "allen-ccf-2017", "grid_id": "allen-ccf-2017-10um", "world_slice_axis": "ap",
+      "slice_count": 2, "slice_shape": [3, 4], "view_box": [0, 0, 4, 3],
+      "plane_index_to_world_um": [0, 0, -10, 100, 20, 0, 0, -50, 0, 30, 0, 5, 0, 0, 0, 1],
+      "world_to_plane_index": [0, 0.05, 0, 2.5, 0, 0, 0.03333333333333333, -0.16666666666666666, -0.1, 0, 0, 10, 0, 0, 0, 1],
+      "voxel_edge_extent_um": [65, 105, -60, -20, -10, 80], "display_slices": [0, 1],
+      "resource_index": {"format": "atlas-registered-svg-resource-index-v1", "resource": {"path": "projections/coronal.json.gz", "media_type": "application/json", "bytes": 20, "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "codec": {"name": "gzip", "decoded_bytes": 100}}}
+    },
+    "sagittal": {
+      "id": "sagittal", "kind": "registered-slice-stack", "reference_space_id": "allen-ccf-2017", "grid_id": "allen-ccf-2017-10um", "world_slice_axis": "ml",
+      "slice_count": 2, "slice_shape": [3, 4], "view_box": [0, 0, 4, 3],
+      "plane_index_to_world_um": [20, 0, 0, -50, 0, 0, -10, 100, 0, 30, 0, 5, 0, 0, 0, 1],
+      "voxel_edge_extent_um": [-60, -20, 65, 105, -10, 80], "display_slices": [0, 1],
+      "resource_index": {"format": "atlas-registered-svg-resource-index-v1", "resource": {"path": "projections/sagittal.json.gz", "media_type": "application/json", "bytes": 20, "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "codec": {"name": "gzip", "decoded_bytes": 100}}}
+    },
+    "horizontal": {
+      "id": "horizontal", "kind": "registered-slice-stack", "reference_space_id": "allen-ccf-2017", "grid_id": "allen-ccf-2017-10um", "world_slice_axis": "dv",
+      "slice_count": 2, "slice_shape": [3, 4], "view_box": [0, 0, 4, 3],
+      "plane_index_to_world_um": [0, 0, -10, 100, 0, 30, 0, 5, 20, 0, 0, -50, 0, 0, 0, 1],
+      "voxel_edge_extent_um": [65, 105, -10, 80, -60, -20], "display_slices": [0, 1],
+      "resource_index": {"format": "atlas-registered-svg-resource-index-v1", "resource": {"path": "projections/horizontal.json.gz", "media_type": "application/json", "bytes": 20, "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "codec": {"name": "gzip", "decoded_bytes": 100}}}
+    },
+    "top": {
+      "id": "top", "kind": "static-regional-map", "view_box": [60, 20, 340, 300], "path_count": 114,
+      "fragment": {"format": "ibl-regional-svg-fragment-v1", "encoding": "utf-8", "resource": {"path": "projections/top.svg-fragment.gz", "media_type": "image/svg+xml", "bytes": 20, "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "codec": {"name": "gzip", "decoded_bytes": 100}}}
+    },
+    "swanson": {
+      "id": "swanson", "kind": "static-regional-map", "view_box": [60, 20, 340, 300], "path_count": 808,
+      "fragment": {"format": "ibl-regional-svg-fragment-v1", "encoding": "utf-8", "resource": {"path": "projections/swanson.svg-fragment.gz", "media_type": "image/svg+xml", "bytes": 20, "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "codec": {"name": "gzip", "decoded_bytes": 100}}}
+    },
+    "projectionPack": {
+      "schema_version": "1.0", "format": "atlas-projection-pack-v1", "pack_id": "synthetic-projections-v1", "immutable": true, "reference_space_id": "allen-ccf-2017",
+      "mappings": ["allen", "beryl", "cosmos"],
+      "projections": [{"$fixture": "coronal"}, {"$fixture": "sagittal"}, {"$fixture": "horizontal"}, {"$fixture": "top"}, {"$fixture": "swanson"}],
+      "provenance": {"$fixture": "provenance"}
+    }
+  },
+  "cases": [
+    {"name": "alias valid", "schema": "alias.schema.json", "valid": true, "document": "alias"},
+    {"name": "artifact and uncompressed resource valid", "schema": "artifact.schema.json", "valid": true, "document": "artifact"},
+    {"name": "uncompressed encoded and decoded lengths differ", "schema": "artifact.schema.json", "valid": false, "document": "artifact", "set": {"/resource/codec/decoded_bytes": 5}},
+    {"name": "catalog valid", "schema": "catalog.schema.json", "valid": true, "document": "catalog"},
+    {"name": "catalog default release missing", "schema": "catalog.schema.json", "valid": false, "document": "catalog", "set": {"/datasets/0/default_release": "missing"}},
+    {"name": "provenance valid", "schema": "provenance.schema.json", "valid": true, "document": "provenance"},
+    {"name": "regional and binary array valid", "schema": "regional.schema.json", "valid": true, "document": "regional"},
+    {"name": "binary decoded length mismatch", "schema": "regional.schema.json", "valid": false, "document": "regional", "set": {"/parcellations/0/values/resource/codec/decoded_bytes": 8}},
+    {"name": "regional statistics valid", "schema": "statistics.schema.json", "valid": true, "document": "statistics"},
+    {"name": "regional histogram count mismatch", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/histogram/global_counts/1": 2}},
+    {"name": "volume summary valid", "schema": "volume-summary.schema.json", "valid": true, "document": "volumeSummary"},
+    {"name": "volume summary classifications not exhaustive", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/missing_voxel_count": 3}},
+    {"name": "volume summary total differs from grid shape", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/grid_shape/2": 5}},
+    {"name": "volume summary histogram mismatch", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/histogram/counts/2": 3}},
+    {"name": "chunk resource index valid", "schema": "volume-resource-index.schema.json", "valid": true, "document": "chunkIndex"},
+    {"name": "slice pack resource index valid", "schema": "volume-resource-index.schema.json", "valid": true, "document": "slicePackIndex"},
+    {"name": "chunk decoded length mismatch", "schema": "volume-resource-index.schema.json", "valid": false, "document": "chunkIndex", "set": {"/chunks/0/resource/codec/decoded_bytes": 92}},
+    {"name": "volume sentinel valid", "schema": "volume.schema.json", "valid": true, "document": "volume"},
+    {"name": "volume mask valid", "schema": "volume.schema.json", "valid": true, "document": "volume", "set": {"/validity": {"kind": "mask", "mask": {"format": "raw-binary-array-v1", "resource": {"path": "volume/validity.u8", "media_type": "application/octet-stream", "bytes": 24, "sha256": "1212121212121212121212121212121212121212121212121212121212121212", "codec": {"name": "none", "decoded_bytes": 24}}, "dtype": "uint8", "shape": [2, 3, 4], "order": "C", "endianness": "not-applicable"}, "codes": {"valid": 0, "outside": 1, "missing": 2}, "classification_order": ["outside", "missing", "valid"]}}},
+    {"name": "volume affine homogeneous row invalid", "schema": "volume.schema.json", "valid": false, "document": "volume", "set": {"/grid/index_to_world_um/15": 2}},
+    {"name": "volume affine spatial permutation invalid", "schema": "volume.schema.json", "valid": false, "document": "volume", "set": {"/grid/index_to_world_um/1": 1}},
+    {"name": "volume inverse invalid", "schema": "volume.schema.json", "valid": false, "document": "volume", "set": {"/grid/world_to_index/0": 1}},
+    {"name": "volume voxel edge extent invalid", "schema": "volume.schema.json", "valid": false, "document": "volume", "set": {"/grid/voxel_edge_extent_um/0": 64}},
+    {"name": "volume mask codes must differ", "schema": "volume.schema.json", "valid": false, "document": "volume", "set": {"/validity": {"kind": "mask", "mask": {"format": "raw-binary-array-v1", "resource": {"path": "volume/validity.u8", "media_type": "application/octet-stream", "bytes": 24, "sha256": "1212121212121212121212121212121212121212121212121212121212121212", "codec": {"name": "none", "decoded_bytes": 24}}, "dtype": "uint8", "shape": [2, 3, 4], "order": "C", "endianness": "not-applicable"}, "codes": {"valid": 0, "outside": 0, "missing": 2}, "classification_order": ["outside", "missing", "valid"]}}},
+    {"name": "feature valid", "schema": "feature.schema.json", "valid": true, "document": "feature"},
+    {"name": "dataset valid", "schema": "dataset.schema.json", "valid": true, "document": "dataset"},
+    {"name": "dataset duplicate feature identifiers", "schema": "dataset.schema.json", "valid": false, "document": "dataset", "append": {"/features": {"id": "synthetic-feature", "descriptor": {"$fixture": "jsonResource"}}}},
+    {"name": "registered projection valid", "schema": "registered-projection.schema.json", "valid": true, "document": "coronal"},
+    {"name": "registered projection axis inconsistent", "schema": "registered-projection.schema.json", "valid": false, "document": "coronal", "set": {"/world_slice_axis": "ml"}},
+    {"name": "registered display slice out of range", "schema": "registered-projection.schema.json", "valid": false, "document": "coronal", "set": {"/display_slices/1": 2}},
+    {"name": "static projection valid", "schema": "static-projection.schema.json", "valid": true, "document": "top"},
+    {"name": "static projection cannot carry affine", "schema": "static-projection.schema.json", "valid": false, "document": "top", "set": {"/index_to_world_um": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]}},
+    {"name": "static projection pinned path count", "schema": "static-projection.schema.json", "valid": false, "document": "top", "set": {"/path_count": 115}},
+    {"name": "projection pack valid", "schema": "projection-pack.schema.json", "valid": true, "document": "projectionPack"},
+    {"name": "projection pack exact projection identities", "schema": "projection-pack.schema.json", "valid": false, "document": "projectionPack", "set": {"/projections/4/id": "top", "/projections/4/path_count": 114}},
+    {"name": "projection pack reference spaces must agree", "schema": "projection-pack.schema.json", "valid": false, "document": "projectionPack", "set": {"/projections/0/reference_space_id": "another-space"}}
+  ]
+}

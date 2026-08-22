@@ -440,6 +440,8 @@ This documentation-only commit:
 
 ### Commit 1 — Define schema v1 and projection-pack contracts
 
+Status: **implemented and staged; the runtime remains on v0.1 until Commit 2**.
+
 - add strict dataset-v1 and `atlas-projection-pack-v1` schemas/types;
 - add exhaustive volume summary counts, validity semantics, separate reference
   space/grid/asset identities, the strict signed axis-aligned affine profile,
@@ -673,8 +675,9 @@ never merge an inferred scientific choice.
 
 ## First action for the next agent
 
-Start Commit 1 only from a clean, current `main`. Read the required documents,
-run the baseline gate, then inventory every schema-v0.1 producer/consumer and
-write the proposed v1 schema plus valid/invalid corpus before editing runtime
-materializers. Resolve contract questions in tests and documentation first; do
-not start the viewport refactor while schema ownership is still moving.
+Start Commit 2 from the green staged schema-v1 contract. Cut the builder,
+publishing validator, browser HTTP/local readers, fixtures, and generated
+catalog copies together; remove v0.1 rather than adding adapters. Regenerate a
+newly identified deterministic synthetic release, audit same-relative-path
+resources across release switches, and leave the renderer/view state untouched
+until the data contract cutover is complete.

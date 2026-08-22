@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.internationalbrainlab.org/schema/v1/static-projection.schema.json",
+  "title": "Affine-free static regional projection v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "kind", "view_box", "path_count", "fragment"],
+  "properties": {
+    "id": {"enum": ["top", "swanson"]},
+    "kind": {"const": "static-regional-map"},
+    "view_box": {"$ref": "common.schema.json#/$defs/viewBox"},
+    "path_count": {"type": "integer", "minimum": 1},
+    "fragment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "encoding", "resource"],
+      "properties": {
+        "format": {"const": "ibl-regional-svg-fragment-v1"},
+        "encoding": {"const": "utf-8"},
+        "resource": {"$ref": "common.schema.json#/$defs/encodedResource"}
+      }
+    }
+  }
+}

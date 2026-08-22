@@ -75,11 +75,12 @@ horizontal support registered anatomy plus volume layers; Top and Swanson are
 static regional projections using the same SVG presentation and interaction
 path. Backward compatibility with the pre-launch formats is not a requirement.
 
-Commit 1 is contract-first: it separates scientific reference-space identity
-from grid and asset identities, admits only verified bytes to persistent cache,
-models secondary/compact/maximized workspace state independently, pins the
-affine-free Top/Swanson static-fragment wire evidence, and requires
-cross-language parity for every schema unit before runtime migration.
+Commit 1 is implemented as a staging contract while the runtime remains on
+v0.1. It separates scientific reference-space identity from grid and asset
+identities, defines verified resources and SHA-plus-decode cache identity,
+pins the affine-free Top/Swanson wire contract, and validates every top-level
+schema/semantic unit through one Python/TypeScript corpus. The next unit is
+Commit 2's atomic producer/consumer migration to that contract.
 
 This machinery is unblocked with deterministic synthetic fixtures. It must not
 resolve or conceal Q4/Q5.
@@ -105,7 +106,7 @@ historical transport evidence, not the default input for new implementation.
 
 Ordered next actions before scientific resolution:
 
-1. execute commits 1-8 in the focused cutover plan, keeping every handoff green;
+1. execute commits 2-8 in the focused cutover plan, keeping every handoff green;
 2. regenerate the canonical synthetic fixture and development releases under
    the new contract, without redundant `Source variant: raw/denoised` prose in
    feature descriptions;
