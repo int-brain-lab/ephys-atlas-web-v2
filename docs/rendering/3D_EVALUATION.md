@@ -70,8 +70,10 @@ ap_um = 5400 - ccf_ap
 dv_um = 332 - ccf_dv
 ```
 
-The mesh manifest must name an exact coordinate-space ID rather than relying on
-the unit/axis prose alone. The builder validates the transform and signed
+The mesh manifest must name the same exact `reference_space_id` used by the
+registered atlas rather than relying on unit/axis prose alone. Its separate
+grid/geometry and pack IDs do not establish compatibility. The builder
+validates the transform and signed
 hemisphere assignment against the canonical bilateral 10 um annotation and
 LUT. Negative ML is left and positive ML is right.
 
@@ -134,8 +136,8 @@ Create one immutable `atlas-mesh-pack-v1` manifest. It records:
 - source GLB URL, byte size, SHA-256, and geometry inventory;
 - canonical annotation/LUT identities and hashes used for coordinate,
   hemisphere, mapping, centroid, color, and coverage validation;
-- coordinate-space ID, source/output axes, units, transform, handedness, and
-  canonical brain center;
+- `reference_space_id`, separate geometry/grid and pack IDs, source/output
+  axes, units, transform, handedness, and canonical brain center;
 - one record per geometry identity: positive source Allen ID, signed
   presentation ID, Allen/Beryl/Cosmos mapping membership, hemisphere,
   canonical centroid, bounds, vertex/triangle counts, and LOD presence;

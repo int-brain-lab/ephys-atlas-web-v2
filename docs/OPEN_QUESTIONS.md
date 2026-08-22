@@ -168,6 +168,27 @@ validated geometry or an explicit scientifically justified exclusion.
 
 Blocks: production 3-D asset publication and main-workspace promotion only.
 
+## Q13 — Top/Swanson deployed-fragment license coverage
+
+Status: **BLOCKER** for publishing the derived production static maps, not for
+schema/runtime work with synthetic fixtures.
+
+The official v1 source repository at
+`1d908bea095be2616a750d939d143f3b4db2a641` is MIT licensed and pins both view
+boxes to `60 20 340 300`. The deployed `slices_top.json` and
+`slices_swanson.json` bytes, hashes, and path counts are recorded in
+`docs/frontend/LEGACY_CURATED_ASSETS.md`, but the deployed JSON contains no
+separate license declaration and is not tracked in that source commit.
+
+Resolution needed: authoritative confirmation that the repository MIT license
+covers those official deployed curated artifacts, plus preservation of the
+required notice in the derived asset release. If it does not, provide an
+authorized equivalent source. Do not infer coverage merely from the hosting
+domain.
+
+Blocks: production Top/Swanson asset ingestion/publication only. Synthetic
+static-map contract, builder, renderer, and interaction work remains unblocked.
+
 ## How to resolve an item
 
 When authoritative evidence arrives:

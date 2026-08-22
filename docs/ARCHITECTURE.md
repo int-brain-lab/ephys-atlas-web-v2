@@ -57,7 +57,15 @@ Do not force distinct representations into one physical format. Feature availabi
 
 HTTP and local/IndexedDB data use the same format-level materializers. Transport adapters implement a small resource-reader boundary and are responsible only for locating and reading JSON/bytes/arrays. Regional values, statistics, histograms, and region metadata are decoded once in shared code.
 
-Immutable-resource caching may be used for responsiveness, but failed in-flight loads must be retryable and persistent caches must remain explicitly clearable. Artifact identity and release immutability are part of the data contract, not inferred from URL conventions.
+Immutable-resource caching may be used for responsiveness, but failed in-flight
+loads must be retryable and persistent caches must remain explicitly clearable.
+Only bytes that match the resource's served-byte size and SHA-256 enter a
+persistent cache. Cache hits are verified before decode; an invalid entry is
+evicted and may be fetched once cleanly rather than poisoning every retry.
+Decoded-cache keys combine the SHA-256 with the complete decoding contract
+(codec, dtype, shape, byte order, axes/layout as applicable), never a
+feature-relative path alone. Artifact identity and release immutability are
+part of the data contract, not inferred from URL conventions.
 
 ## Contracts and validation
 
@@ -111,6 +119,16 @@ layers. Anatomy and volume sources independently map it through their declared
 transforms and then into screen space through an explicit plane registration;
 coincident CSS dimensions are not proof of scientific alignment. Physical
 volume transport remains below a storage-neutral decoded-plane source.
+
+Scientific coordinate identity has three deliberately separate levels:
+
+- `reference_space_id` names the world reference frame and is the only equality
+  required before compositing independently gridded layers;
+- grid identity includes shape, ordered index axes, affine, integer-index voxel
+  centers, and half-index voxel-edge extent, and normally differs between
+  anatomy and volume resolutions;
+- asset/release/pack IDs identify immutable encodings and are never scientific
+  compatibility evidence.
 
 The application remains renderer-agnostic for 3-D, while the first isolated
 brain-mesh lab uses Three.js WebGL2 to minimize implementation and browser risk.

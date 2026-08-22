@@ -65,15 +65,26 @@ For a schema-v1 volume feature, the viewer must:
 - preserve scientific grid shape, dtype, axis semantics, validity rules, and
   index-to-world transform from authoritative metadata, deriving or strictly
   validating any redundant voxel-size/origin presentation;
+- expose a whole-feature summary whose mutually exclusive valid, outside, and
+  missing counts sum to the grid voxel count and whose statistics/histogram use
+  valid voxels only;
 - map linked anatomical coordinates to the volume using the declared scientific transform, never the curated SVG display calibration;
+- require the volume and anatomy to declare the same `reference_space_id`
+  before compositing, while permitting distinct grid identities, resolutions,
+  shapes, and affines;
 - render coronal, sagittal, and horizontal scalar planes as retained Canvas
   layers in the shared projection viewport, with registered anatomy outlines,
   selection, hover, and guides layered independently;
 - apply colormap/range controls consistently with regional scalar rendering where semantics overlap;
+- use nearest-neighbor Canvas sampling and the same nearest-voxel rule for
+  pointer inspection, including pixels with no overlying SVG region path;
+- URL-persist user-adjusted volume opacity and anatomy-outline visibility
+  without changing decoded values, inspection, statistics, or exports;
 - bound decoded-data memory with an explicit cache policy;
 - avoid downloading the entire production volume for ordinary single-slice navigation;
 - verify immutable encoded volume resources by declared served-byte size and
-  SHA-256 before decoding;
+  SHA-256 before persistent caching or decoding, evicting and cleanly retrying
+  an invalid cached entry;
 - report out-of-volume coordinates explicitly rather than clamping them to an
   edge voxel;
 - support the physical layout selected by measured real-data browser benchmarks.
@@ -178,7 +189,8 @@ Acceptance criteria:
 - the sparse registered display corpus is deterministically derived from the
   validated bilateral parent and records its identity;
 - Top and Swanson record their exact distinct source identities, hashes, view
-  boxes, path counts, and static-map status without an invented affine;
+  boxes (`60 20 340 300` for both), path counts, and static-map status without
+  an invented affine, slice index, or world coordinate;
 - every compressed resource is immutable, byte-sized, SHA-256 verified, and
   explicitly decompressed by the browser;
 - topology, source-voxel coverage, signed ID, boundary-error, IoU, and

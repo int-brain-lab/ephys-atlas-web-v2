@@ -80,6 +80,18 @@ Scientific provenance is part of the product contract, not optional metadata.
   pinned Top/Swanson source bytes may be deterministic build inputs for static
   projection assets, with distinct provenance and no invented affine.
 - Volume storage layout (`chunks3d` versus `orthogonal_slice_packs`) is independent of scientific grid geometry. Choose the production layout from measured real-data browser benchmarks, not convenience.
+- Coordinate compatibility is established only by an exact
+  `reference_space_id`. Grid identity (shape, axis semantics, affine,
+  index-center convention, and voxel-edge extent) and asset/pack identity are
+  separate; different 10 µm and 50 µm grids may share a reference space, while
+  matching pack IDs or shapes never prove compatibility.
+- Verify immutable fetched bytes against declared served-byte size and SHA-256
+  before persistent cache admission or decoding. A bad cached entry is evicted
+  and may be retried cleanly; decoded-cache identity includes the resource hash
+  and decoding contract, not a feature-relative path alone.
+- Top and Swanson are affine-free static SVG fragments with the pinned legacy
+  view box `60 20 340 300`. They must not reuse a slice resource descriptor
+  that requires an index or `world_coordinate_um`.
 - The optional 3-D lab may progress independently of the 2-D cutover, but it
   must consume the shared coordinate, regional-presentation, and workspace-view
   contracts rather than fork application state or add another 2-D renderer

@@ -75,6 +75,12 @@ horizontal support registered anatomy plus volume layers; Top and Swanson are
 static regional projections using the same SVG presentation and interaction
 path. Backward compatibility with the pre-launch formats is not a requirement.
 
+Commit 1 is contract-first: it separates scientific reference-space identity
+from grid and asset identities, admits only verified bytes to persistent cache,
+models secondary/compact/maximized workspace state independently, pins the
+affine-free Top/Swanson static-fragment wire evidence, and requires
+cross-language parity for every schema unit before runtime migration.
+
 This machinery is unblocked with deterministic synthetic fixtures. It must not
 resolve or conceal Q4/Q5.
 

@@ -33,6 +33,14 @@ continue to block a purported production volume release. Synthetic fixtures
 may implement and test the new machinery without choosing those scientific or
 transport answers.
 
+The pre-Commit-1 contract is now explicit about separate reference-space,
+grid, and asset identities; verified-only persistent caching; independent
+secondary/compact/maximized workspace state; nearest-neighbor volume paint and
+inspection; exhaustive validity counts; and affine-free Top/Swanson gzip SVG
+fragments with pinned `60 20 340 300` view boxes. The deployed static fragment
+license coverage still requires confirmation before production ingestion;
+synthetic fixtures are unblocked.
+
 An independent, non-production brain-mesh 3-D lab is also approved. It is not
 implemented and is not part of M2 or launch acceptance. It will use a standalone
 Vite entry and reusable technology-neutral scene inputs so mesh/interaction

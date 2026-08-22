@@ -313,6 +313,15 @@ Volume transport remains independent from scientific geometry and is still
 selected only by Q5 evidence. Q4 continues to block production affine and
 outside/missing-value semantics.
 
+Separate coordinate identity into `reference_space_id`, grid identity, and
+asset/pack identity. Only an exact reference-space match permits compositing;
+grids may differ in resolution, shape, and affine, and pack identity is never
+scientific evidence. The launch affine profile is an axis-aligned signed
+permutation with a homogeneous `[0, 0, 0, 1]` row, exactly one finite nonzero
+spatial coefficient per row and column, integer indices at voxel centers, and
+half-index voxel-edge extents. Validate or derive its inverse rather than
+trusting two unrelated matrices.
+
 Adopt one schema v1 for builders, browser HTTP/local data, publishing,
 fixtures, and downloads. Retain the sound v0.1 concepts—dynamic feature
 catalogs, independent representations, provenance, typed binary data, and
@@ -329,6 +338,16 @@ Swanson use exact pinned curated source bytes with distinct provenance and are
 normalized to the same Allen/Beryl/Cosmos path-identity contract at build time.
 Validated older anatomy artifacts may remain as immutable reproducibility/build
 evidence but are not supported browser formats after cutover.
+
+Represent Top and Swanson as affine-free, deterministic gzip-compressed UTF-8
+SVG fragment resources, not slice entries. Both use the legacy source view box
+`60 20 340 300`; neither has a slice index or `world_coordinate_um`. Persist
+workspace composition as three independent states: selected secondary tab,
+active compact view, and maximized view.
+
+Verify served bytes before decoding or persistent cache admission. Evict and
+retry an invalid cached response, and key decoded resources by SHA-256 plus the
+decoding contract so equal relative paths in different releases cannot alias.
 
 This decision supersedes D014; the schema-version-specific parts of D013,
 D015, and D027; the runtime compatibility/fallback portions of D023-D026; and

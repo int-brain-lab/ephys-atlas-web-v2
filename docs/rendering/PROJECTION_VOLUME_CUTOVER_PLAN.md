@@ -153,8 +153,48 @@ viewport transform per registered projection, including world extent,
 pixel-center versus pixel-edge convention, axis direction, and flips. Each
 anatomy, volume, guide, and inspection layer maps through that transform. Use
 asymmetric, anisotropic, signed, non-zero-origin fixtures so swaps and flips
-cannot pass accidentally. Require an exact coordinate-space compatibility ID
-before compositing atlas and dataset layers.
+cannot pass accidentally.
+
+Separate three identities in every contract:
+
+- `reference_space_id` identifies the scientific ML/AP/DV world frame. Exact
+  equality is required before anatomy and volume layers may composite.
+- `grid_id` identifies one sampling grid and is validated together with shape,
+  ordered index-axis semantics, index-to-world affine, integer-index
+  voxel-center convention, and half-index voxel-edge extent. Anatomy and volume
+  normally have different grid IDs and resolutions.
+- release, pack, and resource IDs identify immutable encodings. They never
+  establish scientific compatibility.
+
+The production atlas reference-space ID is pinned by the canonical bilateral
+pack. Q4 must authoritatively identify the volume's reference space; fixtures
+use an explicitly synthetic ID and do not infer production compatibility.
+
+The launch volume affine profile is a row-major axis-aligned signed permutation
+mapping `[i0, i1, i2, 1]` to `[ml, ap, dv, 1]`. Its final row is exactly
+`[0, 0, 0, 1]`; the spatial 3x3 has exactly one finite nonzero coefficient in
+each row and column and zeros elsewhere; translations are finite; absolute
+nonzero coefficients are voxel sizes. Integer indices denote centers. The
+eight half-index corners from `-0.5` through `shape[d]-0.5` define the voxel-edge
+world extent. Derive the inverse, or validate a serialized inverse against that
+derivation within an explicit tolerance; never trust two independent matrices.
+
+### Integrity precedes caching
+
+Every encoded resource descriptor includes immutable path, served-byte size,
+SHA-256, media/format identity, codec, and the decoded contract needed to
+interpret it. Resource loading follows one order:
+
+1. read a persistent-cache candidate, verify size/SHA-256, and evict it if bad;
+2. on miss or eviction, fetch once and verify before decode or cache admission;
+3. decode only verified bytes, then cache the verified encoded bytes;
+4. key decoded/in-flight caches by SHA-256 plus codec, dtype, byte order, shape,
+   axes/layout, and other decoding semantics—not by relative path alone.
+
+Integrity failure remains retryable and cannot create a permanently poisoned
+cache loop. Tests use two datasets/releases with the same relative resource
+path and different hashes/bytes, plus a corrupt persistent entry followed by a
+successful network retry.
 
 ### Share semantics, specialize heavy work
 
@@ -223,9 +263,20 @@ Registered orthogonal projections retain:
 Top and Swanson retain:
 
 - the exact pinned source-object identities and SHA-256 hashes;
-- their source view boxes and path counts;
+- source repository commit
+  `1d908bea095be2616a750d939d143f3b4db2a641`, the source `index.html` hash,
+  license evidence, their exact view box `[60, 20, 340, 300]`, and path counts;
 - an explicit `static-regional-map` classification;
 - no affine or invented coordinate navigation.
+
+Their physical wire resource is a deterministic gzip-compressed UTF-8 safe SVG
+fragment with declared compressed/decoded byte sizes and hashes. Its descriptor
+declares fragment format, media type, codec, view box, and path count. It has no
+slice index, `world_coordinate_um`, grid, registration, or affine; do not reuse
+the registered indexed-slice entry type. The official deployed fragments have
+no separate embedded license statement, so production ingestion waits for
+confirmation that the v1 repository's MIT license covers those artifacts;
+synthetic static fragments exercise the machinery until then.
 
 The deterministic builder converts every path to the same runtime identity
 attributes:
@@ -271,15 +322,23 @@ Make only changes justified by imminent volume production:
    (`float16` and `float32`) unless support for another dtype lands in the same
    task. Broader binary dtypes may remain valid for other artifact kinds.
 6. Add a dedicated volume-summary resource instead of interpreting volume
-   statistics with the regional-statistics schema. It should support a stable
-   whole-feature automatic color range without scanning whichever slice happens
-   to be visible.
+   statistics with the regional-statistics schema. It records total, valid,
+   outside, and missing voxel counts, where the three classifications are
+   mutually exclusive/exhaustive and
+   `total = valid + outside + missing = product(grid.shape)`. Outside
+   classification is applied before missing classification; valid values are
+   finite. Min/max/mean/std/quantiles and histogram counts use valid voxels
+   only, are null/empty when valid count is zero, and histogram counts sum to
+   valid count. This supports a stable whole-feature automatic color range
+   without scanning whichever slice happens to be visible.
 7. Add a checksummed served-resource index for volume chunks/packs so HTTP and
    local loaders can validate immutable encoded bytes by path, byte size, and
    SHA-256.
 8. Add machine-readable validity/outside-brain semantics. The exact sentinel or
-   mask remains blocked on Q4; synthetic fixtures may exercise both machinery
-   paths without choosing production science.
+   mask remains blocked on Q4; define strict sentinel and checksummed mask
+   discriminants, and let synthetic fixtures exercise both without choosing
+   production science. Non-finite values classify as missing unless an
+   authoritative explicit mask says otherwise.
 9. Remove implementation assumptions about a fixed 25 um grid. Support the
    declared grid/affine generically, or explicitly validate any narrower launch
    transform contract once Q4 provides evidence.
@@ -302,14 +361,19 @@ domain state/actions:
 
 ```ts
 interface WorkspaceState {
-  secondaryPanel: 'summary' | WorkspaceViewId;
-  focusedView: WorkspaceViewId | null;
+  secondaryTab: 'summary' | StaticProjectionId;
+  activeCompactView: OrthogonalProjectionId | 'secondary';
+  maximizedView: WorkspaceViewId | null;
 }
 ```
 
-`summary` is a secondary tab, not a projection ID. Prefer distinct
+These are independent states: the selected content in the secondary slot, the
+single visible frame in compact layouts, and the temporarily maximized frame.
+`summary` and `secondary` are not projection IDs. Prefer distinct
 `SecondaryTabId`, `WorkspaceViewId`, `ProjectionId`,
-`OrthogonalProjectionId`, and `StaticProjectionId` types.
+`OrthogonalProjectionId`, and `StaticProjectionId` types. The later 3-D
+integration may extend secondary/workspace view unions without conflating these
+three state dimensions.
 Keep one ML/AP/DV cursor as navigation authority and derive registered native
 indices, display ordinals, slider positions, guides, and volume indices. Do not
 persist a second independently mutable slice triple.
@@ -329,10 +393,34 @@ When the active feature has only a volume representation, static maps may show
 anatomical identity and shared selection, but must not imply that volume scalars
 were projected or regionally aggregated.
 
-Use one new current URL-state encoding. Old URL migrations may be deleted, and
+Use one new current URL-state encoding. Persist `secondaryTab`,
+`activeCompactView`, and `maximizedView`, plus user-adjustable volume opacity
+and anatomy-outline visibility. Old URL migrations may be deleted, and
 an unsupported version resets explicitly to a canonical current URL instead of
-partially consuming stale fields. Persist the active secondary tab and focused
-projection where useful; never persist hover or runtime loading state.
+partially consuming stale fields. Never persist hover or runtime loading state.
+
+### Volume paint and inspection semantics
+
+Canvas scalar sampling is nearest-neighbor for this cutover, with image
+smoothing disabled; interpolation is neither implicit nor a URL option. Volume
+opacity defaults to `1` and anatomy outlines default to visible. Both are typed
+presentation controls and URL-persisted when changed; neither affects fetch,
+decode, validity, inspection values, statistics, or exports.
+
+Pointer inspection follows one tested chain:
+
+```text
+CSS pointer -> viewport coordinates -> inverse world-plane registration
+            -> ML/AP/DV world point -> inverse volume affine
+            -> fractional volume index -> nearest voxel center
+```
+
+Device-pixel ratio and Canvas backing dimensions do not change this mapping.
+An SVG path hit may add a regional identity, but absence of a path/background
+does not suppress volume inspection. Outside the voxel-edge extent returns
+`out-of-grid`; an inside outside/missing voxel returns its declared validity
+class and no scalar value; a valid voxel returns exact stored scalar value and
+optional region identity independently.
 
 ## Planned commits
 
@@ -353,10 +441,19 @@ This documentation-only commit:
 ### Commit 1 — Define schema v1 and projection-pack contracts
 
 - add strict dataset-v1 and `atlas-projection-pack-v1` schemas/types;
-- add volume summary, validity semantics, coordinate-space identity, signed
-  axis-aligned affine profile, and immutable resource index contracts;
+- add exhaustive volume summary counts, validity semantics, separate reference
+  space/grid/asset identities, the strict signed axis-aligned affine profile,
+  verified-resource/cache identity, and immutable resource index contracts;
+- define the affine-free static SVG-fragment wire descriptor and pin the legacy
+  source commit, `[60, 20, 340, 300]` view boxes, source hashes, path counts,
+  and available license evidence;
 - add Python/TypeScript valid-invalid parity fixtures, including asymmetric
   signed transforms and static maps with no affine;
+- require parity fixtures for every v1 schema document/semantic unit, not only
+  the dataset manifest: catalog/alias, dataset, feature, provenance, binary
+  array, regional representation/statistics, volume grid/summary/validity,
+  both volume resource-index layouts, projection manifest, registered stack,
+  and static fragment. Include invalid affine/validity/count combinations;
 - leave the current runtime temporarily untouched so this definition commit is
   green; these parallel definitions are staging, not supported compatibility.
 
@@ -384,7 +481,8 @@ Targeted gates: deterministic fixture parity, local import, publishing,
   registry, and separate secondary-tab type;
 - make the world cursor the sole navigation authority and derive slice/display
   indices and guides;
-- move secondary/focused view state into domain actions/reducers;
+- move secondary-tab, compact-active-view, and maximized-view state into
+  separate domain actions/reducers;
 - replace the URL migration stack with one current codec and explicit reset for
   unsupported versions;
 - initially expose only the existing three orthogonal frames so visible
@@ -436,6 +534,10 @@ regional Playwright, and benchmark sanity run; finish with `just check`.
 - retain anatomy outlines/picking/selection above the volume layer;
 - implement voxel/world/region inspection, validity transparency, and explicit
   invalid-transform, integrity, stale-load, and unsupported-capability states;
+- implement the fixed nearest-neighbor screen-to-world-to-volume inspection
+  chain, including valid background pixels with no SVG region path;
+- add URL-persisted volume opacity and anatomy-outline controls with defaults
+  `1` and visible, without affecting data loading or inspection values;
 - enforce a global decoded byte budget across feature switching while
   preserving in-flight deduplication, cancellation, retry, and adjacent prefetch;
 - prove recolor, opacity, outlines, selection, and hover cause no fetch/decode.
@@ -540,19 +642,29 @@ never merge an inferred scientific choice.
   viewport without target replacement.
 - Atlas and volume layers independently map the same world cursor through their
   authoritative transforms.
-- Atlas/volume compositing requires matching coordinate-space identity and
-  tested world-plane-to-screen registration, not equal CSS dimensions.
+- Atlas/volume compositing requires matching `reference_space_id` and tested
+  world-plane-to-screen registration, not equal grid/pack IDs or CSS
+  dimensions. Different atlas/volume grids remain valid.
+- The affine homogeneous row, signed-permutation matrix, inverse, center
+  convention, and voxel-edge extent pass asymmetric semantic fixtures.
 - Top and Swanson expose no fabricated slice/voxel navigation.
 - Volume resource bytes are immutable and verifiable; caches are byte-bounded,
   globally bounded across feature switches, cancellation-safe, and retry after
-  failure.
+  failure. Only verified bytes enter persistent cache; corrupt entries are
+  evicted; decoded cache identity includes SHA-256 and decoding semantics.
 - Volume automatic color range is feature-global and stable across plane
   navigation; invalid/outside voxels are transparent and non-inspectable.
+- Volume summary counts are exhaustive and consistent with grid size; valid-only
+  summaries/histograms agree with valid count.
+- Canvas and inspection use nearest-neighbor sampling. Background without an
+  SVG path remains inspectable; opacity/outlines persist without altering data.
 - Rapid updates cannot commit stale layers, and a volume-layer failure leaves
   registered anatomy usable.
-- URL/domain/UI view state is registry-driven and responsive.
-- Regional, volume, local, publishing, download, and projection fixtures validate
-  under the same current contract.
+- URL/domain/UI view state is registry-driven and separately represents the
+  secondary tab, compact active view, and maximized view.
+- Every schema unit has cross-language valid/invalid parity; regional, volume,
+  local, publishing, download, and projection fixtures validate under the same
+  current contract.
 - Regenerated feature descriptions do not repeat raw/denoised source-variant
   metadata already expressed by feature identity and structured provenance.
 - Q4/Q5 remain explicit until authoritative evidence resolves them.

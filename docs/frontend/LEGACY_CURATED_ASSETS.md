@@ -1,10 +1,10 @@
 # Legacy curated atlas slice assets
 
-Status: **inactive historical fallback**. D023 supersedes these bundles as the
-v2 runtime geometry. The default viewer uses the registered generated anatomy
-pack and makes no request to the legacy atlas host. This inventory remains so a
-code/config revert can restore the prior provider without rediscovering asset
-identity.
+Status: **inactive runtime; pinned cutover source evidence**. D023 supersedes
+these bundles as current v2 runtime geometry. The approved D031 cutover may
+ingest the exact Top/Swanson bytes as static-map build inputs after license
+coverage is confirmed. The default viewer currently makes no request to the
+legacy atlas host.
 
 This note pins the exact legacy SVG-fragment bundles used by IBL Ephys Atlas Web v1 and validated for the v2 anatomical-view integration.
 
@@ -15,6 +15,22 @@ The five files were downloaded from the deployed v1 atlas on 2026-08-19 from:
 `https://atlas.internationalbrainlab.org/data/json/`
 
 They are deployment/runtime artifacts, not files present in the current `int-brain-lab/ephys-atlas-web` source tree. The historical generation code explicitly notes that the generated slice JSON received additional manual processing, so these deployed files are the authoritative curated artifacts. Do not regenerate or resimplify them casually.
+
+The inspected v1 source checkout is
+`int-brain-lab/ephys-atlas-web@1d908bea095be2616a750d939d143f3b4db2a641`.
+Its `index.html` declares `viewBox="60 20 340 300"` for both Top (lines
+393-400) and Swanson (lines 362-366). The source repository's MIT `LICENSE` has
+SHA-256
+`4a51f3da8e143b69bcba5e1e50fc01469339790fdea96f634f4895ca30393ca5`;
+the inspected `index.html` has SHA-256
+`677135c3a5bbdbd07c1a8c6b202eb636758d3e73bb535ddabeeb545044fe53eb`.
+
+No separate license declaration was found inside the deployed curated JSON
+fragments. Before publishing derived production Top/Swanson assets, confirm
+that the repository MIT license covers those official deployment artifacts and
+preserve the required copyright/license notice. Until then, the exact bytes may
+be pinned and tested as source evidence, while published fixtures remain
+synthetic.
 
 ## Exact inventory
 
@@ -33,6 +49,10 @@ Total raw size: 87,490,174 bytes (83.44 MiB).
 Each bundle is a JSON object whose keys are slice indices encoded as strings and whose values are bare SVG `<path/>` fragments, not complete `<svg>` documents. The orthogonal bundles contain contiguous even-numbered keys across the coverage ranges above. `top` and `swanson` each contain one fragment under key `"0"`.
 
 Every parsed path in all five files carries an `allen_region_<id>`, `beryl_region_<id>`, and `cosmos_region_<id>` class. No embedded `<svg>`, `<style>`, `<script>`, or wrapper `<g>` elements were found in the fragment values.
+
+The Top/Swanson key `"0"` is a container convention, not a scientific slice
+index. The v2 static-map descriptor must omit slice/world/affine fields and
+declare the pinned view box directly.
 
 The companion deployed `regions.json` is no longer fetched at runtime. Its
 BrainRegions row crosswalk is pinned by SHA-256 and joined to authoritative
