@@ -426,7 +426,10 @@ def _static_projection(
         raise ValueError(f"{projection_id} source path count does not match pinned evidence")
     decoded = normalized.encode("utf-8", "strict")
     encoded = gzip.compress(decoded, compresslevel=9, mtime=0)
-    path = Path("static") / f"{projection_id}.svg-fragment.gz"
+    # `.isvg.gz` is intentionally transport-opaque. Development/static hosts
+    # must not infer HTTP Content-Encoding and transparently alter the bytes
+    # before the runtime verifies their declared encoded SHA-256.
+    path = Path("static") / f"{projection_id}.isvg.gz"
     target = stage / path
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(encoded)
