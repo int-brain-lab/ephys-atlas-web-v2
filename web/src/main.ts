@@ -16,10 +16,10 @@ const catalogUrl = import.meta.env.VITE_DATASET_CATALOG_URL as string | undefine
 const developmentDatasetId = import.meta.env.VITE_DEFAULT_DATASET_ID as string | undefined;
 const developmentReleaseId = import.meta.env.VITE_DEFAULT_RELEASE_ID as string | undefined;
 const developmentFeatureId = import.meta.env.VITE_DEFAULT_FEATURE_ID as string | undefined;
-const developmentDefaultView = developmentDatasetId === 'ephys_atlas_channels' && developmentReleaseId && developmentFeatureId
+const developmentDefaultView = developmentDatasetId && developmentReleaseId && developmentFeatureId
   ? {
     ...DEFAULT_VIEW_STATE,
-    dataset: { datasetId: 'ephys_atlas_channels' as const, releaseId: developmentReleaseId },
+    dataset: { datasetId: developmentDatasetId, releaseId: developmentReleaseId },
     featureId: developmentFeatureId,
   }
   : undefined;

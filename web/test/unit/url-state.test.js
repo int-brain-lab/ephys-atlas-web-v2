@@ -69,7 +69,7 @@ test('development defaults initialize parsing while explicit shared state overri
     featureId: 'rms_ap.denoised',
   };
   assert.deepEqual(parseViewState('', developmentDefaults), developmentDefaults);
-  assert.equal(serializeViewState(developmentDefaults, developmentDefaults), 'v=4&feature=rms_ap.denoised');
+  assert.equal(serializeViewState(developmentDefaults, developmentDefaults), 'v=4');
   const explicit = parseViewState('?v=4&release=other&feature=polarity.raw', developmentDefaults);
   assert.equal(explicit.dataset.releaseId, 'other');
   assert.equal(explicit.featureId, 'polarity.raw');

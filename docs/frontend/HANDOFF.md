@@ -138,12 +138,16 @@ The previous frontend provisional schema and schema-v0.1 compatibility path have
    exhaustive validity/summary metadata, and a checksummed physical resource index;
 5. transport differences do not redefine the scientific contract.
 
-`web/public/fixtures/ephys_atlas_channels/golden-v1/` is the browser-served golden fixture used to exercise this contract end-to-end. It is synthetic test data whose signed IDs intersect all three default anatomy planes.
+`fixtures/golden-v1/` is mounted only by the Playwright development server to
+exercise this contract end-to-end. It is never part of `web/public` and never a
+runtime fallback. Ordinary development uses the ignored real `2026_W32`
+release and fails explicitly if that release has not been pulled and built.
 
 ## Current next work
 
-1. Rebuild the external `2026_W32` development release under a new schema-v1
-   release ID before using or publishing it.
+1. Expose the validated local schema-v1 `2026_W32` development release through
+   an authorized non-production object-store catalog and repeat acceptance
+   checks against its real CORS and cache headers.
 2. Deploy the committed projection pack with immutable caching and opaque
    `.isvg.gz` delivery: do not attach HTTP `Content-Encoding`, because the
    browser verifies the compressed bytes before explicit decompression.

@@ -15,7 +15,7 @@ test.beforeEach(async ({ page }) => {
 
 test('wide header keeps long feature and representation context legible', async ({ page }) => {
   await page.setViewportSize({ width: 1680, height: 900 });
-  await page.goto('/?feature=aperiodic_exponent.denoised');
+  await page.goto('/?v=4&feature=aperiodic_exponent.denoised');
 
   const feature = page.locator('[data-context-field="feature"] .context-field__value');
   const representation = page.locator('[data-context-field="representation"] .context-field__value');

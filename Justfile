@@ -17,7 +17,7 @@ bootstrap-anatomy:
 
 # Run the browser app locally.
 dev:
-    cd web && npm run dev
+    cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/2026_W32 EPHYS_ATLAS_REAL_FEATURE=rms_ap.denoised npm run dev:real
 
 # Run the viewer against a pinned local real channel release (development only).
 dev-real release="2026_W32" feature="rms_ap.denoised":

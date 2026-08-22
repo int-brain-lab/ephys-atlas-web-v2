@@ -202,7 +202,7 @@ test('unsupported historical URLs reset explicitly to the current canonical stat
   await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
   await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');
   await expect(page.locator('[data-view="coronal"] [data-slice-asset="projection-pack-v1"]')).toHaveAttribute('data-asset-index', '660');
-  await expect.poll(() => new URL(page.url()).search).toBe('?v=4&feature=rms_ap');
+  await expect.poll(() => new URL(page.url()).search).toBe('?v=4');
 });
 
 test('native bilateral anatomy exposes every scientific range endpoint', async ({ page }) => {
@@ -338,12 +338,12 @@ test('schema v1 regional fixture drives values, coloring, selection and histogra
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download comparison' }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe('ephys_atlas_channels-golden-v1-rms_ap-allen-selected-comparison.csv');
+  expect(download.suggestedFilename()).toBe('golden_fixture-golden-v1-rms_ap-allen-selected-comparison.csv');
   const downloadPath = await download.path();
   expect(downloadPath).not.toBeNull();
   const comparisonCsv = await readFile(downloadPath!, 'utf8');
   expect(comparisonCsv).toContain('dataset_id,release_id,feature_id,representation,parcellation,selected_statistic,unit,population,region_id');
-  expect(comparisonCsv).toContain('ephys_atlas_channels,golden-v1,rms_ap,regional,allen,mean,dB rel. V');
+  expect(comparisonCsv).toContain('golden_fixture,golden-v1,rms_ap,regional,allen,mean,dB rel. V');
   expect(comparisonCsv.trim().split('\n')).toHaveLength(9);
   expect(comparisonCsv).toContain(',-362,MD,Mediodorsal nucleus of thalamus (left),');
   await page.getByRole('button', { name: 'Minimize selected-region comparison' }).click();
@@ -650,12 +650,12 @@ test('share, download and info expose the immutable scientific context', async (
   const downloadPromise = page.waitForEvent('download');
   await actions.getByRole('button', { name: 'Download' }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe('ephys_atlas_channels-golden-v1-rms_ap-allen-median.csv');
+  expect(download.suggestedFilename()).toBe('golden_fixture-golden-v1-rms_ap-allen-median.csv');
   const path = await download.path();
   expect(path).not.toBeNull();
   const csv = await readFile(path!, 'utf8');
   expect(csv).toContain('dataset_id,release_id,feature_id,representation,parcellation,statistic,unit,region_id,acronym,region_name,value');
-  expect(csv).toContain('ephys_atlas_channels,golden-v1,rms_ap,regional,allen,median,dB rel. V');
+  expect(csv).toContain('golden_fixture,golden-v1,rms_ap,regional,allen,median,dB rel. V');
 });
 
 test('renderer region selection flows back into shared URL state', async ({ page }) => {

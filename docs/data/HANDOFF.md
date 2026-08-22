@@ -32,10 +32,10 @@ excludes non-finite observations per feature, preserves source values, folds
 bilateral IDs to the left representation, and builds Allen/Beryl/Cosmos
 statistics and histograms.
 
-The pinned `ea_active/2026_W32` development snapshot was built and validated
-under the retired contract across all 70 discovered features and all three
-parcellations. It must be rebuilt under a new schema-v1 release ID before use;
-it is not the paper release. Q2 still blocks the final paper vintage and aliases. See
+The pinned `ea_active/2026_W32` development snapshot was pulled, rebuilt, and
+validated under schema v1 across all 70 discovered features and all three
+parcellations. It is the ignored local development release, not the paper
+release. Q2 still blocks the final paper vintage and aliases. See
 `docs/data/CHANNELS_RECIPE.md` and `docs/data/DEVELOPMENT_RELEASE.md`.
 
 ## Cluster releases

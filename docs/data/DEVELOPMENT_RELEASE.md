@@ -4,11 +4,10 @@ This records the first end-to-end build against a real immutable channel source.
 It is reproducibility evidence and a browser-integration candidate, not the
 paper snapshot or a production publication.
 
-Status after the schema-v1 cutover: this recorded output used the retired
-schema v0.1 and is no longer consumable by the browser or publisher. Preserve
-it as historical evidence only. Rebuild from the pinned source into a new
-immutable schema-v1 release ID before running the real-release suite or
-publishing it; do not add a v0.1 compatibility reader.
+Status: pulled and rebuilt as schema v1 on 2026-08-22. The ignored local release
+at `data/releases/ephys_atlas_channels/2026_W32` validates and is the mandatory
+ordinary development dataset. It remains a development release rather than a
+paper snapshot or public publication.
 
 ## Resolved inputs
 
@@ -24,7 +23,7 @@ publishing it; do not add a v0.1 compatibility reader.
 - additional QC/outlier replacement: none
 - `ibleatools`: `9bfa0623a16bc7a989a6b27a589887641beee0a8`
 - `iblatlas`: `52083adf44825d0622a503705e095699a5957587`
-- builder: `d954d0e142057afefcba0289f28df19e65669679`
+- builder: `3535f69cd7bca8032022ca8af5a4402ab23e0546`
 - Python: 3.12
 
 The pulled `source.json` contains byte sizes and SHA-256 hashes for all five
@@ -37,16 +36,16 @@ records the three code commits and the complete resolved feature catalog.
 uv sync --project builder --python 3.12 --extra scientific --locked
 
 uv run --project builder --extra scientific --locked ephys-atlas-data pull \
-  ephys_atlas_channels latest --dest data/source
+  ephys_atlas_channels 2026_W32 --dest data/source
 
 uv run --project builder --extra scientific --locked ephys-atlas-data \
   build-channels 2026_W32 \
   --feature-mode both \
   --population inside \
-  --created-at 2026-08-20T11:24:51Z \
+  --created-at 2026-08-22T15:00:00Z \
   --ibleatools-commit 9bfa0623a16bc7a989a6b27a589887641beee0a8 \
   --iblatlas-commit 52083adf44825d0622a503705e095699a5957587 \
-  --builder-commit d954d0e142057afefcba0289f28df19e65669679
+  --builder-commit 3535f69cd7bca8032022ca8af5a4402ab23e0546
 ```
 
 The second command writes and validates
@@ -63,9 +62,8 @@ The second command writes and validates
   `float32` range
 - no non-finite values in any regional display array
 - 918 files, approximately 19.2 MB
-- historical schema-v0.1 validation passed
-- a second build in an independent output root was byte-identical (`diff -qr`)
-- the opt-in real-release Playwright suite passed against the HTTP loader: 591
+- schema-v1 validation passed
+- the real-release Playwright suite passed against the HTTP loader: 591
   Allen, 289 Beryl, and 13 Cosmos rows; raw alpha `float64` decoding; 50-bin
   distribution; and real-region selection
 
@@ -76,8 +74,7 @@ retain the declared source population.
 
 ## Browser acceptance
 
-The real release remains ignored local data. Run its separate acceptance suite
-without adding it to fixture-only CI:
+The real release remains ignored local data. Run its separate acceptance suite:
 
 ```bash
 cd web
@@ -90,7 +87,7 @@ from that directory through the production `HttpDatasetSource` path. It does
 not bypass contract parsing or binary decoding, copy the release into Git, or
 claim to test production-origin CORS/cache headers.
 
-For interactive local review, run:
+For interactive local review, run `just dev`. The parameterized equivalent is:
 
 ```bash
 just dev-real release=2026_W32 feature=rms_ap.denoised
@@ -101,8 +98,20 @@ then exposes a development-only catalog and release bytes under one local
 origin. The root URL opens that release with `rms_ap.denoised` selected, while
 explicit share-URL parameters still take precedence. This exercises the normal
 `HttpDatasetSource`; it does not copy the ignored real release into
-`web/public`, transform it, or label it as the paper snapshot. Standard
-`just dev` remains fixture-backed and keeps the deterministic synthetic default.
+`web/public`, transform it, or label it as the paper snapshot. There is no
+synthetic runtime fallback: startup fails with the missing manifest path when
+the real release has not been pulled and built.
+
+## Why the checkout did not initially contain the data
+
+The canonical source is roughly 466 MB in a private S3 prefix and the built
+schema-v1 release is roughly 21 MB. Both `data/source/` and `data/releases/` are
+intentionally ignored: source parquet and generated releases are reproducible
+local artifacts, not Git payloads. The earlier build record described a local
+schema-v0.1 output that had neither been committed nor published through a
+catalog, while the browser still defaulted to its public golden fixture. Access
+was not the problem; the immutable `2026_W32` source pull succeeded once it was
+requested explicitly.
 
 ## Remaining step
 

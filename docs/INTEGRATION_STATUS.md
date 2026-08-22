@@ -37,12 +37,14 @@ one deterministic valid/invalid corpus covering all top-level schemas, both
 volume transports, sentinel/mask validity, asymmetric signed affines and
 derived extents/inverses, exact static-map evidence, and cache identity.
 Builders, publishing, HTTP/local browser readers, IndexedDB namespaces,
-downloads, and the deterministic `golden-v1` fixture now use that contract
-exclusively. Encoded resources are verified before persistent caching; corrupt
+downloads, and the deterministic test-only `golden-v1` fixture now use that
+contract exclusively. The real `2026_W32` channel source has been pulled and
+built into a validated ignored local schema-v1 release. Ordinary development
+serves that release and has no synthetic ephys fallback; Playwright alone mounts
+the golden fixture through the local-release server. Encoded resources are verified before persistent caching; corrupt
 entries are evicted and retried, and decoded identity is SHA plus decode
 contract rather than path. Schema-v0.1 runtime code, schemas, fixtures, and
-compatibility tests are removed. External development releases must be rebuilt
-under new release IDs before use. Q4 and Q5 remain unresolved and continue to
+compatibility tests are removed. Q4 and Q5 remain unresolved and continue to
 block a purported production volume release.
 
 The enabled 2-D projection registry exposes registered coronal, sagittal, and

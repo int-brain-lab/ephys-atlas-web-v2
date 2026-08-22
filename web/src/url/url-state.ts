@@ -146,7 +146,7 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   if (view.dataset.releaseId && (view.dataset.datasetId !== defaults.dataset.datasetId || view.dataset.releaseId !== defaults.dataset.releaseId)) {
     params.set('release', view.dataset.releaseId);
   }
-  if (view.featureId) params.set('feature', view.featureId);
+  if (view.featureId && view.featureId !== defaults.featureId) params.set('feature', view.featureId);
   if (view.representation !== defaults.representation) params.set('repr', view.representation);
   if (view.parcellation !== defaults.parcellation) params.set('parcel', view.parcellation);
   if (view.regionOrder !== defaults.regionOrder) params.set('order', view.regionOrder);

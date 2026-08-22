@@ -51,7 +51,7 @@ export class AtlasApp {
   constructor(root: HTMLElement, private readonly options: AppOptions = {}) {
     const defaultView = options.defaultView ?? DEFAULT_VIEW_STATE;
     this.store = createAppStore({ ...DEFAULT_APP_STATE, view: defaultView });
-    const catalogUrl = new URL(options.catalogUrl ?? '/fixtures/catalog.json', window.location.href).toString();
+    const catalogUrl = new URL(options.catalogUrl ?? '/catalog.json', window.location.href).toString();
     const repository = new DatasetRepository(new HttpDatasetSource(catalogUrl), this.localSource);
     this.session = new DatasetSession(repository, this.store, () => this.render());
     this.urlController = new UrlStateController(this.store, window, defaultView);

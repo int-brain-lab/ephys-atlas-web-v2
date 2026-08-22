@@ -52,7 +52,11 @@ Scientific provenance is part of the product contract, not optional metadata.
   coherent task rather than adding adapter-specific shadow schemas.
 - Large numeric data belongs in typed binary artifacts, not large JSON payloads.
 - `fixtures/golden-v1/` is deterministic and synthetic. It must never be presented as scientific data.
-- The browser-served golden fixture must remain semantically identical to the builder fixture. If copies are needed for Vite, update them from the canonical fixture rather than hand-editing divergent content.
+- Synthetic ephys fixtures are test-only inputs. Do not copy them under
+  `web/public/`, use them as the runtime default, or fall back to them when a
+  configured real release is absent.
+- Browser tests must mount the canonical golden fixture directly through the
+  test-only local-release server; do not maintain a divergent browser copy.
 
 ## Rendering invariants
 

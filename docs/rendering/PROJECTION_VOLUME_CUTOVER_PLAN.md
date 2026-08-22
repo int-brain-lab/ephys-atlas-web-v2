@@ -468,7 +468,8 @@ Status: **implemented**.
 
 - update builder serialization, Python/TypeScript validators, publishing
   validation, HTTP/local readers, IndexedDB namespace, and download metadata;
-- regenerate a newly identified canonical synthetic release and browser copy;
+- regenerate one canonical synthetic test release and mount it only through
+  the test server;
 - rebuild development releases under new release IDs rather than mutating
   immutable outputs;
 - migrate deterministic channel/cluster tests and keep raw/denoised identity in

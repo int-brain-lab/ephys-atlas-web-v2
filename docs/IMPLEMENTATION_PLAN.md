@@ -45,14 +45,14 @@ Q1 and Q3 are resolved. The paper-facing release remains blocked by Q2.
 Development may build the latest source only when it resolves and records an
 immutable vintage.
 
-The pinned environment and latest development build were completed against the
-immutable `2026_W32` snapshot on 2026-08-20. Details and exact pins are recorded
+The pinned environment and schema-v1 development build were completed against
+the immutable `2026_W32` snapshot on 2026-08-22. Details and exact pins are recorded
 in `docs/data/DEVELOPMENT_RELEASE.md`.
 
 Next actions:
 
-1. use `just dev-real` for the implemented local non-production catalog and
-   viewer path to the immutable development release;
+1. use `just dev` for the local non-production catalog and viewer path to the
+   immutable development release; missing real data is a startup error;
 2. expose the same release through an authorized non-production object-store catalog;
 3. repeat the now-green real-value browser acceptance suite against that origin
    to cover deployment headers and caching;

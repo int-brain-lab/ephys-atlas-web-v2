@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { Plugin } from 'vite';
@@ -10,6 +11,8 @@ interface RealDevelopmentRelease {
   datasetId: string;
   releaseId: string;
   featureId: string;
+  manifestBytes: number;
+  manifestSha256: string;
 }
 
 function mediaType(filePath: string): string {
@@ -24,8 +27,10 @@ export async function loadRealDevelopmentRelease(
   const releaseRoot = path.resolve(releasePath);
   const manifestPath = path.join(releaseRoot, 'manifest.json');
   let document: unknown;
+  let manifestBytes: Uint8Array;
   try {
-    document = JSON.parse(await readFile(manifestPath, 'utf8')) as unknown;
+    manifestBytes = await readFile(manifestPath);
+    document = JSON.parse(Buffer.from(manifestBytes).toString('utf8')) as unknown;
   } catch (error) {
     throw new Error(`Cannot read real development release manifest at ${manifestPath}`, { cause: error });
   }
@@ -50,11 +55,13 @@ export async function loadRealDevelopmentRelease(
     datasetId: manifest.dataset_id,
     releaseId: manifest.release.release_id,
     featureId,
+    manifestBytes: manifestBytes.byteLength,
+    manifestSha256: createHash('sha256').update(manifestBytes).digest('hex'),
   };
 }
 
 export function realReleasePlugin(release: RealDevelopmentRelease): Plugin {
-  const { releaseRoot, datasetId, releaseId } = release;
+  const { releaseRoot, datasetId, releaseId, manifestBytes, manifestSha256 } = release;
   return {
     name: 'ephys-atlas-real-development-release',
     configureServer(server) {
@@ -64,17 +71,21 @@ export function realReleasePlugin(release: RealDevelopmentRelease): Plugin {
           response.setHeader('Content-Type', 'application/json; charset=utf-8');
           response.setHeader('Cache-Control', 'no-store');
           response.end(JSON.stringify({
-            schemaVersion: '0.1',
+            schema_version: '1.0',
             datasets: [{
-              id: datasetId,
+              dataset_id: datasetId,
               title: `${datasetId} (real development release)`,
               description: 'Pinned local development release; not the paper snapshot.',
-              defaultRelease: releaseId,
+              default_release: releaseId,
               releases: [{
-                id: releaseId,
-                label: releaseId,
-                manifest: `./${datasetId}/${releaseId}/manifest.json`,
-                immutable: true,
+                release_id: releaseId,
+                manifest: {
+                  path: `./${datasetId}/${releaseId}/manifest.json`,
+                  media_type: 'application/json',
+                  bytes: manifestBytes,
+                  sha256: manifestSha256,
+                  codec: { name: 'none', decoded_bytes: manifestBytes },
+                },
               }],
             }],
           }));
