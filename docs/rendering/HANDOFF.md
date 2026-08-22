@@ -12,6 +12,12 @@ legacy fallback, and future 3-D details stay below it. Renderer implementations
 must not introduce separate application state or infer scientific transforms
 from display calibration.
 
+This is current implementation state, not the next target. D031 and
+`docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` approve a coordinated
+breaking replacement with one retained layered projection viewport, schema v1,
+and a five-projection pack. Do not extend the current facade or add compatibility
+adapters while executing that cutover.
+
 ## Active regional anatomy
 
 The default renderer uses sparse indexed-SVG `anatomy-pack-v3` with immutable

@@ -16,6 +16,23 @@ Dataset IDs are runtime identifiers rather than a fixed launch enum. Dataset, fe
 
 HTTP and local datasets share the same regional materializer through a transport-independent resource-reader interface. The validation implementation is split by contract concern behind the existing public validation facade.
 
+## Approved next architecture cutover
+
+D031 and `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` define the next
+unblocked implementation unit. The current schema-v0.1, `SliceRenderer`/hybrid,
+anatomy-pack compatibility, legacy fallback, and URL-migration paths remain
+factual implementation state today; they are not long-term compatibility
+requirements. The coordinated cutover will replace them with one schema v1,
+one current URL codec, one five-projection asset contract, and retained layered
+projection viewports. It will add static Top and Swanson views through the same
+regional SVG presentation/interaction path used by the registered orthogonal
+views.
+
+The plan is accepted but not yet implemented. Q4 and Q5 remain unresolved and
+continue to block a purported production volume release. Synthetic fixtures
+may implement and test the new machinery without choosing those scientific or
+transport answers.
+
 The regional UI keeps DOM concerns in its controller while region search/value/statistics derivation is pure/testable. Large dynamic tree interaction uses delegated events.
 The region browser defaults to the expandable anatomical hierarchy and offers
 URL-persisted ascending or descending value rankings as a flat selectable list.
@@ -57,7 +74,7 @@ D028.
 
 The active regional anatomy display is the immutable sparse `anatomy-pack-v3`, derived byte-for-byte from the validated bilateral 10 µm `anatomy-pack-v2` parent. Application/URL/cursor state remains in native 10 µm coordinates while display geometry uses the sparse 80 µm inventory.
 
-Anatomy manifest/version validation is separate from runtime fetch/cache/worker behavior. The v1/v2 compatibility paths remain explicit where they are still useful for validation or rollback; format-specific code should not be unified merely to reduce file count.
+Anatomy manifest/version validation is separate from runtime fetch/cache/worker behavior. The current v1/v2/v3 paths remain present only until the approved breaking cutover; validated artifacts and hashes remain reproducibility evidence, but runtime compatibility paths will be deleted.
 
 ## Scientific data/builders
 
@@ -258,8 +275,9 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
 1. expose the validated `2026_W32` channel development release through an
    authorized non-production origin and repeat real-value browser acceptance;
    freeze the paper release after Q2;
-2. extend volume browser/HTTP benchmarks, resolve Q4-Q5 authoritatively, and
-   build the real immutable volume release;
+2. execute the approved projection/schema/volume-foundation cutover with
+   synthetic fixtures, then extend volume browser/HTTP benchmarks, resolve
+   Q4-Q5 authoritatively, and build the real immutable volume release;
 3. resolve Q6 and build the production cluster release;
 4. define and build the exact `brainwide_map` product after Q7;
 5. finish M5 downloads and local-dataset management UX;

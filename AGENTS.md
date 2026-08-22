@@ -39,26 +39,41 @@ Scientific provenance is part of the product contract, not optional metadata.
 
 ## Data and schema invariants
 
-- Schema v0.1 in `schema/v0.1/` is the contract shared by the builder, browser, local import, and publishing service.
-- Prefer changing the contract once and updating every producer/consumer in the same coherent task rather than adding adapter-specific shadow schemas.
+- Schema v0.1 in `schema/v0.1/` is the currently implemented contract. The
+  approved pre-launch cutover in
+  `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` replaces it with one schema
+  v1 across the builder, browser, local import, publishing service, and
+  fixtures; it does not preserve v0.1 readers or adapters.
+- Change the contract once and update every producer/consumer in the same
+  coherent task rather than adding adapter-specific shadow schemas.
 - Large numeric data belongs in typed binary artifacts, not large JSON payloads.
 - `fixtures/golden-v0.3/` is deterministic and synthetic. It must never be presented as scientific data.
 - The browser-served golden fixture must remain semantically identical to the builder fixture. If copies are needed for Vite, update them from the canonical fixture rather than hand-editing divergent content.
 
 ## Rendering invariants
 
-- `SliceRenderer` is the application rendering boundary. Keep SVG, Canvas, volume, and future 3-D implementation details below it.
+- `SliceRenderer` is the currently implemented boundary, but it is frozen for
+  compatibility-only work. The approved cutover replaces it with one retained,
+  layered 2-D projection viewport shared by regional SVG and volume Canvas;
+  follow `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` and do not add a
+  parallel renderer facade.
 - The immutable bilateral 10 µm `anatomy-pack-v2` is the canonical regional
   geometry and affine authority. The active sparse `anatomy-pack-v3` copies
-  display planes from that parent without changing scientific navigation.
-- Navigation and URL v3 use the native bilateral 10 µm Allen grid and one ML/AP/DV cursor. Keep v1 10 µm and v2 25 µm URL migration covered.
+  display planes from that parent without changing scientific navigation. The
+  cutover may repackage those validated fragments into the new projection-pack
+  contract without weakening their scientific evidence.
+- Navigation uses the native bilateral 10 µm Allen grid and one ML/AP/DV
+  cursor. The approved pre-launch reset does not require old URL migrations in
+  the completed runtime.
 - Do not hand-edit generated anatomy manifests or packs. Parent regeneration
   requires the pinned source annotation/LUT, a clean generator commit, and the
   topology/coverage/error gates in
   `docs/rendering/ANATOMY_PACK_CONTRACT.md` and
   `docs/rendering/BILATERAL_ANATOMY_PACKS.md`; sparse display derivation must
   satisfy `docs/rendering/ANATOMY_PACK_V3_CONTRACT.md`.
-- The five curated v1 SVG bundles remain pinned historical fallback assets only. Their identity and calibration are documented in `docs/frontend/LEGACY_CURATED_ASSETS.md`.
+- Legacy runtime compatibility and host access are not requirements. Exact
+  pinned Top/Swanson source bytes may be deterministic build inputs for static
+  projection assets, with distinct provenance and no invented affine.
 - Volume storage layout (`chunks3d` versus `orthogonal_slice_packs`) is independent of scientific grid geometry. Choose the production layout from measured real-data browser benchmarks, not convenience.
 
 ## Frontend constraints

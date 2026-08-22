@@ -61,7 +61,12 @@ Immutable-resource caching may be used for responsiveness, but failed in-flight 
 
 ## Contracts and validation
 
-Schema v0.1 remains explicit and versioned. Browser validation is organized by contract concern (primitive values, binary arrays, catalog/manifest, feature descriptors, statistics, decoded payloads, and complete local-release graphs) behind a stable public validation facade.
+The approved pre-launch cutover replaces schema v0.1 with one schema v1 used by
+every producer and consumer. Browser validation remains organized by contract
+concern (primitive values, binary arrays, catalog/manifest, feature descriptors,
+statistics, decoded payloads, and complete local-release graphs) behind a
+stable public validation facade. There is no completed-runtime requirement for
+v0.1 compatibility.
 
 The Python builder validator and TypeScript runtime validator are independent implementations of the same contract. Shared valid/invalid fixture corpora should be used to prevent semantic drift; do not add a large runtime schema dependency solely to deduplicate validation code.
 
@@ -81,17 +86,41 @@ The Python builder validator and TypeScript runtime validator are independent im
 
 ## Rendering
 
-`SliceRenderer` is the application rendering boundary. Atlas/world-coordinate and slice-calibration primitives live outside rendering so domain state and URL migration do not depend on a renderer implementation.
+The target application rendering boundary is one retained layered 2-D
+projection viewport. It composes optional scalar-volume Canvas, regional SVG,
+selection/hover, and guide layers without replacing the mounted view. The
+current `SliceRenderer`/hybrid boundary is removed by the coordinated cutover,
+not wrapped indefinitely.
 
-The active regional anatomy path uses immutable sparse indexed SVG packs derived from the validated bilateral Allen CCFv3 parent pack. Manifest/version parsing is separated from the anatomy runtime so format compatibility can evolve without mixing schema rules into fetch/cache/worker code.
+A projection registry distinguishes registered orthogonal slice stacks from
+static regional maps by capabilities. `SliceAxis` remains a scientific type
+for coronal/sagittal/horizontal only. Top and Swanson use the same regional SVG
+layer but declare no affine, volume, slider, wheel-navigation, or crosshair
+capability.
+
+The active regional anatomy content remains derived from validated bilateral
+Allen CCFv3 geometry. One logical projection-pack contract exposes all five 2-D
+views while preserving separate provenance for registered and curated static
+geometry. The completed browser supports only the current contract; older pack
+artifacts may remain build/reproducibility evidence rather than runtime formats.
 
 SVG remains the regional interaction representation because stable path IDs support delegated picking, selection, coloring, and linked guides. Expensive decode work belongs in workers and decoded geometry caches must be byte-bounded.
+
+One ML/AP/DV world cursor is the only scientific bridge among registered
+layers. Anatomy and volume sources independently map it through their declared
+transforms and then into screen space through an explicit plane registration;
+coincident CSS dimensions are not proof of scientific alignment. Physical
+volume transport remains below a storage-neutral decoded-plane source.
 
 3D remains renderer-agnostic. Datoviz, custom WebGPU, Three.js/WebGPU/WebGL, or another suitable browser renderer can be evaluated without coupling the core application model to a specific 3D implementation.
 
 ## UI
 
 Large UI controllers should be decomposed by ownership, not by arbitrary file-size targets. Data shaping/search/statistics calculations should be pure and testable; DOM controllers own events, focus, accessibility, and mutation.
+
+Projection definitions drive view construction, supported layers, navigation
+controls, secondary-panel membership, responsive switching, and focus behavior.
+Do not maintain separate hardcoded desktop/mobile projection inventories.
 
 Event delegation is preferred for large dynamic lists such as the regional tree to avoid rebuilding large listener graphs on every render.
 
@@ -122,5 +151,6 @@ A database, ORM, queue, or web framework should be added only when deployment or
 - Prefer deleting duplication to introducing a generic framework.
 - Preserve scientific provenance and deterministic serialization during refactors.
 - Treat URLs and persisted release formats as explicit versioned contracts.
-- Keep compatibility adapters narrow and removable.
+- During the approved pre-launch reset, update producers and consumers together
+  and delete superseded compatibility adapters before handoff.
 - Add architectural tests for dependency direction and contract parity where they prevent likely regressions.

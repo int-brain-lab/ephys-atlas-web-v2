@@ -279,3 +279,53 @@ On phones, present the same content as a modal bottom sheet with a backdrop,
 because the reduced viewport cannot support simultaneous comparison and atlas
 interaction reliably. Keep comparison data, export behavior, and selection
 state identical across presentations.
+
+## D031 — Pre-launch projection, volume, and schema reset
+
+Use the repository's pre-alpha status to make one breaking architectural
+cutover before production volume releases. There is no requirement to retain
+runtime readers, validators, adapters, fixtures, or URL migrations for the
+current schema v0.1, anatomy pack versions, legacy curated host, or pre-cutover
+URL encodings. Update every producer and consumer coherently, regenerate
+development/synthetic releases, and delete the superseded paths rather than
+maintaining adapters.
+
+Replace D014's `SliceRenderer` boundary with a retained layered 2-D projection
+viewport. Coronal, sagittal, and horizontal are registered slice stacks that
+can compose scalar-volume Canvas, regional-anatomy SVG, selection/hover, and
+guide layers. Top and Swanson are static regional maps using the same SVG
+presentation and interaction implementation without an affine, slice control,
+crosshair, or volume capability. A projection registry and declared
+capabilities drive desktop, secondary-slot, responsive, and focus behavior;
+`SliceAxis` remains limited to the three scientific orthogonal axes.
+
+One ML/AP/DV world cursor remains authoritative. Registered anatomy and volume
+layers independently map it through their own declared transforms; an anatomy
+slice index or display calibration must never stand in for volume geometry.
+Volume transport remains independent from scientific geometry and is still
+selected only by Q5 evidence. Q4 continues to block production affine and
+outside/missing-value semantics.
+
+Adopt one schema v1 for builders, browser HTTP/local data, publishing,
+fixtures, and downloads. Retain the sound v0.1 concepts—dynamic feature
+catalogs, independent representations, provenance, typed binary data, and
+storage-neutral volume geometry—while making imminent volume requirements
+strict: dedicated volume summary metadata, immutable encoded-resource indexes,
+machine-readable validity/outside semantics, supported dtype/axis contracts,
+and honest affine validation. Do not redesign transports without benchmark
+evidence.
+
+Expose all five 2-D views through one logical `atlas-projection-pack-v1`.
+Registered orthogonal geometry retains the validated bilateral 10 um parent,
+affines, sparse display evidence, hashes, and topology/coverage gates. Top and
+Swanson use exact pinned curated source bytes with distinct provenance and are
+normalized to the same Allen/Beryl/Cosmos path-identity contract at build time.
+Validated older anatomy artifacts may remain as immutable reproducibility/build
+evidence but are not supported browser formats after cutover.
+
+This decision supersedes D014; the schema-version-specific parts of D013,
+D015, and D027; the runtime compatibility/fallback portions of D023-D026; and
+the URL-migration requirement in D029. Their scientific provenance,
+immutability, coordinate, performance, public/local parity, and history-intent
+principles remain in force. The complete execution and test plan is
+`docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md`.

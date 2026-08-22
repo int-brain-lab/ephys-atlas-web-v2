@@ -19,6 +19,11 @@ For fresh-checkout and local Codex setup, see
 [`docs/CODEX_HANDOFF.md`](docs/CODEX_HANDOFF.md). It is an operating runbook,
 not a second product-priority list.
 
+The approved next rendering/data-contract unit is the breaking pre-launch
+[`projection and volume architecture cutover`](docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md).
+Future implementation agents should use its commit sequence and acceptance
+gates together with the ordered implementation plan.
+
 Historical/focused documents under `docs/data/`, `docs/frontend/`, `docs/rendering/`, `docs/publishing/`, and `docs/ux/` remain supporting evidence but do not override the active launch spec or decision log.
 
 ## Quick start
@@ -67,7 +72,11 @@ Launch-critical datasets:
 - `brainwide_map`
 - `local` browser-imported datasets
 
-The launch-critical viewer supports regional and volume representations, Allen/Beryl/Cosmos parcellations where applicable, linked orthogonal slices, region search/selection, scalar coloring, descriptive statistics/comparison, shareable URL state, downloads, and the same schema contract for published and local data.
+The launch-critical viewer supports regional and volume representations,
+Allen/Beryl/Cosmos parcellations where applicable, linked orthogonal slices,
+static Top and Swanson regional views, region search/selection, scalar coloring,
+descriptive statistics/comparison, shareable URL state, downloads, and the same
+schema contract for published and local data.
 
 AGEA, MERFISH, large point-cloud workflows, advanced inferential statistics, and a full replacement 3-D stack are deferred unless explicitly promoted.
 

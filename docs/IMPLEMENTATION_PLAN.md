@@ -61,9 +61,22 @@ Next actions:
 
 Acceptance reference: `docs/LAUNCH_SPEC.md` sections 2 and 4.
 
-## M2 — Production volume vertical slice
+## M2 — Projection/volume cutover and production volume vertical slice
 
-Status: **browser/golden path implemented; production science/transport blocked**.
+Status: **breaking projection/schema refactor approved and unblocked;
+production science/transport remains blocked**.
+
+The next implementation unit is the pre-launch cutover in
+`docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md`. It replaces schema v0.1,
+the `SliceRenderer`/hybrid switch, anatomy runtime compatibility, and URL
+migrations with one schema v1, one five-projection asset contract, one current
+URL codec, and retained layered projection viewports. Coronal, sagittal, and
+horizontal support registered anatomy plus volume layers; Top and Swanson are
+static regional projections using the same SVG presentation and interaction
+path. Backward compatibility with the pre-launch formats is not a requirement.
+
+This machinery is unblocked with deterministic synthetic fixtures. It must not
+resolve or conceal Q4/Q5.
 
 Already implemented and green on the handoff baseline:
 
@@ -84,21 +97,28 @@ Current implementation input: the private immutable `ea_active` `2026_W26`
 recorded in `docs/DATA_SOURCES.md`. The older `2026_W12` 25 um measurements are
 historical transport evidence, not the default input for new implementation.
 
-Unblocked preparation work Codex may do before scientific resolution:
+Ordered next actions before scientific resolution:
 
-1. pull, checksum, and header-inspect the documented `2026_W26` object, then
+1. execute commits 1-9 in the focused cutover plan, keeping every handoff green;
+2. regenerate the canonical synthetic fixture and development releases under
+   the new contract, without redundant `Source variant: raw/denoised` prose in
+   feature descriptions;
+3. verify the layered golden volume path, registered anatomy overlays, and
+   Top/Swanson shared interactions across responsive layouts;
+4. pull, checksum, and header-inspect the documented `2026_W26` object, then
    repeat the real-feature slice-pack benchmarks on representative feature
    distributions and the eventual HTTP/CDN origin;
-2. compare the current depth-4 recommendation against depth 8 under production
+5. compare the current depth-4 recommendation against depth 8 under production
    cache headers/network profiles without selecting the winner prematurely;
-3. keep renderer failures explicit for invalid transforms and resource layouts.
+6. keep failures explicit for invalid transforms, out-of-volume coordinates,
+   resource-integrity errors, and unsupported layouts.
 
 After Q4/Q5 resolution:
 
-6. encode the authoritative transform/outside semantics;
-7. select and document the production layout;
-8. build a real immutable `ephys_atlas_volumes` release;
-9. run linked-slice browser acceptance against it.
+7. encode the authoritative transform/outside semantics;
+8. select and document the production layout;
+9. build a real immutable `ephys_atlas_volumes` release;
+10. run linked-slice browser acceptance against it.
 
 Acceptance reference: `docs/LAUNCH_SPEC.md` sections 3 and 6.
 
