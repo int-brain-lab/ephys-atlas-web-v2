@@ -130,12 +130,16 @@ Scientific coordinate identity has three deliberately separate levels:
 
 The application remains renderer-agnostic for 3-D, while the first isolated
 brain-mesh lab uses Three.js WebGL2 to minimize implementation and browser risk.
-The higher-level workspace registry distinguishes `projection-2d` from
-`scene-3d`; `ProjectionRegistry` and `ProjectionViewport` remain specifically
-2-D. A 3-D scene shares coordinate-space identity, regional presentation,
-selection, and hover through technology-neutral inputs, but owns camera,
-explode, GPU resources, and failure state. The standalone lab must not import
-or duplicate `AtlasApp`, dataset sessions, URL reducers, or projection layers.
+The secondary/context content registry distinguishes summary,
+`projection-2d`, and `scene-3d` content while the workspace retains its three
+orthogonal slots plus one secondary slot. `ProjectionRegistry` and
+`ProjectionViewport` remain specifically 2-D. A sibling retained 3-D viewport
+shares coordinate-space identity, regional presentation, selection, and hover
+through technology-neutral inputs, but owns camera, explode, GPU resources,
+lifecycle, and failure state. `AtlasApp` remains the composition root; neither
+the standalone lab nor the retained 3-D viewport duplicates its dataset
+session, URL reducer, colormap, or projection layers. D037 and
+`docs/rendering/3D_INTEGRATION_PLAN.md` define the integration boundary.
 
 Production mesh geometry is an immutable derived web asset, not the raw source
 GLB. Its manifest records source hashes, coordinate axes/units/transform,

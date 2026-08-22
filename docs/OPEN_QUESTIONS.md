@@ -159,14 +159,20 @@ D032 fixes the lab direction: Three.js WebGL2, a pinned derived mesh pack,
 one optional higher LOD, dynamic regional presentation, and genuine radial
 explode. These are sufficient to implement and measure the experiment.
 
+The repository owner approved integration as an optional, visibly experimental
+main-application context view on 2026-08-22. This resolves whether integration
+machinery may be built; it does not approve a production asset or scientific
+release.
+
 Resolution needed before production promotion: visual review at representative
 320/480/800 px view sizes; Chrome/Edge, Firefox, and Safari transfer/decode/
-first-frame/memory/picking results; final per-region simplification thresholds;
-and a product decision to expose 3-D in the main workspace. Every active region,
-including Allen 545 (`RSPd4`) absent from the inspected source GLB, must have
-validated geometry or an explicit scientifically justified exclusion.
+first-frame/memory/picking results; approval of the grey-matter/deepest-active
+scope, Allen 545 (`RSPd4`) source exclusion, Allen 898 open-midline exception,
+and nullable reduced mappings; canonical annotation/LUT evidence; final
+default/upgrade LODs; and the public immutable asset origin.
 
-Blocks: production 3-D asset publication and main-workspace promotion only.
+Blocks: production 3-D asset publication and removal of the experimental label,
+not implementation of the optional context view with deterministic fixtures.
 
 ## Q13 — Top/Swanson deployed-fragment license coverage
 

@@ -484,3 +484,36 @@ Load anatomy independently and preserve it with an explicit error if volume
 compatibility, extent, integrity, or loading fails. The deterministic golden
 volume declares a small Allen CCF 2017 subgrid so the composition machinery is
 exercised, but its values remain synthetic and scientifically meaningless.
+
+## D037 — Integrate 3-D through context content and a sibling viewport
+
+Promote the completed brain-mesh experiment into the main application as an
+optional, visibly experimental context view while production assets remain
+gated by Q12. Treat the frozen experiment branch as donor evidence and rebuild
+reviewed vertical slices on current `main`; do not bulk merge its stale
+cutover-era application and documentation changes.
+
+Place `brain-3d` inside the existing secondary/context slot through a
+discriminated content registry. Keep the four workspace layout slots and the
+2-D `ProjectionRegistry` unchanged. A retained `BrainScene3DViewport` and
+factory are siblings of the retained projection viewport boundary; do not add
+a combined renderer facade. `AtlasApp` remains the composition root and maps
+the one dataset session, regional presentation, selection, hover, and URL store
+to both boundaries.
+
+Converge the experiment's placeholder and EAM3 lab manifests into one strict
+`atlas-mesh-pack-v1` producer/validator/consumer contract before application
+wiring. Load it through the existing verified immutable resource machinery,
+worker decode, a byte-bounded decoded cache, and complete lifecycle disposal.
+Upload merged hemisphere geometry once per LOD; mapping, color, visibility,
+selection, hover, and explode must not rebuild geometry buffers or fetch bytes.
+
+Persist optional explode and a complete renderer-neutral position/target/up
+camera pose as backward-compatible URL-v4 fields. Keep LOD, loading, hover, and
+GPU state runtime-only. The manifest chooses the default and optional upgrade
+LOD. Volume features are anatomy-only in 3-D. Production publication, final
+LOD, scientific exclusions, and removal of the experimental label remain Q12.
+
+The complete ownership, contract, commit order, tests, stop conditions, and
+donor-retirement protocol are in
+`docs/rendering/3D_INTEGRATION_PLAN.md`.

@@ -94,12 +94,21 @@ fragments with pinned `60 20 340 300` view boxes. The deployed static fragment
 license coverage still requires confirmation before production ingestion;
 synthetic fixtures are unblocked.
 
-An independent, non-production brain-mesh 3-D lab is also approved. It is not
-implemented and is not part of M2 or launch acceptance. It will use a standalone
-Vite entry and reusable technology-neutral scene inputs so mesh/interaction
-iteration can proceed in a short-lived worktree without importing or forking
-the main application. Integration waits for M2's higher-level workspace-view
-seam; `ProjectionRegistry` remains 2-D-specific.
+An independent, non-production brain-mesh 3-D lab is implemented in the frozen
+donor branch `experiment/brain-mesh-3d-lab` at `ba1e2d1`. It demonstrates the
+offline compiler, verified EAM3/meshopt loading, merged bilateral rendering,
+mapping/color/selection, press-referenced arcball controls, and grouped radial
+explode. It has not been integrated on `main`, is not part of M2 or launch
+acceptance, and must not be bulk merged because it predates final projection
+cutover commits.
+
+Optional main-application integration is approved through D037 and
+`docs/rendering/3D_INTEGRATION_PLAN.md`. The target is a `brain-3d` content kind
+inside the existing secondary/context slot, backed by a sibling retained 3-D
+viewport and the application's one regional-presentation/state lifecycle.
+`ProjectionRegistry` remains 2-D-specific. The first unblocked implementation
+work is contract/compiler convergence with deterministic tiny fixtures;
+production assets and removal of the experimental label remain blocked by Q12.
 
 The regional UI keeps DOM concerns in its controller while region search/value/statistics derivation is pure/testable. Large dynamic tree interaction uses delegated events.
 The region browser defaults to the expandable anatomical hierarchy and offers

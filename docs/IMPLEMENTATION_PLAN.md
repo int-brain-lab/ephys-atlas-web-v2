@@ -184,36 +184,35 @@ scientific boundaries, and promotion stopping point are specified in
 
 ## P3D — Independent brain-mesh 3-D lab
 
-Status: **approved independent experiment; non-blocking for launch**.
+Status: **experiment implemented in frozen donor; main integration approved and
+not started; non-blocking for launch**.
 
-This lane may run concurrently with M2 in the explicitly authorized short-lived
-worktree described by `AGENTS.md`. It must not import or fork `AtlasApp`, the
-2-D projection viewport, URL state, or dataset sessions. The refactor owns the
-higher-level workspace-view and regional-presentation contracts; the lab owns
-only deterministic mesh-pack tooling, reusable 3-D runtime modules, and a
-standalone Vite entry with synthetic controls.
+The explicitly authorized worktree described by `AGENTS.md` has completed its
+experimental purpose and now remains frozen as donor evidence. Its isolation
+boundary remains authoritative: the lab must not import or fork `AtlasApp`, the
+2-D projection viewport, URL state, or dataset sessions. Main integration owns
+the context-content and shared regional-presentation contracts; port only
+reviewed mesh-pack tooling, 3-D runtime behavior, and the standalone lab.
 
-Ordered slices:
+The completed donor at `ba1e2d129753bdc459bca7b23fa896f41ee13536`
+demonstrates deterministic offline compilation, exact hemisphere clipping,
+verified EAM3/meshopt loading, merged rendering, mapping/color/selection,
+press-referenced arcball controls, and grouped explode. It is evidence, not an
+integration branch: do not bulk merge or rebase it onto `main`.
 
-1. define `atlas-mesh-pack-v1`, pin and validate the source GLB and canonical
-   10 um annotation/LUT, and add a tiny synthetic bilateral fixture;
-2. build the measured default/high meshopt LODs with signed region IDs,
-   canonical centroids, deterministic hashes, and region-coverage gates;
-3. add `/3d-lab/` using Three.js WebGL2 with orbit, picking, mapping/color,
-   visibility, selection, bilateral presentation, and radial explode controls;
-4. measure transfer, decode, first frame, draw calls, memory, recoloring,
-   picking, and LOD swaps at representative viewport sizes and browsers;
-5. only after M2 exposes the shared workspace seam, integrate the lab as an
-   optional `scene-3d` view through a small adapter and add URL/responsive tests.
+Reconstruct the approved integration on current `main` in the ordered commits
+defined by `docs/rendering/3D_INTEGRATION_PLAN.md`: converge one production
+asset contract; add the verified worker-owned source; extract a retained
+renderer and thin standalone lab; share regional presentation with 2-D;
+registry-drive context content and URL state; wire a thin application adapter;
+then complete Q12 evidence and cleanup. The existing secondary/context slot is
+the integration seam; the four workspace slots and 2-D projection registry do
+not gain a permanent fifth panel or 3-D projection.
 
-The lab downloads one union default-LOD pack, not one file per region. It may
-prefetch that pack at low priority after launch-critical 2-D work, loads one
-optional high LOD on sustained/maximized use, and switches Allen/Beryl/Cosmos
-through tables without fetching geometry again. Full-resolution and future
-volume-rendering assets are separate follow-ups.
+Next unblocked action: execute Commit 0 of that plan, then Commit 1 against
+deterministic tiny fixtures. Production asset promotion remains blocked by Q12.
 
-Detailed evidence, contracts, budgets, and promotion gates:
-`docs/rendering/3D_EVALUATION.md`.
+Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 
 ## M3 — `ephys_atlas_clusters`
 

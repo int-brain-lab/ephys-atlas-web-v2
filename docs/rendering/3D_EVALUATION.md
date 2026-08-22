@@ -3,6 +3,11 @@
 Status: **approved independent non-production lab (2026-08-22)**. Production
 promotion remains optional and is tracked by Q12.
 
+The experiment is implemented in the frozen donor branch at `ba1e2d1`.
+Main-application promotion must follow `docs/rendering/3D_INTEGRATION_PLAN.md`;
+do not merge the donor branch wholesale or treat its lab manifest/runtime
+composition as the production architecture.
+
 This document is the focused handoff for iterating on a browser 3-D view in
 parallel with the projection/volume cutover. It records inspected IBL assets,
 exploratory compression measurements, the first implementation contract, and
@@ -314,4 +319,5 @@ The lab slice is complete when:
 - default loading is one request, high loading is at most one additional
   request, and 2-D remains usable under every 3-D failure;
 - the standalone lab and reusable modules are tested and `just check` is green;
-- main-workspace promotion remains a separate explicit Q12 decision.
+- production asset promotion and removal of the experimental label remain a
+  separate explicit Q12 decision.
