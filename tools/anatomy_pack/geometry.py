@@ -147,6 +147,8 @@ def adjacency_pairs(
     geometries: list[Polygon | MultiPolygon],
 ) -> set[tuple[int, int]]:
     """Return indexes of regions sharing a boundary segment."""
+    if not geometries:
+        return set()
     tree = STRtree(geometries)
     pairs = tree.query(geometries, predicate="intersects")
     result: set[tuple[int, int]] = set()

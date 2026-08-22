@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
+  <title>IBL anatomy smoothing evidence</title>
+  <style>
+    :root { color-scheme: dark; font: 15px/1.5 system-ui, sans-serif; background: #10161d; color: #e8f1f6; }
+    body { max-width: 76rem; margin: 0 auto; padding: 2rem; }
+    h1 { margin-bottom: .25rem; }
+    .notice { border-left: .3rem solid #29c5d6; padding: .75rem 1rem; background: #18232d; }
+    dl { display: grid; grid-template-columns: max-content 1fr; gap: .35rem 1rem; }
+    dt { color: #91a6b5; } dd { margin: 0; overflow-wrap: anywhere; }
+    table { border-collapse: collapse; width: 100%; } th, td { padding: .45rem; border-bottom: 1px solid #34424e; text-align: left; }
+    .reference { color: #7bdff2; } .eligible { color: #8be28b; } .rejected { color: #ff8d8d; } .unsafe-control { color: #ffd166; }
+  </style>
+</head>
+<body>
+  <h1>Anatomy smoothing evidence</h1>
+  <p class="notice">Offline investigation output. Eligibility uses provisional gates and does not approve production geometry.</p>
+  <dl id="provenance"></dl>
+  <h2>Run summary</h2>
+  <table><thead><tr><th>Projection</th><th>Slice</th><th>Reason</th><th>Reference</th><th>Eligible</th><th>Rejected</th><th>Unsafe</th></tr></thead><tbody id="summary"></tbody></table>
+  <script type="application/json" id="report-data">__ANATOMY_SMOOTHING_LAB_DATA__</script>
+  <script>
+    'use strict';
+    const report = JSON.parse(document.getElementById('report-data').textContent);
+    const provenance = document.getElementById('provenance');
+    const entries = [
+      ['Format', report.format], ['Created', report.created_at], ['Source mode', report.source.mode],
+      ['Generator commit', report.provenance.generator.commit], ['Dirty worktree', String(report.provenance.generator.dirty)],
+      ['GEOS', report.provenance.geos_version], ['Policy', report.policy.status]
+    ];
+    for (const [term, value] of entries) { const dt=document.createElement('dt'); dt.textContent=term; const dd=document.createElement('dd'); dd.textContent=value; provenance.append(dt,dd); }
+    const body = document.getElementById('summary');
+    for (const plane of report.planes) {
+      const counts = {'reference':0,'eligible':0,'rejected':0,'unsafe-control':0};
+      for (const variant of plane.variants) counts[variant.eligibility]++;
+      const row=document.createElement('tr');
+      for (const value of [plane.projection, plane.slice_index, plane.selection_reasons.join('; '), counts.reference, counts.eligible, counts.rejected, counts['unsafe-control']]) { const cell=document.createElement('td'); cell.textContent=value; row.append(cell); }
+      body.append(row);
+    }
+  </script>
+</body>
+</html>

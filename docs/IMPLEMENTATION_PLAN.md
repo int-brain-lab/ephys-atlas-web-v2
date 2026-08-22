@@ -166,7 +166,7 @@ Acceptance reference: `docs/LAUNCH_SPEC.md` sections 3 and 6.
 
 ## P2S — Anatomy smoothing and simplification lab
 
-Status: **approved investigation; Slice 1 implemented and non-blocking for
+Status: **approved investigation; Slices 1-2 implemented and non-blocking for
 launch**.
 
 The exact bilateral 10 µm registered paths preserve raster-cell boundaries and
@@ -182,9 +182,10 @@ D039 additionally requires the lab to pin the Allen 10 um average-template
 intensity volume and expose exact/candidate boundaries over that anatomical
 image, together with per-candidate encoded sizes, geometry/scientific metrics,
 and representative browser costs. This investigation should run before the
-production projection asset is frozen. Slice 1 now provides the pure strategy,
-metric, failure-retention, and synthetic-topology core. The next unblocked
-action is Slice 2, the deterministic offline report builder.
+production projection asset is frozen. Slices 1-2 now provide the pure strategy,
+metric, failure-retention, synthetic-topology, deterministic report, pinned
+source-validation, stress-selection, and exact-parent regeneration machinery.
+The next unblocked action is Slice 3, the interactive offline review UI.
 
 The ordered implementation slices, metric contract, UI requirements,
 scientific boundaries, and promotion stopping point are specified in

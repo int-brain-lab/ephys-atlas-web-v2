@@ -1,7 +1,13 @@
 # Anatomy smoothing and simplification lab plan
 
-Status: **approved investigation lane; not implemented and not a production
+Status: **approved investigation lane; Slices 1-2 implemented; not a production
 geometry decision**.
+
+Implementation status: Slices 1 and 2 are complete. The pure experiment core,
+deterministic self-contained report builder, synthetic offline report, pinned
+real-source validation, deterministic stress selection, and narrow exact-v2
+regeneration check are implemented. Slice 3, the interactive offline review
+UI, is next; no smoothing policy or production asset has been selected.
 
 This document is an execution plan for a standalone, local lab that compares
 presentation-oriented smoothing and simplification of the active bilateral
@@ -79,6 +85,25 @@ anatomy or projection pack in this lane.
   `atlas-projection-pack-v1`, or add a runtime renderer mode.
 - Lab output belongs under ignored `artifacts/`; it is not production data and
   must not be committed.
+
+## Pinned real review inputs
+
+The Slice 2 real-source run on 2026-08-22 used the existing exact-v2 annotation
+and bilateral LUT identities plus the official Allen average-template object
+downloaded by pinned `iblatlas` commit
+`52083adf44825d0622a503705e095699a5957587`:
+
+- `annotation_10.nrrd`: 32,802,468 bytes, SHA-256
+  `a9e9654ef491f0af107dc0a61bd720dabe7f36e8f3e9239532bf3dbdc94ef24c`;
+- `annotation_10_lut_bilateral_v02.npy`: 2,407,680,128 bytes, SHA-256
+  `f8c26e2eb972cbff5caa2101fda8b7c5c2a2bdb985e3faad6bf0e57defcc27cb`;
+- `average_template_10.nrrd`: 342,560,843 served bytes, SHA-256
+  `055b79034ea3ac47cf8776ecdb0c61d2b338d38ee5fd87d0962753efe600a775`,
+  from Allen Institute `current-release/mouse_ccf/average_template/` through
+  the pinned `iblatlas` downloader.
+
+The `current-release` URL is not itself immutable; the recorded byte size and
+SHA-256 are the review-input identity. These external bytes remain outside Git.
 - A visually preferred result is not accepted until the existing full-corpus
   topology and coverage gates pass. The lab may report a candidate as
   structurally valid, but only a later explicit decision may set a production
@@ -292,7 +317,7 @@ Complete these in order, keeping each commit green and reviewable.
 
 Completion: focused Python tests pass without downloading the real atlas.
 
-### Slice 2 — Deterministic report builder
+### Slice 2 — Deterministic report builder (complete)
 
 - Add a CLI with explicit `--output`, `--created-at`, `--strategies`,
   `--tolerances-um`, optional per-projection slice lists, and offline/source

@@ -162,7 +162,11 @@ def measure_candidate(
                 iou=iou,
             )
         )
-        error_samples.append(boundary_errors(exact, transformed, resolution_um))
+        error_samples.append(
+            np.zeros(1)
+            if exact.equals(transformed)
+            else boundary_errors(exact, transformed, resolution_um)
+        )
 
     all_errors = np.concatenate(error_samples) if error_samples else np.zeros(1)
     eligible = [
