@@ -102,7 +102,7 @@ explode. It has not been integrated on `main`, is not part of M2 or launch
 acceptance, and must not be bulk merged because it predates final projection
 cutover commits.
 
-The approved anatomy smoothing investigation has completed its first two
+The approved anatomy smoothing investigation has completed its first three
 implementation slices. A deterministic registry exposes exact geometry, GEOS
 whole-coverage simplification with explicit outer-boundary policy, and a
 permanently unsafe independent-ring RDP control. Failure-preserving results
@@ -115,8 +115,13 @@ stress samples deterministically; compares regenerated exact paths with
 verified parent bytes; and keeps all generated output under ignored
 `artifacts/`. The pinned real narrow run passed for all three projections. This
 is offline evidence machinery only; it does not alter the active anatomy or
-choose a production smoothing budget. Slice 3, the interactive offline review
-UI, is the next unblocked action.
+choose a production smoothing budget. Its interactive report now supports
+linked exact/candidate and anatomy views, overlay/blink/boundary modes,
+magnified inspection, clearly separated presentation controls, permanent
+reference/eligible/rejected/unsafe status, full sortable per-region evidence,
+JSON/CSV exports, provenance, and fragment-persisted review location. Synthetic
+wide/tablet and pinned-real coronal visual checks passed. Slice 4 is intentionally
+paused at human qualitative review and shortlisting.
 
 Optional main-application integration is approved through D037 and
 `docs/rendering/3D_INTEGRATION_PLAN.md`. The target is a `brain-3d` content kind

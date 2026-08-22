@@ -120,18 +120,32 @@ def measure_candidate(
 
     reference = [reference_by_label[label] for label in labels]
     candidate = [candidate_by_label[label] for label in labels]
+    identical_objects = all(
+        exact is transformed
+        for exact, transformed in zip(reference, candidate, strict=True)
+    )
     coverage_before = bool(coverage_is_valid(reference)) if reference else True
-    coverage_after = bool(coverage_is_valid(candidate)) if candidate else True
+    coverage_after = (
+        coverage_before
+        if identical_objects
+        else bool(coverage_is_valid(candidate)) if candidate else True
+    )
     valid_after = bool(np.all(shapely.is_valid(candidate))) if candidate else True
     signatures_before = [geometry_signature(value) for value in reference]
     signatures_after = [geometry_signature(value) for value in candidate]
     adjacencies_before = _label_adjacencies(labels, reference)
     adjacencies_after = _label_adjacencies(labels, candidate)
-    uncovered, multiply_covered, wrong_label = voxel_center_errors(
-        source_plane, candidate_by_label
+    uncovered, multiply_covered, wrong_label = (
+        (0, 0, 0)
+        if identical_objects
+        else voxel_center_errors(source_plane, candidate_by_label)
     )
     background_before = internal_background_components(source_plane, reference)
-    background_after = internal_background_components(source_plane, candidate)
+    background_after = (
+        background_before
+        if identical_objects
+        else internal_background_components(source_plane, candidate)
+    )
 
     region_metrics: list[RegionMetrics] = []
     error_samples: list[np.ndarray] = []
@@ -146,8 +160,11 @@ def measure_candidate(
         reference_area = float(exact.area * resolution_um**2)
         candidate_area = float(transformed.area * resolution_um**2)
         area_change = candidate_area - reference_area
-        union_area = exact.union(transformed).area
-        iou = 1.0 if union_area == 0 else float(exact.intersection(transformed).area / union_area)
+        if exact is transformed:
+            iou = 1.0
+        else:
+            union_area = exact.union(transformed).area
+            iou = 1.0 if union_area == 0 else float(exact.intersection(transformed).area / union_area)
         region_metrics.append(
             RegionMetrics(
                 label=label,
@@ -186,7 +203,7 @@ def measure_candidate(
         default=None,
     )
     maximum_error = float(np.max(all_errors))
-    geometries_unchanged = all(
+    geometries_unchanged = identical_objects or all(
         exact.equals(transformed)
         for exact, transformed in zip(reference, candidate, strict=True)
     )

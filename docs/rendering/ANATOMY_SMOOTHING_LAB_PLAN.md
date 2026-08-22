@@ -1,13 +1,18 @@
 # Anatomy smoothing and simplification lab plan
 
-Status: **approved investigation lane; Slices 1-2 implemented; not a production
+Status: **approved investigation lane; Slices 1-3 implemented; not a production
 geometry decision**.
 
-Implementation status: Slices 1 and 2 are complete. The pure experiment core,
+Implementation status: Slices 1 through 3 are complete. The pure experiment core,
 deterministic self-contained report builder, synthetic offline report, pinned
 real-source validation, deterministic stress selection, and narrow exact-v2
-regeneration check are implemented. Slice 3, the interactive offline review
-UI, is next; no smoothing policy or production asset has been selected.
+regeneration check are implemented. The interactive offline UI provides linked
+exact/candidate and anatomy modes, magnified inspection, presentation controls,
+status/failure evidence, sortable per-region metrics, exports, provenance, and
+fragment-persisted location. Synthetic wide/tablet and pinned-real coronal
+visual checks passed without runtime errors or horizontal overflow. Slice 4 is
+the human sample review and shortlist boundary; no smoothing policy or
+production asset has been selected.
 
 This document is an execution plan for a standalone, local lab that compares
 presentation-oriented smoothing and simplification of the active bilateral
@@ -335,7 +340,7 @@ Completion: focused Python tests pass without downloading the real atlas.
 Completion: two fixed runs from synthetic inputs are byte-identical, and a real
 10 µm run writes only to ignored `artifacts/anatomy-smoothing-lab/`.
 
-### Slice 3 — Interactive offline UI
+### Slice 3 — Interactive offline UI (complete)
 
 - Implement the required selectors, comparison modes, linked hover, zoom,
   status/failure presentation, metric summary, worst-region table, and

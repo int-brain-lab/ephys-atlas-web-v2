@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+from html.parser import HTMLParser
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -214,6 +216,55 @@ def test_two_fixed_synthetic_reports_are_byte_identical(tmp_path: Path) -> None:
         "horizontal",
     }
     assert b"https://" not in first.read_bytes()
+    assert first_report["reproduction_command"].endswith("--output <output.html>")
+    assert str(tmp_path) not in first_report["reproduction_command"]
+    assert all(
+        str(region["label"]) in first_report["region_metadata"]
+        for plane in first_report["planes"]
+        for variant in plane["variants"]
+        for region in (variant["metrics"] or {}).get("regions", [])
+    )
+
+
+class _SemanticReportParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.ids: set[str] = set()
+        self.review_panels: set[str] = set()
+        self.controls: set[str] = set()
+
+    def handle_starttag(self, _tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        values = dict(attrs)
+        if values.get("id"):
+            self.ids.add(values["id"])
+        if values.get("data-review-panel"):
+            self.review_panels.add(values["data-review-panel"])
+        if values.get("data-control"):
+            self.controls.add(values["data-control"])
+
+
+def test_offline_ui_has_stable_semantic_controls_and_valid_javascript() -> None:
+    template = Path("tools/anatomy_smoothing_lab/template.html").read_text()
+    parser = _SemanticReportParser()
+    parser.feed(template)
+    assert parser.review_panels == {"exact", "candidate"}
+    assert {
+        "projection",
+        "sample",
+        "strategy",
+        "variant",
+        "mode",
+        "opacity",
+        "brightness",
+        "contrast",
+        "zoom",
+        "stroke-width",
+        "line-join",
+        "line-cap",
+    } <= parser.controls
+    assert {"status", "failures", "regions", "provenance", "reproduction"} <= parser.ids
+    script = template.rsplit("<script>", 1)[1].split("</script>", 1)[0]
+    subprocess.run(["node", "--check"], input=script, text=True, check=True)
 
 
 def test_report_inline_json_is_escaped_and_external_templates_are_rejected() -> None:

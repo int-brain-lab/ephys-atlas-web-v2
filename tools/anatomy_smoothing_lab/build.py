@@ -320,9 +320,21 @@ def _report_plane(
             if result.geometries_by_label is not None
             else None
         )
+        record = result.deterministic_record()
+        metrics = record.get("metrics")
+        if metrics is not None:
+            for region in metrics["regions"]:
+                region["label"] = signed_id_for_label(region["label"])
+            for key in (
+                "worst_iou_region",
+                "worst_absolute_area_change_region",
+                "worst_relative_area_change_region",
+            ):
+                if metrics[key] is not None:
+                    metrics[key] = signed_id_for_label(metrics[key])
         results.append(
             {
-                **result.deterministic_record(),
+                **record,
                 "svg_fragment": fragment,
                 "encoded_sizes": _encoded_sizes(fragment) if fragment is not None else None,
             }
@@ -471,6 +483,11 @@ def build_synthetic_report(args: argparse.Namespace, repository: Path) -> dict[s
         "mode": "synthetic",
         "non_scientific": True,
         "identity": "deterministic synthetic topology fixtures",
+        "region_metadata": {
+            str(label): {"acronym": f"S{label}", "name": f"Synthetic region {label}"}
+            for plane in source_planes.values()
+            for label in sorted(int(value) for value in np.unique(plane) if value != 0)
+        },
     })
 
 
@@ -558,6 +575,14 @@ def build_real_report(args: argparse.Namespace, repository: Path) -> dict[str, A
             "source": args.template_source,
             "iblatlas_commit": IBLATLAS_COMMIT,
         },
+        "region_metadata": {
+            str(int(region_id)): {
+                "acronym": str(regions.acronym[row]),
+                "name": str(regions.name[row]),
+            }
+            for row, region_id in enumerate(regions.id)
+            if int(region_id) != 0
+        },
     }
     return _base_report(args, repository, policy, variants, planes, source)
 
@@ -581,10 +606,14 @@ def _base_report(
         for item in available_strategies()
         if item.strategy_id in args.strategies
     }
+    scientific_source = {
+        key: value for key, value in source.items() if key != "region_metadata"
+    }
     return {
         "format": FORMAT,
         "created_at": args.created_at,
-        "source": source,
+        "source": scientific_source,
+        "region_metadata": source["region_metadata"],
         "policy": {
             **asdict(policy),
             "status": "provisional experiment gates; not a production decision",
@@ -598,7 +627,34 @@ def _base_report(
             "geos_version": shapely.geos_version_string,
             "iblatlas_commit": IBLATLAS_COMMIT,
         },
+        "reproduction_command": _reproduction_command(args),
     }
+
+
+def _reproduction_command(args: argparse.Namespace) -> str:
+    common = (
+        "python -m tools.anatomy_smoothing_lab.build --offline "
+        f"--created-at {args.created_at} --strategies {','.join(args.strategies)} "
+        f"--tolerances-um {','.join(format(value, 'g') for value in args.tolerances_um)} "
+        f"--maximum-error-um {args.maximum_error_um:g} --minimum-iou {args.minimum_iou:g} "
+        f"--minimum-iou-area-mm2 {args.minimum_iou_area_mm2:g}"
+    )
+    selections = "".join(
+        f" --{projection}-slices {','.join(map(str, getattr(args, f'{projection}_slices')))}"
+        for projection in PROJECTION_NAMES
+        if getattr(args, f"{projection}_slices")
+    )
+    if args.synthetic:
+        source = " --synthetic"
+    else:
+        source = (
+            f" --source-lut {args.source_lut} --annotation {args.annotation}"
+            f" --template-volume {args.template_volume}"
+            f" --template-sha256 {args.template_sha256}"
+            f" --template-source {args.template_source}"
+            f" --parent {args.parent} --sampled-pack {args.sampled_pack}"
+        )
+    return common + source + selections + " --output <output.html>"
 
 
 def render_report(report: dict[str, Any], template: str) -> bytes:
@@ -609,7 +665,8 @@ def render_report(report: dict[str, Any], template: str) -> bytes:
         r"(?:https?://|<script[^>]+src\s*=|<link[^>]+href\s*=|@import|url\(\s*['\"]?https?:)",
         re.IGNORECASE,
     )
-    if forbidden.search(template):
+    audited_template = template.replace("http://www.w3.org/2000/svg", "")
+    if forbidden.search(audited_template):
         raise ValueError("report template declares an external resource")
     payload = canonical_json(report).decode().replace("</", "<\\/")
     return template.replace(marker, payload).encode()
