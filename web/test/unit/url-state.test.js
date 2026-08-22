@@ -114,3 +114,28 @@ test('workspace dimensions round-trip independently and reject unknown identifie
   const invalid = parseViewState('?v=4&secondary=other&compact=top&max=summary');
   assert.deepEqual(invalid.workspace, DEFAULT_VIEW_STATE.workspace);
 });
+
+test('optional 3-D context, explode, and validated camera pose round-trip in URL v4', () => {
+  const parsed = parseViewState('?v=4&secondary=brain-3d&explode3d=0.375&camera3d=1.23456,-5,3,0,0,0,0,0,2');
+  assert.equal(parsed.workspace.secondaryTab, 'brain-3d');
+  assert.equal(parsed.scene3d.explode, 0.375);
+  assert.deepEqual(parsed.scene3d.camera, {
+    positionUm: [1.235, -5, 3], targetUm: [0, 0, 0], up: [0, 0, 1],
+  });
+  const query = serializeViewState(parsed);
+  assert.match(query, /secondary=brain-3d/);
+  assert.match(query, /explode3d=0.375/);
+  assert.match(query, /camera3d=1.235%2C-5%2C3%2C0%2C0%2C0%2C0%2C0%2C1/);
+  assert.deepEqual(parseViewState(`?${query}`), parsed);
+});
+
+test('malformed, degenerate, and unbounded 3-D cameras fall back as a whole', () => {
+  for (const camera of [
+    '1,2,3',
+    '1,2,3,0,0,0,0,0,wat',
+    '0,0,0,0,0,0,0,0,1',
+    '0,-5,3,0,0,0,0,-5,3',
+    '10000001,0,0,0,0,0,0,0,1',
+  ]) assert.equal(parseViewState(`?v=4&camera3d=${camera}`).scene3d.camera, null);
+  assert.equal(parseViewState('?v=4&explode3d=2').scene3d.explode, 0);
+});

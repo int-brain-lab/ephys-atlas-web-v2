@@ -7,6 +7,7 @@ import {
   regionalIndicesToWorld,
   worldToRegionalIndices,
 } from '../core/slice-calibration.js';
+import { normalizeBrainCameraPose, normalizeScene3DExplode } from './scene3d.js';
 
 function uniqueSelection(regionIds: readonly string[]): readonly string[] {
   // Order is meaningful: it assigns stable categorical colors to selected regions.
@@ -101,6 +102,13 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         ...state,
         view: { ...state.view, layers: { ...state.view.layers, anatomyOutlines: action.visible } },
       };
+    case 'scene3d/explode':
+      return { ...state, view: { ...state.view, scene3d: { ...state.view.scene3d, explode: normalizeScene3DExplode(action.explode) } } };
+    case 'scene3d/camera': {
+      const camera = action.camera === null ? null : normalizeBrainCameraPose(action.camera);
+      if (action.camera !== null && camera === null) return state;
+      return { ...state, view: { ...state.view, scene3d: { ...state.view.scene3d, camera } } };
+    }
     case 'color/statistic':
       return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, statistic: action.statistic } } };
     case 'color/mode':

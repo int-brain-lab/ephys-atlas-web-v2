@@ -129,3 +129,17 @@ test('workspace refinements replace history and preserve independent dimensions'
   assert.match(win.location.search, /max=horizontal/);
   controller.stop();
 });
+
+test('camera drags debounce replace-history writes while 3-D context remains independent', async () => {
+  const { store, win, controller } = setup('https://atlas.test/');
+  win.writes.length = 0;
+  store.dispatch({ type: 'workspace/secondary-tab', tab: 'brain-3d' });
+  store.dispatch({ type: 'scene3d/camera', camera: { positionUm: [0, -5, 3], targetUm: [0, 0, 0], up: [0, 0, 1] } });
+  store.dispatch({ type: 'scene3d/camera', camera: { positionUm: [1, -5, 3], targetUm: [0, 0, 0], up: [0, 0, 1] } });
+  assert.deepEqual(win.writes.map(({ mode }) => mode), ['replace']);
+  await new Promise((resolve) => setTimeout(resolve, 150));
+  assert.deepEqual(win.writes.map(({ mode }) => mode), ['replace', 'replace']);
+  assert.match(win.location.search, /secondary=brain-3d/);
+  assert.match(win.location.search, /camera3d=/);
+  controller.stop();
+});

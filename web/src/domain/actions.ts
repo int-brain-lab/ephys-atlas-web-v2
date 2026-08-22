@@ -12,6 +12,7 @@ import type {
   SliceAxis,
   ViewState,
   WorkspaceViewId,
+  BrainCameraPose,
 } from './types.js';
 
 export type AppAction =
@@ -37,6 +38,8 @@ type ViewActionPayload =
   | { type: 'workspace/maximized-view'; view: WorkspaceViewId | null }
   | { type: 'layers/volume-opacity'; opacity: number }
   | { type: 'layers/anatomy-outlines'; visible: boolean }
+  | { type: 'scene3d/explode'; explode: number }
+  | { type: 'scene3d/camera'; camera: BrainCameraPose | null }
   | { type: 'color/statistic'; statistic: ColorStatisticId }
   | { type: 'color/mode'; mode: ColorMode }
   | { type: 'color/colormap'; colormap: string }

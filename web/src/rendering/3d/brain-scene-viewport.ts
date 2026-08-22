@@ -1,16 +1,11 @@
 import * as THREE from 'three';
 import type { RegionalPresentation } from '../../application/regional-presentation.js';
+import type { BrainCameraPose, Scene3DViewState } from '../../domain/types.js';
 import type { MeshPackV1, MeshRegionV1 } from '../../data/schema-v1.js';
 import type { LoadedMeshLod, MeshPackSource } from './mesh-pack-source.js';
 import { StableArcballControls, type CameraInteractionPhase } from './stable-arcball-controls.js';
 
-export interface BrainCameraPose {
-  readonly positionUm: readonly [number, number, number];
-  readonly targetUm: readonly [number, number, number];
-  readonly up: readonly [number, number, number];
-}
-
-export interface Scene3DViewState { readonly explode: number; readonly camera: BrainCameraPose | null }
+export type { BrainCameraPose, Scene3DViewState } from '../../domain/types.js';
 
 export type { RegionalPresentation } from '../../application/regional-presentation.js';
 

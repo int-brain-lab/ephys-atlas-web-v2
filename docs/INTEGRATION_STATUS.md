@@ -102,7 +102,7 @@ explode. It has not been integrated on `main`, is not part of M2 or launch
 acceptance, and must not be bulk merged because it predates final projection
 cutover commits.
 
-The approved main-integration Commits 0-4 are complete. At main
+The approved main-integration Commits 0-5 are complete. At main
 `9624b05`, the full `just check` gate passed; at the unchanged donor
 `ba1e2d1`, the focused compiler (5), web unit (18), and Chromium lab (4) tests
 passed. No donor history changed. Main now has one strict snake_case
@@ -122,7 +122,12 @@ facade is gone. Regional semantics now resolve once in the application layer
 and feed registered 2-D, static 2-D, and retained 3-D applicators; renderer-
 local bilateral color/selection resolution is gone, while static volume views
 remain explicitly anatomy-only. Registry-driven context content and optional
-URL-v4 3-D state are next; production promotion remains blocked by Q12.
+URL-v4 3-D state are implemented: `brain-3d` is context-registry content, not a
+projection or fifth workspace slot, and its null host performs no mesh request.
+Camera poses are finite, bounded, nondegenerate, normalized as a whole, and
+camera drag writes are debounced replacements; explode and camera fields are
+optional additions to URL v4. The thin optional application adapter is next;
+production promotion remains blocked by Q12.
 
 The approved anatomy smoothing investigation has completed its first three
 implementation slices. A deterministic registry exposes exact geometry, GEOS

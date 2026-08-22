@@ -8,6 +8,7 @@ import {
 import { isViewAction } from '../domain/actions.js';
 import { DEFAULT_VIEW_STATE } from '../domain/defaults.js';
 import { WORKSPACE_VIEW_IDS } from '../domain/projections.js';
+import { normalizeBrainCameraPose } from '../domain/scene3d.js';
 import type { AppStore } from '../domain/store.js';
 import type {
   ColorRange,
@@ -19,6 +20,7 @@ import type {
   SecondaryTabId,
   ViewState,
   WorkspaceViewId,
+  BrainCameraPose,
 } from '../domain/types.js';
 
 const URL_VERSION = 4;
@@ -27,7 +29,7 @@ const PARCELLATIONS = new Set<ParcellationId>(['allen', 'beryl', 'cosmos']);
 const REPRESENTATIONS = new Set<RepresentationKind>(['regional', 'volume']);
 const COLOR_STATISTICS = new Set<ColorStatisticId>(['mean', 'median', 'min', 'max']);
 const REGION_ORDERS = new Set<RegionOrder>(['anatomy', 'value-asc', 'value-desc']);
-const SECONDARY_TABS = new Set<SecondaryTabId>(['summary', 'top', 'swanson']);
+const SECONDARY_TABS = new Set<SecondaryTabId>(['summary', 'top', 'swanson', 'brain-3d']);
 
 function finiteNumber(value: string | null, fallback: number): number {
   if (value === null || value.trim() === '') return fallback;
@@ -65,6 +67,19 @@ function parseOpacity(value: string | null, fallback: number): number {
   if (value === null || value.trim() === '') return fallback;
   const opacity = Number(value);
   return Number.isFinite(opacity) && opacity >= 0 && opacity <= 1 ? opacity : fallback;
+}
+
+function parseCameraPose(value: string | null, fallback: BrainCameraPose | null): BrainCameraPose | null {
+  if (!value) return fallback;
+  const parts = value.split(',');
+  if (parts.length !== 9) return fallback;
+  const numbers = parts.map(Number);
+  if (numbers.some((component) => !Number.isFinite(component))) return fallback;
+  return normalizeBrainCameraPose({
+    positionUm: [numbers[0]!, numbers[1]!, numbers[2]!],
+    targetUm: [numbers[3]!, numbers[4]!, numbers[5]!],
+    up: [numbers[6]!, numbers[7]!, numbers[8]!],
+  }) ?? fallback;
 }
 
 export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIEW_STATE): ViewState {
@@ -123,6 +138,10 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
       volumeOpacity: parseOpacity(params.get('opacity'), defaults.layers.volumeOpacity),
       anatomyOutlines: params.get('outlines') === '0' ? false : defaults.layers.anatomyOutlines,
     },
+    scene3d: {
+      explode: parseOpacity(params.get('explode3d'), defaults.scene3d.explode),
+      camera: parseCameraPose(params.get('camera3d'), defaults.scene3d.camera),
+    },
     coloring: {
       mode: params.get('colors') === 'anatomy' ? 'anatomy' : 'feature',
       statistic,
@@ -137,6 +156,13 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
 
 function sameTriple(values: readonly number[], defaults: readonly number[]): boolean {
   return values.every((value, index) => value === defaults[index]);
+}
+
+function sameCamera(left: BrainCameraPose | null, right: BrainCameraPose | null): boolean {
+  if (left === null || right === null) return left === right;
+  return sameTriple(left.positionUm, right.positionUm)
+    && sameTriple(left.targetUm, right.targetUm)
+    && sameTriple(left.up, right.up);
 }
 
 export function serializeViewState(view: ViewState, defaults: ViewState = DEFAULT_VIEW_STATE): string {
@@ -173,6 +199,14 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   if (view.layers.anatomyOutlines !== defaults.layers.anatomyOutlines) {
     params.set('outlines', view.layers.anatomyOutlines ? '1' : '0');
   }
+  if (view.scene3d.explode !== defaults.scene3d.explode) params.set('explode3d', String(view.scene3d.explode));
+  if (view.scene3d.camera !== null && !sameCamera(view.scene3d.camera, defaults.scene3d.camera)) {
+    params.set('camera3d', [
+      ...view.scene3d.camera.positionUm,
+      ...view.scene3d.camera.targetUm,
+      ...view.scene3d.camera.up,
+    ].join(','));
+  }
 
   if (view.selection.length) params.set('selected', view.selection.map(encodeURIComponent).join(','));
   return params.toString();
@@ -201,7 +235,7 @@ export class UrlStateController {
         this.cancelScheduledWrite();
         return;
       }
-      if (action.type === 'slice/set' || action.type === 'cursor/set') {
+      if (action.type === 'slice/set' || action.type === 'cursor/set' || action.type === 'scene3d/camera') {
         this.scheduleUrlWrite(state.view);
       } else {
         const mode = action.history ?? 'replace';

@@ -27,6 +27,11 @@ export interface StaticProjectionDefinition {
 
 export type ProjectionDefinition = OrthogonalProjectionDefinition | StaticProjectionDefinition;
 
+export type SecondaryContentDefinition =
+  | { readonly kind: 'summary'; readonly id: 'summary'; readonly label: string }
+  | { readonly kind: 'static-projection'; readonly id: StaticProjectionId; readonly label: string; readonly projectionId: StaticProjectionId }
+  | { readonly kind: 'scene3d'; readonly id: 'brain-3d'; readonly label: string };
+
 export interface ProjectionWorkspaceViewDefinition {
   readonly kind: 'projection';
   readonly id: OrthogonalProjectionId;
@@ -69,6 +74,20 @@ export const STATIC_PROJECTION_REGISTRY = [
   staticProjection('top', 'Top'),
   staticProjection('swanson', 'Swanson'),
 ] as const;
+
+export const SECONDARY_CONTENT_REGISTRY = [
+  { kind: 'summary', id: 'summary', label: 'Summary' },
+  ...STATIC_PROJECTION_REGISTRY.map((projection) => ({
+    kind: 'static-projection' as const,
+    id: projection.id,
+    label: projection.label,
+    projectionId: projection.id,
+  })),
+  { kind: 'scene3d', id: 'brain-3d', label: '3-D' },
+] as const satisfies readonly SecondaryContentDefinition[];
+
+export const SECONDARY_CONTENT_BY_ID: Readonly<Record<SecondaryTabId, SecondaryContentDefinition>> =
+  Object.fromEntries(SECONDARY_CONTENT_REGISTRY.map((content) => [content.id, content])) as Record<SecondaryTabId, SecondaryContentDefinition>;
 
 /** All enabled 2-D projections; workspace slots remain a separate registry. */
 export const PROJECTION_REGISTRY = [

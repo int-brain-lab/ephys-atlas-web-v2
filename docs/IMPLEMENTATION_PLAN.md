@@ -194,7 +194,7 @@ scientific boundaries, and promotion stopping point are specified in
 
 ## P3D — Independent brain-mesh 3-D lab
 
-Status: **experiment implemented in frozen donor; main Commits 0-4 complete;
+Status: **experiment implemented in frozen donor; main Commits 0-5 complete;
 non-blocking for launch**.
 
 The explicitly authorized worktree described by `AGENTS.md` has completed its
@@ -234,8 +234,12 @@ Commit 4 added one pure application-owned regional-presentation resolver and
 migrated registered, static, and 3-D applicators to its mapping, anatomy/
 feature color, visibility, signed selection/hover, and left-feature semantics;
 the duplicate renderer-local bilateral resolution is gone. Next unblocked
-action: execute Commit 5, registry-driven context content plus optional URL-v4
-3-D state. Production asset promotion remains blocked by Q12.
+action: execute Commit 6, the thin optional application adapter. Commit 5 made
+`brain-3d` registry-driven context content without adding a projection or
+workspace slot, and added validated renderer-neutral camera/explode state with
+canonical optional URL-v4 fields, debounced camera history, responsive/null-
+host behavior, and no mesh request before integration. Production asset
+promotion remains blocked by Q12.
 
 Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 

@@ -12,6 +12,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  overflow-x: auto;
 }
 
 .secondary-view__tab {
@@ -44,6 +45,23 @@
   background:
     linear-gradient(145deg, rgb(var(--color-accent-rgb) / 2.5%), transparent 55%),
     var(--color-view);
+}
+
+.secondary-view__scene3d-host {
+  position: absolute;
+  inset: 0;
+}
+
+.secondary-view__scene3d-notice {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: min(24rem, calc(100% - 2 * var(--space-4)));
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: .72rem;
+  line-height: 1.5;
+  text-align: center;
+  transform: translate(-50%, -50%);
 }
 
 .secondary-projection {

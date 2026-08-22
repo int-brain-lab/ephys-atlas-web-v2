@@ -22,7 +22,7 @@ export type RegionOrder = 'anatomy' | 'value-asc' | 'value-desc';
 export type OrthogonalProjectionId = SliceAxis;
 export type StaticProjectionId = 'top' | 'swanson';
 export type ProjectionId = OrthogonalProjectionId | StaticProjectionId;
-export type SecondaryTabId = 'summary' | StaticProjectionId;
+export type SecondaryTabId = 'summary' | StaticProjectionId | 'brain-3d';
 export type WorkspaceViewId = OrthogonalProjectionId | 'secondary';
 
 export interface WorkspaceState {
@@ -34,6 +34,17 @@ export interface WorkspaceState {
 export interface VolumeLayerState {
   volumeOpacity: number;
   anatomyOutlines: boolean;
+}
+
+export interface BrainCameraPose {
+  readonly positionUm: readonly [number, number, number];
+  readonly targetUm: readonly [number, number, number];
+  readonly up: readonly [number, number, number];
+}
+
+export interface Scene3DViewState {
+  readonly explode: number;
+  readonly camera: BrainCameraPose | null;
 }
 
 export interface DatasetRef {
@@ -66,6 +77,7 @@ export interface ViewState {
   cursor: CursorState;
   workspace: WorkspaceState;
   layers: VolumeLayerState;
+  scene3d: Scene3DViewState;
   coloring: ColoringState;
 }
 

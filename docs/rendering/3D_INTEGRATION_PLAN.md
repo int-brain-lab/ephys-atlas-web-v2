@@ -1,6 +1,6 @@
 # 3-D main-application integration plan
 
-Status: **Commits 0-4 complete on `main`; Commit 5 is next
+Status: **Commits 0-5 complete on `main`; Commit 6 is next
 (2026-08-22)**.
 
 This document defines how to promote the completed independent brain-mesh lab

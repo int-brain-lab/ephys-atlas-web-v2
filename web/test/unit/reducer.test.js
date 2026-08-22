@@ -84,3 +84,23 @@ test('volume layer presentation clamps opacity and preserves outline visibility 
   state = reduceAppState(state, { type: 'layers/volume-opacity', opacity: 0.35 });
   assert.deepEqual(state.view.layers, { volumeOpacity: 0.35, anatomyOutlines: false });
 });
+
+test('3-D state clamps explode and rejects invalid camera poses as a whole', () => {
+  let state = reduceAppState(DEFAULT_APP_STATE, { type: 'scene3d/explode', explode: 1.4 });
+  assert.equal(state.view.scene3d.explode, 1);
+  state = reduceAppState(state, {
+    type: 'scene3d/camera',
+    camera: { positionUm: [1.23456, -5, 3], targetUm: [0, 0, 0], up: [0, 0, 2] },
+  });
+  assert.deepEqual(state.view.scene3d.camera, {
+    positionUm: [1.235, -5, 3], targetUm: [0, 0, 0], up: [0, 0, 1],
+  });
+  const accepted = state;
+  state = reduceAppState(state, {
+    type: 'scene3d/camera',
+    camera: { positionUm: [0, 0, 0], targetUm: [0, 0, 0], up: [0, 0, 1] },
+  });
+  assert.equal(state, accepted);
+  state = reduceAppState(state, { type: 'scene3d/camera', camera: null });
+  assert.equal(state.view.scene3d.camera, null);
+});

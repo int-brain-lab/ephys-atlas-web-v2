@@ -18,6 +18,8 @@ import { deriveOrthogonalNavigation } from '../domain/navigation.js';
 import {
   ORTHOGONAL_PROJECTION_REGISTRY,
   STATIC_PROJECTION_REGISTRY,
+  SECONDARY_CONTENT_BY_ID,
+  SECONDARY_CONTENT_REGISTRY,
   WORKSPACE_VIEW_REGISTRY,
 } from '../domain/projections.js';
 import type {
@@ -163,6 +165,7 @@ export class AppShell {
   private readonly viewFrames = new Map<SliceAxis, ViewFrameNodes>();
   private readonly staticFrames = new Map<StaticProjectionId, StaticFrameNodes>();
   private readonly secondaryTabButtons = new Map<SecondaryTabId, HTMLButtonElement>();
+  private readonly secondaryPanels = new Map<SecondaryTabId, HTMLElement>();
   private secondaryFrame!: HTMLElement;
   private secondaryMaximize!: HTMLButtonElement;
   private readonly headerActionButtons = new Map<HeaderAction, HTMLButtonElement[]>();
@@ -1182,7 +1185,7 @@ export class AppShell {
     const secondaryHeader = element('div', 'view-frame__header secondary-view__header');
     const secondaryTabs = element('div', 'secondary-view__tabs');
     secondaryTabs.setAttribute('role', 'tablist');
-    for (const [tab, label] of [['summary', 'Summary'], ['top', 'Top'], ['swanson', 'Swanson']] as const) {
+    for (const { id: tab, label } of SECONDARY_CONTENT_REGISTRY) {
       const button = element('button', 'secondary-view__tab');
       button.type = 'button';
       button.textContent = label;
@@ -1190,6 +1193,7 @@ export class AppShell {
       button.setAttribute('role', 'tab');
       button.setAttribute('aria-selected', String(tab === 'summary'));
       button.addEventListener('click', () => this.callbacks.setSecondaryTab(tab));
+      button.addEventListener('keydown', (event) => this.onSecondaryTabKeyDown(event, tab));
       this.secondaryTabButtons.set(tab, button);
       secondaryTabs.append(button);
     }
@@ -1203,7 +1207,9 @@ export class AppShell {
     const secondaryBody = element('div', 'secondary-view__body');
     const summary = element('div', 'secondary-view__surface secondary-view__summary');
     summary.dataset.secondaryPanel = 'summary';
-    secondaryBody.append(summary, ...STATIC_PROJECTION_REGISTRY.map(({ id }) => this.createStaticFrame(id)));
+    this.secondaryPanels.set('summary', summary);
+    const brain3d = this.createNullScene3DPanel();
+    secondaryBody.append(summary, ...STATIC_PROJECTION_REGISTRY.map(({ id }) => this.createStaticFrame(id)), brain3d);
     secondary.append(secondaryHeader, secondaryBody);
     this.secondaryFrame = secondary;
     const distribution = element('section', 'distribution-band panel');
@@ -1344,6 +1350,37 @@ export class AppShell {
       frame, target, viewport, notice, tooltip, tooltipIdentity, tooltipValue, tooltipMeta,
       renderKey: '', renderToken: 0,
     });
+    this.secondaryPanels.set(projectionId, frame);
+    return frame;
+  }
+
+  private onSecondaryTabKeyDown(event: KeyboardEvent, current: SecondaryTabId): void {
+    const ids = SECONDARY_CONTENT_REGISTRY.map(({ id }) => id);
+    const index = ids.indexOf(current);
+    const nextIndex = event.key === 'ArrowRight' ? (index + 1) % ids.length
+      : event.key === 'ArrowLeft' ? (index - 1 + ids.length) % ids.length
+        : event.key === 'Home' ? 0
+          : event.key === 'End' ? ids.length - 1
+            : -1;
+    if (nextIndex < 0) return;
+    const next = ids[nextIndex]!;
+    event.preventDefault();
+    this.callbacks.setSecondaryTab(next);
+    this.secondaryTabButtons.get(next)?.focus();
+  }
+
+  private createNullScene3DPanel(): HTMLElement {
+    const frame = element('section', 'secondary-view__surface secondary-view__scene3d');
+    frame.dataset.secondaryPanel = 'brain-3d';
+    frame.hidden = true;
+    const host = element('div', 'secondary-view__scene3d-host');
+    host.dataset.scene3dHost = 'null';
+    host.setAttribute('aria-label', '3-D brain renderer target');
+    const notice = element('p', 'secondary-view__scene3d-notice');
+    notice.setAttribute('role', 'status');
+    notice.textContent = 'Experimental 3-D context is not connected in this build.';
+    frame.append(host, notice);
+    this.secondaryPanels.set('brain-3d', frame);
     return frame;
   }
 
@@ -1357,13 +1394,10 @@ export class AppShell {
       button.setAttribute('aria-selected', String(active));
       button.tabIndex = active ? 0 : -1;
     }
-    const summary = this.secondaryFrame.querySelector<HTMLElement>('[data-secondary-panel="summary"]');
-    if (summary) summary.hidden = tab !== 'summary';
-    for (const [projectionId, nodes] of this.staticFrames) {
-      nodes.frame.hidden = projectionId !== tab;
-    }
-    if (tab === 'summary') return;
-    const nodes = this.staticFrames.get(tab);
+    for (const [candidate, panel] of this.secondaryPanels) panel.hidden = candidate !== tab;
+    const content = SECONDARY_CONTENT_BY_ID[tab];
+    if (content.kind !== 'static-projection') return;
+    const nodes = this.staticFrames.get(content.projectionId);
     if (!nodes) return;
     const view = model.state.view;
     const renderKey = [view.dataset.datasetId, view.dataset.releaseId ?? '', view.parcellation,
@@ -1373,7 +1407,7 @@ export class AppShell {
     const token = ++nodes.renderToken;
     nodes.notice.textContent = 'Loading static projection…';
     const pending = nodes.viewport.render({
-      projectionId: tab,
+      projectionId: content.projectionId,
       parcellation: view.parcellation,
       feature: model.feature?.representation === 'regional' ? model.feature : null,
     });

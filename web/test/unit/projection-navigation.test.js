@@ -4,6 +4,7 @@ import { deriveOrthogonalNavigation, deriveRegionalSliceIndices } from '../../.t
 import {
   ORTHOGONAL_PROJECTION_REGISTRY,
   PROJECTION_REGISTRY,
+  SECONDARY_CONTENT_REGISTRY,
   WORKSPACE_VIEW_REGISTRY,
 } from '../../.test-dist/domain/projections.js';
 
@@ -21,6 +22,13 @@ test('enabled projection and workspace registries keep projection and secondary 
     ['projection', 'horizontal'],
     ['secondary', 'secondary'],
   ]);
+  assert.deepEqual(SECONDARY_CONTENT_REGISTRY.map(({ kind, id }) => [kind, id]), [
+    ['summary', 'summary'],
+    ['static-projection', 'top'],
+    ['static-projection', 'swanson'],
+    ['scene3d', 'brain-3d'],
+  ]);
+  assert.equal(PROJECTION_REGISTRY.some(({ id }) => id === 'brain-3d'), false);
 });
 
 test('one world cursor derives every native plane without storing slice state', () => {
