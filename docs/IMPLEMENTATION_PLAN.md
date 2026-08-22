@@ -164,6 +164,24 @@ After Q4/Q5 resolution:
 
 Acceptance reference: `docs/LAUNCH_SPEC.md` sections 3 and 6.
 
+## P2S — Anatomy smoothing and simplification lab
+
+Status: **approved investigation; not implemented and non-blocking for
+launch**.
+
+The exact bilateral 10 µm registered paths preserve raster-cell boundaries and
+can look visibly stair-stepped when enlarged. Build a standalone, offline lab
+to compare exact geometry with deterministic topology-aware smoothing and
+simplification candidates before considering any new immutable anatomy asset.
+The lab must keep rejected candidates visible with their failed gates, support
+human visual review across all three projections, and provide a separate
+full-corpus validation path for any shortlist. It must not modify the active
+projection pack or introduce runtime smoothing.
+
+The ordered implementation slices, metric contract, UI requirements,
+scientific boundaries, and promotion stopping point are specified in
+`docs/rendering/ANATOMY_SMOOTHING_LAB_PLAN.md`.
+
 ## P3D — Independent brain-mesh 3-D lab
 
 Status: **approved independent experiment; non-blocking for launch**.
