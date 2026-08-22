@@ -158,6 +158,14 @@ validation follows every declared resource and rejects undeclared files. The
 committed fixture is synthetic and test-only. No production mesh is selected
 until Q12 is closed.
 
+Mesh discovery begins from an application-supplied immutable manifest
+descriptor and an injected verified `ResourceFetcher`; it does not fetch an
+LOD. Manifest-selected geometry is verified before worker transfer, explicitly
+gunzipped and decoded in a module worker, and returned as transport-neutral
+merged hemisphere chunks. Shared requests preserve per-consumer cancellation.
+Decoded retention is byte-bounded and keyed by resource SHA plus the complete
+codec/EAM3/encoding/quantization contract, never by a relative path.
+
 ## UI
 
 Large UI controllers should be decomposed by ownership, not by arbitrary file-size targets. Data shaping/search/statistics calculations should be pure and testable; DOM controllers own events, focus, accessibility, and mutation.

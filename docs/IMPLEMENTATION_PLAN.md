@@ -194,7 +194,7 @@ scientific boundaries, and promotion stopping point are specified in
 
 ## P3D — Independent brain-mesh 3-D lab
 
-Status: **experiment implemented in frozen donor; main Commits 0-1 complete;
+Status: **experiment implemented in frozen donor; main Commits 0-2 complete;
 non-blocking for launch**.
 
 The explicitly authorized worktree described by `AGENTS.md` has completed its
@@ -224,8 +224,12 @@ browser baselines without copying or rebasing donor code. Commit 1 established
 the sole snake_case schema-v1 mesh contract, cross-language semantic corpus,
 deterministic GLB/clipping/ontology/EAM3 compiler primitives, content-addressed
 graph validator, and a byte-reproducible tiny test-only bilateral pack. Next
-unblocked action: execute Commit 2, the verified source and decode worker.
-Production asset promotion remains blocked by Q12.
+Commit 2 adds verified manifest/LOD transport over injected `ResourceFetcher`,
+consumer-safe shared cancellation, worker-owned gzip and strict EAM3 raw/
+meshopt decode, decoder-contract cache identity, and a bounded decoded CPU LRU.
+The real Chromium worker decodes the tiny pack. Next unblocked action: execute
+Commit 3, the retained renderer and thin standalone lab. Production asset
+promotion remains blocked by Q12.
 
 Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 

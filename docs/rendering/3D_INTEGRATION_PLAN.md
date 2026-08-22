@@ -1,6 +1,6 @@
 # 3-D main-application integration plan
 
-Status: **Commits 0-1 complete on `main`; Commit 2 is next
+Status: **Commits 0-2 complete on `main`; Commit 3 is next
 (2026-08-22)**.
 
 This document defines how to promote the completed independent brain-mesh lab
@@ -337,6 +337,8 @@ Stop short of production if canonical annotation/LUT evidence is unavailable.
 
 ### Commit 2 — Add verified source and decode worker
 
+Status: complete; exact landing commit is recorded by repository history.
+
 - Implement `MeshPackSource` over injected `ResourceFetcher`.
 - Add cancellation, shared loads, gzip, decoded-size checks, worker meshopt
   decode, transferable buffers, decoded identity, and CPU LRU.
@@ -345,6 +347,17 @@ Stop short of production if canonical annotation/LUT evidence is unavailable.
 Tests cover no premature LOD load; corrupt-cache eviction/refetch; cancellation
 without poisoning another consumer; URL/SHA/decoder identity isolation;
 malformed headers/ranges/codecs/sizes/meshopt; and memory eviction.
+
+The implemented `MeshPackSource` requires an injected `ResourceFetcher` and a
+verified immutable manifest descriptor. Discovery loads no geometry; public
+loads expose only the manifest-selected default and optional upgrade. Shared
+loads preserve independent consumer cancellation, and disposal aborts work and
+terminates the module worker. Encoded bytes are verified before transfer to the
+worker, which owns explicit gzip plus strict raw/meshopt EAM3 decode and returns
+transport-neutral merged chunks. The decoded LRU is byte-bounded and keyed by
+resource SHA plus codec/container/encoding/quantization identity. Unit coverage
+includes corrupt persistent-cache recovery and every failure class above; a
+Chromium test exercises the real module worker against the tiny committed pack.
 
 ### Commit 3 — Extract retained renderer and thin lab
 

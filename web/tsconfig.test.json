@@ -30,6 +30,7 @@
     "src/rendering/chunked-volume-source.ts",
     "src/rendering/display-slice-inventory.ts",
     "src/rendering/region-id.ts",
+    "src/rendering/3d/**/*.ts",
     "src/ui/regional/model.ts",
     "src/ui/regional/histogram-curve.ts",
     "src/ui/regional/comparison-export.ts",

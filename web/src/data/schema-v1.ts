@@ -142,6 +142,48 @@ export interface ProjectionPackV1 {
   readonly provenance: Readonly<Record<string, unknown>>;
 }
 
+export type MeshHemisphereV1 = 'left' | 'right';
+export type MeshMappingV1 = 'allen' | 'beryl' | 'cosmos';
+
+export interface MeshDecoderV1 {
+  readonly container: 'EAM3';
+  readonly container_version: 1;
+  readonly encoding: 'raw-v1' | 'meshopt-quantized-v1';
+  readonly position_bits: number;
+  readonly normal_bits: number;
+}
+
+export interface MeshRegionV1 {
+  readonly feature_id: number;
+  readonly source_allen_id: number;
+  readonly signed_allen_id: number;
+  readonly hemisphere: MeshHemisphereV1;
+  readonly mappings: Readonly<Record<MeshMappingV1, number | null>>;
+  readonly signed_explode_group_id: number;
+}
+
+export interface MeshLodV1 {
+  readonly id: string;
+  readonly triangle_count: number;
+  readonly resource: EncodedResourceV1;
+  readonly decoder: MeshDecoderV1;
+}
+
+export interface MeshPackV1 {
+  readonly schema_version: SchemaV1Version;
+  readonly format: 'atlas-mesh-pack-v1';
+  readonly pack_id: string;
+  readonly geometry_id: string;
+  readonly immutable: true;
+  readonly purpose: 'test-only' | 'production';
+  readonly reference_space_id: ReferenceSpaceId;
+  readonly regions: readonly MeshRegionV1[];
+  readonly default_lod_id: string;
+  readonly upgrade_lod_id: string | null;
+  readonly lods: readonly MeshLodV1[];
+  readonly [key: string]: unknown;
+}
+
 export function decodedResourceCacheKey(
   resource: EncodedResourceV1,
   contract: DecodedResourceContractV1,
