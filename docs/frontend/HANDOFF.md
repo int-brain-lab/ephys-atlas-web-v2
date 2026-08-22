@@ -18,7 +18,7 @@ add a diverging palette until view state and normalization carry an explicit
 scientifically meaningful center; the current min/max linear/log contract is
 not sufficient.
 
-Data loading is behind `DatasetSource` and `DatasetRepository`. `HttpDatasetSource` handles published immutable releases. `LocalDatasetSource` persists imported directory contents in IndexedDB but exposes the same scientific resource graph. Both consume schema v0.1 rather than a frontend-specific provisional data format.
+Data loading is behind `DatasetSource` and `DatasetRepository`. `HttpDatasetSource` handles published immutable releases. `LocalDatasetSource` persists imported directory contents in IndexedDB but exposes the same scientific resource graph. Both consume schema v1 rather than a frontend-specific provisional data format.
 
 Immutable HTTP resources have cache-first Cache Storage support plus in-flight request coalescing. `PrefetchQueue` provides small cancellable idle-time prefetch. No service worker is required.
 
@@ -79,7 +79,7 @@ Phase 3 was visually approved on 2026-08-19.
 - one selection and hover state drives both the region tree and all anatomical projections;
 - narrow/tablet/phone reuse the same component in the region drawer.
 
-Schema-v0.1 regional values come from the active dataset release. The pinned ontology remains independently available for anatomy colors and hierarchy containers even when a feature has no value for a row.
+Schema-v1 regional values come from the active dataset release. The pinned ontology remains independently available for anatomy colors and hierarchy containers even when a feature has no value for a row.
 
 ## UX Phase 4 — anatomical view frames
 
@@ -105,7 +105,7 @@ authority for state and cross-projection synchronization.
 Primary interfaces:
 
 - `AppState`, `ViewState`, `AppAction`, `AppStore` in `web/src/domain/`;
-- schema-v0.1 browser contracts and decoders in `web/src/data/`;
+- schema-v1 browser contracts and decoders in `web/src/data/`;
 - `DatasetRepository` in `web/src/data/repository.ts`;
 - `SliceRenderer`, `SliceRenderModel`, `RendererInteractionSink` in `web/src/rendering/interfaces.ts`;
 - curated legacy asset inventory/helpers in `web/src/rendering/legacy-slice-assets.ts`;
@@ -114,25 +114,29 @@ Primary interfaces:
 
 ## Integrated data contract
 
-The previous frontend provisional schema has been removed from the active path. Published and local datasets both use schema v0.1:
+The previous frontend provisional schema and schema-v0.1 compatibility path have been removed. Published and local datasets both use schema v1:
 
 1. catalog resolves an immutable release manifest;
 2. manifest provides feature descriptors and parcellation region-index resources;
 3. regional features resolve typed value/statistics/histogram resources;
-4. volume features resolve explicit scientific grid metadata plus a physical-layout descriptor;
+4. volume features resolve explicit reference-space/grid/affine metadata,
+   exhaustive validity/summary metadata, and a checksummed physical resource index;
 5. transport differences do not redefine the scientific contract.
 
-`web/public/fixtures/ephys_atlas_channels/golden-v0.3/` is the browser-served golden fixture used to exercise this contract end-to-end. It is synthetic test data whose signed IDs intersect all three default anatomy planes.
+`web/public/fixtures/ephys_atlas_channels/golden-v1/` is the browser-served golden fixture used to exercise this contract end-to-end. It is synthetic test data whose signed IDs intersect all three default anatomy planes.
 
 ## Current next work
 
-1. Publish the validated real channel development release through an authorized non-production catalog; `just dev-real` validates and defaults to immutable `2026_W32` plus `rms_ap.denoised` locally.
-2. Deploy the committed generated anatomy pack with opaque gzip delivery and verify its immutable public URLs.
-3. Use the `2026_W26` 50 um object and official access recipe in
+1. Execute Commit 3 of the projection/volume cutover: data-driven projection,
+   navigation, and independent workspace-view state without adding a renderer facade.
+2. Rebuild the external `2026_W32` development release under a new schema-v1
+   release ID before using or publishing it.
+3. Deploy the committed generated anatomy pack with opaque gzip delivery and verify its immutable public URLs.
+4. Use the `2026_W26` 50 um object and official access recipe in
    `docs/DATA_SOURCES.md` to repeat the real encoding-volume layout benchmarks
    before selecting the launch physical representation; keep volume scientific
    geometry independent of SVG display calibration.
-4. Keep 3-D behind the regional and volume launch-critical vertical slices.
+5. Keep 3-D in its independent lab until the shared workspace seam is ready.
 
 ## Remaining decisions / external inputs
 

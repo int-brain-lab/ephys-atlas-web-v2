@@ -17,7 +17,7 @@ import {
 } from '../../.test-dist/rendering/colormap-palettes.js';
 
 const feature = {
-  schemaVersion: '0.1',
+  schemaVersion: '1.0',
   featureId: 'x',
   representation: 'regional',
   parcellation: 'allen',

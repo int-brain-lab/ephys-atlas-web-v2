@@ -20,7 +20,7 @@ def _write_pack(path: Path, values: np.ndarray) -> dict[str, int | str]:
 
 def _prepare_depth(volume: np.ndarray, root: Path, depth: int) -> dict:
     axis_names = ("coronal", "sagittal", "horizontal")
-    axes = {}
+    packs = []
     files = []
     centers = []
     warm = []
@@ -39,19 +39,38 @@ def _prepare_depth(volume: np.ndarray, root: Path, depth: int) -> dict:
         centers.append(center)
         warm.append(warm_index)
         boundaries.append(boundary)
-        remaining_shape = [size for index, size in enumerate(volume.shape) if index != dimension]
-        axes[axis] = {
-            "slice_shape": remaining_shape,
-            "codec": {"name": "gzip"},
-            "path_template": f"depth{depth}/{axis}/{{pack}}.f16.gz",
-        }
         oriented = np.moveaxis(volume, dimension, 0)
         for pack in sorted({center_pack, boundary // depth}):
             start = pack * depth
             relative = Path(f"depth{depth}/{axis}/{pack}.f16.gz")
-            result = _write_pack(root / relative, oriented[start : min(start + depth, count)])
+            values = oriented[start : min(start + depth, count)]
+            result = _write_pack(root / relative, values)
             result["path"] = relative.as_posix()
             files.append(result)
+            storage_axes = [f"i{dimension}"] + [
+                f"i{index}" for index in range(3) if index != dimension
+            ]
+            packs.append(
+                {
+                    "axis": f"i{dimension}",
+                    "firstSlice": start,
+                    "sliceCount": len(values),
+                    "decoded": {
+                        "shape": list(values.shape),
+                        "storageAxes": storage_axes,
+                    },
+                    "resource": {
+                        "path": relative.as_posix(),
+                        "mediaType": "application/octet-stream",
+                        "bytes": result["gzip_bytes"],
+                        "sha256": sha256_file(root / relative),
+                        "codec": {
+                            "name": "gzip",
+                            "decodedBytes": result["raw_bytes"],
+                        },
+                    },
+                }
+            )
     return {
         "depth": depth,
         "shape": list(volume.shape),
@@ -59,7 +78,7 @@ def _prepare_depth(volume: np.ndarray, root: Path, depth: int) -> dict:
         "centers": centers,
         "warm_indices": warm,
         "boundary_indices": boundaries,
-        "resource": {"pack_depth": depth, "axes": axes},
+        "resource": {"pack_depth": depth, "packs": packs},
         "files": files,
     }
 

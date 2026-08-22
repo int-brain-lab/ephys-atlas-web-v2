@@ -1,0 +1,269 @@
+{
+  "chunk_shape": [
+    4,
+    3,
+    2
+  ],
+  "chunks": [
+    {
+      "decoded": {
+        "dtype": "float32",
+        "endianness": "little",
+        "order": "C",
+        "shape": [
+          4,
+          3,
+          2
+        ],
+        "storage_axes": [
+          "i0",
+          "i1",
+          "i2"
+        ]
+      },
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "resource": {
+        "bytes": 96,
+        "codec": {
+          "decoded_bytes": 96,
+          "name": "none"
+        },
+        "media_type": "application/octet-stream",
+        "path": "volume/chunks/0.0.0.f32",
+        "sha256": "bf4a91ccf7e8a5accb0cbd8379f5404409fe8924f1a13365781eaeb4de34efb5"
+      }
+    },
+    {
+      "decoded": {
+        "dtype": "float32",
+        "endianness": "little",
+        "order": "C",
+        "shape": [
+          4,
+          3,
+          2
+        ],
+        "storage_axes": [
+          "i0",
+          "i1",
+          "i2"
+        ]
+      },
+      "origin": [
+        0,
+        0,
+        2
+      ],
+      "resource": {
+        "bytes": 96,
+        "codec": {
+          "decoded_bytes": 96,
+          "name": "none"
+        },
+        "media_type": "application/octet-stream",
+        "path": "volume/chunks/0.0.1.f32",
+        "sha256": "d866c96493f37be7f49c1f2ca8c5b414c19970c96c96b1ba50a94fb3952dd426"
+      }
+    },
+    {
+      "decoded": {
+        "dtype": "float32",
+        "endianness": "little",
+        "order": "C",
+        "shape": [
+          4,
+          3,
+          2
+        ],
+        "storage_axes": [
+          "i0",
+          "i1",
+          "i2"
+        ]
+      },
+      "origin": [
+        0,
+        3,
+        0
+      ],
+      "resource": {
+        "bytes": 96,
+        "codec": {
+          "decoded_bytes": 96,
+          "name": "none"
+        },
+        "media_type": "application/octet-stream",
+        "path": "volume/chunks/0.1.0.f32",
+        "sha256": "40265e191efc51897eca061e8d223661cb78ee260ceb286f1553f0f61f34ed16"
+      }
+    },
+    {
+      "decoded": {
+        "dtype": "float32",
+        "endianness": "little",
+        "order": "C",
+        "shape": [
+          4,
+          3,
+          2
+        ],
+        "storage_axes": [
+          "i0",
+          "i1",
+          "i2"
+        ]
+      },
+      "origin": [
+        0,
+        3,
+        2
+      ],
+      "resource": {
+        "bytes": 96,
+        "codec": {
+          "decoded_bytes": 96,
+          "name": "none"
+        },
+        "media_type": "application/octet-stream",
+        "path": "volume/chunks/0.1.1.f32",
+        "sha256": "72b84080e7152dd7c4765c7b145fa9cba882de4e37b42aa15e7fc2f931a25343"
+      }
+    },
+    {
+      "decoded": {
+        "dtype": "float32",
+        "endianness": "little",
+        "order": "C",
+        "shape": [
+          4,
+          3,
+          2
+        ],
+        "storage_axes": [
+          "i0",
+          "i1",
+          "i2"
+        ]
+      },
+      "origin": [
+        4,
+        0,
+        0
+      ],
+      "resource": {
+        "bytes": 96,
+        "codec": {
+          "decoded_bytes": 96,
+          "name": "none"
+        },
+        "media_type": "application/octet-stream",
+        "path": "volume/chunks/1.0.0.f32",
+        "sha256": "cbcb49ebde637c8ff2c4c541a2f5ce9fdc97e147f8f59479900b882839464cdb"
+      }
+    },
+    {
+      "decoded": {
+        "dtype": "float32",
+        "endianness": "little",
+        "order": "C",
+        "shape": [
+          4,
+          3,
+          2
+        ],
+        "storage_axes": [
+          "i0",
+          "i1",
+          "i2"
+        ]
+      },
+      "origin": [
+        4,
+        0,
+        2
+      ],
+      "resource": {
+        "bytes": 96,
+        "codec": {
+          "decoded_bytes": 96,
+          "name": "none"
+        },
+        "media_type": "application/octet-stream",
+        "path": "volume/chunks/1.0.1.f32",
+        "sha256": "04974beea616a74d8776bb7b8c805257cb551dbbc68f15eeb99595d4bdaa18e4"
+      }
+    },
+    {
+      "decoded": {
+        "dtype": "float32",
+        "endianness": "little",
+        "order": "C",
+        "shape": [
+          4,
+          3,
+          2
+        ],
+        "storage_axes": [
+          "i0",
+          "i1",
+          "i2"
+        ]
+      },
+      "origin": [
+        4,
+        3,
+        0
+      ],
+      "resource": {
+        "bytes": 96,
+        "codec": {
+          "decoded_bytes": 96,
+          "name": "none"
+        },
+        "media_type": "application/octet-stream",
+        "path": "volume/chunks/1.1.0.f32",
+        "sha256": "cd8f296f3e92fa2113742111969118a989af71faf760f9f6cea4e2dc1deafd38"
+      }
+    },
+    {
+      "decoded": {
+        "dtype": "float32",
+        "endianness": "little",
+        "order": "C",
+        "shape": [
+          4,
+          3,
+          2
+        ],
+        "storage_axes": [
+          "i0",
+          "i1",
+          "i2"
+        ]
+      },
+      "origin": [
+        4,
+        3,
+        2
+      ],
+      "resource": {
+        "bytes": 96,
+        "codec": {
+          "decoded_bytes": 96,
+          "name": "none"
+        },
+        "media_type": "application/octet-stream",
+        "path": "volume/chunks/1.1.1.f32",
+        "sha256": "65a44e21a742458aa090594c75c285ac8f4b4eafe8e2f114bd2ce3ccf1d620c6"
+      }
+    }
+  ],
+  "format": "ephys-atlas-volume-resource-index-v1",
+  "grid_id": "golden-grid-25um",
+  "layout": "chunks3d",
+  "schema_version": "1.0"
+}

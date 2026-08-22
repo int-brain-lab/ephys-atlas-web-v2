@@ -146,7 +146,7 @@ export class RegionalPanelController {
     this.tree.source.textContent = model.anatomyAtlas
       ? model.anatomyAtlas
       : fixture
-        ? 'Synthetic schema-v0.1 fixture'
+        ? 'Synthetic schema-v1 fixture'
         : `${model.state.view.parcellation.toUpperCase()} regional values`;
     this.tree.render(model.regions, values, statistic, unit, range, selected, regionOrder);
     renderSelectedRegions(this.detailsTargets(), model.regions, selected, values, statistic, unit);

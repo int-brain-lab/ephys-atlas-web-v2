@@ -7,24 +7,34 @@ import {
 
 function feature(overrides = {}) {
   const values = new Float32Array([0, 1, 2, 3, 4, 5, 6, 7]);
+  const encoded = {
+    path: 'chunks/0.0.0.f32', mediaType: 'application/octet-stream', bytes: values.byteLength,
+    sha256: '0'.repeat(64), codec: { name: 'none', decodedBytes: values.byteLength },
+  };
   return {
-    schemaVersion: '0.1',
+    schemaVersion: '1.0',
     featureId: 'x',
     representation: 'volume',
     descriptor: {
       kind: 'volume',
-      format: 'ephys-atlas-chunked-volume-v0.1',
+      format: 'ephys-atlas-volume-v1',
       layout: 'chunks3d',
       grid: {
         shape: [2, 2, 2],
         axisOrder: ['ap', 'ml', 'dv'],
         coordinateSystem: 'test AP/ML/DV micrometres',
+        referenceSpaceId: 'test', gridId: 'test-grid',
         voxelSizeUm: [25, 25, 25],
         originUm: [0, 0, 0],
-        indexToWorldUm: [25, 0, 0, 0, 0, 25, 0, 0, 0, 0, 25, 0, 0, 0, 0, 1],
+        indexToWorldUm: [0, 25, 0, 0, 25, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 1],
+        worldToIndex: [0, 0.04, 0, 0, 0.04, 0, 0, 0, 0, 0, 0.04, 0, 0, 0, 0, 1],
+        voxelEdgeExtentUm: [-12.5, 37.5, -12.5, 37.5, -12.5, 37.5],
       },
       array: { dtype: 'float32', endianness: 'little', order: 'C', nonfinite: 'preserve' },
-      resource: { shape: [2, 2, 2], codec: { name: 'none' }, path_template: 'chunks/{i0}.{i1}.{i2}.f32' },
+      resource: {
+        layout: 'chunks3d', grid_id: 'test-grid', chunk_shape: [2, 2, 2],
+        chunks: [{ origin: [0, 0, 0], decoded: { shape: [2, 2, 2], storageAxes: ['i0', 'i1', 'i2'] }, resource: encoded }],
+      },
       valueRange: [0, 7],
       ...overrides.descriptor,
     },
@@ -44,19 +54,28 @@ test('chunks3d adapter decodes a schema volume chunk', async () => {
   assert.deepEqual([...chunk.data], [0, 1, 2, 3, 4, 5, 6, 7]);
 });
 
-test('chunks3d adapter transposes a non-canonical array axis order', async () => {
-  const raw = new Float32Array([0, 1, 2, 3, 4, 5]); // ml=2, ap=3, dv=1
+test('chunks3d adapter transposes grid and explicit storage-axis permutations', async () => {
+  const raw = new Float32Array([0, 3, 1, 4, 2, 5]); // stored ap=3, ml=2, dv=1
   const payload = feature({
     descriptor: {
       grid: {
         shape: [2, 3, 1],
         axisOrder: ['ml', 'ap', 'dv'],
         coordinateSystem: 'test',
+        referenceSpaceId: 'test', gridId: 'test-grid',
         voxelSizeUm: [25, 25, 25],
         originUm: [0, 0, 0],
         indexToWorldUm: [0, 25, 0, 0, 25, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 1],
+        worldToIndex: [0, 0.04, 0, 0, 0.04, 0, 0, 0, 0, 0, 0.04, 0, 0, 0, 0, 1],
+        voxelEdgeExtentUm: [-12.5, 62.5, -12.5, 37.5, -12.5, 12.5],
       },
-      resource: { shape: [2, 3, 1], codec: { name: 'none' }, path_template: 'chunks/{i0}.{i1}.{i2}.f32' },
+      resource: {
+        layout: 'chunks3d', grid_id: 'test-grid', chunk_shape: [2, 3, 1],
+        chunks: [{
+          origin: [0, 0, 0], decoded: { shape: [3, 2, 1], storageAxes: ['i1', 'i0', 'i2'] },
+          resource: { path: 'chunks/0.0.0.f32', mediaType: 'application/octet-stream', bytes: raw.byteLength, sha256: '0'.repeat(64), codec: { name: 'none', decodedBytes: raw.byteLength } },
+        }],
+      },
     },
     feature: {
       async loadResource(path) {
@@ -79,9 +98,12 @@ test('regional slice coordinates map through volume index_to_world transform', (
         shape: [8, 6, 4],
         axisOrder: ['ap', 'ml', 'dv'],
         coordinateSystem: 'test',
+        referenceSpaceId: 'test', gridId: 'test-grid',
         voxelSizeUm: [25, 25, 25],
         originUm: [0, 0, 0],
-        indexToWorldUm: [25, 0, 0, 0, 0, 25, 0, 0, 0, 0, 25, 0, 0, 0, 0, 1],
+        indexToWorldUm: [0, 25, 0, 0, 25, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 1],
+        worldToIndex: [0, 0.04, 0, 0, 0.04, 0, 0, 0, 0, 0, 0.04, 0, 0, 0, 0, 1],
+        voxelEdgeExtentUm: [-12.5, 137.5, -12.5, 187.5, -12.5, 87.5],
       },
     },
   });

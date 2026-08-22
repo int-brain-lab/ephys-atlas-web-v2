@@ -1,29 +1,21 @@
 {
-  "schemaVersion": "0.1",
+  "schema_version": "1.0",
   "datasets": [
     {
-      "id": "ephys_atlas_channels",
-      "title": "Ephys Atlas channels (integration fixture)",
-      "description": "Schema-v0.1 golden fixture wired through the real manifest/binary loader; not scientific data.",
-      "defaultRelease": "golden-v0.3",
+      "dataset_id": "ephys_atlas_channels",
+      "title": "IBL Ephys Atlas synthetic fixture",
+      "description": "Deterministic non-scientific schema-v1 fixture.",
+      "default_release": "golden-v1",
       "releases": [
         {
-          "id": "golden-v0.3",
-          "label": "golden-v0.3 (visible left anatomy)",
-          "manifest": "./ephys_atlas_channels/golden-v0.3/manifest.json",
-          "immutable": true
-        },
-        {
-          "id": "golden-v0.2",
-          "label": "golden-v0.2 (left-folded)",
-          "manifest": "./ephys_atlas_channels/golden-v0.2/manifest.json",
-          "immutable": true
-        },
-        {
-          "id": "golden-v0.1",
-          "label": "golden-v0.1",
-          "manifest": "./ephys_atlas_channels/golden-v0.1/manifest.json",
-          "immutable": true
+          "release_id": "golden-v1",
+          "manifest": {
+            "path": "./ephys_atlas_channels/golden-v1/manifest.json",
+            "media_type": "application/json",
+            "bytes": 2465,
+            "sha256": "749a353772703b5beaf5b2a5a528a5d9f789fedc346974758672542d52547767",
+            "codec": {"name": "none", "decoded_bytes": 2465}
+          }
         }
       ]
     }

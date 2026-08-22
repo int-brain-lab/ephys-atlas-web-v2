@@ -33,4 +33,4 @@ public/
 ```
 
 `_publication.json` is publishing metadata only; the scientific contract remains
-`manifest.json` and schema v0.1 under `schema/v0.1/`.
+`manifest.json` and schema v1 under `schema/v1/`.

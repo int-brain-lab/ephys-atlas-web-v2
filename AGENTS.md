@@ -14,7 +14,7 @@ Before changing code, read these files in order:
 6. `docs/DECISIONS.md`
 7. `docs/INTEGRATION_STATUS.md`
 
-Use `docs/DATA_SOURCES.md`, `schema/v0.1/README.md`, and the focused documents under `docs/data/`, `docs/frontend/`, `docs/rendering/`, and `docs/publishing/` when working in those areas.
+Use `docs/DATA_SOURCES.md`, `schema/v1/README.md`, and the focused documents under `docs/data/`, `docs/frontend/`, `docs/rendering/`, and `docs/publishing/` when working in those areas.
 
 ## Branch and commit model
 
@@ -44,15 +44,14 @@ Scientific provenance is part of the product contract, not optional metadata.
 
 ## Data and schema invariants
 
-- Schema v0.1 in `schema/v0.1/` is the currently implemented contract. The
-  approved pre-launch cutover in
-  `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` replaces it with one schema
-  v1 across the builder, browser, local import, publishing service, and
-  fixtures; it does not preserve v0.1 readers or adapters.
+- Schema v1 in `schema/v1/` is the sole implemented release contract across
+  the builder, browser, local import, publishing service, and fixtures. Schema
+  v0.1 readers, adapters, schemas, and fixtures were removed in the approved
+  pre-launch cutover; do not reintroduce them.
 - Change the contract once and update every producer/consumer in the same
   coherent task rather than adding adapter-specific shadow schemas.
 - Large numeric data belongs in typed binary artifacts, not large JSON payloads.
-- `fixtures/golden-v0.3/` is deterministic and synthetic. It must never be presented as scientific data.
+- `fixtures/golden-v1/` is deterministic and synthetic. It must never be presented as scientific data.
 - The browser-served golden fixture must remain semantically identical to the builder fixture. If copies are needed for Vite, update them from the canonical fixture rather than hand-editing divergent content.
 
 ## Rendering invariants

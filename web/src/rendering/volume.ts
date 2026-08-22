@@ -23,7 +23,7 @@ export interface VolumeChunk {
 export interface VolumeChunkMetadata {
   shape: VolumeShape;
   chunkShape: VolumeShape;
-  voxelSizeUm: 25;
+  voxelSizeUm: number;
   storageDtype: 'float16' | 'float32';
 }
 

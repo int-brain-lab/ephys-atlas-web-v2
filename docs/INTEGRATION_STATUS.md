@@ -18,25 +18,30 @@ HTTP and local datasets share the same regional materializer through a transport
 
 ## Approved next architecture cutover
 
-D031 and `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` define the next
-unblocked implementation unit. The current schema-v0.1, `SliceRenderer`/hybrid,
-anatomy-pack compatibility, legacy fallback, and URL-migration paths remain
+D031 and `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` define the active
+implementation sequence. Schema v1 is now the sole implemented data contract.
+The current `SliceRenderer`/hybrid, anatomy-pack compatibility, legacy fallback, and URL-migration paths remain
 factual implementation state today; they are not long-term compatibility
-requirements. The coordinated cutover will replace them with one schema v1,
-one current URL codec, one five-projection asset contract, and retained layered
+requirements. The remaining coordinated cutover will replace them with one
+current URL codec, one five-projection asset contract, and retained layered
 projection viewports. It will add static Top and Swanson views through the same
 regional SVG presentation/interaction path used by the registered orthogonal
 views.
 
-Commit 1 of the plan is implemented: `schema/v1/` now stages the strict dataset,
+Commits 1 and 2 of the plan are implemented: `schema/v1/` defines the strict dataset,
 resource, regional, volume, summary/index, and five-projection contracts plus
 matching TypeScript types. Python and TypeScript semantic validators execute
 one deterministic valid/invalid corpus covering all top-level schemas, both
 volume transports, sentinel/mask validity, asymmetric signed affines and
-derived extents/inverses, exact static-map evidence, and cache identity. The
-current runtime deliberately remains on v0.1 until Commit 2 atomically migrates
-all producers and consumers. Q4 and Q5 remain unresolved and continue to block
-a purported production volume release.
+derived extents/inverses, exact static-map evidence, and cache identity.
+Builders, publishing, HTTP/local browser readers, IndexedDB namespaces,
+downloads, and the deterministic `golden-v1` fixture now use that contract
+exclusively. Encoded resources are verified before persistent caching; corrupt
+entries are evicted and retried, and decoded identity is SHA plus decode
+contract rather than path. Schema-v0.1 runtime code, schemas, fixtures, and
+compatibility tests are removed. External development releases must be rebuilt
+under new release IDs before use. Q4 and Q5 remain unresolved and continue to
+block a purported production volume release.
 
 The pre-Commit-1 contract is now explicit about separate reference-space,
 grid, and asset identities; verified-only persistent caching; independent
@@ -98,7 +103,9 @@ Anatomy manifest/version validation is separate from runtime fetch/cache/worker 
 
 ## Scientific data/builders
 
-Schema v0.1 is the current browser/publishing release contract. Regional release serialization is shared by channel and cluster builders; scientific source selection and computation remain dataset-specific.
+Schema v1 is the sole browser, builder, and publishing release contract.
+Regional release serialization is shared by channel and cluster builders;
+scientific source selection and computation remain dataset-specific.
 
 Current launch-critical dataset families are:
 
@@ -147,7 +154,7 @@ and launch feature catalog.
 
 ## Regional viewer
 
-The schema-v0.1 regional path is implemented end to end for published HTTP and
+The schema-v1 regional path is implemented end to end for published HTTP and
 browser-local releases: catalog, immutable manifest, feature descriptors,
 parcellation metadata/index, typed values/statistics/histograms, region
 search/tree, scalar coloring, shared SVG/list selection and hover, URL state,

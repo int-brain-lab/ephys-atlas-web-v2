@@ -6,7 +6,7 @@ order, `docs/OPEN_QUESTIONS.md` for choices an agent must not invent, and
 
 ## Shared contract
 
-Schema v0.1 is the implemented contract for builders, browser HTTP reads,
+Schema v1 is the sole implemented contract for builders, browser HTTP reads,
 browser-local IndexedDB imports, and publishing validation. It provides:
 
 - immutable dataset manifests and dynamic feature catalogs;
@@ -18,7 +18,7 @@ browser-local IndexedDB imports, and publishing validation. It provides:
   whole-release ZIP packaging.
 
 The Python validator and independent TypeScript validator share valid/invalid
-manifest fixtures. `fixtures/golden-v0.3` is the deterministic synthetic
+fixtures for every contract document and semantic unit. `fixtures/golden-v1` is the deterministic synthetic
 cross-implementation fixture; the browser-served copy must remain semantically
 identical and must never be labeled scientific.
 
@@ -32,9 +32,10 @@ excludes non-finite observations per feature, preserves source values, folds
 bilateral IDs to the left representation, and builds Allen/Beryl/Cosmos
 statistics and histograms.
 
-The pinned `ea_active/2026_W32` development snapshot has been built and
-validated across all 70 discovered features and all three parcellations. It is
-not the paper release. Q2 still blocks the final paper vintage and aliases. See
+The pinned `ea_active/2026_W32` development snapshot was built and validated
+under the retired contract across all 70 discovered features and all three
+parcellations. It must be rebuilt under a new schema-v1 release ID before use;
+it is not the paper release. Q2 still blocks the final paper vintage and aliases. See
 `docs/data/CHANNELS_RECIPE.md` and `docs/data/DEVELOPMENT_RELEASE.md`.
 
 ## Cluster releases
@@ -86,7 +87,7 @@ yet resolving that decision.
   are not required by a clean-checkout `just check`.
 
 The next data work is the earliest unblocked action in the implementation plan:
-publish the W32 channel development release to an authorized non-production
-origin, repeat W26 volume inspection/benchmarks without inventing Q4/Q5, then
+rebuild the W32 channel development release under schema v1 before any
+non-production publication, repeat W26 volume inspection/benchmarks without inventing Q4/Q5, then
 consume authoritative answers for the paper channel, cluster, and
 `brainwide_map` releases.

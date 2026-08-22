@@ -31,7 +31,7 @@ Status: **machinery implemented; paper release blocked only on source vintage**.
 
 Already implemented:
 
-- deterministic schema-v0.1 release builder path;
+- deterministic schema-v1 release builder path;
 - explicit source vintage, feature mode, population, creation time, and paper-snapshot inputs;
 - dynamic feature discovery;
 - regional statistics/histograms and Allen/Beryl/Cosmos packaging;
@@ -63,7 +63,7 @@ Acceptance reference: `docs/LAUNCH_SPEC.md` sections 2 and 4.
 
 ## M2 — Projection/volume cutover and production volume vertical slice
 
-Status: **breaking projection/schema refactor approved and unblocked;
+Status: **breaking projection refactor active; schema-v1 cutover complete;
 production science/transport remains blocked**.
 
 The next implementation unit is the pre-launch cutover in
@@ -75,19 +75,21 @@ horizontal support registered anatomy plus volume layers; Top and Swanson are
 static regional projections using the same SVG presentation and interaction
 path. Backward compatibility with the pre-launch formats is not a requirement.
 
-Commit 1 is implemented as a staging contract while the runtime remains on
-v0.1. It separates scientific reference-space identity from grid and asset
-identities, defines verified resources and SHA-plus-decode cache identity,
-pins the affine-free Top/Swanson wire contract, and validates every top-level
-schema/semantic unit through one Python/TypeScript corpus. The next unit is
-Commit 2's atomic producer/consumer migration to that contract.
+Commits 1 and 2 are implemented. Schema v1 is now the sole builder,
+publishing, HTTP/local browser, fixture, and download contract. It separates
+scientific reference-space identity from grid and asset identities, admits
+only the checked signed-permutation affine profile, verifies encoded bytes
+before persistent caching, and keys decoded resources by SHA plus decode
+contract. The newly identified `golden-v1` fixture is canonical; v0.1 schemas,
+fixtures, readers, and compatibility tests are deleted. The next unit is
+Commit 3's data-driven projection/navigation state.
 
 This machinery is unblocked with deterministic synthetic fixtures. It must not
 resolve or conceal Q4/Q5.
 
 Already implemented and green on the handoff baseline:
 
-- schema-v0.1 volume payload path for published/local sources;
+- schema-v1 volume payload path for published/local sources;
 - `chunks3d` reference adapter;
 - `orthogonal_slice_packs` adapter with in-flight deduplication and a bounded decoded LRU;
 - float16/float32 decoding and optional gzip;
@@ -106,10 +108,9 @@ historical transport evidence, not the default input for new implementation.
 
 Ordered next actions before scientific resolution:
 
-1. execute commits 2-8 in the focused cutover plan, keeping every handoff green;
-2. regenerate the canonical synthetic fixture and development releases under
-   the new contract, without redundant `Source variant: raw/denoised` prose in
-   feature descriptions;
+1. execute commits 3-8 in the focused cutover plan, keeping every handoff green;
+2. rebuild external development releases under new schema-v1 release IDs
+   before using the opt-in real-release suite; do not add a compatibility reader;
 3. verify the layered golden volume path, registered anatomy overlays, and
    Top/Swanson shared interactions across responsive layouts;
 4. pull, checksum, and header-inspect the documented `2026_W26` object, then

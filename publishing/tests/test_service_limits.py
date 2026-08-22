@@ -14,7 +14,7 @@ class FakeStore:
         self.state = state
 
     def list_datasets(self):
-        return {"schemaVersion": "0.1", "datasets": []}
+        return {"schema_version": "1.0", "datasets": []}
 
     def dataset_owner(self, _dataset_id):
         return "publisher-1"

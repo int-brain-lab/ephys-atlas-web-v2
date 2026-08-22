@@ -84,15 +84,16 @@ Either physical case is poor for the required interaction model:
 the Python examples with `allow_pickle=True`, which is not a useful browser
 metadata representation.
 
-## Decision for v0.1
+## Decision carried into schema v1
 
 D010 remains the governing rule: use the canonical object directly when its
 physical format and HTTP configuration satisfy browser requirements. The current
 NPZ does not.
 
-For the current encoding-volume product, v0.1 therefore uses a deterministic
-web transform from a pinned/checksummed canonical NPZ into independently
-addressable per-feature chunks with small JSON metadata. The source NPZ remains
+For the current encoding-volume product, schema v1 therefore uses a
+deterministic web transform from a pinned/checksummed canonical NPZ into
+independently addressable per-feature resources with small JSON metadata and a
+checksummed explicit resource index. The source NPZ remains
 the scientific authority and a downloadable provenance artifact; the chunks are
 only browser transport.
 

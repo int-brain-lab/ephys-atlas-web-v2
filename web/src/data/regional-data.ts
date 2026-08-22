@@ -95,7 +95,7 @@ function optionalStatistic(
 
 export function parseRegionalStatisticsResource(value: unknown): RegionalStatisticsResource {
   const root = object(value, 'statistics');
-  if (root.format !== 'ephys-atlas-statistics-v0.1') {
+  if (root.schema_version !== '1.0' || root.format !== 'ephys-atlas-regional-statistics-v1') {
     throw new Error('statistics.format is unsupported');
   }
   const regional = object(root.regional_summary, 'statistics.regional_summary');

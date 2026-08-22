@@ -16,7 +16,7 @@ The browser boundary is deliberately layered:
 - `scalarToRgba` applies the active scalar range/palette.
 - `CanvasVolumeSliceRenderer` paints prepared RGBA pixels only.
 
-This separation is intentional because schema v0.1 supports both physical
+This separation is intentional because schema v1 supports both physical
 layouts and Q5 still requires a benchmark-based production selection.
 
 ## Historical 2026_W12 benchmark dimensions and dtype
@@ -50,7 +50,7 @@ transport evidence, but new production work must repeat them against W26.
 
 This is the central launch issue. Small cubes reduce voxel overfetch but explode request count; large cubes reduce requests while loading tens of MiB for each cold slice.
 
-Schema v0.1 retains this `chunks3d` layout as the deterministic reference path,
+Schema v1 retains this `chunks3d` layout as the deterministic reference path,
 but also permits `orthogonal_slice_packs`. The renderer benchmark does **not**
 support selecting 64³ chunks for production: that candidate touches 157 chunk
 objects / 78.5 MiB summed across the three views before overlap, or 136 unique
@@ -75,7 +75,8 @@ This representation can use ordinary static gzip-compressed objects without rang
 
 ### Resolved schema boundary and remaining benchmark
 
-Schema v0.1 now makes `layout` explicit and implements both candidate adapters.
+Schema v1 makes `layout` explicit, lists every immutable encoded resource, and
+implements both candidate adapters.
 The remaining work is to benchmark at least these two real-data candidates:
 
 1. existing 32^3/64^3 cube chunks, including real browser request fan-out and three-plane startup transfer;

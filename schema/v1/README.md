@@ -1,8 +1,8 @@
 # Schema v1
 
-Schema v1 is the contract staged for the projection and volume cutover. It is
-not a compatibility layer for schema v0.1 and is not consumed by the current
-runtime until the atomic producer/consumer cutover.
+Schema v1 is the active release contract for builders, publishing, HTTP/local
+browser loading, fixtures, and downloads. It replaced schema v0.1 atomically;
+there is no compatibility reader or adapter for the retired contract.
 
 All encoded resources carry their encoded byte length and SHA-256 plus an
 explicit codec and decoded byte length. Consumers must verify encoded bytes

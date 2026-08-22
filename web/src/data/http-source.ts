@@ -2,8 +2,10 @@ import type { DatasetId, DatasetRef, ParcellationId, RepresentationKind } from '
 import { ResourceFetcher } from './cache.js';
 import { loadRegionalFeatureFromResources, loadRegionsFromResources } from './regional-loader.js';
 import type { ResourceReader } from './resource-reader.js';
+import { parseVolumeResourceIndex, parseVolumeSummary } from './validation/volume-v1.js';
 import {
   decodeBinaryArray,
+  decodeResourceBytes,
   parseDatasetCatalog,
   parseDatasetManifestDocument,
   parseFeatureDescriptor,
@@ -17,6 +19,7 @@ import type {
   DatasetManifest,
   DatasetReleaseSummary,
   DatasetSource,
+  EncodedResourceDescriptor,
   FeatureDescriptor,
   FeaturePayload,
   RegionMetadata,
@@ -32,23 +35,23 @@ class HttpResourceReader implements ResourceReader {
     return new URL(relative, base).toString();
   }
 
-  async readJson(location: string, signal?: AbortSignal): Promise<unknown> {
+  async readJson(location: string, signal?: AbortSignal, resource?: EncodedResourceDescriptor): Promise<unknown> {
     const response = await this.fetcher.fetch(
       location,
-      { immutable: this.immutable, ...(signal ? { signal } : {}) },
+      { immutable: this.immutable, ...(signal ? { signal } : {}), ...(resource ? { integrity: resource } : {}) },
     );
     return response.json() as Promise<unknown>;
   }
 
   async readArray(location: string, descriptor: BinaryArrayDescriptor, signal?: AbortSignal): Promise<number[]> {
-    const bytes = await this.readBytes(location, signal);
-    return decodeBinaryArray(bytes, descriptor);
+    const bytes = await this.readBytes(location, signal, descriptor);
+    return decodeBinaryArray(await decodeResourceBytes(bytes, descriptor), descriptor);
   }
 
-  async readBytes(location: string, signal?: AbortSignal): Promise<ArrayBuffer> {
+  async readBytes(location: string, signal?: AbortSignal, resource?: EncodedResourceDescriptor): Promise<ArrayBuffer> {
     const response = await this.fetcher.fetch(
       location,
-      { immutable: this.immutable, ...(signal ? { signal } : {}) },
+      { immutable: this.immutable, ...(signal ? { signal } : {}), ...(resource ? { integrity: resource } : {}) },
     );
     return response.arrayBuffer();
   }
@@ -86,7 +89,7 @@ export class HttpDatasetSource implements DatasetSource {
       const reader = this.reader(release.immutable);
       const manifestUrl = reader.resolve(this.catalogUrl, release.manifest);
       this.manifestUrls.set(key, manifestUrl);
-      manifest = reader.readJson(manifestUrl).then(async (raw) => {
+      manifest = reader.readJson(manifestUrl, undefined, release.manifestResource).then(async (raw) => {
         const document = parseDatasetManifestDocument(raw);
         if (document.release.releaseId !== release.id) {
           throw new Error(`Manifest release ${document.release.releaseId} does not match catalog release ${release.id}`);
@@ -94,7 +97,10 @@ export class HttpDatasetSource implements DatasetSource {
         const features = await Promise.all(document.featureRefs.map(async (featureRef) => {
           const featureUrl = reader.resolve(manifestUrl, featureRef.path);
           this.featureUrls.set(this.featureKey(entry.id, release.id, featureRef.id), featureUrl);
-          const descriptor = parseFeatureDescriptor(await reader.readJson(featureUrl), featureRef.path);
+          const descriptor = parseFeatureDescriptor(
+            await reader.readJson(featureUrl, undefined, featureRef.resource),
+            featureRef.path,
+          );
           if (descriptor.id !== featureRef.id) throw new Error(`Feature id mismatch for ${featureRef.path}`);
           return descriptor;
         }));
@@ -145,13 +151,34 @@ export class HttpDatasetSource implements DatasetSource {
     if (representation === 'volume') {
       const descriptor = feature.representations.volume;
       if (!descriptor) throw new Error(`Feature ${feature.id} has no volume representation`);
+      const [resourceIndexRaw, summaryRaw] = await Promise.all([
+        reader.readJson(
+          reader.resolve(featureUrl, descriptor.resourceIndexPath),
+          signal,
+          descriptor.resourceIndexResource,
+        ),
+        reader.readJson(
+          reader.resolve(featureUrl, descriptor.summaryPath),
+          signal,
+          descriptor.summaryResource,
+        ),
+      ]);
+      const resolvedDescriptor = {
+        ...descriptor,
+        resource: parseVolumeResourceIndex(resourceIndexRaw, descriptor),
+        valueRange: parseVolumeSummary(summaryRaw, descriptor),
+      };
       return {
         schemaVersion: SCHEMA_VERSION,
         featureId,
         representation: 'volume',
-        descriptor,
+        descriptor: resolvedDescriptor,
         baseUrl: featureUrl,
-        loadResource: (path, signal) => reader.readBytes(reader.resolve(featureUrl, path), signal),
+        loadResource: (path, resourceSignal, resource) => reader.readBytes(
+          reader.resolve(featureUrl, path),
+          resourceSignal,
+          resource,
+        ),
       };
     }
 

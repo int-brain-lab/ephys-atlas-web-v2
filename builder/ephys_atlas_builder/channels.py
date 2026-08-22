@@ -14,7 +14,7 @@ from .channel_source import (
     discover_channel_table_dir,
     load_channel_scientific_inputs,
 )
-from .io import sha256_file, write_json
+from .io import json_resource, sha256_file, write_json
 from .regional_release import (
     DEFAULT_PARCELLATIONS,
     FeatureInfo,
@@ -93,7 +93,7 @@ def build_channels_release_from_arrays(
     provenance_sources: Sequence[dict],
     feature_metadata: Mapping[str, FeatureInfo] | None = None,
 ) -> Path:
-    """Build a schema-v0.1 regional channel release from already-selected arrays."""
+    """Build a schema-v1 regional channel release from already-selected arrays."""
     config.validate()
     release_dir = release_dir.resolve()
     if release_dir.exists() and any(release_dir.iterdir()):
@@ -152,16 +152,14 @@ def build_channels_release_from_arrays(
         ]
         info = feature_metadata.get(feature_id)
         source_column = info.source_column if info else feature_id
-        variant = info.variant if info else (config.feature_mode if config.feature_mode != "both" else None)
-        variant_label = f" ({variant})" if variant else ""
         feature_doc = {
-            "schema_version": "0.1",
+            "schema_version": "1.0",
             "id": feature_id,
             "label": info.label if info else feature_id.replace("_", " "),
             "description": (
                 info.description
                 if info
-                else f"Channel feature {source_column}{variant_label} aggregated regionally by arithmetic mean."
+                else f"Channel feature {source_column} aggregated regionally by arithmetic mean."
             ),
             "unit": info.unit if info else None,
             **({"display": {"scale": "log"}} if feature_id in config.log_color_features else {}),
@@ -175,14 +173,22 @@ def build_channels_release_from_arrays(
             },
             "representations": {
                 "regional": {
-                    "format": "ephys-atlas-regional-v0.1",
+                    "format": "ephys-atlas-regional-v1",
                     "parcellations": regional,
                 }
             },
             "artifacts": [],
         }
-        write_json(feature_root / "feature.json", feature_doc)
-        features.append({"id": feature_id, "path": f"features/{feature_id}/feature.json"})
+        feature_path = feature_root / "feature.json"
+        write_json(feature_path, feature_doc)
+        features.append(
+            {
+                "id": feature_id,
+                "descriptor": json_resource(
+                    feature_path, release_dir, "ephys-atlas-feature-v1"
+                ),
+            }
+        )
 
     scientific_sources = []
     if config.ibleatools_commit:
@@ -204,7 +210,7 @@ def build_channels_release_from_arrays(
             }
         )
     manifest = {
-        "schema_version": "0.1",
+        "schema_version": "1.0",
         "dataset_id": DATASET_ID,
         "title": "IBL Ephys Atlas channel features",
         "description": "Regional descriptive summaries of channel-level ephys-atlas features.",
@@ -218,7 +224,7 @@ def build_channels_release_from_arrays(
             "sources": [*provenance_sources, *scientific_sources],
             "builder": {
                 "name": "ibl-ephys-atlas-builder",
-                "version": "0.1.0",
+                "version": "1.0.0",
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 **({"commit": config.builder_commit} if config.builder_commit else {}),
                 "command": (
@@ -227,7 +233,7 @@ def build_channels_release_from_arrays(
                 ),
             },
             "recipe": {
-                "id": "ephys-atlas-channels-regional-v0.1",
+                "id": "ephys-atlas-channels-regional-v1",
                 "feature_mode": config.feature_mode,
                 "population": config.population,
                 "parcellations": list(config.parcellations),

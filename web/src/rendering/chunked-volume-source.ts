@@ -1,5 +1,5 @@
 import type { SliceAxis } from '../domain/types.js';
-import type { VolumeFeaturePayload } from '../data/contracts.js';
+import type { EncodedResourceDescriptor, VolumeFeaturePayload } from '../data/contracts.js';
 import { decodeBinaryArray } from '../data/validate.js';
 import { regionalIndexToCoordinateUm } from './slice-calibration.js';
 import type {
@@ -17,20 +17,31 @@ const AXIS_NAME: Readonly<Record<SliceAxis, 'ap' | 'ml' | 'dv'>> = {
 };
 
 const WORLD_ROW: Readonly<Record<'ap' | 'ml' | 'dv', number>> = {
-  ap: 0,
-  ml: 1,
+  ml: 0,
+  ap: 1,
   dv: 2,
 };
 
 interface Chunks3dResource {
   shape: readonly [number, number, number];
-  codec: { name: 'none' | 'gzip' };
-  pathTemplate: string;
+  chunks: readonly {
+    origin: readonly [number, number, number];
+    decodedShape: readonly [number, number, number];
+    storageAxes: readonly ['i0' | 'i1' | 'i2', 'i0' | 'i1' | 'i2', 'i0' | 'i1' | 'i2'];
+    resource: EncodedResourceDescriptor;
+  }[];
 }
 
 function integerTriple(value: unknown, context: string): [number, number, number] {
   if (!Array.isArray(value) || value.length !== 3 || value.some((item) => !Number.isInteger(item) || Number(item) <= 0)) {
     throw new Error(`${context} must contain three positive integers`);
+  }
+  return [Number(value[0]), Number(value[1]), Number(value[2])];
+}
+
+function nonnegativeIntegerTriple(value: unknown, context: string): [number, number, number] {
+  if (!Array.isArray(value) || value.length !== 3 || value.some((item) => !Number.isInteger(item) || Number(item) < 0)) {
+    throw new Error(`${context} must contain three non-negative integers`);
   }
   return [Number(value[0]), Number(value[1]), Number(value[2])];
 }
@@ -41,15 +52,28 @@ function chunks3dResource(feature: VolumeFeaturePayload): Chunks3dResource {
     throw new Error(`Volume layout ${descriptor.layout} is not handled by the chunks3d adapter`);
   }
   const raw = descriptor.resource;
-  const codecRaw = raw.codec;
-  if (!codecRaw || typeof codecRaw !== 'object' || Array.isArray(codecRaw)) throw new Error('volume chunks codec must be an object');
-  const codecName = (codecRaw as Record<string, unknown>).name;
-  if (codecName !== 'none' && codecName !== 'gzip') throw new Error(`unsupported volume chunk codec ${String(codecName)}`);
-  if (typeof raw.path_template !== 'string' || !raw.path_template) throw new Error('volume chunks path_template is required');
+  if (!Array.isArray(raw.chunks)) throw new Error('volume chunk resource index is missing chunks');
   return {
-    shape: integerTriple(raw.shape, 'volume chunks shape'),
-    codec: { name: codecName },
-    pathTemplate: raw.path_template,
+    shape: integerTriple(raw.chunk_shape, 'volume chunks shape'),
+    chunks: raw.chunks.map((value, index) => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`volume chunk ${index} is invalid`);
+      const entry = value as Record<string, unknown>;
+      const decoded = entry.decoded;
+      if (!decoded || typeof decoded !== 'object' || Array.isArray(decoded)) throw new Error(`volume chunk ${index} decoded block is invalid`);
+      const storageAxes = (decoded as Record<string, unknown>).storageAxes;
+      if (!Array.isArray(storageAxes)
+        || storageAxes.length !== 3
+        || new Set(storageAxes).size !== 3
+        || storageAxes.some((axis) => !['i0', 'i1', 'i2'].includes(String(axis)))) {
+        throw new Error(`volume chunk ${index} storage axes are invalid`);
+      }
+      return {
+        origin: nonnegativeIntegerTriple(entry.origin, `volume chunk ${index} origin`),
+        decodedShape: integerTriple((decoded as Record<string, unknown>).shape, `volume chunk ${index} decoded shape`),
+        storageAxes: storageAxes as unknown as Chunks3dResource['chunks'][number]['storageAxes'],
+        resource: entry.resource as EncodedResourceDescriptor,
+      };
+    }),
   };
 }
 
@@ -90,14 +114,7 @@ function rawLocalIndex(feature: VolumeFeaturePayload, c: number, s: number, h: n
   }) as [number, number, number];
 }
 
-function pathForChunk(template: string, key: readonly [number, number, number]): string {
-  return template
-    .replaceAll('{i0}', String(key[0]))
-    .replaceAll('{i1}', String(key[1]))
-    .replaceAll('{i2}', String(key[2]));
-}
-
-async function maybeDecompress(buffer: ArrayBuffer, codec: Chunks3dResource['codec']): Promise<ArrayBuffer> {
+async function maybeDecompress(buffer: ArrayBuffer, codec: EncodedResourceDescriptor['codec']): Promise<ArrayBuffer> {
   if (codec.name === 'none') return buffer;
   if (!('DecompressionStream' in globalThis)) throw new Error('gzip volume chunks require DecompressionStream support');
   const stream = new Blob([buffer]).stream().pipeThrough(new DecompressionStream('gzip'));
@@ -119,6 +136,13 @@ function rawValue(values: readonly number[], shape: readonly [number, number, nu
   return values[((index[0] * shape[1]) + index[1]) * shape[2] + index[2]] ?? NaN;
 }
 
+function storageIndex(
+  axes: Chunks3dResource['chunks'][number]['storageAxes'],
+  rawIndex: readonly [number, number, number],
+): [number, number, number] {
+  return axes.map((axis) => rawIndex[Number(axis[1])]!) as [number, number, number];
+}
+
 export class SchemaChunks3dVolumeSource implements VolumeChunkSource {
   readonly metadata: VolumeChunkMetadata;
   private readonly resource: Chunks3dResource;
@@ -128,27 +152,31 @@ export class SchemaChunks3dVolumeSource implements VolumeChunkSource {
     if (feature.descriptor.array.dtype !== 'float16' && feature.descriptor.array.dtype !== 'float32') {
       throw new Error(`volume slice renderer currently supports float16/float32, not ${feature.descriptor.array.dtype}`);
     }
-    if (feature.descriptor.grid.voxelSizeUm.some((value) => value !== 25)) {
-      throw new Error('launch volume renderer currently requires the 25 um encoding grid');
-    }
     this.metadata = {
       shape: anatomicalShape(feature, feature.descriptor.grid.shape),
       chunkShape: anatomicalShape(feature, this.resource.shape),
-      voxelSizeUm: 25,
+      voxelSizeUm: Math.min(...feature.descriptor.grid.voxelSizeUm),
       storageDtype: feature.descriptor.array.dtype,
     };
   }
 
   async loadChunk(key: VolumeChunkKey, signal?: AbortSignal): Promise<VolumeChunk> {
     const rawKey = rawChunkKey(this.feature, key);
+    const origin = rawKey.map((value, index) => value * this.resource.shape[index]!) as [number, number, number];
+    const entry = this.resource.chunks.find((candidate) => candidate.origin.every((value, index) => value === origin[index]));
+    if (!entry) throw new Error(`volume resource index has no chunk at ${origin.join('/')}`);
     const rawShape = rawChunkShape(this.feature.descriptor.grid.shape, this.resource.shape, rawKey);
-    const path = pathForChunk(this.resource.pathTemplate, rawKey);
-    const compressed = await this.feature.loadResource(path, signal);
-    const buffer = await maybeDecompress(compressed, this.resource.codec);
+    const expectedDecodedShape = entry.storageAxes.map((axis) => rawShape[Number(axis[1])]!);
+    if (entry.decodedShape.some((value, index) => value !== expectedDecodedShape[index])) throw new Error('volume chunk decoded shape is inconsistent');
+    const path = entry.resource.path;
+    const compressed = await this.feature.loadResource(path, signal, entry.resource);
+    const buffer = await maybeDecompress(compressed, entry.resource.codec);
     const values = decodeBinaryArray(buffer, {
+      format: 'raw-binary-array-v1',
+      ...entry.resource,
       path,
       dtype: this.feature.descriptor.array.dtype,
-      shape: rawShape,
+      shape: entry.decodedShape,
       order: 'C',
       endianness: this.feature.descriptor.array.endianness,
     });
@@ -158,7 +186,8 @@ export class SchemaChunks3dVolumeSource implements VolumeChunkSource {
     for (let c = 0; c < shape.coronal; c += 1) {
       for (let s = 0; s < shape.sagittal; s += 1) {
         for (let h = 0; h < shape.horizontal; h += 1) {
-          data[offset++] = rawValue(values, rawShape, rawLocalIndex(this.feature, c, s, h));
+          const rawIndex = rawLocalIndex(this.feature, c, s, h);
+          data[offset++] = rawValue(values, entry.decodedShape, storageIndex(entry.storageAxes, rawIndex));
         }
       }
     }

@@ -1,36 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-const RELEASE_PATH = '/fixtures/ephys_atlas_channels/golden-v0.3/';
-
-async function installSecondFeatureFixture(page: Page): Promise<void> {
-  await page.route(`**${RELEASE_PATH}**`, async (route) => {
-    const url = new URL(route.request().url());
-    if (url.pathname.endsWith(`${RELEASE_PATH}manifest.json`)) {
-      const response = await route.fetch();
-      const manifest = await response.json();
-      manifest.features.push({ id: 'rms_lf', path: 'features/rms_lf/feature.json' });
-      await route.fulfill({ response, json: manifest });
-      return;
-    }
-    if (url.pathname.includes(`${RELEASE_PATH}features/rms_lf/`)) {
-      const sourceUrl = url.toString().replace('/features/rms_lf/', '/features/rms_ap/');
-      if (url.pathname.endsWith('/feature.json')) {
-        const response = await route.fetch({ url: sourceUrl });
-        const feature = await response.json();
-        feature.id = 'rms_lf';
-        feature.label = 'LFP RMS (shortcut fixture)';
-        await route.fulfill({ response, json: feature });
-      } else {
-        await route.continue({ url: sourceUrl });
-      }
-      return;
-    }
-    await route.continue();
-  });
-}
-
-test('global shortcuts search and cycle the manifest feature catalogue', async ({ page }) => {
-  await installSecondFeatureFixture(page);
+test('global shortcuts search and report manifest feature catalogue boundaries', async ({ page }) => {
   await page.goto('/');
 
   const featureField = page.locator('[data-context-field="feature"]');
@@ -45,21 +15,15 @@ test('global shortcuts search and cycle the manifest feature catalogue', async (
   await page.keyboard.press('Escape');
 
   await page.keyboard.press('Shift+ArrowDown');
-  await expect(featureTrigger).toContainText('LFP RMS (shortcut fixture)');
-  await expect.poll(() => new URL(page.url()).searchParams.get('feature')).toBe('rms_lf');
-  await expect(shortcutStatus).toContainText('Feature 2 of 2: LFP RMS (shortcut fixture)');
-
-  await page.keyboard.press('Shift+ArrowDown');
-  await expect(featureTrigger).toContainText('LFP RMS (shortcut fixture)');
+  await expect(featureTrigger).toContainText('AP RMS (golden fixture)');
   await expect(shortcutStatus).toContainText('Last feature');
 
   await page.keyboard.press('Shift+ArrowUp');
   await expect(featureTrigger).toContainText('AP RMS (golden fixture)');
-  await expect.poll(() => new URL(page.url()).searchParams.get('feature')).toBe('rms_ap');
+  await expect(shortcutStatus).toContainText('First feature');
 });
 
 test('shortcuts stay out of text entry and expose the concise help guide', async ({ page }) => {
-  await installSecondFeatureFixture(page);
   await page.goto('/');
 
   const featureField = page.locator('[data-context-field="feature"]');

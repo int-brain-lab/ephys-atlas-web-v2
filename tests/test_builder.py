@@ -21,9 +21,9 @@ def test_golden_is_deterministic(tmp_path):
 
 
 def test_checked_in_golden_and_browser_copy_match_generator(tmp_path):
-    generated = generate_golden(tmp_path / "golden-v0.3")
-    canonical = ROOT / "fixtures" / "golden-v0.3"
-    browser = ROOT / "web" / "public" / "fixtures" / "ephys_atlas_channels" / "golden-v0.3"
+    generated = generate_golden(tmp_path / "golden-v1")
+    canonical = ROOT / "fixtures" / "golden-v1"
+    browser = ROOT / "web" / "public" / "fixtures" / "ephys_atlas_channels" / "golden-v1"
     expected_files = sorted(path.relative_to(generated) for path in generated.rglob("*") if path.is_file())
     for copy in (canonical, browser):
         actual_files = sorted(path.relative_to(copy) for path in copy.rglob("*") if path.is_file())
@@ -48,7 +48,7 @@ def test_validator_detects_tampered_binary(tmp_path):
     values = release / "features/rms_ap/allen.values.f32"
     values.write_bytes(values.read_bytes()[:-1] + b"x")
     with pytest.raises(ValidationError, match="sha256 mismatch"):
-        validate_release(release, ROOT / "schema" / "v0.1")
+        validate_release(release, ROOT / "schema" / "v1")
 
 
 def test_validator_detects_tampered_artifact(tmp_path):
@@ -56,7 +56,7 @@ def test_validator_detects_tampered_artifact(tmp_path):
     artifact = release / "features/rms_ap/rms_ap.csv"
     artifact.write_text(artifact.read_text() + "# tampered\n")
     with pytest.raises(ValidationError, match="artifact sha256 mismatch|byte size mismatch"):
-        validate_release(release, ROOT / "schema" / "v0.1")
+        validate_release(release, ROOT / "schema" / "v1")
 
 
 def test_whole_release_package_is_deterministic(tmp_path):

@@ -9,7 +9,7 @@ import {
   type ProvenanceSourceRole,
   type ReleaseMetadata,
 } from '../contracts.js';
-import { parseBinaryArray } from './binary.js';
+import { parseBinaryArray, parseEncodedResource } from './binary.js';
 import {
   array,
   boolean,
@@ -20,7 +20,6 @@ import {
   object,
   parcellation,
   plainString,
-  relativePath,
   SHA256,
   string,
   unique,
@@ -53,7 +52,7 @@ function parseRelease(value: unknown): ReleaseMetadata {
 function parseProvenance(value: unknown): DatasetProvenance {
   const provenance = object(value, 'manifest.provenance');
   const roles: readonly ProvenanceSourceRole[] = [
-    'scientific-code', 'canonical-data', 'selection-freeze', 'publication-input', 'user-input',
+    'scientific-code', 'canonical-data', 'selection-freeze', 'publication-input', 'user-input', 'atlas-geometry',
   ];
   const sources = array(provenance.sources, 'manifest.provenance.sources').map((value, index) => {
     const context = `manifest.provenance.sources[${index}]`;
@@ -74,6 +73,7 @@ function parseProvenance(value: unknown): DatasetProvenance {
       ...(source.release !== undefined ? { release: plainString(source.release, `${context}.release`) } : {}),
       ...(source.uri !== undefined ? { uri: plainString(source.uri, `${context}.uri`) } : {}),
       ...(source.sha256 !== undefined ? { sha256: source.sha256 } : {}),
+      ...(source.license !== undefined ? { license: plainString(source.license, `${context}.license`) } : {}),
     };
   });
   if (sources.length === 0) throw new Error('manifest.provenance.sources must not be empty');
@@ -109,20 +109,33 @@ export function parseDatasetManifestDocument(value: unknown): DatasetManifestDoc
   if (root.schema_version !== SCHEMA_VERSION) throw new Error(`manifest.schema_version must be ${SCHEMA_VERSION}`);
   const release = parseRelease(root.release);
   const provenance = parseProvenance(root.provenance);
-  array(root.artifacts, 'manifest.artifacts');
+  for (const [index, raw] of array(root.artifacts, 'manifest.artifacts').entries()) {
+    const artifact = object(raw, `manifest.artifacts[${index}]`);
+    parseEncodedResource(artifact.resource, `manifest.artifacts[${index}].resource`);
+  }
   const parcellations = array(root.parcellations, 'manifest.parcellations').map((value, index) => {
     const item = object(value, `manifest.parcellations[${index}]`);
+    const metadataResource = parseEncodedResource(
+      object(item.metadata, `manifest.parcellations[${index}].metadata`).resource,
+      `manifest.parcellations[${index}].metadata.resource`,
+    );
     return {
       id: parcellation(item.id, `manifest.parcellations[${index}].id`),
       regionIndex: parseBinaryArray(item.region_index, `manifest.parcellations[${index}].region_index`),
-      ...(item.metadata !== undefined ? { metadata: relativePath(item.metadata, `manifest.parcellations[${index}].metadata`) } : {}),
+      metadata: metadataResource.path,
+      metadataResource,
     };
   });
   const featureRefs = array(root.features, 'manifest.features').map((value, index) => {
     const item = object(value, `manifest.features[${index}]`);
+    const resource = parseEncodedResource(
+      object(item.descriptor, `manifest.features[${index}].descriptor`).resource,
+      `manifest.features[${index}].descriptor.resource`,
+    );
     return {
       id: string(item.id, `manifest.features[${index}].id`),
-      path: relativePath(item.path, `manifest.features[${index}].path`),
+      path: resource.path,
+      resource,
     };
   });
   unique(parcellations.map((item) => item.id), 'manifest.parcellations ids');

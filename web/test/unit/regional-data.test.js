@@ -18,18 +18,25 @@ test('region metadata preserves atlas ids and display labels', () => {
 
 test('statistics parser retains global and histogram resources', () => {
   const resource = parseRegionalStatisticsResource({
-    format: 'ephys-atlas-statistics-v0.1',
+    schema_version: '1.0',
+    format: 'ephys-atlas-regional-statistics-v1',
     population: 'fixture observations',
-    global: { count: 6, missing_count: 1, mean: 1.5, q05: 0.1, q95: 2.9 },
+    global: { count: 6, missing_count: 1, min: 0, max: 3, mean: 1.5, std: 1, median: 1.5, q05: 0.1, q95: 2.9 },
     regional_summary: {
       fields: ['mean', 'count'],
-      values: { path: 'summary.f64', dtype: 'float64', shape: [2, 2], order: 'C', endianness: 'little' },
+      values: {
+        format: 'raw-binary-array-v1', dtype: 'float64', shape: [2, 2], order: 'C', endianness: 'little',
+        resource: { path: 'summary.f64', media_type: 'application/octet-stream', bytes: 32, sha256: '0'.repeat(64), codec: { name: 'none', decoded_bytes: 32 } },
+      },
     },
     histogram: {
       edges: [0, 1, 2],
       global_counts: [2, 4],
-      regional_counts: { path: 'hist.u32', dtype: 'uint32', shape: [2, 2], order: 'C', endianness: 'little' },
-      bin_rule: 'test-rule',
+      regional_counts: {
+        format: 'raw-binary-array-v1', dtype: 'uint32', shape: [2, 2], order: 'C', endianness: 'little',
+        resource: { path: 'hist.u32', media_type: 'application/octet-stream', bytes: 16, sha256: '0'.repeat(64), codec: { name: 'none', decoded_bytes: 16 } },
+      },
+      bin_rule: 'left-closed-right-open-last-closed',
     },
   });
   assert.equal(resource.population, 'fixture observations');

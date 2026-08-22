@@ -14,15 +14,17 @@ should not be combined into one opaque cache.
 
 ## Invariants
 
-- Published and local releases use the same schema-v0.1 scientific contract.
+- Published and local releases use the same schema-v1 scientific contract.
 - Local storage changes transport only; it does not create a shadow schema.
 - Published release files are immutable and addressed through an immutable
   release ID. Mutable catalogs and aliases remain outside release directories.
 - Local data are never uploaded implicitly.
 - A corrupt, incomplete, or evicted local release must fail explicitly rather
   than render partial or stale scientific data.
-- Cache identity must include enough immutable context to prevent collisions
-  across dataset, release, feature, representation, and resource path.
+- Persistent entries are admitted only after encoded byte-size/SHA-256
+  verification. A corrupt hit is evicted and receives one clean network retry.
+- Decoded identity uses resource SHA-256 plus its complete decoding contract,
+  never a feature-relative path alone.
 - Persistent storage is an optimization and local-data feature, not the source
   of scientific truth for a published release.
 
@@ -32,11 +34,11 @@ should not be combined into one opaque cache.
 
 `ResourceFetcher` provides:
 
-- in-flight request coalescing by absolute URL;
-- cache-first Cache Storage reads for resources whose catalog release is
-  declared immutable;
+- in-flight request coalescing by absolute URL and expected SHA-256;
+- verified cache-first Cache Storage reads for immutable resources with an
+  integrity descriptor;
 - persistent writes to the versioned
-  `ibl-ephys-atlas-v2-immutable-v1` cache;
+  `ibl-ephys-atlas-schema-v1-verified` cache, only after verification;
 - an API to clear that persistent cache;
 - no service-worker dependency.
 
@@ -63,7 +65,8 @@ scientific storage-format constant.
 
 ### Imported local releases
 
-`LocalDatasetSource` stores schema-v0.1 releases in IndexedDB. The current path:
+`LocalDatasetSource` stores schema-v1 releases in the versioned
+`ibl-ephys-atlas-schema-v1-local` IndexedDB database. The current path:
 
 - namespaces releases by source `dataset_id` and `release_id`;
 - validates the complete browser-supported regional/volume resource graph;
@@ -100,8 +103,9 @@ Q8. Correct CDN headers complement the application's Cache Storage layer: they
 support normal browser caching and avoid unnecessary transfers even where the
 application cache is unavailable or evicted.
 
-Immutable cache entries are currently keyed by absolute URL. This is safe only
-when an immutable URL can never serve different bytes. Cache names must be
+Cache Storage entries are addressed by absolute URL but verified against the
+caller's expected SHA-256 on every hit. A same-path/different-release byte set
+therefore evicts and retries rather than being accepted. Cache names must be
 versioned when decoding or resource-identity assumptions change.
 
 ## Local dataset management UX

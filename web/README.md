@@ -1,7 +1,7 @@
 # Frontend
 
 The browser application is TypeScript + Vite with plain DOM components. It
-loads schema-v0.1 published or IndexedDB-backed local releases and keeps
+loads schema-v1 published or IndexedDB-backed local releases and keeps
 regional SVG and volume Canvas implementations below the shared
 `SliceRenderer` boundary.
 
@@ -27,7 +27,7 @@ in a fresh checkout.
   primitives.
 - `src/domain/` contains typed application state, actions, and reducers.
 - `src/application/` owns asynchronous dataset/release/feature workflows.
-- `src/data/` contains schema-v0.1 validation, materialization, HTTP/local
+- `src/data/` contains schema-v1 validation, materialization, HTTP/local
   resource adapters, and caches.
 - `src/rendering/` contains the generated anatomy, regional SVG, volume, and
   future-facing 3-D implementations below `SliceRenderer`.
@@ -41,7 +41,7 @@ in a fresh checkout.
 
 The default anatomy display is sparse `anatomy-pack-v3`, derived byte-for-byte
 from the validated bilateral 10 µm v2 parent. Scientific cursor, URL, affine,
-and guide state stays on the parent grid. `fixtures/golden-v0.3` and its
+and guide state stays on the parent grid. `fixtures/golden-v1` and its
 browser-served copy are synthetic and must never be presented as scientific
 data.
 

@@ -22,16 +22,29 @@ class FixtureReader {
   async readBytes() { throw new Error('unused'); }
 }
 
-const index = { path: 'parcellations/beryl/region_ids.i32', dtype: 'int32', shape: [2], order: 'C', endianness: 'little' };
-const parcellation = { id: 'beryl', regionIndex: index, metadata: 'parcellations/beryl/regions.json' };
-const valuesDescriptor = { path: 'beryl.values.f32', dtype: 'float32', shape: [2], order: 'C', endianness: 'little' };
-const matrixDescriptor = { path: 'beryl.summary.f64', dtype: 'float64', shape: [2, 4], order: 'C', endianness: 'little' };
+const resource = (path, bytes) => ({
+  path, mediaType: 'application/octet-stream', bytes, sha256: '0'.repeat(64),
+  codec: { name: 'none', decodedBytes: bytes },
+});
+const index = { format: 'raw-binary-array-v1', ...resource('parcellations/beryl/region_ids.i32', 8), dtype: 'int32', shape: [2], order: 'C', endianness: 'little' };
+const metadataResource = resource('parcellations/beryl/regions.json', 1);
+const parcellation = { id: 'beryl', regionIndex: index, metadata: metadataResource.path, metadataResource };
+const valuesDescriptor = { format: 'raw-binary-array-v1', ...resource('beryl.values.f32', 8), dtype: 'float32', shape: [2], order: 'C', endianness: 'little' };
+const matrixDescriptor = { format: 'raw-binary-array-v1', ...resource('beryl.summary.f64', 64), dtype: 'float64', shape: [2, 4], order: 'C', endianness: 'little' };
+const matrixWireDescriptor = {
+  format: 'raw-binary-array-v1', dtype: 'float64', shape: [2, 4], order: 'C', endianness: 'little',
+  resource: {
+    path: 'beryl.summary.f64', media_type: 'application/octet-stream', bytes: 64,
+    sha256: '0'.repeat(64), codec: { name: 'none', decoded_bytes: 64 },
+  },
+};
+const statisticsResource = resource('beryl.statistics.json', 1);
 const feature = {
   id: 'example', path: 'features/example/feature.json', label: 'Example', description: '', unit: null,
   valueSemantics: { quantity: 'example', transform: 'identity', sourcePopulation: 'all', missingValues: 'excluded' },
   statistics: ['mean'],
-  representations: { regional: { kind: 'regional', format: 'ephys-atlas-regional-v0.1', parcellations: {
-    beryl: { parcellationId: 'beryl', summary: 'mean', values: valuesDescriptor, statistics: 'beryl.statistics.json' },
+  representations: { regional: { kind: 'regional', format: 'ephys-atlas-regional-v1', parcellations: {
+    beryl: { parcellationId: 'beryl', summary: 'mean', values: valuesDescriptor, statistics: 'beryl.statistics.json', statisticsResource },
   } } },
 };
 
@@ -43,10 +56,11 @@ function fixtureReader() {
         { index: 1, atlas_id: -2, acronym: 'B', name: 'Beta' },
       ]],
       ['features/example/beryl.statistics.json', {
-        format: 'ephys-atlas-statistics-v0.1',
+        schema_version: '1.0',
+        format: 'ephys-atlas-regional-statistics-v1',
         population: 'all rows',
-        global: { count: 4, mean: 2.5 },
-        regional_summary: { fields: ['mean', 'count', 'std', 'q25'], values: matrixDescriptor },
+        global: { count: 4, missing_count: 0, min: 1, max: 4, mean: 2.5, std: 1, median: 2.5 },
+        regional_summary: { fields: ['mean', 'count', 'std', 'q25'], values: matrixWireDescriptor },
       }],
     ]),
     new Map([

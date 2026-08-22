@@ -51,7 +51,8 @@ behavior.
 
 ## Volume rendering
 
-The browser implements both schema-v0.1 physical layouts:
+The browser implements both schema-v1 physical layouts through explicit,
+checksummed resource indexes:
 
 - `chunks3d` through a bounded chunk LRU and canonical slice assembly;
 - `orthogonal_slice_packs` with float16/float32 decoding, optional gzip,

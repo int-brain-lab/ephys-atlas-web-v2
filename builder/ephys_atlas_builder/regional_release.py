@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .io import write_array, write_json
+from .io import json_resource, write_array, write_json
 from .statistics import SUMMARY_FIELDS, describe, histogram, summary_matrix
 
 DEFAULT_PARCELLATIONS = ("allen", "beryl", "cosmos")
@@ -97,8 +97,9 @@ def write_parcellation(
         raise ValueError(f"{parcellation} metadata is missing region ids: {preview}")
 
     root = release_dir / "parcellations" / parcellation
-    index_meta = write_array(root / "region_ids.i32", ids, "int32")
-    index_meta["path"] = f"parcellations/{parcellation}/region_ids.i32"
+    index_meta = write_array(
+        root / "region_ids.i32", ids, "int32", root=release_dir
+    )
     regions = []
     for index, region_id in enumerate(ids):
         info = _region_info(metadata, int(region_id))
@@ -111,11 +112,14 @@ def write_parcellation(
                 "name": info.name,
             }
         )
-    write_json(root / "regions.json", regions)
+    metadata_path = root / "regions.json"
+    write_json(metadata_path, regions)
     return {
         "id": parcellation,
         "region_index": index_meta,
-        "metadata": f"parcellations/{parcellation}/regions.json",
+        "metadata": json_resource(
+            metadata_path, release_dir, "ephys-atlas-region-metadata-v1"
+        ),
     }, groups
 
 
@@ -157,7 +161,8 @@ def write_feature_parcellation(
     )
 
     stats = {
-        "format": "ephys-atlas-statistics-v0.1",
+        "schema_version": "1.0",
+        "format": "ephys-atlas-regional-statistics-v1",
         "population": population_description,
         "global": describe(values),
         "regional_summary": {"fields": SUMMARY_FIELDS, "values": summary_meta},
@@ -168,10 +173,15 @@ def write_feature_parcellation(
             "bin_rule": "left-closed-right-open-last-closed",
         },
     }
-    write_json(feature_root / f"{parcellation}.statistics.json", stats)
+    statistics_path = feature_root / f"{parcellation}.statistics.json"
+    write_json(statistics_path, stats)
     return {
         "parcellation_id": parcellation,
         "summary": "mean",
         "values": values_meta,
-        "statistics": f"{parcellation}.statistics.json",
+        "statistics": json_resource(
+            statistics_path,
+            feature_root,
+            "ephys-atlas-regional-statistics-v1",
+        ),
     }

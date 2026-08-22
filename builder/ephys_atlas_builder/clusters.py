@@ -9,7 +9,7 @@ from typing import Mapping, Sequence
 
 import numpy as np
 
-from .io import sha256_file, write_json
+from .io import json_resource, sha256_file, write_json
 from .regional_release import (
     DEFAULT_PARCELLATIONS,
     FeatureInfo,
@@ -148,7 +148,7 @@ def build_clusters_release_from_arrays(
         info = feature_metadata.get(feature_id)
         source_column = info.source_column if info else feature_id
         feature_doc = {
-            "schema_version": "0.1",
+            "schema_version": "1.0",
             "id": feature_id,
             "label": info.label if info else feature_id.replace("_", " "),
             "description": info.description if info else f"Cluster feature {source_column} aggregated regionally over all finite clusters.",
@@ -164,14 +164,22 @@ def build_clusters_release_from_arrays(
             },
             "representations": {
                 "regional": {
-                    "format": "ephys-atlas-regional-v0.1",
+                    "format": "ephys-atlas-regional-v1",
                     "parcellations": regional,
                 }
             },
             "artifacts": [],
         }
-        write_json(feature_root / "feature.json", feature_doc)
-        features.append({"id": feature_id, "path": f"features/{feature_id}/feature.json"})
+        feature_path = feature_root / "feature.json"
+        write_json(feature_path, feature_doc)
+        features.append(
+            {
+                "id": feature_id,
+                "descriptor": json_resource(
+                    feature_path, release_dir, "ephys-atlas-feature-v1"
+                ),
+            }
+        )
 
     scientific_sources = []
     for description, repository, commit in (
@@ -189,7 +197,7 @@ def build_clusters_release_from_arrays(
             )
 
     manifest = {
-        "schema_version": "0.1",
+        "schema_version": "1.0",
         "dataset_id": DATASET_ID,
         "title": "IBL Ephys Atlas cluster features",
         "description": "Regional descriptive summaries of cluster-level ephys-atlas features.",
@@ -203,13 +211,13 @@ def build_clusters_release_from_arrays(
             "sources": [*provenance_sources, *scientific_sources],
             "builder": {
                 "name": "ibl-ephys-atlas-builder",
-                "version": "0.1.0",
+                "version": "1.0.0",
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 **({"commit": config.builder_commit} if config.builder_commit else {}),
                 "command": f"ephys-atlas-data build-clusters {config.release_id} --project {config.project} --population all",
             },
             "recipe": {
-                "id": "ephys-atlas-clusters-regional-v0.1",
+                "id": "ephys-atlas-clusters-regional-v1",
                 "project": config.project,
                 "population": "all",
                 "parcellations": list(config.parcellations),

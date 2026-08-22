@@ -66,22 +66,26 @@ test('real slice packs meet the request/cache path in Chromium', async ({ page, 
       ]);
       const axes = ['coronal', 'sagittal', 'horizontal'] as const;
       const payload = {
-        schemaVersion: '0.1' as const,
+        schemaVersion: '1.0' as const,
         featureId,
         representation: 'volume' as const,
         descriptor: {
           kind: 'volume' as const,
-          format: 'ephys-atlas-chunked-volume-v0.1' as const,
+          format: 'ephys-atlas-volume-v1' as const,
           layout: 'orthogonal_slice_packs' as const,
           grid: {
             shape: layout.shape,
             axisOrder: layout.axis_order,
             coordinateSystem: 'transport benchmark; not scientific geometry',
+            referenceSpaceId: 'transport-benchmark',
+            gridId: `transport-benchmark-${layout.depth}`,
             voxelSizeUm: [25, 25, 25] as const,
             originUm: [0, 0, 0] as const,
-            indexToWorldUm: [25, 0, 0, 0, 0, 25, 0, 0, 0, 0, 25, 0, 0, 0, 0, 1],
+            indexToWorldUm: [0, 25, 0, 0, 25, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 1],
+            worldToIndex: [0, 0.04, 0, 0, 0.04, 0, 0, 0, 0, 0, 0.04, 0, 0, 0, 0, 1],
+            voxelEdgeExtentUm: [-12.5, layout.shape[1] * 25 - 12.5, -12.5, layout.shape[0] * 25 - 12.5, -12.5, layout.shape[2] * 25 - 12.5] as const,
           },
-          array: { dtype: 'float16' as const, endianness: 'little' as const, order: 'C' as const, nonfinite: 'preserve' as const },
+          array: { dtype: 'float16' as const, endianness: 'little' as const, order: 'C' as const },
           resource: layout.resource,
         },
         async loadResource(resourcePath: string): Promise<ArrayBuffer> {

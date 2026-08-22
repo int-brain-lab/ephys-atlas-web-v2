@@ -4,6 +4,12 @@ This records the first end-to-end build against a real immutable channel source.
 It is reproducibility evidence and a browser-integration candidate, not the
 paper snapshot or a production publication.
 
+Status after the schema-v1 cutover: this recorded output used the retired
+schema v0.1 and is no longer consumable by the browser or publisher. Preserve
+it as historical evidence only. Rebuild from the pinned source into a new
+immutable schema-v1 release ID before running the real-release suite or
+publishing it; do not add a v0.1 compatibility reader.
+
 ## Resolved inputs
 
 - dataset: `ephys_atlas_channels`
@@ -57,7 +63,7 @@ The second command writes and validates
   `float32` range
 - no non-finite values in any regional display array
 - 918 files, approximately 19.2 MB
-- schema-v0.1 validation passed
+- historical schema-v0.1 validation passed
 - a second build in an independent output root was byte-identical (`diff -qr`)
 - the opt-in real-release Playwright suite passed against the HTTP loader: 591
   Allen, 289 Beryl, and 13 Cosmos rows; raw alpha `float64` decoding; 50-bin

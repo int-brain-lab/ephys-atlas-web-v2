@@ -1,4 +1,4 @@
-# Storage formats v0.1
+# Storage formats v1
 
 D010 separates **canonical scientific storage** from **browser transport**.
 Direct HTTP/object-store consumption is preferred when the canonical object
@@ -60,13 +60,16 @@ Thus Range support alone does not make this NPZ incrementally browser-readable.
 
 ### Web representations for the current product
 
-Schema v0.1 separates explicit dtype/geometry metadata from physical `layout`
+Schema v1 separates reference-space identity and explicit dtype/grid/affine
+metadata from physical `layout`
 and permits two deterministic per-feature transports:
 
 - `chunks3d`: C-order chunks of raw little-endian values, optionally
-  gzip-compressed, with release-declared chunk shape;
+  gzip-compressed, with a checksummed explicit resource index, decoded shape,
+  storage-axis permutation, origin, and release-declared chunk shape;
 - `orthogonal_slice_packs`: independently addressable neighboring slices for
-  each of the three projections, with release-declared depth and codec.
+  each of the three projections, with a checksummed explicit resource index,
+  first slice/count, decoded shape/axes, release-declared depth, and codec.
 
 Both transformations record provenance back to the exact canonical NPZ vintage
 and checksum. `chunks3d` remains the deterministic golden/reference layout; it
@@ -76,7 +79,7 @@ open until representative W26 features and the final HTTP/CDN origin are
 measured.
 
 Zarr remains a possible interoperability option, but it is not required for the
-launch reader. The small v0.1 contract needs only static URLs, explicit
+launch reader. The v1 contract needs only static URLs, explicit
 metadata, typed arrays, and a documented codec/layout.
 
 ### Re-evaluation gate

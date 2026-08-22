@@ -1,8 +1,7 @@
-"""Staged schema-v1 JSON and semantic contract validation.
+"""Active schema-v1 JSON and semantic contract validation.
 
-The current release runtime remains on v0.1 until the atomic cutover. This
-module is intentionally side-by-side only for contract development and parity
-testing; it is not a compatibility adapter.
+The builder, publisher, and browser share this contract and its parity corpus.
+It is the sole release schema, not a compatibility adapter.
 """
 
 from __future__ import annotations

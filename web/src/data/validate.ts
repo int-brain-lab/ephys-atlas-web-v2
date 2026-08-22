@@ -5,7 +5,7 @@
  * concern under data/validation/. This lets schemas evolve without turning a
  * single validator file into another application subsystem.
  */
-export { decodeBinaryArray, parseBinaryArray } from './validation/binary.js';
+export { decodeBinaryArray, decodeResourceBytes, parseBinaryArray } from './validation/binary.js';
 export { parseDatasetCatalog } from './validation/catalog.js';
 export { parseFeatureDescriptor } from './validation/feature.js';
 export {

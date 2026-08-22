@@ -15,7 +15,7 @@ from .validate import ValidationError, validate_release
 
 
 def _schema_dir() -> Path:
-    return Path(__file__).resolve().parents[2] / "schema" / "v0.1"
+    return Path(__file__).resolve().parents[2] / "schema" / "v1"
 
 
 def main(argv: list[str] | None = None) -> int:

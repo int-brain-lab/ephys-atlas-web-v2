@@ -70,7 +70,7 @@ Blocks: scientifically valid volume navigation and production volume release.
 
 Status: **BLOCKER** for production volume packaging, not for golden-fixture development.
 
-Schema v0.1 permits `chunks3d` and `orthogonal_slice_packs`. `chunks3d` is the deterministic reference implementation, but production selection must be based on real-volume browser measurements.
+Schema v1 permits `chunks3d` and `orthogonal_slice_packs`. `chunks3d` is the deterministic reference implementation, but production selection must be based on real-volume browser measurements.
 
 Resolution needed: benchmark representative real features and choose a layout using recorded request count, transferred bytes, decode latency, interaction latency, and memory. Benchmark multiple chunk/pack sizes as appropriate.
 

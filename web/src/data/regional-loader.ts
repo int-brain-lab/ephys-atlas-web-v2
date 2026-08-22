@@ -29,7 +29,11 @@ export async function loadRegionsFromResources(
 ): Promise<readonly RegionMetadata[]> {
   if (!descriptor.metadata) throw new Error(`${parcellation} parcellation has no region metadata resource`);
   const [raw, regionIds] = await Promise.all([
-    reader.readJson(reader.resolve(manifestLocation, descriptor.metadata)),
+    reader.readJson(
+      reader.resolve(manifestLocation, descriptor.metadata),
+      undefined,
+      descriptor.metadataResource,
+    ),
     reader.readArray(reader.resolve(manifestLocation, descriptor.regionIndex.path), descriptor.regionIndex),
   ]);
   const regions = parseRegionMetadata(raw);
@@ -62,7 +66,11 @@ export async function loadRegionalFeatureFromResources(options: {
       signal,
     ),
     reader.readArray(reader.resolve(featureLocation, regional.values.path), regional.values, signal),
-    reader.readJson(reader.resolve(featureLocation, regional.statistics), signal),
+    reader.readJson(
+      reader.resolve(featureLocation, regional.statistics),
+      signal,
+      regional.statisticsResource,
+    ),
   ]);
   if (regionIds.length !== values.length) {
     throw new Error(`${feature.id}/${parcellation} values do not match region index length`);

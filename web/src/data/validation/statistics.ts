@@ -13,7 +13,8 @@ export interface StatisticsDocument {
 
 export function parseStatisticsDocument(value: unknown): StatisticsDocument {
   const root = object(value, 'statistics');
-  if (root.format !== 'ephys-atlas-statistics-v0.1') throw new Error('statistics.format is unsupported');
+  if (root.schema_version !== '1.0') throw new Error('statistics.schema_version is unsupported');
+  if (root.format !== 'ephys-atlas-regional-statistics-v1') throw new Error('statistics.format is unsupported');
   string(root.population, 'statistics.population');
   const global = object(root.global, 'statistics.global');
   for (const field of ['count', 'missing_count'] as const) {

@@ -440,7 +440,7 @@ This documentation-only commit:
 
 ### Commit 1 — Define schema v1 and projection-pack contracts
 
-Status: **implemented and staged; the runtime remains on v0.1 until Commit 2**.
+Status: **implemented; promoted as the sole runtime contract by Commit 2**.
 
 - add strict dataset-v1 and `atlas-projection-pack-v1` schemas/types;
 - add exhaustive volume summary counts, validity semantics, separate reference
@@ -463,6 +463,8 @@ Targeted gates: cross-language contract corpus, `just test-python`, and
 `just test-web`; finish with `just check`.
 
 ### Commit 2 — Cut every dataset producer and consumer to schema v1
+
+Status: **implemented**.
 
 - update builder serialization, Python/TypeScript validators, publishing
   validation, HTTP/local readers, IndexedDB namespace, and download metadata;
@@ -675,9 +677,8 @@ never merge an inferred scientific choice.
 
 ## First action for the next agent
 
-Start Commit 2 from the green staged schema-v1 contract. Cut the builder,
-publishing validator, browser HTTP/local readers, fixtures, and generated
-catalog copies together; remove v0.1 rather than adding adapters. Regenerate a
-newly identified deterministic synthetic release, audit same-relative-path
-resources across release switches, and leave the renderer/view state untouched
-until the data contract cutover is complete.
+Start Commit 3 from the green schema-v1-only runtime. Introduce the
+discriminated 2-D projection registry and the separate secondary-tab,
+compact-active-view, and maximized-view state without changing visible
+behavior. Keep the existing renderer mounted until the atomic Commit 5/6
+viewport cutover; do not add a parallel renderer facade.

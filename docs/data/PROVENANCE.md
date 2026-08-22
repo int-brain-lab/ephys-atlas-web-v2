@@ -49,7 +49,7 @@ Reproducible v2 path:
    than a compiled frontend list;
 6. build v2 regional/statistics artifacts without recomputing raw ephys.
 
-The approved v0.1 recipe now publishes both raw and denoised variants, uses the
+The approved channel recipe publishes both raw and denoised variants, uses the
 `inside` population, performs no additional QC or alpha replacement, folds
 bilateral observations left, and uses the arithmetic mean as its primary
 regional summary. Do not silently change those decisions. The remaining paper
@@ -114,8 +114,9 @@ its SHA-256 must be recorded.
 current private object is not anonymously readable; the volume prefix is not yet
 mirrored in the public IBL bucket; current public IBL objects support byte ranges
 but not browser CORS; and the NPZ's monolithic 4-D layout is unsuitable
-for efficient incremental feature/slice access. Therefore the current v0.1 web
-transport is a deterministic derived per-feature chunked representation, with
+for efficient incremental feature/slice access. Therefore the current schema-v1
+web transport is a deterministic derived per-feature representation with an
+explicit checksummed resource index, with
 provenance back to the pinned NPZ. This must be re-evaluated if the future public
 canonical artifact or CDN layout changes.
 
@@ -149,7 +150,7 @@ v1 analysis outputs.
 
 ## `local`
 
-There is no remote scientific authority. A local dataset is a user-provided v0.1
+There is no remote scientific authority. A local dataset is a user-provided schema-v1
 release/package validated against exactly the same contract. Provenance should
 record source filenames/checksums and user-supplied semantic metadata. Local
 import must not silently manufacture units, transforms, parcellations, or volume

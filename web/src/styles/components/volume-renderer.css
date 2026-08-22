@@ -6,6 +6,6 @@
   image-rendering: auto;
 }
 
-.view-frame__renderer[data-slice-asset='schema-volume-v0.1'] {
+.view-frame__renderer[data-slice-asset='schema-volume-v1'] {
   background: #071019;
 }

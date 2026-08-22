@@ -41,7 +41,7 @@ def _write_alias(dest: Path, dataset: str, alias: str, release_id: str) -> None:
     write_json(
         dest / dataset / "aliases" / f"{alias}.json",
         {
-            "schema_version": "0.1",
+            "schema_version": "1.0",
             "dataset_id": dataset,
             "alias": alias,
             "release_id": release_id,
@@ -202,7 +202,7 @@ def pull(
         files = _files(root)
 
     source = {
-        "schema_version": "0.1",
+        "schema_version": "1.0",
         "dataset_id": dataset,
         "requested_release": requested_release,
         "resolved_release": str(release),

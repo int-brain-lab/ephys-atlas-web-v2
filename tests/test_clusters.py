@@ -69,7 +69,7 @@ def _build(path: Path) -> Path:
 
 def test_cluster_recipe_builds_schema_valid_equal_weight_release(tmp_path):
     release = _build(tmp_path / "release")
-    validate_release(release, ROOT / "schema" / "v0.1")
+    validate_release(release, ROOT / "schema" / "v1")
 
     manifest = json.loads((release / "manifest.json").read_text())
     assert manifest["dataset_id"] == "ephys_atlas_clusters"
@@ -134,7 +134,7 @@ def test_cluster_recipe_emits_explicit_log_color_defaults(tmp_path):
         metadata,
         [{"role": "canonical-data", "description": "display metadata test"}],
     )
-    validate_release(release, ROOT / "schema" / "v0.1")
+    validate_release(release, ROOT / "schema" / "v1")
     firing_rate = json.loads((release / "features/firing_rate/feature.json").read_text())
     amplitude = json.loads((release / "features/amp_median/feature.json").read_text())
     assert firing_rate["display"] == {"scale": "log"}

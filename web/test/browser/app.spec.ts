@@ -224,7 +224,7 @@ test('native bilateral anatomy exposes every scientific range endpoint', async (
   await expect(page.locator('[data-view="horizontal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '793');
 });
 
-test('schema v0.1 regional fixture drives values, coloring, selection and histogram comparison', async ({ page }) => {
+test('schema v1 regional fixture drives values, coloring, selection and histogram comparison', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
 
@@ -345,12 +345,12 @@ test('schema v0.1 regional fixture drives values, coloring, selection and histog
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download comparison' }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe('ephys_atlas_channels-golden-v0.3-rms_ap-allen-selected-comparison.csv');
+  expect(download.suggestedFilename()).toBe('ephys_atlas_channels-golden-v1-rms_ap-allen-selected-comparison.csv');
   const downloadPath = await download.path();
   expect(downloadPath).not.toBeNull();
   const comparisonCsv = await readFile(downloadPath!, 'utf8');
   expect(comparisonCsv).toContain('dataset_id,release_id,feature_id,representation,parcellation,selected_statistic,unit,population,region_id');
-  expect(comparisonCsv).toContain('ephys_atlas_channels,golden-v0.3,rms_ap,regional,allen,mean,dB rel. V');
+  expect(comparisonCsv).toContain('ephys_atlas_channels,golden-v1,rms_ap,regional,allen,mean,dB rel. V');
   expect(comparisonCsv.trim().split('\n')).toHaveLength(9);
   expect(comparisonCsv).toContain(',-362,MD,Mediodorsal nucleus of thalamus (left),');
   await page.getByRole('button', { name: 'Minimize selected-region comparison' }).click();
@@ -438,7 +438,7 @@ test('scientific context menus and color controls are driven by the loaded relea
   expect(triggerBounds!.y + triggerBounds!.height).toBeGreaterThanOrEqual(headerBounds!.y + headerBounds!.height - 2);
   await datasetTrigger.click({ position: { x: triggerBounds!.width / 2, y: 2 } });
   await expect(dataset.locator('.context-menu__panel')).toHaveAttribute('data-open', 'true');
-  await expect(dataset.getByRole('option', { selected: true })).toContainText('golden-v0.3');
+  await expect(dataset.getByRole('option', { selected: true })).toContainText('golden-v1');
   await page.keyboard.press('Escape');
   await expect(datasetTrigger).toBeFocused();
 
@@ -644,22 +644,22 @@ test('share, download and info expose the immutable scientific context', async (
   const info = page.getByRole('dialog', { name: 'Dataset information' });
   await expect(info).toBeVisible();
   await expect(info).toContainText('Synthetic test fixture');
-  await expect(info).toContainText('golden-v0.3');
+  await expect(info).toContainText('golden-v1');
   await expect(info).toContainText('AP RMS (golden fixture)');
   await expect(info).toContainText('dB rel. V');
-  await expect(info).toContainText('golden-fixture-v0.3');
+  await expect(info).toContainText('golden-fixture-v1');
   await expect(info).toContainText('Deterministic synthetic fixture seed');
   await info.getByRole('button', { name: 'Close' }).click();
 
   const downloadPromise = page.waitForEvent('download');
   await actions.getByRole('button', { name: 'Download' }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe('ephys_atlas_channels-golden-v0.3-rms_ap-allen-median.csv');
+  expect(download.suggestedFilename()).toBe('ephys_atlas_channels-golden-v1-rms_ap-allen-median.csv');
   const path = await download.path();
   expect(path).not.toBeNull();
   const csv = await readFile(path!, 'utf8');
   expect(csv).toContain('dataset_id,release_id,feature_id,representation,parcellation,statistic,unit,region_id,acronym,region_name,value');
-  expect(csv).toContain('ephys_atlas_channels,golden-v0.3,rms_ap,regional,allen,median,dB rel. V');
+  expect(csv).toContain('ephys_atlas_channels,golden-v1,rms_ap,regional,allen,median,dB rel. V');
 });
 
 test('renderer region selection flows back into shared URL state', async ({ page }) => {
@@ -850,7 +850,7 @@ test('generated anatomy renderer uses direct mapping IDs and affine-derived guid
     const renderer = new GeneratedAnatomySliceRenderer(source);
     const presentation = {
       feature: {
-        schemaVersion: '0.1' as const, featureId: 'fixture', representation: 'regional' as const, parcellation: 'beryl' as const,
+        schemaVersion: '1.0' as const, featureId: 'fixture', representation: 'regional' as const, parcellation: 'beryl' as const,
         regionIds: ['-20'], statistics: { mean: [1] },
       },
       regions: [{ id: '-20', atlasId: -20, index: 0, acronym: 'R', name: 'Region', colorHex: '#123456' }],

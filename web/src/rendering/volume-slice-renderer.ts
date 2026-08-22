@@ -114,7 +114,7 @@ export class SchemaVolumeSliceRenderer implements SliceRenderer {
     });
     mount.feature = feature;
     mount.slice = slice;
-    target.dataset.sliceAsset = 'schema-volume-v0.1';
+    target.dataset.sliceAsset = 'schema-volume-v1';
     target.dataset.volumeIndex = String(volumeIndex);
     target.dataset.volumeFeature = feature.featureId;
     const prefetch = loader.prefetchAdjacent?.(model.axis, volumeIndex, 1);

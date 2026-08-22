@@ -1,6 +1,6 @@
 # Ephys atlas channel release recipe
 
-`ephys_atlas_channels` now has an approved schema-v0.1 regional build path in
+`ephys_atlas_channels` has an approved schema-v1 regional build path in
 `builder/ephys_atlas_builder/channels.py`.
 
 ## Canonical source
@@ -85,7 +85,7 @@ parcellation:
   rather than clipped or overflowed when the source range requires it);
 - the full descriptive-statistics matrix (`float64`);
 - a global histogram and per-region histogram counts (`uint32`);
-- schema-v0.1 metadata linking those files.
+- schema-v1 metadata linking those files.
 
 Non-finite feature observations are retained as missing observations and are
 excluded from finite summaries/histograms. There is no hidden QC filter beyond

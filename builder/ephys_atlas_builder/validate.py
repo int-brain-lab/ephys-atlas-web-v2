@@ -10,8 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from jsonschema import Draft202012Validator, FormatChecker
-from referencing import Registry, Resource
+from jsonschema import FormatChecker
 
 from .io import DTYPES, sha256_file
 
@@ -41,26 +40,6 @@ def _is_rfc3339_date_time(value: object) -> bool:
     return True
 
 
-def _schema_registry(schema_dir: Path) -> tuple[Registry, dict[str, dict]]:
-    schemas = {}
-    registry = Registry()
-    for path in sorted(schema_dir.glob("*.schema.json")):
-        schema = json.loads(path.read_text())
-        schemas[path.name] = schema
-        registry = registry.with_resource(schema["$id"], Resource.from_contents(schema))
-    return registry, schemas
-
-
-def _validate_json(instance: Any, schema_name: str, schemas: dict[str, dict], registry: Registry) -> None:
-    validator = Draft202012Validator(
-        schemas[schema_name], registry=registry, format_checker=FORMAT_CHECKER
-    )
-    errors = sorted(validator.iter_errors(instance), key=lambda error: list(error.absolute_path))
-    if errors:
-        lines = [f"{schema_name}: {'.'.join(map(str, error.absolute_path))}: {error.message}" for error in errors]
-        raise ValidationError("\n".join(lines))
-
-
 def _load_json(path: Path, description: str) -> Any:
     if not path.is_file():
         raise ValidationError(f"missing {description}: {path}")
@@ -70,283 +49,276 @@ def _load_json(path: Path, description: str) -> Any:
         raise ValidationError(f"invalid {description}: {path}: {exc}") from exc
 
 
-def _unique(values: list[str], description: str) -> None:
-    seen: set[str] = set()
-    for value in values:
-        if value in seen:
-            raise ValidationError(f"duplicate {description}: {value}")
-        seen.add(value)
+def _unique(values: list[Any], description: str) -> None:
+    normalized = [json.dumps(value, sort_keys=True) for value in values]
+    if len(normalized) != len(set(normalized)):
+        raise ValidationError(f"duplicate {description}")
 
 
-def _check_binary(root: Path, meta: dict) -> Path:
-    path = root / meta["path"]
-    if not path.is_file():
-        raise ValidationError(f"missing binary payload: {path}")
-    expected = math.prod(meta["shape"]) * DTYPES[meta["dtype"]].itemsize
-    if path.stat().st_size != expected:
-        raise ValidationError(f"wrong byte size for {path}: {path.stat().st_size} != {expected}")
-    if meta.get("bytes") is not None and path.stat().st_size != meta["bytes"]:
-        raise ValidationError(f"declared byte size mismatch for {path}")
-    if meta.get("sha256") and sha256_file(path) != meta["sha256"]:
-        raise ValidationError(f"sha256 mismatch for {path}")
+def _resource_path(root: Path, resource: dict[str, Any]) -> Path:
+    path = (root / resource["path"]).resolve()
+    try:
+        path.relative_to(root.resolve())
+    except ValueError as exc:
+        raise ValidationError(f"resource escapes release root: {resource['path']}") from exc
     return path
 
 
-def _read_binary(root: Path, meta: dict) -> np.ndarray:
-    path = _check_binary(root, meta)
-    return np.fromfile(path, dtype=DTYPES[meta["dtype"]]).reshape(meta["shape"])
-
-
-def _check_artifact(root: Path, artifact: dict) -> None:
-    path = root / artifact["path"]
+def _check_resource(root: Path, resource: dict[str, Any]) -> Path:
+    path = _resource_path(root, resource)
     if not path.is_file():
-        raise ValidationError(f"missing artifact: {path}")
-    if path.stat().st_size != artifact["bytes"]:
-        raise ValidationError(f"declared artifact byte size mismatch for {path}")
-    if sha256_file(path) != artifact["sha256"]:
-        raise ValidationError(f"artifact sha256 mismatch for {path}")
-
-
-def _decoded_size(path: Path, codec: str, description: str) -> int:
-    if not path.is_file():
-        raise ValidationError(f"missing {description}: {path}")
-    if codec == "none":
-        return path.stat().st_size
-    if codec == "gzip":
+        raise ValidationError(f"missing resource: {path}")
+    size = path.stat().st_size
+    if size != resource["bytes"]:
+        raise ValidationError(f"declared resource byte size mismatch for {path}")
+    if sha256_file(path) != resource["sha256"]:
+        raise ValidationError(f"resource sha256 mismatch for {path}")
+    codec = resource["codec"]
+    if codec["name"] == "none":
+        decoded_size = size
+    elif codec["name"] == "gzip":
         try:
             with gzip.open(path, "rb") as stream:
-                return len(stream.read())
+                decoded_size = len(stream.read())
         except (OSError, EOFError) as exc:
-            raise ValidationError(f"invalid gzip {description}: {path}: {exc}") from exc
-    raise ValidationError(f"unsupported volume codec: {codec}")
-
-
-def _format_resource_path(root: Path, template: str, description: str, **values: int) -> Path:
-    try:
-        rendered = template.format(**values)
-    except (KeyError, IndexError, ValueError) as exc:
-        raise ValidationError(f"invalid {description} path template: {template}: {exc}") from exc
-    return root / rendered
-
-
-def _check_distinct_paths(paths: list[Path], description: str) -> None:
-    normalized = [path.resolve() for path in paths]
-    if len(normalized) != len(set(normalized)):
-        raise ValidationError(f"{description} path template does not produce unique paths")
-
-
-def _check_geometry_numbers(grid: dict) -> None:
-    matrix = grid["index_to_world_um"]
-    values = [*matrix, *grid["origin_um"], *grid["voxel_size_um"]]
-    if not all(math.isfinite(value) for value in values):
-        raise ValidationError("volume grid geometry must contain only finite numbers")
-
-
-def _check_volume(root: Path, meta: dict) -> None:
-    shape = meta["grid"]["shape"]
-    axis_order = [name.casefold() for name in meta["grid"]["axis_order"]]
-    if len(set(axis_order)) != 3 or set(axis_order) != {"ap", "ml", "dv"}:
-        raise ValidationError("volume axis_order must contain unique ap, ml, and dv axes")
-    _check_geometry_numbers(meta["grid"])
-    dtype = DTYPES[meta["array"]["dtype"]]
-    paths: list[Path] = []
-
-    if meta["layout"] == "chunks3d":
-        chunks = meta["chunks"]
-        chunk_shape = chunks["shape"]
-        nchunks = [(shape[d] + chunk_shape[d] - 1) // chunk_shape[d] for d in range(3)]
-        for i0, i1, i2 in product(*(range(count) for count in nchunks)):
-            path = _format_resource_path(
-                root, chunks["path_template"], "volume chunk", i0=i0, i1=i1, i2=i2
-            )
-            paths.append(path)
-            starts = [i0 * chunk_shape[0], i1 * chunk_shape[1], i2 * chunk_shape[2]]
-            actual_shape = [min(chunk_shape[d], shape[d] - starts[d]) for d in range(3)]
-            expected = dtype.itemsize * math.prod(actual_shape)
-            actual = _decoded_size(path, chunks["codec"]["name"], "volume chunk")
-            if actual != expected:
-                raise ValidationError(f"wrong decoded chunk size for {path}: {actual} != {expected}")
-    elif meta["layout"] == "orthogonal_slice_packs":
-        slice_packs = meta["slice_packs"]
-        pack_depth = slice_packs["pack_depth"]
-        axis_dimension = {
-            "coronal": axis_order.index("ap"),
-            "sagittal": axis_order.index("ml"),
-            "horizontal": axis_order.index("dv"),
-        }
-        for axis, dimension in axis_dimension.items():
-            descriptor = slice_packs["axes"][axis]
-            expected_slice_shape = [shape[index] for index in range(3) if index != dimension]
-            if descriptor["slice_shape"] != expected_slice_shape:
-                raise ValidationError(
-                    f"volume {axis} slice_shape {descriptor['slice_shape']} != {expected_slice_shape}"
-                )
-            pack_count = (shape[dimension] + pack_depth - 1) // pack_depth
-            for pack in range(pack_count):
-                path = _format_resource_path(root, descriptor["path_template"], f"{axis} slice pack", pack=pack)
-                paths.append(path)
-                slices = min(pack_depth, shape[dimension] - pack * pack_depth)
-                expected = dtype.itemsize * slices * math.prod(expected_slice_shape)
-                actual = _decoded_size(path, descriptor["codec"]["name"], f"{axis} slice pack")
-                if actual != expected:
-                    raise ValidationError(f"wrong decoded slice pack size for {path}: {actual} != {expected}")
+            raise ValidationError(f"invalid gzip resource: {path}: {exc}") from exc
     else:
-        raise ValidationError(f"unsupported volume layout: {meta['layout']}")
-    _check_distinct_paths(paths, "volume resource")
+        raise ValidationError(f"unsupported resource codec: {codec['name']}")
+    if decoded_size != codec["decoded_bytes"]:
+        raise ValidationError(f"decoded resource byte size mismatch for {path}")
+    return path
 
 
-def _check_region_table(release_dir: Path, parcellation: dict) -> int:
+def _check_json_resource(
+    root: Path,
+    descriptor: dict[str, Any],
+    description: str,
+) -> tuple[Path, Any]:
+    path = _check_resource(root, descriptor["resource"])
+    return path, _load_json(path, description)
+
+
+def _check_binary(root: Path, descriptor: dict[str, Any]) -> Path:
+    path = _check_resource(root, descriptor["resource"])
+    expected = math.prod(descriptor["shape"]) * DTYPES[descriptor["dtype"]].itemsize
+    if descriptor["resource"]["codec"]["decoded_bytes"] != expected:
+        raise ValidationError(f"binary decoded byte size mismatch for {path}")
+    return path
+
+
+def _read_binary(root: Path, descriptor: dict[str, Any]) -> np.ndarray:
+    path = _check_binary(root, descriptor)
+    codec = descriptor["resource"]["codec"]["name"]
+    raw = path.read_bytes() if codec == "none" else gzip.decompress(path.read_bytes())
+    return np.frombuffer(raw, dtype=DTYPES[descriptor["dtype"]]).reshape(
+        descriptor["shape"]
+    )
+
+
+def _check_region_table(release_dir: Path, parcellation: dict[str, Any]) -> int:
     descriptor = parcellation["region_index"]
-    if len(descriptor["shape"]) != 1:
-        raise ValidationError(f"parcellation {parcellation['id']} region_index must be one-dimensional")
-    if not descriptor["dtype"].startswith(("int", "uint")):
-        raise ValidationError(f"parcellation {parcellation['id']} region_index must use an integer dtype")
-    region_ids = _read_binary(release_dir, descriptor)
-    metadata_ref = parcellation.get("metadata")
-    if not metadata_ref:
-        raise ValidationError(f"parcellation {parcellation['id']} must declare metadata")
-    metadata_path = release_dir / metadata_ref
-    metadata = _load_json(metadata_path, "parcellation metadata")
-    if not isinstance(metadata, list):
-        raise ValidationError(f"parcellation metadata must be an array: {metadata_path}")
-    if len(metadata) != len(region_ids):
+    if len(descriptor["shape"]) != 1 or not descriptor["dtype"].startswith(
+        ("int", "uint")
+    ):
         raise ValidationError(
-            f"parcellation {parcellation['id']} metadata length {len(metadata)} "
-            f"!= region index length {len(region_ids)}"
+            f"parcellation {parcellation['id']} region index must be one-dimensional integers"
+        )
+    region_ids = _read_binary(release_dir, descriptor)
+    _, metadata = _check_json_resource(
+        release_dir, parcellation["metadata"], "parcellation metadata"
+    )
+    if not isinstance(metadata, list) or len(metadata) != len(region_ids):
+        raise ValidationError(
+            f"parcellation {parcellation['id']} metadata does not match region index"
         )
     atlas_ids: list[int] = []
     for position, region in enumerate(metadata):
-        if not isinstance(region, dict):
-            raise ValidationError(f"parcellation {parcellation['id']} metadata row {position} must be an object")
-        if type(region.get("index")) is not int or region["index"] != position:
-            raise ValidationError(f"parcellation {parcellation['id']} metadata index mismatch at row {position}")
+        if (
+            not isinstance(region, dict)
+            or type(region.get("index")) is not int
+            or region["index"] != position
+        ):
+            raise ValidationError(
+                f"parcellation {parcellation['id']} metadata index mismatch at row {position}"
+            )
         atlas_id = region.get("atlas_id")
-        if type(atlas_id) is not int:
-            raise ValidationError(f"parcellation {parcellation['id']} atlas_id at row {position} must be an integer")
-        if atlas_id != int(region_ids[position]):
-            raise ValidationError(f"parcellation {parcellation['id']} atlas_id mismatch at row {position}")
+        if type(atlas_id) is not int or atlas_id != int(region_ids[position]):
+            raise ValidationError(
+                f"parcellation {parcellation['id']} atlas_id mismatch at row {position}"
+            )
         atlas_ids.append(atlas_id)
-    if len(set(atlas_ids)) != len(atlas_ids):
-        raise ValidationError(f"parcellation {parcellation['id']} contains duplicate atlas_id values")
+    _unique(atlas_ids, f"atlas id in {parcellation['id']}")
     return len(region_ids)
 
 
 def _check_statistics(
-    path: Path,
-    schemas: dict[str, dict],
-    registry: Registry,
-    region_count: int | None,
-) -> dict:
-    stats = _load_json(path, "statistics metadata")
-    _validate_json(stats, "statistics.schema.json", schemas, registry)
-    summary = stats["regional_summary"]
-    summary_values = summary["values"]
-    _check_binary(path.parent, summary_values)
-    if len(summary_values["shape"]) != 2 or summary_values["shape"][1] != len(summary["fields"]):
-        raise ValidationError(f"regional summary shape does not match fields: {path}")
-    if region_count is not None and summary_values["shape"][0] != region_count:
-        raise ValidationError(f"regional summary row count does not match parcellation: {path}")
+    feature_root: Path,
+    descriptor: dict[str, Any],
+    region_count: int,
+) -> dict[str, Any]:
+    from .schema_v1 import validate_schema_v1_document
 
-    histogram = stats.get("histogram")
+    path, statistics = _check_json_resource(
+        feature_root, descriptor, "regional statistics"
+    )
+    validate_schema_v1_document(statistics, "statistics.schema.json")
+    summary = statistics["regional_summary"]
+    _check_binary(path.parent, summary["values"])
+    if summary["values"]["shape"] != [region_count, len(summary["fields"])]:
+        raise ValidationError(
+            f"regional summary shape does not match parcellation: {path}"
+        )
+    histogram = statistics.get("histogram")
     if histogram:
-        edges = histogram["edges"]
-        if not all(math.isfinite(edge) for edge in edges) or not all(
-            left < right for left, right in zip(edges, edges[1:])
-        ):
-            raise ValidationError(f"histogram edges must be finite and strictly increasing: {path}")
-        bin_count = len(edges) - 1
-        if len(histogram["global_counts"]) != bin_count:
-            raise ValidationError(f"histogram global_counts length does not match edges: {path}")
-        if sum(histogram["global_counts"]) != stats["global"]["count"]:
-            raise ValidationError(f"histogram global_counts do not sum to global count: {path}")
         counts = histogram["regional_counts"]
         _check_binary(path.parent, counts)
-        if len(counts["shape"]) != 2 or counts["shape"][1] != bin_count:
-            raise ValidationError(f"regional histogram shape does not match edges: {path}")
-        expected_rows = region_count if region_count is not None else summary_values["shape"][0]
-        if counts["shape"][0] != expected_rows:
-            raise ValidationError(f"regional histogram row count does not match summary/parcellation: {path}")
-    return stats
+        if counts["shape"] != [region_count, len(histogram["edges"]) - 1]:
+            raise ValidationError(
+                f"regional histogram shape does not match parcellation: {path}"
+            )
+    return statistics
+
+
+def _check_volume(feature_root: Path, volume: dict[str, Any]) -> None:
+    from .schema_v1 import validate_schema_v1_document
+
+    summary_path, summary = _check_json_resource(
+        feature_root, volume["summary"], "volume summary"
+    )
+    validate_schema_v1_document(summary, "volume-summary.schema.json")
+    grid = volume["grid"]
+    if summary["grid_id"] != grid["grid_id"] or summary["grid_shape"] != grid["shape"]:
+        raise ValidationError(
+            f"volume summary grid does not match feature descriptor: {summary_path}"
+        )
+
+    index_path, index = _check_json_resource(
+        feature_root,
+        volume["encoding"]["resource_index"],
+        "volume resource index",
+    )
+    validate_schema_v1_document(index, "volume-resource-index.schema.json")
+    if (
+        index["grid_id"] != grid["grid_id"]
+        or index["layout"] != volume["encoding"]["layout"]
+    ):
+        raise ValidationError(
+            f"volume resource index does not match feature descriptor: {index_path}"
+        )
+    entries = index["chunks"] if index["layout"] == "chunks3d" else index["packs"]
+    for entry in entries:
+        _check_resource(feature_root, entry["resource"])
+        if entry["decoded"]["dtype"] != volume["array"]["dtype"]:
+            raise ValidationError("volume resource dtype differs from feature descriptor")
+
+    shape = grid["shape"]
+    if index["layout"] == "chunks3d":
+        chunk_shape = index["chunk_shape"]
+        expected_origins = {
+            origin
+            for origin in product(
+                *(range(0, shape[dimension], chunk_shape[dimension]) for dimension in range(3))
+            )
+        }
+        by_origin = {tuple(entry["origin"]): entry for entry in entries}
+        if set(by_origin) != expected_origins:
+            raise ValidationError("volume chunks do not cover the grid exactly")
+        for origin, entry in by_origin.items():
+            raw_shape = [
+                min(chunk_shape[dimension], shape[dimension] - origin[dimension])
+                for dimension in range(3)
+            ]
+            expected_shape = [
+                raw_shape[int(axis[1])] for axis in entry["decoded"]["storage_axes"]
+            ]
+            if entry["decoded"]["shape"] != expected_shape:
+                raise ValidationError("volume chunk decoded shape is inconsistent")
+    else:
+        pack_depth = index["pack_depth"]
+        for dimension in range(3):
+            axis = f"i{dimension}"
+            expected_starts = set(range(0, shape[dimension], pack_depth))
+            axis_entries = {
+                entry["first_slice"]: entry
+                for entry in entries
+                if entry["axis"] == axis
+            }
+            if set(axis_entries) != expected_starts:
+                raise ValidationError(f"volume slice packs do not cover {axis} exactly")
+            for first_slice, entry in axis_entries.items():
+                expected_count = min(pack_depth, shape[dimension] - first_slice)
+                decoded = entry["decoded"]
+                expected_shape = [
+                    expected_count if storage_axis == axis else shape[int(storage_axis[1])]
+                    for storage_axis in decoded["storage_axes"]
+                ]
+                if (
+                    entry["slice_count"] != expected_count
+                    or decoded["storage_axes"][0] != axis
+                    or decoded["shape"] != expected_shape
+                ):
+                    raise ValidationError(f"volume {axis} slice pack is inconsistent")
+
+    validity = volume["validity"]
+    if validity["kind"] == "mask":
+        _check_binary(feature_root, validity["mask"])
 
 
 def validate_release(release_dir: Path, schema_dir: Path) -> None:
+    from .schema_v1 import validate_schema_v1_document
+
     release_dir = release_dir.resolve()
-    registry, schemas = _schema_registry(schema_dir)
+    expected_schema_dir = Path(__file__).resolve().parents[2] / "schema" / "v1"
+    if schema_dir.resolve() != expected_schema_dir.resolve():
+        raise ValidationError(
+            f"schema v1 is the only supported release contract: {schema_dir}"
+        )
+
     manifest = _load_json(release_dir / "manifest.json", "release manifest")
-    _validate_json(manifest, "dataset.schema.json", schemas, registry)
-    if not manifest["release"]["immutable"]:
-        raise ValidationError("manifest release must be immutable")
+    validate_schema_v1_document(manifest, "dataset.schema.json", schema_dir)
 
     parcellations = manifest["parcellations"]
-    _unique([item["id"] for item in parcellations], "parcellation id")
-    _unique([item["region_index"]["path"] for item in parcellations], "parcellation region_index path")
-    _unique([item["metadata"] for item in parcellations if item.get("metadata")], "parcellation metadata path")
-    region_counts = {item["id"]: _check_region_table(release_dir, item) for item in parcellations}
+    region_counts = {
+        item["id"]: _check_region_table(release_dir, item)
+        for item in parcellations
+    }
+    for artifact in manifest["artifacts"]:
+        _check_resource(release_dir, artifact["resource"])
 
-    artifacts = manifest["artifacts"]
-    _unique([item["id"] for item in artifacts], "manifest artifact id")
-    _unique([item["path"] for item in artifacts], "manifest artifact path")
-    for artifact in artifacts:
-        _check_artifact(release_dir, artifact)
-
-    feature_refs = manifest["features"]
-    _unique([item["id"] for item in feature_refs], "feature id")
-    _unique([item["path"] for item in feature_refs], "feature path")
-    for feature_ref in feature_refs:
-        feature_path = release_dir / feature_ref["path"]
-        feature = _load_json(feature_path, "feature metadata")
-        _validate_json(feature, "feature.schema.json", schemas, registry)
+    for feature_ref in manifest["features"]:
+        feature_path, feature = _check_json_resource(
+            release_dir, feature_ref["descriptor"], "feature descriptor"
+        )
+        validate_schema_v1_document(feature, "feature.schema.json", schema_dir)
         if feature["id"] != feature_ref["id"]:
             raise ValidationError(f"feature id mismatch: {feature_path}")
         feature_root = feature_path.parent
-        feature_artifacts = feature["artifacts"]
-        _unique([item["id"] for item in feature_artifacts], f"artifact id in feature {feature['id']}")
-        _unique([item["path"] for item in feature_artifacts], f"artifact path in feature {feature['id']}")
 
-        validated_statistics: dict[Path, dict] = {}
         regional = feature["representations"].get("regional")
         if regional:
-            regional_parcellations = regional["parcellations"]
-            _unique(
-                [item["parcellation_id"] for item in regional_parcellations],
-                f"regional parcellation id in feature {feature['id']}",
-            )
-            _unique(
-                [item["values"]["path"] for item in regional_parcellations],
-                f"regional values path in feature {feature['id']}",
-            )
-            _unique(
-                [item["statistics"] for item in regional_parcellations],
-                f"regional statistics path in feature {feature['id']}",
-            )
-            for parc in regional_parcellations:
-                parcellation_id = parc["parcellation_id"]
+            for item in regional["parcellations"]:
+                parcellation_id = item["parcellation_id"]
                 if parcellation_id not in region_counts:
                     raise ValidationError(
                         f"feature {feature['id']} references unknown parcellation {parcellation_id}"
                     )
-                values = parc["values"]
-                _check_binary(feature_root, values)
-                if values["shape"] != [region_counts[parcellation_id]]:
+                _check_binary(feature_root, item["values"])
+                if item["values"]["shape"] != [region_counts[parcellation_id]]:
                     raise ValidationError(
-                        f"regional values shape does not match parcellation {parcellation_id}: {feature_path}"
+                        f"regional values shape does not match {parcellation_id}: {feature_path}"
                     )
-                stats_path = (feature_root / parc["statistics"]).resolve()
-                stats = _check_statistics(stats_path, schemas, registry, region_counts[parcellation_id])
-                validated_statistics[stats_path] = stats
-                if parc["summary"] not in stats["regional_summary"]["fields"]:
+                statistics = _check_statistics(
+                    feature_root,
+                    item["statistics"],
+                    region_counts[parcellation_id],
+                )
+                if item["summary"] not in statistics["regional_summary"]["fields"]:
                     raise ValidationError(
-                        f"regional summary {parc['summary']} is not declared by statistics: {stats_path}"
+                        f"regional summary {item['summary']} is not declared by statistics"
                     )
-
-        for artifact in feature_artifacts:
-            _check_artifact(feature_root, artifact)
 
         volume = feature["representations"].get("volume")
         if volume:
-            statistics_ref = volume.get("statistics")
-            if statistics_ref:
-                stats_path = (feature_root / statistics_ref).resolve()
-                if stats_path not in validated_statistics:
-                    _check_statistics(stats_path, schemas, registry, None)
             _check_volume(feature_root, volume)
+        for artifact in feature["artifacts"]:
+            _check_resource(feature_root, artifact["resource"])

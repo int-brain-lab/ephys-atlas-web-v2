@@ -6,6 +6,6 @@ inventory. The normative scientific and semantic rules are documented in
 `docs/rendering/ANATOMY_PACK_CONTRACT.md` and exercised against the synthetic
 fixture in `fixtures/anatomy/anatomy-pack-v1/`.
 
-This contract is independent from dataset schema v0.1. Anatomy is a shared,
+This contract is independent from dataset schema v1. Anatomy is a shared,
 versioned rendering authority rather than a feature inside one scientific
 dataset release.

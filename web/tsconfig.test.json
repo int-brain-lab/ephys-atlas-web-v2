@@ -16,6 +16,7 @@
     "src/data/schema-v1.ts",
     "src/data/validate.ts",
     "src/data/validation/schema-v1.ts",
+    "src/data/validation/volume-v1.ts",
     "src/data/regional-data.ts",
     "src/data/regional-loader.ts",
     "src/data/resource-reader.ts",

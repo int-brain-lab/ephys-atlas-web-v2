@@ -8,7 +8,7 @@ from ibl_ephys_atlas_publish.core import PublicationStore, OffsetConflict, Valid
 from ibl_ephys_atlas_publish.service import PublishingApplication
 
 def art(path,data): return {'path':path,'size':len(data),'sha256':hashlib.sha256(data).hexdigest()}
-def manifest(dataset, release): return json.dumps({'schema_version':'0.1','dataset_id':dataset,'release':{'release_id':release}}).encode()
+def manifest(dataset, release): return json.dumps({'schema_version':'1.0','dataset_id':dataset,'release':{'release_id':release}}).encode()
 
 def upload_files(store, dataset, release, files):
     payload = {'manifest.json': manifest(dataset, release), **files}

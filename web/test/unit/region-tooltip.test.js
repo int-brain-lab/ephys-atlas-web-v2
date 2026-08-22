@@ -3,7 +3,7 @@ import test from 'node:test';
 import { buildRegionTooltipModel } from '../../.test-dist/ui/regional/model.js';
 
 const feature = {
-  schemaVersion: '0.1',
+  schemaVersion: '1.0',
   featureId: 'rms',
   representation: 'regional',
   parcellation: 'allen',

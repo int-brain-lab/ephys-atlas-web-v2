@@ -37,19 +37,60 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def write_array(path: Path, values: np.ndarray, dtype: str) -> dict[str, Any]:
+def encoded_resource(
+    path: Path,
+    root: Path,
+    media_type: str,
+    *,
+    codec: str = "none",
+    decoded_bytes: int | None = None,
+    level: int | None = None,
+) -> dict[str, Any]:
+    size = path.stat().st_size
+    codec_descriptor: dict[str, Any] = {
+        "name": codec,
+        "decoded_bytes": size if decoded_bytes is None else decoded_bytes,
+    }
+    if codec == "gzip" and level is not None:
+        codec_descriptor["level"] = level
+    return {
+        "path": path.relative_to(root).as_posix(),
+        "media_type": media_type,
+        "bytes": size,
+        "sha256": sha256_file(path),
+        "codec": codec_descriptor,
+    }
+
+
+def json_resource(path: Path, root: Path, format_name: str) -> dict[str, Any]:
+    return {
+        "format": format_name,
+        "resource": encoded_resource(path, root, "application/json"),
+    }
+
+
+def write_array(
+    path: Path,
+    values: np.ndarray,
+    dtype: str,
+    *,
+    root: Path | None = None,
+) -> dict[str, Any]:
     dt = DTYPES[dtype]
     arr = np.ascontiguousarray(values, dtype=dt)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(arr.tobytes(order="C"))
     return {
-        "path": path.name,
+        "format": "raw-binary-array-v1",
+        "resource": encoded_resource(
+            path,
+            root or path.parent,
+            "application/octet-stream",
+        ),
         "dtype": dtype,
         "shape": list(arr.shape),
         "order": "C",
         "endianness": "little" if dt.itemsize > 1 else "not-applicable",
-        "bytes": path.stat().st_size,
-        "sha256": sha256_file(path),
     }
 
 

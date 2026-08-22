@@ -29,35 +29,64 @@ function makeSlicePackFeature(axisOrder: readonly ['dv', 'ap', 'ml'] = ['dv', 'a
   const shape = axisOrder.map((axis) => anatomicalShape[axis]) as [number, number, number];
   const packDepth = 2;
   const loads = new Map<string, number>();
-  const resource = {
-    pack_depth: packDepth,
-    axes: Object.fromEntries((['coronal', 'sagittal', 'horizontal'] as const).map((axis) => {
-      const dimension = axisOrder.indexOf(axisNames[axis]);
-      return [axis, {
-        slice_shape: shape.filter((_, index) => index !== dimension),
-        codec: { name: 'none' },
-        path_template: `${axis}/{pack}.f32`,
-      }];
-    })),
-  };
+  const packs = (['coronal', 'sagittal', 'horizontal'] as const).flatMap((axis) => {
+    const dimension = axisOrder.indexOf(axisNames[axis]);
+    const packCount = Math.ceil(shape[dimension]! / packDepth);
+    return Array.from({ length: packCount }, (_, pack) => {
+      const firstSlice = pack * packDepth;
+      const depth = Math.min(packDepth, shape[dimension]! - firstSlice);
+      const remainingDimensions = [0, 1, 2].filter((candidate) => candidate !== dimension);
+      const decodedShape = [depth, shape[remainingDimensions[0]!]!, shape[remainingDimensions[1]!]!] as [number, number, number];
+      const storageAxes = [`i${dimension}`, ...remainingDimensions.map((candidate) => `i${candidate}`)] as [
+        'i0' | 'i1' | 'i2', 'i0' | 'i1' | 'i2', 'i0' | 'i1' | 'i2',
+      ];
+      const bytes = decodedShape.reduce((product, size) => product * size, 4);
+      return {
+        axis: `i${dimension}`,
+        firstSlice,
+        sliceCount: depth,
+        decoded: { shape: decodedShape, storageAxes },
+        resource: {
+          path: `${axis}/${pack}.f32`, mediaType: 'application/octet-stream', bytes,
+          sha256: '0'.repeat(64), codec: { name: 'none' as const, decodedBytes: bytes },
+        },
+      };
+    });
+  });
+  const resource = { pack_depth: packDepth, packs };
   const feature: VolumeFeaturePayload = {
-    schemaVersion: '0.1',
+    schemaVersion: '1.0',
     featureId: 'memory-slice-packs',
     representation: 'volume',
     descriptor: {
       kind: 'volume',
-      format: 'ephys-atlas-chunked-volume-v0.1',
+      format: 'ephys-atlas-volume-v1',
       layout: 'orthogonal_slice_packs',
       grid: {
         shape,
         axisOrder,
         coordinateSystem: 'test',
+        referenceSpaceId: 'test',
+        gridId: 'test-grid',
         voxelSizeUm: [25, 25, 25],
         originUm: [0, 0, 0],
         indexToWorldUm: [25, 0, 0, 0, 0, 25, 0, 0, 0, 0, 25, 0, 0, 0, 0, 1],
+        worldToIndex: [0.04, 0, 0, 0, 0, 0.04, 0, 0, 0, 0, 0.04, 0, 0, 0, 0, 1],
+        voxelEdgeExtentUm: [-12.5, 112.5, -12.5, 87.5, -12.5, 62.5],
       },
-      array: { dtype: 'float32', endianness: 'little', order: 'C', nonfinite: 'preserve' },
+      array: { dtype: 'float32', endianness: 'little', order: 'C' },
       resource,
+      resourceIndexPath: 'resource-index.json',
+      resourceIndexResource: {
+        path: 'resource-index.json', mediaType: 'application/json', bytes: 1,
+        sha256: '0'.repeat(64), codec: { name: 'none', decodedBytes: 1 },
+      },
+      summaryPath: 'summary.json',
+      summaryResource: {
+        path: 'summary.json', mediaType: 'application/json', bytes: 1,
+        sha256: '0'.repeat(64), codec: { name: 'none', decodedBytes: 1 },
+      },
+      validity: { kind: 'sentinel', outside_value: -9999, missing_values: 'nonfinite' },
     },
     async loadResource(path: string): Promise<ArrayBuffer> {
       loads.set(path, (loads.get(path) ?? 0) + 1);

@@ -31,7 +31,7 @@ Shared contracts are changed once on `main`, with affected producers and consume
 
 ### Regional
 
-The schema-v0.1 regional golden path is implemented end-to-end:
+The schema-v1 regional golden path is implemented end-to-end:
 
 regional feature -> typed binary artifacts -> published/local browser source ->
 region metadata/statistics/histograms -> linked sparse indexed-SVG anatomy ->
@@ -42,7 +42,7 @@ The fixture is synthetic; production channel science remains blocked on the expl
 
 ### Volume
 
-The schema-v0.1 golden volume path is implemented through the shared renderer boundary:
+The schema-v1 golden volume path is implemented through the shared renderer boundary:
 
 volume descriptor -> transport resource callback -> `chunks3d` or
 `orthogonal_slice_packs` adapter -> axis/coordinate mapping from declared

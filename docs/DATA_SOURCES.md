@@ -116,7 +116,10 @@ The S3 NPZ is the canonical scientific source, but it is not automatically the o
 - decoded memory/cache cost in target browsers;
 - feature-switch cost.
 
-Schema v0.1 currently supports a deterministic `chunks3d` reference layout and an `orthogonal_slice_packs` browser-oriented layout. Production selection must come from a real-data benchmark. See Q5.
+Schema v1 supports a deterministic `chunks3d` reference layout and an
+`orthogonal_slice_packs` browser-oriented layout through checksummed explicit
+resource indexes. Production selection must come from a real-data benchmark.
+See Q5.
 
 If the canonical public object eventually becomes sufficiently feature/slice-addressable and meets the browser budgets, direct consumption remains acceptable under D010. If a web-optimized representation is required, it must be generated deterministically with provenance back to the pinned canonical object.
 

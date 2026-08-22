@@ -23,7 +23,7 @@ test('range labels stack only when no in-bounds horizontal placement can separat
 });
 
 const regional = {
-  schemaVersion: '0.1',
+  schemaVersion: '1.0',
   featureId: 'feature',
   representation: 'regional',
   parcellation: 'allen',

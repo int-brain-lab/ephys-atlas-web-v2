@@ -23,3 +23,61 @@ test('an aborted prefetch does not poison a foreground request for the same reso
   assert.equal(await foreground.text(), 'foreground');
   assert.equal(calls, 2);
 });
+
+async function sha256(value) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+test('a corrupt persistent hit is evicted and replaced only after a verified retry', async () => {
+  const previousCaches = globalThis.caches;
+  let cached = new Response('old-wrong-bytes');
+  let deletes = 0;
+  let puts = 0;
+  const cache = {
+    async match() { return cached?.clone(); },
+    async delete() { deletes += 1; cached = undefined; return true; },
+    async put(_url, response) { puts += 1; cached = response.clone(); },
+  };
+  globalThis.caches = { async open() { return cache; }, async delete() { return true; } };
+  try {
+    const expected = 'release-two';
+    let networkCalls = 0;
+    const fetcher = new ResourceFetcher(async () => {
+      networkCalls += 1;
+      return new Response(expected);
+    });
+    const response = await fetcher.fetch('https://example.test/same/path.bin', {
+      immutable: true,
+      integrity: { bytes: expected.length, sha256: await sha256(expected) },
+    });
+    assert.equal(await response.text(), expected);
+    assert.equal(await cached.text(), expected);
+    assert.equal(deletes, 1);
+    assert.equal(puts, 1);
+    assert.equal(networkCalls, 1);
+  } finally {
+    globalThis.caches = previousCaches;
+  }
+});
+
+test('an integrity failure never enters the persistent cache', async () => {
+  const previousCaches = globalThis.caches;
+  let puts = 0;
+  const cache = {
+    async match() { return undefined; },
+    async delete() { return true; },
+    async put() { puts += 1; },
+  };
+  globalThis.caches = { async open() { return cache; }, async delete() { return true; } };
+  try {
+    const fetcher = new ResourceFetcher(async () => new Response('corrupt'));
+    await assert.rejects(fetcher.fetch('https://example.test/resource.bin', {
+      immutable: true,
+      integrity: { bytes: 7, sha256: await sha256('correct') },
+    }), /SHA-256 mismatch/);
+    assert.equal(puts, 0);
+  } finally {
+    globalThis.caches = previousCaches;
+  }
+});

@@ -27,7 +27,7 @@ async function mockCuratedSlices(page: Page): Promise<void> {
   });
 }
 
-test('schema-v0.1 chunks3d volume renders all three orthogonal golden slices', async ({ page }) => {
+test('schema-v1 chunks3d volume renders all three orthogonal golden slices', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await mockCuratedSlices(page);
   await page.goto('/?v=1&feature=rms_ap&repr=volume&slices=540,574,33');
@@ -35,7 +35,7 @@ test('schema-v0.1 chunks3d volume renders all three orthogonal golden slices', a
   await expect.poll(() => new URL(page.url()).searchParams.get('repr')).toBe('volume');
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
     const target = page.locator(`[data-view="${axis}"] .view-frame__renderer`);
-    await expect(target).toHaveAttribute('data-slice-asset', 'schema-volume-v0.1');
+    await expect(target).toHaveAttribute('data-slice-asset', 'schema-volume-v1');
     await expect(target).toHaveAttribute('data-volume-feature', 'rms_ap');
     await expect(target).toHaveAttribute('data-volume-index', '0');
     await expect(target.locator('canvas.view-frame__volume-canvas')).toBeAttached();

@@ -315,6 +315,8 @@ class PublicationStore:
             raise ValidationError(f"invalid manifest.json: {exc}") from exc
         if manifest.get("dataset_id") != dataset_id:
             raise ValidationError("manifest dataset_id does not match upload dataset")
+        if manifest.get("schema_version") != "1.0":
+            raise ValidationError("manifest schema_version must be 1.0")
         release = manifest.get("release")
         if not isinstance(release, dict) or release.get("release_id") != release_id:
             raise ValidationError("manifest release_id does not match upload release")
@@ -468,29 +470,38 @@ class PublicationStore:
         title = metadata.get("title")
         description = metadata.get("description")
         entry: dict[str, Any] = {
-            "id": dataset_id,
+            "dataset_id": dataset_id,
             "title": title if isinstance(title, str) and title else dataset_id,
             "releases": [
                 {
-                    "id": release_id,
-                    "label": release_id,
-                    "manifest": f"./datasets/{dataset_id}/releases/{release_id}/manifest.json",
-                    "immutable": True,
+                    "release_id": release_id,
+                    "manifest": self._manifest_resource(dataset_id, release_id),
                 }
                 for release_id in releases
             ],
-            "defaultRelease": default_release,
+            "default_release": default_release,
         }
         if isinstance(description, str) and description:
             entry["description"] = description
         return entry
+
+    def _manifest_resource(self, dataset_id: str, release_id: str) -> dict[str, Any]:
+        path = self._dataset(dataset_id) / "releases" / release_id / "manifest.json"
+        size = path.stat().st_size
+        return {
+            "path": f"./datasets/{dataset_id}/releases/{release_id}/manifest.json",
+            "media_type": "application/json",
+            "bytes": size,
+            "sha256": sha256_file(path),
+            "codec": {"name": "none", "decoded_bytes": size},
+        }
 
     def _catalog(self) -> None:
         """Regenerate the public browser catalog from authoritative dataset indexes.
 
         Administrative aliases and archived datasets remain in per-dataset indexes
         and are exposed through the authenticated mutation API. The static file is
-        intentionally the browser's schema-v0.1 catalog contract only.
+        intentionally the browser's schema-v1 catalog contract only.
         """
         datasets: list[dict[str, Any]] = []
         root = self.public / "datasets"
@@ -504,7 +515,7 @@ class PublicationStore:
                     datasets.append(entry)
         atomic_json(
             self.public / "catalog.json",
-            {"schemaVersion": "0.1", "datasets": datasets},
+            {"schema_version": "1.0", "datasets": datasets},
         )
 
     def _audit(self, credential_id: str, action: str, **fields: Any) -> None:

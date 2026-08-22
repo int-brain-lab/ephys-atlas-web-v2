@@ -71,7 +71,7 @@ def _build(path: Path) -> Path:
 
 def test_channel_recipe_builds_schema_valid_release(tmp_path):
     release = _build(tmp_path / "release")
-    validate_release(release, ROOT / "schema" / "v0.1")
+    validate_release(release, ROOT / "schema" / "v1")
 
     manifest = json.loads((release / "manifest.json").read_text())
     assert manifest["dataset_id"] == "ephys_atlas_channels"
@@ -126,7 +126,7 @@ def test_channel_recipe_emits_explicit_log_color_defaults(tmp_path):
         metadata,
         [{"role": "canonical-data", "description": "display metadata test"}],
     )
-    validate_release(release, ROOT / "schema" / "v0.1")
+    validate_release(release, ROOT / "schema" / "v1")
     rms = json.loads((release / "features/rms_ap/feature.json").read_text())
     polarity = json.loads((release / "features/polarity/feature.json").read_text())
     manifest = json.loads((release / "manifest.json").read_text())
@@ -230,7 +230,7 @@ def test_channel_recipe_promotes_regional_values_that_exceed_float32(tmp_path):
     )
     allen = feature["representations"]["regional"]["parcellations"][0]
     assert allen["values"]["dtype"] == "float64"
-    assert allen["values"]["path"] == "allen.values.f64"
+    assert allen["values"]["resource"]["path"] == "allen.values.f64"
     values = np.fromfile(
         release / "features/alpha_mean/allen.values.f64", dtype="<f8"
     )
@@ -264,6 +264,10 @@ def test_both_mode_produces_explicit_variant_catalog(tmp_path):
         "rms_ap.denoised",
         "rms_ap.raw",
     ]
+    for feature_id in ("rms_ap.denoised", "rms_ap.raw"):
+        feature = json.loads((release / f"features/{feature_id}/feature.json").read_text())
+        assert "(raw)" not in feature["description"]
+        assert "(denoised)" not in feature["description"]
 
 
 def test_snapshot_build_requires_reproducibility_pins():

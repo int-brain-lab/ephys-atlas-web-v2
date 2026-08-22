@@ -1,8 +1,10 @@
 import type { DatasetRef, ParcellationId, RepresentationKind } from '../domain/types.js';
 import { loadRegionalFeatureFromResources, loadRegionsFromResources } from './regional-loader.js';
 import type { ResourceReader } from './resource-reader.js';
+import { parseVolumeResourceIndex, parseVolumeSummary } from './validation/volume-v1.js';
 import {
   decodeBinaryArray,
+  decodeResourceBytes,
   localDatasetReleaseId,
   resolveDatasetManifest,
   validateLocalDatasetFiles,
@@ -13,12 +15,13 @@ import type {
   DatasetCatalog,
   DatasetManifest,
   DatasetSource,
+  EncodedResourceDescriptor,
   FeatureDescriptor,
   FeaturePayload,
   RegionMetadata,
 } from './contracts.js';
 
-const DB_NAME = 'ibl-ephys-atlas-v2-local-v02';
+const DB_NAME = 'ibl-ephys-atlas-schema-v1-local';
 const DB_VERSION = 1;
 const MANIFESTS = 'manifests';
 const RESOURCES = 'resources';
@@ -89,7 +92,7 @@ class LocalResourceReader implements ResourceReader {
     return resolvePath(base, relative);
   }
 
-  async readJson(location: string, signal?: AbortSignal): Promise<unknown> {
+  async readJson(location: string, signal?: AbortSignal, _resource?: EncodedResourceDescriptor): Promise<unknown> {
     signal?.throwIfAborted();
     const text = await (await this.source.readResource(this.manifest, location)).text();
     signal?.throwIfAborted();
@@ -98,10 +101,10 @@ class LocalResourceReader implements ResourceReader {
 
   async readArray(location: string, descriptor: BinaryArrayDescriptor, signal?: AbortSignal): Promise<number[]> {
     const bytes = await this.readBytes(location, signal);
-    return decodeBinaryArray(bytes, { ...descriptor, path: location });
+    return decodeBinaryArray(await decodeResourceBytes(bytes, descriptor), { ...descriptor, path: location });
   }
 
-  async readBytes(location: string, signal?: AbortSignal): Promise<ArrayBuffer> {
+  async readBytes(location: string, signal?: AbortSignal, _resource?: EncodedResourceDescriptor): Promise<ArrayBuffer> {
     signal?.throwIfAborted();
     const bytes = await (await this.source.readResource(this.manifest, location)).arrayBuffer();
     signal?.throwIfAborted();
@@ -170,7 +173,7 @@ export class LocalDatasetSource implements DatasetSource {
       datasets: releases.length ? [{
         id: 'local',
         title: 'Local datasets',
-        description: 'Browser-imported schema-v0.1 datasets stored only on this device.',
+        description: 'Browser-imported schema-v1 datasets stored only on this device.',
         releases,
         defaultRelease: releases.at(-1)?.id ?? '',
       }] : [],
@@ -210,12 +213,25 @@ export class LocalDatasetSource implements DatasetSource {
     if (representation === 'volume') {
       const descriptor = feature.representations.volume;
       if (!descriptor) throw new Error(`Feature ${featureId} has no volume representation`);
+      const [resourceIndexRaw, summaryRaw] = await Promise.all([
+        reader.readJson(reader.resolve(feature.path, descriptor.resourceIndexPath), signal),
+        reader.readJson(reader.resolve(feature.path, descriptor.summaryPath), signal),
+      ]);
+      const resolvedDescriptor = {
+        ...descriptor,
+        resource: parseVolumeResourceIndex(resourceIndexRaw, descriptor),
+        valueRange: parseVolumeSummary(summaryRaw, descriptor),
+      };
       return {
         schemaVersion: SCHEMA_VERSION,
         featureId,
         representation: 'volume',
-        descriptor,
-        loadResource: (path, resourceSignal) => reader.readBytes(reader.resolve(feature.path, path), resourceSignal),
+        descriptor: resolvedDescriptor,
+        loadResource: (path, resourceSignal, resource) => reader.readBytes(
+          reader.resolve(feature.path, path),
+          resourceSignal,
+          resource,
+        ),
       };
     }
 

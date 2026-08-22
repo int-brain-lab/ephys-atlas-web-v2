@@ -18,7 +18,7 @@ def artifact(path: str, data: bytes) -> dict:
 
 def publish(store: PublicationStore, dataset: str, release: str, aliases=()):
     manifest = json.dumps({
-        "schema_version": "0.1",
+        "schema_version": "1.0",
         "dataset_id": dataset,
         "release": {"release_id": release},
     }).encode()
@@ -44,26 +44,45 @@ def test_public_catalog_matches_browser_contract(tmp_path):
         {"title": "Ephys Atlas channels", "description": "Channel summaries"},
         "credential",
     )
-    assert public_catalog(store) == {"schemaVersion": "0.1", "datasets": []}
+    assert public_catalog(store) == {"schema_version": "1.0", "datasets": []}
 
     publish(store, "ephys_atlas_channels", "2026_W12", aliases=["latest"])
     catalog = public_catalog(store)
     assert catalog == {
-        "schemaVersion": "0.1",
+        "schema_version": "1.0",
         "datasets": [
             {
-                "id": "ephys_atlas_channels",
+                "dataset_id": "ephys_atlas_channels",
                 "title": "Ephys Atlas channels",
                 "description": "Channel summaries",
                 "releases": [
                     {
-                        "id": "2026_W12",
-                        "label": "2026_W12",
-                        "manifest": "./datasets/ephys_atlas_channels/releases/2026_W12/manifest.json",
-                        "immutable": True,
+                        "release_id": "2026_W12",
+                        "manifest": {
+                            "path": "./datasets/ephys_atlas_channels/releases/2026_W12/manifest.json",
+                            "media_type": "application/json",
+                            "bytes": len(json.dumps({
+                                "schema_version": "1.0",
+                                "dataset_id": "ephys_atlas_channels",
+                                "release": {"release_id": "2026_W12"},
+                            }).encode()),
+                            "sha256": hashlib.sha256(json.dumps({
+                                "schema_version": "1.0",
+                                "dataset_id": "ephys_atlas_channels",
+                                "release": {"release_id": "2026_W12"},
+                            }).encode()).hexdigest(),
+                            "codec": {
+                                "name": "none",
+                                "decoded_bytes": len(json.dumps({
+                                    "schema_version": "1.0",
+                                    "dataset_id": "ephys_atlas_channels",
+                                    "release": {"release_id": "2026_W12"},
+                                }).encode()),
+                            },
+                        },
                     }
                 ],
-                "defaultRelease": "2026_W12",
+                "default_release": "2026_W12",
             }
         ],
     }
@@ -76,12 +95,11 @@ def test_public_catalog_resolves_aliases_to_immutable_release_ids(tmp_path):
     publish(store, "d", "r2", aliases=["latest"])
 
     entry = public_catalog(store)["datasets"][0]
-    assert entry["defaultRelease"] == "r1"
-    assert [release["id"] for release in entry["releases"]] == ["r1", "r2"]
-    assert all(release["immutable"] for release in entry["releases"])
+    assert entry["default_release"] == "r1"
+    assert [release["release_id"] for release in entry["releases"]] == ["r1", "r2"]
 
     store.set_alias("d", "paper", "r2", "credential")
-    assert public_catalog(store)["datasets"][0]["defaultRelease"] == "r2"
+    assert public_catalog(store)["datasets"][0]["default_release"] == "r2"
 
 
 def test_archived_dataset_stays_in_admin_api_but_leaves_public_catalog(tmp_path):
@@ -90,7 +108,7 @@ def test_archived_dataset_stays_in_admin_api_but_leaves_public_catalog(tmp_path)
     publish(store, "d", "r1", aliases=["latest"])
     store.archive_dataset("d", "credential")
 
-    assert public_catalog(store) == {"schemaVersion": "0.1", "datasets": []}
+    assert public_catalog(store) == {"schema_version": "1.0", "datasets": []}
     admin = store.list_datasets()
     assert admin["datasets"] == []
     assert admin["archived_datasets"][0]["dataset_id"] == "d"

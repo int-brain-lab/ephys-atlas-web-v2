@@ -6,7 +6,7 @@ import { createAppStore } from '../../.test-dist/domain/store.js';
 
 function manifest(id = 'custom_dataset') {
   return {
-    schemaVersion: '0.1',
+    schemaVersion: '1.0',
     dataset: { id, release: 'r1', title: id, description: '' },
     release: { releaseId: 'r1', immutable: true, createdAt: '2026-08-21T00:00:00Z', paperSnapshot: false },
     provenance: { sources: [], builder: { name: '', version: '', command: '' }, recipe: { id: 'test' }, notes: [] },
@@ -16,7 +16,7 @@ function manifest(id = 'custom_dataset') {
       id: 'feature_a', path: 'feature.json', label: 'A', description: '', unit: null,
       valueSemantics: { quantity: 'a', transform: 'identity', sourcePopulation: 'all', missingValues: 'excluded' },
       statistics: ['mean'],
-      representations: { regional: { kind: 'regional', format: 'ephys-atlas-regional-v0.1', parcellations: {} } },
+      representations: { regional: { kind: 'regional', format: 'ephys-atlas-regional-v1', parcellations: {} } },
     }],
   };
 }
@@ -33,9 +33,9 @@ test('dataset session owns manifest/feature lifecycle outside the UI', async () 
     dataset: { datasetId: 'custom_dataset', releaseId: 'r1' },
     featureId: 'feature_a',
   } });
-  const feature = { schemaVersion: '0.1', featureId: 'feature_a', representation: 'regional', parcellation: 'beryl', regionIds: [], statistics: {} };
+  const feature = { schemaVersion: '1.0', featureId: 'feature_a', representation: 'regional', parcellation: 'beryl', regionIds: [], statistics: {} };
   const repository = {
-    async loadCatalog() { return { schemaVersion: '0.1', datasets: [] }; },
+    async loadCatalog() { return { schemaVersion: '1.0', datasets: [] }; },
     async loadManifest() { return manifest(); },
     async loadRegions() { return []; },
     async loadFeature() { return feature; },
@@ -53,7 +53,7 @@ test('stale dataset completions cannot replace the active dataset', async () => 
   const store = createAppStore({ ...DEFAULT_APP_STATE });
   const first = deferred();
   const repository = {
-    async loadCatalog() { return { schemaVersion: '0.1', datasets: [] }; },
+    async loadCatalog() { return { schemaVersion: '1.0', datasets: [] }; },
     loadManifest(ref) { return ref.datasetId === 'slow' ? first.promise : Promise.resolve(manifest('fast')); },
     async loadRegions() { return []; },
     async loadFeature() { throw new Error('not used'); },
@@ -77,14 +77,14 @@ test('starting a feature load aborts active prefetch from the previous feature',
   const testManifest = manifest();
   testManifest.features.push({ ...testManifest.features[0], id: 'feature_b' });
   const feature = {
-    schemaVersion: '0.1', featureId: 'feature_a', representation: 'regional',
+    schemaVersion: '1.0', featureId: 'feature_a', representation: 'regional',
     parcellation: 'beryl', regionIds: [], statistics: {},
   };
   let activeSignal;
   let markStarted;
   const started = new Promise((resolve) => { markStarted = resolve; });
   const repository = {
-    async loadCatalog() { return { schemaVersion: '0.1', datasets: [] }; },
+    async loadCatalog() { return { schemaVersion: '1.0', datasets: [] }; },
     async loadManifest() { return testManifest; },
     async loadRegions() { return []; },
     async loadFeature() { return feature; },
@@ -118,12 +118,12 @@ test('feature loading prefetches the next and previous manifest neighbours', asy
   let resolvePrefetched;
   const bothPrefetched = new Promise((resolve) => { resolvePrefetched = resolve; });
   const repository = {
-    async loadCatalog() { return { schemaVersion: '0.1', datasets: [] }; },
+    async loadCatalog() { return { schemaVersion: '1.0', datasets: [] }; },
     async loadManifest() { return testManifest; },
     async loadRegions() { return []; },
     async loadFeature(_ref, featureId) {
       return {
-        schemaVersion: '0.1', featureId, representation: 'regional',
+        schemaVersion: '1.0', featureId, representation: 'regional',
         parcellation: 'beryl', regionIds: [], statistics: {},
       };
     },

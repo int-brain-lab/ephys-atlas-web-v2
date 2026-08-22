@@ -1,23 +1,21 @@
 import type { ParcellationId } from '../../domain/types.js';
 import type {
   BinaryArrayDescriptor,
+  EncodedResourceDescriptor,
   FeatureDescriptor,
   DatasetManifestDocument,
 } from '../contracts.js';
-import { binaryBytes, bytesPerElement, decodeBinaryArray } from './binary.js';
+import { binaryBytes, decodeBinaryArray, parseBinaryArray, parseEncodedResource } from './binary.js';
 import { parseFeatureDescriptor } from './feature.js';
 import { parseDatasetManifestDocument } from './manifest.js';
 import {
   array,
-  integerArray,
   object,
-  relativePath,
   resolveRelativePath,
-  SHA256,
   string,
-  templatePath,
 } from './primitives.js';
 import { parseStatisticsDocument } from './statistics.js';
+import { parseVolumeResourceIndex, parseVolumeSummary } from './volume-v1.js';
 
 interface ArtifactExpectation {
   path: string;
@@ -48,19 +46,13 @@ function parseArtifacts(value: unknown, baseFile: string, context: string): Arti
     if (!['current-feature', 'selected-data', 'source-snapshot', 'auxiliary'].includes(String(item.role))) {
       throw new Error(`${context}[${index}].role is unsupported`);
     }
-    string(item.media_type, `${context}[${index}].media_type`);
-    if (typeof item.bytes !== 'number' || !Number.isInteger(item.bytes) || item.bytes < 0) {
-      throw new Error(`${context}[${index}].bytes must be a non-negative integer`);
-    }
-    if (typeof item.sha256 !== 'string' || !SHA256.test(item.sha256)) {
-      throw new Error(`${context}[${index}].sha256 must be 64 lowercase hexadecimal characters`);
-    }
+    const resource = parseEncodedResource(item.resource, `${context}[${index}].resource`);
     const path = resolveRelativePath(
       baseFile,
-      relativePath(item.path, `${context}[${index}].path`),
+      resource.path,
       `${context}[${index}].path`,
     );
-    return { path, bytes: item.bytes, sha256: item.sha256, context: `${context}[${index}]` };
+    return { path, bytes: resource.bytes, sha256: resource.sha256, context: `${context}[${index}]` };
   });
 }
 
@@ -105,6 +97,18 @@ async function decodedByteLength(blob: Blob, codec: 'none' | 'gzip', path: strin
   }
 }
 
+async function decodedBuffer(blob: Blob, codec: 'none' | 'gzip', path: string): Promise<ArrayBuffer> {
+  if (codec === 'none') return blob.arrayBuffer();
+  if (!('DecompressionStream' in globalThis)) {
+    throw new Error(`Cannot decode gzip resource ${path}: DecompressionStream is unavailable`);
+  }
+  try {
+    return new Response(blob.stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  } catch {
+    throw new Error(`Local resource ${path} is not valid gzip data`);
+  }
+}
+
 function addResource(resources: Map<string, ResourceExpectation>, expectation: ResourceExpectation): void {
   const existing = resources.get(expectation.path);
   if (!existing) {
@@ -133,14 +137,34 @@ function addBinaryResource(
 ): string {
   const path = resolveRelativePath(baseFile, descriptor.path, context);
   const expectedBytes = binaryBytes(descriptor);
-  if (descriptor.bytes !== undefined && descriptor.bytes !== expectedBytes) {
+  if (descriptor.codec.decodedBytes !== expectedBytes) {
     throw new Error(`${context}.bytes is ${descriptor.bytes}; dtype and shape require ${expectedBytes}`);
   }
   addResource(resources, {
     path,
     context,
-    bytes: expectedBytes,
-    ...(descriptor.sha256 ? { sha256: descriptor.sha256 } : {}),
+    bytes: descriptor.bytes,
+    sha256: descriptor.sha256,
+    decodedBytes: expectedBytes,
+    codec: descriptor.codec.name,
+  });
+  return path;
+}
+
+function addEncodedResource(
+  resources: Map<string, ResourceExpectation>,
+  baseFile: string,
+  descriptor: EncodedResourceDescriptor,
+  context: string,
+): string {
+  const path = resolveRelativePath(baseFile, descriptor.path, context);
+  addResource(resources, {
+    path,
+    context,
+    bytes: descriptor.bytes,
+    sha256: descriptor.sha256,
+    decodedBytes: descriptor.codec.decodedBytes,
+    codec: descriptor.codec.name,
   });
   return path;
 }
@@ -167,13 +191,16 @@ async function validateResourceFiles(
   }
 }
 
-/** Validate the complete browser-supported schema-v0.1 graph before IndexedDB is mutated. */
+/** Validate the complete browser-supported schema-v1 graph before IndexedDB is mutated. */
 export async function validateLocalDatasetFiles(
   files: ReadonlyMap<string, Blob>,
 ): Promise<ValidatedLocalDataset> {
   const manifestRaw = await parseJsonResource(files, 'manifest.json', 'manifest');
   const document = parseDatasetManifestDocument(manifestRaw);
   const resources = new Map<string, ResourceExpectation>();
+  for (const featureRef of document.featureRefs) {
+    addEncodedResource(resources, 'manifest.json', featureRef.resource, `feature ${featureRef.id}`);
+  }
   for (const artifact of parseArtifacts(manifestRaw.artifacts, 'manifest.json', 'manifest.artifacts')) {
     addResource(resources, artifact);
   }
@@ -193,7 +220,13 @@ export async function validateLocalDatasetFiles(
     if (count === undefined) throw new Error(`${parcel.id} region index must be one-dimensional`);
     regionCounts.set(parcel.id, count);
     if (!parcel.metadata) throw new Error(`${parcel.id} parcellation requires metadata for browser import`);
-    addResource(resources, { path: parcel.metadata, context: `manifest.parcellations.${parcel.id}.metadata` });
+    if (!parcel.metadataResource) throw new Error(`${parcel.id} parcellation metadata has no integrity descriptor`);
+    addEncodedResource(
+      resources,
+      'manifest.json',
+      parcel.metadataResource,
+      `manifest.parcellations.${parcel.id}.metadata`,
+    );
 
     const metadata = array(
       await readJsonResource(files, parcel.metadata, `${parcel.id} region metadata`),
@@ -203,7 +236,7 @@ export async function validateLocalDatasetFiles(
     const regionIdsFile = files.get(indexPath);
     if (!regionIdsFile) throw new Error(`Local dataset is missing ${indexPath}`);
     const regionIds = decodeBinaryArray(
-      await regionIdsFile.arrayBuffer(),
+      await decodedBuffer(regionIdsFile, parcel.regionIndex.codec.name, indexPath),
       { ...parcel.regionIndex, path: indexPath },
     );
     const seenAtlasIds = new Set<number>();
@@ -251,7 +284,12 @@ export async function validateLocalDatasetFiles(
           descriptor.statistics,
           `${feature.id}/${parcellationId} statistics`,
         );
-        addResource(resources, { path: statisticsPath, context: `${feature.id}/${parcellationId} statistics` });
+        addEncodedResource(
+          resources,
+          feature.path,
+          descriptor.statisticsResource,
+          `${feature.id}/${parcellationId} statistics`,
+        );
         const statistics = parseStatisticsDocument(
           await parseJsonResource(files, statisticsPath, `${feature.id}/${parcellationId} statistics`),
         );
@@ -280,86 +318,41 @@ export async function validateLocalDatasetFiles(
 
     const volume = feature.representations.volume;
     if (!volume) continue;
-    const volumePaths = new Set<string>();
-    if (volume.statistics) {
-      const statisticsPath = resolveRelativePath(feature.path, volume.statistics, `${feature.id} volume statistics`);
-      addResource(resources, { path: statisticsPath, context: `${feature.id} volume statistics` });
-      await parseJsonResource(files, statisticsPath, `${feature.id} volume statistics`);
+    const summaryPath = addEncodedResource(
+      resources,
+      feature.path,
+      volume.summaryResource,
+      `${feature.id} volume summary`,
+    );
+    const summaryRaw = await parseJsonResource(files, summaryPath, `${feature.id} volume summary`);
+    parseVolumeSummary(summaryRaw, volume);
+    const resourceIndexPath = addEncodedResource(
+      resources,
+      feature.path,
+      volume.resourceIndexResource,
+      `${feature.id} volume resource index`,
+    );
+    const resourceIndexRaw = await parseJsonResource(
+      files,
+      resourceIndexPath,
+      `${feature.id} volume resource index`,
+    );
+    const parsedIndex = parseVolumeResourceIndex(resourceIndexRaw, volume);
+    const entries = volume.layout === 'chunks3d'
+      ? array(parsedIndex.chunks, `${feature.id} volume chunks`)
+      : array(parsedIndex.packs, `${feature.id} volume packs`);
+    for (const [index, raw] of entries.entries()) {
+      const entry = object(raw, `${feature.id} volume resource ${index}`);
+      addEncodedResource(
+        resources,
+        feature.path,
+        entry.resource as EncodedResourceDescriptor,
+        `${feature.id} volume resource ${index}`,
+      );
     }
-    const elementBytes = bytesPerElement(volume.array.dtype);
-    if (volume.layout === 'chunks3d') {
-      const chunkShape = integerArray(volume.resource.shape, 3, `${feature.id}.volume.chunks.shape`);
-      const codecRaw = object(volume.resource.codec, `${feature.id}.volume.chunks.codec`);
-      if (codecRaw.name !== 'none' && codecRaw.name !== 'gzip') {
-        throw new Error(`${feature.id}.volume.chunks.codec.name is unsupported`);
-      }
-      const codec = codecRaw.name;
-      const template = relativePath(volume.resource.path_template, `${feature.id}.volume.chunks.path_template`);
-      if (!['{i0}', '{i1}', '{i2}'].every((field) => template.includes(field))) {
-        throw new Error(`${feature.id}.volume.chunks.path_template must contain {i0}, {i1}, and {i2}`);
-      }
-      const chunkCounts = volume.grid.shape.map((size, dimension) => Math.ceil(size / chunkShape[dimension]!));
-      for (let i0 = 0; i0 < chunkCounts[0]!; i0 += 1) {
-        for (let i1 = 0; i1 < chunkCounts[1]!; i1 += 1) {
-          for (let i2 = 0; i2 < chunkCounts[2]!; i2 += 1) {
-            const indices = [i0, i1, i2];
-            const actualShape = volume.grid.shape.map((size, dimension) =>
-              Math.min(chunkShape[dimension]!, size - indices[dimension]! * chunkShape[dimension]!));
-            const decodedBytes = actualShape.reduce((product, size) => product * size, elementBytes);
-            const path = resolveRelativePath(
-              feature.path,
-              templatePath(template, { i0, i1, i2 }, `${feature.id}.volume.chunks.path_template`),
-              `${feature.id} volume chunk`,
-            );
-            if (volumePaths.has(path)) throw new Error(`${feature.id} volume resource template does not produce unique paths`);
-            volumePaths.add(path);
-            addResource(resources, { path, context: `${feature.id} volume chunk`, decodedBytes, codec });
-          }
-        }
-      }
-    } else {
-      const packDepth = volume.resource.pack_depth;
-      if (typeof packDepth !== 'number' || !Number.isInteger(packDepth) || packDepth <= 0) {
-        throw new Error(`${feature.id}.volume.slice_packs.pack_depth must be a positive integer`);
-      }
-      const axes = object(volume.resource.axes, `${feature.id}.volume.slice_packs.axes`);
-      for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
-        const axisResource = object(axes[axis], `${feature.id}.volume.slice_packs.axes.${axis}`);
-        const sliceShape = integerArray(axisResource.slice_shape, 2, `${feature.id}.volume.slice_packs.axes.${axis}.slice_shape`);
-        const codecRaw = object(axisResource.codec, `${feature.id}.volume.slice_packs.axes.${axis}.codec`);
-        if (codecRaw.name !== 'none' && codecRaw.name !== 'gzip') {
-          throw new Error(`${feature.id}.volume.slice_packs.axes.${axis}.codec.name is unsupported`);
-        }
-        const template = relativePath(axisResource.path_template, `${feature.id}.volume.slice_packs.axes.${axis}.path_template`);
-        if (!template.includes('{pack}')) {
-          throw new Error(`${feature.id}.volume.slice_packs.axes.${axis}.path_template must contain {pack}`);
-        }
-        const dimensionName = axis === 'coronal' ? 'ap' : axis === 'sagittal' ? 'ml' : 'dv';
-        const dimension = volume.grid.axisOrder.findIndex((name) => name.toLowerCase() === dimensionName);
-        if (dimension < 0) throw new Error(`${feature.id}.volume.grid.axis_order does not contain ${dimensionName}`);
-        const sliceCount = volume.grid.shape[dimension]!;
-        const expectedSliceShape = volume.grid.shape.filter((_, index) => index !== dimension);
-        if (sliceShape[0] !== expectedSliceShape[0] || sliceShape[1] !== expectedSliceShape[1]) {
-          throw new Error(`${feature.id}.volume.slice_packs.axes.${axis}.slice_shape is inconsistent with the grid`);
-        }
-        for (let pack = 0; pack < Math.ceil(sliceCount / packDepth); pack += 1) {
-          const depth = Math.min(packDepth, sliceCount - pack * packDepth);
-          const decodedBytes = sliceShape[0]! * sliceShape[1]! * depth * elementBytes;
-          const path = resolveRelativePath(
-            feature.path,
-            templatePath(template, { pack }, `${feature.id}.volume.slice_packs.axes.${axis}.path_template`),
-            `${feature.id} ${axis} slice pack`,
-          );
-          if (volumePaths.has(path)) throw new Error(`${feature.id} volume resource template does not produce unique paths`);
-          volumePaths.add(path);
-          addResource(resources, {
-            path,
-            context: `${feature.id} ${axis} slice pack`,
-            decodedBytes,
-            codec: codecRaw.name,
-          });
-        }
-      }
+    if (volume.validity.kind === 'mask') {
+      const mask = parseBinaryArray(volume.validity.mask, `${feature.id} volume validity mask`);
+      addBinaryResource(resources, feature.path, mask, `${feature.id} volume validity mask`);
     }
   }
 

@@ -6,9 +6,10 @@ import type {
   StatisticId,
 } from '../domain/types.js';
 
-export const SCHEMA_VERSION = '0.1' as const;
+export const SCHEMA_VERSION = '1.0' as const;
 export type SchemaVersion = typeof SCHEMA_VERSION;
 export type BinaryDType =
+  | 'uint8'
   | 'int16'
   | 'int32'
   | 'uint16'
@@ -17,20 +18,27 @@ export type BinaryDType =
   | 'float32'
   | 'float64';
 
-export interface BinaryArrayDescriptor {
+export interface EncodedResourceDescriptor {
   path: string;
+  mediaType: string;
+  sha256: string;
+  bytes: number;
+  codec: { name: 'none' | 'gzip'; decodedBytes: number; level?: number };
+}
+
+export interface BinaryArrayDescriptor extends EncodedResourceDescriptor {
+  format: 'raw-binary-array-v1';
   dtype: BinaryDType;
   shape: readonly number[];
   order: 'C';
   endianness: 'little' | 'not-applicable';
-  sha256?: string;
-  bytes?: number;
 }
 
 export interface DatasetReleaseSummary {
   id: string;
   label: string;
   manifest: string;
+  manifestResource?: EncodedResourceDescriptor;
   immutable: boolean;
 }
 
@@ -50,12 +58,14 @@ export interface DatasetCatalog {
 export interface FeatureReference {
   id: string;
   path: string;
+  resource: EncodedResourceDescriptor;
 }
 
 export interface ParcellationDescriptor {
   id: ParcellationId;
   regionIndex: BinaryArrayDescriptor;
   metadata?: string;
+  metadataResource?: EncodedResourceDescriptor;
 }
 
 export interface ReleasePublication {
@@ -76,7 +86,8 @@ export type ProvenanceSourceRole =
   | 'canonical-data'
   | 'selection-freeze'
   | 'publication-input'
-  | 'user-input';
+  | 'user-input'
+  | 'atlas-geometry';
 
 export interface ProvenanceSource {
   role: ProvenanceSourceRole;
@@ -87,6 +98,7 @@ export interface ProvenanceSource {
   release?: string;
   uri?: string;
   sha256?: string;
+  license?: string;
 }
 
 export interface ProvenanceBuilder {
@@ -156,38 +168,46 @@ export interface RegionalParcellationDescriptor {
   summary: string;
   values: BinaryArrayDescriptor;
   statistics: string;
+  statisticsResource: EncodedResourceDescriptor;
 }
 
 export interface RegionalRepresentationDescriptor {
   kind: 'regional';
-  format: 'ephys-atlas-regional-v0.1';
+  format: 'ephys-atlas-regional-v1';
   parcellations: Partial<Record<ParcellationId, RegionalParcellationDescriptor>>;
 }
 
 export interface VolumeGridDescriptor {
+  referenceSpaceId: string;
+  gridId: string;
   shape: readonly [number, number, number];
   axisOrder: readonly [string, string, string];
   coordinateSystem: string;
   voxelSizeUm: readonly [number, number, number];
   originUm: readonly [number, number, number];
   indexToWorldUm: readonly number[];
+  worldToIndex: readonly number[];
+  voxelEdgeExtentUm: readonly [number, number, number, number, number, number];
 }
 
 export interface VolumeArrayDescriptor {
   dtype: BinaryDType;
   endianness: 'little' | 'not-applicable';
   order: 'C';
-  nonfinite: 'preserve' | 'forbid';
 }
 
 export interface VolumeRepresentationDescriptor {
   kind: 'volume';
-  format: 'ephys-atlas-chunked-volume-v0.1';
+  format: 'ephys-atlas-volume-v1';
   layout: 'chunks3d' | 'orthogonal_slice_packs';
   grid: VolumeGridDescriptor;
   array: VolumeArrayDescriptor;
   resource: Record<string, unknown>;
-  statistics?: string;
+  resourceIndexPath: string;
+  resourceIndexResource: EncodedResourceDescriptor;
+  summaryPath: string;
+  summaryResource: EncodedResourceDescriptor;
+  validity: Readonly<Record<string, unknown>>;
   valueRange?: readonly [number | null, number | null];
 }
 
@@ -262,7 +282,7 @@ export interface VolumeFeaturePayload {
   featureId: string;
   representation: 'volume';
   descriptor: VolumeRepresentationDescriptor;
-  loadResource(path: string, signal?: AbortSignal): Promise<ArrayBuffer>;
+  loadResource(path: string, signal?: AbortSignal, resource?: EncodedResourceDescriptor): Promise<ArrayBuffer>;
   baseUrl?: string;
 }
 

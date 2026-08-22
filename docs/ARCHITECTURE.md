@@ -69,12 +69,11 @@ part of the data contract, not inferred from URL conventions.
 
 ## Contracts and validation
 
-The approved pre-launch cutover replaces schema v0.1 with one schema v1 used by
-every producer and consumer. Browser validation remains organized by contract
+The completed data-contract phase of the pre-launch cutover established schema
+v1 as the sole contract used by every producer and consumer. Browser validation remains organized by contract
 concern (primitive values, binary arrays, catalog/manifest, feature descriptors,
 statistics, decoded payloads, and complete local-release graphs) behind a
-stable public validation facade. There is no completed-runtime requirement for
-v0.1 compatibility.
+stable public validation facade. There is no v0.1 compatibility runtime.
 
 The Python builder validator and TypeScript runtime validator are independent implementations of the same contract. Shared valid/invalid fixture corpora should be used to prevent semantic drift; do not add a large runtime schema dependency solely to deduplicate validation code.
 

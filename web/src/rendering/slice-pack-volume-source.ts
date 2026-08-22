@@ -1,4 +1,4 @@
-import type { VolumeFeaturePayload } from '../data/contracts.js';
+import type { EncodedResourceDescriptor, VolumeFeaturePayload } from '../data/contracts.js';
 import { decodeBinaryArray } from '../data/validate.js';
 import type { SliceAxis } from '../domain/types.js';
 import type { VolumeSlice, VolumeSliceSource } from './volume.js';
@@ -15,21 +15,25 @@ const PLANE_AXES: Readonly<Record<SliceAxis, readonly [SliceAxis, SliceAxis]>> =
   horizontal: ['sagittal', 'coronal'],
 };
 
-interface AxisPackResource {
-  sliceShape: readonly [number, number];
-  codec: 'none' | 'gzip';
-  pathTemplate: string;
+interface PackEntry {
+  axis: 'i0' | 'i1' | 'i2';
+  firstSlice: number;
+  sliceCount: number;
+  decoded: {
+    shape: readonly [number, number, number];
+    storageAxes: readonly ['i0' | 'i1' | 'i2', 'i0' | 'i1' | 'i2', 'i0' | 'i1' | 'i2'];
+  };
+  resource: EncodedResourceDescriptor;
 }
 
 interface SlicePackResource {
   packDepth: number;
-  axes: Readonly<Record<SliceAxis, AxisPackResource>>;
+  packs: readonly PackEntry[];
 }
 
 interface DecodedPack {
   values: Float32Array;
-  depth: number;
-  sliceShape: readonly [number, number];
+  entry: PackEntry;
 }
 
 function record(value: unknown, context: string): Record<string, unknown> {
@@ -46,23 +50,13 @@ function positiveInteger(value: unknown, context: string): number {
   return value;
 }
 
-function integerPair(value: unknown, context: string): [number, number] {
-  if (!Array.isArray(value) || value.length !== 2) throw new Error(`${context} must contain two dimensions`);
-  return [positiveInteger(value[0], `${context}[0]`), positiveInteger(value[1], `${context}[1]`)];
-}
-
-function parseAxis(value: unknown, context: string): AxisPackResource {
-  const resource = record(value, context);
-  const codec = record(resource.codec, `${context}.codec`).name;
-  if (codec !== 'none' && codec !== 'gzip') throw new Error(`${context}.codec.name is unsupported`);
-  if (typeof resource.path_template !== 'string' || !resource.path_template.includes('{pack}')) {
-    throw new Error(`${context}.path_template must contain {pack}`);
-  }
-  return {
-    sliceShape: integerPair(resource.slice_shape, `${context}.slice_shape`),
-    codec,
-    pathTemplate: resource.path_template,
-  };
+function integerTriple(value: unknown, context: string): [number, number, number] {
+  if (!Array.isArray(value) || value.length !== 3) throw new Error(`${context} must contain three dimensions`);
+  return [
+    positiveInteger(value[0], `${context}[0]`),
+    positiveInteger(value[1], `${context}[1]`),
+    positiveInteger(value[2], `${context}[2]`),
+  ];
 }
 
 function parseResource(feature: VolumeFeaturePayload): SlicePackResource {
@@ -70,19 +64,36 @@ function parseResource(feature: VolumeFeaturePayload): SlicePackResource {
     throw new Error(`Volume layout ${feature.descriptor.layout} is not handled by the slice-pack adapter`);
   }
   const resource = feature.descriptor.resource;
-  const axes = record(resource.axes, 'volume slice_packs.axes');
+  const rawPacks = resource.packs;
+  if (!Array.isArray(rawPacks)) throw new Error('volume slice-pack resource index is missing packs');
+  const packs = rawPacks.map((value, index) => {
+    const raw = record(value, `volume pack ${index}`);
+    const decoded = record(raw.decoded, `volume pack ${index}.decoded`);
+    const storageAxes = decoded.storageAxes;
+    if (!Array.isArray(storageAxes) || storageAxes.length !== 3) throw new Error(`volume pack ${index} storage axes are invalid`);
+    const entry: PackEntry = {
+      axis: raw.axis as PackEntry['axis'],
+      firstSlice: Number(raw.firstSlice),
+      sliceCount: positiveInteger(raw.sliceCount, `volume pack ${index}.sliceCount`),
+      decoded: {
+        shape: integerTriple(decoded.shape, `volume pack ${index}.decoded.shape`),
+        storageAxes: storageAxes as unknown as PackEntry['decoded']['storageAxes'],
+      },
+      resource: raw.resource as EncodedResourceDescriptor,
+    };
+    if (!['i0', 'i1', 'i2'].includes(entry.axis) || !Number.isInteger(entry.firstSlice) || entry.firstSlice < 0) {
+      throw new Error(`volume pack ${index} position is invalid`);
+    }
+    return entry;
+  });
   return {
-    packDepth: positiveInteger(resource.pack_depth, 'volume slice_packs.pack_depth'),
-    axes: {
-      coronal: parseAxis(axes.coronal, 'volume slice_packs.axes.coronal'),
-      sagittal: parseAxis(axes.sagittal, 'volume slice_packs.axes.sagittal'),
-      horizontal: parseAxis(axes.horizontal, 'volume slice_packs.axes.horizontal'),
-    },
+    packDepth: positiveInteger(resource.pack_depth, 'volume slice packs pack_depth'),
+    packs,
   };
 }
 
-async function decompress(buffer: ArrayBuffer, codec: 'none' | 'gzip'): Promise<ArrayBuffer> {
-  if (codec === 'none') return buffer;
+async function decompress(buffer: ArrayBuffer, codec: EncodedResourceDescriptor['codec']): Promise<ArrayBuffer> {
+  if (codec.name === 'none') return buffer;
   if (!('DecompressionStream' in globalThis)) throw new Error('gzip volume slice packs require DecompressionStream support');
   const stream = new Blob([buffer]).stream().pipeThrough(new DecompressionStream('gzip'));
   return new Response(stream).arrayBuffer();
@@ -91,12 +102,13 @@ async function decompress(buffer: ArrayBuffer, codec: 'none' | 'gzip'): Promise<
 function axisDimension(feature: VolumeFeaturePayload, axis: SliceAxis): number {
   const name = AXIS_NAME[axis];
   const dimension = feature.descriptor.grid.axisOrder.findIndex((item) => item.toLowerCase() === name);
-  if (dimension < 0) throw new Error(`volume axis_order does not contain ${name}`);
+  if (dimension < 0) throw new Error(`volume affine axes do not contain ${name}`);
   return dimension;
 }
 
-function pathForPack(template: string, pack: number): string {
-  return template.replaceAll('{pack}', String(pack));
+function storageOffset(entry: PackEntry, rawCoordinates: readonly [number, number, number]): number {
+  const coordinates = entry.decoded.storageAxes.map((axis) => rawCoordinates[Number(axis[1])]!);
+  return ((coordinates[0]! * entry.decoded.shape[1]!) + coordinates[1]!) * entry.decoded.shape[2]! + coordinates[2]!;
 }
 
 export class SchemaSlicePackVolumeSource implements VolumeSliceSource {
@@ -113,9 +125,6 @@ export class SchemaSlicePackVolumeSource implements VolumeSliceSource {
     if (feature.descriptor.array.dtype !== 'float16' && feature.descriptor.array.dtype !== 'float32') {
       throw new Error(`volume slice renderer currently supports float16/float32, not ${feature.descriptor.array.dtype}`);
     }
-    if (feature.descriptor.grid.voxelSizeUm.some((value) => value !== 25)) {
-      throw new Error('launch volume renderer currently requires the 25 um encoding grid');
-    }
     if (!Number.isFinite(maxCacheBytes) || maxCacheBytes <= 0) throw new RangeError('maxCacheBytes must be positive');
   }
 
@@ -127,32 +136,24 @@ export class SchemaSlicePackVolumeSource implements VolumeSliceSource {
     }
     const packIndex = Math.floor(index / this.resource.packDepth);
     const pack = await this.loadPack(axis, packIndex, signal);
-    const localSlice = index - packIndex * this.resource.packDepth;
-    if (localSlice >= pack.depth) throw new Error(`${axis} pack ${packIndex} does not contain slice ${index}`);
+    const localSlice = index - pack.entry.firstSlice;
+    if (localSlice < 0 || localSlice >= pack.entry.sliceCount) {
+      throw new Error(`${axis} pack ${packIndex} does not contain slice ${index}`);
+    }
 
     const [widthAxis, heightAxis] = PLANE_AXES[axis];
-    const width = this.feature.descriptor.grid.shape[axisDimension(this.feature, widthAxis)]!;
-    const height = this.feature.descriptor.grid.shape[axisDimension(this.feature, heightAxis)]!;
-    const remainingNames = this.feature.descriptor.grid.axisOrder
-      .map((name) => name.toLowerCase())
-      .filter((_, rawDimension) => rawDimension !== dimension);
-    const widthName = AXIS_NAME[widthAxis];
-    const heightName = AXIS_NAME[heightAxis];
-    const firstIsWidth = remainingNames[0] === widthName && remainingNames[1] === heightName;
-    const firstIsHeight = remainingNames[0] === heightName && remainingNames[1] === widthName;
-    if (!firstIsWidth && !firstIsHeight) throw new Error(`${axis} slice pack axes are inconsistent with axis_order`);
+    const widthDimension = axisDimension(this.feature, widthAxis);
+    const heightDimension = axisDimension(this.feature, heightAxis);
+    const width = this.feature.descriptor.grid.shape[widthDimension]!;
+    const height = this.feature.descriptor.grid.shape[heightDimension]!;
     const data = new Float32Array(width * height);
-    const sliceOffset = localSlice * pack.sliceShape[0] * pack.sliceShape[1];
-    if (firstIsHeight && pack.sliceShape[0] === height && pack.sliceShape[1] === width) {
-      data.set(pack.values.subarray(sliceOffset, sliceOffset + data.length));
-      return { axis, index, widthAxis, heightAxis, width, height, data };
-    }
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) {
-        const first = firstIsWidth ? x : y;
-        const second = firstIsWidth ? y : x;
-        const offset = sliceOffset + first * pack.sliceShape[1] + second;
-        data[y * width + x] = pack.values[offset] ?? NaN;
+        const rawCoordinates = [0, 0, 0] as [number, number, number];
+        rawCoordinates[dimension] = localSlice;
+        rawCoordinates[widthDimension] = x;
+        rawCoordinates[heightDimension] = y;
+        data[y * width + x] = pack.values[storageOffset(pack.entry, rawCoordinates)] ?? NaN;
       }
     }
     return { axis, index, widthAxis, heightAxis, width, height, data };
@@ -189,29 +190,27 @@ export class SchemaSlicePackVolumeSource implements VolumeSliceSource {
         this.cacheBytes -= oldest.values.byteLength;
       }
       return pack;
-    }).finally(() => {
-      this.pending.delete(key);
-    });
+    }).finally(() => this.pending.delete(key));
     this.pending.set(key, request);
     return request;
   }
 
   private async fetchPack(axis: SliceAxis, packIndex: number, signal?: AbortSignal): Promise<DecodedPack> {
-    const axisResource = this.resource.axes[axis];
     const dimension = axisDimension(this.feature, axis);
-    const sliceCount = this.feature.descriptor.grid.shape[dimension]!;
-    const depth = Math.min(this.resource.packDepth, sliceCount - packIndex * this.resource.packDepth);
-    if (depth <= 0) throw new RangeError(`${axis} pack ${packIndex} is outside the volume`);
-    const path = pathForPack(axisResource.pathTemplate, packIndex);
-    const compressed = await this.feature.loadResource(path, signal);
-    const buffer = await decompress(compressed, axisResource.codec);
+    const rawAxis = `i${dimension}`;
+    const firstSlice = packIndex * this.resource.packDepth;
+    const entry = this.resource.packs.find((candidate) => candidate.axis === rawAxis && candidate.firstSlice === firstSlice);
+    if (!entry) throw new Error(`volume resource index has no ${rawAxis} pack at ${firstSlice}`);
+    const compressed = await this.feature.loadResource(entry.resource.path, signal, entry.resource);
+    const buffer = await decompress(compressed, entry.resource.codec);
     const values = Float32Array.from(decodeBinaryArray(buffer, {
-      path,
+      format: 'raw-binary-array-v1',
+      ...entry.resource,
       dtype: this.feature.descriptor.array.dtype,
-      shape: [depth, ...axisResource.sliceShape],
+      shape: entry.decoded.shape,
       order: 'C',
       endianness: this.feature.descriptor.array.endianness,
     }));
-    return { values, depth, sliceShape: axisResource.sliceShape };
+    return { values, entry };
   }
 }
