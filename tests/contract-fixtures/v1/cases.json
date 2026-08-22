@@ -225,6 +225,13 @@
       "features": [{"id": "synthetic-feature", "descriptor": {"$fixture": "jsonResource"}}],
       "artifacts": [{"$fixture": "artifact"}]
     },
+    "registeredSvgIndex": {
+      "schema_version": "1.0", "format": "atlas-registered-svg-resource-index-v1", "projection_id": "coronal",
+      "resources": [
+        {"pack_id": "synthetic-coronal-0", "slice_indices": [0], "resource": {"path": "registered/coronal/0.isvg.gz", "media_type": "application/vnd.ibl.indexed-svg", "bytes": 20, "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "codec": {"name": "gzip", "decoded_bytes": 100}}},
+        {"pack_id": "synthetic-coronal-1", "slice_indices": [1], "resource": {"path": "registered/coronal/1.isvg.gz", "media_type": "application/vnd.ibl.indexed-svg", "bytes": 20, "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "codec": {"name": "gzip", "decoded_bytes": 100}}}
+      ]
+    },
     "coronal": {
       "id": "coronal", "kind": "registered-slice-stack", "reference_space_id": "allen-ccf-2017", "grid_id": "allen-ccf-2017-10um", "world_slice_axis": "ap",
       "slice_count": 2, "slice_shape": [3, 4], "view_box": [0, 0, 4, 3],
@@ -290,6 +297,8 @@
     {"name": "feature valid", "schema": "feature.schema.json", "valid": true, "document": "feature"},
     {"name": "dataset valid", "schema": "dataset.schema.json", "valid": true, "document": "dataset"},
     {"name": "dataset duplicate feature identifiers", "schema": "dataset.schema.json", "valid": false, "document": "dataset", "append": {"/features": {"id": "synthetic-feature", "descriptor": {"$fixture": "jsonResource"}}}},
+    {"name": "registered SVG resource index valid", "schema": "registered-svg-resource-index.schema.json", "valid": true, "document": "registeredSvgIndex"},
+    {"name": "registered SVG resource index duplicate slice", "schema": "registered-svg-resource-index.schema.json", "valid": false, "document": "registeredSvgIndex", "set": {"/resources/1/slice_indices/0": 0}},
     {"name": "registered projection valid", "schema": "registered-projection.schema.json", "valid": true, "document": "coronal"},
     {"name": "registered projection axis inconsistent", "schema": "registered-projection.schema.json", "valid": false, "document": "coronal", "set": {"/world_slice_axis": "ml"}},
     {"name": "registered display slice out of range", "schema": "registered-projection.schema.json", "valid": false, "document": "coronal", "set": {"/display_slices/1": 2}},

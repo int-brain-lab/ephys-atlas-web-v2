@@ -426,3 +426,23 @@ to current defaults before replacing the location with a canonical v4 URL. Do
 not partially consume old `slices` or other stale fields, and do not retain the
 v1/v2/v3 migration stack. This implements the URL portion of D031 and
 supersedes D029's migration behavior and D024's URL-v3 runtime requirement.
+
+## D034 — Projection-pack derivation and complete validation
+
+Use `allen-ccf-2017` as the local reference-space identity and
+`allen-ccf-2017-10um` as the registered grid identity for the canonical
+bilateral anatomy carried into `atlas-projection-pack-v1`. These identifiers
+name the already validated v2 geometry; they do not replace its source hashes,
+affines, topology, coverage, or synchronization evidence. Convert the legacy
+v3 display `slice_shape` height/width order explicitly to schema v1's
+`[slice, u, v]` affine order and derive the inverse and voxel-edge extent from
+the forward signed-permutation matrix.
+
+Registered v1 descriptors point to gzip-compressed
+`atlas-registered-svg-resource-index-v1` documents. A pack is valid only when
+its manifest, three indexes, every transitive indexed-SVG/static resource,
+decoded inventories, and exact declared file graph validate together.
+Top/Swanson normalization accepts paths only and resolves legacy row indices
+through the pinned Allen/Beryl/Cosmos catalog. Production mode requires exact
+pinned source bytes and explicit Q13 license evidence; synthetic mode remains
+clearly test-only and is not a scientific release.

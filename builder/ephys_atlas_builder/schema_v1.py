@@ -238,6 +238,25 @@ def _registered_semantics(document: dict[str, Any]) -> None:
         _fail("registered display slices must be increasing and inside the native domain")
 
 
+def _registered_resource_index_semantics(document: dict[str, Any]) -> None:
+    resources = document["resources"]
+    _unique([entry["pack_id"] for entry in resources], "registered SVG pack id")
+    _unique([entry["resource"]["path"] for entry in resources], "registered SVG resource path")
+    slices: list[int] = []
+    for entry in resources:
+        entry_slices = entry["slice_indices"]
+        if entry_slices != sorted(entry_slices):
+            _fail("registered SVG resource slices must be increasing")
+        resource = entry["resource"]
+        if resource["media_type"] != "application/vnd.ibl.indexed-svg":
+            _fail("registered SVG packs must use the indexed-SVG media type")
+        if resource["codec"]["name"] != "gzip":
+            _fail("registered SVG packs must be gzip-compressed")
+        slices.extend(entry_slices)
+    if slices != sorted(slices) or len(slices) != len(set(slices)):
+        _fail("registered SVG resource index slices must be globally increasing and unique")
+
+
 def _static_semantics(document: dict[str, Any]) -> None:
     if document["view_box"] != [60, 20, 340, 300]:
         _fail("static projection view box does not match pinned source evidence")
@@ -297,6 +316,8 @@ def _document_semantics(document: dict[str, Any], schema_name: str) -> None:
             _document_semantics(volume, "volume.schema.json")
     elif schema_name == "registered-projection.schema.json":
         _registered_semantics(document)
+    elif schema_name == "registered-svg-resource-index.schema.json":
+        _registered_resource_index_semantics(document)
     elif schema_name == "static-projection.schema.json":
         _static_semantics(document)
     elif schema_name == "projection-pack.schema.json":

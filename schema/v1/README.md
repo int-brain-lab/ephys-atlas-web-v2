@@ -24,6 +24,12 @@ Top and Swanson are affine-free static regional maps. Their descriptors contain
 only SVG display geometry and checksummed fragment resources; they must never
 claim a grid, slice index, world coordinate, or affine.
 
+Each registered projection points to a gzip-compressed
+`atlas-registered-svg-resource-index-v1`. That index enumerates immutable
+indexed-SVG packs and their exact native slice inventories. A complete
+projection-pack validator must verify the manifest, the three indexes, every
+transitive registered/static resource, and the absence of undeclared files.
+
 The shared valid/invalid corpus under `tests/contract-fixtures/v1/` is executed
 by both Python and TypeScript validators and covers every top-level schema plus
 the common binary/resource semantics.

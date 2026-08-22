@@ -49,6 +49,15 @@ committed v3 `.isvg.gz` bytes without HTTP `Content-Encoding`, verify immutable
 URLs/cache headers/SHA checks, and record throttled network and wheel-burst
 behavior.
 
+Commit 4 of D031 also implements `tools/projection_pack/`: a deterministic
+five-view pack builder and complete graph validator. It verifies the v3/v2
+scientific evidence and copies orthogonal indexed-SVG bytes losslessly into
+schema-v1 resources. It sanitizes Top/Swanson to canonical path-only fragments
+with stable Allen/Beryl/Cosmos IDs. `just projection-pack-validate <path>`
+checks every transitive compressed resource and rejects undeclared files.
+Production static generation requires exact pinned bytes plus explicit Q13
+license evidence; only synthetic static inputs are exercised today.
+
 ## Volume rendering
 
 The browser implements both schema-v1 physical layouts through explicit,

@@ -221,6 +221,23 @@ function registeredSemantics(document: JsonObject): void {
   if (slices.some((value, index) => value >= shape[0]! || (index > 0 && slices[index - 1]! >= value))) fail('registered display slices are invalid');
 }
 
+function registeredResourceIndexSemantics(document: JsonObject): void {
+  expect(document.format, 'atlas-registered-svg-resource-index-v1', 'registered SVG resource-index format');
+  const resources = array(document.resources, 'registered SVG resources').map((value) => object(value, 'registered SVG resource'));
+  unique(resources.map((entry) => entry.pack_id), 'registered SVG pack id');
+  unique(resources.map((entry) => object(entry.resource, 'registered SVG encoded resource').path), 'registered SVG resource path');
+  const allSlices: number[] = [];
+  for (const entry of resources) {
+    const slices = integers(entry.slice_indices, 'registered SVG slice indices');
+    increasing(slices, 'registered SVG resource slices');
+    const resource = object(entry.resource, 'registered SVG encoded resource');
+    expect(resource.media_type, 'application/vnd.ibl.indexed-svg', 'registered SVG media type');
+    expect(object(resource.codec, 'registered SVG codec').name, 'gzip', 'registered SVG codec');
+    allSlices.push(...slices);
+  }
+  increasing(allSlices, 'registered SVG resource-index slices');
+}
+
 function staticSemantics(document: JsonObject): void {
   exactKeys(document, ['id', 'kind', 'view_box', 'path_count', 'fragment'], 'static projection');
   expect(document.kind, 'static-regional-map', 'static projection kind');
@@ -301,6 +318,9 @@ export function validateSchemaV1Document(value: unknown, schemaName: string): vo
     }
     case 'registered-projection.schema.json':
       registeredSemantics(document);
+      break;
+    case 'registered-svg-resource-index.schema.json':
+      registeredResourceIndexSemantics(document);
       break;
     case 'static-projection.schema.json':
       staticSemantics(document);

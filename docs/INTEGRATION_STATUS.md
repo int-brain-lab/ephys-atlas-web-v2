@@ -23,12 +23,13 @@ implementation sequence. Schema v1 is now the sole implemented data contract.
 The current `SliceRenderer`/hybrid, anatomy-pack compatibility, and legacy
 fallback paths remain factual implementation state today; they are not
 long-term compatibility requirements. The URL migration stack has been
-removed. The remaining coordinated cutover will add one five-projection asset contract and retained layered
-projection viewports. It will add static Top and Swanson views through the same
+removed. The remaining coordinated cutover will switch the browser to the
+five-projection asset contract and retained layered projection viewports. It
+will add static Top and Swanson views through the same
 regional SVG presentation/interaction path used by the registered orthogonal
 views.
 
-Commits 1 through 3 of the plan are implemented: `schema/v1/` defines the strict dataset,
+Commits 1 through 4 of the plan are implemented: `schema/v1/` defines the strict dataset,
 resource, regional, volume, summary/index, and five-projection contracts plus
 matching TypeScript types. Python and TypeScript semantic validators execute
 one deterministic valid/invalid corpus covering all top-level schemas, both
@@ -52,7 +53,19 @@ ordinals, coordinate labels, renderer inputs, and guides are derived from it.
 URL v4 serializes the cursor and workspace state. Any non-current version is
 reset wholesale to the canonical current URL, with no partial legacy-field
 consumption. The existing renderer remains mounted until the planned atomic
-Commit 5/6 viewport cutover.
+Commit 5 viewport cutover.
+
+`tools/projection_pack/` builds and validates one self-contained immutable
+five-view pack. Registered coronal/sagittal/horizontal resources are copied
+losslessly only after validating their bilateral 10 um v2 scientific parent,
+v3 sparse inventories, topology, coverage, synchronization evidence, encoded
+hashes, and decoded indexed-SVG identity. Top and Swanson pass through a
+path-only sanitizer and the pinned Allen/Beryl/Cosmos crosswalk before
+deterministic gzip encoding. The graph validator follows the three registered
+resource indexes and every static/registered resource and rejects integrity,
+inventory, missing-file, and undeclared-file errors. Production invocation
+requires explicit Q13 license evidence and exact pinned source bytes; no
+production static asset has been asserted while that evidence remains open.
 
 The pre-Commit-1 contract is now explicit about separate reference-space,
 grid, and asset identities; verified-only persistent caching; independent

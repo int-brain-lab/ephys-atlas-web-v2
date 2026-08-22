@@ -138,9 +138,8 @@ The previous frontend provisional schema and schema-v0.1 compatibility path have
 
 ## Current next work
 
-1. Execute Commit 4 of the projection/volume cutover: generate and validate the
-   unified five-projection pack, using synthetic Top/Swanson inputs if source
-   licensing remains unconfirmed.
+1. Execute Commit 5 of the projection/volume cutover as one atomic retained
+   viewport cutover; do not stage a second exported renderer facade.
 2. Rebuild the external `2026_W32` development release under a new schema-v1
    release ID before using or publishing it.
 3. Deploy the committed generated anatomy pack with opaque gzip delivery and verify its immutable public URLs.

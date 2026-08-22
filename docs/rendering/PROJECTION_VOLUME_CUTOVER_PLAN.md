@@ -499,6 +499,8 @@ view-model tests; finish with `just check`.
 
 ### Commit 4 — Generate the unified five-projection pack
 
+Status: **implemented; production Top/Swanson output remains blocked by Q13**.
+
 - implement the projection-pack generator/validator from Commit 1;
 - carry forward registered orthogonal geometry, affine, sparse-display,
   topology, coverage, and synchronization evidence;
@@ -679,10 +681,11 @@ never merge an inferred scientific choice.
 
 ## First action for the next agent
 
-Start Commit 4 from the green schema-v1 and URL-v4 runtime. Implement the
-deterministic five-projection pack generator and complete validators, retaining
-the registered orthogonal geometry/evidence and using only licensed pinned
-Top/Swanson inputs. If licensing is still unresolved, keep production
-ingestion blocked and exercise the affine-free static-fragment path with
-synthetic fixtures. Keep the existing renderer mounted until the atomic Commit
-5/6 viewport cutover; do not add a parallel renderer facade.
+Start Commit 5 from the green schema-v1, URL-v4, and projection-pack generator
+baseline. Introduce the retained layer primitives and viewport only as part of
+the atomic application cutover: migrate all three registered views, switch the
+browser to the v1 pack, and remove `SliceRenderer`, the hybrid switch, old pack
+parsers, and superseded renderers in the same coherent commit. Preserve the
+current interaction, cancellation, sparse-navigation, and performance behavior.
+Do not expose Top/Swanson yet (Commit 7) and do not add a parallel renderer
+facade.

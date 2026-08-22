@@ -108,6 +108,17 @@ export interface RegisteredProjectionV1 {
   }>;
 }
 
+export interface RegisteredSvgResourceIndexV1 {
+  readonly schema_version: SchemaV1Version;
+  readonly format: 'atlas-registered-svg-resource-index-v1';
+  readonly projection_id: OrthogonalProjectionId;
+  readonly resources: readonly Readonly<{
+    pack_id: string;
+    slice_indices: readonly number[];
+    resource: EncodedResourceV1;
+  }>[];
+}
+
 export interface StaticProjectionV1 {
   readonly id: StaticProjectionId;
   readonly kind: 'static-regional-map';

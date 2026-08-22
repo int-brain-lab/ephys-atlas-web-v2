@@ -75,7 +75,7 @@ horizontal support registered anatomy plus volume layers; Top and Swanson are
 static regional projections using the same SVG presentation and interaction
 path. Backward compatibility with the pre-launch formats is not a requirement.
 
-Commits 1 through 3 are implemented. Schema v1 is now the sole builder,
+Commits 1 through 4 are implemented. Schema v1 is now the sole builder,
 publishing, HTTP/local browser, fixture, and download contract. It separates
 scientific reference-space identity from grid and asset identities, admits
 only the checked signed-permutation affine profile, verifies encoded bytes
@@ -85,8 +85,12 @@ fixtures, readers, and compatibility tests are deleted. Projection and
 responsive workspace state are registry-driven; one world cursor is the only
 stored navigation authority; URL v4 persists that cursor plus independent
 secondary-tab, compact-view, and maximized-view state and explicitly resets
-unsupported versions. The next unit is Commit 4's unified five-projection pack
-generator.
+unsupported versions. The deterministic five-projection pack builder now
+losslessly repackages validated sparse registered geometry, emits strict
+resource indexes, normalizes affine-free static fragments, and validates the
+complete immutable file graph. Q13 still blocks a production Top/Swanson pack,
+so tests use conspicuously synthetic fragments. The next unit is Commit 5's
+atomic retained-viewport cutover.
 
 This machinery is unblocked with deterministic synthetic fixtures. It must not
 resolve or conceal Q4/Q5.
