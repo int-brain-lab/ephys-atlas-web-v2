@@ -24,6 +24,21 @@ test('schema-v1 chunks3d volume renders all three orthogonal golden slices', asy
   await expect(page.locator('[data-view="sagittal"] canvas')).toHaveJSProperty('height', 4);
   await expect(page.locator('[data-view="horizontal"] canvas')).toHaveJSProperty('width', 6);
   await expect(page.locator('[data-view="horizontal"] canvas')).toHaveJSProperty('height', 8);
+
+  const coronal = page.locator('[data-view="coronal"]');
+  await coronal.evaluate((frame) => {
+    const host = frame.querySelector<SVGGraphicsElement>('.projection-viewport__scalar-host')!;
+    const regional = frame.querySelector<SVGSVGElement>('svg.projection-viewport__regional')!;
+    const bounds = host.getBoundingClientRect();
+    regional.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true,
+      clientX: bounds.left + bounds.width / 2,
+      clientY: bounds.top + bounds.height / 2,
+    }));
+  });
+  await expect(coronal.locator('.region-tooltip')).toBeVisible();
+  await expect(coronal.locator('.region-tooltip')).toContainText('Voxel');
+  await expect(coronal.locator('.region-tooltip')).toContainText(/voxel \d,\d,\d/);
 });
 
 test('an out-of-grid world cursor fails explicitly without fetching a clamped edge plane', async ({ page }) => {
@@ -77,4 +92,32 @@ test('switching regional to volume preserves each retained layer stack', async (
   await representation.getByRole('option', { name: /Regional/ }).click();
   await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
   await expect(page.locator('.projection-viewport[data-mode="regional"]')).toHaveCount(3);
+});
+
+test('URL-persisted layer controls repaint retained layers without volume requests', async ({ page }) => {
+  const chunks: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/volume/chunks/')) chunks.push(request.url());
+  });
+  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25&opacity=0.4&outlines=0');
+  await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
+  await expect(page.locator('.projection-viewport__scalar').first()).toHaveCSS('opacity', '0.4');
+  await expect(page.locator('.projection-viewport').first()).toHaveAttribute('data-anatomy-outlines', 'false');
+  await page.waitForTimeout(200);
+  const baseline = chunks.length;
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  const opacity = page.getByRole('slider', { name: 'Volume opacity' });
+  await expect(opacity).toHaveValue('0.4');
+  await opacity.evaluate((input: HTMLInputElement) => {
+    input.value = '0.25';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.getByRole('checkbox', { name: 'Show anatomy outlines' }).check();
+
+  await expect(page.locator('.projection-viewport__scalar').first()).toHaveCSS('opacity', '0.25');
+  await expect(page.locator('.projection-viewport').first()).toHaveAttribute('data-anatomy-outlines', 'true');
+  await expect.poll(() => new URL(page.url()).searchParams.get('opacity')).toBe('0.25');
+  await expect.poll(() => new URL(page.url()).searchParams.has('outlines')).toBe(false);
+  expect(chunks.length).toBe(baseline);
 });

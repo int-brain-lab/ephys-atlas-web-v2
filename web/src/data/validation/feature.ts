@@ -14,6 +14,11 @@ import {
 } from './primitives.js';
 import { validateSchemaV1Document } from './schema-v1.js';
 
+function finiteNumber(value: unknown, context: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(`${context} must be finite`);
+  return value;
+}
+
 function deriveSignedPermutationInverse(matrix: readonly number[]): number[] {
   const inverse = new Array<number>(16).fill(0);
   inverse[15] = 1;
@@ -150,6 +155,28 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
     const summary = object(volume.summary, `${path}.volume.summary`);
     const resourceIndexResource = parseEncodedResource(resourceIndex.resource, `${path}.volume.encoding.resource_index.resource`);
     const summaryResource = parseEncodedResource(summary.resource, `${path}.volume.summary.resource`);
+    const rawValidity = object(volume.validity, `${path}.volume.validity`);
+    const validity = rawValidity.kind === 'sentinel'
+      ? {
+          kind: 'sentinel' as const,
+          outsideValue: finiteNumber(rawValidity.outside_value, `${path}.volume.validity.outside_value`),
+        }
+      : (() => {
+          const mask = object(rawValidity.mask, `${path}.volume.validity.mask`);
+          const codes = object(rawValidity.codes, `${path}.volume.validity.codes`);
+          return {
+            kind: 'mask' as const,
+            mask: {
+              resource: parseEncodedResource(mask.resource, `${path}.volume.validity.mask.resource`),
+              shape: numberArray(mask.shape, 3, `${path}.volume.validity.mask.shape`) as [number, number, number],
+            },
+            codes: {
+              valid: finiteNumber(codes.valid, `${path}.volume.validity.codes.valid`),
+              outside: finiteNumber(codes.outside, `${path}.volume.validity.codes.outside`),
+              missing: finiteNumber(codes.missing, `${path}.volume.validity.codes.missing`),
+            },
+          };
+        })();
     const resourceIndexPath = resourceIndexResource.path;
     const summaryPath = summaryResource.path;
     descriptor.representations.volume = {
@@ -178,7 +205,7 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
       resourceIndexResource,
       summaryPath,
       summaryResource,
-      validity: object(volume.validity, `${path}.volume.validity`),
+      validity,
     };
   }
 

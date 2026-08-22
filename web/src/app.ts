@@ -11,7 +11,9 @@ import { createAppStore, type AppStore } from './domain/store.js';
 import type { SliceAxis, ViewState } from './domain/types.js';
 import type { DisplaySliceInventory } from './rendering/display-slice-inventory.js';
 import {
+  type ProjectionInspection,
   type RegionInspection,
+  type VolumeInspection,
   NullProjectionViewportFactory,
   type ProjectionPresentation,
   type ProjectionViewportFactory,
@@ -72,6 +74,8 @@ export class AtlasApp {
       setColormap: (colormap) => this.store.dispatch({ type: 'color/colormap', colormap }),
       setColorRange: (range) => this.store.dispatch({ type: 'color/range', range }),
       setColorScale: (scale) => this.store.dispatch({ type: 'color/scale', scale }),
+      setVolumeOpacity: (opacity) => this.store.dispatch({ type: 'layers/volume-opacity', opacity }),
+      setAnatomyOutlines: (visible) => this.store.dispatch({ type: 'layers/anatomy-outlines', visible }),
       setSlice: (axis, index) => this.setSlice(axis, index),
       setActiveCompactView: (view) => this.store.dispatch({ type: 'workspace/compact-view', view }),
       setMaximizedView: (view) => this.store.dispatch({ type: 'workspace/maximized-view', view }),
@@ -93,7 +97,7 @@ export class AtlasApp {
     });
     this.viewportFactory.setInteractionSink({
       hover: (hit) => this.setHoveredRegion(hit?.regionId ?? null),
-      inspect: (inspection) => this.inspectRegion(inspection),
+      inspect: (inspection) => this.inspectProjection(inspection),
       toggleSelection: (hit) => this.store.dispatch({ type: 'selection/toggle', regionId: hit.regionId }),
       stepSlice: (axis, delta) => this.stepSlice(axis, delta),
       moveCursor: (cursor) => this.store.dispatch({ type: 'cursor/set', cursor }),
@@ -144,6 +148,8 @@ export class AtlasApp {
       coloring: resolveColoringState(state.view.coloring, descriptor?.display?.scale),
       selectedRegionIds: state.view.selection,
       hoveredRegionId: this.hoveredRegionId,
+      volumeOpacity: state.view.layers.volumeOpacity,
+      anatomyOutlines: state.view.layers.anatomyOutlines,
     };
     if (this.presentationChanged(presentation)) {
       this.viewportPresentation = presentation;
@@ -180,7 +186,9 @@ export class AtlasApp {
       || previous.coloring.range !== next.coloring.range
       || previous.coloring.scale !== next.coloring.scale
       || previous.selectedRegionIds !== next.selectedRegionIds
-      || previous.hoveredRegionId !== next.hoveredRegionId;
+      || previous.hoveredRegionId !== next.hoveredRegionId
+      || previous.volumeOpacity !== next.volumeOpacity
+      || previous.anatomyOutlines !== next.anatomyOutlines;
   }
 
   private setSlice(axis: SliceAxis, index: number): void {
@@ -220,6 +228,56 @@ export class AtlasApp {
     const model = buildRegionTooltipModel(inspection, regions, data.feature, descriptor, state.view.coloring);
     if (model) this.shell.showRegionTooltip(inspection, model);
     else this.shell.hideRegionTooltip(inspection.axis);
+  }
+
+  private inspectProjection(inspection: ProjectionInspection | null): void {
+    if (!inspection) {
+      this.shell.hideRegionTooltip();
+      return;
+    }
+    if ((inspection as VolumeInspection).kind === 'volume') {
+      this.inspectVolume(inspection as VolumeInspection);
+      return;
+    }
+    this.inspectRegion(inspection as RegionInspection);
+  }
+
+  private inspectVolume(inspection: VolumeInspection): void {
+    const state = this.store.getState();
+    const data = this.session.snapshot();
+    if (state.view.representation !== 'volume' || data.feature?.representation !== 'volume') {
+      this.shell.hideRegionTooltip(inspection.axis);
+      return;
+    }
+    const regions = this.atlasRegions?.mappings[inspection.parcellation] ?? data.regions;
+    const region = inspection.regionId ? regions.find(({ id }) => id === inspection.regionId) : undefined;
+    const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
+    const coordinate = (value: number, axis: string) => `${axis} ${value >= 0 ? '+' : ''}${(value / 1000).toFixed(2)} mm`;
+    const coordinates = [
+      coordinate(inspection.world.ml, 'ML'),
+      coordinate(inspection.world.ap, 'AP'),
+      coordinate(inspection.world.dv, 'DV'),
+    ];
+    const voxel = inspection.voxelIndex ? `voxel ${inspection.voxelIndex.join(',')}` : 'outside grid';
+    const statusLabel = inspection.status === 'valid'
+      ? 'Valid voxel'
+      : inspection.status === 'outside'
+        ? 'Outside brain'
+        : inspection.status === 'missing'
+          ? 'Missing value'
+          : inspection.status === 'unsupported-validity'
+            ? 'Validity mask unsupported'
+            : 'Outside volume grid';
+    const valueText = inspection.status === 'valid' && inspection.value !== undefined
+      ? `${Number(inspection.value.toPrecision(6)).toLocaleString('en-US')}${descriptor?.unit ? ` ${descriptor.unit}` : ''}`
+      : statusLabel;
+    this.shell.showVolumeTooltip(inspection, {
+      acronym: region?.acronym ?? 'Voxel',
+      name: region?.name.replace(/\s+\(left\)$/i, '') ?? 'Volume sample',
+      valueLabel: inspection.status === 'valid' ? 'Value' : 'Status',
+      valueText,
+      meta: [statusLabel, voxel, ...coordinates].join(' · '),
+    });
   }
 
   private loadRendererInventory(): void {

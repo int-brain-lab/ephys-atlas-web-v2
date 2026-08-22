@@ -92,6 +92,15 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         ...state,
         view: { ...state.view, workspace: { ...state.view.workspace, maximizedView: action.view } },
       };
+    case 'layers/volume-opacity': {
+      const opacity = Number.isFinite(action.opacity) ? Math.min(1, Math.max(0, action.opacity)) : 1;
+      return { ...state, view: { ...state.view, layers: { ...state.view.layers, volumeOpacity: opacity } } };
+    }
+    case 'layers/anatomy-outlines':
+      return {
+        ...state,
+        view: { ...state.view, layers: { ...state.view.layers, anatomyOutlines: action.visible } },
+      };
     case 'color/statistic':
       return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, statistic: action.statistic } } };
     case 'color/mode':

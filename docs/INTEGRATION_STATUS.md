@@ -24,13 +24,14 @@ the browser now mounts one retained layered `ProjectionViewport` for each
 registered frame. `SliceRenderer`, the hybrid facade, v1/v2/v3 anatomy-pack
 readers, legacy renderer/crosswalk, and URL migrations have been removed. The
 viewport now composites reference-compatible volume and registered anatomy
-layers. The remaining coordinated work completes volume inspection and layer
-controls, then exposes static Top and Swanson views through the same regional
-SVG presentation and interaction path.
+layers with background-capable voxel inspection, validity transparency, and
+URL-persisted layer controls. The remaining coordinated work exposes static Top
+and Swanson views through the same regional SVG presentation and interaction
+path, then removes transitional artifacts and completes the cutover audit.
 
-Commits 1 through 5 of the plan are implemented: `schema/v1/` defines the strict dataset,
-resource, regional, volume, summary/index, and five-projection contracts plus
-matching TypeScript types. Python and TypeScript semantic validators execute
+Commits 1 through 6 of the plan are implemented: `schema/v1/` defines the
+strict dataset, resource, regional, volume, summary/index, and five-projection
+contracts plus matching TypeScript types. Python and TypeScript semantic validators execute
 one deterministic valid/invalid corpus covering all top-level schemas, both
 volume transports, sentinel/mask validity, asymmetric signed affines and
 derived extents/inverses, exact static-map evidence, and cache identity.
@@ -297,8 +298,16 @@ nearest edge slice. Volume failures preserve the loaded anatomy with an
 explicit error instead of clearing the frame. The golden fixture's synthetic
 values occupy an explicitly declared small Allen CCF 2017 subgrid solely to
 exercise compositing; they have no scientific interpretation. Pointer
-inspection and URL-persisted opacity/outline controls remain the next Commit 6
-work.
+inspection follows the nearest-neighbor
+screen-to-projection-to-world-to-voxel chain even where no anatomical SVG path
+exists. Sentinel and checksummed mask validity produce the same
+valid/outside/missing classification used for transparent Canvas
+paint. URL v4 persists volume opacity and anatomy-outline visibility; opacity,
+outlines, recoloring, hover, and selection repaint retained layers without
+fetching or decoding. The active volume source owns one 96 MiB decoded budget
+shared by mask and scalar caches, is disposed on feature switching, and uses
+consumer-aware in-flight deduplication so obsolete-render or prefetch
+cancellation cannot poison a current consumer.
 
 This proves the browser architecture, not the production science. Q4 still
 blocks the authoritative affine/axis mapping and any remaining missing-value

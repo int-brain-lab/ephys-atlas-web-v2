@@ -70,6 +70,32 @@
   opacity: .45;
 }
 
+.settings-control__range {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--color-accent);
+}
+
+.settings-control:has(.settings-control__value) {
+  grid-template-columns: minmax(0, 1fr) 6rem 2rem;
+}
+
+.settings-control__value {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.settings-control--toggle {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.settings-control__checkbox {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-accent);
+}
+
 .color-legend {
   position: relative;
   display: grid;

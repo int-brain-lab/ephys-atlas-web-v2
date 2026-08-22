@@ -18,6 +18,7 @@ import type {
   ProjectionViewport,
   ProjectionViewportFactory,
   RegionInspection,
+  VolumeInspection,
 } from '../rendering/projection-viewport.js';
 import { regionalColorRange } from '../rendering/scalar-colormap.js';
 import { COLORMAPS } from '../rendering/colormap-palettes.js';
@@ -36,6 +37,8 @@ export interface AppShellCallbacks {
   setColormap(colormap: string): void;
   setColorRange(range: ColorRange): void;
   setColorScale(scale: ColorScaleSelection): void;
+  setVolumeOpacity(opacity: number): void;
+  setAnatomyOutlines(visible: boolean): void;
   setSlice(axis: SliceAxis, index: number): void;
   setActiveCompactView(view: WorkspaceViewId): void;
   setMaximizedView(view: WorkspaceViewId | null): void;
@@ -148,6 +151,10 @@ export class AppShell {
   private scaleSelect!: HTMLSelectElement;
   private rangeModeSelect!: HTMLSelectElement;
   private colorRangeControl!: ColorRangeControl;
+  private volumeLayerSettings!: HTMLElement;
+  private volumeOpacityInput!: HTMLInputElement;
+  private volumeOpacityValue!: HTMLOutputElement;
+  private anatomyOutlinesInput!: HTMLInputElement;
   private featureId: string | null = null;
 
   constructor(
@@ -242,6 +249,7 @@ export class AppShell {
     this.representationContext.setDisplay(`${representationLabel} · ${titleCaseToken(view.parcellation)}`, 'Allen CCFv3 · 10 µm');
     this.renderContextMenus(model);
     this.renderColorSettings(model);
+    this.renderVolumeLayerSettings(model);
     this.renderInfo(model);
     this.setHeaderActionDisabled('share', false);
     this.setHeaderActionDisabled('info', manifest === null);
@@ -254,15 +262,28 @@ export class AppShell {
   }
 
   showRegionTooltip(inspection: RegionInspection, model: RegionTooltipModel): void {
+    this.showProjectionTooltip(inspection, model, inspection.regionId);
+  }
+
+  showVolumeTooltip(inspection: VolumeInspection, model: RegionTooltipModel): void {
+    this.showProjectionTooltip(inspection, model, inspection.regionId);
+  }
+
+  private showProjectionTooltip(
+    inspection: Pick<RegionInspection, 'axis' | 'clientX' | 'clientY'>,
+    model: RegionTooltipModel,
+    regionId?: string,
+  ): void {
     const nodes = this.viewFrames.get(inspection.axis);
     if (!nodes) return;
     for (const [axis, frame] of this.viewFrames) {
       if (axis !== inspection.axis) frame.tooltip.hidden = true;
     }
-    const contentKey = `${inspection.regionId}\u0000${model.acronym}\u0000${model.name}\u0000${model.valueLabel ?? ''}\u0000${model.valueText ?? ''}\u0000${model.meta}`;
+    const contentKey = `${regionId ?? ''}\u0000${model.acronym}\u0000${model.name}\u0000${model.valueLabel ?? ''}\u0000${model.valueText ?? ''}\u0000${model.meta}`;
     if (nodes.tooltip.dataset.contentKey !== contentKey) {
       nodes.tooltip.dataset.contentKey = contentKey;
-      nodes.tooltip.dataset.regionId = inspection.regionId;
+      if (regionId) nodes.tooltip.dataset.regionId = regionId;
+      else delete nodes.tooltip.dataset.regionId;
       nodes.tooltipIdentity.replaceChildren();
       const acronym = element('strong', 'region-tooltip__acronym');
       acronym.textContent = model.acronym;
@@ -848,7 +869,7 @@ export class AppShell {
     pane.dataset.open = 'false';
     const panelHeader = this.panelHeader('Visualization settings', () => this.closeDrawers());
     const content = element('div', 'settings-pane__content');
-    content.append(this.createColorSettings());
+    content.append(this.createColorSettings(), this.createVolumeLayerSettings());
     pane.append(panelHeader, content);
     return pane;
   }
@@ -885,6 +906,43 @@ export class AppShell {
     this.colorRangeControl = new ColorRangeControl((range) => this.callbacks.setColorRange(range));
 
     group.append(colorMode.row, statistic.row, colormap.row, scale.row, rangeMode.row, this.colorRangeControl.element);
+    return group;
+  }
+
+  private createVolumeLayerSettings(): HTMLElement {
+    const group = element('section', 'settings-placeholder settings-controls');
+    group.append(heading('Volume layers', 3));
+
+    const opacityRow = element('label', 'settings-control');
+    const opacityLabel = element('span', 'settings-control__label');
+    opacityLabel.textContent = 'Volume opacity';
+    this.volumeOpacityInput = element('input', 'settings-control__range');
+    this.volumeOpacityInput.type = 'range';
+    this.volumeOpacityInput.min = '0';
+    this.volumeOpacityInput.max = '1';
+    this.volumeOpacityInput.step = '0.05';
+    this.volumeOpacityInput.setAttribute('aria-label', 'Volume opacity');
+    this.volumeOpacityValue = element('output', 'settings-control__value');
+    this.volumeOpacityInput.addEventListener('input', () => {
+      const opacity = this.volumeOpacityInput.valueAsNumber;
+      this.volumeOpacityValue.value = `${Math.round(opacity * 100)}%`;
+      this.callbacks.setVolumeOpacity(opacity);
+    });
+    opacityRow.append(opacityLabel, this.volumeOpacityInput, this.volumeOpacityValue);
+
+    const outlinesRow = element('label', 'settings-control settings-control--toggle');
+    const outlinesLabel = element('span', 'settings-control__label');
+    outlinesLabel.textContent = 'Anatomy outlines';
+    this.anatomyOutlinesInput = element('input', 'settings-control__checkbox');
+    this.anatomyOutlinesInput.type = 'checkbox';
+    this.anatomyOutlinesInput.setAttribute('aria-label', 'Show anatomy outlines');
+    this.anatomyOutlinesInput.addEventListener('change', () => {
+      this.callbacks.setAnatomyOutlines(this.anatomyOutlinesInput.checked);
+    });
+    outlinesRow.append(outlinesLabel, this.anatomyOutlinesInput);
+
+    group.append(opacityRow, outlinesRow);
+    this.volumeLayerSettings = group;
     return group;
   }
 
@@ -994,6 +1052,14 @@ export class AppShell {
     } else {
       this.colorRangeControl.hide();
     }
+  }
+
+  private renderVolumeLayerSettings(model: ShellModel): void {
+    const volume = model.state.view.representation === 'volume';
+    this.volumeLayerSettings.hidden = !volume;
+    this.volumeOpacityInput.value = String(model.state.view.layers.volumeOpacity);
+    this.volumeOpacityValue.value = `${Math.round(model.state.view.layers.volumeOpacity * 100)}%`;
+    this.anatomyOutlinesInput.checked = model.state.view.layers.anatomyOutlines;
   }
 
   private featureRepresentations(feature: DatasetManifest['features'][number]): RepresentationKind[] {

@@ -11,14 +11,21 @@ import {
   volumeAxisDimension,
 } from './chunked-volume-source.js';
 import { SchemaSlicePackVolumeSource } from './slice-pack-volume-source.js';
+import { VolumeValiditySliceSource } from './volume-validity-source.js';
 import { VolumeSliceLoader, type VolumeSlice, type VolumeSliceSource } from './volume.js';
 import { paletteRgb } from './colormap-palettes.js';
+import { regionIdFromPath } from './region-id.js';
 import {
   ProjectionPackSource,
   type RegisteredProjectionRegistration,
   type RegisteredProjectionSlice,
   type RegisteredProjectionSource,
 } from './projection-pack-source.js';
+import {
+  assertCompatibleReferenceSpace,
+  inspectVolumePlanePoint,
+  volumeValueIsVisible,
+} from './volume-inspection.js';
 import type {
   ProjectionInteractionSink,
   ProjectionPresentation,
@@ -54,18 +61,6 @@ export interface RegisteredVolumeCanvasPlacement {
   readonly flipX: boolean;
   readonly flipY: boolean;
   readonly viewBox: ViewBox;
-}
-
-export function assertCompatibleReferenceSpace(
-  registration: RegisteredProjectionRegistration,
-  feature: VolumeFeaturePayload,
-): void {
-  const volumeReference = feature.descriptor.grid.referenceSpaceId;
-  if (registration.referenceSpaceId !== volumeReference) {
-    throw new Error(
-      `Cannot composite ${registration.referenceSpaceId} anatomy with ${volumeReference} volume`,
-    );
-  }
 }
 
 function volumeIndexToPlane(
@@ -135,6 +130,8 @@ const DEFAULT_PRESENTATION: ProjectionPresentation = {
   },
   selectedRegionIds: [],
   hoveredRegionId: null,
+  volumeOpacity: 1,
+  anatomyOutlines: true,
 };
 
 function finiteRange(values: Float32Array): readonly [number, number] | null {
@@ -181,7 +178,7 @@ function rgbaForSlice(
   for (let index = 0; index < slice.data.length; index += 1) {
     const value = slice.data[index]!;
     const offset = index * 4;
-    if (!Number.isFinite(value) || (log && value <= 0)) continue;
+    if (!volumeValueIsVisible(feature, value, slice.validity?.[index]) || (log && value <= 0)) continue;
     const scalar = log ? Math.log(value) : value;
     const [r, g, b] = paletteRgb(coloring.colormap, span > 0 ? (scalar - lo) / span : 0.5);
     rgba[offset] = r;
@@ -237,9 +234,12 @@ class RetainedProjectionViewport implements ProjectionViewport {
   private renderToken = 0;
   private pending: PendingRender | null = null;
   private inFlight = false;
+  private activeRenderAbort: AbortController | null = null;
+  private volumePrefetchAbort: AbortController | null = null;
   private frame: RegionalSliceFrame | null = null;
   private volumeFeature: VolumeFeaturePayload | null = null;
   private volumeSlice: VolumeSlice | null = null;
+  private volumeRegistration: RegisteredProjectionRegistration | null = null;
   private requestedIndex = 0;
   private renderedRequestedIndex: number | null = null;
   private requestedParcellation: ProjectionRenderModel['parcellation'] = 'allen';
@@ -254,12 +254,15 @@ class RetainedProjectionViewport implements ProjectionViewport {
     private readonly volumeSource: (feature: VolumeFeaturePayload) => VolumeSliceSource,
   ) {
     this.mount = this.createMount();
+    this.applyLayerPresentation(this.presentation());
     target.replaceChildren(this.mount.root);
   }
 
   render(model: ProjectionRenderModel): Promise<void> {
     if (model.axis !== this.axis) return Promise.reject(new Error(`${this.axis} viewport cannot render ${model.axis}`));
     const token = ++this.renderToken;
+    this.activeRenderAbort?.abort();
+    this.volumePrefetchAbort?.abort();
     this.requestedIndex = model.sliceIndex;
     this.requestedParcellation = model.parcellation;
     this.hideError();
@@ -272,6 +275,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
 
   updatePresentation(): void {
     const presentation = this.presentation();
+    this.applyLayerPresentation(presentation);
     if (this.frame) {
       const slice: RegisteredProjectionSlice = {
         axis: this.axis,
@@ -296,11 +300,16 @@ class RetainedProjectionViewport implements ProjectionViewport {
 
   clear(): void {
     this.renderToken += 1;
+    this.activeRenderAbort?.abort();
+    this.activeRenderAbort = null;
+    this.volumePrefetchAbort?.abort();
+    this.volumePrefetchAbort = null;
     this.pending?.resolve();
     this.pending = null;
     this.frame = null;
     this.volumeFeature = null;
     this.volumeSlice = null;
+    this.volumeRegistration = null;
     this.previousNativeIndex = null;
     this.renderedRequestedIndex = null;
     this.mount.regional.clear();
@@ -329,20 +338,23 @@ class RetainedProjectionViewport implements ProjectionViewport {
     const request = this.pending;
     this.pending = null;
     this.inFlight = true;
-    void this.renderNow(request.model, request.token)
+    const abort = new AbortController();
+    this.activeRenderAbort = abort;
+    void this.renderNow(request.model, request.token, abort.signal)
       .then(request.resolve, request.reject)
       .finally(() => {
+        if (this.activeRenderAbort === abort) this.activeRenderAbort = null;
         this.inFlight = false;
         this.pump();
       });
   }
 
-  private async renderNow(model: ProjectionRenderModel, token: number): Promise<void> {
-    if (model.feature?.representation === 'volume') await this.renderVolume(model, token);
-    else await this.renderRegional(model, token);
+  private async renderNow(model: ProjectionRenderModel, token: number, signal: AbortSignal): Promise<void> {
+    if (model.feature?.representation === 'volume') await this.renderVolume(model, token, signal);
+    else await this.renderRegional(model, token, signal);
   }
 
-  private async renderRegional(model: ProjectionRenderModel, token: number): Promise<void> {
+  private async renderRegional(model: ProjectionRenderModel, token: number, signal: AbortSignal): Promise<void> {
     const world = cursorStateToWorld(model.cursor);
     const sameGeometry = this.frame?.axis === model.axis
       && this.renderedRequestedIndex === model.sliceIndex
@@ -354,6 +366,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
       this.mount.regional.updateGuides(this.frame);
       this.volumeFeature = null;
       this.volumeSlice = null;
+      this.volumeRegistration = null;
       this.mount.root.dataset.mode = 'regional';
       this.target.dataset.sliceAsset = 'projection-pack-v1';
       delete this.target.dataset.volumeIndex;
@@ -361,7 +374,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
       return;
     }
     const [slice, guides] = await Promise.all([
-      this.source.loadSlice(model.axis, model.sliceIndex),
+      this.source.loadSlice(model.axis, model.sliceIndex, signal),
       this.source.guidesForWorld(model.axis, world),
     ]);
     if (this.renderToken !== token) return;
@@ -370,6 +383,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
     this.mount.regional.render(this.frame);
     this.volumeFeature = null;
     this.volumeSlice = null;
+    this.volumeRegistration = null;
     this.mount.root.dataset.mode = 'regional';
     this.target.dataset.sliceAsset = 'projection-pack-v1';
     this.target.dataset.assetIndex = String(slice.sliceIndex);
@@ -384,13 +398,13 @@ class RetainedProjectionViewport implements ProjectionViewport {
     }
   }
 
-  private async renderVolume(model: ProjectionRenderModel, token: number): Promise<void> {
+  private async renderVolume(model: ProjectionRenderModel, token: number, signal: AbortSignal): Promise<void> {
     const feature = model.feature;
     if (!feature || feature.representation !== 'volume') throw new Error('Volume viewport requires a volume feature');
     const world = cursorStateToWorld(model.cursor);
     const [registration, anatomySlice, guides] = await Promise.all([
       this.source.getRegistration(model.axis),
-      this.source.loadSlice(model.axis, model.sliceIndex),
+      this.source.loadSlice(model.axis, model.sliceIndex, signal),
       this.source.guidesForWorld(model.axis, world),
     ]);
     if (this.renderToken !== token) return;
@@ -398,6 +412,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
     this.mount.regional.render(this.frame);
     this.volumeFeature = null;
     this.volumeSlice = null;
+    this.volumeRegistration = null;
     this.mount.root.dataset.mode = 'regional';
     this.target.dataset.sliceAsset = 'projection-pack-v1';
     this.target.dataset.assetIndex = String(anatomySlice.sliceIndex);
@@ -410,17 +425,20 @@ class RetainedProjectionViewport implements ProjectionViewport {
     }
     const volumeIndex = location.index;
     const loader = this.volumeSource(feature);
-    const slice = await loader.loadSlice(model.axis, volumeIndex);
+    const slice = await loader.loadSlice(model.axis, volumeIndex, signal);
     if (this.renderToken !== token) return;
     this.placeVolume(registeredVolumeCanvasPlacement(feature, slice, registration));
     this.paintVolume(feature, slice, this.presentation().coloring);
     this.volumeFeature = feature;
     this.volumeSlice = slice;
+    this.volumeRegistration = registration;
     this.mount.root.dataset.mode = 'composite';
     this.target.dataset.sliceAsset = 'schema-volume-v1';
     this.target.dataset.volumeIndex = String(volumeIndex);
     this.target.dataset.volumeFeature = feature.featureId;
-    void loader.prefetchAdjacent?.(model.axis, volumeIndex, 1)?.catch(() => undefined);
+    const prefetchAbort = new AbortController();
+    this.volumePrefetchAbort = prefetchAbort;
+    void loader.prefetchAdjacent?.(model.axis, volumeIndex, 1, prefetchAbort.signal)?.catch(() => undefined);
   }
 
   private placeVolume(placement: RegisteredVolumeCanvasPlacement): void {
@@ -451,6 +469,14 @@ class RetainedProjectionViewport implements ProjectionViewport {
     });
   }
 
+  private applyLayerPresentation(presentation: ProjectionPresentation): void {
+    const opacity = Number.isFinite(presentation.volumeOpacity)
+      ? Math.min(1, Math.max(0, presentation.volumeOpacity))
+      : 1;
+    this.mount.scalar.style.opacity = String(opacity);
+    this.mount.root.dataset.anatomyOutlines = String(presentation.anatomyOutlines ?? true);
+  }
+
   private onRegionPointer(event: SliceRegionPointerEvent): void {
     const sink = this.interactionSink();
     if (!sink) return;
@@ -466,7 +492,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
     };
     if (event.type === 'select') sink.toggleSelection(hit);
     else if (event.type === 'hover') sink.hover(hit);
-    else sink.inspect({
+    else if (this.mount.root.dataset.mode !== 'composite') sink.inspect({
       ...hit,
       physicalRegionId: event.regionId,
       parcellation: this.requestedParcellation,
@@ -475,10 +501,44 @@ class RetainedProjectionViewport implements ProjectionViewport {
     });
   }
 
+  private onVolumePointer(event: PointerEvent): void {
+    if (this.mount.root.dataset.mode !== 'composite') return;
+    const feature = this.volumeFeature;
+    const slice = this.volumeSlice;
+    const registration = this.volumeRegistration;
+    const sink = this.interactionSink();
+    if (!feature || !slice || !registration || !sink) return;
+    const screen = this.mount.scalar.getScreenCTM();
+    if (!screen) return;
+    try {
+      const plane = new DOMPoint(event.clientX, event.clientY).matrixTransform(screen.inverse());
+      const inspection = inspectVolumePlanePoint(feature, slice, registration, { u: plane.x, v: plane.y });
+      const path = event.target instanceof Element ? event.target.closest<SVGPathElement>('path') : null;
+      const physicalRegionId = path ? regionIdFromPath('allen', path) : null;
+      const mappedRegionId = path ? regionIdFromPath(this.requestedParcellation, path) : null;
+      sink.inspect({
+        kind: 'volume',
+        axis: this.axis,
+        sliceIndex: this.requestedIndex,
+        parcellation: this.requestedParcellation,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        ...inspection,
+        ...(mappedRegionId == null ? {} : { regionId: String(-Math.abs(mappedRegionId)) }),
+        ...(physicalRegionId == null ? {} : { physicalRegionId }),
+      });
+    } catch (error) {
+      sink.reportError(error);
+      sink.inspect(null);
+    }
+  }
+
   private createMount(): RetainedMount {
     const root = document.createElement('div');
     root.className = 'projection-viewport';
     root.dataset.mode = 'empty';
+    root.addEventListener('pointermove', (event) => this.onVolumePointer(event));
+    root.addEventListener('pointerleave', () => this.interactionSink()?.inspect(null));
     const scalar = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     scalar.classList.add('projection-viewport__scalar');
     scalar.setAttribute('preserveAspectRatio', 'xMidYMid meet');
@@ -535,18 +595,41 @@ export interface RetainedProjectionViewportFactoryOptions {
   readonly projectionPackUrl?: string;
   readonly fetchImpl?: typeof fetch;
   readonly maxDecodedBytes?: number;
+  readonly maxVolumeDecodedBytes?: number;
   /** Deterministic test seam; production uses projectionPackUrl. */
   readonly source?: RegisteredProjectionSource;
+}
+
+/** Reserve decoded validity bytes before assigning the shared volume cache budget. */
+export function volumeScalarCacheBudget(
+  feature: VolumeFeaturePayload,
+  maxDecodedBytes: number,
+): number {
+  if (!Number.isFinite(maxDecodedBytes) || maxDecodedBytes <= 0) {
+    throw new RangeError('maxDecodedBytes must be positive');
+  }
+  const validityBytes = feature.descriptor.validity.kind === 'mask'
+    ? feature.descriptor.validity.mask.resource.codec.decodedBytes
+    : 0;
+  const cacheBytes = maxDecodedBytes - validityBytes;
+  if (cacheBytes <= 0) throw new Error('volume validity mask exceeds the decoded-memory budget');
+  return cacheBytes;
 }
 
 export class RetainedProjectionViewportFactory implements ProjectionViewportFactory {
   private readonly source: RegisteredProjectionSource;
   private readonly viewports = new Set<RetainedProjectionViewport>();
-  private readonly volumeSources = new WeakMap<VolumeFeaturePayload, VolumeSliceSource>();
+  private readonly maxVolumeDecodedBytes: number;
+  private activeVolumeFeature: VolumeFeaturePayload | null = null;
+  private activeVolumeSource: VolumeSliceSource | null = null;
   private presentation: ProjectionPresentation = DEFAULT_PRESENTATION;
   private sink: ProjectionInteractionSink | null = null;
 
   constructor(options: RetainedProjectionViewportFactoryOptions) {
+    this.maxVolumeDecodedBytes = options.maxVolumeDecodedBytes ?? 96 * 1024 * 1024;
+    if (!Number.isFinite(this.maxVolumeDecodedBytes) || this.maxVolumeDecodedBytes <= 0) {
+      throw new RangeError('maxVolumeDecodedBytes must be positive');
+    }
     if (options.source) this.source = options.source;
     else {
       if (!options.projectionPackUrl) throw new Error('projectionPackUrl is required without a test source');
@@ -587,17 +670,24 @@ export class RetainedProjectionViewportFactory implements ProjectionViewportFact
   destroy(): void {
     for (const viewport of this.viewports) viewport.destroy();
     this.viewports.clear();
+    this.activeVolumeSource?.dispose?.();
+    this.activeVolumeSource = null;
+    this.activeVolumeFeature = null;
     this.source.dispose();
   }
 
   private volumeSource(feature: VolumeFeaturePayload): VolumeSliceSource {
-    let source = this.volumeSources.get(feature);
-    if (!source) {
-      source = feature.descriptor.layout === 'chunks3d'
-        ? new VolumeSliceLoader(new SchemaChunks3dVolumeSource(feature))
-        : new SchemaSlicePackVolumeSource(feature);
-      this.volumeSources.set(feature, source);
-    }
+    if (this.activeVolumeFeature === feature && this.activeVolumeSource) return this.activeVolumeSource;
+    this.activeVolumeSource?.dispose?.();
+    const cacheBytes = volumeScalarCacheBudget(feature, this.maxVolumeDecodedBytes);
+    const scalarSource: VolumeSliceSource = feature.descriptor.layout === 'chunks3d'
+      ? new VolumeSliceLoader(new SchemaChunks3dVolumeSource(feature), { cacheBytes })
+      : new SchemaSlicePackVolumeSource(feature, cacheBytes);
+    const source = feature.descriptor.validity.kind === 'mask'
+      ? new VolumeValiditySliceSource(feature, scalarSource)
+      : scalarSource;
+    this.activeVolumeFeature = feature;
+    this.activeVolumeSource = source;
     return source;
   }
 }

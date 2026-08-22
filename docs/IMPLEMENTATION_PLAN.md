@@ -75,11 +75,11 @@ horizontal support registered anatomy plus volume layers; Top and Swanson are
 static regional projections using the same SVG presentation and interaction
 path. Backward compatibility with the pre-launch formats is not a requirement.
 
-Commits 1 through 5 are implemented, and Commit 6 is in progress. Schema v1 is now the sole builder,
-publishing, HTTP/local browser, fixture, and download contract. It separates
-scientific reference-space identity from grid and asset identities, admits
-only the checked signed-permutation affine profile, verifies encoded bytes
-before persistent caching, and keys decoded resources by SHA plus decode
+Commits 1 through 6 are implemented, and Commit 7 is next. Schema v1 is now the
+sole builder, publishing, HTTP/local browser, fixture, and download contract.
+It separates scientific reference-space identity from grid and asset
+identities, admits only the checked signed-permutation affine profile, verifies
+encoded bytes before persistent caching, and keys decoded resources by SHA plus decode
 contract. The newly identified `golden-v1` fixture is canonical; v0.1 schemas,
 fixtures, readers, and compatibility tests are deleted. Projection and
 responsive workspace state are registry-driven; one world cursor is the only
@@ -97,8 +97,15 @@ hybrid switch, anatomy-pack readers, legacy renderer/crosswalk, URL migrations,
 and application-owned slice triple are deleted. Compatible schema-v1 volume
 planes now composite beneath retained anatomy after exact reference-space
 validation and affine-derived voxel-edge placement; an unavailable volume
-leaves the registered anatomy usable. Commit 6 next adds the complete
-screen/world/voxel inspection path and URL-persisted layer controls.
+leaves the registered anatomy usable. Nearest-neighbor pointer inspection maps
+background-capable projection coordinates through world space to exact volume
+voxels and reports valid, outside, missing, or out-of-grid status. Sentinel and
+checksummed mask validity drive both inspection and transparency. URL v4
+persists independent volume opacity and anatomy-outline controls, and those
+presentation changes repaint retained layers without resource requests. One
+96 MiB decoded-volume budget covers the active feature's mask and scalar cache;
+feature switches dispose the previous source, while consumer-aware in-flight
+deduplication preserves current loads across obsolete-render cancellation.
 
 This machinery is unblocked with deterministic synthetic fixtures. It must not
 resolve or conceal Q4/Q5.
@@ -113,6 +120,11 @@ Volume foundations already implemented and green on the handoff baseline:
 - scientific coordinate mapping through declared `index_to_world_um`;
 - Canvas scalar-layer painting inside the retained projection viewport;
 - both physical volume adapters behind one decoded-plane source;
+- sentinel and full-grid mask validity with transparent invalid voxels;
+- world/voxel/value inspection over both anatomical paths and SVG background;
+- URL-persisted opacity and anatomy-outline presentation controls;
+- one active-feature decoded-memory budget, cancellation, and in-flight request
+  deduplication;
 - golden unit and Playwright coverage.
 
 Blocked by: Q4 and Q5.
@@ -124,7 +136,7 @@ historical transport evidence, not the default input for new implementation.
 
 Ordered next actions before scientific resolution:
 
-1. execute commits 6-8 in the focused cutover plan, keeping every handoff green;
+1. execute commits 7-8 in the focused cutover plan, keeping every handoff green;
 2. rebuild external development releases under new schema-v1 release IDs
    before using the opt-in real-release suite; do not add a compatibility reader;
 3. verify the layered golden volume path, registered anatomy overlays, and

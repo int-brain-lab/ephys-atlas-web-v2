@@ -35,6 +35,8 @@ type ViewActionPayload =
   | { type: 'workspace/secondary-tab'; tab: SecondaryTabId }
   | { type: 'workspace/compact-view'; view: WorkspaceViewId }
   | { type: 'workspace/maximized-view'; view: WorkspaceViewId | null }
+  | { type: 'layers/volume-opacity'; opacity: number }
+  | { type: 'layers/anatomy-outlines'; visible: boolean }
   | { type: 'color/statistic'; statistic: ColorStatisticId }
   | { type: 'color/mode'; mode: ColorMode }
   | { type: 'color/colormap'; colormap: string }

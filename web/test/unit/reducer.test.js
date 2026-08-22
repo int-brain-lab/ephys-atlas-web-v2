@@ -76,3 +76,11 @@ test('secondary tab, compact view, and maximized view update independently', () 
   assert.equal(state.view.workspace.activeCompactView, 'secondary');
   assert.equal(state.view.workspace.maximizedView, null);
 });
+
+test('volume layer presentation clamps opacity and preserves outline visibility independently', () => {
+  let state = reduceAppState(DEFAULT_APP_STATE, { type: 'layers/volume-opacity', opacity: 2 });
+  state = reduceAppState(state, { type: 'layers/anatomy-outlines', visible: false });
+  assert.deepEqual(state.view.layers, { volumeOpacity: 1, anatomyOutlines: false });
+  state = reduceAppState(state, { type: 'layers/volume-opacity', opacity: 0.35 });
+  assert.deepEqual(state.view.layers, { volumeOpacity: 0.35, anatomyOutlines: false });
+});

@@ -5,13 +5,20 @@ import type { VolumeFeaturePayload } from '../../web/src/data/contracts.js';
 import type { SliceAxis } from '../../web/src/domain/types.js';
 import { locateVolumePlane } from '../../web/src/rendering/chunked-volume-source.js';
 import {
-  assertCompatibleReferenceSpace,
   registeredVolumeCanvasPlacement,
+  volumeScalarCacheBudget,
 } from '../../web/src/rendering/retained-projection-viewport.js';
+import {
+  assertCompatibleReferenceSpace,
+  inspectVolumePlanePoint,
+  volumeValueIsVisible,
+} from '../../web/src/rendering/volume-inspection.js';
 import { SchemaSlicePackVolumeSource } from '../../web/src/rendering/slice-pack-volume-source.js';
+import { VolumeValiditySliceSource } from '../../web/src/rendering/volume-validity-source.js';
 import {
   VolumeChunkCache,
   VolumeSliceLoader,
+  AbortableRequestCache,
   chunkKeysForSlice,
   scalarToRgba,
   type VolumeChunk,
@@ -91,7 +98,7 @@ function makeSlicePackFeature(axisOrder: readonly ['dv', 'ap', 'ml'] = ['dv', 'a
         path: 'summary.json', mediaType: 'application/json', bytes: 1,
         sha256: '0'.repeat(64), codec: { name: 'none', decodedBytes: 1 },
       },
-      validity: { kind: 'sentinel', outside_value: -9999, missing_values: 'nonfinite' },
+      validity: { kind: 'sentinel', outsideValue: -9999 },
     },
     async loadResource(path: string): Promise<ArrayBuffer> {
       loads.set(path, (loads.get(path) ?? 0) + 1);
@@ -259,6 +266,12 @@ test('volume plane edges register into anatomy coordinates with declared orienta
     axis: 'coronal' as const,
     referenceSpaceId: 'allen-ccf-2017',
     viewBox: { x: -20, y: -20, width: 40, height: 40 },
+    planeIndexToWorldUm: [
+      0, 10, 0, 0,
+      25, 0, 0, 0,
+      0, 0, -10, 0,
+      0, 0, 0, 1,
+    ] as const,
     worldToPlaneIndex: [
       0, 0.04, 0, 0,
       0.1, 0, 0, 0,
@@ -286,6 +299,131 @@ test('volume plane edges register into anatomy coordinates with declared orienta
     ),
     /Cannot composite different-space anatomy with allen-ccf-2017 volume/,
   );
+});
+
+test('plane inspection maps background coordinates to exact voxel validity and value', () => {
+  const { feature } = makeSlicePackFeature();
+  feature.descriptor.grid.shape = [8, 6, 4];
+  feature.descriptor.grid.axisOrder = ['ap', 'ml', 'dv'];
+  feature.descriptor.grid.referenceSpaceId = 'allen-ccf-2017';
+  feature.descriptor.grid.indexToWorldUm = [
+    0, 25, 0, 0,
+    25, 0, 0, 0,
+    0, 0, 25, 0,
+    0, 0, 0, 1,
+  ];
+  feature.descriptor.grid.worldToIndex = [
+    0, 0.04, 0, 0,
+    0.04, 0, 0, 0,
+    0, 0, 0.04, 0,
+    0, 0, 0, 1,
+  ];
+  const registration = {
+    axis: 'coronal' as const,
+    referenceSpaceId: 'allen-ccf-2017',
+    viewBox: { x: -20, y: -20, width: 40, height: 40 },
+    planeIndexToWorldUm: [
+      0, 10, 0, 0,
+      25, 0, 0, 0,
+      0, 0, -10, 0,
+      0, 0, 0, 1,
+    ] as const,
+    worldToPlaneIndex: [
+      0, 0.04, 0, 0,
+      0.1, 0, 0, 0,
+      0, 0, -0.1, 0,
+      0, 0, 0, 1,
+    ] as const,
+  };
+  const data = new Float32Array(24);
+  data[2 * 6 + 3] = 42;
+  const slice = {
+    axis: 'coronal' as const, index: 2, widthAxis: 'sagittal' as const,
+    heightAxis: 'horizontal' as const, width: 6, height: 4, data,
+  };
+  assert.deepEqual(inspectVolumePlanePoint(feature, slice, registration, { u: 7.5, v: -5 }), {
+    status: 'valid',
+    world: { ml: 75, ap: 50, dv: 50 },
+    fractionalIndex: [2, 3, 2],
+    voxelIndex: [2, 3, 2],
+    value: 42,
+  });
+  assert.equal(inspectVolumePlanePoint(feature, slice, registration, { u: 20, v: 0 }).status, 'out-of-grid');
+  slice.data[2 * 6 + 3] = Number.NaN;
+  assert.equal(inspectVolumePlanePoint(feature, slice, registration, { u: 7.5, v: -5 }).status, 'missing');
+  slice.data[2 * 6 + 3] = -9999;
+  assert.equal(inspectVolumePlanePoint(feature, slice, registration, { u: 7.5, v: -5 }).status, 'outside');
+});
+
+test('validity-mask source verifies once and extracts matching planes in raw C order', async () => {
+  const { feature } = makeSlicePackFeature();
+  feature.descriptor.grid.shape = [2, 2, 2];
+  feature.descriptor.grid.axisOrder = ['ap', 'ml', 'dv'];
+  const mask = new Uint8Array([0, 1, 2, 0, 1, 2, 0, 1]);
+  let maskLoads = 0;
+  feature.descriptor.validity = {
+    kind: 'mask',
+    mask: {
+      resource: {
+        path: 'validity.u8', mediaType: 'application/octet-stream', bytes: mask.byteLength,
+        sha256: '0'.repeat(64), codec: { name: 'none', decodedBytes: mask.byteLength },
+      },
+      shape: [2, 2, 2],
+    },
+    codes: { valid: 0, outside: 1, missing: 2 },
+  };
+  feature.loadResource = async (path) => {
+    assert.equal(path, 'validity.u8');
+    maskLoads += 1;
+    return mask.buffer.slice(0);
+  };
+  const base = {
+    async loadSlice(axis: SliceAxis, index: number) {
+      return {
+        axis, index, widthAxis: 'sagittal' as const, heightAxis: 'horizontal' as const,
+        width: 2, height: 2, data: new Float32Array([10, 20, 30, 40]),
+      };
+    },
+  };
+  const source = new VolumeValiditySliceSource(feature, base);
+  const first = await source.loadSlice('coronal', 1);
+  const second = await source.loadSlice('coronal', 0);
+  assert.deepEqual([...first.validity!], [1, 0, 2, 1]);
+  assert.deepEqual([...second.validity!], [0, 2, 1, 0]);
+  assert.equal(maskLoads, 1);
+  assert.equal(volumeValueIsVisible(feature, 10, first.validity![0]), false);
+  assert.equal(volumeValueIsVisible(feature, 20, first.validity![1]), true);
+  assert.equal(volumeValueIsVisible(feature, 30, first.validity![2]), false);
+  assert.equal(volumeScalarCacheBudget(feature, 64), 56);
+  assert.throws(() => volumeScalarCacheBudget(feature, 8), /exceeds the decoded-memory budget/);
+});
+
+test('disposing a chunked source releases its decoded cache and refuses reuse', async () => {
+  const loader = new VolumeSliceLoader(new MemorySource(), { cacheBytes: 1024 * 1024 });
+  await loader.loadSlice('coronal', 0);
+  assert.ok(loader.cache.byteLength > 0);
+  loader.dispose();
+  assert.equal(loader.cache.byteLength, 0);
+  await assert.rejects(loader.loadSlice('coronal', 0), /disposed/);
+});
+
+test('in-flight volume requests deduplicate without one consumer cancellation poisoning another', async () => {
+  const requests = new AbortableRequestCache<number>();
+  let starts = 0;
+  let release!: (value: number) => void;
+  const transport = new Promise<number>((resolve) => { release = resolve; });
+  const firstAbort = new AbortController();
+  const start = async () => {
+    starts += 1;
+    return transport;
+  };
+  const first = requests.load('same', start, firstAbort.signal);
+  const second = requests.load('same', start);
+  firstAbort.abort();
+  release(42);
+  await assert.rejects(first, { name: 'AbortError' });
+  assert.equal(await second, 42);
+  assert.equal(starts, 1);
 });
 
 test('LRU cache respects a byte budget', () => {

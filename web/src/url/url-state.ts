@@ -61,6 +61,12 @@ function parseDatasetId(value: string | null, fallback: DatasetId): DatasetId {
   return parsed ? parsed : fallback;
 }
 
+function parseOpacity(value: string | null, fallback: number): number {
+  if (value === null || value.trim() === '') return fallback;
+  const opacity = Number(value);
+  return Number.isFinite(opacity) && opacity >= 0 && opacity <= 1 ? opacity : fallback;
+}
+
 export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIEW_STATE): ViewState {
   const params = new URLSearchParams(search);
   const version = Number(params.get('v'));
@@ -113,6 +119,10 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
     selection: [...new Set(selection)],
     cursor,
     workspace: { secondaryTab, activeCompactView, maximizedView },
+    layers: {
+      volumeOpacity: parseOpacity(params.get('opacity'), defaults.layers.volumeOpacity),
+      anatomyOutlines: params.get('outlines') === '0' ? false : defaults.layers.anatomyOutlines,
+    },
     coloring: {
       mode: params.get('colors') === 'anatomy' ? 'anatomy' : 'feature',
       statistic,
@@ -157,6 +167,12 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
     params.set('compact', view.workspace.activeCompactView);
   }
   if (view.workspace.maximizedView !== null) params.set('max', view.workspace.maximizedView);
+  if (view.layers.volumeOpacity !== defaults.layers.volumeOpacity) {
+    params.set('opacity', String(view.layers.volumeOpacity));
+  }
+  if (view.layers.anatomyOutlines !== defaults.layers.anatomyOutlines) {
+    params.set('outlines', view.layers.anatomyOutlines ? '1' : '0');
+  }
 
   if (view.selection.length) params.set('selected', view.selection.map(encodeURIComponent).join(','));
   return params.toString();

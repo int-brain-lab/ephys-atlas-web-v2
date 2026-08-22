@@ -19,6 +19,10 @@
   vector-effect: non-scaling-stroke;
 }
 
+.projection-viewport[data-mode='composite'][data-anatomy-outlines='false'] .view-frame__slice-figure path {
+  stroke-opacity: 0;
+}
+
 .projection-viewport[data-mode='composite'] .view-frame__slice-figure path.is-selected,
 .projection-viewport[data-mode='composite'] .view-frame__slice-figure path.is-highlighted {
   fill-opacity: .12;

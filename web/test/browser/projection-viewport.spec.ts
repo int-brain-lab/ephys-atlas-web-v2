@@ -180,3 +180,59 @@ test('retained viewport runs one geometry request and commits only the latest pe
   });
   expect(result).toEqual({ loaded: [4, 7], assetIndex: '7' });
 });
+
+test('retained viewport aborts obsolete geometry before loading the latest slice', async ({ page }) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const { RetainedProjectionViewportFactory } = await import('/src/rendering/retained-projection-viewport.ts');
+    const target = document.createElement('div');
+    document.body.append(target);
+    const aborted: number[] = [];
+    const source = {
+      async getDisplaySliceInventories() { throw new Error('not used'); },
+      async loadSlice(
+        axis: 'coronal' | 'sagittal' | 'horizontal',
+        sliceIndex: number,
+        signal?: AbortSignal,
+      ) {
+        if (sliceIndex === 5) {
+          await new Promise<void>((resolve, reject) => {
+            const timer = window.setTimeout(resolve, 5_000);
+            signal?.addEventListener('abort', () => {
+              window.clearTimeout(timer);
+              aborted.push(sliceIndex);
+              reject(new DOMException('Aborted', 'AbortError'));
+            }, { once: true });
+          });
+        }
+        return {
+          axis,
+          sliceIndex,
+          worldCoordinateUm: sliceIndex * 10,
+          viewBox: { x: 0, y: 0, width: 2, height: 2 },
+          svgFragment: `<path data-allen-id="-10" data-beryl-id="-20" data-cosmos-id="-30" d="M${sliceIndex} 0Z"/>`,
+        };
+      },
+      async guidesForWorld() { return []; },
+      async prefetchNeighbor() {},
+      dispose() {},
+    };
+    const factory = new RetainedProjectionViewportFactory({ source });
+    const viewport = factory.create(target, 'coronal');
+    const model = (sliceIndex: number) => ({
+      axis: 'coronal' as const,
+      sliceIndex,
+      cursor: { xUm: 0, yUm: 0, zUm: 0 },
+      parcellation: 'allen' as const,
+      feature: null,
+    });
+    await viewport.render(model(4));
+    const obsolete = viewport.render(model(5)).catch((error: DOMException) => error.name);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const latest = viewport.render(model(6));
+    const obsoleteResult = await obsolete;
+    await latest;
+    return { aborted, obsoleteResult, assetIndex: target.dataset.assetIndex };
+  });
+  expect(result).toEqual({ aborted: [5], obsoleteResult: 'AbortError', assetIndex: '6' });
+});

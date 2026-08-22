@@ -538,8 +538,7 @@ regional Playwright, and benchmark sanity run; finish with `just check`.
 
 ### Commit 6 — Composite volume planes in registered world space
 
-Status: **in progress; registered anatomy/volume composition and unclamped
-world-cursor plane location are implemented**.
+Status: **implemented**.
 
 - split volume loading, location, colorization, and Canvas paint;
 - map the shared world cursor independently through the volume transform and
@@ -686,9 +685,9 @@ never merge an inferred scientific choice.
 
 ## First action for the next agent
 
-Continue Commit 6 from the green registered-composite baseline. Implement the
-specified nearest-neighbor background-capable inspection chain, validity
-classification, URL-persisted opacity/outline controls, and decoded-memory
-evidence. Keep repaint-only changes fetch-free and use synthetic data until Q4
-is authoritatively resolved. Do not expose Top/Swanson yet (Commit 7) and do
-not select a production volume transport before Q5 evidence.
+Execute Commit 7 from the green completed-volume baseline. Expose the synthetic
+Top and Swanson projections through the existing secondary workspace slot and
+shared regional presentation/interaction path, including responsive and
+maximize behavior. Keep volume-only semantics explicit on static maps, do not
+present the synthetic fragments as scientific assets, and do not select a
+production volume transport before Q5 evidence.

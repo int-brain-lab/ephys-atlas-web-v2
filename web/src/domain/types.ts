@@ -31,6 +31,11 @@ export interface WorkspaceState {
   maximizedView: WorkspaceViewId | null;
 }
 
+export interface VolumeLayerState {
+  volumeOpacity: number;
+  anatomyOutlines: boolean;
+}
+
 export interface DatasetRef {
   datasetId: DatasetId;
   releaseId: string | null;
@@ -60,6 +65,7 @@ export interface ViewState {
   selection: readonly string[];
   cursor: CursorState;
   workspace: WorkspaceState;
+  layers: VolumeLayerState;
   coloring: ColoringState;
 }
 

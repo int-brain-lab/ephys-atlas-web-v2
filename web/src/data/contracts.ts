@@ -196,6 +196,20 @@ export interface VolumeArrayDescriptor {
   order: 'C';
 }
 
+export type VolumeValidityDescriptor =
+  | {
+      kind: 'sentinel';
+      outsideValue: number;
+    }
+  | {
+      kind: 'mask';
+      mask: {
+        resource: EncodedResourceDescriptor;
+        shape: readonly [number, number, number];
+      };
+      codes: Readonly<{ valid: number; outside: number; missing: number }>;
+    };
+
 export interface VolumeRepresentationDescriptor {
   kind: 'volume';
   format: 'ephys-atlas-volume-v1';
@@ -207,7 +221,7 @@ export interface VolumeRepresentationDescriptor {
   resourceIndexResource: EncodedResourceDescriptor;
   summaryPath: string;
   summaryResource: EncodedResourceDescriptor;
-  validity: Readonly<Record<string, unknown>>;
+  validity: VolumeValidityDescriptor;
   valueRange?: readonly [number | null, number | null];
 }
 

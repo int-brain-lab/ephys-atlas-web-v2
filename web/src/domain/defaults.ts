@@ -17,6 +17,10 @@ export const DEFAULT_VIEW_STATE: ViewState = {
     activeCompactView: 'coronal',
     maximizedView: null,
   },
+  layers: {
+    volumeOpacity: 1,
+    anatomyOutlines: true,
+  },
   coloring: {
     mode: 'feature',
     statistic: 'mean',

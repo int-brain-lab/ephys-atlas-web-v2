@@ -6,6 +6,7 @@ import type {
   SliceAxis,
 } from '../domain/types.js';
 import type { DisplaySliceInventory } from './display-slice-inventory.js';
+import type { VolumeValidityStatus } from './volume-inspection.js';
 
 export interface ProjectionRenderModel {
   axis: SliceAxis;
@@ -22,6 +23,8 @@ export interface ProjectionPresentation {
   coloring: EffectiveColoringState;
   selectedRegionIds: readonly string[];
   hoveredRegionId: string | null;
+  volumeOpacity: number;
+  anatomyOutlines: boolean;
 }
 
 export interface RegionHit {
@@ -37,9 +40,27 @@ export interface RegionInspection extends RegionHit {
   clientY: number;
 }
 
+export interface VolumeInspection {
+  readonly kind: 'volume';
+  readonly axis: SliceAxis;
+  readonly sliceIndex: number;
+  readonly parcellation: ParcellationId;
+  readonly clientX: number;
+  readonly clientY: number;
+  readonly status: VolumeValidityStatus;
+  readonly world: Readonly<{ ml: number; ap: number; dv: number }>;
+  readonly fractionalIndex: readonly [number, number, number];
+  readonly voxelIndex?: readonly [number, number, number];
+  readonly value?: number;
+  readonly regionId?: string;
+  readonly physicalRegionId?: number;
+}
+
+export type ProjectionInspection = RegionInspection | VolumeInspection;
+
 export interface ProjectionInteractionSink {
   hover(hit: RegionHit | null): void;
-  inspect(inspection: RegionInspection | null): void;
+  inspect(inspection: ProjectionInspection | null): void;
   toggleSelection(hit: RegionHit): void;
   stepSlice(axis: SliceAxis, delta: number): void;
   moveCursor(cursor: CursorState): void;

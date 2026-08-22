@@ -35,6 +35,7 @@ export interface VolumeChunkSource {
 export interface VolumeSliceSource {
   loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<VolumeSlice>;
   prefetchAdjacent?(axis: SliceAxis, index: number, radius?: number, signal?: AbortSignal): Promise<void>;
+  dispose?(): void;
 }
 
 export interface VolumeSlice {
@@ -45,6 +46,7 @@ export interface VolumeSlice {
   width: number;
   height: number;
   data: Float32Array;
+  validity?: Uint8Array;
 }
 
 const PLANE_AXES: Readonly<Record<SliceAxis, readonly [SliceAxis, SliceAxis]>> = {
@@ -66,6 +68,56 @@ function validateIndex(index: number, count: number): number {
     throw new RangeError(`slice index ${index} is outside [0, ${count - 1}]`);
   }
   return index;
+}
+
+interface SharedRequest<T> {
+  readonly controller: AbortController;
+  readonly promise: Promise<T>;
+  consumers: number;
+}
+
+function waitForConsumer<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return promise;
+  if (signal.aborted) return Promise.reject(signal.reason ?? new DOMException('Aborted', 'AbortError'));
+  return new Promise<T>((resolve, reject) => {
+    const abort = () => reject(signal.reason ?? new DOMException('Aborted', 'AbortError'));
+    signal.addEventListener('abort', abort, { once: true });
+    void promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+  });
+}
+
+/** Deduplicates transport while allowing each foreground/prefetch consumer to cancel independently. */
+export class AbortableRequestCache<T> {
+  private readonly entries = new Map<string, SharedRequest<T>>();
+
+  async load(key: string, start: (signal: AbortSignal) => Promise<T>, signal?: AbortSignal): Promise<T> {
+    if (signal?.aborted) throw signal.reason ?? new DOMException('Aborted', 'AbortError');
+    let entry = this.entries.get(key);
+    if (!entry) {
+      const controller = new AbortController();
+      const promise = start(controller.signal).finally(() => {
+        const current = this.entries.get(key);
+        if (current?.promise === promise) this.entries.delete(key);
+      });
+      entry = { controller, promise, consumers: 0 };
+      this.entries.set(key, entry);
+    }
+    entry.consumers += 1;
+    try {
+      return await waitForConsumer(entry.promise, signal);
+    } finally {
+      entry.consumers -= 1;
+      if (entry.consumers === 0 && this.entries.get(key) === entry) {
+        this.entries.delete(key);
+        entry.controller.abort();
+      }
+    }
+  }
+
+  clear(): void {
+    for (const entry of this.entries.values()) entry.controller.abort();
+    this.entries.clear();
+  }
 }
 
 export function chunkGridShape(metadata: VolumeChunkMetadata): VolumeShape {
@@ -155,6 +207,8 @@ export class VolumeSliceLoader implements VolumeSliceSource {
   readonly cache: VolumeChunkCache;
   readonly source: VolumeChunkSource;
   private readonly concurrency: number;
+  private readonly pending = new AbortableRequestCache<VolumeChunk>();
+  private disposed = false;
 
   constructor(source: VolumeChunkSource, options: { cacheBytes?: number; concurrency?: number } = {}) {
     this.source = source;
@@ -164,16 +218,20 @@ export class VolumeSliceLoader implements VolumeSliceSource {
   }
 
   async loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<VolumeSlice> {
+    if (this.disposed) throw new Error('volume chunk source is disposed');
     const { metadata } = this.source;
     validateIndex(index, metadata.shape[axis]);
     const keys = chunkKeysForSlice(metadata, axis, index);
     const chunks = await mapWithConcurrency(keys, this.concurrency, async (key) => {
       const cached = this.cache.get(key);
       if (cached) return cached;
-      const chunk = await this.source.loadChunk(key, signal);
-      this.cache.set(chunk);
-      return chunk;
+      return this.pending.load(chunkKeyId(key), async (requestSignal) => {
+        const chunk = await this.source.loadChunk(key, requestSignal);
+        if (!this.disposed) this.cache.set(chunk);
+        return chunk;
+      }, signal);
     });
+    if (this.disposed) throw new Error('volume chunk source was disposed while loading');
 
     const [widthAxis, heightAxis] = PLANE_AXES[axis];
     const width = metadata.shape[widthAxis];
@@ -221,6 +279,7 @@ export class VolumeSliceLoader implements VolumeSliceSource {
   }
 
   async prefetchAdjacent(axis: SliceAxis, index: number, radius = 1, signal?: AbortSignal): Promise<void> {
+    if (this.disposed) return;
     const count = this.source.metadata.shape[axis];
     const indices = new Set<number>();
     for (let delta = -radius; delta <= radius; delta++) {
@@ -235,8 +294,18 @@ export class VolumeSliceLoader implements VolumeSliceSource {
     }
     await mapWithConcurrency([...keys.values()], this.concurrency, async (key) => {
       if (this.cache.get(key)) return;
-      this.cache.set(await this.source.loadChunk(key, signal));
+      await this.pending.load(chunkKeyId(key), async (requestSignal) => {
+        const chunk = await this.source.loadChunk(key, requestSignal);
+        if (!this.disposed) this.cache.set(chunk);
+        return chunk;
+      }, signal);
     });
+  }
+
+  dispose(): void {
+    this.disposed = true;
+    this.pending.clear();
+    this.cache.clear();
   }
 }
 

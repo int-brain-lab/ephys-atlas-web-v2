@@ -39,6 +39,7 @@ export interface RegisteredProjectionRegistration {
   readonly axis: SliceAxis;
   readonly referenceSpaceId: string;
   readonly viewBox: ViewBox;
+  readonly planeIndexToWorldUm: Matrix4;
   readonly worldToPlaneIndex: Matrix4;
 }
 
@@ -122,6 +123,7 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
       axis,
       referenceSpaceId: projection.reference_space_id,
       viewBox: viewBox(projection.view_box),
+      planeIndexToWorldUm: matrix(projection.plane_index_to_world_um),
       worldToPlaneIndex: matrix(projection.world_to_plane_index),
     };
   }

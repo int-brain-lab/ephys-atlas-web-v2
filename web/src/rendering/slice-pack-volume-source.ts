@@ -1,7 +1,7 @@
 import type { EncodedResourceDescriptor, VolumeFeaturePayload } from '../data/contracts.js';
 import { decodeBinaryArray } from '../data/validate.js';
 import type { SliceAxis } from '../domain/types.js';
-import type { VolumeSlice, VolumeSliceSource } from './volume.js';
+import { AbortableRequestCache, type VolumeSlice, type VolumeSliceSource } from './volume.js';
 
 const AXIS_NAME: Readonly<Record<SliceAxis, 'ap' | 'ml' | 'dv'>> = {
   coronal: 'ap',
@@ -114,8 +114,9 @@ function storageOffset(entry: PackEntry, rawCoordinates: readonly [number, numbe
 export class SchemaSlicePackVolumeSource implements VolumeSliceSource {
   private readonly resource: SlicePackResource;
   private readonly cache = new Map<string, DecodedPack>();
-  private readonly pending = new Map<string, Promise<DecodedPack>>();
+  private readonly pending = new AbortableRequestCache<DecodedPack>();
   private cacheBytes = 0;
+  private disposed = false;
 
   constructor(
     private readonly feature: VolumeFeaturePayload,
@@ -129,6 +130,7 @@ export class SchemaSlicePackVolumeSource implements VolumeSliceSource {
   }
 
   async loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<VolumeSlice> {
+    if (this.disposed) throw new Error('volume slice-pack source is disposed');
     const dimension = axisDimension(this.feature, axis);
     const count = this.feature.descriptor.grid.shape[dimension]!;
     if (!Number.isInteger(index) || index < 0 || index >= count) {
@@ -160,6 +162,7 @@ export class SchemaSlicePackVolumeSource implements VolumeSliceSource {
   }
 
   async prefetchAdjacent(axis: SliceAxis, index: number, radius = 1, signal?: AbortSignal): Promise<void> {
+    if (this.disposed) return;
     const dimension = axisDimension(this.feature, axis);
     const count = this.feature.descriptor.grid.shape[dimension]!;
     const packs = new Set<number>();
@@ -170,6 +173,13 @@ export class SchemaSlicePackVolumeSource implements VolumeSliceSource {
     await Promise.all([...packs].map((pack) => this.loadPack(axis, pack, signal).then(() => undefined)));
   }
 
+  dispose(): void {
+    this.disposed = true;
+    this.pending.clear();
+    this.cache.clear();
+    this.cacheBytes = 0;
+  }
+
   private async loadPack(axis: SliceAxis, packIndex: number, signal?: AbortSignal): Promise<DecodedPack> {
     const key = `${axis}/${packIndex}`;
     const cached = this.cache.get(key);
@@ -178,9 +188,8 @@ export class SchemaSlicePackVolumeSource implements VolumeSliceSource {
       this.cache.set(key, cached);
       return cached;
     }
-    const inFlight = this.pending.get(key);
-    if (inFlight) return inFlight;
-    const request = this.fetchPack(axis, packIndex, signal).then((pack) => {
+    return this.pending.load(key, (requestSignal) => this.fetchPack(axis, packIndex, requestSignal).then((pack) => {
+      if (this.disposed) throw new Error('volume slice-pack source was disposed while loading');
       this.cache.set(key, pack);
       this.cacheBytes += pack.values.byteLength;
       while (this.cacheBytes > this.maxCacheBytes && this.cache.size > 1) {
@@ -190,9 +199,7 @@ export class SchemaSlicePackVolumeSource implements VolumeSliceSource {
         this.cacheBytes -= oldest.values.byteLength;
       }
       return pack;
-    }).finally(() => this.pending.delete(key));
-    this.pending.set(key, request);
-    return request;
+    }), signal);
   }
 
   private async fetchPack(axis: SliceAxis, packIndex: number, signal?: AbortSignal): Promise<DecodedPack> {
