@@ -54,7 +54,7 @@ benchmark-anatomy:
 
 # Exercise the anatomy contract, generator, artifact validator, and comparison cases.
 test-anatomy:
-    {{uv-anatomy}} python -m pytest -q tests/test_anatomy_pack.py tests/test_anatomy_pack_schema.py tests/test_anatomy_compare.py tests/test_anatomy_pack_v2.py tests/test_anatomy_pack_v2_schema.py tests/test_svg_pack.py tests/test_sampled_svg_pack.py tests/test_projection_pack.py
+    {{uv-anatomy}} python -m pytest -q tests/test_anatomy_pack.py tests/test_anatomy_pack_schema.py tests/test_anatomy_compare.py tests/test_anatomy_smoothing_lab.py tests/test_anatomy_pack_v2.py tests/test_anatomy_pack_v2_schema.py tests/test_svg_pack.py tests/test_sampled_svg_pack.py tests/test_projection_pack.py
 
 # Build a historical 25 um v1 anatomy pack from a clean commit.
 anatomy-pack tolerance="15" depth="16" output="artifacts/anatomy-pack-v1":

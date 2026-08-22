@@ -137,12 +137,16 @@ def raster_label_geometries(plane: np.ndarray) -> dict[int, Polygon | MultiPolyg
     return result
 
 
-def _geometry_signature(geometry: Polygon | MultiPolygon) -> tuple[int, int]:
+def geometry_signature(geometry: Polygon | MultiPolygon) -> tuple[int, int]:
+    """Return polygon-component and interior-ring counts for one region."""
     polygons = list(get_parts(geometry))
     return len(polygons), sum(len(polygon.interiors) for polygon in polygons)
 
 
-def _adjacencies(geometries: list[Polygon | MultiPolygon]) -> set[tuple[int, int]]:
+def adjacency_pairs(
+    geometries: list[Polygon | MultiPolygon],
+) -> set[tuple[int, int]]:
+    """Return indexes of regions sharing a boundary segment."""
     tree = STRtree(geometries)
     pairs = tree.query(geometries, predicate="intersects")
     result: set[tuple[int, int]] = set()
@@ -155,11 +159,12 @@ def _adjacencies(geometries: list[Polygon | MultiPolygon]) -> set[tuple[int, int
     return result
 
 
-def _boundary_errors(
+def boundary_errors(
     reference: Polygon | MultiPolygon,
     candidate: Polygon | MultiPolygon,
     resolution_um: int,
 ) -> np.ndarray:
+    """Sample symmetric boundary distances in physical units."""
     reference_boundary = shapely.segmentize(reference.boundary, 0.25)
     candidate_boundary = shapely.segmentize(candidate.boundary, 0.25)
     reference_vertices = points(get_coordinates(reference_boundary))
@@ -169,7 +174,7 @@ def _boundary_errors(
     return np.concatenate((forward, reverse)) * resolution_um
 
 
-def _voxel_center_errors(
+def voxel_center_errors(
     plane: np.ndarray,
     geometries_by_label: dict[int, Polygon | MultiPolygon],
 ) -> tuple[int, int, int]:
@@ -198,7 +203,7 @@ def _voxel_center_errors(
     return uncovered, multiply_covered, wrong_label
 
 
-def _internal_background_components(
+def internal_background_components(
     plane: np.ndarray,
     geometries: list[Polygon | MultiPolygon],
 ) -> int:
@@ -276,20 +281,20 @@ def simplify_coverage(
 
     coverage_after = bool(coverage_is_valid(candidate))
     valid_after = bool(np.all(shapely.is_valid(candidate)))
-    signatures_before = [_geometry_signature(geometry) for geometry in exact]
-    signatures_after = [_geometry_signature(geometry) for geometry in candidate]
+    signatures_before = [geometry_signature(geometry) for geometry in exact]
+    signatures_after = [geometry_signature(geometry) for geometry in candidate]
     components_before = sum(value[0] for value in signatures_before)
     components_after = sum(value[0] for value in signatures_after)
     holes_before = sum(value[1] for value in signatures_before)
     holes_after = sum(value[1] for value in signatures_after)
-    adjacency_before = _adjacencies(exact)
-    adjacency_after = _adjacencies(candidate)
+    adjacency_before = adjacency_pairs(exact)
+    adjacency_after = adjacency_pairs(candidate)
     candidate_by_label = dict(zip(labels, candidate, strict=True))
     uncovered_voxels, multiply_covered_voxels, wrong_label_voxels = (
-        _voxel_center_errors(source_plane, candidate_by_label)
+        voxel_center_errors(source_plane, candidate_by_label)
     )
-    internal_background_before = _internal_background_components(source_plane, exact)
-    internal_background_after = _internal_background_components(source_plane, candidate)
+    internal_background_before = internal_background_components(source_plane, exact)
+    internal_background_after = internal_background_components(source_plane, candidate)
 
     eligible_ious: list[float] = []
     errors: list[np.ndarray] = []
@@ -302,7 +307,7 @@ def simplify_coverage(
         )
         if reference.area * resolution_um**2 >= minimum_iou_area_um2:
             eligible_ious.append(iou)
-        errors.append(_boundary_errors(reference, simplified_geometry, resolution_um))
+        errors.append(boundary_errors(reference, simplified_geometry, resolution_um))
     all_errors = np.concatenate(errors) if errors else np.zeros(1)
 
     validation = SliceValidation(
@@ -441,9 +446,9 @@ def validate_exact_coverage(
     geometries_valid = bool(np.all(shapely.is_valid(exact)))
     if not coverage_valid or not geometries_valid:
         raise ValueError("exact anatomy is not a valid polygonal coverage")
-    signatures = [_geometry_signature(geometry) for geometry in exact]
-    adjacency = _adjacencies(exact)
-    internal_background = _internal_background_components(source_plane, exact)
+    signatures = [geometry_signature(geometry) for geometry in exact]
+    adjacency = adjacency_pairs(exact)
+    internal_background = internal_background_components(source_plane, exact)
     vertices_before = sum(len(get_coordinates(geometry.boundary)) for geometry in exact)
     vertices_after = sum(
         len(_without_collinear(np.asarray(ring.coords))) - 1

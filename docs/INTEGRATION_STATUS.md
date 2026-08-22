@@ -102,6 +102,17 @@ explode. It has not been integrated on `main`, is not part of M2 or launch
 acceptance, and must not be bulk merged because it predates final projection
 cutover commits.
 
+The approved anatomy smoothing investigation has completed its first pure
+experiment slice. A deterministic registry now exposes exact geometry, GEOS
+whole-coverage simplification with explicit outer-boundary policy, and a
+permanently unsafe independent-ring RDP control. Failure-preserving results
+measure coverage, geometry validity, components, holes, adjacency, source
+voxel centres, background topology, per-region IoU/area change, symmetric
+boundary error, and complexity across deterministic synthetic stress planes.
+This is offline evidence machinery only; it does not alter the active anatomy
+or choose a production smoothing budget. Slice 2, the deterministic report
+builder, is the next unblocked action.
+
 Optional main-application integration is approved through D037 and
 `docs/rendering/3D_INTEGRATION_PLAN.md`. The target is a `brain-3d` content kind
 inside the existing secondary/context slot, backed by a sibling retained 3-D
