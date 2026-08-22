@@ -517,3 +517,80 @@ LOD, scientific exclusions, and removal of the experimental label remain Q12.
 The complete ownership, contract, commit order, tests, stop conditions, and
 donor-retirement protocol are in
 `docs/rendering/3D_INTEGRATION_PLAN.md`.
+
+## D038 — Freeze clusters from the BWM project and preserve the legacy BWM product
+
+Use the current `ibleatools` frozen project
+`ibl_neuropixel_brainwide_01` as the launch source namespace for
+`ephys_atlas_clusters`. Build from every row of a content-addressed snapshot of
+`cells_aggregates/clusters.table.pqt`, retaining D006's equal-cluster,
+feature-wise finite population with no good-unit filter or insertion
+balancing. The S3 project prefix is not an immutable release identity: the
+puller must record every source object and hash and derive the release identity
+from the fetched contents.
+
+Review the 14 scalar features historically exposed by the atlas cluster path
+as the initial launch-catalog candidate: `amp_max`, `amp_min`, `amp_median`,
+`amp_std_dB`, `contamination`, `contamination_alt`, `drift`,
+`missed_spikes_est`, `noise_cutoff`, `presence_ratio`,
+`presence_ratio_std`, `slidingRP_viol`, `spike_count`, and `firing_rate`.
+Before freezing that catalog, produce a source audit of column presence, dtype,
+units, finite/missing counts, ranges, and distributions for human review.
+Waveform, ACG, STPC, and STLFP arrays are not launch regional features.
+
+Define the launch `brainwide_map` dataset as a faithful schema-v1 preservation
+of the v1 website's five Beryl-only regional analysis families: `choice`,
+`feedback`, `stimulus`, `wheel_speed`, and `wheel_velocity`. Pin and checksum
+the five existing Parquet inputs and the v1 `generate.py` implementation at
+commit `1d908bea095be2616a750d939d143f3b4db2a641`. Preserve the legacy feature
+values and aggregation/significance semantics through equivalence fixtures;
+do not silently reinterpret this snapshot as a regeneration from a newer BWM
+paper release. A later scientifically refreshed BWM product requires a new
+immutable release and explicit decision.
+
+## D039 — Review smoothing against pinned anatomy images and complete metrics
+
+The anatomy smoothing lab is a pre-release visual investigation whose output
+is evidence, not an automatic production cutover. Compare every candidate with
+the exact bilateral 10 um label geometry and with a separately pinned,
+SHA-256-verified Allen 10 um average-template intensity volume on the same
+grid. The report must offer anatomy-only, exact-over-anatomy,
+candidate-over-anatomy, exact/candidate overlay, blink, side-by-side, and
+magnified modes. It may also show the exact annotation-label raster as a
+registration diagnostic. Image contrast, opacity, and stroke controls are
+presentation aids and never scientific metrics.
+
+Human review chooses a shortlist. Eligibility still requires deterministic
+topology, coverage, label, component/hole, adjacency, source-voxel, IoU,
+area-change, and boundary-error evidence. Report raw SVG, gzip-9, optional
+Brotli, vertex/path/ring complexity, generation time, and representative
+browser parse/render/picking measurements per candidate. A shortlisted
+configuration must then pass the complete 3,260-plane corpus and report actual
+407-plane sparse-pack sizes and worst slices/regions before a separate
+promotion decision may replace the active presentation asset.
+
+## D040 — Stage static delivery on S3/CloudFront and use a manual cross-browser gate
+
+Use IBL-owned S3 as the immutable object store and CloudFront as the preferred
+HTTPS/browser delivery boundary for staging and production scientific
+releases, projection packs, mesh packs, and catalogs. Keep immutable objects
+on content/release-specific keys with long-lived immutable caching; keep
+catalogs and mutable aliases separate with appropriate short-lived caching.
+Use an S3 REST origin with controlled bucket access rather than relying on an
+HTTP-only S3 website endpoint. Configure and verify CORS, MIME types, opaque
+gzip serving, byte sizes, SHA-256 values, and cache behavior at the actual
+origin before launch. Exact bucket, distribution, domain, and alias names
+remain deployment inputs under Q8. Do not access or modify the existing
+`iblviz` EC2 host without explicit repository-owner permission.
+
+Treat depth-four orthogonal slice packs as the primary Q5 production candidate,
+while retaining both schema-v1 transports until representative `2026_W26`
+features pass browser/HTTP measurements at the selected CloudFront origin.
+This recommendation does not by itself resolve Q5.
+
+For initial launch downloads, artifact URLs and current-feature/context-rich
+exports are sufficient. Polished whole-release packaging and broader local
+dataset management may follow without blocking launch. Keep automated
+Chromium Playwright as the continuous browser gate and complete a documented
+manual Firefox and Safari matrix for release sign-off; automated
+Firefox/WebKit CI is not required for launch.

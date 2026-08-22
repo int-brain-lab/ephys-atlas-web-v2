@@ -208,8 +208,10 @@ nonempty scalar feature catalog. It aggregates every finite row of
 `clusters.table.pqt` with equal cluster weight after left folding; it does not
 use `clusters_good.table.pqt`, insertion balancing, or hidden good-unit/QC
 filters. Its build inputs can separately declare presentation-only log-color
-defaults. Production remains blocked on Q6's authoritative project/snapshot
-and launch feature catalog.
+defaults. D038 selects the frozen `ibl_neuropixel_brainwide_01` project and the
+legacy 14-feature scalar list as the review candidate. Production now waits on
+the content-addressed source pull/audit and human freeze of that catalog under
+Q6.
 
 ## Regional viewer
 
@@ -356,7 +358,9 @@ local from published content without a shadow scientific schema.
 Share copies complete URL state; Info exposes immutable release, feature
 semantics, and source/builder provenance; current regional statistics and
 selected-region comparisons export as context-rich CSV. Volume-feature
-navigation/download and broader whole-release/local-dataset UX remain in M5.
+artifact navigation/download remains in M5. Artifact URLs and current-feature
+exports are sufficient for initial launch; polished whole-release packaging
+and broader local-dataset management are non-blocking follow-ups under D040.
 
 ## Publishing
 
@@ -391,13 +395,16 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
 2. extend volume browser/HTTP benchmarks, resolve Q4-Q5 authoritatively, and
    build the real immutable volume release on the completed projection/schema
    foundation;
-3. resolve Q6 and build the production cluster release;
-4. define and build the exact `brainwide_map` product after Q7;
-5. finish M5 downloads and local-dataset management UX;
-6. deploy the immutable projection assets and finalize catalog/origin/default
+3. pull/audit `ibl_neuropixel_brainwide_01`, freeze the reviewed scalar catalog,
+   and build the production cluster release;
+4. build the D038 preserved five-family legacy BWM product now that Q7 is
+   resolved;
+5. provide artifact URLs and current-feature exports for launch; broader
+   package/local-management UX is non-blocking;
+6. stage immutable assets on S3/CloudFront and finalize catalog/origin/default
    alias/publishing choices in Q8-Q9;
-7. run final production-origin, performance, responsive, and cross-browser QA,
-   resolving Q11.
+7. run final production-origin, performance, responsive, automated Chromium,
+   and documented manual Firefox/Safari QA under resolved Q11.
 
 Production promotion of the independent 3-D lab, AGEA, MERFISH, large point
 clouds, inferential statistics, full OAuth, and broad legacy custom-bucket

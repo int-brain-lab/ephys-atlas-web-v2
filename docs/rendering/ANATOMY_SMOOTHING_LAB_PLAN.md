@@ -23,7 +23,10 @@ Build an ignored, fully offline HTML report in which a human reviewer can move
 between representative coronal, sagittal, and horizontal slices and compare
 the exact reference with several deterministic candidate strategies and
 parameter values. The page must expose visual differences and measured
-scientific/structural consequences together.
+scientific/structural consequences together. It must also show exact and
+candidate boundaries over the registered Allen 10 um average-template anatomy
+so the reviewer can detect orientation or registration mistakes and judge
+boundary placement against anatomical contrast.
 
 The investigation is complete when:
 
@@ -57,6 +60,12 @@ anatomy or projection pack in this lane.
 - Read the pinned annotation/LUT identity and projection transforms from the
   validated parent/build inputs. Do not introduce a new affine, orientation,
   atlas ID domain, hemisphere rule, or reference-space identity.
+- Treat the Allen 10 um average-template intensity volume as a separate pinned
+  review input. Verify its declared byte size and SHA-256, validate its grid
+  shape/orientation against the annotation, record its exact source and
+  `iblatlas` version/commit, and derive every displayed plane through the same
+  projection transform as the label geometry. The intensity image is visual
+  evidence; the annotation labels remain the boundary authority.
 - Smoothing changes presentation geometry only. Native 10 µm cursor state,
   world coordinates, slice counts, sparse 80 µm display selection, and volume
   registration remain unchanged.
@@ -174,6 +183,8 @@ schema. For each source plane and variant record:
 - post-serialization shared-edge/coverage results, so coordinate formatting or
   quantization cannot reintroduce a seam after in-memory validation;
 - raw UTF-8, deterministic gzip-9, and optional Brotli sizes;
+- per-plane and aggregate size/complexity deltas relative to exact geometry,
+  plus projected and eventual actual 407-plane sparse-pack sizes;
 - generation/validation elapsed time as diagnostic evidence, clearly excluded
   from deterministic equality; and
 - tool commit/dirty state plus Shapely and GEOS versions.
@@ -202,8 +213,13 @@ Required controls and views:
 - strategy and parameter selectors, with keyboard-accessible previous/next
   controls;
 - exact and candidate side-by-side panels using the identical view box;
+- anatomy-only, exact-over-anatomy, and candidate-over-anatomy modes using the
+  pinned average-template slice, plus an optional exact annotation-label
+  raster registration mode;
 - overlay, boundary-only overlay, adjustable opacity, blink, and difference
   emphasis modes;
+- independent image contrast/brightness and boundary opacity controls, clearly
+  labelled as review presentation rather than geometry parameters;
 - pan/zoom or a magnified inspection inset so 10 µm stair steps can be reviewed
   without changing geometry;
 - browser-only stroke visibility, width, line-join, and line-cap controls for
@@ -214,6 +230,8 @@ Required controls and views:
 - a persistent status badge for reference/eligible/rejected/unsafe and a list
   of all failed gates;
 - a compact summary comparing vertices, encoded size, IoU, and boundary error;
+- raw/gzip/Brotli byte counts, percentage deltas, and generation timing for the
+  selected variant;
 - full per-slice metrics and a sortable worst-region table; and
 - a provenance panel containing exact source, parameter, tool, and environment
   identities.

@@ -96,27 +96,46 @@ For every explicitly selected scalar feature, average all finite clusters in
 each left-folded Allen/Beryl/Cosmos region with one equal-weight observation per
 cluster; publish descriptive statistics, histograms, and counts.
 
-Still needed: the authoritative project/source snapshot and the explicit
-launch feature catalog. Units/transforms must come from that pinned source
+Resolved by D038: use the `ibl_neuropixel_brainwide_01` project and create a
+content-addressed snapshot of its otherwise unversioned `cells_aggregates`
+source objects. Review the 14 legacy scalar cluster features named by D038 as
+the initial launch-catalog candidate; waveform, ACG, STPC, and STLFP arrays are
+not regional launch features.
+
+Still needed: pull the exact source snapshot and produce the required
+column/unit/missingness/range/distribution audit, then record human approval of
+the final scalar catalog. Units/transforms must come from that pinned source
 schema and remain null rather than being guessed when absent.
 
-Blocks: production cluster source pull/release, not the deterministic builder machinery.
+Blocks: the final production cluster release, not the source pull/audit or
+deterministic builder machinery.
 
 ## Q7 — Exact `brainwide_map` launch product
 
-Status: **BLOCKER** for `brainwide_map`.
+Status: **RESOLVED by D038 (2026-08-22)**.
 
-Do not equate the intended launch dataset with whichever legacy website export or paper-selection file is easiest to find.
+The resolution deliberately selects the exact checksummed legacy website
+snapshot. Do not substitute a different legacy export or paper-selection file
+without a new decision and release identity.
 
-Resolution needed: authoritative source repository/object, population/selection, features, release/vintage, and expected regional/volume representations.
-
-Blocks: BWM builder, catalog entry, launch acceptance for this dataset.
+Resolution: preserve the v1 website's five Beryl-only Parquet families
+(`choice`, `feedback`, `stimulus`, `wheel_speed`, and `wheel_velocity`) as a
+checksummed legacy snapshot and reproduce the pinned v1 generator semantics in
+schema v1. Label it as a preserved legacy website product, not as a current
+paper-pipeline regeneration. This unblocks the BWM builder, catalog entry, and
+browser acceptance work.
 
 ## Q8 — Production public origin and storage
 
-Status: **DECISION**.
+Status: **PARTIALLY RESOLVED by D040; DECISION**.
 
-Resolution needed: final domain, object-storage/CDN location, cache policy, CORS configuration, and whether the publishing service writes directly to that storage or to an intermediate filesystem/object-sync layer.
+Resolved direction: use IBL-owned S3 for immutable objects with CloudFront as
+the preferred HTTPS/browser origin. Do not use or modify `iblviz` without
+explicit repository-owner permission.
+
+Resolution still needed: final bucket, distribution and domain names, exact
+cache/CORS policy, and whether the publishing service writes directly to S3 or
+through an intermediate filesystem/object-sync layer.
 
 Blocks: production-origin QA, generated v3 anatomy-pack deployment, and
 deployment documentation.
@@ -142,13 +161,13 @@ copied for the default launch path.
 
 ## Q11 — Cross-browser release gate depth
 
-Status: **DECISION**.
+Status: **RESOLVED by D040 (2026-08-22)**.
 
 Chromium Playwright is automated. Launch targets also include Firefox and Safari.
 
-Resolution needed: decide whether to add automated Firefox/WebKit Playwright jobs before launch or perform a documented manual release matrix for those browsers.
-
-Blocks: final browser QA sign-off, not ordinary implementation.
+Resolution: retain automated Chromium Playwright and perform a documented
+manual Firefox and Safari release matrix. Automated Firefox/WebKit jobs are not
+required for launch.
 
 ## Q12 — 3-D production promotion and final LOD
 

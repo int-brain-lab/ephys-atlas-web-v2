@@ -4,6 +4,11 @@
 columns of `cells_aggregates/clusters.table.pqt`. It does not use BWM data or
 `clusters_good.table.pqt`.
 
+The approved launch source project is the current `ibleatools` frozen BWM
+project `ibl_neuropixel_brainwide_01`. This is an Alyx project/cohort and S3
+namespace, not an immutable release identifier. The builder must therefore
+snapshot and checksum its exact aggregate objects before building.
+
 ## Population and aggregation
 
 The approved population is all cluster rows in the explicitly selected project
@@ -30,20 +35,22 @@ The build additionally requires the exact project name and Git commits for
 project/QC choice remain explicit inputs; the recipe does not guess a paper
 vintage or substitute a different cluster population.
 
-There is deliberately no default launch feature catalog. Every snapshot build
-must repeat `--feature` to define a nonempty catalog, and the resolved list is
-recorded in provenance. Units are copied only when the pinned upstream schema
-provides them; otherwise they remain null rather than being guessed. Large
-waveform, ACG, STPC, and STLFP arrays are not silently reduced into regional
-features.
+Every snapshot build must repeat `--feature` to define a nonempty catalog, and
+the resolved list is recorded in provenance. D038 identifies the legacy
+14-feature scalar list as the launch-review candidate, not an implicit CLI
+default. Before freezing it, report source column presence, dtype, units,
+finite/missing counts, ranges, and distributions for human approval. Units are
+copied only when the pinned upstream schema provides them; otherwise they
+remain null rather than being guessed. Large waveform, ACG, STPC, and STLFP
+arrays are not silently reduced into regional features.
 
 ## Example
 
 ```bash
-ephys-atlas-data pull ephys_atlas_clusters latest --project <exact-project>
+ephys-atlas-data pull ephys_atlas_clusters latest --project ibl_neuropixel_brainwide_01
 
 ephys-atlas-data build-clusters latest \
-  --project <exact-project> \
+  --project ibl_neuropixel_brainwide_01 \
   --population all \
   --feature firing_rate \
   --feature amp_median \

@@ -178,6 +178,13 @@ human visual review across all three projections, and provide a separate
 full-corpus validation path for any shortlist. It must not modify the active
 projection pack or introduce runtime smoothing.
 
+D039 additionally requires the lab to pin the Allen 10 um average-template
+intensity volume and expose exact/candidate boundaries over that anatomical
+image, together with per-candidate encoded sizes, geometry/scientific metrics,
+and representative browser costs. This investigation should run before the
+production projection asset is frozen. Its first unblocked action is Slice 1
+of the focused plan.
+
 The ordered implementation slices, metric contract, UI requirements,
 scientific boundaries, and promotion stopping point are specified in
 `docs/rendering/ANATOMY_SMOOTHING_LAB_PLAN.md`.
@@ -216,7 +223,7 @@ Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 
 ## M3 — `ephys_atlas_clusters`
 
-Status: **deterministic builder implemented; production source/catalog blocked**.
+Status: **deterministic builder implemented; source project resolved; catalog review pending**.
 
 Implemented:
 
@@ -225,30 +232,37 @@ Implemented:
 - all-cluster, equal-cluster regional aggregation with no good-unit filter;
 - left-folded Allen/Beryl/Cosmos summaries, provenance, and validation.
 
-Blocked by the remaining parts of Q6: authoritative project/source snapshot
-and launch feature catalog.
+The source project is `ibl_neuropixel_brainwide_01` by D038. Q6 remains open
+only through the source pull/audit and human freeze of the proposed 14-feature
+scalar catalog.
 
-After resolution:
+Next actions:
 
-1. pull the approved content-addressed project snapshot;
-2. inspect source-provided feature metadata/units;
-3. build and validate the immutable release;
-4. exercise the browser path without cluster-specific UI hardcoding.
+1. pull and checksum the content-addressed project snapshot;
+2. report column presence, dtypes, units, finite/missing counts, ranges, and
+   distributions for the 14 D038 candidate features;
+3. record human approval or adjustment of that catalog in Q6;
+4. build and validate the immutable release;
+5. exercise the browser path without cluster-specific UI hardcoding.
 
 Acceptance reference: section 5 of the launch spec.
 
 ## M4 — `brainwide_map`
 
-Status: **blocked on product/scientific definition**.
+Status: **legacy launch product defined; builder not implemented**.
 
-Blocked by: Q7.
+Q7 is resolved by D038. The launch product preserves the five existing
+Beryl-only v1 Parquet families with exact source hashes and semantic
+equivalence evidence; it is not a current paper-pipeline regeneration.
 
-After resolution:
+Next actions:
 
-1. pin the authoritative source and selection/population;
-2. implement the smallest deterministic builder adapter needed for the defined representation;
-3. record provenance and validate;
-4. add to the public catalog and browser acceptance suite.
+1. ingest the five explicit Parquet paths and verify their recorded SHA-256
+   values before reading them;
+2. implement the smallest deterministic Beryl regional builder adapter;
+3. compare values/statistics against the pinned v1 `generate.py` behavior;
+4. record the legacy-snapshot provenance and validate;
+5. add the release to the public catalog and browser acceptance suite.
 
 Acceptance reference: section 7 of the launch spec.
 
@@ -272,7 +286,8 @@ Goals:
 
 - production-grade local import validation for regional and supported volume releases;
 - volume-feature download/navigation;
-- deterministic whole-release package path exposed/documented where practical;
+- immutable artifact URLs and current-feature/context-rich exports for launch;
+- deterministic whole-release package path as a non-blocking follow-up where practical;
 - visible provenance identifiers in exported data.
 
 Requirements:
@@ -285,16 +300,17 @@ Acceptance reference: sections 8 and 9 of the launch spec.
 
 ## M6 — Production assets, catalog, publishing, deployment
 
-Status: **registered anatomy integrated; catalog/deployment decisions open**.
+Status: **registered anatomy integrated; S3/CloudFront direction selected; deployment details open**.
 
 Blocked in part by: Q8 and Q9.
 
 Actions:
 
-1. deploy the committed immutable projection pack and preserve opaque
+1. provision a staging S3 REST origin and CloudFront distribution without
+   accessing `iblviz`, then deploy the committed immutable projection pack and preserve opaque
    `.isvg.gz` bytes without HTTP `Content-Encoding`;
 2. finalize static public catalog/default aliases for the frozen scientific release set;
-3. configure production CORS/cache policy;
+3. configure and verify production CORS, MIME, cache, and bucket-access policy;
 4. deploy or explicitly waive the remote publishing service for launch;
 5. if deployed, configure validator command, secrets, storage, backups, and TLS/reverse proxy;
 6. verify anatomy and scientific release URLs from the production origin.
@@ -309,7 +325,8 @@ Actions:
 
 1. run `just check` from a clean checkout;
 2. run representative real-data performance measurements;
-3. execute the cross-browser matrix chosen in Q11;
+3. execute automated Chromium plus the documented manual Firefox/Safari matrix
+   selected by D040/Q11;
 4. verify responsive desktop/tablet/phone behavior;
 5. test deep links and immutable release URLs;
 6. test asset/data failure states;

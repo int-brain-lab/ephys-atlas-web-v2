@@ -136,17 +136,26 @@ fixed `bwm_query` freezes, aggregate-table downloads, checksums, and UUID-hash
 verification for `bwm_units`. It therefore provides authoritative provenance for
 paper unit/session selections.
 
-The v1 website's BWM regional feature files (`choice_bwm.pqt`,
-`feedback_bwm.pqt`, `stimulus_bwm.pqt`, wheel analyses, etc.) are only consumed
-by the v1 generator; their end-to-end production was not found in the four
-requested current repositories. The current paper repository also defaults its
-aggregate downloader to a 2026 tag, which is not automatically the same thing as
-the 2025 paper snapshot.
+By D038, the v2 launch preserves the v1 website's exact Beryl-only regional
+feature snapshot rather than regenerating a current paper product. The pinned
+generator is `int-brain-lab/ephys-atlas-web/generate.py` at
+`1d908bea095be2616a750d939d143f3b4db2a641`. The source files observed in the
+clean sibling checkout on 2026-08-22 are:
 
-**Do not guess:** what `brainwide_map` means for v2 launch (paper unit table,
-paper analysis summaries, the v1 feature family, or a subset); which publication
-freeze/tag is the paper-facing default; aggregation/significance semantics for
-v1 analysis outputs.
+| Family | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `choice_bwm.pqt` | 19,742 | `179bd6714bbb3e22f98fc4311c07a9a367d6ad8bf7487469108862751a2c3421` |
+| `feedback_bwm.pqt` | 20,053 | `262f48322b36f3655e76648aaa41db7a075387541a9403e52819523a56acf7f1` |
+| `stimulus_bwm.pqt` | 18,892 | `6ecd376ec9a81bf179a04bd250793fc8f254cd3e77ba93c4c63ba861e07d8efa` |
+| `wheel_speed_bwm.pqt` | 12,371 | `58b63dd36f7ce3e7615624d1e11e47906fae00eff717f08653f7e299f057a7ca` |
+| `wheel_velocity_bwm.pqt` | 12,126 | `5da2ee7ae0added6996a433fd8c04796d8953bac15612cd89f46d8fb56688438` |
+
+The new builder must accept explicit source paths, verify these bytes before
+reading, preserve the legacy feature values and aggregation/significance
+semantics through equivalence fixtures, and identify the result as a preserved
+legacy website snapshot. The table records source identity; it does not fill
+the missing end-to-end provenance that produced the Parquet files and must not
+be presented as a newer paper-pipeline regeneration.
 
 ## `local`
 

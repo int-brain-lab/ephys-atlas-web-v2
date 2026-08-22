@@ -123,6 +123,30 @@ See Q5.
 
 If the canonical public object eventually becomes sufficiently feature/slice-addressable and meets the browser budgets, direct consumption remains acceptable under D010. If a web-optimized representation is required, it must be generated deterministically with provenance back to the pinned canonical object.
 
+## Ephys Atlas clusters
+
+The approved launch project is `ibl_neuropixel_brainwide_01`, described by the
+current `ibleatools` S3 architecture as the frozen Brain-Wide Map dataset. It
+is both an Alyx project/cohort name and the source namespace:
+
+    aggregates/atlas/projects/ibl_neuropixel_brainwide_01/cells_aggregates/
+
+It is not a release identifier. Snapshot and checksum the exact aggregate
+objects before building. Use all rows of `clusters.table.pqt` under the recipe
+in `docs/data/CLUSTERS_RECIPE.md`; do not substitute `clusters_good.table.pqt`
+or the stricter paper `bwm_query` population. D038 names the 14-feature review
+candidate; the final scalar catalog remains explicit after source audit.
+
+## Preserved legacy Brain-Wide Map
+
+The launch `brainwide_map` product is the five-family Beryl-only snapshot used
+by the v1 website: choice, feedback, stimulus, wheel speed, and wheel velocity.
+Exact byte sizes and hashes are recorded in `docs/data/PROVENANCE.md`. Its
+generator is pinned to the clean v1 website commit
+`1d908bea095be2616a750d939d143f3b4db2a641`. Preserve these inputs and semantics
+as legacy data; do not describe the resulting release as regenerated from a
+current BWM paper freeze.
+
 ## Regional aggregation evidence from v1
 
 The legacy `int-brain-lab/ephys-atlas-web/make_ephys.py` provides useful historical aggregation semantics:
@@ -163,4 +187,7 @@ See `docs/IMPLEMENTATION_PLAN.md` for execution order. The highest-value source-
 3. inspect and checksum the `2026_W26` 50 um object, then repeat representative
    encoding-volume browser transport benchmarks for Q5; retain `2026_W12`
    results as explicitly historical evidence;
-4. re-test the final public object origin for CORS/Range/cache behavior when available.
+4. build and review the content-addressed `ibl_neuropixel_brainwide_01` cluster
+   source audit and proposed scalar catalog;
+5. build the schema-v1 preserved legacy BWM release with equivalence evidence;
+6. re-test the final S3/CloudFront origin for CORS/Range/cache behavior when available.

@@ -14,8 +14,8 @@ browser-local IndexedDB imports, and publishing validation. It provides:
   parcellation region indices;
 - explicit volume geometry independent of physical layout;
 - `chunks3d` and `orthogonal_slice_packs` volume layouts;
-- provenance, artifact byte-size/SHA-256 identity, aliases, and deterministic
-  whole-release ZIP packaging.
+- provenance, artifact byte-size/SHA-256 identity, aliases, and optional
+  deterministic whole-release ZIP packaging.
 
 The Python validator and independent TypeScript validator share valid/invalid
 fixtures for every contract document and semantic unit. `fixtures/golden-v1` is the deterministic synthetic
@@ -43,9 +43,20 @@ release. Q2 still blocks the final paper vintage and aliases. See
 The cluster builder accepts an explicit content-addressed project snapshot and
 nonempty scalar feature catalog. It aggregates every finite row from
 `clusters.table.pqt` with equal cluster weight after left folding, without a
-good-unit filter or insertion balancing. Q6 still blocks the authoritative
-project/source snapshot and launch feature catalog. See
+good-unit filter or insertion balancing. D038 selects
+`ibl_neuropixel_brainwide_01` as the source project and the
+legacy 14 scalar features as the review candidate. The remaining Q6 work is to
+pull and checksum the exact aggregate snapshot, audit those columns and units,
+and freeze the final catalog after human review. See
 `docs/data/CLUSTERS_RECIPE.md`.
+
+## Brain-Wide Map release
+
+D038 resolves Q7 by preserving the five checksummed Beryl-only v1 website
+families: choice, feedback, stimulus, wheel speed, and wheel velocity. The new
+builder must verify the recorded Parquet bytes, reproduce the pinned v1
+generator semantics through equivalence evidence, and identify the output as a
+legacy website snapshot rather than a current paper-pipeline regeneration.
 
 ## Volume releases
 
@@ -87,7 +98,7 @@ yet resolving that decision.
   are not required by a clean-checkout `just check`.
 
 The next data work is the earliest unblocked action in the implementation plan:
-rebuild the W32 channel development release under schema v1 before any
-non-production publication, repeat W26 volume inspection/benchmarks without inventing Q4/Q5, then
-consume authoritative answers for the paper channel, cluster, and
-`brainwide_map` releases.
+publish and validate the W32 channel development release at a non-production
+origin, repeat W26 volume inspection/benchmarks without inventing Q4/Q5, audit
+the selected cluster source/catalog, and implement the preserved legacy BWM
+builder.

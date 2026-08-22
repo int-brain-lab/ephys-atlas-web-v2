@@ -118,7 +118,10 @@ Acceptance criteria:
 - the output uses the same schema-v1 regional contract where applicable;
 - the viewer requires no cluster-specific hardcoded feature list.
 
-The exact scientific population/features remain blocked until resolved in `docs/OPEN_QUESTIONS.md`.
+D038 selects all rows from a content-addressed
+`ibl_neuropixel_brainwide_01/clusters.table.pqt` snapshot. Q6 remains open only
+until the source audit and human review freeze the proposed 14-feature scalar
+catalog.
 
 ## 6. `ephys_atlas_volumes`
 
@@ -135,11 +138,13 @@ Acceptance criteria:
 
 Acceptance criteria:
 
-- one exact launch product is defined, including source repository/object, population, features, and release/vintage;
-- it is not silently conflated with legacy website exports or paper-selection files;
+- the launch product faithfully preserves the five checksummed Beryl-only v1
+  website Parquet families selected by D038;
+- it is explicitly identified as a preserved legacy website snapshot and is
+  not presented as a current paper-selection or regenerated paper release;
+- feature values and aggregation/significance semantics validate against the
+  pinned v1 generator through deterministic equivalence evidence;
 - the dataset validates against the shared release contract and is discoverable through the public catalog.
-
-The exact product remains an open scientific/product question.
 
 ## 8. Local datasets
 
@@ -159,7 +164,9 @@ Acceptance criteria:
 
 - current-feature download is available or directly navigable from immutable release artifacts;
 - selected-region/visible comparison data can be exported in a documented machine-readable form;
-- whole immutable releases can be packaged/downloaded deterministically where size permits;
+- immutable artifact URLs and current-feature/context-rich exports satisfy the
+  initial launch; polished deterministic whole-release packaging is a
+  non-blocking follow-up;
 - downloads preserve enough metadata/provenance to identify dataset ID, release ID, feature, representation, statistic/parcellation, and source vintage.
 
 ## 10. Publishing and public reads
