@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   SchemaChunks3dVolumeSource,
-  regionalSliceToVolumeIndex,
+  locateVolumePlane,
 } from '../../.test-dist/rendering/chunked-volume-source.js';
 
 function feature(overrides = {}) {
@@ -91,7 +91,7 @@ test('chunks3d adapter transposes grid and explicit storage-axis permutations', 
   assert.deepEqual([...chunk.data], [0, 3, 1, 4, 2, 5]);
 });
 
-test('regional slice coordinates map through volume index_to_world transform', () => {
+test('world coordinates map through volume world_to_index without edge clamping', () => {
   const payload = feature({
     descriptor: {
       grid: {
@@ -107,8 +107,10 @@ test('regional slice coordinates map through volume index_to_world transform', (
       },
     },
   });
-  assert.equal(regionalSliceToVolumeIndex(payload, 'coronal', 540), 0);
-  assert.equal(regionalSliceToVolumeIndex(payload, 'coronal', 535), 2);
-  assert.equal(regionalSliceToVolumeIndex(payload, 'sagittal', 574), 0);
-  assert.equal(regionalSliceToVolumeIndex(payload, 'horizontal', 33), 0);
+  assert.deepEqual(locateVolumePlane(payload, 'coronal', { ml: 0, ap: 50, dv: 0 }), {
+    status: 'in-grid', index: 2, fractionalIndex: 2, rawDimension: 0,
+  });
+  assert.equal(locateVolumePlane(payload, 'sagittal', { ml: 0, ap: 0, dv: 0 }).index, 0);
+  assert.equal(locateVolumePlane(payload, 'horizontal', { ml: 0, ap: 0, dv: 0 }).index, 0);
+  assert.equal(locateVolumePlane(payload, 'coronal', { ml: 0, ap: -13, dv: 0 }).status, 'out-of-grid');
 });

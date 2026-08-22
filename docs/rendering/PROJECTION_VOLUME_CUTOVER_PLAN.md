@@ -538,6 +538,8 @@ regional Playwright, and benchmark sanity run; finish with `just check`.
 
 ### Commit 6 — Composite volume planes in registered world space
 
+Status: **in progress; unclamped world-cursor plane location is implemented**.
+
 - split volume loading, location, colorization, and Canvas paint;
 - map the shared world cursor independently through the volume transform and
   return an explicit out-of-grid result;

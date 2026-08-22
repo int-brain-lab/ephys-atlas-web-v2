@@ -56,6 +56,11 @@ transform, preserve anatomy when volume fails, and implement the specified
 nearest-neighbor screen/world/voxel inspection path. Opacity and outline-only
 changes must repaint without fetching or decoding.
 
+The first Commit 6 slice is implemented: orthogonal volume planes are located
+by applying the declared `world_to_index` matrix to the shared world cursor.
+Voxel-edge bounds return an explicit `out-of-grid` result; the runtime no
+longer clamps an outside cursor to an edge plane or fetches that plane.
+
 Q4 still blocks authoritative production volume geometry/outside semantics,
 and Q5 still blocks the production transport choice. Use synthetic fixtures
 until those questions are resolved; do not infer a production affine.

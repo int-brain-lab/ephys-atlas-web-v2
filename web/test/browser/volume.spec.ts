@@ -21,10 +21,31 @@ test('schema-v1 chunks3d volume renders all three orthogonal golden slices', asy
   await expect(page.locator('[data-view="horizontal"] canvas')).toHaveJSProperty('height', 8);
 });
 
+test('an out-of-grid world cursor fails explicitly without fetching a clamped edge plane', async ({ page }) => {
+  const chunkRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/volume/chunks/')) chunkRequests.push(request.url());
+  });
+  await page.goto('/?v=4&feature=rms_ap&repr=volume');
+
+  for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
+    const frame = page.locator(`[data-view="${axis}"]`);
+    await expect(frame).toHaveAttribute('data-state', 'error');
+    await expect(frame.locator('.projection-viewport__error')).toContainText(
+      `${axis} cursor is outside the declared volume extent`,
+    );
+  }
+  expect(chunkRequests).toEqual([]);
+});
+
 test('switching regional to volume preserves each retained layer stack', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
   await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
+  await page.evaluate(() => {
+    history.replaceState({}, '', '/?v=4&cursor=25,25,25');
+    dispatchEvent(new PopStateEvent('popstate'));
+  });
   await page.evaluate(() => {
     const state = window as Window & { __retainedProjectionNodes?: Element[] };
     state.__retainedProjectionNodes = [...document.querySelectorAll(

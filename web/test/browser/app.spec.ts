@@ -202,7 +202,7 @@ test('unsupported historical URLs reset explicitly to the current canonical stat
   await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
   await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');
   await expect(page.locator('[data-view="coronal"] [data-slice-asset="projection-pack-v1"]')).toHaveAttribute('data-asset-index', '660');
-  await expect.poll(() => new URL(page.url()).search).toBe('?v=4');
+  await expect.poll(() => new URL(page.url()).search).toBe('?v=4&feature=rms_ap');
 });
 
 test('native bilateral anatomy exposes every scientific range endpoint', async ({ page }) => {
@@ -392,11 +392,14 @@ test('Allen anatomy mode shows actual regions and dark-theme ontology colors', a
 test('long feature menus scroll without option descriptions overlapping', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
+  await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
 
   const feature = page.locator('[data-context-field="feature"]');
   await feature.locator('.context-menu__trigger').click();
   const list = feature.locator('.context-menu__list');
   await list.evaluate((node) => {
+    node.style.height = '180px';
+    node.style.maxHeight = '180px';
     const template = node.querySelector<HTMLButtonElement>('.context-menu__option');
     if (!template) throw new Error('Expected a feature option');
     for (let index = 1; index < 30; index += 1) {

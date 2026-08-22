@@ -1,7 +1,7 @@
 import type { SliceAxis } from '../domain/types.js';
 import type { EncodedResourceDescriptor, VolumeFeaturePayload } from '../data/contracts.js';
 import { decodeBinaryArray } from '../data/validate.js';
-import { regionalIndexToCoordinateUm } from './slice-calibration.js';
+import type { WorldCoordinateUm } from '../core/spatial.js';
 import type {
   VolumeChunk,
   VolumeChunkKey,
@@ -14,12 +14,6 @@ const AXIS_NAME: Readonly<Record<SliceAxis, 'ap' | 'ml' | 'dv'>> = {
   coronal: 'ap',
   sagittal: 'ml',
   horizontal: 'dv',
-};
-
-const WORLD_ROW: Readonly<Record<'ap' | 'ml' | 'dv', number>> = {
-  ml: 0,
-  ap: 1,
-  dv: 2,
 };
 
 interface Chunks3dResource {
@@ -195,24 +189,34 @@ export class SchemaChunks3dVolumeSource implements VolumeChunkSource {
   }
 }
 
-export function regionalSliceToVolumeIndex(feature: VolumeFeaturePayload, axis: SliceAxis, regionalIndex: number): number {
-  const axisName = AXIS_NAME[axis];
-  const rawDimension = axisDimension(feature, axis);
-  const worldRow = WORLD_ROW[axisName];
-  const matrix = feature.descriptor.grid.indexToWorldUm;
-  if (matrix.length !== 16) throw new Error('volume index_to_world_um must contain 16 values');
+export type VolumePlaneLocation =
+  | { readonly status: 'in-grid'; readonly index: number; readonly fractionalIndex: number; readonly rawDimension: number }
+  | { readonly status: 'out-of-grid'; readonly fractionalIndex: number; readonly rawDimension: number };
 
-  for (let column = 0; column < 3; column += 1) {
-    if (column === rawDimension) continue;
-    if (Math.abs(matrix[worldRow * 4 + column] ?? 0) > 1e-9) {
-      throw new Error(`volume transform couples ${axisName} to another array axis; orthogonal slice mapping is undefined`);
-    }
-  }
-  const step = matrix[worldRow * 4 + rawDimension] ?? 0;
-  if (!Number.isFinite(step) || Math.abs(step) < 1e-12) throw new Error(`volume transform has no ${axisName} step`);
-  const origin = matrix[worldRow * 4 + 3] ?? feature.descriptor.grid.originUm[worldRow] ?? 0;
-  const coordinate = regionalIndexToCoordinateUm(axis, regionalIndex);
-  const rawIndex = Math.round((coordinate - origin) / step);
+/** Locate a registered orthogonal plane from the shared world cursor without clamping. */
+export function locateVolumePlane(
+  feature: VolumeFeaturePayload,
+  axis: SliceAxis,
+  world: WorldCoordinateUm,
+): VolumePlaneLocation {
+  const rawDimension = axisDimension(feature, axis);
+  const matrix = feature.descriptor.grid.worldToIndex;
+  if (matrix.length !== 16) throw new Error('volume world_to_index must contain 16 values');
+  const coordinates = [world.ml, world.ap, world.dv, 1] as const;
+  const row = rawDimension * 4;
+  const fractionalIndex = matrix[row]! * coordinates[0]
+    + matrix[row + 1]! * coordinates[1]
+    + matrix[row + 2]! * coordinates[2]
+    + matrix[row + 3]!;
+  if (!Number.isFinite(fractionalIndex)) throw new Error('volume world_to_index produced a non-finite plane');
   const count = feature.descriptor.grid.shape[rawDimension]!;
-  return Math.min(count - 1, Math.max(0, rawIndex));
+  if (fractionalIndex < -0.5 || fractionalIndex >= count - 0.5) {
+    return { status: 'out-of-grid', fractionalIndex, rawDimension };
+  }
+  return {
+    status: 'in-grid',
+    index: Math.floor(fractionalIndex + 0.5),
+    fractionalIndex,
+    rawDimension,
+  };
 }

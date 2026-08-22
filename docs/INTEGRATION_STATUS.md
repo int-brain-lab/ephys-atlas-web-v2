@@ -286,6 +286,12 @@ inspection.
 Published and local releases share the same transport-independent volume
 payload contract.
 
+Volume plane selection now applies the declared inverse affine to the shared
+world cursor and checks half-index voxel-edge bounds. An outside cursor fails
+explicitly before any plane resource request; it is never clamped to the
+nearest edge slice. Full layer registration and pointer inspection remain the
+next Commit 6 work.
+
 This proves the browser architecture, not the production science. Q4 still
 blocks the authoritative affine/axis mapping and any remaining missing-value
 semantics. Q5 remains

@@ -5,7 +5,7 @@ import { bilateralAtlasRegionColorMap, bilateralFeatureColorMap } from './scalar
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
 import type { RegionalSliceFrame, SliceRegionPointerEvent } from './types.js';
 import { CanvasVolumeSliceRenderer } from './canvas-volume-renderer.js';
-import { SchemaChunks3dVolumeSource, regionalSliceToVolumeIndex } from './chunked-volume-source.js';
+import { SchemaChunks3dVolumeSource, locateVolumePlane } from './chunked-volume-source.js';
 import { SchemaSlicePackVolumeSource } from './slice-pack-volume-source.js';
 import { VolumeSliceLoader, type VolumeSlice, type VolumeSliceSource } from './volume.js';
 import { paletteRgb } from './colormap-palettes.js';
@@ -296,7 +296,11 @@ class RetainedProjectionViewport implements ProjectionViewport {
   private async renderVolume(model: ProjectionRenderModel, token: number): Promise<void> {
     const feature = model.feature;
     if (!feature || feature.representation !== 'volume') throw new Error('Volume viewport requires a volume feature');
-    const volumeIndex = regionalSliceToVolumeIndex(feature, model.axis, model.sliceIndex);
+    const location = locateVolumePlane(feature, model.axis, cursorStateToWorld(model.cursor));
+    if (location.status === 'out-of-grid') {
+      throw new RangeError(`${model.axis} cursor is outside the declared volume extent`);
+    }
+    const volumeIndex = location.index;
     const loader = this.volumeSource(feature);
     const slice = await loader.loadSlice(model.axis, volumeIndex);
     if (this.renderToken !== token) return;

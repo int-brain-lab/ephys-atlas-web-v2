@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import type { VolumeFeaturePayload } from '../../web/src/data/contracts.js';
 import type { SliceAxis } from '../../web/src/domain/types.js';
+import { locateVolumePlane } from '../../web/src/rendering/chunked-volume-source.js';
 import { SchemaSlicePackVolumeSource } from '../../web/src/rendering/slice-pack-volume-source.js';
 import {
   VolumeChunkCache,
@@ -207,6 +208,36 @@ test('slice-pack source reuses a pack and decodes a short edge pack', async () =
   const edge = await source.loadSlice('coronal', 4);
   assert.deepEqual([...edge.data].slice(0, 4), [400, 410, 420, 430]);
   assert.equal(loads.get('coronal/2.f32'), 1);
+});
+
+test('world-space volume plane location follows the declared inverse without clamping', () => {
+  const { feature } = makeSlicePackFeature();
+  feature.descriptor.grid.indexToWorldUm = [
+    0, 0, 25, 0,
+    0, 25, 0, 0,
+    25, 0, 0, 0,
+    0, 0, 0, 1,
+  ];
+  feature.descriptor.grid.worldToIndex = [
+    0, 0, 0.04, 0,
+    0, 0.04, 0, 0,
+    0.04, 0, 0, 0,
+    0, 0, 0, 1,
+  ];
+  const world = { ml: 75, ap: 50, dv: 25 };
+  assert.deepEqual(locateVolumePlane(feature, 'coronal', world), {
+    status: 'in-grid', index: 2, fractionalIndex: 2, rawDimension: 1,
+  });
+  assert.deepEqual(locateVolumePlane(feature, 'sagittal', world), {
+    status: 'in-grid', index: 3, fractionalIndex: 3, rawDimension: 2,
+  });
+  assert.deepEqual(locateVolumePlane(feature, 'horizontal', world), {
+    status: 'in-grid', index: 1, fractionalIndex: 1, rawDimension: 0,
+  });
+  assert.equal(locateVolumePlane(feature, 'coronal', { ...world, ap: -12.5 }).status, 'in-grid');
+  assert.equal(locateVolumePlane(feature, 'coronal', { ...world, ap: -12.6 }).status, 'out-of-grid');
+  assert.equal(locateVolumePlane(feature, 'coronal', { ...world, ap: 112.49 }).status, 'in-grid');
+  assert.equal(locateVolumePlane(feature, 'coronal', { ...world, ap: 112.5 }).status, 'out-of-grid');
 });
 
 test('LRU cache respects a byte budget', () => {
