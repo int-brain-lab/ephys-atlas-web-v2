@@ -1,4 +1,4 @@
-import type { FeaturePayload, RegionMetadata } from '../data/contracts.js';
+import type { FeaturePayload } from '../data/contracts.js';
 import type {
   CursorState,
   EffectiveColoringState,
@@ -9,6 +9,7 @@ import type {
 } from '../domain/types.js';
 import type { DisplaySliceInventory } from './display-slice-inventory.js';
 import type { VolumeValidityStatus } from './volume-inspection.js';
+import type { RegionalPresentation } from '../application/regional-presentation.js';
 
 export interface ProjectionRenderModel {
   axis: SliceAxis;
@@ -19,12 +20,9 @@ export interface ProjectionRenderModel {
 }
 
 export interface ProjectionPresentation {
+  regional: RegionalPresentation;
   feature: FeaturePayload | null;
-  regions?: readonly RegionMetadata[];
-  anatomyRegions?: readonly RegionMetadata[];
   coloring: EffectiveColoringState;
-  selectedRegionIds: readonly string[];
-  hoveredRegionId: string | null;
   volumeOpacity: number;
   anatomyOutlines: boolean;
 }

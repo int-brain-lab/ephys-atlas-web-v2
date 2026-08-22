@@ -1,6 +1,6 @@
 import type { DatasetManifest, FeaturePayload, RegionMetadata } from '../../data/contracts.js';
 import type { AppState, RegionOrder, StatisticId } from '../../domain/types.js';
-import { regionalColorRange } from '../../rendering/scalar-colormap.js';
+import { regionalColorRange } from '../../application/scalar-colormap.js';
 import { required, message } from './dom.js';
 import {
   renderAnalysis,

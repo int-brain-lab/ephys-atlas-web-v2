@@ -25,8 +25,6 @@
     "src/data/repository.ts",
     "src/data/prefetch.ts",
     "src/data/cache.ts",
-    "src/rendering/scalar-colormap.ts",
-    "src/rendering/colormap-palettes.ts",
     "src/rendering/chunked-volume-source.ts",
     "src/rendering/display-slice-inventory.ts",
     "src/rendering/region-id.ts",

@@ -194,7 +194,7 @@ scientific boundaries, and promotion stopping point are specified in
 
 ## P3D — Independent brain-mesh 3-D lab
 
-Status: **experiment implemented in frozen donor; main Commits 0-3 complete;
+Status: **experiment implemented in frozen donor; main Commits 0-4 complete;
 non-blocking for launch**.
 
 The explicitly authorized worktree described by `AGENTS.md` has completed its
@@ -230,8 +230,12 @@ merged hemisphere uploads, shader lookup presentation and explode, signed
 filtered picking, press-referenced arcball, atomic LOD replacement, demand-only
 rendering, resize/context-loss/disposal ownership, and failed-upgrade retention
 are covered in Chromium. The obsolete exploratory renderer facade was removed.
-Next unblocked action: execute Commit 4, the shared regional-presentation
-resolver and 2-D migration. Production asset promotion remains blocked by Q12.
+Commit 4 added one pure application-owned regional-presentation resolver and
+migrated registered, static, and 3-D applicators to its mapping, anatomy/
+feature color, visibility, signed selection/hover, and left-feature semantics;
+the duplicate renderer-local bilateral resolution is gone. Next unblocked
+action: execute Commit 5, registry-driven context content plus optional URL-v4
+3-D state. Production asset promotion remains blocked by Q12.
 
 Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 

@@ -3,18 +3,17 @@ import test from 'node:test';
 import {
   atlasRegionColorMap,
   bilateralAtlasRegionColorMap,
-  bilateralFeatureColorMap,
   darkThemeAtlasColor,
   regionalColorMap,
   regionalColorRange,
-} from '../../.test-dist/rendering/scalar-colormap.js';
+} from '../../.test-dist/application/scalar-colormap.js';
 import { resolveColoringState } from '../../.test-dist/domain/color-scale.js';
 import {
   COLORMAPS,
   paletteCssColor,
   paletteCssGradient,
   paletteRgb,
-} from '../../.test-dist/rendering/colormap-palettes.js';
+} from '../../.test-dist/application/colormap-palettes.js';
 
 const feature = {
   schemaVersion: '1.0',
@@ -96,17 +95,4 @@ test('dark anatomy presentation tones down only near-white neutral atlas colors'
   assert.equal(darkThemeAtlasColor('#fffdbc'), '#fffdbc');
   const regions = [{ id: '-1009', atlasId: -1009, index: 0, acronym: 'fiber tracts', name: 'fiber tracts', colorHex: '#cccccc' }];
   assert.deepEqual([...bilateralAtlasRegionColorMap(regions)], [[-1009, '#616f79'], [1009, '#616f79']]);
-});
-
-test('bilateral feature mode keeps feature color left and ontology reference right', () => {
-  const foldedFeature = { ...feature, regionIds: ['-10', '-20', '-30'] };
-  const regions = [
-    { id: '-10', atlasId: -10, index: 0, acronym: 'R1', name: 'Region 1', colorHex: '#ff90ff' },
-    { id: '-20', atlasId: -20, index: 1, acronym: 'R2', name: 'Region 2', colorHex: '#00ff00' },
-  ];
-  const colors = bilateralFeatureColorMap(foldedFeature, coloring, regions);
-  assert.match(colors.get(-10), /^rgb\(/);
-  assert.equal(colors.get(10), '#ff90ff');
-  assert.equal(colors.get(20), '#00ff00');
-  assert.notEqual(colors.get(-10), colors.get(10));
 });

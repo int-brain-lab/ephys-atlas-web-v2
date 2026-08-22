@@ -27,8 +27,8 @@ import type {
   StaticProjectionViewport,
   VolumeInspection,
 } from '../rendering/projection-viewport.js';
-import { regionalColorRange } from '../rendering/scalar-colormap.js';
-import { COLORMAPS } from '../rendering/colormap-palettes.js';
+import { regionalColorRange } from '../application/scalar-colormap.js';
+import { COLORMAPS } from '../application/colormap-palettes.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
 import { ColorRangeControl } from './color-range-control.js';
 import { ContextMenu, type ContextMenuOption } from './context-menu.js';

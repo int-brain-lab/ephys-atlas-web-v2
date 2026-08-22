@@ -83,3 +83,11 @@ def test_three_runtime_stays_inside_rendering_3d() -> None:
             if not path.relative_to(ROOT).as_posix().startswith("rendering/3d/"):
                 violations.append(path.relative_to(ROOT).as_posix())
     assert not violations, "Three runtime dependency escaped rendering/3d:\n" + "\n".join(violations)
+
+
+def test_projection_viewports_consume_shared_regional_presentation() -> None:
+    for name in ("retained-projection-viewport.ts", "static-projection-viewport.ts"):
+        source = (ROOT / "rendering" / name).read_text()
+        assert "regional-presentation.js" in source
+        assert "bilateralAtlasRegionColorMap" not in source
+        assert "bilateralFeatureColorMap" not in source

@@ -79,19 +79,3 @@ export function bilateralAtlasRegionColorMap(regions: readonly RegionMetadata[])
   }
   return colors;
 }
-
-/** Feature colors on folded-left IDs, with right anatomy retained as reference. */
-export function bilateralFeatureColorMap(
-  feature: RegionalFeaturePayload,
-  coloring: EffectiveColoringState,
-  regions: readonly RegionMetadata[],
-): ReadonlyMap<number, string> {
-  const colors = new Map<number, string>();
-  for (const [atlasId, color] of bilateralAtlasRegionColorMap(regions)) {
-    if (atlasId > 0) colors.set(atlasId, color);
-  }
-  for (const [atlasId, color] of regionalColorMap(feature, coloring)) {
-    if (atlasId !== 0) colors.set(-Math.abs(atlasId), color);
-  }
-  return colors;
-}

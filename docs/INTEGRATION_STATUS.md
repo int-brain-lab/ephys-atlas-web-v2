@@ -102,7 +102,7 @@ explode. It has not been integrated on `main`, is not part of M2 or launch
 acceptance, and must not be bulk merged because it predates final projection
 cutover commits.
 
-The approved main-integration Commits 0-3 are complete. At main
+The approved main-integration Commits 0-4 are complete. At main
 `9624b05`, the full `just check` gate passed; at the unchanged donor
 `ba1e2d1`, the focused compiler (5), web unit (18), and Chromium lab (4) tests
 passed. No donor history changed. Main now has one strict snake_case
@@ -118,8 +118,11 @@ LOD replacement, demand-only frames, resize, WebGL context loss, and complete
 disposal. The thin `/3d-lab/` entry uses the canonical committed fixture through
 a development/test-only server route; it is covered by the ordinary Chromium
 gate and is not a production-data fallback. The obsolete exploratory renderer
-facade is gone. Shared regional presentation is next; production promotion
-remains blocked by Q12.
+facade is gone. Regional semantics now resolve once in the application layer
+and feed registered 2-D, static 2-D, and retained 3-D applicators; renderer-
+local bilateral color/selection resolution is gone, while static volume views
+remain explicitly anatomy-only. Registry-driven context content and optional
+URL-v4 3-D state are next; production promotion remains blocked by Q12.
 
 The approved anatomy smoothing investigation has completed its first three
 implementation slices. A deterministic registry exposes exact geometry, GEOS

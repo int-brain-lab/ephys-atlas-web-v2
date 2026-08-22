@@ -4,6 +4,7 @@ test('retained viewport shares region identity, guides, presentation, and intera
   await page.goto('/');
   await page.evaluate(async () => {
     const { RetainedProjectionViewportFactory } = await import('/src/rendering/retained-projection-viewport.ts');
+    const { resolveRegionalPresentation } = await import('/src/application/regional-presentation.ts');
     const target = document.createElement('div');
     target.id = 'retained-viewport-test';
     document.body.append(target);
@@ -30,29 +31,40 @@ test('retained viewport shares region identity, guides, presentation, and intera
       dispose() {},
     };
     const factory = new RetainedProjectionViewportFactory({ source });
-    const presentation = {
-      feature: {
+    const feature = {
         schemaVersion: '1.0' as const,
         featureId: 'fixture',
         representation: 'regional' as const,
         parcellation: 'beryl' as const,
         regionIds: ['-20'],
         statistics: { mean: [1] },
-      },
-      regions: [{ id: '-20', atlasId: -20, index: 0, acronym: 'R', name: 'Region', colorHex: '#123456' }],
-      selectedRegionIds: ['-20'],
-      hoveredRegionId: null as string | null,
-      coloring: {
+    };
+    const regions = [{ id: '-20', atlasId: -20, index: 0, acronym: 'R', name: 'Region', colorHex: '#123456' }];
+    const selectedRegionIds = ['-20'];
+    const coloring = {
         mode: 'feature' as const,
         statistic: 'mean' as const,
         colormap: 'viridis',
         range: { mode: 'auto' as const },
         scale: 'linear' as const,
-      },
+    };
+    const presentation = {
+      feature, coloring, volumeOpacity: 1, anatomyOutlines: true,
+      regional: resolveRegionalPresentation({
+        mapping: 'beryl', feature, anatomyRegions: regions, coloring, selectedRegionIds, hoveredRegionId: null,
+      }),
     };
     factory.updatePresentation(presentation);
     factory.setInteractionSink({
-      hover: (hit) => factory.updatePresentation({ ...presentation, hoveredRegionId: hit?.regionId ?? null }),
+      hover: (hit) => {
+        const hoveredRegionId = hit?.regionId ?? null;
+        factory.updatePresentation({
+          ...presentation,
+          regional: resolveRegionalPresentation({
+            mapping: 'beryl', feature, anatomyRegions: regions, coloring, selectedRegionIds, hoveredRegionId,
+          }),
+        });
+      },
       inspect: () => undefined,
       toggleSelection: (hit) => { target.dataset.hit = hit.regionId; },
       stepSlice: () => undefined,

@@ -1,6 +1,6 @@
 import type { FeaturePayload } from '../data/contracts.js';
 import type { ColorRange, StatisticId } from '../domain/types.js';
-import { paletteCssGradient } from '../rendering/colormap-palettes.js';
+import { paletteCssGradient } from '../application/colormap-palettes.js';
 import {
   clampRangeHandle,
   colorRangeDomain,

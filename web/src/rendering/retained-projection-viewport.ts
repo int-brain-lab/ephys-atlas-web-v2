@@ -1,7 +1,7 @@
 import type { ColoringState, EffectiveColoringState, SliceAxis } from '../domain/types.js';
 import type { VolumeFeaturePayload } from '../data/contracts.js';
 import { applyAffine, cursorStateToWorld, worldToPlane, type Matrix4, type ViewBox } from './coordinate-space.js';
-import { bilateralAtlasRegionColorMap, bilateralFeatureColorMap } from './scalar-colormap.js';
+import { regionalPresentationColors, regionalPresentationIds } from '../application/regional-presentation.js';
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
 import type { RegionalSliceFrame, SliceRegionPointerEvent } from './types.js';
 import { CanvasVolumeSliceRenderer } from './canvas-volume-renderer.js';
@@ -14,7 +14,7 @@ import { SchemaSlicePackVolumeSource } from './slice-pack-volume-source.js';
 import { VolumeValiditySliceSource } from './volume-validity-source.js';
 import { RetainedStaticProjectionViewport } from './static-projection-viewport.js';
 import { VolumeSliceLoader, type VolumeSlice, type VolumeSliceSource } from './volume.js';
-import { paletteRgb } from './colormap-palettes.js';
+import { paletteRgb } from '../application/colormap-palettes.js';
 import { regionIdFromPath } from './region-id.js';
 import {
   ProjectionPackSource,
@@ -120,9 +120,11 @@ export function registeredVolumeCanvasPlacement(
 }
 
 const DEFAULT_PRESENTATION: ProjectionPresentation = {
+  regional: {
+    mapping: 'allen', anatomyColors: new Map(), featureColors: null,
+    visibleRegionIds: new Set(), selectedRegionIds: new Set(), highlightedRegionId: null, featureSide: null,
+  },
   feature: null,
-  regions: [],
-  anatomyRegions: [],
   coloring: {
     mode: 'feature',
     statistic: 'mean',
@@ -130,8 +132,6 @@ const DEFAULT_PRESENTATION: ProjectionPresentation = {
     range: { mode: 'auto' },
     scale: 'linear',
   },
-  selectedRegionIds: [],
-  hoveredRegionId: null,
   volumeOpacity: 1,
   anatomyOutlines: true,
 };
@@ -191,31 +191,13 @@ function rgbaForSlice(
   return rgba;
 }
 
-function bilateralIds(ids: readonly string[]): ReadonlySet<number> {
-  const result = new Set<number>();
-  for (const id of ids) {
-    const atlasId = Number(id);
-    if (!Number.isInteger(atlasId) || atlasId === 0) continue;
-    result.add(-Math.abs(atlasId));
-    result.add(Math.abs(atlasId));
-  }
-  return result;
-}
-
 function regionalFrame(
   model: ProjectionRenderModel,
   slice: RegisteredProjectionSlice,
   guides: RegionalSliceFrame['guides'],
   presentation: ProjectionPresentation,
 ): RegionalSliceFrame {
-  const anatomyRegions = presentation.anatomyRegions ?? presentation.regions ?? [];
-  const atlasColors = bilateralAtlasRegionColorMap(anatomyRegions);
-  const feature = presentation.feature;
-  const regionColors = presentation.coloring.mode === 'anatomy'
-    ? atlasColors
-    : feature?.representation === 'regional' && feature.parcellation === model.parcellation
-      ? bilateralFeatureColorMap(feature, presentation.coloring, anatomyRegions)
-      : new Map([...atlasColors].filter(([atlasId]) => atlasId > 0));
+  const semantics = presentation.regional;
   return {
     axis: model.axis,
     index: slice.sliceIndex,
@@ -223,11 +205,11 @@ function regionalFrame(
     svgFragment: slice.svgFragment,
     viewBox: slice.viewBox,
     guides,
-    regionColors,
-    selectedRegionIds: bilateralIds(presentation.selectedRegionIds),
-    highlightedRegionIds: presentation.hoveredRegionId == null
+    regionColors: regionalPresentationColors(semantics, true),
+    selectedRegionIds: semantics.selectedRegionIds,
+    highlightedRegionIds: semantics.highlightedRegionId == null
       ? new Set()
-      : bilateralIds([presentation.hoveredRegionId]),
+      : regionalPresentationIds([semantics.highlightedRegionId]),
   };
 }
 
@@ -279,6 +261,14 @@ class RetainedProjectionViewport implements ProjectionViewport {
     const presentation = this.presentation();
     this.applyLayerPresentation(presentation);
     if (this.frame) {
+      if (presentation.regional.mapping !== this.requestedParcellation) {
+        this.mount.regional.render({
+          ...this.frame,
+          selectedRegionIds: new Set(),
+          highlightedRegionIds: new Set(),
+        });
+        return;
+      }
       const slice: RegisteredProjectionSlice = {
         axis: this.axis,
         sliceIndex: this.frame.index,

@@ -1,4 +1,5 @@
 import { DatasetSession } from './application/dataset-session.js';
+import { regionalPresentationsEqual, resolveRegionalPresentation } from './application/regional-presentation.js';
 import { maxRegionalSliceIndex } from './core/slice-calibration.js';
 import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
 import { HttpDatasetSource } from './data/http-source.js';
@@ -140,15 +141,19 @@ export class AtlasApp {
     const state = this.store.getState();
     const data = this.session.snapshot();
     const anatomyRegions = this.atlasRegions?.mappings[state.view.parcellation] ?? data.regions;
-    const rendererRegions = state.view.coloring.mode === 'anatomy' ? anatomyRegions : data.regions;
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
+    const coloring = resolveColoringState(state.view.coloring, descriptor?.display?.scale);
     const presentation: ProjectionPresentation = {
+      regional: resolveRegionalPresentation({
+        mapping: state.view.parcellation,
+        feature: data.feature,
+        anatomyRegions,
+        coloring,
+        selectedRegionIds: state.view.selection,
+        hoveredRegionId: this.hoveredRegionId,
+      }),
       feature: data.feature,
-      regions: rendererRegions,
-      anatomyRegions,
-      coloring: resolveColoringState(state.view.coloring, descriptor?.display?.scale),
-      selectedRegionIds: state.view.selection,
-      hoveredRegionId: this.hoveredRegionId,
+      coloring,
       volumeOpacity: state.view.layers.volumeOpacity,
       anatomyOutlines: state.view.layers.anatomyOutlines,
     };
@@ -179,15 +184,12 @@ export class AtlasApp {
     const previous = this.viewportPresentation;
     return !previous
       || previous.feature !== next.feature
-      || previous.regions !== next.regions
-      || previous.anatomyRegions !== next.anatomyRegions
+      || !regionalPresentationsEqual(previous.regional, next.regional)
       || previous.coloring.mode !== next.coloring.mode
       || previous.coloring.statistic !== next.coloring.statistic
       || previous.coloring.colormap !== next.coloring.colormap
       || previous.coloring.range !== next.coloring.range
       || previous.coloring.scale !== next.coloring.scale
-      || previous.selectedRegionIds !== next.selectedRegionIds
-      || previous.hoveredRegionId !== next.hoveredRegionId
       || previous.volumeOpacity !== next.volumeOpacity
       || previous.anatomyOutlines !== next.anatomyOutlines;
   }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { RegionalPresentation } from '../../application/regional-presentation.js';
 import type { MeshPackV1, MeshRegionV1 } from '../../data/schema-v1.js';
 import type { LoadedMeshLod, MeshPackSource } from './mesh-pack-source.js';
 import { StableArcballControls, type CameraInteractionPhase } from './stable-arcball-controls.js';
@@ -11,15 +12,7 @@ export interface BrainCameraPose {
 
 export interface Scene3DViewState { readonly explode: number; readonly camera: BrainCameraPose | null }
 
-export interface RegionalPresentation {
-  readonly mapping: 'allen' | 'beryl' | 'cosmos';
-  readonly anatomyColors: ReadonlyMap<number, string>;
-  readonly featureColors: ReadonlyMap<number, string> | null;
-  readonly visibleRegionIds: ReadonlySet<number>;
-  readonly selectedRegionIds: ReadonlySet<number>;
-  readonly highlightedRegionId: number | null;
-  readonly featureSide: 'left' | null;
-}
+export type { RegionalPresentation } from '../../application/regional-presentation.js';
 
 export interface BrainScene3DInteractionSink {
   regionPointer?(event: { type: 'hover' | 'leave' | 'select'; regionId: number | null; originalEvent: PointerEvent }): void;

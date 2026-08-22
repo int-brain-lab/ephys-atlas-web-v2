@@ -1,5 +1,5 @@
 import type { StaticProjectionId } from '../domain/types.js';
-import { bilateralAtlasRegionColorMap, bilateralFeatureColorMap } from './scalar-colormap.js';
+import { regionalPresentationColors, regionalPresentationIds } from '../application/regional-presentation.js';
 import { regionIdFromPath } from './region-id.js';
 import type { RegisteredProjectionSource, StaticProjectionFrame } from './projection-pack-source.js';
 import type {
@@ -12,30 +12,12 @@ import type {
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
 import type { RegionalSliceFrame, SliceRegionPointerEvent } from './types.js';
 
-function bilateralIds(ids: readonly string[]): ReadonlySet<number> {
-  const result = new Set<number>();
-  for (const id of ids) {
-    const atlasId = Number(id);
-    if (!Number.isInteger(atlasId) || atlasId === 0) continue;
-    result.add(-Math.abs(atlasId));
-    result.add(Math.abs(atlasId));
-  }
-  return result;
-}
-
 function presentationFrame(
   source: StaticProjectionFrame,
   model: StaticProjectionRenderModel,
   presentation: ProjectionPresentation,
 ): RegionalSliceFrame {
-  const anatomyRegions = presentation.anatomyRegions ?? presentation.regions ?? [];
-  const atlasColors = bilateralAtlasRegionColorMap(anatomyRegions);
-  const feature = presentation.feature;
-  const regionColors = presentation.coloring.mode === 'anatomy'
-    ? atlasColors
-    : feature?.representation === 'regional' && feature.parcellation === model.parcellation
-      ? bilateralFeatureColorMap(feature, presentation.coloring, anatomyRegions)
-      : atlasColors;
+  const semantics = presentation.regional;
   return {
     axis: source.projectionId,
     index: 0,
@@ -43,11 +25,11 @@ function presentationFrame(
     svgFragment: source.svgFragment,
     viewBox: source.viewBox,
     guides: [],
-    regionColors,
-    selectedRegionIds: bilateralIds(presentation.selectedRegionIds),
-    highlightedRegionIds: presentation.hoveredRegionId == null
+    regionColors: regionalPresentationColors(semantics, presentation.feature?.representation === 'regional'),
+    selectedRegionIds: semantics.selectedRegionIds,
+    highlightedRegionIds: semantics.highlightedRegionId == null
       ? new Set()
-      : bilateralIds([presentation.hoveredRegionId]),
+      : regionalPresentationIds([semantics.highlightedRegionId]),
   };
 }
 
@@ -57,6 +39,7 @@ export class RetainedStaticProjectionViewport implements StaticProjectionViewpor
   private readonly renderer: SvgSliceRenderer;
   private readonly error: HTMLDivElement;
   private frame: StaticProjectionFrame | null = null;
+  private renderedFrame: RegionalSliceFrame | null = null;
   private model: StaticProjectionRenderModel | null = null;
   private token = 0;
   private activeAbort: AbortController | null = null;
@@ -104,7 +87,8 @@ export class RetainedStaticProjectionViewport implements StaticProjectionViewpor
       if (this.token !== token) return;
       this.frame = frame;
       this.model = model;
-      this.renderer.render(presentationFrame(frame, model, this.presentation()));
+      this.renderedFrame = presentationFrame(frame, model, this.presentation());
+      this.renderer.render(this.renderedFrame);
       this.root.dataset.syntheticFixture = String(frame.syntheticFixture);
       this.root.dataset.mode = model.feature?.representation === 'volume' ? 'anatomy-only' : 'regional';
     } finally {
@@ -114,7 +98,17 @@ export class RetainedStaticProjectionViewport implements StaticProjectionViewpor
 
   updatePresentation(): void {
     if (this.frame && this.model) {
-      this.renderer.render(presentationFrame(this.frame, this.model, this.presentation()));
+      const presentation = this.presentation();
+      if (presentation.regional.mapping !== this.model.parcellation) {
+        if (this.renderedFrame) this.renderer.render({
+          ...this.renderedFrame,
+          selectedRegionIds: new Set(),
+          highlightedRegionIds: new Set(),
+        });
+        return;
+      }
+      this.renderedFrame = presentationFrame(this.frame, this.model, presentation);
+      this.renderer.render(this.renderedFrame);
     }
   }
 
@@ -123,6 +117,7 @@ export class RetainedStaticProjectionViewport implements StaticProjectionViewpor
     this.activeAbort?.abort();
     this.activeAbort = null;
     this.model = null;
+    this.renderedFrame = null;
     this.renderer.clear();
   }
 
