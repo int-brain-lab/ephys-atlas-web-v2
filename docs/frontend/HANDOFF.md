@@ -142,17 +142,16 @@ The previous frontend provisional schema and schema-v0.1 compatibility path have
 
 ## Current next work
 
-1. Execute Commit 6 of the projection/volume cutover: composite anatomy and
-   scalar layers in registered world space, add voxel inspection, opacity and
-   outline controls, and preserve anatomy across volume failures.
-2. Rebuild the external `2026_W32` development release under a new schema-v1
+1. Rebuild the external `2026_W32` development release under a new schema-v1
    release ID before using or publishing it.
-3. Deploy the committed generated anatomy pack with opaque gzip delivery and verify its immutable public URLs.
-4. Use the `2026_W26` 50 um object and official access recipe in
+2. Deploy the committed projection pack with immutable caching and opaque
+   `.isvg.gz` delivery: do not attach HTTP `Content-Encoding`, because the
+   browser verifies the compressed bytes before explicit decompression.
+3. Use the `2026_W26` 50 um object and official access recipe in
    `docs/DATA_SOURCES.md` to repeat the real encoding-volume layout benchmarks
    before selecting the launch physical representation; keep volume scientific
    geometry independent of SVG display calibration.
-5. Keep 3-D in its independent lab until the shared workspace seam is ready.
+4. Keep 3-D in its independent lab until the shared workspace seam is ready.
 
 ## Remaining decisions / external inputs
 

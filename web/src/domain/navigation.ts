@@ -1,6 +1,5 @@
-import { cursorStateToWorld, type CursorState, type SliceGuide, type SliceIndices } from '../core/spatial.js';
+import { cursorStateToWorld, type CursorState, type SliceIndices } from '../core/spatial.js';
 import {
-  linkedGuidesForWorld,
   regionalIndexToCoordinateUm,
   worldToRegionalIndices,
 } from '../core/slice-calibration.js';
@@ -11,7 +10,6 @@ export interface OrthogonalNavigationState {
   readonly projectionId: OrthogonalProjectionId;
   readonly nativeIndex: number;
   readonly worldCoordinateUm: number;
-  readonly guides: readonly SliceGuide[];
 }
 
 export function deriveRegionalSliceIndices(cursor: CursorState): SliceIndices {
@@ -29,6 +27,5 @@ export function deriveOrthogonalNavigation(
     projectionId,
     nativeIndex,
     worldCoordinateUm: regionalIndexToCoordinateUm(projection.id, nativeIndex),
-    guides: linkedGuidesForWorld(world, projection.id),
   };
 }

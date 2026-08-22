@@ -63,11 +63,11 @@ Acceptance reference: `docs/LAUNCH_SPEC.md` sections 2 and 4.
 
 ## M2 — Projection/volume cutover and production volume vertical slice
 
-Status: **breaking projection refactor active; schema-v1 cutover complete;
-production science/transport remains blocked**.
+Status: **projection refactor complete; production science/transport remains
+blocked**.
 
-The next implementation unit is the pre-launch cutover in
-`docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md`. It replaces schema v0.1,
+The completed pre-launch cutover is defined in
+`docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md`. It replaced schema v0.1,
 the `SliceRenderer`/hybrid switch, anatomy runtime compatibility, and URL
 migrations with one schema v1, one five-projection asset contract, one current
 URL codec, and retained layered projection viewports. Coronal, sagittal, and
@@ -75,7 +75,7 @@ horizontal support registered anatomy plus volume layers; Top and Swanson are
 static regional projections using the same SVG presentation and interaction
 path. Backward compatibility with the pre-launch formats is not a requirement.
 
-Commits 1 through 7 are implemented, and Commit 8 is next. Schema v1 is now the
+Commits 1 through 8 are implemented. Schema v1 is now the
 sole builder, publishing, HTTP/local browser, fixture, and download contract.
 It separates scientific reference-space identity from grid and asset
 identities, admits only the checked signed-permutation affine profile, verifies
@@ -89,9 +89,9 @@ unsupported versions. The deterministic five-projection pack builder now
 losslessly repackages validated sparse registered geometry, emits strict
 resource indexes, normalizes affine-free static fragments, and validates the
 complete immutable file graph. Q13 still blocks a production Top/Swanson pack,
-so the checked-in browser fixture uses conspicuously synthetic, currently
-hidden static fragments alongside the validated registered geometry. The
-browser now uses one retained `ProjectionViewport` per registered frame and
+so the checked-in browser fixture uses conspicuously synthetic static fragments
+alongside the validated registered geometry. The browser now uses one retained
+`ProjectionViewport` per registered frame and
 the schema-v1 projection pack directly. The old `SliceRenderer` facade,
 hybrid switch, anatomy-pack readers, legacy renderer/crosswalk, URL migrations,
 and application-owned slice triple are deleted. Compatible schema-v1 volume
@@ -143,25 +143,24 @@ historical transport evidence, not the default input for new implementation.
 
 Ordered next actions before scientific resolution:
 
-1. execute Commit 8 in the focused cutover plan, keeping the handoff green;
-2. rebuild external development releases under new schema-v1 release IDs
+1. rebuild external development releases under new schema-v1 release IDs
    before using the opt-in real-release suite; do not add a compatibility reader;
-3. verify the layered golden volume path, registered anatomy overlays, and
-   Top/Swanson shared interactions across responsive layouts;
-4. pull, checksum, and header-inspect the documented `2026_W26` object, then
+2. pull, checksum, and header-inspect the documented `2026_W26` object, then
    repeat the real-feature slice-pack benchmarks on representative feature
    distributions and the eventual HTTP/CDN origin;
-5. compare the current depth-4 recommendation against depth 8 under production
+3. compare the current depth-4 recommendation against depth 8 under production
    cache headers/network profiles without selecting the winner prematurely;
-6. keep failures explicit for invalid transforms, out-of-volume coordinates,
+4. deploy the projection pack with immutable caching and transport-opaque gzip,
+   and verify its headers and encoded hashes from the selected origin;
+5. keep failures explicit for invalid transforms, out-of-volume coordinates,
    resource-integrity errors, and unsupported layouts.
 
 After Q4/Q5 resolution:
 
-7. encode the authoritative transform/outside semantics;
-8. select and document the production layout;
-9. build a real immutable `ephys_atlas_volumes` release;
-10. run linked-slice browser acceptance against it.
+6. encode the authoritative transform/outside semantics;
+7. select and document the production layout;
+8. build a real immutable `ephys_atlas_volumes` release;
+9. run linked-slice browser acceptance against it.
 
 Acceptance reference: `docs/LAUNCH_SPEC.md` sections 3 and 6.
 
@@ -275,7 +274,8 @@ Blocked in part by: Q8 and Q9.
 
 Actions:
 
-1. deploy the committed immutable v3 indexed-SVG anatomy pack and preserve opaque gzip bytes without HTTP `Content-Encoding`;
+1. deploy the committed immutable projection pack and preserve opaque
+   `.isvg.gz` bytes without HTTP `Content-Encoding`;
 2. finalize static public catalog/default aliases for the frozen scientific release set;
 3. configure production CORS/cache policy;
 4. deploy or explicitly waive the remote publishing service for launch;

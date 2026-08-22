@@ -16,21 +16,21 @@ Dataset IDs are runtime identifiers rather than a fixed launch enum. Dataset, fe
 
 HTTP and local datasets share the same regional materializer through a transport-independent resource-reader interface. The validation implementation is split by contract concern behind the existing public validation facade.
 
-## Active architecture cutover
+## Completed architecture cutover
 
-D031 and `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` define the active
-implementation sequence. Schema v1 is the sole implemented data contract, and
-the browser now mounts one retained layered `ProjectionViewport` for each
+D031 and `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` define the completed
+cutover and the gated production-volume follow-up. Schema v1 is the sole
+implemented data contract, and the browser now mounts one retained layered
+`ProjectionViewport` for each
 registered frame. `SliceRenderer`, the hybrid facade, v1/v2/v3 anatomy-pack
 readers, legacy renderer/crosswalk, and URL migrations have been removed. The
 viewport now composites reference-compatible volume and registered anatomy
 layers with background-capable voxel inspection, validity transparency, and
 URL-persisted layer controls. Top and Swanson now use the same regional SVG
-presentation and interaction path in the secondary workspace slot. The
-remaining coordinated work removes transitional residue and completes the
-cutover audit.
+presentation and interaction path in the secondary workspace slot. The residue
+audit, architecture guards, and final performance/size rebaseline are complete.
 
-Commits 1 through 7 of the plan are implemented: `schema/v1/` defines the
+Commits 1 through 8 of the plan are implemented: `schema/v1/` defines the
 strict dataset, resource, regional, volume, summary/index, and five-projection
 contracts plus matching TypeScript types. Python and TypeScript semantic validators execute
 one deterministic valid/invalid corpus covering all top-level schemas, both
@@ -375,13 +375,13 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
 1. expose the validated `2026_W32` channel development release through an
    authorized non-production origin and repeat real-value browser acceptance;
    freeze the paper release after Q2;
-2. execute the approved projection/schema/volume-foundation cutover with
-   synthetic fixtures, then extend volume browser/HTTP benchmarks, resolve
-   Q4-Q5 authoritatively, and build the real immutable volume release;
+2. extend volume browser/HTTP benchmarks, resolve Q4-Q5 authoritatively, and
+   build the real immutable volume release on the completed projection/schema
+   foundation;
 3. resolve Q6 and build the production cluster release;
 4. define and build the exact `brainwide_map` product after Q7;
 5. finish M5 downloads and local-dataset management UX;
-6. deploy the immutable v3 anatomy assets and finalize catalog/origin/default
+6. deploy the immutable projection assets and finalize catalog/origin/default
    alias/publishing choices in Q8-Q9;
 7. run final production-origin, performance, responsive, and cross-browser QA,
    resolving Q11.

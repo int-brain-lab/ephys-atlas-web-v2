@@ -1,6 +1,8 @@
 # IBL Ephys Atlas Web v2
 
-A clean-slate v2 of the International Brain Laboratory Ephys Atlas web application. The legacy application remains separate and deployable as fallback during the v2 launch window.
+A clean-slate v2 of the International Brain Laboratory Ephys Atlas web
+application. The historical application remains a separate source reference;
+it is not a runtime compatibility dependency or launch fallback requirement.
 
 ## Development model
 
@@ -19,10 +21,11 @@ For fresh-checkout and local Codex setup, see
 [`docs/CODEX_HANDOFF.md`](docs/CODEX_HANDOFF.md). It is an operating runbook,
 not a second product-priority list.
 
-The approved next rendering/data-contract unit is the breaking pre-launch
-[`projection and volume architecture cutover`](docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md).
-Future implementation agents should use its commit sequence and acceptance
-gates together with the ordered implementation plan.
+The breaking pre-launch
+[`projection and volume architecture cutover`](docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md)
+is complete through Commit 8. Future implementation agents should use its
+Commit 9 production-volume gates together with the ordered implementation plan;
+Q4 and Q5 must be resolved before selecting production geometry or transport.
 
 Historical/focused documents under `docs/data/`, `docs/frontend/`, `docs/rendering/`, `docs/publishing/`, and `docs/ux/` remain supporting evidence but do not override the active launch spec or decision log.
 
@@ -53,14 +56,15 @@ fully offline report, run `just bootstrap-anatomy` and `just anatomy-compare`.
 The methodology and scientific limits are documented in
 [`docs/rendering/ANATOMY_COMPARISON.md`](docs/rendering/ANATOMY_COMPARISON.md).
 
-The default viewer serves the immutable sparse 80 µm `anatomy-pack-v3`, derived
-byte-for-byte from the validated bilateral 10 µm `anatomy-pack-v2` parent.
-Scientific cursor, URL, affine, and guide state remain on the native bilateral
-10 µm grid. Run `just test-anatomy` to exercise the parent contract, generator,
-integrity, and comparison gates. Clean reproducible parent and sparse-display
-builds are available through `just anatomy-pack-v2` and
-`just sampled-anatomy-pack`; existing output is never overwritten. The
-`just anatomy-pack` recipe retains the historical 25 µm v1 generator.
+The default viewer serves one schema-v1 `atlas-projection-pack-v1` with three
+registered sparse slice stacks and affine-free Top/Swanson maps. Its registered
+geometry is copied byte-for-byte from the validated sparse 80 µm anatomy build,
+which derives from the bilateral 10 µm authority; anatomy packs are build inputs,
+not browser formats. Scientific cursor, URL, affine, and guide state remain on
+the native bilateral 10 µm grid. Run `just test-anatomy` to exercise the source
+contracts, generators, integrity, and comparison gates. Clean reproducible
+source builds remain available through `just anatomy-pack-v2` and
+`just sampled-anatomy-pack`; existing output is never overwritten.
 
 ## Launch scope
 

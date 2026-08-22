@@ -41,6 +41,11 @@ mutations only. See `docs/publishing/API.md` and `publishing/README.md`.
 - Serve immutable releases with long-lived cache headers and mutable
   catalog/index/alias objects with revalidation; verify the exact policy from
   the selected production origin.
+- Serve projection-pack `.isvg.gz` resources as opaque stored bytes without
+  HTTP `Content-Encoding`. The browser verifies the encoded byte count and
+  SHA-256 before explicitly decompressing them; transparent origin/CDN
+  decompression invalidates that contract. Verify this behavior from the
+  deployed origin rather than relying only on filename conventions.
 
 An object-storage backend can later replace filesystem rename with a unique
 staging prefix plus conditional publication of the small mutable index object.

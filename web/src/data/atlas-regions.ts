@@ -55,7 +55,6 @@ export function parseAtlasRegionCatalog(value: unknown): AtlasRegionCatalog {
         id: String(atlasId),
         atlasId,
         index: rows.length,
-        legacyIndex: integer(row.idx, `${mapping} regions[${position}].idx`),
         acronym: string(row.acronym, `${mapping} regions[${position}].acronym`),
         name: string(row.name, `${mapping} regions[${position}].name`),
         parentId,

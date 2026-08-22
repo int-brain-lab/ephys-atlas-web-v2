@@ -43,9 +43,10 @@ in a fresh checkout.
 The default registered display uses `atlas-projection-pack-v1`; its sparse
 geometry is copied byte-for-byte from anatomy-pack-v3 and ultimately from the
 validated bilateral 10 µm v2 parent. Scientific cursor, URL, affine, and guide
-state stays on the parent grid. The pack's currently hidden Top/Swanson paths,
-`fixtures/golden-v1`, and its browser copy are synthetic and must never be
-presented as scientific data.
+state stays on the parent grid. Top/Swanson are exposed as affine-free secondary
+views through the shared regional presentation path. The checked-in static
+paths, `fixtures/golden-v1`, and its browser copy are visibly labeled synthetic
+and must never be presented as scientific data.
 
 Current implementation status and next work are recorded in
 `docs/INTEGRATION_STATUS.md` and `docs/IMPLEMENTATION_PLAN.md`.

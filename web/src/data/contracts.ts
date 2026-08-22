@@ -134,7 +134,6 @@ export interface RegionMetadata {
   depth?: number;
   colorHex?: string;
   mappingMember?: boolean;
-  legacyIndex?: number;
 }
 
 export interface DatasetManifestDocument {

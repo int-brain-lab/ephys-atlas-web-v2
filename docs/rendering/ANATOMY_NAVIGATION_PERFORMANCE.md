@@ -127,3 +127,32 @@ No long task was observed and the maximum animation-frame gap was 16.8 ms.
 Every navigation retained the mounted viewport DOM and committed the requested
 final display plane. Local Vite fetch timing is still not production-network
 evidence; deployment-origin throttling remains the next measurement.
+
+## Final five-view cutover rebaseline
+
+Commit 8 re-ran the same benchmark after volume compositing, pointer
+inspection, and the affine-free static-map viewports were integrated. On
+2026-08-22, a second five-trial Linux x64/Chromium 151 run produced:
+
+| slice | cold commit p50 | cold paint p50 | same-pack commit p50 | retained commit p50 |
+| --- | ---: | ---: | ---: | ---: |
+| coronal p95, 812 | 19.8 ms | 29.7 ms | 5.0 ms | 1.9 ms |
+| sagittal p95, 606 | 24.9 ms | 28.6 ms | 8.4 ms | 2.1 ms |
+| horizontal p95, 345 | 28.7 ms | 29.0 ms | 9.8 ms | 1.6 ms |
+| horizontal maximum, 401 | 31.8 ms | 32.0 ms | 12.7 ms | 1.7 ms |
+
+No long task was observed and the maximum animation-frame gap was 16.8 ms.
+Cold preparation and uncached same-pack SVG parsing are slower than the
+Commit-5-only viewport measurement, while retained revisits remain close to
+one frame and below 2.1 ms to commit. This is an explicit optimization target,
+not a launch-network result; production-origin throttling and a visible input
+burst remain required before changing prefetch or cache policy.
+
+The complete checked-in development projection pack occupies 5,616,902 bytes:
+5,609,654 encoded bytes across registered resources, 749 encoded bytes across
+the two static fragments, and a 6,499-byte manifest. Top is 197 bytes encoded
+and 15,162 bytes decoded (114 paths); Swanson is 552 bytes encoded and 107,464
+bytes decoded (808 paths). Both static fragments load independently and only
+when their secondary tab is first opened. The final production build is
+243.99 kB JavaScript (68.69 kB gzip), 65.08 kB CSS (11.86 kB gzip), and a
+3.77 kB indexed-SVG worker, excluding scientific assets.

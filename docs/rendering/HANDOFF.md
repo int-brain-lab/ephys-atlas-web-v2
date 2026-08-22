@@ -85,11 +85,18 @@ until those questions are resolved; do not infer a production affine.
 ## Performance evidence
 
 `just benchmark-anatomy` exercises cold indexed-pack navigation, another slice
-in the same decoded pack, and a retained-layer revisit. The 2026-08-22 Linux
-Chromium sanity run measured median cold commits of 10.0–13.4 ms, same-pack
-commits of 1.4–2.7 ms, retained revisits of 0.6–1.0 ms, no long tasks, and a
-16.8 ms maximum frame gap. Full measurements and the earlier v3 baseline are
-in `docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.
+in the same decoded pack, and a retained-layer revisit. The final 2026-08-22
+Linux Chromium sanity run measured median cold commits of 19.8–31.8 ms,
+same-pack commits of 5.0–12.7 ms, retained revisits of 1.6–2.1 ms, no long
+tasks, and a 16.8 ms maximum frame gap. Full measurements, asset/bundle sizes,
+and the earlier v3 and Commit 5 baselines are in
+`docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.
+
+The checked-in real-volume browser evidence remains the 2026-08-20 transport
+benchmark against the historical `2026_W12` object. Commit 8 could not repeat
+it because neither the private source object nor prepared benchmark directory
+is present in this checkout. Treat it only as physical-format evidence; Q4/Q5
+still require the documented `2026_W26` object and eventual deployment origin.
 
 ## 3-D
 
@@ -106,5 +113,6 @@ projection layers. See `docs/rendering/3D_EVALUATION.md`.
 - `just benchmark-anatomy` and `npm run benchmark:real-volume` are explicit
   measurements, not default CI gates.
 
-The immediate next action is Commit 8's residue audit, architecture guards, and
-evidence rebaseline in `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md`.
+The cutover through Commit 8 is complete. The next rendering action is to
+obtain the authoritative Q4 volume geometry/validity semantics and Q5 real-data
+transport evidence before building Commit 9's production volume release.

@@ -4,17 +4,10 @@ import test from 'node:test';
 
 import {
   ANATOMY_10UM_CALIBRATION,
-  LEGACY_VIEW_BOXES,
   REGIONAL_10UM_CALIBRATION,
   indexToCoordinateUm,
-  legacyRegionalIndicesToWorld,
-  linkedGuides,
-  projectLegacyGuide,
   regionalIndexToCoordinateUm,
-  regionalIndexToLegacyIndex,
   regionalIndicesToWorld,
-  regionalIndexToVolumeIndex,
-  volumeIndexToCoordinateUm,
   worldToRegionalIndices,
 } from '../../web/src/rendering/slice-calibration.js';
 import {
@@ -32,76 +25,20 @@ const fixture = JSON.parse(
   readFileSync(new URL('../../fixtures/rendering/linked-slices.fixture.json', import.meta.url), 'utf8'),
 );
 
-test('legacy 10 um indices reproduce v1 coordinate labels', () => {
+test('native 10 um indices reproduce the pinned coordinate labels', () => {
   assert.equal(indexToCoordinateUm(660, REGIONAL_10UM_CALIBRATION.coronal), -1200);
   assert.equal(indexToCoordinateUm(570, REGIONAL_10UM_CALIBRATION.sagittal), -39);
   assert.equal(indexToCoordinateUm(400, REGIONAL_10UM_CALIBRATION.horizontal), -3668);
-  assert.deepEqual(legacyRegionalIndicesToWorld(fixture.indices), { ml: -39, ap: -1200, dv: -3668 });
+  assert.deepEqual(regionalIndicesToWorld(fixture.indices), { ml: -39, ap: -1200, dv: -3668 });
 });
 
-test('generated anatomy navigation uses the native 10 um bilateral grid', () => {
+test('projection navigation uses the native 10 um bilateral grid', () => {
   assert.equal(ANATOMY_10UM_CALIBRATION.coronal.indexCount, 1320);
   assert.equal(ANATOMY_10UM_CALIBRATION.sagittal.indexCount, 1140);
   assert.equal(ANATOMY_10UM_CALIBRATION.horizontal.indexCount, 800);
   assert.equal(regionalIndexToCoordinateUm('coronal', 660), -1200);
   assert.equal(regionalIndexToCoordinateUm('sagittal', 570), -39);
   assert.equal(regionalIndexToCoordinateUm('horizontal', 400), -3668);
-});
-
-test('10 um anatomy and 25 um volume grids map through Allen coordinates', () => {
-  assert.equal(volumeIndexToCoordinateUm('coronal', 0), 5400);
-  assert.equal(volumeIndexToCoordinateUm('sagittal', 0), -5739);
-  assert.equal(volumeIndexToCoordinateUm('horizontal', 0), 332);
-  assert.equal(regionalIndexToVolumeIndex('coronal', 660), 264);
-  assert.equal(regionalIndexToVolumeIndex('sagittal', 570), 228);
-  assert.equal(regionalIndexToVolumeIndex('horizontal', 400), 160);
-  assert.equal(regionalIndexToLegacyIndex('coronal', 660), 660);
-  assert.equal(regionalIndexToLegacyIndex('sagittal', 570), 570);
-  assert.equal(regionalIndexToLegacyIndex('horizontal', 400), 400);
-});
-
-test('guide registration maps scientific axis endpoints to projection view boxes', () => {
-  assert.deepEqual(projectLegacyGuide('sagittal', 'coronal', 0), {
-    sourceAxis: 'sagittal', targetAxis: 'coronal', dimension: 'x', position: 58,
-  });
-  assert.deepEqual(projectLegacyGuide('sagittal', 'coronal', 1139), {
-    sourceAxis: 'sagittal', targetAxis: 'coronal', dimension: 'x', position: 414,
-  });
-  assert.deepEqual(projectLegacyGuide('coronal', 'sagittal', 0), {
-    sourceAxis: 'coronal', targetAxis: 'sagittal', dimension: 'x', position: 56,
-  });
-  assert.deepEqual(projectLegacyGuide('horizontal', 'coronal', 799), {
-    sourceAxis: 'horizontal', targetAxis: 'coronal', dimension: 'y', position: 300,
-  });
-});
-
-test('all linked guides stay inside the registered target view box', () => {
-  const endpointSets = [
-    { coronal: 0, sagittal: 0, horizontal: 0 },
-    { coronal: 1319, sagittal: 1139, horizontal: 799 },
-  ];
-  for (const indices of endpointSets) {
-    for (const targetAxis of ['coronal', 'sagittal', 'horizontal'] as const) {
-      const viewBox = LEGACY_VIEW_BOXES[targetAxis];
-      for (const guide of linkedGuides(indices, targetAxis)) {
-        const [minimum, maximum] = guide.dimension === 'x'
-          ? [viewBox.x, viewBox.x + viewBox.width]
-          : [viewBox.y, viewBox.y + viewBox.height];
-        assert.ok(guide.position >= minimum && guide.position <= maximum);
-      }
-    }
-  }
-});
-
-test('linked fixture produces two guides per view and exact v1 view boxes', () => {
-  const indices = { coronal: 660, sagittal: 570, horizontal: 400 };
-  for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
-    const guides = linkedGuides(indices, axis);
-    assert.equal(guides.length, 2);
-    assert.ok(guides.every((guide) => guide.targetAxis === axis));
-    assert.ok(LEGACY_VIEW_BOXES[axis].width > 0);
-    assert.ok(fixture.fragments[axis].includes('beryl_region_101'));
-  }
 });
 
 test('all projections share one explicit ML/AP/DV world cursor', () => {

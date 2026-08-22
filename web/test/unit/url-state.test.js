@@ -80,7 +80,7 @@ test('malformed fixed range is ignored', () => {
   assert.deepEqual(parsed.coloring.range, DEFAULT_VIEW_STATE.coloring.range);
 });
 
-test('legacy count coloring falls back to feature magnitude', () => {
+test('unsupported count coloring falls back to feature magnitude', () => {
   const parsed = parseViewState('?v=4&stat=count');
   assert.equal(parsed.coloring.statistic, DEFAULT_VIEW_STATE.coloring.statistic);
   assert.equal(serializeViewState(parsed).includes('stat=count'), false);

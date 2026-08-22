@@ -12,7 +12,8 @@ the ontology fields supplied by the pinned `iblatlas` source:
 - official RGB color serialized as lowercase `#rrggbb`;
 - whether a node belongs to the selected mapping or is an Allen hierarchy
   container added to make a reduced mapping parent-closed;
-- legacy SVG/BrainRegions row index.
+- source SVG/BrainRegions row index, retained as generation provenance but not
+  parsed into the browser's runtime region model.
 
 ## Provenance and identity
 
@@ -59,6 +60,6 @@ The browser orders rows from `parent_id`, derives hierarchy depth rather than
 trusting display metadata, and supports the full Allen depth instead of
 clamping all descendants below `grey` to one indentation level.
 
-The same renderer presentation contract supplies colors to the default
-generated anatomy-pack renderer and the inactive legacy fallback. Neither renderer owns the
-color-mode state or scientific feature data.
+The same regional presentation contract supplies colors to all five views in
+the active projection pack. The viewport owns neither color-mode state nor
+scientific feature data, and there is no legacy renderer fallback.

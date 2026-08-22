@@ -56,11 +56,11 @@ Scientific provenance is part of the product contract, not optional metadata.
 
 ## Rendering invariants
 
-- `SliceRenderer` is the currently implemented boundary, but it is frozen for
-  compatibility-only work. The approved cutover replaces it with one retained,
-  layered 2-D projection viewport shared by regional SVG and volume Canvas;
-  follow `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` and do not add a
-  parallel renderer facade.
+- `ProjectionViewportFactory` is the implemented application boundary. It owns
+  retained layered orthogonal viewports shared by regional SVG and volume
+  Canvas plus affine-free static regional viewports. Do not reintroduce
+  `SliceRenderer`, a hybrid switch, anatomy-pack browser readers, or another
+  renderer facade.
 - The immutable bilateral 10 µm `anatomy-pack-v2` is the canonical regional
   geometry and affine authority. The active sparse `anatomy-pack-v3` copies
   display planes from that parent without changing scientific navigation. The

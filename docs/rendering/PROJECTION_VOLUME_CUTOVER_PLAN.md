@@ -577,6 +577,8 @@ narrow layouts; finish with `just check`.
 
 ### Commit 8 — Delete residue and rebaseline evidence
 
+Status: **implemented**.
+
 - delete remaining old schema, URL migration, legacy-host, crosswalk, anatomy
   parser, hybrid renderer, dead CSS, and stale compatibility tests/docs;
 - add dependency/architecture tests that prevent old boundaries from returning;
@@ -687,9 +689,8 @@ never merge an inferred scientific choice.
 
 ## First action for the next agent
 
-Execute Commit 8 from the green five-projection baseline. Delete and prohibit
-remaining compatibility residue, re-run the architecture/reference audits,
-refresh affected performance and size evidence, and leave durable deployment
-and handoff documents describing only the shipped schema-v1/five-view retained
-viewport architecture. Do not select a production volume transport before Q5
-evidence.
+Do not select a production volume transport before Q5 evidence. Obtain the
+authoritative Q4 grid/affine/outside semantics and Q5 real-data browser/HTTP
+measurements, then execute Commit 9. In parallel, external development releases
+may be rebuilt under new immutable schema-v1 release IDs and the projection pack
+may be verified from the selected deployment origin with opaque gzip delivery.

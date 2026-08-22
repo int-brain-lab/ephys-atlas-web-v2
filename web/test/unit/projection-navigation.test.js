@@ -23,7 +23,7 @@ test('enabled projection and workspace registries keep projection and secondary 
   ]);
 });
 
-test('one world cursor derives every native plane and each projection guide pair', () => {
+test('one world cursor derives every native plane without storing slice state', () => {
   const cursor = { xUm: -39, yUm: -1210, zUm: -3678 };
   assert.deepEqual(deriveRegionalSliceIndices(cursor), {
     coronal: 661,
@@ -33,7 +33,5 @@ test('one world cursor derives every native plane and each projection guide pair
   for (const projection of ORTHOGONAL_PROJECTION_REGISTRY) {
     const navigation = deriveOrthogonalNavigation(cursor, projection.id);
     assert.equal(navigation.nativeIndex, deriveRegionalSliceIndices(cursor)[projection.id]);
-    assert.equal(navigation.guides.length, 2);
-    assert.equal(navigation.guides.every(({ targetAxis }) => targetAxis === projection.id), true);
   }
 });

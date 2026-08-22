@@ -35,3 +35,28 @@ def test_domain_does_not_depend_on_rendering_or_ui() -> None:
 
 def test_application_does_not_depend_on_rendering_or_ui() -> None:
     assert_layer_does_not_import("application", ("rendering/", "ui/"))
+
+
+def test_browser_runtime_has_no_pre_cutover_compatibility_contracts() -> None:
+    forbidden = {
+        "schema v0.1": re.compile(r"schema[- /]?v?0\.1", re.IGNORECASE),
+        "anatomy-pack runtime": re.compile(r"anatomy-pack-v[123]"),
+        "removed renderer facade": re.compile(r"\b(?:HybridSliceRenderer|SliceRenderer)\b"),
+        "legacy region crosswalk": re.compile(r"\blegacyIndex\b"),
+        "legacy slice calibration": re.compile(r"\b(?:legacyRegional|projectLegacy|LEGACY_VIEW)"),
+    }
+    violations: list[str] = []
+    for path in sorted(ROOT.rglob("*.ts")):
+        source = path.read_text()
+        for label, pattern in forbidden.items():
+            if pattern.search(source):
+                violations.append(f"{path.relative_to(ROOT)}: {label}")
+    assert not violations, "pre-cutover browser contracts returned:\n" + "\n".join(violations)
+
+
+def test_application_composition_uses_only_the_projection_viewport_boundary() -> None:
+    app = (ROOT / "app.ts").read_text()
+    assert "ProjectionViewportFactory" in app
+    assert "SvgSliceRenderer" not in app
+    assert "CanvasVolumeSliceRenderer" not in app
+    assert "ProjectionPackSource" not in app
