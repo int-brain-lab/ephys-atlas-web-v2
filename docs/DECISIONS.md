@@ -612,3 +612,13 @@ across Allen 927, 526322264, and 599626923, with a maximum axis discrepancy of
 109.447 um. Do not clamp, substitute mesh centroids, or mark bounds validation
 green. Reconcile or regenerate the affected source geometry before production
 promotion.
+
+The repository owner subsequently approved deterministic regeneration from the
+same canonical bilateral 10 um annotation for the complete bilateral source
+identities of positive Allen 927, 526322264, and 599626923. Regenerate both
+hemispheres for each ID so provenance is not mixed within a source identity;
+leave every unaffected identity pinned to the GLB. This approval is local-only
+and does not authorize smoothing/manual repair, additional IDs, final LOD
+selection, publication, a default descriptor, removal of the experimental
+label, or donor retirement. The binding handoff is
+`docs/rendering/3D_PROMOTION_REVIEW.md`.

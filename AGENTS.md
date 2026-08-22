@@ -101,6 +101,14 @@ Scientific provenance is part of the product contract, not optional metadata.
   facade. Build web mesh packs from pinned inputs with deterministic provenance,
   integrity, coverage, LOD, and visual-quality gates; do not serve the raw
   monolithic source GLB as the production contract.
+- For Q12, the repository owner has approved local canonical-annotation
+  regeneration of the complete bilateral source identities for Allen 927,
+  526322264, and 599626923. This does not authorize any other regenerated ID,
+  smoothing/manual repair, publication, final LOD selection, removal of the
+  experimental label, or donor retirement. Follow the exact implementation,
+  evidence, stop conditions, and owner review checklist in
+  `docs/rendering/3D_PROMOTION_REVIEW.md`; keep generated evidence under
+  ignored `artifacts/`.
 
 ## Frontend constraints
 

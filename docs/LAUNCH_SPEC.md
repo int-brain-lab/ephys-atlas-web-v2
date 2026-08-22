@@ -252,8 +252,10 @@ The following are not launch blockers unless later promoted by an explicit decis
 An isolated non-production 3-D brain-mesh lab may proceed concurrently with
 launch work. It remains optional, failure-isolated, and outside launch
 acceptance until it passes the promotion gates in
-`docs/rendering/3D_EVALUATION.md`; its existence must not delay or fork the
-launch-critical 2-D workspace.
+`docs/rendering/3D_EVALUATION.md`. Any resumed promotion work must use the
+exact regeneration and owner-review handoff in
+`docs/rendering/3D_PROMOTION_REVIEW.md`; its existence must not delay or fork
+the launch-critical 2-D workspace.
 
 ## Definition of launch-ready
 

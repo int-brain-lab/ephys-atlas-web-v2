@@ -246,9 +246,12 @@ runtime fallback. Commit 7 now has deterministic local active-inventory and
 canonical-centroid evidence machinery. Exact inputs were found and verified,
 and the owner approved scope, Allen 545, Allen 898, and nullable-mapping
 choices. The fail-closed audit found four signed centroids outside the pinned
-GLB bounds (three absolute Allen IDs; maximum 109.447 um), so candidate
-generation stops before a manifest. Q12 still blocks source reconciliation,
-final LOD/cross-browser review, immutable-origin deployment, and promotion.
+GLB bounds (three absolute Allen IDs; maximum 109.447 um). The owner has now
+approved canonical regeneration of all six bilateral halves for those three
+positive IDs, so the next unblocked P3D slice is the local regeneration,
+candidate build, and exact review bundle defined in
+`docs/rendering/3D_PROMOTION_REVIEW.md`. Q12 still blocks final LOD/
+cross-browser review, immutable-origin deployment, and promotion.
 
 Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 

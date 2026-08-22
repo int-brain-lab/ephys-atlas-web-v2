@@ -1,8 +1,8 @@
 # 3-D main-application integration plan
 
-Status: **Commits 0-6 complete on `main`; Commit 7 is blocked by the Q12
-production inputs, deployment origin, measurements, and human review
-(2026-08-22)**.
+Status: **Commits 0-6 complete on `main`; Commit 7 local regeneration is
+approved and unblocked, while final review, deployment, and promotion remain
+under Q12 (2026-08-22)**.
 
 This document defines how to promote the completed independent brain-mesh lab
 into the v2 application without importing its experimental composition into the
@@ -11,8 +11,10 @@ product architecture. It is the implementation authority for P3D integration.
 Q12 remains the production-promotion gate.
 
 The repository owner approved an optional, visibly experimental 3-D view in the
-main application. That does not approve a production mesh asset, scientific
-exclusions, or a final LOD.
+main application and the scoped regeneration recorded in D041. That does not
+approve a production mesh asset, final LOD, publication, or removal of the
+experimental label. `docs/rendering/3D_PROMOTION_REVIEW.md` is the exact
+resumption and owner-review checklist.
 
 ## Evidence baseline and landing rule
 
@@ -412,21 +414,26 @@ manifest/LOD/WebGL failure; responsive/maximize/Escape/URL/history/teardown.
 
 ### Commit 7 — Produce and review a promotion candidate
 
-Status: **partially executed locally; stopped by canonical source mismatch**.
+Status: **partially executed locally; scoped canonical regeneration approved
+and next implementation slice unblocked**.
 The exact inputs were found and verified, and the owner approved the scientific
 scope/exceptions listed in D041. The canonical bilateral 10 um LUT audit found
 four signed centroids outside the pinned GLB bounds (Allen -927, -526322264,
-+526322264, and +599626923; maximum 109.447 um). Candidate generation fails
-closed and records the ignored-artifact audit. Do not clamp the centroids or
-mark the pack valid; reconcile or regenerate those source surfaces first.
++526322264, and +599626923; maximum 109.447 um). The owner approved
+regenerating both hemispheres for all three positive source identities. Follow
+`docs/rendering/3D_PROMOTION_REVIEW.md`; do not clamp centroids, expand the ID
+set, publish, or choose final LODs on the owner's behalf.
 
 - Build outside Git from exact pinned GLB, annotation, LUT, projection pack,
   and atlas catalog, then reproduce and graph-validate it.
-- Deploy to an immutable non-production origin with opaque gzip and verify
-  headers/hashes.
-- Record 320/480/800 px review and Chrome/Edge/Firefox/Safari transfer, decode,
-  upload, first-frame, frame, memory, picking, context-loss, and cache evidence.
-- Obtain explicit scope, exclusion, open-surface, and LOD decisions.
+- Build the self-contained local 320/480/800 px review and measurement bundle.
+- Obtain the explicit geometry and LOD decisions in the review handoff. Scope,
+  exclusion, open-surface, nullable-mapping, and scoped-regeneration decisions
+  are already recorded in D041.
+- Only after separate owner authorization, deploy to an immutable
+  non-production origin with opaque gzip, verify headers/hashes, and record the
+  Chrome/Edge/Firefox/Safari transfer, decode, upload, first-frame, frame,
+  memory, picking, context-loss, and cache evidence.
 
 Only after Q12 is resolved may the production descriptor become default and
 the experimental label disappear. Promotion creates a new immutable pack.

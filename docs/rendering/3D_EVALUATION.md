@@ -3,6 +3,11 @@
 Status: **approved independent non-production lab (2026-08-22)**. Production
 promotion remains optional and is tracked by Q12.
 
+The exact local regeneration and owner review handoff is now
+`docs/rendering/3D_PROMOTION_REVIEW.md`. The owner approved canonical bilateral
+regeneration for Allen 927, 526322264, and 599626923; this does not approve a
+production asset or final LOD.
+
 The experiment is implemented in the frozen donor branch at `ba1e2d1`.
 Main-application promotion must follow `docs/rendering/3D_INTEGRATION_PLAN.md`;
 do not merge the donor branch wholesale or treat its lab manifest/runtime
@@ -321,3 +326,7 @@ The lab slice is complete when:
 - the standalone lab and reusable modules are tested and `just check` is green;
 - production asset promotion and removal of the experimental label remain a
   separate explicit Q12 decision.
+
+When resuming this work, do not infer review requirements from this historical
+evaluation narrative. Produce and walk through every artifact and sign-off row
+in `docs/rendering/3D_PROMOTION_REVIEW.md`.

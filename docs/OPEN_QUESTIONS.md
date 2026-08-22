@@ -194,11 +194,16 @@ four annotation centroids outside the pinned GLB bounds: Allen -927,
 under `artifacts/mesh-production-candidate/pack/`; it does not clamp the
 centroids or claim a valid production pack.
 
-Resolution needed before production promotion: reconcile or regenerate the
-three affected absolute Allen source surfaces; visual review at representative
-320/480/800 px view sizes; Chrome/Edge, Firefox, and Safari transfer/decode/
-first-frame/memory/picking results; final default/upgrade LODs; and the public
-immutable asset origin.
+On 2026-08-22 the owner approved deterministic canonical-annotation
+regeneration of the complete bilateral source identities for Allen 927,
+526322264, and 599626923. Local implementation is therefore unblocked. The
+exact next-agent contract and owner sign-off form are in
+`docs/rendering/3D_PROMOTION_REVIEW.md`.
+
+Resolution still needed before production promotion: successful regenerated
+geometry evidence; the recorded 320/480/800 px owner review; Chrome/Edge,
+Firefox, and Safari transfer/decode/first-frame/memory/picking results; final
+default/upgrade LODs; and the public immutable asset origin.
 
 Blocks: production 3-D asset publication and removal of the experimental label,
 not implementation of the optional context view with deterministic fixtures.
