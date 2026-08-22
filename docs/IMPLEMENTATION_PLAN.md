@@ -194,8 +194,8 @@ scientific boundaries, and promotion stopping point are specified in
 
 ## P3D — Independent brain-mesh 3-D lab
 
-Status: **experiment implemented in frozen donor; main Commits 0-5 complete;
-non-blocking for launch**.
+Status: **experiment implemented in frozen donor; main Commits 0-6 complete;
+production promotion blocked by Q12 and non-blocking for launch**.
 
 The explicitly authorized worktree described by `AGENTS.md` has completed its
 experimental purpose and now remains frozen as donor evidence. Its isolation
@@ -233,13 +233,17 @@ are covered in Chromium. The obsolete exploratory renderer facade was removed.
 Commit 4 added one pure application-owned regional-presentation resolver and
 migrated registered, static, and 3-D applicators to its mapping, anatomy/
 feature color, visibility, signed selection/hover, and left-feature semantics;
-the duplicate renderer-local bilateral resolution is gone. Next unblocked
-action: execute Commit 6, the thin optional application adapter. Commit 5 made
+the duplicate renderer-local bilateral resolution is gone. Commit 5 made
 `brain-3d` registry-driven context content without adding a projection or
 workspace slot, and added validated renderer-neutral camera/explode state with
 canonical optional URL-v4 fields, debounced camera history, responsive/null-
-host behavior, and no mesh request before integration. Production asset
-promotion remains blocked by Q12.
+host behavior, and no mesh request before integration. Commit 6 added the thin
+optional adapter: an explicitly configured immutable descriptor lazily creates
+the retained viewport, shared presentation/selection/camera state stays linked,
+hidden work pauses, failures remain isolated, and teardown is owned. The
+canonical fixture is injected only by the browser-test server and is never a
+runtime fallback. Commit 7 production evidence and promotion are blocked by
+Q12; no further integration-plan action is currently unblocked.
 
 Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 

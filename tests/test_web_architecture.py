@@ -57,9 +57,13 @@ def test_browser_runtime_has_no_pre_cutover_compatibility_contracts() -> None:
 def test_application_composition_uses_only_the_projection_viewport_boundary() -> None:
     app = (ROOT / "app.ts").read_text()
     assert "ProjectionViewportFactory" in app
+    assert "BrainScene3DViewportFactory" in app
     assert "SvgSliceRenderer" not in app
     assert "CanvasVolumeSliceRenderer" not in app
     assert "ProjectionPackSource" not in app
+    assert "MeshPackSource" not in app
+    assert "meshoptimizer" not in app
+    assert "from 'three'" not in app
 
 
 def test_mesh_runtime_dependencies_stay_inside_rendering_3d() -> None:
@@ -91,3 +95,14 @@ def test_projection_viewports_consume_shared_regional_presentation() -> None:
         assert "regional-presentation.js" in source
         assert "bilateralAtlasRegionColorMap" not in source
         assert "bilateralFeatureColorMap" not in source
+
+
+def test_3d_context_does_not_become_a_projection_or_runtime_fallback() -> None:
+    projections = (ROOT / "domain" / "projections.ts").read_text()
+    main = (ROOT / "main.ts").read_text()
+    assert "kind: 'scene3d'" in projections
+    projection_registry = projections.split("export const PROJECTION_REGISTRY", 1)[1].split("];", 1)[0]
+    assert "brain-3d" not in projection_registry
+    assert "VITE_BRAIN_MESH_MANIFEST_URL" in main
+    assert "/__mesh-pack-fixture/" not in main
+    assert ".glb" not in main.lower()

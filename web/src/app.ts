@@ -11,6 +11,7 @@ import { deriveRegionalSliceIndices } from './domain/navigation.js';
 import { createAppStore, type AppStore } from './domain/store.js';
 import type { SliceAxis, ViewState } from './domain/types.js';
 import type { DisplaySliceInventory } from './rendering/display-slice-inventory.js';
+import type { BrainScene3DViewportFactory } from './rendering/3d/brain-scene-viewport.js';
 import {
   type ProjectionInspection,
   type RegionInspection,
@@ -30,6 +31,7 @@ export interface AppOptions {
   atlasRegionsUrl?: string;
   defaultView?: ViewState;
   viewportFactory?: ProjectionViewportFactory;
+  scene3dFactory?: BrainScene3DViewportFactory;
 }
 
 /**
@@ -86,7 +88,7 @@ export class AtlasApp {
       downloadCurrentFeature: () => this.downloadCurrentFeature(),
       importLocal: (files) => this.importLocal(files),
       reportError: (error) => this.reportRuntimeError(error),
-    }, this.viewportFactory);
+    }, this.viewportFactory, options.scene3dFactory);
     this.regionalPanel = new RegionalPanelController(root, {
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
       setRegionOrder: (order) => this.store.dispatch({ type: 'regions/order', order }),
@@ -104,6 +106,18 @@ export class AtlasApp {
       stepSlice: (axis, delta) => this.stepSlice(axis, delta),
       moveCursor: (cursor) => this.store.dispatch({ type: 'cursor/set', cursor }),
       reportError: (error) => this.reportRuntimeError(error),
+    });
+    options.scene3dFactory?.setInteractionSink({
+      regionPointer: ({ type, regionId }) => {
+        const logicalRegionId = regionId === null ? null : String(-Math.abs(regionId));
+        if (type === 'select' && logicalRegionId !== null) {
+          this.store.dispatch({ type: 'selection/toggle', regionId: logicalRegionId });
+        } else {
+          this.setHoveredRegion(type === 'hover' ? logicalRegionId : null);
+        }
+      },
+      cameraChanged: (camera) => this.store.dispatch({ type: 'scene3d/camera', camera }),
+      error: (error) => this.reportRuntimeError(error),
     });
   }
 
@@ -168,6 +182,7 @@ export class AtlasApp {
       manifest: data.manifest,
       feature: data.feature,
       displaySliceInventories: this.displaySliceInventories,
+      regionalPresentation: this.viewportPresentation?.regional ?? presentation.regional,
     };
     this.shell.render(model);
     this.regionalPanel.render({

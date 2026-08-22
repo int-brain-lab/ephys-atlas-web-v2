@@ -146,8 +146,8 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     this.scheduleRender();
   }
 
-  activate(): void { this.assertActiveObject(); this.active = true; this.controls.enabled = true; this.scheduleRender(); }
-  deactivate(): void { this.active = false; this.controls.enabled = false; if (this.frame !== null) cancelAnimationFrame(this.frame); this.frame = null; }
+  activate(): void { this.assertActiveObject(); this.active = true; this.host.dataset.active = 'true'; this.controls.enabled = true; this.scheduleRender(); }
+  deactivate(): void { this.active = false; this.host.dataset.active = 'false'; this.controls.enabled = false; if (this.frame !== null) cancelAnimationFrame(this.frame); this.frame = null; }
 
   destroy(): void {
     if (this.destroyed) return;
@@ -181,6 +181,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
       this.manifest = manifest;
       this.installLod(lod);
       this.frameCamera();
+      if (this.state.camera) this.applyCamera(this.state.camera);
       this.host.dataset.scene3dState = 'ready';
       this.host.dataset.lod = lod.id;
       this.scheduleRender();

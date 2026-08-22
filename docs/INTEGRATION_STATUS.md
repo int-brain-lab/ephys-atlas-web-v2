@@ -102,8 +102,8 @@ explode. It has not been integrated on `main`, is not part of M2 or launch
 acceptance, and must not be bulk merged because it predates final projection
 cutover commits.
 
-The approved main-integration Commits 0-5 are complete. At main
-`9624b05`, the full `just check` gate passed; at the unchanged donor
+The approved main-integration Commits 0-6 are complete. The ordinary full gate
+is required at each landing point; at the unchanged donor
 `ba1e2d1`, the focused compiler (5), web unit (18), and Chromium lab (4) tests
 passed. No donor history changed. Main now has one strict snake_case
 `atlas-mesh-pack-v1` contract with Python/TypeScript parity, deterministic
@@ -126,8 +126,13 @@ URL-v4 3-D state are implemented: `brain-3d` is context-registry content, not a
 projection or fifth workspace slot, and its null host performs no mesh request.
 Camera poses are finite, bounded, nondegenerate, normalized as a whole, and
 camera drag writes are debounced replacements; explode and camera fields are
-optional additions to URL v4. The thin optional application adapter is next;
-production promotion remains blocked by Q12.
+optional additions to URL v4. The thin optional application adapter now lazily
+creates an explicitly configured immutable viewport, pauses hidden work, shares
+presentation, selection, and camera state, isolates failures, and owns teardown.
+Without a descriptor the null host remains request-free. The canonical synthetic mesh is
+injected only by the browser-test server, never as a runtime fallback.
+Production evidence and promotion are the next planned slice and remain blocked
+by Q12's external inputs, deployment, measurements, and human review.
 
 The approved anatomy smoothing investigation has completed its first three
 implementation slices. A deterministic registry exposes exact geometry, GEOS
@@ -154,9 +159,9 @@ Optional main-application integration is approved through D037 and
 `docs/rendering/3D_INTEGRATION_PLAN.md`. The target is a `brain-3d` content kind
 inside the existing secondary/context slot, backed by a sibling retained 3-D
 viewport and the application's one regional-presentation/state lifecycle.
-`ProjectionRegistry` remains 2-D-specific. The first unblocked implementation
-work is contract/compiler convergence with deterministic tiny fixtures;
-production assets and removal of the experimental label remain blocked by Q12.
+`ProjectionRegistry` remains 2-D-specific. The optional application integration
+is complete through Commit 6; production assets, promotion evidence, and
+removal of the experimental label remain blocked by Q12.
 
 The regional UI keeps DOM concerns in its controller while region search/value/statistics derivation is pure/testable. Large dynamic tree interaction uses delegated events.
 The region browser defaults to the expandable anatomical hierarchy and offers

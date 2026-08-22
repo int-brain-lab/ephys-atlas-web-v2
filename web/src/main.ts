@@ -2,6 +2,7 @@ import './styles.css';
 import { AtlasApp } from './app.js';
 import { DEFAULT_VIEW_STATE } from './domain/defaults.js';
 import { RetainedProjectionViewportFactory } from './rendering/retained-projection-viewport.js';
+import { LazyBrainScene3DViewportFactory } from './rendering/3d/lazy-brain-scene-viewport.js';
 
 const root = document.querySelector<HTMLElement>('#app');
 if (!root) throw new Error('Missing #app root element');
@@ -23,9 +24,30 @@ const developmentDefaultView = developmentDatasetId && developmentReleaseId && d
     featureId: developmentFeatureId,
   }
   : undefined;
-const app = new AtlasApp(root, {
-  viewportFactory,
-  ...(catalogUrl ? { catalogUrl } : {}),
-  ...(developmentDefaultView ? { defaultView: developmentDefaultView } : {}),
-});
-void app.start();
+function optionalScene3DFactory() {
+  const url = import.meta.env.VITE_BRAIN_MESH_MANIFEST_URL as string | undefined;
+  const sha256 = import.meta.env.VITE_BRAIN_MESH_MANIFEST_SHA256 as string | undefined;
+  const bytesText = import.meta.env.VITE_BRAIN_MESH_MANIFEST_BYTES as string | undefined;
+  if (!url && !sha256 && !bytesText) return undefined;
+  const bytes = Number(bytesText);
+  if (!url || !/^[0-9a-f]{64}$/.test(sha256 ?? '') || !Number.isSafeInteger(bytes) || bytes <= 0) {
+    console.error('Ignoring incomplete VITE_BRAIN_MESH_MANIFEST_* configuration');
+    return undefined;
+  }
+  return new LazyBrainScene3DViewportFactory({
+    url: new URL(url, location.href).toString(), bytes, sha256: sha256!,
+  });
+}
+
+function start(): void {
+  const scene3dFactory = optionalScene3DFactory();
+  const app = new AtlasApp(root!, {
+    viewportFactory,
+    ...(scene3dFactory ? { scene3dFactory } : {}),
+    ...(catalogUrl ? { catalogUrl } : {}),
+    ...(developmentDefaultView ? { defaultView: developmentDefaultView } : {}),
+  });
+  void app.start();
+}
+
+start();

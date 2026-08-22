@@ -36,6 +36,11 @@ import { ColorRangeControl } from './color-range-control.js';
 import { ContextMenu, type ContextMenuOption } from './context-menu.js';
 import type { DisplaySliceInventory } from '../rendering/display-slice-inventory.js';
 import type { RegionTooltipModel } from './regional/model.js';
+import type { RegionalPresentation } from '../application/regional-presentation.js';
+import type {
+  BrainScene3DViewport,
+  BrainScene3DViewportFactory,
+} from '../rendering/3d/brain-scene-viewport.js';
 
 export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
@@ -65,6 +70,7 @@ export interface ShellModel {
   manifest: DatasetManifest | null;
   feature: FeaturePayload | null;
   displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null;
+  regionalPresentation: RegionalPresentation;
 }
 
 type LayoutMode = 'wide' | 'compact' | 'narrow' | 'phone';
@@ -166,6 +172,12 @@ export class AppShell {
   private readonly staticFrames = new Map<StaticProjectionId, StaticFrameNodes>();
   private readonly secondaryTabButtons = new Map<SecondaryTabId, HTMLButtonElement>();
   private readonly secondaryPanels = new Map<SecondaryTabId, HTMLElement>();
+  private scene3dHost!: HTMLElement;
+  private scene3dNotice!: HTMLElement;
+  private scene3dViewport: BrainScene3DViewport | null = null;
+  private scene3dFailed = false;
+  private scene3dPresentation: RegionalPresentation | null = null;
+  private scene3dViewState: AppState['view']['scene3d'] | null = null;
   private secondaryFrame!: HTMLElement;
   private secondaryMaximize!: HTMLButtonElement;
   private readonly headerActionButtons = new Map<HeaderAction, HTMLButtonElement[]>();
@@ -192,6 +204,7 @@ export class AppShell {
     root: HTMLElement,
     private readonly callbacks: AppShellCallbacks,
     private readonly viewportFactory: ProjectionViewportFactory,
+    private readonly scene3dFactory?: BrainScene3DViewportFactory,
   ) {
     root.replaceChildren();
 
@@ -374,6 +387,7 @@ export class AppShell {
       if (nodes.loadingNoticeTimer !== null) window.clearTimeout(nodes.loadingNoticeTimer);
     }
     this.viewportFactory.destroy();
+    this.scene3dFactory?.destroy();
   }
 
   private createHeader(): HTMLElement {
@@ -1374,12 +1388,14 @@ export class AppShell {
     frame.dataset.secondaryPanel = 'brain-3d';
     frame.hidden = true;
     const host = element('div', 'secondary-view__scene3d-host');
-    host.dataset.scene3dHost = 'null';
+    host.dataset.scene3dHost = this.scene3dFactory ? 'available' : 'null';
     host.setAttribute('aria-label', '3-D brain renderer target');
     const notice = element('p', 'secondary-view__scene3d-notice');
     notice.setAttribute('role', 'status');
     notice.textContent = 'Experimental 3-D context is not connected in this build.';
     frame.append(host, notice);
+    this.scene3dHost = host;
+    this.scene3dNotice = notice;
     this.secondaryPanels.set('brain-3d', frame);
     return frame;
   }
@@ -1396,6 +1412,7 @@ export class AppShell {
     }
     for (const [candidate, panel] of this.secondaryPanels) panel.hidden = candidate !== tab;
     const content = SECONDARY_CONTENT_BY_ID[tab];
+    this.renderScene3D(model, content.kind === 'scene3d');
     if (content.kind !== 'static-projection') return;
     const nodes = this.staticFrames.get(content.projectionId);
     if (!nodes) return;
@@ -1428,6 +1445,62 @@ export class AppShell {
       nodes.viewport.showError(error);
       this.callbacks.reportError(error);
     });
+  }
+
+  private renderScene3D(model: ShellModel, selected: boolean): void {
+    const view = model.state.view;
+    const maximized = view.workspace.maximizedView;
+    const visible = selected && (maximized === 'secondary'
+      || (maximized === null && (window.innerWidth >= 1100 || view.workspace.activeCompactView === 'secondary')));
+    if (!this.scene3dFactory) {
+      this.scene3dNotice.textContent = 'Experimental 3-D context is not connected in this build.';
+      this.scene3dNotice.dataset.state = 'unavailable';
+      return;
+    }
+    if (visible && !this.scene3dViewport && !this.scene3dFailed) {
+      try {
+        this.scene3dViewport = this.scene3dFactory.create(this.scene3dHost);
+        this.scene3dHost.dataset.scene3dHost = 'connected';
+      } catch (error) {
+        this.scene3dFailed = true;
+        this.scene3dHost.dataset.scene3dState = 'error';
+        this.scene3dNotice.textContent = 'Experimental 3-D context unavailable.';
+        this.scene3dNotice.dataset.state = 'error';
+        this.callbacks.reportError(error);
+        return;
+      }
+    }
+    const viewport = this.scene3dViewport;
+    if (!viewport) return;
+    try {
+      if (this.scene3dHost.dataset.scene3dState === 'error') {
+        this.scene3dFailed = true;
+        viewport.deactivate();
+        this.scene3dNotice.textContent = 'Experimental 3-D context unavailable.';
+        this.scene3dNotice.dataset.state = 'error';
+        return;
+      }
+      if (this.scene3dPresentation !== model.regionalPresentation) {
+        viewport.setPresentation(model.regionalPresentation);
+        this.scene3dPresentation = model.regionalPresentation;
+      }
+      if (this.scene3dViewState !== view.scene3d) {
+        viewport.setViewState(view.scene3d);
+        this.scene3dViewState = view.scene3d;
+      }
+      if (visible) viewport.activate();
+      else viewport.deactivate();
+      this.scene3dNotice.textContent = view.representation === 'volume'
+        ? 'Experimental 3-D context · anatomy only — volume scalars are not defined on this view'
+        : 'Experimental 3-D context';
+      this.scene3dNotice.dataset.state = 'experimental';
+    } catch (error) {
+      this.scene3dFailed = true;
+      viewport.deactivate();
+      this.scene3dNotice.textContent = 'Experimental 3-D context unavailable.';
+      this.scene3dNotice.dataset.state = 'error';
+      this.callbacks.reportError(error);
+    }
   }
 
   private renderViewFrame(axis: SliceAxis, model: ShellModel): void {
@@ -1629,6 +1702,7 @@ export class AppShell {
   private readonly onResize = (): void => {
     this.hideRegionTooltip();
     this.syncLayoutMode();
+    if (this.currentModel) this.renderSecondaryView(this.currentModel);
   };
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
