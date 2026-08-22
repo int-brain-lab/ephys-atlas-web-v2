@@ -1,0 +1,468 @@
+import type { ColoringState, EffectiveColoringState, SliceAxis } from '../domain/types.js';
+import type { VolumeFeaturePayload } from '../data/contracts.js';
+import { cursorStateToWorld } from './coordinate-space.js';
+import { bilateralAtlasRegionColorMap, bilateralFeatureColorMap } from './scalar-colormap.js';
+import { SvgSliceRenderer } from './svg-slice-renderer.js';
+import type { RegionalSliceFrame, SliceRegionPointerEvent } from './types.js';
+import { CanvasVolumeSliceRenderer } from './canvas-volume-renderer.js';
+import { SchemaChunks3dVolumeSource, regionalSliceToVolumeIndex } from './chunked-volume-source.js';
+import { SchemaSlicePackVolumeSource } from './slice-pack-volume-source.js';
+import { VolumeSliceLoader, type VolumeSlice, type VolumeSliceSource } from './volume.js';
+import { paletteRgb } from './colormap-palettes.js';
+import {
+  ProjectionPackSource,
+  type RegisteredProjectionSlice,
+  type RegisteredProjectionSource,
+} from './projection-pack-source.js';
+import type {
+  ProjectionInteractionSink,
+  ProjectionPresentation,
+  ProjectionRenderModel,
+  ProjectionViewport,
+  ProjectionViewportFactory,
+  RegionHit,
+} from './projection-viewport.js';
+
+interface PendingRender {
+  readonly model: ProjectionRenderModel;
+  readonly token: number;
+  readonly resolve: () => void;
+  readonly reject: (error: unknown) => void;
+}
+
+interface RetainedMount {
+  readonly root: HTMLDivElement;
+  readonly canvas: HTMLCanvasElement;
+  readonly volume: CanvasVolumeSliceRenderer;
+  readonly svg: SVGSVGElement;
+  readonly regional: SvgSliceRenderer;
+  readonly error: HTMLDivElement;
+}
+
+const DEFAULT_PRESENTATION: ProjectionPresentation = {
+  feature: null,
+  regions: [],
+  anatomyRegions: [],
+  coloring: {
+    mode: 'feature',
+    statistic: 'mean',
+    colormap: 'viridis',
+    range: { mode: 'auto' },
+    scale: 'linear',
+  },
+  selectedRegionIds: [],
+  hoveredRegionId: null,
+};
+
+function finiteRange(values: Float32Array): readonly [number, number] | null {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const value of values) {
+    if (!Number.isFinite(value)) continue;
+    min = Math.min(min, value);
+    max = Math.max(max, value);
+  }
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+  return max > min ? [min, max] : [min, min + 1];
+}
+
+function displayRange(
+  feature: VolumeFeaturePayload,
+  slice: VolumeSlice,
+  coloring: ColoringState,
+): readonly [number, number] | null {
+  if (coloring.range.mode === 'fixed') {
+    return coloring.range.max > coloring.range.min ? [coloring.range.min, coloring.range.max] : null;
+  }
+  const declared = feature.descriptor.valueRange;
+  if (declared && declared[0] != null && declared[1] != null && declared[1] > declared[0]) {
+    return [declared[0], declared[1]];
+  }
+  return finiteRange(slice.data);
+}
+
+function rgbaForSlice(
+  feature: VolumeFeaturePayload,
+  slice: VolumeSlice,
+  coloring: EffectiveColoringState,
+): Uint8ClampedArray {
+  const range = displayRange(feature, slice, coloring);
+  const rgba = new Uint8ClampedArray(slice.data.length * 4);
+  if (!range) return rgba;
+  const [min, max] = range;
+  if (coloring.scale === 'log' && !(min > 0 && max > min)) return rgba;
+  const log = coloring.scale === 'log';
+  const lo = log ? Math.log(min) : min;
+  const hi = log ? Math.log(max) : max;
+  const span = hi - lo;
+  for (let index = 0; index < slice.data.length; index += 1) {
+    const value = slice.data[index]!;
+    const offset = index * 4;
+    if (!Number.isFinite(value) || (log && value <= 0)) continue;
+    const scalar = log ? Math.log(value) : value;
+    const [r, g, b] = paletteRgb(coloring.colormap, span > 0 ? (scalar - lo) / span : 0.5);
+    rgba[offset] = r;
+    rgba[offset + 1] = g;
+    rgba[offset + 2] = b;
+    rgba[offset + 3] = 255;
+  }
+  return rgba;
+}
+
+function bilateralIds(ids: readonly string[]): ReadonlySet<number> {
+  const result = new Set<number>();
+  for (const id of ids) {
+    const atlasId = Number(id);
+    if (!Number.isInteger(atlasId) || atlasId === 0) continue;
+    result.add(-Math.abs(atlasId));
+    result.add(Math.abs(atlasId));
+  }
+  return result;
+}
+
+function regionalFrame(
+  model: ProjectionRenderModel,
+  slice: RegisteredProjectionSlice,
+  guides: RegionalSliceFrame['guides'],
+  presentation: ProjectionPresentation,
+): RegionalSliceFrame {
+  const anatomyRegions = presentation.anatomyRegions ?? presentation.regions ?? [];
+  const atlasColors = bilateralAtlasRegionColorMap(anatomyRegions);
+  const feature = presentation.feature;
+  const regionColors = presentation.coloring.mode === 'anatomy'
+    ? atlasColors
+    : feature?.representation === 'regional' && feature.parcellation === model.parcellation
+      ? bilateralFeatureColorMap(feature, presentation.coloring, anatomyRegions)
+      : new Map([...atlasColors].filter(([atlasId]) => atlasId > 0));
+  return {
+    axis: model.axis,
+    index: slice.sliceIndex,
+    mapping: model.parcellation,
+    svgFragment: slice.svgFragment,
+    viewBox: slice.viewBox,
+    guides,
+    regionColors,
+    selectedRegionIds: bilateralIds(presentation.selectedRegionIds),
+    highlightedRegionIds: presentation.hoveredRegionId == null
+      ? new Set()
+      : bilateralIds([presentation.hoveredRegionId]),
+  };
+}
+
+class RetainedProjectionViewport implements ProjectionViewport {
+  private readonly mount: RetainedMount;
+  private renderToken = 0;
+  private pending: PendingRender | null = null;
+  private inFlight = false;
+  private frame: RegionalSliceFrame | null = null;
+  private volumeFeature: VolumeFeaturePayload | null = null;
+  private volumeSlice: VolumeSlice | null = null;
+  private requestedIndex = 0;
+  private renderedRequestedIndex: number | null = null;
+  private requestedParcellation: ProjectionRenderModel['parcellation'] = 'allen';
+  private previousNativeIndex: number | null = null;
+
+  constructor(
+    private readonly target: HTMLElement,
+    private readonly axis: SliceAxis,
+    private readonly source: RegisteredProjectionSource,
+    private readonly presentation: () => ProjectionPresentation,
+    private readonly interactionSink: () => ProjectionInteractionSink | null,
+    private readonly volumeSource: (feature: VolumeFeaturePayload) => VolumeSliceSource,
+  ) {
+    this.mount = this.createMount();
+    target.replaceChildren(this.mount.root);
+  }
+
+  render(model: ProjectionRenderModel): Promise<void> {
+    if (model.axis !== this.axis) return Promise.reject(new Error(`${this.axis} viewport cannot render ${model.axis}`));
+    const token = ++this.renderToken;
+    this.requestedIndex = model.sliceIndex;
+    this.requestedParcellation = model.parcellation;
+    this.hideError();
+    this.pending?.resolve();
+    return new Promise<void>((resolve, reject) => {
+      this.pending = { model, token, resolve, reject };
+      this.pump();
+    });
+  }
+
+  updatePresentation(): void {
+    const presentation = this.presentation();
+    if (this.frame) {
+      const slice: RegisteredProjectionSlice = {
+        axis: this.axis,
+        sliceIndex: this.frame.index,
+        worldCoordinateUm: Number(this.target.dataset.worldCoordinateUm ?? 0),
+        svgFragment: this.frame.svgFragment,
+        viewBox: this.frame.viewBox,
+      };
+      this.frame = regionalFrame({
+        axis: this.axis,
+        sliceIndex: this.requestedIndex,
+        cursor: { xUm: 0, yUm: 0, zUm: 0 },
+        parcellation: this.requestedParcellation,
+        feature: presentation.feature,
+      }, slice, this.frame.guides, presentation);
+      this.mount.regional.render(this.frame);
+    }
+    if (this.volumeFeature && this.volumeSlice && presentation.feature === this.volumeFeature) {
+      this.paintVolume(this.volumeFeature, this.volumeSlice, presentation.coloring);
+    }
+  }
+
+  clear(): void {
+    this.renderToken += 1;
+    this.pending?.resolve();
+    this.pending = null;
+    this.frame = null;
+    this.volumeFeature = null;
+    this.volumeSlice = null;
+    this.previousNativeIndex = null;
+    this.renderedRequestedIndex = null;
+    this.mount.regional.clear();
+    this.mount.volume.dispose();
+    this.mount.root.dataset.mode = 'empty';
+    delete this.target.dataset.sliceAsset;
+    delete this.target.dataset.assetIndex;
+    delete this.target.dataset.worldCoordinateUm;
+    delete this.target.dataset.volumeIndex;
+    delete this.target.dataset.volumeFeature;
+  }
+
+  showError(error: unknown): void {
+    this.mount.error.textContent = error instanceof Error ? error.message : 'Projection could not be rendered';
+    this.mount.error.hidden = false;
+  }
+
+  destroy(): void {
+    this.clear();
+    this.mount.regional.dispose();
+    this.target.replaceChildren();
+  }
+
+  private pump(): void {
+    if (this.inFlight || !this.pending) return;
+    const request = this.pending;
+    this.pending = null;
+    this.inFlight = true;
+    void this.renderNow(request.model, request.token)
+      .then(request.resolve, request.reject)
+      .finally(() => {
+        this.inFlight = false;
+        this.pump();
+      });
+  }
+
+  private async renderNow(model: ProjectionRenderModel, token: number): Promise<void> {
+    if (model.feature?.representation === 'volume') await this.renderVolume(model, token);
+    else await this.renderRegional(model, token);
+  }
+
+  private async renderRegional(model: ProjectionRenderModel, token: number): Promise<void> {
+    const world = cursorStateToWorld(model.cursor);
+    const sameGeometry = this.frame?.axis === model.axis
+      && this.renderedRequestedIndex === model.sliceIndex
+      && this.frame.mapping === model.parcellation;
+    if (sameGeometry && this.frame) {
+      const guides = await this.source.guidesForWorld(model.axis, world);
+      if (this.renderToken !== token) return;
+      this.frame = { ...this.frame, guides };
+      this.mount.regional.updateGuides(this.frame);
+      return;
+    }
+    const [slice, guides] = await Promise.all([
+      this.source.loadSlice(model.axis, model.sliceIndex),
+      this.source.guidesForWorld(model.axis, world),
+    ]);
+    if (this.renderToken !== token) return;
+    const previous = this.previousNativeIndex;
+    this.frame = regionalFrame(model, slice, guides, this.presentation());
+    this.mount.regional.render(this.frame);
+    this.mount.root.dataset.mode = 'regional';
+    this.target.dataset.sliceAsset = 'projection-pack-v1';
+    this.target.dataset.assetIndex = String(slice.sliceIndex);
+    this.target.dataset.worldCoordinateUm = String(slice.worldCoordinateUm);
+    delete this.target.dataset.volumeIndex;
+    delete this.target.dataset.volumeFeature;
+    this.previousNativeIndex = model.sliceIndex;
+    this.renderedRequestedIndex = model.sliceIndex;
+    if (previous !== null && previous !== model.sliceIndex) {
+      const direction = model.sliceIndex > previous ? 1 : -1;
+      void this.source.prefetchNeighbor(model.axis, model.sliceIndex, direction).catch(() => undefined);
+    }
+  }
+
+  private async renderVolume(model: ProjectionRenderModel, token: number): Promise<void> {
+    const feature = model.feature;
+    if (!feature || feature.representation !== 'volume') throw new Error('Volume viewport requires a volume feature');
+    const volumeIndex = regionalSliceToVolumeIndex(feature, model.axis, model.sliceIndex);
+    const loader = this.volumeSource(feature);
+    const slice = await loader.loadSlice(model.axis, volumeIndex);
+    if (this.renderToken !== token) return;
+    this.paintVolume(feature, slice, this.presentation().coloring);
+    this.volumeFeature = feature;
+    this.volumeSlice = slice;
+    this.mount.root.dataset.mode = 'volume';
+    this.target.dataset.sliceAsset = 'schema-volume-v1';
+    this.target.dataset.volumeIndex = String(volumeIndex);
+    this.target.dataset.volumeFeature = feature.featureId;
+    delete this.target.dataset.assetIndex;
+    delete this.target.dataset.worldCoordinateUm;
+    void loader.prefetchAdjacent?.(model.axis, volumeIndex, 1)?.catch(() => undefined);
+  }
+
+  private paintVolume(
+    feature: VolumeFeaturePayload,
+    slice: VolumeSlice,
+    coloring: EffectiveColoringState,
+  ): void {
+    this.mount.volume.render({
+      axis: slice.axis,
+      index: slice.index,
+      width: slice.width,
+      height: slice.height,
+      rgba: rgbaForSlice(feature, slice, coloring),
+    });
+  }
+
+  private onRegionPointer(event: SliceRegionPointerEvent): void {
+    const sink = this.interactionSink();
+    if (!sink) return;
+    if (event.type === 'leave') {
+      sink.hover(null);
+      sink.inspect(null);
+      return;
+    }
+    const hit: RegionHit = {
+      regionId: String(-Math.abs(event.regionId)),
+      axis: event.axis,
+      sliceIndex: this.requestedIndex,
+    };
+    if (event.type === 'select') sink.toggleSelection(hit);
+    else if (event.type === 'hover') sink.hover(hit);
+    else sink.inspect({
+      ...hit,
+      physicalRegionId: event.regionId,
+      parcellation: this.requestedParcellation,
+      clientX: event.originalEvent.clientX,
+      clientY: event.originalEvent.clientY,
+    });
+  }
+
+  private createMount(): RetainedMount {
+    const root = document.createElement('div');
+    root.className = 'projection-viewport';
+    root.dataset.mode = 'empty';
+    const canvas = document.createElement('canvas');
+    canvas.className = 'projection-viewport__scalar view-frame__volume-canvas';
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', 'Ephys atlas volume slice');
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('projection-viewport__regional', 'view-frame__brain-svg');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Registered Allen atlas anatomical slice');
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    const figureLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    figureLayer.classList.add('view-frame__slice-figure');
+    const guideLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    guideLayer.classList.add('view-frame__guide-layer');
+    guideLayer.setAttribute('aria-hidden', 'true');
+    svg.append(figureLayer, guideLayer);
+    const error = document.createElement('div');
+    error.className = 'projection-viewport__error';
+    error.setAttribute('role', 'status');
+    error.hidden = true;
+    root.append(canvas, svg, error);
+    return {
+      root,
+      canvas,
+      volume: new CanvasVolumeSliceRenderer(canvas),
+      svg,
+      regional: new SvgSliceRenderer(
+        { svg, figureLayer, guideLayer },
+        {
+          onRegionPointer: (event) => this.onRegionPointer(event),
+          onSliceStep: (axis, delta) => this.interactionSink()?.stepSlice(axis, delta),
+        },
+      ),
+      error,
+    };
+  }
+
+  private hideError(): void {
+    this.mount.error.hidden = true;
+    this.mount.error.textContent = '';
+  }
+}
+
+export interface RetainedProjectionViewportFactoryOptions {
+  readonly projectionPackUrl?: string;
+  readonly fetchImpl?: typeof fetch;
+  readonly maxDecodedBytes?: number;
+  /** Deterministic test seam; production uses projectionPackUrl. */
+  readonly source?: RegisteredProjectionSource;
+}
+
+export class RetainedProjectionViewportFactory implements ProjectionViewportFactory {
+  private readonly source: RegisteredProjectionSource;
+  private readonly viewports = new Set<RetainedProjectionViewport>();
+  private readonly volumeSources = new WeakMap<VolumeFeaturePayload, VolumeSliceSource>();
+  private presentation: ProjectionPresentation = DEFAULT_PRESENTATION;
+  private sink: ProjectionInteractionSink | null = null;
+
+  constructor(options: RetainedProjectionViewportFactoryOptions) {
+    if (options.source) this.source = options.source;
+    else {
+      if (!options.projectionPackUrl) throw new Error('projectionPackUrl is required without a test source');
+      this.source = new ProjectionPackSource({
+        manifestUrl: options.projectionPackUrl,
+        ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
+        ...(options.maxDecodedBytes ? { maxDecodedBytes: options.maxDecodedBytes } : {}),
+      });
+    }
+  }
+
+  create(target: HTMLElement, axis: SliceAxis): ProjectionViewport {
+    const viewport = new RetainedProjectionViewport(
+      target,
+      axis,
+      this.source,
+      () => this.presentation,
+      () => this.sink,
+      (feature) => this.volumeSource(feature),
+    );
+    this.viewports.add(viewport);
+    return viewport;
+  }
+
+  updatePresentation(presentation: ProjectionPresentation): void {
+    this.presentation = presentation;
+    for (const viewport of this.viewports) viewport.updatePresentation();
+  }
+
+  setInteractionSink(sink: ProjectionInteractionSink): void {
+    this.sink = sink;
+  }
+
+  getDisplaySliceInventories() {
+    return this.source.getDisplaySliceInventories();
+  }
+
+  destroy(): void {
+    for (const viewport of this.viewports) viewport.destroy();
+    this.viewports.clear();
+    this.source.dispose();
+  }
+
+  private volumeSource(feature: VolumeFeaturePayload): VolumeSliceSource {
+    let source = this.volumeSources.get(feature);
+    if (!source) {
+      source = feature.descriptor.layout === 'chunks3d'
+        ? new VolumeSliceLoader(new SchemaChunks3dVolumeSource(feature))
+        : new SchemaSlicePackVolumeSource(feature);
+      this.volumeSources.set(feature, source);
+    }
+    return source;
+  }
+}

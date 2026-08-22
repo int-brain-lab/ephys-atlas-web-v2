@@ -59,13 +59,20 @@ BrainRegions row crosswalk is pinned by SHA-256 and joined to authoritative
 ontology names, hierarchy, and RGB in the committed browser asset documented
 by `docs/frontend/ALLEN_REGION_METADATA.md`.
 
-The v2 frontend keeps scientific 10 um navigation/coordinate calibration separate from this display-asset inventory. The odd SVG slices were deliberately omitted from the legacy bundles to reduce file size: slicing is primarily a user navigation/display convenience here, not a scientifically critical 10 um anatomical measurement. The UI therefore preserves the full scientific index domains with `step=1`, including odd indices. `LegacyCuratedSvgSliceRenderer` independently chooses the nearest available curated SVG fragment for display (normally at 20 um spacing), while coordinates, URL state, and linked-guide navigation continue to use the requested 10 um index. The chosen SVG index is exposed only as renderer/debug metadata (`data-asset-index`).
+The historical v2 frontend kept scientific 10 um navigation/coordinate
+calibration separate from this display inventory. Odd SVG slices were omitted
+from the legacy bundles to reduce size while requested coordinates remained on
+the 10 um grid. The current browser no longer reads this format; registered
+navigation is implemented through `atlas-projection-pack-v1` and its explicit
+display inventories.
 
 ## Historical fallback decision
 
 The implementation repository records the immutable inventory and hashes but
-does not duplicate the 83.44 MiB of legacy deployment artifacts. The modular
-`LegacyCuratedSvgSliceRenderer` remains available in source, but it is not
-constructed by `main.ts` and its deployed host is not contacted by default.
+does not duplicate the 83.44 MiB of legacy deployment artifacts. The legacy
+renderer and runtime crosswalk have been deleted. Exact pinned Top/Swanson
+source bytes remain potential deterministic inputs to the projection-pack
+builder once Q13 license evidence is complete; the deployed host is never a
+runtime dependency.
 
 A release copy is valid only if all five SHA-256 hashes above match. Do not use the historical generation script as a substitute for the curated deployed files.

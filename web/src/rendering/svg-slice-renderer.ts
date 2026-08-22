@@ -92,6 +92,12 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   dispose(): void {
     this.abortController.abort();
     if (this.wheelFrame !== null) cancelAnimationFrame(this.wheelFrame);
+    this.clear();
+  }
+
+  clear(): void {
+    this.currentAxis = null;
+    this.hoveredRegionId = null;
     this.pathIndex = new Map();
     this.preparedLayers.clear();
     this.activeLayerKey = null;

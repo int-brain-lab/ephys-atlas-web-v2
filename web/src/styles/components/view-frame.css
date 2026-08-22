@@ -93,6 +93,40 @@
   overflow: hidden;
 }
 
+.projection-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.projection-viewport__scalar,
+.projection-viewport__regional {
+  position: absolute;
+  inset: 0;
+}
+
+.projection-viewport[data-mode='regional'] .projection-viewport__scalar,
+.projection-viewport:not([data-mode='volume']) .projection-viewport__scalar,
+.projection-viewport[data-mode='volume'] .projection-viewport__regional {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.projection-viewport__error {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-3);
+  max-width: calc(100% - 2 * var(--space-4));
+  transform: translateX(-50%);
+  padding: 0.26rem 0.5rem;
+  border: 1px solid rgb(var(--color-accent-rgb) / 38%);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  background: rgb(7 16 25 / 90%);
+  font-size: 0.66rem;
+  text-align: center;
+}
+
 .view-frame__brain-svg {
   width: 100%;
   height: 100%;

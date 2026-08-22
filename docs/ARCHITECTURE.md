@@ -93,11 +93,10 @@ The Python builder validator and TypeScript runtime validator are independent im
 
 ## Rendering
 
-The target application rendering boundary is one retained layered 2-D
+The application rendering boundary is one retained layered 2-D
 projection viewport. It composes optional scalar-volume Canvas, regional SVG,
 selection/hover, and guide layers without replacing the mounted view. The
-current `SliceRenderer`/hybrid boundary is removed by the coordinated cutover,
-not wrapped indefinitely.
+previous `SliceRenderer`/hybrid boundary has been removed rather than wrapped.
 
 A projection registry distinguishes registered orthogonal slice stacks from
 static regional maps by capabilities. `SliceAxis` remains a scientific type

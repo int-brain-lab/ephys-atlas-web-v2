@@ -37,11 +37,12 @@ The current storage layers, launch cache-header policy, local dataset management
 UX, quota/eviction requirements, and ordered follow-up work are specified in
 `docs/frontend/BROWSER_STORAGE_AND_CACHE.md`.
 
-Rendering remains behind the frontend-owned `SliceRenderer` /
-`SliceRenderModel` facade. `GeneratedAnatomySliceRenderer` is the active
-regional adapter and loads sparse indexed-SVG v3 fragments derived from the
-validated bilateral 10 µm v2 parent. `LegacyCuratedSvgSliceRenderer` remains a
-code-level historical fallback and is not fetched by default.
+Rendering is behind the frontend-owned retained `ProjectionViewport` /
+`ProjectionRenderModel` boundary. One shared factory creates a stable layered
+viewport per registered frame and owns presentation plus interaction sinks.
+`ProjectionPackSource` is the only browser regional-geometry source; it loads
+schema-v1 projection resources derived from the validated bilateral 10 µm v2
+parent. There is no legacy or anatomy-pack browser adapter.
 
 Allen ontology identity is a separate pinned browser asset. The shared renderer
 presentation supports URL-persisted `Feature values` and `Allen anatomy` fill
@@ -95,21 +96,22 @@ Schema-v1 regional values come from the active dataset release. The pinned ontol
 ## UX Phase 4 — anatomical view frames
 
 Phase 4's layout remains implemented. D024 defines the scientific geometry and
-D026 defines the active display transport. The viewer uses the committed sparse
-80 µm v3 inventory derived from the exact bilateral 10 µm v2 parent, whose
-native ranges `1320/1140/800`, signed atlas IDs, and manifest affines remain the
-authority for state and cross-projection synchronization.
+D031/D034 define the active projection transport. The viewer uses the sparse
+80 µm inventory repackaged losslessly in `atlas-projection-pack-v1` from the
+exact bilateral 10 µm v2 parent, whose native ranges `1320/1140/800`, signed
+atlas IDs, and affines remain the authority for state and synchronization.
 
 - three anatomical frames expose calibrated AP/ML/DV coordinates,
   display-plane ordinal sliders mapped back to native indices, renderer status,
   and maximize/restore affordances;
 - one ML/AP/DV cursor and the registered manifest affines drive slices and guides without visual calibration formulas;
 - feature mode colors folded feature values on the left and official Allen ontology colors on the right; anatomy mode colors both hemispheres by ontology identity;
-- v3 pack bytes are lazy, integrity checked, explicitly decompressed in a
-  persistent worker, prefetched directionally, and held in bounded worker/DOM
-  caches;
+- projection-pack bytes are lazy, integrity checked before persistent cache
+  admission, explicitly decompressed in a persistent worker, prefetched
+  directionally, and held in bounded worker/DOM caches;
 - view frames retain the previous valid anatomy while a replacement loads and report failures explicitly;
-- the generated and legacy providers remain modular below the shared `SliceRenderer`; legacy assets are code-level rollback inputs, not runtime dependencies.
+- revisioned latest-only viewport scheduling skips superseded pending geometry
+  and retains stable layer DOM across navigation.
 
 ## Public interfaces
 
@@ -118,9 +120,11 @@ Primary interfaces:
 - `AppState`, `ViewState`, `AppAction`, `AppStore` in `web/src/domain/`;
 - schema-v1 browser contracts and decoders in `web/src/data/`;
 - `DatasetRepository` in `web/src/data/repository.ts`;
-- `SliceRenderer`, `SliceRenderModel`, `RendererInteractionSink` in `web/src/rendering/interfaces.ts`;
-- curated legacy asset inventory/helpers in `web/src/rendering/legacy-slice-assets.ts`;
-- lower-level SVG/volume renderer contracts in `web/src/rendering/`;
+- `ProjectionViewport`, `ProjectionRenderModel`, and
+  `ProjectionInteractionSink` in `web/src/rendering/projection-viewport.ts`;
+- `ProjectionPackSource` in `web/src/rendering/projection-pack-source.ts`;
+- retained composition and lower-level SVG/Canvas layers in
+  `web/src/rendering/`;
 - `parseViewState()` / `serializeViewState()` in `web/src/url/url-state.ts`.
 
 ## Integrated data contract
@@ -138,8 +142,9 @@ The previous frontend provisional schema and schema-v0.1 compatibility path have
 
 ## Current next work
 
-1. Execute Commit 5 of the projection/volume cutover as one atomic retained
-   viewport cutover; do not stage a second exported renderer facade.
+1. Execute Commit 6 of the projection/volume cutover: composite anatomy and
+   scalar layers in registered world space, add voxel inspection, opacity and
+   outline controls, and preserve anatomy across volume failures.
 2. Rebuild the external `2026_W32` development release under a new schema-v1
    release ID before using or publishing it.
 3. Deploy the committed generated anatomy pack with opaque gzip delivery and verify its immutable public URLs.

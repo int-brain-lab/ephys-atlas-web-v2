@@ -140,10 +140,10 @@ A benchmark may compare transports before the authoritative affine is resolved, 
 Before adding a dependency, ask whether the existing platform/library can solve the problem simply.
 
 - Keep the frontend framework-free unless an explicit decision changes D002.
-- Preserve the current `SliceRenderer` boundary except while executing the
-  approved coordinated replacement in
-  `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md`; do not create a third
-  competing facade.
+- Preserve the retained `ProjectionViewport` boundary established by the
+  coordinated cutover in
+  `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md`; do not reintroduce a
+  renderer-switching facade.
 - Do not create a second schema for local data, publishing, or a specific renderer.
 - Do not make publishing responsible for scientific transformation.
 - Keep production data/asset URLs configurable or catalog-driven rather than embedding temporary environments throughout UI code.

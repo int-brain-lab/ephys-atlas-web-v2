@@ -1,35 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
-
-const fragments = {
-  coronal: '<path d="M0 0h10v10H0z" class="allen_region_10 beryl_region_10 cosmos_region_10"/>',
-  sagittal: '<path d="M0 0h10v10H0z" class="allen_region_10 beryl_region_10 cosmos_region_10"/>',
-  horizontal: '<path d="M0 0h10v10H0z" class="allen_region_10 beryl_region_10 cosmos_region_10"/>',
-} as const;
-
-const ranges = {
-  coronal: { min: 2, max: 1316, step: 2 },
-  sagittal: { min: 54, max: 1086, step: 2 },
-  horizontal: { min: 16, max: 754, step: 2 },
-} as const;
-
-function bundle(axis: keyof typeof fragments): Record<string, string> {
-  const { min, max, step } = ranges[axis];
-  const out: Record<string, string> = {};
-  for (let index = min; index <= max; index += step) out[String(index)] = fragments[axis];
-  return out;
-}
-
-async function mockCuratedSlices(page: Page): Promise<void> {
-  await page.route('https://atlas.internationalbrainlab.org/data/json/slices_*.json', async (route) => {
-    const axis = route.request().url().match(/slices_(coronal|sagittal|horizontal)\.json/)?.[1] as keyof typeof fragments | undefined;
-    if (!axis) return route.abort();
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(bundle(axis)) });
-  });
-}
+import { expect, test } from '@playwright/test';
 
 test('schema-v1 chunks3d volume renders all three orthogonal golden slices', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await mockCuratedSlices(page);
   await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=1,0,2');
 
   await expect.poll(() => new URL(page.url()).searchParams.get('repr')).toBe('volume');
@@ -47,4 +19,29 @@ test('schema-v1 chunks3d volume renders all three orthogonal golden slices', asy
   await expect(page.locator('[data-view="sagittal"] canvas')).toHaveJSProperty('height', 4);
   await expect(page.locator('[data-view="horizontal"] canvas')).toHaveJSProperty('width', 6);
   await expect(page.locator('[data-view="horizontal"] canvas')).toHaveJSProperty('height', 8);
+});
+
+test('switching regional to volume preserves each retained layer stack', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
+  await page.evaluate(() => {
+    const state = window as Window & { __retainedProjectionNodes?: Element[] };
+    state.__retainedProjectionNodes = [...document.querySelectorAll(
+      '.view-frame__renderer > .projection-viewport, .view-frame__renderer canvas, .view-frame__renderer svg',
+    )];
+  });
+
+  const representation = page.locator('[data-context-field="representation"]');
+  await representation.locator('.context-menu__trigger').click();
+  await representation.getByRole('option', { name: /Volume/ }).click();
+  await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
+
+  expect(await page.evaluate(() => {
+    const state = window as Window & { __retainedProjectionNodes?: Element[] };
+    const current = [...document.querySelectorAll(
+      '.view-frame__renderer > .projection-viewport, .view-frame__renderer canvas, .view-frame__renderer svg',
+    )];
+    return state.__retainedProjectionNodes?.every((node, index) => node === current[index]);
+  })).toBe(true);
 });

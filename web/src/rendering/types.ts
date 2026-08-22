@@ -1,4 +1,4 @@
-import type { SliceAxis, SliceGuide, SliceIndices, ViewBox } from '../core/spatial.js';
+import type { SliceAxis, SliceGuide, ViewBox } from '../core/spatial.js';
 export { SLICE_AXES } from '../core/spatial.js';
 export type { GuideDimension, SliceAxis, SliceGuide, SliceIndices, ViewBox } from '../core/spatial.js';
 
@@ -27,34 +27,6 @@ export interface SliceRegionPointerEvent {
 export interface RegionalSliceRenderer {
   render(frame: RegionalSliceFrame): void | Promise<void>;
   dispose(): void;
-}
-
-export interface SvgSliceAssetSource {
-  loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<string>;
-}
-
-export interface AnatomyRegionPath {
-  atlasIds: Readonly<Record<MappingName, number>>;
-  d: string;
-}
-
-export interface AnatomySlice {
-  packFormat: 'anatomy-pack-v1' | 'anatomy-pack-v2' | 'anatomy-pack-v3';
-  axis: SliceAxis;
-  sliceIndex: number;
-  worldCoordinateUm: number;
-  paths: readonly AnatomyRegionPath[];
-  svgFragment?: string;
-  viewBox: ViewBox;
-}
-
-export interface AnatomySliceSource {
-  loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<AnatomySlice>;
-  worldFromSliceIndices(indices: SliceIndices): Promise<import('../core/spatial.js').WorldCoordinateUm>;
-  guidesForWorld(axis: SliceAxis, world: import('../core/spatial.js').WorldCoordinateUm): Promise<readonly SliceGuide[]>;
-  prefetchNextPack?(axis: SliceAxis, index: number, direction: -1 | 1): void;
-  getDisplaySliceIndices?(): Promise<Readonly<Record<SliceAxis, readonly number[]>> | null>;
-  dispose?(): void;
 }
 
 export interface Renderer3DState {

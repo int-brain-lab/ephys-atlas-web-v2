@@ -12,9 +12,13 @@ import type {
   ColorStatisticId,
   WorkspaceViewId,
 } from '../domain/types.js';
-import { deriveOrthogonalNavigation, deriveRegionalSliceIndices } from '../domain/navigation.js';
+import { deriveOrthogonalNavigation } from '../domain/navigation.js';
 import { PROJECTION_REGISTRY, WORKSPACE_VIEW_REGISTRY } from '../domain/projections.js';
-import type { RegionInspection, SliceRenderer } from '../rendering/interfaces.js';
+import type {
+  ProjectionViewport,
+  ProjectionViewportFactory,
+  RegionInspection,
+} from '../rendering/projection-viewport.js';
 import { regionalColorRange } from '../rendering/scalar-colormap.js';
 import { COLORMAPS } from '../rendering/colormap-palettes.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
@@ -57,6 +61,7 @@ type HeaderAction = 'share' | 'download' | 'info' | 'help';
 interface ViewFrameNodes {
   frame: HTMLElement;
   target: HTMLElement;
+  viewport: ProjectionViewport;
   coordinate: HTMLElement;
   slider: HTMLInputElement;
   status: HTMLElement;
@@ -148,7 +153,7 @@ export class AppShell {
   constructor(
     root: HTMLElement,
     private readonly callbacks: AppShellCallbacks,
-    private readonly renderer: SliceRenderer,
+    private readonly viewportFactory: ProjectionViewportFactory,
   ) {
     root.replaceChildren();
 
@@ -311,7 +316,7 @@ export class AppShell {
     for (const nodes of this.viewFrames.values()) {
       if (nodes.loadingNoticeTimer !== null) window.clearTimeout(nodes.loadingNoticeTimer);
     }
-    this.renderer.destroy?.();
+    this.viewportFactory.destroy();
   }
 
   private createHeader(): HTMLElement {
@@ -1150,6 +1155,7 @@ export class AppShell {
     const viewport = element('div', 'view-frame__viewport');
     const target = element('div', 'view-frame__renderer');
     target.setAttribute('aria-label', `${axis} renderer target`);
+    const projectionViewport = this.viewportFactory.create(target, axis);
     const stateText = element('div', 'view-frame__state-message');
     stateText.setAttribute('role', 'status');
     stateText.textContent = 'Loading registered anatomy…';
@@ -1181,7 +1187,7 @@ export class AppShell {
 
     frame.append(header, viewport, footer);
     this.viewFrames.set(axis, {
-      frame, target, coordinate, slider, status, maximize,
+      frame, target, viewport: projectionViewport, coordinate, slider, status, maximize,
       tooltip, tooltipIdentity, tooltipValue, tooltipMeta,
       renderKey: '', geometryKey: '', renderToken: 0, loadingNoticeTimer: null,
     });
@@ -1197,7 +1203,6 @@ export class AppShell {
     const inventory = view.representation === 'regional' ? model.displaySliceInventories?.[axis] : undefined;
     const navigation = deriveOrthogonalNavigation(view.cursor, axis);
     const sliceIndex = navigation.nativeIndex;
-    const slices = deriveRegionalSliceIndices(view.cursor);
     const displayOrdinal = inventory?.ordinalForNativeIndex(sliceIndex) ?? sliceIndex;
     const displayMax = inventory ? inventory.count - 1 : maxRegionalSliceIndex(axis);
     const coordinate = formatRegionalCoordinate(axis, sliceIndex);
@@ -1206,17 +1211,25 @@ export class AppShell {
     nodes.slider.value = String(displayOrdinal);
     nodes.slider.setAttribute('aria-valuetext', coordinate);
 
-    const geometryKey = `${view.representation}:${view.parcellation}:${model.feature?.featureId ?? ''}:${sliceIndex}`;
+    const geometryKey = [
+      view.dataset.datasetId,
+      view.dataset.releaseId ?? '',
+      view.representation,
+      model.feature?.representation ?? '',
+      view.parcellation,
+      model.feature?.featureId ?? '',
+      sliceIndex,
+    ].join(':');
     const renderKey = view.representation === 'volume'
       ? geometryKey
-      : `${geometryKey}:${slices.coronal}:${slices.sagittal}:${slices.horizontal}`;
+      : `${geometryKey}:${view.cursor.xUm}:${view.cursor.yUm}:${view.cursor.zUm}`;
     if (nodes.renderKey === renderKey) return;
     nodes.renderKey = renderKey;
     const geometryChanged = nodes.geometryKey !== geometryKey;
     nodes.geometryKey = geometryKey;
     const token = ++nodes.renderToken;
     const retainsAnatomy = view.representation !== 'volume'
-      && nodes.target.dataset.sliceAsset?.startsWith('generated-anatomy-') === true;
+      && nodes.target.dataset.sliceAsset === 'projection-pack-v1';
     const stateMessage = nodes.frame.querySelector<HTMLElement>('.view-frame__state-message');
     if (nodes.loadingNoticeTimer !== null) {
       window.clearTimeout(nodes.loadingNoticeTimer);
@@ -1243,13 +1256,11 @@ export class AppShell {
       }
     }
 
-    const pending = this.renderer.render(nodes.target, {
+    const pending = nodes.viewport.render({
       axis,
       sliceIndex,
-      slices,
       cursor: view.cursor,
       parcellation: view.parcellation,
-      selectedRegionIds: view.selection,
       feature: model.feature,
     });
 
@@ -1275,7 +1286,8 @@ export class AppShell {
       } else {
         nodes.frame.dataset.state = 'error';
         nodes.status.textContent = 'Unavailable';
-        this.renderer.clear(nodes.target);
+        nodes.viewport.clear();
+        nodes.viewport.showError(error);
         if (stateMessage) {
           stateMessage.textContent = error instanceof Error ? error.message : 'Registered anatomy could not be loaded';
         }

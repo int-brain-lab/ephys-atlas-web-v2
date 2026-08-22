@@ -446,3 +446,25 @@ Top/Swanson normalization accepts paths only and resolves legacy row indices
 through the pinned Allen/Beryl/Cosmos catalog. Production mode requires exact
 pinned source bytes and explicit Q13 license evidence; synthetic mode remains
 clearly test-only and is not a scientific release.
+
+## D035 — Atomic retained projection-viewport boundary
+
+Replace the application-level `SliceRenderer` and hybrid switch atomically
+with one `ProjectionViewportFactory` and one retained `ProjectionViewport` per
+registered frame. A viewport owns a stable scalar Canvas, regional SVG, guide,
+interaction, and error layer stack. It accepts the one world cursor and derived
+native slice rather than a separately mutable slice triple. Revisioned
+latest-only scheduling permits at most one geometry request in flight, skips
+superseded pending work, and prevents stale completions from committing.
+
+Use `ProjectionPackSource` as the sole browser regional-geometry source. It
+consumes `atlas-projection-pack-v1`, verifies immutable encoded resources
+before persistent cache admission, and retains worker-owned indexed-SVG decode
+and bounded parsed-layer caches. Delete legacy curated/anatomy-pack browser
+readers, crosswalks, and renderer facades; keep v2/v3 artifacts only as
+validated projection-pack build and reproducibility evidence.
+
+The checked-in web fixture may combine validated registered geometry with
+deterministic synthetic Top/Swanson paths so the complete graph can be tested.
+Those static resources remain hidden until the shared static workspace work and
+must never be described as production, scientific, or licensing evidence.

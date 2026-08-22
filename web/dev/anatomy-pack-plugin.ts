@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 
-const ANATOMY_PREFIX = '/atlas/anatomy/';
+const OPAQUE_ATLAS_PREFIXES = ['/atlas/anatomy/', '/atlas/projections/'];
 const PUBLIC_ROOT = path.resolve(fileURLToPath(new URL('../public/', import.meta.url)));
 
 export function anatomyPackPlugin(): Plugin {
@@ -17,7 +17,7 @@ export function anatomyPackPlugin(): Plugin {
     next: () => void,
   ) => {
     const pathname = request.url ? new URL(request.url, 'http://localhost').pathname : '';
-    if (!pathname.startsWith(ANATOMY_PREFIX)
+    if (!OPAQUE_ATLAS_PREFIXES.some((prefix) => pathname.startsWith(prefix))
       || (!pathname.endsWith('.json.gz') && !pathname.endsWith('.isvg.gz'))) return next();
     const target = path.resolve(PUBLIC_ROOT, decodeURIComponent(pathname.slice(1)));
     if (!target.startsWith(`${PUBLIC_ROOT}${path.sep}`)) {

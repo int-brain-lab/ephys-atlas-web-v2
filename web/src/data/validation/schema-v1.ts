@@ -53,6 +53,17 @@ function exactKeys(record: JsonObject, keys: readonly string[], context: string)
   required(record, keys, context);
 }
 
+function allowedKeys(
+  record: JsonObject,
+  requiredKeys: readonly string[],
+  optionalKeys: readonly string[],
+  context: string,
+): void {
+  const allowed = new Set([...requiredKeys, ...optionalKeys]);
+  for (const key of Object.keys(record)) if (!allowed.has(key)) fail(`${context} contains unsupported ${key}`);
+  required(record, requiredKeys, context);
+}
+
 function expect(value: unknown, expected: unknown, context: string): void {
   if (value !== expected) fail(`${context} must equal ${String(expected)}`);
 }
@@ -82,6 +93,14 @@ function resourceSemantics(value: unknown): void {
   const record = value as JsonObject;
   if (['path', 'media_type', 'bytes', 'sha256', 'codec'].every((key) => key in record)) {
     const codec = object(record.codec, 'resource codec');
+    exactKeys(record, ['path', 'media_type', 'bytes', 'sha256', 'codec'], 'encoded resource');
+    if (typeof record.path !== 'string' || !record.path || record.path.startsWith('/')
+      || record.path.split('/').includes('..')) fail('encoded resource path is invalid');
+    if (typeof record.media_type !== 'string' || !record.media_type) fail('encoded resource media type is invalid');
+    if (!Number.isSafeInteger(record.bytes) || Number(record.bytes) < 0) fail('encoded resource byte length is invalid');
+    if (typeof record.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(record.sha256)) fail('encoded resource SHA-256 is invalid');
+    allowedKeys(codec, ['name', 'decoded_bytes'], ['level'], 'resource codec');
+    if (!Number.isSafeInteger(codec.decoded_bytes) || Number(codec.decoded_bytes) < 0) fail('decoded resource byte length is invalid');
     required(codec, ['name', 'decoded_bytes'], 'resource codec');
     if (codec.name === 'none') {
       if (codec.decoded_bytes !== record.bytes) fail('uncompressed resource has unequal encoded and decoded lengths');
@@ -209,6 +228,12 @@ function indexSemantics(document: JsonObject): void {
 }
 
 function registeredSemantics(document: JsonObject): void {
+  allowedKeys(document, [
+    'id', 'kind', 'reference_space_id', 'grid_id', 'world_slice_axis', 'slice_count',
+    'slice_shape', 'view_box', 'plane_index_to_world_um', 'voxel_edge_extent_um',
+    'display_slices', 'resource_index',
+  ], ['world_to_plane_index'], 'registered projection');
+  expect(document.kind, 'registered-slice-stack', 'registered projection kind');
   const id = String(document.id);
   const expectedAxis = PROJECTION_AXES[id];
   if (expectedAxis === undefined || document.world_slice_axis !== expectedAxis) fail('registered projection world axis is invalid');
@@ -222,12 +247,15 @@ function registeredSemantics(document: JsonObject): void {
 }
 
 function registeredResourceIndexSemantics(document: JsonObject): void {
+  exactKeys(document, ['schema_version', 'format', 'projection_id', 'resources'], 'registered SVG resource index');
+  expect(document.schema_version, '1.0', 'registered SVG resource-index schema version');
   expect(document.format, 'atlas-registered-svg-resource-index-v1', 'registered SVG resource-index format');
   const resources = array(document.resources, 'registered SVG resources').map((value) => object(value, 'registered SVG resource'));
   unique(resources.map((entry) => entry.pack_id), 'registered SVG pack id');
   unique(resources.map((entry) => object(entry.resource, 'registered SVG encoded resource').path), 'registered SVG resource path');
   const allSlices: number[] = [];
   for (const entry of resources) {
+    exactKeys(entry, ['pack_id', 'slice_indices', 'resource'], 'registered SVG resource');
     const slices = integers(entry.slice_indices, 'registered SVG slice indices');
     increasing(slices, 'registered SVG resource slices');
     const resource = object(entry.resource, 'registered SVG encoded resource');
@@ -248,6 +276,13 @@ function staticSemantics(document: JsonObject): void {
 }
 
 function packSemantics(document: JsonObject): void {
+  exactKeys(document, [
+    'schema_version', 'format', 'pack_id', 'immutable', 'reference_space_id',
+    'mappings', 'projections', 'provenance',
+  ], 'projection pack');
+  expect(document.schema_version, '1.0', 'projection-pack schema version');
+  expect(document.format, 'atlas-projection-pack-v1', 'projection-pack format');
+  expect(document.immutable, true, 'projection-pack immutability');
   const mappings = array(document.mappings, 'projection mappings');
   if (new Set(mappings).size !== 3 || !['allen', 'beryl', 'cosmos'].every((mapping) => mappings.includes(mapping))) fail('projection mappings are incomplete');
   const projections = array(document.projections, 'projections').map((item) => object(item, 'projection'));

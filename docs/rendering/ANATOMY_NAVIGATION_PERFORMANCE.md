@@ -9,18 +9,14 @@ just benchmark-anatomy
 ```
 
 It launches an isolated headless Chromium rather than reusing a developer
-browser. Each trial creates a fresh anatomy source, cache-busts the selected
-pack request, and records:
+browser. Each trial creates a fresh schema-v1 projection-pack source and
+retained viewport, cache-busts the selected pack request, and records:
 
-- fetch and response-body read;
-- SHA-256 verification;
-- gzip decompression;
-- UTF-8 decoding, JSON parsing, and pack validation;
-- SVG-fragment serialization, SVG parsing, path indexing, DOM swap, regional
-  state, and guides;
 - input-to-DOM-commit and input-to-next-paint;
 - long tasks, animation-frame gaps, heap delta, and final-slice correctness;
-- a second uncached SVG in the same decoded pack and a retained-layer revisit.
+- cold verified pack load plus worker decode and SVG preparation;
+- a second uncached SVG in the same decoded pack and a retained-layer revisit;
+- stable viewport DOM across the complete sequence.
 
 Set `EPHYS_ATLAS_ANATOMY_BENCHMARK_OUTPUT` to write the JSON report. To retain a
 Playwright timeline with network and browser snapshots, append `--trace on` to
@@ -112,3 +108,22 @@ The next production measurement is against the deployed origin with network
 throttling and a visible wheel-burst scenario. That evidence should select any
 prefetch-distance change; the current policy remains one adjacent pack during
 idle time.
+
+## Projection-pack-v1 retained-viewport rebaseline
+
+Commit 5 moved the same validated sparse registered bytes behind the sole
+schema-v1 projection-pack source and retained viewport. On 2026-08-22, five
+cache-busted trials per case on Linux x64 (32 logical CPUs, headless Chromium
+151) produced:
+
+| slice | cold commit p50 | cold paint p50 | same-pack commit p50 | retained commit p50 |
+| --- | ---: | ---: | ---: | ---: |
+| coronal p95, 812 | 11.5 ms | 16.5 ms | 1.8 ms | 0.9 ms |
+| sagittal p95, 606 | 10.0 ms | 16.5 ms | 1.4 ms | 0.6 ms |
+| horizontal p95, 345 | 13.4 ms | 17.1 ms | 2.7 ms | 1.0 ms |
+| horizontal maximum, 401 | 12.3 ms | 16.4 ms | 2.1 ms | 1.0 ms |
+
+No long task was observed and the maximum animation-frame gap was 16.8 ms.
+Every navigation retained the mounted viewport DOM and committed the requested
+final display plane. Local Vite fetch timing is still not production-network
+evidence; deployment-origin throttling remains the next measurement.

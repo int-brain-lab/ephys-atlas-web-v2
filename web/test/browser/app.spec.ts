@@ -42,7 +42,7 @@ for (const viewport of reviewViewports) {
     await expect(page.locator('[data-view="coronal"] .view-frame__status')).toHaveText('');
     await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
     await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');
-    await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '660');
+    await expect(page.locator('[data-view="coronal"] [data-slice-asset="projection-pack-v1"]')).toHaveAttribute('data-asset-index', '660');
     await expect(page.getByLabel('coronal slice')).toHaveAttribute('min', '0');
     await expect(page.getByLabel('coronal slice')).toHaveAttribute('max', '164');
     await expect(page.getByLabel('coronal slice')).toHaveAttribute('step', '1');
@@ -75,23 +75,25 @@ test('slice control updates calibrated coordinate and renderer request', async (
   await expect(slider).toHaveAttribute('aria-valuetext', 'AP -1.60 mm');
   await expect(page.locator('[data-view="coronal"] .view-frame__footer output')).toHaveCount(0);
   await expect.poll(() => new URL(page.url()).searchParams.get('cursor')).toBe('-239,-1600,-3668');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '700');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="projection-pack-v1"]')).toHaveAttribute('data-asset-index', '700');
 });
 
 test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
+  await expect(page.locator('[data-view="coronal"]')).toHaveAttribute('data-state', 'ready');
 
   await page.locator('[data-view="coronal"] .view-frame__brain-svg').dispatchEvent('wheel', { deltaY: 100 });
   await expect(page.getByLabel('coronal slice')).toHaveValue('81');
   await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.12 mm');
   await expect.poll(() => new URL(page.url()).searchParams.get('cursor')).toBe('-239,-1120,-3668');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '652');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="projection-pack-v1"]')).toHaveAttribute('data-asset-index', '652');
 });
 
 test('small pixel wheel deltas accumulate sensitively for smooth macOS scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
+  await expect(page.locator('[data-view="coronal"]')).toHaveAttribute('data-state', 'ready');
 
   await page.locator('[data-view="coronal"] .view-frame__brain-svg').evaluate((node) => {
     for (let index = 0; index < 2; index += 1) {
@@ -105,22 +107,24 @@ test('small pixel wheel deltas accumulate sensitively for smooth macOS scrolling
 test('initial anatomy display fetches only the three visible packs', async ({ page }) => {
   const packRequests: string[] = [];
   page.on('request', (request) => {
-    if (request.url().includes('/packs/8/')) packRequests.push(new URL(request.url()).pathname);
+    if (request.url().includes('/registered/') && request.url().endsWith('.isvg.gz')) {
+      packRequests.push(new URL(request.url()).pathname);
+    }
   });
   await page.goto('/');
-  await expect(page.locator('[data-slice-asset="generated-anatomy-v3"]')).toHaveCount(3);
+  await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
   await page.waitForTimeout(250);
 
   expect(new Set(packRequests)).toEqual(new Set([
-    '/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1-display-80um-d8-f8277956e67a/packs/8/coronal/10.isvg.gz',
-    '/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1-display-80um-d8-f8277956e67a/packs/8/sagittal/8.isvg.gz',
-    '/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1-display-80um-d8-f8277956e67a/packs/8/horizontal/6.isvg.gz',
+    '/atlas/projections/synthetic-static-registered-v1/registered/coronal/10.isvg.gz',
+    '/atlas/projections/synthetic-static-registered-v1/registered/sagittal/8.isvg.gz',
+    '/atlas/projections/synthetic-static-registered-v1/registered/horizontal/6.isvg.gz',
   ]));
 });
 
 test('a wheel burst is coalesced and only updates linked guides in other projections', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('[data-slice-asset="generated-anatomy-v3"]')).toHaveCount(3);
+  await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
   await expect(page.locator('.view-frame[data-state="ready"]')).toHaveCount(3);
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   const svg = page.locator('[data-view="coronal"] .view-frame__brain-svg');
@@ -137,7 +141,7 @@ test('a wheel burst is coalesced and only updates linked guides in other project
     for (let index = 0; index < 5; index += 1) node.dispatchEvent(new WheelEvent('wheel', { deltaY: 100, cancelable: true }));
   });
   await expect(page.getByLabel('coronal slice')).toHaveValue('77');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '620');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="projection-pack-v1"]')).toHaveAttribute('data-asset-index', '620');
   expect(await page.evaluate(() => (
     (window as Window & { __unchangedFigureMutations?: { sagittal: number; horizontal: number } }).__unchangedFigureMutations
   ))).toEqual({ sagittal: 0, horizontal: 0 });
@@ -147,14 +151,14 @@ test('an existing anatomy slice stays visible while an adjacent pack loads', asy
   await page.setViewportSize({ width: 1280, height: 800 });
   let releasePack: () => void = () => {};
   const packGate = new Promise<void>((resolve) => { releasePack = resolve; });
-  await page.route('**/packs/8/coronal/11.isvg.gz', async (route) => {
+  await page.route('**/registered/coronal/11.isvg.gz', async (route) => {
     await packGate;
     await route.continue();
   });
   await page.goto('/');
 
   const frame = page.locator('[data-view="coronal"]');
-  const target = frame.locator('[data-slice-asset="generated-anatomy-v3"]');
+  const target = frame.locator('[data-slice-asset="projection-pack-v1"]');
   await expect(target).toHaveAttribute('data-asset-index', '660');
   await page.getByLabel('coronal slice').fill('88');
   await expect(page.getByLabel('coronal slice')).toHaveValue('88');
@@ -197,7 +201,7 @@ test('unsupported historical URLs reset explicitly to the current canonical stat
   await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.20 mm');
   await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
   await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '660');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="projection-pack-v1"]')).toHaveAttribute('data-asset-index', '660');
   await expect.poll(() => new URL(page.url()).search).toBe('?v=4');
 });
 
@@ -208,9 +212,9 @@ test('native bilateral anatomy exposes every scientific range endpoint', async (
   await expect(page.getByLabel('coronal slice')).toHaveValue('0');
   await expect(page.getByLabel('sagittal slice')).toHaveValue('141');
   await expect(page.getByLabel('horizontal slice')).toHaveValue('99');
-  await expect(page.locator('[data-view="coronal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '4');
-  await expect(page.locator('[data-view="sagittal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '1134');
-  await expect(page.locator('[data-view="horizontal"] [data-slice-asset="generated-anatomy-v3"]')).toHaveAttribute('data-asset-index', '793');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="projection-pack-v1"]')).toHaveAttribute('data-asset-index', '4');
+  await expect(page.locator('[data-view="sagittal"] [data-slice-asset="projection-pack-v1"]')).toHaveAttribute('data-asset-index', '1134');
+  await expect(page.locator('[data-view="horizontal"] [data-slice-asset="projection-pack-v1"]')).toHaveAttribute('data-asset-index', '793');
 });
 
 test('schema v1 regional fixture drives values, coloring, selection and histogram comparison', async ({ page }) => {
@@ -804,184 +808,6 @@ test('regional tree reapplies hover styling after its rows rerender', async ({ p
   await expect(page.locator('.is-highlighted')).toHaveCount(0);
 });
 
-test('generated anatomy renderer uses direct mapping IDs and affine-derived guides', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
-  await page.evaluate(async () => {
-    const { GeneratedAnatomySliceRenderer } = await import('/src/rendering/generated-anatomy-renderer.ts');
-    const axes = ['coronal', 'sagittal', 'horizontal'] as const;
-    const targets = new Map(axes.map((axis) => {
-      const target = document.createElement('div');
-      target.id = axis === 'coronal' ? 'generated-anatomy-test' : `generated-anatomy-test-${axis}`;
-      document.body.append(target);
-      return [axis, target] as const;
-    }));
-    const target = targets.get('coronal')!;
-    const source = {
-      async loadSlice(axis: 'coronal' | 'sagittal' | 'horizontal', sliceIndex: number) {
-        return {
-          packFormat: 'anatomy-pack-v2' as const, axis, sliceIndex, worldCoordinateUm: 50,
-          viewBox: { x: -0.5, y: -0.5, width: 3, height: 2 },
-          paths: [
-            { atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: 'M0 0L1 0L1 1Z' },
-            { atlasIds: { allen: 10, beryl: 20, cosmos: 30 }, d: 'M1 0L2 0L2 1Z' },
-          ],
-        };
-      },
-      async worldFromSliceIndices() { return { ml: 25, ap: 50, dv: 75 }; },
-      async guidesForWorld(axis: 'coronal' | 'sagittal' | 'horizontal') {
-        return [
-          { sourceAxis: 'sagittal' as const, targetAxis: axis, dimension: 'x' as const, position: 1 },
-          { sourceAxis: 'horizontal' as const, targetAxis: axis, dimension: 'y' as const, position: 2 },
-        ];
-      },
-    };
-    const renderer = new GeneratedAnatomySliceRenderer(source);
-    const presentation = {
-      feature: {
-        schemaVersion: '1.0' as const, featureId: 'fixture', representation: 'regional' as const, parcellation: 'beryl' as const,
-        regionIds: ['-20'], statistics: { mean: [1] },
-      },
-      regions: [{ id: '-20', atlasId: -20, index: 0, acronym: 'R', name: 'Region', colorHex: '#123456' }],
-      selectedRegionIds: ['-20'], hoveredRegionId: null as string | null,
-      coloring: { mode: 'feature' as const, statistic: 'mean' as const, colormap: 'viridis', range: { mode: 'auto' as const }, scale: 'linear' as const },
-    };
-    renderer.setInteractionSink({
-      hover: (hit) => renderer.updatePresentation({ ...presentation, hoveredRegionId: hit?.regionId ?? null }),
-      inspect: () => undefined,
-      toggleSelection: (hit) => { target.dataset.hit = hit.regionId; },
-      stepSlice: () => undefined,
-      moveCursor: () => undefined,
-      reportError: () => undefined,
-    });
-    await Promise.all(axes.map((axis) => renderer.render(targets.get(axis)!, {
-      axis, sliceIndex: axis === 'coronal' ? 2 : axis === 'sagittal' ? 1 : 3,
-      slices: { coronal: 2, sagittal: 1, horizontal: 3 },
-      cursor: { xUm: 25, yUm: 50, zUm: 75 }, parcellation: 'beryl',
-      selectedRegionIds: ['-20'], feature: null,
-    })));
-    renderer.updatePresentation(presentation);
-    target.querySelector('path[data-beryl-id="20"]')?.dispatchEvent(new PointerEvent('pointermove', { bubbles: true }));
-    target.querySelector('path[data-beryl-id="20"]')?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
-  });
-
-  const target = page.locator('#generated-anatomy-test');
-  await expect(target).toHaveAttribute('data-slice-asset', 'generated-anatomy-v2');
-  await expect(target).toHaveAttribute('data-world-coordinate-um', '50');
-  await expect(target).toHaveAttribute('data-hit', '-20');
-  const leftPath = target.locator('path[data-beryl-id="-20"]');
-  const rightPath = target.locator('path[data-beryl-id="20"]');
-  await expect(leftPath).toHaveAttribute('data-allen-id', '-10');
-  await expect(rightPath).toHaveAttribute('data-allen-id', '10');
-  await expect(leftPath).toHaveAttribute('style', /fill: rgb\(68, 1, 84\)/);
-  await expect(rightPath).toHaveAttribute('style', /fill: rgb\(18, 52, 86\)/);
-  for (const path of [leftPath, rightPath]) {
-    await expect(path).toHaveClass(/is-selected/);
-    await expect(path).toHaveClass(/is-highlighted/);
-  }
-  for (const axis of ['sagittal', 'horizontal'] as const) {
-    const projection = page.locator(`#generated-anatomy-test-${axis}`);
-    await expect(projection.locator('path[data-beryl-id="-20"]')).toHaveClass(/is-highlighted/);
-    await expect(projection.locator('path[data-beryl-id="20"]')).toHaveClass(/is-highlighted/);
-  }
-  await expect(target.locator('.slice-guide[data-source-axis="sagittal"]')).toHaveAttribute('x1', '1');
-  await expect(target.locator('.slice-guide[data-source-axis="horizontal"]')).toHaveAttribute('y1', '2');
-});
-
-test('generated anatomy renderer reuses a prepared SVG slice layer on revisit', async ({ page }) => {
-  await page.goto('/');
-  const result = await page.evaluate(async () => {
-    const { GeneratedAnatomySliceRenderer } = await import('/src/rendering/generated-anatomy-renderer.ts');
-    const target = document.createElement('div');
-    document.body.append(target);
-    const descriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
-    if (!descriptor?.get || !descriptor.set) throw new Error('Element.innerHTML is unavailable');
-    let parseCount = 0;
-    Object.defineProperty(Element.prototype, 'innerHTML', {
-      configurable: true,
-      get() { return descriptor.get!.call(this); },
-      set(value: string) {
-        if (this instanceof SVGGElement && (value.includes('d="M4 ') || value.includes('d="M5 '))) parseCount += 1;
-        descriptor.set!.call(this, value);
-      },
-    });
-    try {
-      const source = {
-        async loadSlice(axis: 'coronal' | 'sagittal' | 'horizontal', sliceIndex: number) {
-          return {
-            packFormat: 'anatomy-pack-v2' as const, axis, sliceIndex, worldCoordinateUm: sliceIndex * 10,
-            viewBox: { x: -0.5, y: -0.5, width: 2, height: 2 },
-            paths: [{ atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: `M${sliceIndex} 0L1 0L1 1Z` }],
-          };
-        },
-        async worldFromSliceIndices() { return { ml: 0, ap: 0, dv: 0 }; },
-        async guidesForWorld() { return []; },
-      };
-      const renderer = new GeneratedAnatomySliceRenderer(source);
-      const model = (sliceIndex: number) => ({
-        axis: 'coronal' as const, sliceIndex,
-        slices: { coronal: sliceIndex, sagittal: 0, horizontal: 0 },
-        cursor: { xUm: 0, yUm: 0, zUm: 0 }, parcellation: 'allen' as const,
-        selectedRegionIds: [], feature: null,
-      });
-      await renderer.render(target, model(4));
-      const firstPath = target.querySelector('path');
-      const firstLayer = target.querySelector('.view-frame__slice-figure > g');
-      await renderer.render(target, model(5));
-      await renderer.render(target, model(4));
-      return {
-        parseCount,
-        reusedPath: firstPath === target.querySelector('path'),
-        reusedLayer: firstLayer === target.querySelector('.view-frame__slice-figure > g'),
-      };
-    } finally {
-      Object.defineProperty(Element.prototype, 'innerHTML', descriptor);
-      target.remove();
-    }
-  });
-  expect(result).toEqual({ parseCount: 2, reusedPath: true, reusedLayer: true });
-});
-
-test('generated anatomy renderer keeps one request in flight and starts only the latest pending slice', async ({ page }) => {
-  await page.goto('/');
-  const result = await page.evaluate(async () => {
-    const { GeneratedAnatomySliceRenderer } = await import('/src/rendering/generated-anatomy-renderer.ts');
-    const target = document.createElement('div');
-    document.body.append(target);
-    const loaded: number[] = [];
-    const source = {
-      async loadSlice(axis: 'coronal' | 'sagittal' | 'horizontal', sliceIndex: number) {
-        loaded.push(sliceIndex);
-        return {
-          packFormat: 'anatomy-pack-v2' as const, axis, sliceIndex, worldCoordinateUm: sliceIndex * 10,
-          viewBox: { x: 0, y: 0, width: 2, height: 2 },
-          paths: [{ atlasIds: { allen: -10, beryl: -20, cosmos: -30 }, d: `M${sliceIndex} 0L1 0L1 1Z` }],
-        };
-      },
-      async worldFromSliceIndices() { return { ml: 0, ap: 0, dv: 0 }; },
-      async guidesForWorld() { return []; },
-    };
-    const renderer = new GeneratedAnatomySliceRenderer(source);
-    const model = (sliceIndex: number) => ({
-      axis: 'coronal' as const, sliceIndex,
-      slices: { coronal: sliceIndex, sagittal: 0, horizontal: 0 },
-      cursor: { xUm: 0, yUm: 0, zUm: 0 }, parcellation: 'allen' as const,
-      selectedRegionIds: [], feature: null,
-    });
-    await renderer.render(target, model(4));
-    await Promise.all([
-      renderer.render(target, model(5)),
-      renderer.render(target, model(6)),
-      renderer.render(target, model(7)),
-    ]);
-    const assetIndex = target.dataset.assetIndex;
-    renderer.destroy();
-    target.remove();
-    return { loaded, assetIndex };
-  });
-  expect(result).toEqual({ loaded: [4, 5, 7], assetIndex: '7' });
-});
-
 test('region search filters loaded metadata rather than prototype rows', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
@@ -1022,9 +848,9 @@ test('compact workspace selection hydrates and persists independently', async ({
   await expect(new URL(page.url()).searchParams.get('max')).toBeNull();
 });
 
-test('generated anatomy pack failure is an explicit view-frame error state', async ({ page }) => {
+test('projection pack failure is an explicit view-frame error state', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.route('**/packs/8/coronal/*.isvg.gz', (route) => route.fulfill({ status: 503, body: 'offline' }));
+  await page.route('**/registered/coronal/*.isvg.gz', (route) => route.fulfill({ status: 503, body: 'offline' }));
   await page.goto('/');
   await expect(page.locator('[data-view="coronal"]')).toHaveAttribute('data-state', 'error');
   await expect(page.locator('[data-view="coronal"] .view-frame__status')).toHaveText('Unavailable');

@@ -11,11 +11,11 @@ import { createAppStore, type AppStore } from './domain/store.js';
 import type { SliceAxis, ViewState } from './domain/types.js';
 import type { DisplaySliceInventory } from './rendering/display-slice-inventory.js';
 import {
-  NullSliceRenderer,
   type RegionInspection,
-  type RendererPresentation,
-  type SliceRenderer,
-} from './rendering/interfaces.js';
+  NullProjectionViewportFactory,
+  type ProjectionPresentation,
+  type ProjectionViewportFactory,
+} from './rendering/projection-viewport.js';
 import { AppShell, type ShellModel } from './ui/app-shell.js';
 import { RegionalPanelController } from './ui/regional-panel.js';
 import { buildSelectedComparisonExport } from './ui/regional/comparison-export.js';
@@ -26,7 +26,7 @@ export interface AppOptions {
   catalogUrl?: string;
   atlasRegionsUrl?: string;
   defaultView?: ViewState;
-  renderer?: SliceRenderer;
+  viewportFactory?: ProjectionViewportFactory;
 }
 
 /**
@@ -40,11 +40,11 @@ export class AtlasApp {
   private readonly urlController: UrlStateController;
   private readonly shell: AppShell;
   private readonly regionalPanel: RegionalPanelController;
-  private readonly renderer: SliceRenderer;
+  private readonly viewportFactory: ProjectionViewportFactory;
   private displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null = null;
   private atlasRegions: AtlasRegionCatalog | null = null;
   private hoveredRegionId: string | null = null;
-  private rendererPresentation: RendererPresentation | null = null;
+  private viewportPresentation: ProjectionPresentation | null = null;
 
   constructor(root: HTMLElement, private readonly options: AppOptions = {}) {
     const defaultView = options.defaultView ?? DEFAULT_VIEW_STATE;
@@ -53,7 +53,7 @@ export class AtlasApp {
     const repository = new DatasetRepository(new HttpDatasetSource(catalogUrl), this.localSource);
     this.session = new DatasetSession(repository, this.store, () => this.render());
     this.urlController = new UrlStateController(this.store, window, defaultView);
-    this.renderer = options.renderer ?? new NullSliceRenderer();
+    this.viewportFactory = options.viewportFactory ?? new NullProjectionViewportFactory();
     this.shell = new AppShell(root, {
       setDataset: (ref) => this.store.dispatch({ type: 'dataset/set', dataset: ref, history: 'push' }),
       setFeature: (featureId, representation) => this.store.dispatch({
@@ -80,7 +80,7 @@ export class AtlasApp {
       downloadCurrentFeature: () => this.downloadCurrentFeature(),
       importLocal: (files) => this.importLocal(files),
       reportError: (error) => this.reportRuntimeError(error),
-    }, this.renderer);
+    }, this.viewportFactory);
     this.regionalPanel = new RegionalPanelController(root, {
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
       setRegionOrder: (order) => this.store.dispatch({ type: 'regions/order', order }),
@@ -91,7 +91,7 @@ export class AtlasApp {
       },
       downloadComparison: () => this.downloadSelectedComparison(),
     });
-    this.renderer.setInteractionSink?.({
+    this.viewportFactory.setInteractionSink({
       hover: (hit) => this.setHoveredRegion(hit?.regionId ?? null),
       inspect: (inspection) => this.inspectRegion(inspection),
       toggleSelection: (hit) => this.store.dispatch({ type: 'selection/toggle', regionId: hit.regionId }),
@@ -137,7 +137,7 @@ export class AtlasApp {
     const anatomyRegions = this.atlasRegions?.mappings[state.view.parcellation] ?? data.regions;
     const rendererRegions = state.view.coloring.mode === 'anatomy' ? anatomyRegions : data.regions;
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
-    const presentation: RendererPresentation = {
+    const presentation: ProjectionPresentation = {
       feature: data.feature,
       regions: rendererRegions,
       anatomyRegions,
@@ -146,8 +146,8 @@ export class AtlasApp {
       hoveredRegionId: this.hoveredRegionId,
     };
     if (this.presentationChanged(presentation)) {
-      this.rendererPresentation = presentation;
-      this.renderer.updatePresentation?.(presentation);
+      this.viewportPresentation = presentation;
+      this.viewportFactory.updatePresentation(presentation);
     }
 
     const model: ShellModel = {
@@ -168,8 +168,8 @@ export class AtlasApp {
     });
   }
 
-  private presentationChanged(next: RendererPresentation): boolean {
-    const previous = this.rendererPresentation;
+  private presentationChanged(next: ProjectionPresentation): boolean {
+    const previous = this.viewportPresentation;
     return !previous
       || previous.feature !== next.feature
       || previous.regions !== next.regions
@@ -223,8 +223,7 @@ export class AtlasApp {
   }
 
   private loadRendererInventory(): void {
-    if (!this.renderer.getDisplaySliceInventories) return;
-    void this.renderer.getDisplaySliceInventories()
+    void this.viewportFactory.getDisplaySliceInventories()
       .then((inventories) => {
         this.displaySliceInventories = inventories;
         this.render();

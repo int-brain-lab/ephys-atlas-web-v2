@@ -6,95 +6,83 @@ decisions, and task order are `docs/INTEGRATION_STATUS.md`,
 
 ## Application boundary
 
-`web/src/rendering/interfaces.ts` owns the application-level `SliceRenderer` /
-`SliceRenderModel` boundary. Regional SVG, generated anatomy, volume Canvas2D,
-legacy fallback, and future 3-D details stay below it. Renderer implementations
-must not introduce separate application state or infer scientific transforms
-from display calibration.
+`web/src/rendering/projection-viewport.ts` owns the application-facing 2-D
+boundary. `AtlasApp` provides a `ProjectionRenderModel` containing one axis,
+derived native slice, world cursor, parcellation, and active feature. A shared
+`ProjectionViewportFactory` owns presentation and interaction sinks and creates
+one retained `ProjectionViewport` per registered frame.
 
-This is current implementation state, not the next target. D031 and
-`docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` approve a coordinated
-breaking replacement with one retained layered projection viewport, schema v1,
-and a five-projection pack. Do not extend the current facade or add compatibility
-adapters while executing that cutover.
+Each viewport mounts one stable Canvas/SVG/guide/error stack. Navigation uses
+revisioned latest-only scheduling: at most one geometry request is active,
+superseded pending requests are skipped, and stale completions cannot commit.
+Presentation-only updates reuse prepared SVG layers. There is no parallel
+`SliceRenderer` or hybrid facade.
 
-## Active regional anatomy
+## Registered projection source
 
-The default renderer uses sparse indexed-SVG `anatomy-pack-v3` with immutable
-pack ID
-`allen-ccfv3-10um-bilateral-exact-599b5e0bbab1-display-80um-d8-f8277956e67a`.
-Its 407 display planes are copied byte-for-byte from the validated bilateral
-10 µm v2 parent. Scientific cursor, URL, affine, signed atlas-ID, and guide
-state stays on the parent's 3,260-slice grid; only displayed geometry snaps to
-the nearest 80 µm inventory plane.
+`ProjectionPackSource` is the only browser regional-geometry source. It loads
+`atlas-projection-pack-v1`, validates its registered resource indexes, verifies
+immutable compressed bytes before persistent caching, and transfers indexed
+SVG packs to the existing worker-owned 32 MiB decoded LRU. It resolves native
+10 µm indices to the nearest declared sparse display plane with lower-index
+tie breaking and derives guides from the manifest affine.
 
-Compressed bytes are fetched and SHA-256 verified by the anatomy source. A
-persistent worker decompresses indexed packs, retains a byte-bounded LRU, and
-returns only the requested UTF-8 fragment. Each view retains eight parsed SVG
-layers. The default page does not fetch the legacy atlas host or curated v1
-bundles.
+The checked-in development fixture at
+`web/public/atlas/projections/synthetic-static-registered-v1/` combines the
+validated registered geometry with deterministic synthetic Top/Swanson paths.
+The static maps are deliberately hidden until Commit 7 and must never be
+presented as scientific or licensing evidence. Rebuild it with
+`tools/projection_pack/build_web_fixture.py` and validate it with
+`just projection-pack-validate <path>`.
 
-Normative and measured evidence:
+The immutable v2/v3 anatomy artifacts remain the scientific and reproducible
+inputs to projection-pack generation, not supported browser formats. The
+registered resources retain their exact geometry, affine, sparse inventories,
+topology, coverage, synchronization evidence, and hashes.
 
-- `docs/rendering/BILATERAL_ANATOMY_PACKS.md` — canonical v2 parent;
-- `docs/rendering/ANATOMY_PACK_V3_CONTRACT.md` — sparse derivation and runtime
-  contract;
-- `docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md` — controlled Chromium
-  measurements;
-- `docs/frontend/LEGACY_CURATED_ASSETS.md` and
-  `docs/rendering/SVG_CALIBRATION.md` — inactive historical fallback only.
+## Layer state
 
-The next anatomy work is deployment-origin validation under M6/M7: serve the
-committed v3 `.isvg.gz` bytes without HTTP `Content-Encoding`, verify immutable
-URLs/cache headers/SHA checks, and record throttled network and wheel-burst
-behavior.
+The retained viewport already owns independently mounted regional SVG and
+scalar Canvas layers. Regional features preserve Allen/Beryl/Cosmos identity,
+bilateral coloring, hover, selection, pointer inspection, guides, wheel
+navigation, failure display, and parsed-layer reuse. Existing schema-v1
+`chunks3d` and `orthogonal_slice_packs` sources still terminate at one decoded
+volume-plane boundary.
 
-Commit 4 of D031 also implements `tools/projection_pack/`: a deterministic
-five-view pack builder and complete graph validator. It verifies the v3/v2
-scientific evidence and copies orthogonal indexed-SVG bytes losslessly into
-schema-v1 resources. It sanitizes Top/Swanson to canonical path-only fragments
-with stable Allen/Beryl/Cosmos IDs. `just projection-pack-validate <path>`
-checks every transitive compressed resource and rejects undeclared files.
-Production static generation requires exact pinned bytes plus explicit Q13
-license evidence; only synthetic static inputs are exercised today.
+Volume display is intentionally still exclusive in the current handoff. The
+next unit, Commit 6, must load anatomy and volume independently into the same
+viewport, require matching `reference_space_id`, register each through its own
+transform, preserve anatomy when volume fails, and implement the specified
+nearest-neighbor screen/world/voxel inspection path. Opacity and outline-only
+changes must repaint without fetching or decoding.
 
-## Volume rendering
+Q4 still blocks authoritative production volume geometry/outside semantics,
+and Q5 still blocks the production transport choice. Use synthetic fixtures
+until those questions are resolved; do not infer a production affine.
 
-The browser implements both schema-v1 physical layouts through explicit,
-checksummed resource indexes:
+## Performance evidence
 
-- `chunks3d` through a bounded chunk LRU and canonical slice assembly;
-- `orthogonal_slice_packs` with float16/float32 decoding, optional gzip,
-  in-flight deduplication, adjacent prefetch, and a bounded decoded LRU.
-
-Both terminate at the same storage-neutral volume slice boundary and render via
-Canvas2D. Declared storage-axis permutation and `index_to_world_um` drive
-mapping; generated or legacy SVG calibration never does.
-
-The older `2026_W12` 25 µm benchmarks favor slice packs, and implemented
-Chromium evidence currently favors depth four. These are transport results,
-not scientific geometry. New production work must use the documented private
-`2026_W26` 50 µm object, obtain the authoritative affine/outside semantics
-under Q4, and confirm layout against representative features plus the final
-HTTP/CDN origin under Q5. See `docs/rendering/VOLUME_ARCHITECTURE.md` and
-`docs/DATA_SOURCES.md`.
+`just benchmark-anatomy` exercises cold indexed-pack navigation, another slice
+in the same decoded pack, and a retained-layer revisit. The 2026-08-22 Linux
+Chromium sanity run measured median cold commits of 10.0–13.4 ms, same-pack
+commits of 1.4–2.7 ms, retained revisits of 0.6–1.0 ms, no long tasks, and a
+16.8 ms maximum frame gap. Full measurements and the earlier v3 baseline are
+in `docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.
 
 ## 3-D
 
-`web/src/rendering/scene3d.ts` retains a technology-neutral scene contract, but
-3-D is deferred and renderer choice remains open. Do not add a large 3-D
-dependency until the launch-critical regional, volume, data, and deployment
-paths are secure. Historical candidate evidence is in
-`docs/rendering/3D_EVALUATION.md`.
+The independent 3-D lab remains outside this viewport and the M2 acceptance
+path. It may share reference-space and regional presentation contracts later,
+but must not import or fork `AtlasApp`, dataset sessions, URL reducers, or 2-D
+projection layers. See `docs/rendering/3D_EVALUATION.md`.
 
 ## Verification
 
 - `just test-web` covers strict TypeScript, unit/rendering tests, and build.
-- `just test-browser` covers user-visible anatomy and volume paths.
-- `just test-anatomy` covers v1/v2/v3 contracts, generators, integrity, and
-  comparison gates.
+- `just test-browser` covers user-visible regional and volume behavior.
+- `just test-anatomy` covers v1/v2/v3 build evidence and projection-pack gates.
 - `just benchmark-anatomy` and `npm run benchmark:real-volume` are explicit
-  measurement commands, not default CI gates.
+  measurements, not default CI gates.
 
-Production scientific and transport blockers remain Q4-Q5; production origin
-and cross-browser release checks remain Q8 and Q11.
+The immediate next action is Commit 6 in
+`docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md`.

@@ -1,6 +1,7 @@
 # Anatomy pack v3 contract
 
-Status: accepted implementation contract.
+Status: accepted immutable build/reproducibility contract; superseded as a
+browser runtime format by `atlas-projection-pack-v1`.
 
 `anatomy-pack-v3` is a sparse display transport derived from a validated,
 immutable `anatomy-pack-v2`. It does not replace the parent's scientific
@@ -41,9 +42,9 @@ ISVG artifact, validates the new manifest schema, and refuses to overwrite an
 existing output. The production CLI also refuses a dirty tracked worktree so
 the recorded converter commit identifies the generator exactly.
 
-## Browser ownership boundary
+## Historical browser ownership boundary
 
-The anatomy source owns manifest parsing, immutable fetches, compressed-byte
+Before the D031 cutover, the anatomy source owned manifest parsing, immutable fetches, compressed-byte
 SHA verification, in-flight request deduplication, and prefetch policy. A
 persistent module worker owns the decompressed ISVG byte LRU. Loading a pack
 transfers the verified compressed buffer to that worker; requesting a slice
@@ -55,8 +56,10 @@ residency tokens and reload if a fragment lookup reports a miss. The renderer
 may separately retain a small LRU of parsed SVG DOM layers; that cache is a
 presentation optimization and does not change source or worker ownership.
 
-## Compatibility
+## Projection-pack derivation
 
-The immutable bilateral 10 µm `anatomy-pack-v2` remains a supported fallback.
-Volume data storage and sampling are independent of this regional SVG display
-contract.
+The v3 artifact is now validated and copied losslessly into the registered
+resources of `atlas-projection-pack-v1`. Neither v3 nor its immutable bilateral
+10 µm v2 parent is a supported browser fallback. Both remain authoritative
+build evidence, and volume data storage and sampling remain independent of
+this regional SVG display contract.

@@ -517,6 +517,8 @@ Targeted gates: anatomy generator/contract/integrity tests and
 
 ### Commit 5 — Atomically cut registered anatomy to retained viewports
 
+Status: **implemented**.
+
 - add the viewport factory and atomic revisioned update model;
 - implement independently tested regional SVG, scalar Canvas, guide,
   selection/hover, interaction, and error layers;
@@ -681,11 +683,11 @@ never merge an inferred scientific choice.
 
 ## First action for the next agent
 
-Start Commit 5 from the green schema-v1, URL-v4, and projection-pack generator
-baseline. Introduce the retained layer primitives and viewport only as part of
-the atomic application cutover: migrate all three registered views, switch the
-browser to the v1 pack, and remove `SliceRenderer`, the hybrid switch, old pack
-parsers, and superseded renderers in the same coherent commit. Preserve the
-current interaction, cancellation, sparse-navigation, and performance behavior.
-Do not expose Top/Swanson yet (Commit 7) and do not add a parallel renderer
-facade.
+Start Commit 6 from the green retained-viewport baseline. Make the scalar
+Canvas and registered regional SVG coexist in the already-mounted viewport,
+with independent world-space transforms and explicit reference-space
+compatibility. Preserve anatomy if a volume request fails, keep repaint-only
+changes fetch-free, and implement the specified nearest-neighbor inspection
+chain with synthetic data until Q4 is authoritatively resolved. Do not expose
+Top/Swanson yet (Commit 7) and do not select a production volume transport
+before Q5 evidence.

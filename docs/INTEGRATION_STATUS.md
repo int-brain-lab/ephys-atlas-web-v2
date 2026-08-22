@@ -16,20 +16,18 @@ Dataset IDs are runtime identifiers rather than a fixed launch enum. Dataset, fe
 
 HTTP and local datasets share the same regional materializer through a transport-independent resource-reader interface. The validation implementation is split by contract concern behind the existing public validation facade.
 
-## Approved next architecture cutover
+## Active architecture cutover
 
 D031 and `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` define the active
-implementation sequence. Schema v1 is now the sole implemented data contract.
-The current `SliceRenderer`/hybrid, anatomy-pack compatibility, and legacy
-fallback paths remain factual implementation state today; they are not
-long-term compatibility requirements. The URL migration stack has been
-removed. The remaining coordinated cutover will switch the browser to the
-five-projection asset contract and retained layered projection viewports. It
-will add static Top and Swanson views through the same
-regional SVG presentation/interaction path used by the registered orthogonal
-views.
+implementation sequence. Schema v1 is the sole implemented data contract, and
+the browser now mounts one retained layered `ProjectionViewport` for each
+registered frame. `SliceRenderer`, the hybrid facade, v1/v2/v3 anatomy-pack
+readers, legacy renderer/crosswalk, and URL migrations have been removed. The
+remaining coordinated work will composite registered volume and anatomy
+layers, then expose static Top and Swanson views through the same regional SVG
+presentation and interaction path.
 
-Commits 1 through 4 of the plan are implemented: `schema/v1/` defines the strict dataset,
+Commits 1 through 5 of the plan are implemented: `schema/v1/` defines the strict dataset,
 resource, regional, volume, summary/index, and five-projection contracts plus
 matching TypeScript types. Python and TypeScript semantic validators execute
 one deterministic valid/invalid corpus covering all top-level schemas, both
@@ -52,8 +50,10 @@ fields. A single snapped ML/AP/DV cursor is stored; native indices, display
 ordinals, coordinate labels, renderer inputs, and guides are derived from it.
 URL v4 serializes the cursor and workspace state. Any non-current version is
 reset wholesale to the canonical current URL, with no partial legacy-field
-consumption. The existing renderer remains mounted until the planned atomic
-Commit 5 viewport cutover.
+consumption. `AtlasApp` and `AppShell` depend only on the retained viewport
+factory; each frame keeps one stable Canvas/SVG/guide/error layer stack across
+navigation, and revisioned latest-only scheduling prevents stale geometry from
+committing.
 
 `tools/projection_pack/` builds and validates one self-contained immutable
 five-view pack. Registered coronal/sagittal/horizontal resources are copied
@@ -66,6 +66,13 @@ resource indexes and every static/registered resource and rejects integrity,
 inventory, missing-file, and undeclared-file errors. Production invocation
 requires explicit Q13 license evidence and exact pinned source bytes; no
 production static asset has been asserted while that evidence remains open.
+
+The default development URL is a complete validated schema-v1 pack under
+`web/public/atlas/projections/synthetic-static-registered-v1/`. Its registered
+resources are the validated sparse bilateral geometry; its Top/Swanson inputs
+are deterministic synthetic test paths and remain unavailable in the UI until
+Commit 7. `tools/projection_pack/build_web_fixture.py` reproduces this fixture.
+It is neither a scientific release nor evidence that Q13 is resolved.
 
 The pre-Commit-1 contract is now explicit about separate reference-space,
 grid, and asset identities; verified-only persistent caching; independent
@@ -121,9 +128,16 @@ D028.
 
 ## Anatomy rendering
 
-The active regional anatomy display is the immutable sparse `anatomy-pack-v3`, derived byte-for-byte from the validated bilateral 10 µm `anatomy-pack-v2` parent. Application/URL/cursor state remains in native 10 µm coordinates while display geometry uses the sparse 80 µm inventory.
+The active regional anatomy display is the registered portion of
+`atlas-projection-pack-v1`. Its indexed-SVG bytes and 80 µm display inventories
+are copied losslessly from the validated sparse v3 artifact, whose bilateral
+10 µm v2 parent remains the scientific geometry and affine authority.
+Application/URL/cursor state remains in native 10 µm coordinates and display
+selection alone snaps to the nearest sparse plane.
 
-Anatomy manifest/version validation is separate from runtime fetch/cache/worker behavior. The current v1/v2/v3 paths remain present only until the approved breaking cutover; validated artifacts and hashes remain reproducibility evidence, but runtime compatibility paths will be deleted.
+The immutable v2/v3 artifacts, schemas, generators, and validators remain as
+build/reproducibility evidence. They are no longer browser runtime formats;
+the browser has only the schema-v1 projection-pack source.
 
 ## Scientific data/builders
 
@@ -244,7 +258,7 @@ for 25 of 35 source features; the ten unresolved waveform descriptions and
 units are audited in `docs/data/CHANNELS_RECIPE.md` and must not be guessed by
 the browser or builder.
 
-The active anatomy display is the immutable 80 µm `anatomy-pack-v3`: 165
+The registered projection-pack content carries the immutable 80 µm v3 inventory: 165
 coronal, 142 sagittal, and 100 horizontal display planes in 52 depth-eight
 indexed packs totaling 5,604,696 compressed bytes. It is derived byte-for-byte
 from the validated bilateral 10 µm v2 parent, which remains the scientific and
@@ -252,11 +266,12 @@ reproducibility authority. State, URLs, cursor coordinates, guides, and affines
 remain on the exact native 10 µm grid; display-plane selection alone snaps to
 the nearest sparse SVG with lower-index tie breaking.
 
-Fetch and compressed-byte verification remain in the anatomy source. A module
-worker owns a 32 MiB decoded LRU and returns only requested fragments; each view
-retains eight parsed SVG layers. The committed Chromium benchmark measured
-9.3–10.6 ms median cold commits, 2.2–3.4 ms same-pack commits, no long tasks,
-and a 17.6 ms maximum frame gap. See
+The projection-pack source verifies compressed bytes before cache admission. A
+module worker owns a 32 MiB decoded LRU and returns only requested fragments;
+each retained view caches parsed SVG layers. The current Linux Chromium sanity
+run measured 10.0–13.4 ms median cold commits, 1.4–2.7 ms same-pack commits,
+0.6–1.0 ms retained revisits, no long tasks, and a 16.8 ms maximum frame gap.
+See
 `docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.
 
 ## Volume viewer
@@ -264,7 +279,10 @@ and a 17.6 ms maximum frame gap. See
 The browser/golden volume path supports `chunks3d` and
 `orthogonal_slice_packs`, float16/float32 decoding, optional gzip, explicit
 storage-axis permutation, declared `index_to_world_um` mapping, bounded decoded
-caches, Canvas2D scalar slices, and renderer switching below `SliceRenderer`.
+caches and Canvas2D scalar slices inside the retained viewport. The current
+volume path is still exclusive with regional SVG; Commit 6 makes the two
+layers coexist through independent world-space registration and adds voxel
+inspection.
 Published and local releases share the same transport-independent volume
 payload contract.
 

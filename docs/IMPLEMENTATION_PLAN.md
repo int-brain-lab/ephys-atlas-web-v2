@@ -75,7 +75,7 @@ horizontal support registered anatomy plus volume layers; Top and Swanson are
 static regional projections using the same SVG presentation and interaction
 path. Backward compatibility with the pre-launch formats is not a requirement.
 
-Commits 1 through 4 are implemented. Schema v1 is now the sole builder,
+Commits 1 through 5 are implemented. Schema v1 is now the sole builder,
 publishing, HTTP/local browser, fixture, and download contract. It separates
 scientific reference-space identity from grid and asset identities, admits
 only the checked signed-permutation affine profile, verifies encoded bytes
@@ -89,13 +89,18 @@ unsupported versions. The deterministic five-projection pack builder now
 losslessly repackages validated sparse registered geometry, emits strict
 resource indexes, normalizes affine-free static fragments, and validates the
 complete immutable file graph. Q13 still blocks a production Top/Swanson pack,
-so tests use conspicuously synthetic fragments. The next unit is Commit 5's
-atomic retained-viewport cutover.
+so the checked-in browser fixture uses conspicuously synthetic, currently
+hidden static fragments alongside the validated registered geometry. The
+browser now uses one retained `ProjectionViewport` per registered frame and
+the schema-v1 projection pack directly. The old `SliceRenderer` facade,
+hybrid switch, anatomy-pack readers, legacy renderer/crosswalk, URL migrations,
+and application-owned slice triple are deleted. The next unit is Commit 6's
+registered world-space volume composition and inspection path.
 
 This machinery is unblocked with deterministic synthetic fixtures. It must not
 resolve or conceal Q4/Q5.
 
-Already implemented and green on the handoff baseline:
+Volume foundations already implemented and green on the handoff baseline:
 
 - schema-v1 volume payload path for published/local sources;
 - `chunks3d` reference adapter;
@@ -103,8 +108,8 @@ Already implemented and green on the handoff baseline:
 - float16/float32 decoding and optional gzip;
 - bounded slice chunk cache;
 - scientific coordinate mapping through declared `index_to_world_um`;
-- Canvas slice rendering below the shared `SliceRenderer` facade;
-- hybrid regional/volume renderer;
+- Canvas scalar-layer painting inside the retained projection viewport;
+- both physical volume adapters behind one decoded-plane source;
 - golden unit and Playwright coverage.
 
 Blocked by: Q4 and Q5.
@@ -116,7 +121,7 @@ historical transport evidence, not the default input for new implementation.
 
 Ordered next actions before scientific resolution:
 
-1. execute commits 4-8 in the focused cutover plan, keeping every handoff green;
+1. execute commits 6-8 in the focused cutover plan, keeping every handoff green;
 2. rebuild external development releases under new schema-v1 release IDs
    before using the opt-in real-release suite; do not add a compatibility reader;
 3. verify the layered golden volume path, registered anatomy overlays, and

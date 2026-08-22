@@ -16,6 +16,11 @@ export interface DisplaySliceInventory {
   step(ordinal: number, delta: number): number;
 }
 
+export interface ResolvedDisplaySlice {
+  readonly ordinal: number;
+  readonly nativeIndex: number;
+}
+
 function integer(value: number, context: string): number {
   if (!Number.isInteger(value)) throw new RangeError(`${context} must be an integer`);
   return value;
@@ -69,6 +74,15 @@ export function createDisplaySliceInventory(indices: readonly number[], context 
       return Math.min(normalized.length - 1, Math.max(0, current + amount));
     },
   };
+}
+
+export function nearestDisplaySlice(
+  indices: readonly number[],
+  nativeIndex: number,
+): ResolvedDisplaySlice {
+  const inventory = createDisplaySliceInventory(indices);
+  const ordinal = inventory.ordinalForNativeIndex(nativeIndex);
+  return { ordinal, nativeIndex: inventory.nativeIndexAtOrdinal(ordinal) };
 }
 
 export function createDisplaySliceInventories(indices: DisplaySliceIndices): Readonly<Record<SliceAxis, DisplaySliceInventory>> {

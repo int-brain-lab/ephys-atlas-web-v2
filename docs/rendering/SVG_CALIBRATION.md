@@ -44,7 +44,11 @@ This is the strongest registration the legacy assets support: their bare path fr
 
 `SvgSliceRenderer` receives an immutable render frame: selected slice fragment, mapping, colors, selection/highlight, view box, and precomputed guide positions. It owns DOM painting and pointer hit extraction only. It does not own application state, feature loading, slice indices, URL state, or region selection semantics.
 
-The current v1 class convention (`beryl_region_123`, `allen_region_123`, `cosmos_region_123`) is retained by the renderer adapter so the curated assets can be reused without rewriting their paths.
+The historical v1 class convention (`beryl_region_123`, `allen_region_123`,
+`cosmos_region_123`) is normalized by the projection-pack builder to direct
+`data-allen-id`, `data-beryl-id`, and `data-cosmos-id` attributes. The current
+renderer accepts only those stable attributes; it has no legacy class-index
+or runtime crosswalk path.
 
 ## Asset delivery recommendation
 
