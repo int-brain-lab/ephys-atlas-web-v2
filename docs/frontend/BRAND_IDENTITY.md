@@ -24,6 +24,14 @@ is legible and accessible at the viewer header's compact sizes. The complete
 lockup links to the official `https://iblcore.org/` homepage in a new tab so
 the viewer's scientific state remains in place.
 
+## Product favicon
+
+`web/public/favicon.svg` is a separate Ephys Atlas product pictogram, not an
+extraction or modification of the official IBL Core lockup. Its abstract white
+bilateral slice and cyan-to-magenta probe use the institutional palette on the
+blue browser-theme background. The silhouette is illustrative branding rather
+than scientific atlas geometry.
+
 ## Institutional palette
 
 The manual defines:

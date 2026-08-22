@@ -42,3 +42,16 @@ test('header uses the official IBL Core negative lockup and palette', async ({ p
   expect(phoneLogo!.height).toBeGreaterThanOrEqual(33);
   expect(phoneLogo!.height).toBeLessThanOrEqual(35);
 });
+
+test('document uses the Ephys Atlas product favicon', async ({ page, request }) => {
+  await page.goto('/');
+
+  const favicon = page.locator('link[rel="icon"]');
+  await expect(favicon).toHaveAttribute('href', '/favicon.svg');
+  await expect(favicon).toHaveAttribute('type', 'image/svg+xml');
+
+  const response = await request.get('/favicon.svg');
+  expect(response.ok()).toBe(true);
+  expect(response.headers()['content-type']).toContain('image/svg+xml');
+  expect(await response.text()).toContain('viewBox="0 0 64 64"');
+});
