@@ -24,21 +24,30 @@ proxy request limit at least as large as the greater application limit.
 ## Local smoke test
 
 ```bash
-PYTHONPATH=publishing/src pytest publishing/tests -q
-PYTHONPATH=publishing/src python -m ibl_ephys_atlas_publish credential-create \
+uv run --project publishing --extra test --locked \
+  python -m pytest publishing/tests -q
+uv run --project publishing --locked ephys-atlas-publish credential-create \
   --credentials /srv/ephys-publish/credentials.json --label maintainer --can-create-datasets
 ```
 
 Run the service behind nginx/TLS:
 
 ```bash
-export PYTHONPATH=/opt/ibl-ephys-atlas-web-v2/publishing/src
-python -m ibl_ephys_atlas_publish serve \
+uv sync --project /opt/ibl-ephys-atlas-web-v2/builder --python 3.12 --locked
+uv sync --project /opt/ibl-ephys-atlas-web-v2/publishing --python 3.12 \
+  --extra server --locked
+uv run --project /opt/ibl-ephys-atlas-web-v2/publishing --locked \
+  ephys-atlas-publish serve \
   --storage /srv/ephys-publish/storage \
   --credentials /srv/ephys-publish/credentials.json \
   --host 127.0.0.1 --port 8080 \
-  --validator-command 'ephys-atlas-data validate {release_dir}'
+  --validator-command 'uv run --project /opt/ibl-ephys-atlas-web-v2/builder --locked --no-sync ephys-atlas-data validate {release_dir}'
 ```
+
+The two explicit syncs prepare immutable deployment environments before the
+service account starts. The example systemd unit uses `--no-sync` at runtime,
+so its protected service process neither resolves dependencies nor writes into
+the checkout.
 
 The example systemd unit conservatively uses one Gunicorn worker with threads
 behind nginx. Filesystem mutations are also serialized across WSGI processes by
@@ -50,8 +59,10 @@ Publish a directory already produced by the data builder:
 
 ```bash
 export IBL_PUBLISH_TOKEN='iblpub_...'
-ephys-atlas-publish dataset-create --url https://publish.example.org ephys_atlas_channels
-ephys-atlas-publish publish --url https://publish.example.org \
+uv run --project publishing --locked ephys-atlas-publish dataset-create \
+  --url https://publish.example.org ephys_atlas_channels
+uv run --project publishing --locked ephys-atlas-publish publish \
+  --url https://publish.example.org \
   ephys_atlas_channels 2026-08-19 data/releases/ephys_atlas_channels/2026-08-19 \
   --alias latest
 ```
@@ -61,5 +72,6 @@ The browser/CDN should read `STORAGE/public/catalog.json`, dataset `index.json` 
 Resume an interrupted upload using its upload ID:
 
 ```bash
-ephys-atlas-publish resume --url https://publish.example.org UPLOAD_ID data/releases/... --alias latest
+uv run --project publishing --locked ephys-atlas-publish resume \
+  --url https://publish.example.org UPLOAD_ID data/releases/... --alias latest
 ```

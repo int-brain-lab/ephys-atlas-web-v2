@@ -118,7 +118,10 @@ Scientific provenance is part of the product contract, not optional metadata.
 
 ## Required commands
 
-Run `just bootstrap` once in a fresh checkout, then use:
+Install `uv`, Node 22, and `just`, then run `just bootstrap` once in a fresh
+checkout. All repository Python environments and commands are owned by the
+committed `uv.lock` files; do not install project dependencies into system
+Python or invoke system `pip`. Then use:
 
 - `just dev` — run the Vite viewer locally.
 - `just test-python` — builder and publishing Python tests.

@@ -9,6 +9,10 @@ description = "Minimal capability-based publishing service/client for IBL Ephys 
 requires-python = ">=3.11"
 dependencies = []
 
+[project.optional-dependencies]
+test = ["pytest>=8"]
+server = ["gunicorn>=23,<24"]
+
 [project.scripts]
 ephys-atlas-publish = "ibl_ephys_atlas_publish.cli:main"
 

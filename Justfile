@@ -1,9 +1,12 @@
-python := "python3"
+uv-test := "uv run --project builder --extra test --locked"
+uv-publishing := "uv run --project publishing --extra test --locked"
+uv-scientific := "uv run --project builder --extra scientific --locked"
+uv-anatomy := "uv run --project builder --extra anatomy --extra scientific --extra test --locked"
 
-# Install local development dependencies in a fresh checkout.
+# Install all locked local development dependencies in a fresh checkout.
 bootstrap:
-    {{python}} -m pip install -e 'builder[test]'
-    {{python}} -m pip install -e publishing
+    uv sync --project builder --python 3.12 --extra anatomy --extra scientific --extra test --locked
+    uv sync --project publishing --python 3.12 --extra test --locked
     cd web && npm ci
     cd web && npx playwright install chromium
 
@@ -25,11 +28,11 @@ dev-real release="2026_W32" feature="rms_ap.denoised":
 
 # Builder/schema tests.
 test-builder:
-    PYTHONPATH=builder {{python}} -m pytest -q tests
+    {{uv-test}} python -m pytest -q tests
 
 # Publishing service/client tests.
 test-publishing:
-    PYTHONPATH=publishing/src {{python}} -m pytest -q publishing/tests
+    {{uv-publishing}} python -m pytest -q publishing/tests
 
 # All Python gates used by CI.
 test-python: test-builder test-publishing
@@ -51,31 +54,31 @@ benchmark-anatomy:
 
 # Exercise the anatomy contract, generator, artifact validator, and comparison cases.
 test-anatomy:
-    uv run --project builder --extra anatomy --extra scientific --extra test --locked python -m pytest -q tests/test_anatomy_pack.py tests/test_anatomy_pack_schema.py tests/test_anatomy_compare.py tests/test_anatomy_pack_v2.py tests/test_anatomy_pack_v2_schema.py tests/test_svg_pack.py tests/test_sampled_svg_pack.py tests/test_projection_pack.py
+    {{uv-anatomy}} python -m pytest -q tests/test_anatomy_pack.py tests/test_anatomy_pack_schema.py tests/test_anatomy_compare.py tests/test_anatomy_pack_v2.py tests/test_anatomy_pack_v2_schema.py tests/test_svg_pack.py tests/test_sampled_svg_pack.py tests/test_projection_pack.py
 
 # Build a historical 25 um v1 anatomy pack from a clean commit.
 anatomy-pack tolerance="15" depth="16" output="artifacts/anatomy-pack-v1":
-    uv run --project builder --extra anatomy --extra scientific --extra test --locked python -m tools.anatomy_pack.build --tolerance-um {{tolerance}} --pack-depth {{depth}} --created-at 2026-08-20T00:00:00Z --output {{output}}
+    {{uv-anatomy}} python -m tools.anatomy_pack.build --tolerance-um {{tolerance}} --pack-depth {{depth}} --created-at 2026-08-20T00:00:00Z --output {{output}}
 
 # Build the canonical bilateral 10 um v2 parent. Existing output is never replaced.
 anatomy-pack-v2 depth="16" output="artifacts/anatomy-pack-v2":
-    uv run --project builder --extra anatomy --extra scientific --extra test --locked python -m tools.anatomy_pack.build_v2 --pack-depth {{depth}} --created-at 2026-08-20T00:00:00Z --output {{output}}
+    {{uv-anatomy}} python -m tools.anatomy_pack.build_v2 --pack-depth {{depth}} --created-at 2026-08-20T00:00:00Z --output {{output}}
 
 # Derive a sparse indexed-SVG display corpus from one validated immutable v2 pack.
 sampled-anatomy-pack parent output spacing="80" depth="8":
-    uv run --project builder --extra anatomy --extra scientific --extra test --locked python -m tools.svg_pack.build_sampled --parent {{parent}} --output {{output}} --spacing-um {{spacing}} --pack-depth {{depth}} --created-at 2026-08-21T00:00:00Z
+    {{uv-anatomy}} python -m tools.svg_pack.build_sampled --parent {{parent}} --output {{output}} --spacing-um {{spacing}} --pack-depth {{depth}} --created-at 2026-08-21T00:00:00Z
 
 # Validate the complete files and checksums of one immutable v1 projection pack.
 projection-pack-validate path:
-    PYTHONPATH=builder {{python}} -m tools.projection_pack.validate {{path}}
+    {{uv-test}} python -m tools.projection_pack.validate {{path}}
 
 # Generate the ignored, fully offline anatomy comparison lab.
 anatomy-compare resolution="25":
-    uv run --project builder --extra anatomy --extra scientific --extra test --locked python tools/anatomy_compare/build.py --resolution {{resolution}}
+    {{uv-anatomy}} python tools/anatomy_compare/build.py --resolution {{resolution}}
 
 # Rebuild the pinned Allen ontology/color and legacy-SVG crosswalk asset.
 atlas-regions:
-    uv run --project builder --extra scientific --locked python tools/allen_regions/build.py --force
+    {{uv-scientific}} python tools/allen_regions/build.py --force
 
 # Full local completion gate. Keep this aligned with .github/workflows/ci.yml.
 check: test-python test-web test-browser
@@ -85,26 +88,26 @@ test: check
 
 # Pull canonical source artifacts only; never recompute raw scientific features.
 data-pull dataset release="latest":
-    uv run --project builder --extra scientific --locked ephys-atlas-data pull {{dataset}} {{release}} --dest data/source
+    {{uv-scientific}} ephys-atlas-data pull {{dataset}} {{release}} --dest data/source
 
 # Build the launch channel dataset. Raw/denoised and population are intentionally explicit.
 data-build-channels release feature_mode population created_at ibleatools_commit iblatlas_commit builder_commit:
-    uv run --project builder --extra scientific --locked ephys-atlas-data build-channels {{release}} --feature-mode {{feature_mode}} --population {{population}} --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
+    {{uv-scientific}} ephys-atlas-data build-channels {{release}} --feature-mode {{feature_mode}} --population {{population}} --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
 
 # Validate a dataset-specific build output. Scientific transforms stay explicit recipes.
 data-build dataset release="latest":
-    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli build {{dataset}} {{release}}
+    {{uv-test}} ephys-atlas-data build {{dataset}} {{release}}
 
 data-validate path:
-    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli validate {{path}}
+    {{uv-test}} ephys-atlas-data validate {{path}}
 
 # Inspect NPZ/NPY container metadata without decoding the full volume.
 data-inspect-volume path:
-    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli inspect-volume {{path}}
+    {{uv-test}} ephys-atlas-data inspect-volume {{path}}
 
 golden:
-    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli golden fixtures/golden-v1
+    {{uv-test}} ephys-atlas-data golden fixtures/golden-v1
 
 # Deterministic whole-release download artifact.
 data-package path output:
-    PYTHONPATH=builder {{python}} -m ephys_atlas_builder.cli package {{path}} {{output}}
+    {{uv-test}} ephys-atlas-data package {{path}} {{output}}

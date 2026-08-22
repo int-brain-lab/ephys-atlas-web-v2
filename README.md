@@ -31,7 +31,9 @@ Historical/focused documents under `docs/data/`, `docs/frontend/`, `docs/renderi
 
 ## Quick start
 
-Prerequisites: Python 3.11+ (CI uses 3.12), Node 22, and `just`.
+Prerequisites: [`uv`](https://docs.astral.sh/uv/) 0.12+, Node 22, and `just`.
+`uv` installs/uses Python 3.12 for the repository; project dependencies are
+never installed into system Python.
 
 ```bash
 just bootstrap
@@ -41,15 +43,21 @@ just dev
 
 `just check` is the local completion gate and mirrors CI: builder/schema tests, publishing tests, TypeScript typecheck, frontend unit tests, production build, and Playwright browser tests.
 
+All Python commands in the `Justfile` run through the committed builder and
+publishing `uv.lock` files. `just bootstrap` is safe on PEP 668 externally
+managed Debian/Ubuntu Python installations and does not require `sudo` or
+system `pip`.
+
 Real ephys channel builds use a separate pinned environment:
 
 ```bash
 just bootstrap-scientific
 ```
 
-This uses Python 3.12 and the committed `builder/uv.lock`; it does not require
-sudo. The first real development build and its exact source/code pins are
-recorded in [`docs/data/DEVELOPMENT_RELEASE.md`](docs/data/DEVELOPMENT_RELEASE.md).
+This uses the same uv-managed Python 3.12 and committed builder lock; it does
+not require sudo. The first real development build and its exact source/code
+pins are recorded in
+[`docs/data/DEVELOPMENT_RELEASE.md`](docs/data/DEVELOPMENT_RELEASE.md).
 
 To compare the legacy curated SVGs with annotation-derived candidates in a
 fully offline report, run `just bootstrap-anatomy` and `just anatomy-compare`.

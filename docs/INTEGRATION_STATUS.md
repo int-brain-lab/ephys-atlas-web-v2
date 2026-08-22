@@ -364,7 +364,9 @@ mutation lock as WSGI mutations.
 
 ## Quality gates
 
-CI uses Python 3.12 and Node 22. It runs Python builder/publishing tests plus
+CI uses uv 0.12 with the committed builder and publishing locks, Python 3.12,
+and Node 22. The local Justfile uses the same uv boundary and never installs
+into system Python. CI runs Python builder/publishing tests plus
 TypeScript typechecking, browser unit/rendering tests, a production build, and
 Chromium Playwright tests. Architectural tests protect important dependency
 directions so domain/core code cannot silently acquire renderer/UI

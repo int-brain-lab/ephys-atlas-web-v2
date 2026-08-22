@@ -33,8 +33,11 @@ mutations only. See `docs/publishing/API.md` and `publishing/README.md`.
 - Keep credentials, private staging, and service configuration readable only
   by the service account. Do not commit tokens or deployment secrets.
 - Configure the validator as
-  `python -m ephys_atlas_builder.cli validate {release_dir}` (or the installed
-  `ephys-atlas-data validate` equivalent).
+  `uv run --project /opt/ibl-ephys-atlas-web-v2/builder --locked --no-sync
+  ephys-atlas-data validate {release_dir}` so it uses the same locked builder
+  environment as local validation and CI. Prepare the builder and publishing
+  environments with explicit locked `uv sync` commands before starting the
+  protected service; runtime commands must not resolve or install packages.
 - Keep staging and public roots on the same filesystem when using atomic rename.
 - Back up public releases, catalog/index/alias control state, credential
   registry, and operational audit data if the service is deployed.

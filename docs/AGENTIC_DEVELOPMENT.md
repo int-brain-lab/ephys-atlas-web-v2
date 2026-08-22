@@ -139,6 +139,12 @@ A benchmark may compare transports before the authoritative affine is resolved, 
 
 Before adding a dependency, ask whether the existing platform/library can solve the problem simply.
 
+Run repository Python through `uv` and the committed project lockfiles. Do not
+use system `pip`, create an untracked dependency environment with different
+resolution, or bypass `--locked` in a normal test/build command. Update the
+applicable `pyproject.toml` and lock together when an approved dependency
+change is genuinely required.
+
 - Keep the frontend framework-free unless an explicit decision changes D002.
 - Preserve the retained `ProjectionViewport` boundary established by the
   coordinated cutover in

@@ -9,6 +9,10 @@ At handoff, GitHub has a single branch: `main`.
 
 ## Fresh local checkout
 
+Install `uv` 0.12+, Node 22, and `just` first. Repository Python setup and
+execution use only the committed uv lockfiles; no system `pip` installation is
+required.
+
 ```bash
 git clone https://github.com/rossant/ibl-ephys-atlas-web-v2.git
 cd ibl-ephys-atlas-web-v2
