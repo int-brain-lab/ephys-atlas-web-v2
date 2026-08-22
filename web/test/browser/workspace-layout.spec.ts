@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('desktop workspace reserves more height for feature context than projections', async ({ page }) => {
+test('desktop workspace keeps projections compact enough for feature context', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
 
@@ -9,9 +9,22 @@ test('desktop workspace reserves more height for feature context than projection
 
   expect(projections).not.toBeNull();
   expect(context).not.toBeNull();
-  expect(projections!.height).toBeLessThan(460);
-  expect(context!.height).toBeGreaterThanOrEqual(230);
+  expect(projections!.height).toBeLessThanOrEqual(405);
+  expect(context!.height).toBeGreaterThanOrEqual(255);
   expect(context!.y).toBeGreaterThan(projections!.y + projections!.height);
+});
+
+test('tall desktop workspace gives excess height to feature context', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/');
+
+  const projections = await page.locator('.slice-strip').boundingBox();
+  const context = await page.locator('.context-strip').boundingBox();
+
+  expect(projections).not.toBeNull();
+  expect(context).not.toBeNull();
+  expect(projections!.height).toBeLessThanOrEqual(545);
+  expect(context!.height).toBeGreaterThanOrEqual(400);
 });
 
 test('feature summary balances description space with compact statistics', async ({ page }) => {
