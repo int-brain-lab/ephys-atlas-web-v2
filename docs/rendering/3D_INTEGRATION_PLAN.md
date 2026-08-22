@@ -412,6 +412,14 @@ manifest/LOD/WebGL failure; responsive/maximize/Escape/URL/history/teardown.
 
 ### Commit 7 — Produce and review a promotion candidate
 
+Status: **partially executed locally; stopped by canonical source mismatch**.
+The exact inputs were found and verified, and the owner approved the scientific
+scope/exceptions listed in D041. The canonical bilateral 10 um LUT audit found
+four signed centroids outside the pinned GLB bounds (Allen -927, -526322264,
++526322264, and +599626923; maximum 109.447 um). Candidate generation fails
+closed and records the ignored-artifact audit. Do not clamp the centroids or
+mark the pack valid; reconcile or regenerate those source surfaces first.
+
 - Build outside Git from exact pinned GLB, annotation, LUT, projection pack,
   and atlas catalog, then reproduce and graph-validate it.
 - Deploy to an immutable non-production origin with opaque gzip and verify

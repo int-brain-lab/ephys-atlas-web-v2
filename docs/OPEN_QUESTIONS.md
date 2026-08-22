@@ -180,15 +180,25 @@ explode. These are sufficient to implement and measure the experiment.
 
 The repository owner approved integration as an optional, visibly experimental
 main-application context view on 2026-08-22. This resolves whether integration
-machinery may be built; it does not approve a production asset or scientific
+machinery may be built. On the same date, the owner approved the deepest-active
+grey-matter scope, the explicit Allen 545 (`RSPd4`) source exclusion, the Allen
+898 open-midline exception, and nullable reduced mappings. D041 records those
+choices; they do not approve a final LOD, production asset, or scientific
 release.
 
-Resolution needed before production promotion: visual review at representative
+All exact local inputs have now been found and SHA-256 verified. A canonical
+10 um bilateral LUT audit checked all 1,130 signed source surfaces and found
+four annotation centroids outside the pinned GLB bounds: Allen -927,
+-526322264, +526322264, and +599626923. The largest axis discrepancy is
+109.447 um. Candidate generation fails closed and writes its audit outside Git
+under `artifacts/mesh-production-candidate/pack/`; it does not clamp the
+centroids or claim a valid production pack.
+
+Resolution needed before production promotion: reconcile or regenerate the
+three affected absolute Allen source surfaces; visual review at representative
 320/480/800 px view sizes; Chrome/Edge, Firefox, and Safari transfer/decode/
-first-frame/memory/picking results; approval of the grey-matter/deepest-active
-scope, Allen 545 (`RSPd4`) source exclusion, Allen 898 open-midline exception,
-and nullable reduced mappings; canonical annotation/LUT evidence; final
-default/upgrade LODs; and the public immutable asset origin.
+first-frame/memory/picking results; final default/upgrade LODs; and the public
+immutable asset origin.
 
 Blocks: production 3-D asset publication and removal of the experimental label,
 not implementation of the optional context view with deterministic fixtures.

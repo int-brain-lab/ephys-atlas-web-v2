@@ -594,3 +594,21 @@ dataset management may follow without blocking launch. Keep automated
 Chromium Playwright as the continuous browser gate and complete a documented
 manual Firefox and Safari matrix for release sign-off; automated
 Firefox/WebKit CI is not required for launch.
+
+## D041 — Approve the 3-D scientific scope and fail closed on source mismatch
+
+For the optional 3-D context, use deepest-active descendants of the Allen 8
+`grey` root. Record Allen 545 (`RSPd4`) as an explicit unavailable-source
+exclusion, accept Allen 898 as the one reviewed open-midline source exception,
+and preserve nullable Beryl/Cosmos mappings. The repository owner approved
+these four choices on 2026-08-22. This resolves those parts of Q12 only; it does
+not select final LODs, approve publication, or remove the experimental label.
+
+Derive active inventory from the exact active sparse projection pack and derive
+region, whole-brain, and explode centroids from the canonical bilateral 10 um
+LUT. Fail candidate generation when canonical centroids lie outside source
+surface bounds. The first exact-input audit found four failing signed surfaces
+across Allen 927, 526322264, and 599626923, with a maximum axis discrepancy of
+109.447 um. Do not clamp, substitute mesh centroids, or mark bounds validation
+green. Reconcile or regenerate the affected source geometry before production
+promotion.

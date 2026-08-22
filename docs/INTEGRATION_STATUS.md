@@ -131,8 +131,14 @@ creates an explicitly configured immutable viewport, pauses hidden work, shares
 presentation, selection, and camera state, isolates failures, and owns teardown.
 Without a descriptor the null host remains request-free. The canonical synthetic mesh is
 injected only by the browser-test server, never as a runtime fallback.
-Production evidence and promotion are the next planned slice and remain blocked
-by Q12's external inputs, deployment, measurements, and human review.
+Exact local production inputs have now been found and verified. The owner
+approved deepest-active grey matter, the Allen 545 source exclusion, the Allen
+898 open-midline exception, and nullable reduced mappings. Deterministic local
+inventory and canonical 10 um LUT centroid evidence machinery is present, but
+its fail-closed audit found four of 1,130 signed annotation centroids outside
+the pinned GLB bounds (three absolute Allen IDs; maximum 109.447 um). No
+production manifest was emitted. Q12 still blocks source reconciliation, final
+LOD/cross-browser review, immutable-origin deployment, and promotion.
 
 The approved anatomy smoothing investigation has completed its first three
 implementation slices. A deterministic registry exposes exact geometry, GEOS

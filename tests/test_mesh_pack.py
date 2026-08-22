@@ -10,12 +10,15 @@ import pytest
 
 from ephys_atlas_builder.schema_v1 import validate_schema_v1_document
 from ephys_atlas_builder.validate import ValidationError
+from tools.mesh_pack.active_ids import build_active_ids
 from tools.mesh_pack.binary import encode_raw_lod, inspect_lod
 from tools.mesh_pack.build import build_pack
+from tools.mesh_pack.canonical_metadata import _ancestor_source
 from tools.mesh_pack.geometry import split_and_cap_hemispheres
 from tools.mesh_pack.ontology import resolve_mapping, select_grey_matter_source_ids
 from tools.mesh_pack.synthetic import build_synthetic_glb
 from tools.mesh_pack.validate import validate_pack
+from tools.svg_pack.codec import SvgFragment, SvgPack, encode
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "fixtures/mesh-pack-v1"
@@ -73,6 +76,30 @@ def test_ontology_scope_is_deepest_active_grey_and_null_mapping_stays_null() -> 
     assert scope["excluded_non_grey_active_ids"] == {1009}
     assert resolve_mapping(315, "beryl", catalog) is None
     assert resolve_mapping(315, "cosmos", catalog) == 315
+
+
+def test_active_mesh_inventory_is_derived_from_projection_fragments(tmp_path: Path) -> None:
+    pack = tmp_path / "projection"
+    (pack / "packs/coronal").mkdir(parents=True)
+    (pack / "manifest.json").write_text(json.dumps({"pack_id": "projection-pack"}))
+    fragment = SvgFragment(0, 0, '<path data-allen-id="-315"/><path data-allen-id="1009"/>')
+    encoded = encode(SvgPack("coronal", "sample", (fragment,)))
+    (pack / "packs/coronal/sample.isvg.gz").write_bytes(gzip.compress(encoded, mtime=0))
+    document = build_active_ids(pack, tmp_path / "active.json")
+    assert document["allen_ids"] == [315, 545, 1009]
+    assert document["canonical_additions"] == [545]
+    assert document["sampled_resource_count"] == 1
+
+
+def test_canonical_centroid_assignment_uses_nearest_active_ancestor() -> None:
+    rows = {
+        8: {"parent_id": 997},
+        315: {"parent_id": 8},
+        927: {"parent_id": 315},
+    }
+    assert _ancestor_source(927, {315, 8}, rows) == 315
+    assert _ancestor_source(927, {927, 315}, rows) == 927
+    assert _ancestor_source(997, {315}, rows) is None
 
 
 def test_manifest_enforces_signed_bilateral_and_bounds_semantics() -> None:

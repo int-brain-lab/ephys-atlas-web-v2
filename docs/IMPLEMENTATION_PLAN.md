@@ -242,8 +242,13 @@ optional adapter: an explicitly configured immutable descriptor lazily creates
 the retained viewport, shared presentation/selection/camera state stays linked,
 hidden work pauses, failures remain isolated, and teardown is owned. The
 canonical fixture is injected only by the browser-test server and is never a
-runtime fallback. Commit 7 production evidence and promotion are blocked by
-Q12; no further integration-plan action is currently unblocked.
+runtime fallback. Commit 7 now has deterministic local active-inventory and
+canonical-centroid evidence machinery. Exact inputs were found and verified,
+and the owner approved scope, Allen 545, Allen 898, and nullable-mapping
+choices. The fail-closed audit found four signed centroids outside the pinned
+GLB bounds (three absolute Allen IDs; maximum 109.447 um), so candidate
+generation stops before a manifest. Q12 still blocks source reconciliation,
+final LOD/cross-browser review, immutable-origin deployment, and promotion.
 
 Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 
