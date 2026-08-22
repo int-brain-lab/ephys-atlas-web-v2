@@ -274,8 +274,12 @@ def _crosswalk(catalog_path: Path) -> tuple[dict[str, dict[int, int]], str]:
         for row in rows:
             index = row.get("idx")
             atlas_id = row.get("atlas_id")
-            if not isinstance(index, int) or not isinstance(atlas_id, int) or atlas_id == 0 or index in lookup:
+            if not isinstance(index, int) or not isinstance(atlas_id, int):
                 raise ValueError(f"region crosswalk has invalid {mapping} identities")
+            if atlas_id == 0:
+                continue
+            if index in lookup:
+                raise ValueError(f"region crosswalk has duplicate {mapping} identities")
             lookup[index] = atlas_id
         result[mapping] = lookup
     return result, _sha(raw)

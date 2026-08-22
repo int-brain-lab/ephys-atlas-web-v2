@@ -124,9 +124,9 @@ def _catalog(path: Path) -> None:
                 "format": "ibl-atlas-regions-v1",
                 "atlas": "synthetic",
                 "mappings": {
-                    "allen": [{"idx": 1, "atlas_id": -10}],
-                    "beryl": [{"idx": 2, "atlas_id": -20}],
-                    "cosmos": [{"idx": 3, "atlas_id": -30}],
+                    "allen": [{"idx": 0, "atlas_id": 0}, {"idx": 1, "atlas_id": -10}],
+                    "beryl": [{"idx": 0, "atlas_id": 0}, {"idx": 2, "atlas_id": -20}],
+                    "cosmos": [{"idx": 0, "atlas_id": 0}, {"idx": 3, "atlas_id": -30}],
                 },
             }
         )
