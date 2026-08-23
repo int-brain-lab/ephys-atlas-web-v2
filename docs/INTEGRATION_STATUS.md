@@ -273,9 +273,12 @@ nonempty scalar feature catalog. It aggregates every finite row of
 use `clusters_good.table.pqt`, insertion balancing, or hidden good-unit/QC
 filters. Its build inputs can separately declare presentation-only log-color
 defaults. D038 selects the frozen `ibl_neuropixel_brainwide_01` project and the
-legacy 14-feature scalar list as the review candidate. Production now waits on
-the content-addressed source pull/audit and human freeze of that catalog under
-Q6.
+legacy 14-feature scalar list as the review candidate. Content-addressed
+snapshot `sha256-9b5e55215b306f26` and the all-row source audit are complete:
+all candidates exist, all source dtypes are double, four columns contain
+missing values, and the pinned schema declares no units. Production now waits
+on human catalog review/freeze under Q6; see
+`docs/data/CLUSTERS_SOURCE_AUDIT.md`.
 
 ### `brainwide_map`
 
@@ -483,8 +486,8 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
 2. extend volume browser/HTTP benchmarks, resolve Q4-Q5 authoritatively, and
    build the real immutable volume release on the completed projection/schema
    foundation;
-3. pull/audit `ibl_neuropixel_brainwide_01`, freeze the reviewed scalar catalog,
-   and build the production cluster release;
+3. review the completed `ibl_neuropixel_brainwide_01` audit, freeze the approved
+   scalar catalog, and build the production cluster release;
 4. keep the validated D038 preserved five-family BWM release and opt-in local
    browser acceptance green; online catalog publication remains deferred until
    authorized;

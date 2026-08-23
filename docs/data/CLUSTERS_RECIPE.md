@@ -44,6 +44,12 @@ copied only when the pinned upstream schema provides them; otherwise they
 remain null rather than being guessed. Large waveform, ACG, STPC, and STLFP
 arrays are not silently reduced into regional features.
 
+The D038 source audit is complete for content-addressed snapshot
+`sha256-9b5e55215b306f26`. All 14 candidates are present, but the pinned upstream
+schema declares no units and the distributions expose missingness and heavy
+tails that require human review. See `docs/data/CLUSTERS_SOURCE_AUDIT.md` and
+the raw JSON report it references. The catalog is not yet approved.
+
 ## Example
 
 ```bash

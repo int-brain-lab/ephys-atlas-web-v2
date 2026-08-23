@@ -7,6 +7,7 @@ from .channels import DATASET_ID as CHANNELS_DATASET_ID
 from .channels import ChannelBuildConfig, build_channels_from_snapshot
 from .clusters import DATASET_ID as CLUSTERS_DATASET_ID
 from .clusters import ClusterBuildConfig, build_clusters_from_snapshot
+from .cluster_audit import audit_cluster_snapshot
 from .brainwide_map import (
     BrainwideMapBuildConfig,
     build_brainwide_map_from_sources,
@@ -125,6 +126,17 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     p = sub.add_parser(
+        "audit-clusters",
+        help="audit an explicit candidate catalog against a pulled cluster snapshot",
+    )
+    p.add_argument("release", help="content-addressed source release or pulled latest alias")
+    p.add_argument("--project", required=True)
+    p.add_argument("--feature", action="append", dest="features", required=True)
+    p.add_argument("--histogram-bins", type=int, default=20)
+    p.add_argument("--source-root", type=Path, default=Path("data/source"))
+    p.add_argument("--output", type=Path, required=True)
+
+    p = sub.add_parser(
         "build-channels",
         help="build a regional ephys_atlas_channels release from an already-pulled ea_active snapshot",
     )
@@ -211,6 +223,18 @@ def main(argv: list[str] | None = None) -> int:
                 resolution_um=args.resolution_um,
             )
             print(path)
+        elif args.cmd == "audit-clusters":
+            resolved = resolve_source_release(
+                args.source_root, CLUSTERS_DATASET_ID, args.release
+            )
+            output = audit_cluster_snapshot(
+                args.source_root / CLUSTERS_DATASET_ID / resolved,
+                args.output,
+                project=args.project,
+                features=args.features,
+                histogram_bins=args.histogram_bins,
+            )
+            print(output)
         elif args.cmd == "build-channels":
             resolved = resolve_source_release(
                 args.source_root, CHANNELS_DATASET_ID, args.release

@@ -256,7 +256,7 @@ Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 
 ## M3 — `ephys_atlas_clusters`
 
-Status: **deterministic builder implemented; source project resolved; catalog review pending**.
+Status: **deterministic builder and source audit implemented; human catalog review pending**.
 
 Implemented:
 
@@ -266,17 +266,13 @@ Implemented:
 - left-folded Allen/Beryl/Cosmos summaries, provenance, and validation.
 
 The source project is `ibl_neuropixel_brainwide_01` by D038. Q6 remains open
-only through the source pull/audit and human freeze of the proposed 14-feature
-scalar catalog.
+only through human review and freeze of the audited 14-feature scalar catalog.
 
 Next actions:
 
-1. pull and checksum the content-addressed project snapshot;
-2. report column presence, dtypes, units, finite/missing counts, ranges, and
-   distributions for the 14 D038 candidate features;
-3. record human approval or adjustment of that catalog in Q6;
-4. build and validate the immutable release;
-5. exercise the browser path without cluster-specific UI hardcoding.
+1. record human approval or adjustment of the audited catalog in Q6;
+2. build and validate the immutable release;
+3. exercise the browser path without cluster-specific UI hardcoding.
 
 Acceptance reference: section 5 of the launch spec.
 

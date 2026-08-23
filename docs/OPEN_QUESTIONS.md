@@ -102,10 +102,15 @@ source objects. Review the 14 legacy scalar cluster features named by D038 as
 the initial launch-catalog candidate; waveform, ACG, STPC, and STLFP arrays are
 not regional launch features.
 
-Still needed: pull the exact source snapshot and produce the required
-column/unit/missingness/range/distribution audit, then record human approval of
-the final scalar catalog. Units/transforms must come from that pinned source
-schema and remain null rather than being guessed when absent.
+Completed evidence: content-addressed snapshot `sha256-9b5e55215b306f26` and
+the column/unit/missingness/range/distribution audit in
+`docs/data/CLUSTERS_SOURCE_AUDIT.md`. All 14 candidates are present, but the
+pinned schema declares no units and several distributions require scientific
+review.
+
+Still needed: record human approval or adjustment of the final scalar catalog,
+units/descriptions, and any presentation-only log defaults. Units/transforms
+must remain null rather than being guessed when absent.
 
 Blocks: the final production cluster release, not the source pull/audit or
 deterministic builder machinery.

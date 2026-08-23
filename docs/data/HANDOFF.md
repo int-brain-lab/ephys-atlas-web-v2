@@ -45,10 +45,11 @@ nonempty scalar feature catalog. It aggregates every finite row from
 `clusters.table.pqt` with equal cluster weight after left folding, without a
 good-unit filter or insertion balancing. D038 selects
 `ibl_neuropixel_brainwide_01` as the source project and the
-legacy 14 scalar features as the review candidate. The remaining Q6 work is to
-pull and checksum the exact aggregate snapshot, audit those columns and units,
-and freeze the final catalog after human review. See
-`docs/data/CLUSTERS_RECIPE.md`.
+legacy 14 scalar features as the review candidate. Snapshot
+`sha256-9b5e55215b306f26` and its exact all-row audit are complete; all candidates
+are present, upstream units are undeclared, and review questions are recorded
+in `docs/data/CLUSTERS_SOURCE_AUDIT.md`. Q6 now waits only on human catalog
+approval or adjustment before build and browser acceptance.
 
 ## Brain-Wide Map release
 

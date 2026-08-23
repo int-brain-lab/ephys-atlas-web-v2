@@ -118,6 +118,10 @@ data-pull dataset release="latest":
 data-pull-volume release resolution_um:
     {{uv-scientific}} ephys-atlas-data pull ephys_atlas_volumes {{release}} --resolution-um {{resolution_um}} --dest data/source
 
+# Pull the D038-approved cluster project into a content-addressed local snapshot.
+data-pull-clusters release="latest":
+    {{uv-scientific}} ephys-atlas-data pull ephys_atlas_clusters {{release}} --project ibl_neuropixel_brainwide_01 --dest data/source
+
 # Build the launch channel dataset. Raw/denoised and population are intentionally explicit.
 data-build-channels release feature_mode population created_at ibleatools_commit iblatlas_commit builder_commit:
     {{uv-scientific}} ephys-atlas-data build-channels {{release}} --feature-mode {{feature_mode}} --population {{population}} --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
