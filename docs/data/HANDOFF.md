@@ -59,8 +59,10 @@ pinned Beryl metadata dependency before decoding. Deterministic tests reproduce
 the pinned generator's lateralization, arithmetic aggregation, six-significant-
 digit serialization, and `false=0.5`/`true=1.0` significance behavior. An
 exact-input local run produced 30 schema-valid features over 210 Beryl regions.
-The output identifies itself as a legacy website snapshot rather than a current
-paper-pipeline regeneration. Local catalog/browser acceptance remains.
+The ignored `legacy-v1-1d908bea` local release was built and validated from
+builder commit `9d2d37b`. The output identifies itself as a legacy website
+snapshot rather than a current paper-pipeline regeneration. Local
+catalog/browser acceptance remains.
 
 ## Volume releases
 

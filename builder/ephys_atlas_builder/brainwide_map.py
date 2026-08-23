@@ -4,6 +4,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 import re
+import subprocess
 
 import numpy as np
 
@@ -272,6 +273,20 @@ def verify_legacy_sources(source_dir: Path) -> dict[str, Path]:
     return verified
 
 
+def require_local_builder_commit(commit: str, repository_root: Path) -> None:
+    """Reject a provenance pin that is not a commit in this builder checkout."""
+    result = subprocess.run(
+        ["git", "-C", str(repository_root), "cat-file", "-e", f"{commit}^{{commit}}"],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"builder_commit is not a commit in the local repository: {commit}"
+        )
+
+
 def _load_verified_tables(
     verified: Mapping[str, Path],
 ) -> tuple[dict[str, LegacyFamilyTable], dict[int, RegionInfo]]:
@@ -340,6 +355,10 @@ def build_brainwide_map_from_sources(
     config: BrainwideMapBuildConfig,
 ) -> Path:
     config.validate()
+    if config.builder_commit is not None:
+        require_local_builder_commit(
+            config.builder_commit, Path(__file__).resolve().parents[2]
+        )
     verified = verify_legacy_sources(source_dir)
     families, metadata = _load_verified_tables(verified)
     sources = [

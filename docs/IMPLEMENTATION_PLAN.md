@@ -294,6 +294,8 @@ Implemented locally:
 
 - fail-closed byte-size/SHA-256 verification before Parquet decoding for all
   five families and the pinned Beryl metadata used by the legacy generator;
+- rejection of builder provenance pins that are not commits in the local
+  repository;
 - a deterministic Beryl-only schema-v1 adapter with explicit legacy-snapshot
   provenance;
 - equivalence coverage for lateralization, aggregation, six-significant-digit
@@ -302,10 +304,10 @@ Implemented locally:
 
 Next actions:
 
-1. build the immutable local release from a clean committed builder revision;
-2. add it to a local/test catalog and exercise browser acceptance without
+1. add the validated ignored local release to a local/test catalog and exercise
+   browser acceptance without
    publishing it online;
-3. add it to the public catalog only when publication is authorized.
+2. add it to the public catalog only when publication is authorized.
 
 Acceptance reference: section 7 of the launch spec.
 

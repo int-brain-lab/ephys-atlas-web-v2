@@ -281,12 +281,13 @@ Q6.
 
 The deterministic local builder preserves the five D038-selected Beryl-only v1
 website families. It verifies every pinned family and the legacy Beryl metadata
-before Parquet decoding, reproduces left lateralization, arithmetic aggregation,
-six-significant-digit serialization, and the legacy significance encoding, and
-emits explicit preserved-snapshot provenance. Synthetic deterministic/schema
-tests and an exact-input local comparison cover all 30 features and 210 regions.
-The release has not been published or added to a public catalog; local browser
-acceptance remains.
+before Parquet decoding, rejects nonexistent local builder-commit pins,
+reproduces left lateralization, arithmetic aggregation, six-significant-digit
+serialization, and the legacy significance encoding, and emits explicit
+preserved-snapshot provenance. Synthetic deterministic/schema tests and an
+exact-input local comparison cover all 30 features and 210 regions. A validated
+ignored local release was built from commit `9d2d37b`; it has not been published
+or added to a public catalog, and local browser acceptance remains.
 
 ## Regional viewer
 

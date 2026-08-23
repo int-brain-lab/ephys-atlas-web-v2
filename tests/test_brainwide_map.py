@@ -10,6 +10,7 @@ from ephys_atlas_builder.brainwide_map import (
     BrainwideMapBuildConfig,
     LegacyFamilyTable,
     build_brainwide_map_release_from_tables,
+    require_local_builder_commit,
     verify_legacy_sources,
 )
 from ephys_atlas_builder.regional_release import RegionInfo
@@ -165,3 +166,8 @@ def test_brainwide_map_rejects_an_unpinned_generator():
     )
     with pytest.raises(ValueError, match="D038-pinned"):
         config.validate()
+
+
+def test_brainwide_map_rejects_nonexistent_local_builder_commit():
+    with pytest.raises(RuntimeError, match="not a commit"):
+        require_local_builder_commit("0" * 40, ROOT)
