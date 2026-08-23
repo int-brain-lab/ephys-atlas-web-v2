@@ -9,6 +9,8 @@ const DATASET_ID = /^[a-z0-9][a-z0-9._-]*$/;
 interface RealDevelopmentRelease {
   releaseRoot: string;
   datasetId: string;
+  title: string;
+  description: string;
   releaseId: string;
   featureId: string;
   manifestBytes: number;
@@ -37,11 +39,17 @@ export async function loadRealDevelopmentRelease(
   if (!document || typeof document !== 'object') throw new Error(`Invalid release manifest at ${manifestPath}`);
   const manifest = document as {
     dataset_id?: unknown;
+    title?: unknown;
+    description?: unknown;
     features?: unknown;
     release?: { immutable?: unknown; release_id?: unknown };
   };
   if (typeof manifest.dataset_id !== 'string' || !DATASET_ID.test(manifest.dataset_id)) {
     throw new Error(`dev-real requires a valid dataset_id in ${manifestPath}`);
+  }
+  if (typeof manifest.title !== 'string' || manifest.title.length === 0
+    || typeof manifest.description !== 'string') {
+    throw new Error(`dev-real requires dataset title and description in ${manifestPath}`);
   }
   if (manifest.release?.immutable !== true || typeof manifest.release.release_id !== 'string') {
     throw new Error(`dev-real requires an immutable release identity in ${manifestPath}`);
@@ -53,6 +61,8 @@ export async function loadRealDevelopmentRelease(
   return {
     releaseRoot,
     datasetId: manifest.dataset_id,
+    title: manifest.title,
+    description: manifest.description,
     releaseId: manifest.release.release_id,
     featureId,
     manifestBytes: manifestBytes.byteLength,
@@ -61,7 +71,15 @@ export async function loadRealDevelopmentRelease(
 }
 
 export function realReleasePlugin(release: RealDevelopmentRelease): Plugin {
-  const { releaseRoot, datasetId, releaseId, manifestBytes, manifestSha256 } = release;
+  const {
+    releaseRoot,
+    datasetId,
+    title,
+    description,
+    releaseId,
+    manifestBytes,
+    manifestSha256,
+  } = release;
   return {
     name: 'ephys-atlas-real-development-release',
     configureServer(server) {
@@ -74,8 +92,8 @@ export function realReleasePlugin(release: RealDevelopmentRelease): Plugin {
             schema_version: '1.0',
             datasets: [{
               dataset_id: datasetId,
-              title: `${datasetId} (real development release)`,
-              description: 'Pinned local development release; not the paper snapshot.',
+              title,
+              description,
               default_release: releaseId,
               releases: [{
                 release_id: releaseId,

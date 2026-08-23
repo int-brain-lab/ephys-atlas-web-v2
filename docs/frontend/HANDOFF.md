@@ -142,6 +142,10 @@ The previous frontend provisional schema and schema-v0.1 compatibility path have
 exercise this contract end-to-end. It is never part of `web/public` and never a
 runtime fallback. Ordinary development uses the ignored real `2026_W32`
 release and fails explicitly if that release has not been pulled and built.
+The separate `just test-brainwide-map-release` command mounts the ignored
+`legacy-v1-1d908bea` Beryl-only release through the same development catalog
+and production HTTP reader. It is opt-in because clean checkouts do not contain
+the generated release.
 
 ## Current next work
 

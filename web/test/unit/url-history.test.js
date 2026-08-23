@@ -79,15 +79,17 @@ test('derived dataset normalization replaces the user-created checkpoint', () =>
     history: 'push',
   });
   store.dispatch({
-    type: 'feature/set',
+    type: 'context/reconcile',
     featureId: 'wheel_speed',
     representation: 'regional',
+    parcellation: 'beryl',
     history: 'replace',
   });
 
   assert.deepEqual(win.writes.map(({ mode }) => mode), ['push', 'replace']);
   assert.match(win.location.search, /dataset=brainwide_map/);
   assert.match(win.location.search, /feature=wheel_speed/);
+  assert.match(win.location.search, /parcel=beryl/);
   controller.stop();
 });
 

@@ -1,6 +1,7 @@
 import './styles.css';
 import { AtlasApp } from './app.js';
 import { DEFAULT_VIEW_STATE } from './domain/defaults.js';
+import type { ParcellationId } from './domain/types.js';
 import { RetainedProjectionViewportFactory } from './rendering/retained-projection-viewport.js';
 import { LazyBrainScene3DViewportFactory } from './rendering/3d/lazy-brain-scene-viewport.js';
 
@@ -17,11 +18,17 @@ const catalogUrl = import.meta.env.VITE_DATASET_CATALOG_URL as string | undefine
 const developmentDatasetId = import.meta.env.VITE_DEFAULT_DATASET_ID as string | undefined;
 const developmentReleaseId = import.meta.env.VITE_DEFAULT_RELEASE_ID as string | undefined;
 const developmentFeatureId = import.meta.env.VITE_DEFAULT_FEATURE_ID as string | undefined;
+const developmentParcellation = import.meta.env.VITE_DEFAULT_PARCELLATION_ID as string | undefined;
+const developmentParcellationId: ParcellationId = developmentParcellation === 'beryl'
+  || developmentParcellation === 'cosmos'
+  ? developmentParcellation
+  : 'allen';
 const developmentDefaultView = developmentDatasetId && developmentReleaseId && developmentFeatureId
   ? {
     ...DEFAULT_VIEW_STATE,
     dataset: { datasetId: developmentDatasetId, releaseId: developmentReleaseId },
     featureId: developmentFeatureId,
+    parcellation: developmentParcellationId,
   }
   : undefined;
 function optionalScene3DFactory() {

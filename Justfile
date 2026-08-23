@@ -48,6 +48,10 @@ test-web:
 test-browser:
     cd web && npm run test:browser
 
+# Opt-in browser acceptance for the ignored local D038 Brain-Wide Map release.
+test-brainwide-map-release:
+    cd web && npm run test:brainwide-map-release
+
 # Profile cold-pack, same-pack, and retained SVG navigation in Chromium.
 benchmark-anatomy:
     cd web && npm run benchmark:anatomy

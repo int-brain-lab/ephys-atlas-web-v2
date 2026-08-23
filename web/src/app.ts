@@ -131,10 +131,10 @@ export class AtlasApp {
       if (action.type === 'dataset/set' || action.type === 'view/hydrate') {
         void this.session.loadDataset(state.view.dataset);
       }
-      if (action.type === 'feature/set') void this.session.loadCurrentFeature();
+      if (action.type === 'feature/set') void this.session.loadCurrentFeature(true);
       if (action.type === 'parcellation/set') {
         void this.session.loadRegions(state.view.dataset, state.view.parcellation);
-        void this.session.loadCurrentFeature();
+        void this.session.loadCurrentFeature(false);
       }
     });
     this.render();

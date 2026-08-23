@@ -25,6 +25,12 @@ export type UrlHistoryMode = 'push' | 'replace' | 'none';
 type ViewActionPayload =
   | { type: 'view/hydrate'; view: ViewState }
   | { type: 'dataset/set'; dataset: DatasetRef }
+  | {
+    type: 'context/reconcile';
+    featureId: string;
+    representation: RepresentationKind;
+    parcellation: ParcellationId;
+  }
   | { type: 'feature/set'; featureId: string | null; representation?: RepresentationKind }
   | { type: 'parcellation/set'; parcellation: ParcellationId }
   | { type: 'regions/order'; order: RegionOrder }

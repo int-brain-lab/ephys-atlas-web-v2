@@ -18,6 +18,23 @@ test('dataset changes clear feature and region selection', () => {
   assert.equal(next.view.dataset.datasetId, 'brainwide_map');
 });
 
+test('derived context reconciliation atomically selects a supported parcellation', () => {
+  const populated = {
+    ...DEFAULT_APP_STATE,
+    view: { ...DEFAULT_APP_STATE.view, selection: ['-362'] },
+  };
+  const next = reduceAppState(populated, {
+    type: 'context/reconcile',
+    featureId: 'choice_decoding_significant',
+    representation: 'regional',
+    parcellation: 'beryl',
+  });
+  assert.equal(next.view.featureId, 'choice_decoding_significant');
+  assert.equal(next.view.representation, 'regional');
+  assert.equal(next.view.parcellation, 'beryl');
+  assert.deepEqual(next.view.selection, []);
+});
+
 test('selection toggles are unique and preserve first-selection order', () => {
   let state = DEFAULT_APP_STATE;
   state = reduceAppState(state, { type: 'selection/toggle', regionId: 'VISp' });

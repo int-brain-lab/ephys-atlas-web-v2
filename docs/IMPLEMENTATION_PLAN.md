@@ -283,8 +283,8 @@ Acceptance reference: section 5 of the launch spec.
 
 ## M4 — `brainwide_map`
 
-Status: **legacy launch product defined; deterministic local builder implemented;
-catalog/browser acceptance pending**.
+Status: **deterministic local release and HTTP browser acceptance complete;
+online publication deferred**.
 
 Q7 is resolved by D038. The launch product preserves the five existing
 Beryl-only v1 Parquet families with exact source hashes and semantic
@@ -300,13 +300,14 @@ Implemented locally:
   provenance;
 - equivalence coverage for lateralization, aggregation, six-significant-digit
   serialization, and boolean significance presentation;
-- exact-input local validation of 30 features over 210 Beryl regions.
+- exact-input local validation of 30 features over 210 Beryl regions;
+- an opt-in test-only local catalog exercising the production HTTP reader;
+- Chromium acceptance for the dynamic 30-feature catalog, Beryl-only context,
+  legacy significance values/provenance, feature switching, and CSV download.
 
 Next actions:
 
-1. add the validated ignored local release to a local/test catalog and exercise
-   browser acceptance without
-   publishing it online;
+1. keep the ignored release reproducible and its opt-in acceptance suite green;
 2. add it to the public catalog only when publication is authorized.
 
 Acceptance reference: section 7 of the launch spec.

@@ -16,7 +16,7 @@ function manifest(id = 'custom_dataset') {
       id: 'feature_a', path: 'feature.json', label: 'A', description: '', unit: null,
       valueSemantics: { quantity: 'a', transform: 'identity', sourcePopulation: 'all', missingValues: 'excluded' },
       statistics: ['mean'],
-      representations: { regional: { kind: 'regional', format: 'ephys-atlas-regional-v1', parcellations: {} } },
+      representations: { regional: { kind: 'regional', format: 'ephys-atlas-regional-v1', parcellations: { beryl: {} } } },
     }],
   };
 }
@@ -31,7 +31,7 @@ test('dataset session owns manifest/feature lifecycle outside the UI', async () 
   const store = createAppStore({ ...DEFAULT_APP_STATE, view: {
     ...DEFAULT_APP_STATE.view,
     dataset: { datasetId: 'custom_dataset', releaseId: 'r1' },
-    featureId: 'feature_a',
+    featureId: null,
   } });
   const feature = { schemaVersion: '1.0', featureId: 'feature_a', representation: 'regional', parcellation: 'beryl', regionIds: [], statistics: {} };
   const repository = {
@@ -46,6 +46,7 @@ test('dataset session owns manifest/feature lifecycle outside the UI', async () 
   await session.loadDataset(store.getState().view.dataset);
   assert.equal(session.snapshot().manifest.dataset.id, 'custom_dataset');
   assert.equal(session.snapshot().feature, feature);
+  assert.equal(store.getState().view.parcellation, 'beryl');
   assert.ok(changes >= 2);
 });
 
@@ -56,7 +57,12 @@ test('stale dataset completions cannot replace the active dataset', async () => 
     async loadCatalog() { return { schemaVersion: '1.0', datasets: [] }; },
     loadManifest(ref) { return ref.datasetId === 'slow' ? first.promise : Promise.resolve(manifest('fast')); },
     async loadRegions() { return []; },
-    async loadFeature() { throw new Error('not used'); },
+    async loadFeature(_ref, featureId) {
+      return {
+        schemaVersion: '1.0', featureId, representation: 'regional',
+        parcellation: 'beryl', regionIds: [], statistics: {},
+      };
+    },
     async prefetchFeature() {},
   };
   const session = new DatasetSession(repository, store, () => {});

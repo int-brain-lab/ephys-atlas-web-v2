@@ -61,8 +61,12 @@ digit serialization, and `false=0.5`/`true=1.0` significance behavior. An
 exact-input local run produced 30 schema-valid features over 210 Beryl regions.
 The ignored `legacy-v1-1d908bea` local release was built and validated from
 builder commit `9d2d37b`. The output identifies itself as a legacy website
-snapshot rather than a current paper-pipeline regeneration. Local
-catalog/browser acceptance remains.
+snapshot rather than a current paper-pipeline regeneration. The opt-in local
+catalog/Chromium suite validates all 30 discovered features, Beryl-only context
+reconciliation, representative significance values and provenance, feature
+switching, regional population counts, and CSV context through the production
+HTTP reader. Run it with `just test-brainwide-map-release`. Online publication
+remains deferred.
 
 ## Volume releases
 

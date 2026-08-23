@@ -28,6 +28,19 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           selection: [],
         },
       };
+    case 'context/reconcile':
+      return {
+        ...state,
+        view: {
+          ...state.view,
+          featureId: action.featureId,
+          representation: action.representation,
+          parcellation: action.parcellation,
+          selection: action.parcellation === state.view.parcellation
+            ? state.view.selection
+            : [],
+        },
+      };
     case 'feature/set':
       return {
         ...state,

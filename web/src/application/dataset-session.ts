@@ -87,20 +87,17 @@ export class DatasetSession {
       this.manifest = manifest;
       this.changed();
 
+      const current = this.store.getState().view;
+      const currentFeature = manifest.features.find((item) => item.id === current.featureId);
+      this.reconcileContext(
+        manifest,
+        !currentFeature || !currentFeature.representations[current.representation],
+      );
       const state = this.store.getState();
       const regionsReady = await this.loadRegions(state.view.dataset, state.view.parcellation, generation);
       if (!this.isCurrentDataset(generation) || !regionsReady) return;
       this.store.dispatch({ type: 'runtime/dataset', status: 'ready' });
-
-      const selected = manifest.features.find((item) => item.id === state.view.featureId);
-      if (!selected && manifest.features.length) {
-        const first = manifest.features[0];
-        if (!first) return;
-        const representation: RepresentationKind = first.representations.regional ? 'regional' : 'volume';
-        this.store.dispatch({ type: 'feature/set', featureId: first.id, representation, history: 'replace' });
-      } else {
-        await this.loadCurrentFeature();
-      }
+      await this.loadCurrentFeature();
       this.changed();
     } catch (error) {
       if (!this.isCurrentDataset(generation)) return;
@@ -134,9 +131,11 @@ export class DatasetSession {
     }
   }
 
-  async loadCurrentFeature(): Promise<void> {
+  async loadCurrentFeature(reconcileParcellation = false): Promise<void> {
     const requestGeneration = ++this.featureGeneration;
     this.prefetch.cancel();
+    const previousParcellation = this.store.getState().view.parcellation;
+    if (this.manifest) this.reconcileContext(this.manifest, reconcileParcellation);
     const state = this.store.getState();
     const { featureId, representation, parcellation, dataset } = state.view;
     if (!featureId || !this.manifest) {
@@ -146,6 +145,10 @@ export class DatasetSession {
     }
 
     const datasetGeneration = this.datasetGeneration;
+    if (parcellation !== previousParcellation) {
+      const regionsReady = await this.loadRegions(dataset, parcellation, datasetGeneration);
+      if (!regionsReady || !this.isCurrentFeature(datasetGeneration, requestGeneration)) return;
+    }
     try {
       const feature = await this.repository.loadFeature(
         dataset,
@@ -217,6 +220,41 @@ export class DatasetSession {
 
   private isCurrentFeature(datasetGeneration: number, requestGeneration: number): boolean {
     return datasetGeneration === this.datasetGeneration && requestGeneration === this.featureGeneration;
+  }
+
+  private reconcileContext(
+    manifest: DatasetManifest,
+    reconcileParcellation: boolean,
+  ): void {
+    const view = this.store.getState().view;
+    const feature = manifest.features.find((item) => item.id === view.featureId)
+      ?? manifest.features[0];
+    if (!feature) return;
+    const representation: RepresentationKind = feature.representations[view.representation]
+      ? view.representation
+      : feature.representations.regional ? 'regional' : 'volume';
+    const regionalParcellations = representation === 'regional'
+      ? Object.keys(feature.representations.regional?.parcellations ?? {}) as ParcellationId[]
+      : [];
+    const availableParcellations = regionalParcellations.length > 0
+      ? regionalParcellations
+      : manifest.parcellations;
+    const parcellation = reconcileParcellation && representation === 'regional'
+      && !availableParcellations.includes(view.parcellation)
+      ? availableParcellations[0] ?? view.parcellation
+      : view.parcellation;
+    if (
+      feature.id === view.featureId
+      && representation === view.representation
+      && parcellation === view.parcellation
+    ) return;
+    this.store.dispatch({
+      type: 'context/reconcile',
+      featureId: feature.id,
+      representation,
+      parcellation,
+      history: 'replace',
+    });
   }
 }
 

@@ -16,6 +16,9 @@ export default defineConfig(async () => {
       'import.meta.env.VITE_DEFAULT_DATASET_ID': JSON.stringify(release.datasetId),
       'import.meta.env.VITE_DEFAULT_RELEASE_ID': JSON.stringify(release.releaseId),
       'import.meta.env.VITE_DEFAULT_FEATURE_ID': JSON.stringify(release.featureId),
+      'import.meta.env.VITE_DEFAULT_PARCELLATION_ID': JSON.stringify(
+        process.env.EPHYS_ATLAS_REAL_PARCELLATION ?? 'allen',
+      ),
     },
     plugins: [...base.plugins, realReleasePlugin(release)],
   };

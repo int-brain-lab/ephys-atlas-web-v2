@@ -12,6 +12,7 @@
     "test:rendering": "rm -rf .rendering-test-dist && tsc -p tsconfig.rendering-test.json && mkdir -p .rendering-test-dist/fixtures/rendering && cp ../fixtures/rendering/linked-slices.fixture.json .rendering-test-dist/fixtures/rendering/ && node --test .rendering-test-dist/tests/rendering/*.test.js",
     "test:browser": "playwright test",
     "test:real-release": "playwright test --config playwright.real-release.config.ts",
+    "test:brainwide-map-release": "playwright test --config playwright.brainwide-map.config.ts",
     "benchmark:real-volume": "playwright test --config playwright.volume-benchmark.config.ts",
     "benchmark:anatomy": "playwright test --config playwright.anatomy-benchmark.config.ts",
     "test": "npm run typecheck && npm run test:unit && npm run test:rendering"

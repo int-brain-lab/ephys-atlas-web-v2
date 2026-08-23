@@ -287,7 +287,12 @@ serialization, and the legacy significance encoding, and emits explicit
 preserved-snapshot provenance. Synthetic deterministic/schema tests and an
 exact-input local comparison cover all 30 features and 210 regions. A validated
 ignored local release was built from commit `9d2d37b`; it has not been published
-or added to a public catalog, and local browser acceptance remains.
+or added to a public catalog. The development server now exposes its manifest
+title/description through a test-only one-release catalog and the production
+HTTP reader. Opt-in Chromium acceptance covers the dynamic 30-feature catalog,
+automatic Beryl reconciliation, legacy `0.5`/`1.0` significance values,
+provenance, feature switching, 201/210-region populations, and contextual CSV
+download.
 
 ## Regional viewer
 
@@ -316,7 +321,12 @@ sheet. Synthetic fixtures are visibly identified as non-scientific.
 generation-based stale-work suppression, and cancellable idle prefetch. Active
 prefetch aborts propagate through repositories, HTTP/local resource readers,
 and regional materialization without poisoning a foreground request for the
-same immutable resource. Dataset/parcellation changes clear stale hover, and
+same immutable resource. Dataset-derived feature/representation repair and
+explicit feature switching atomically reconcile unsupported parcellation state
+before requesting resources, with a replace-history URL update. Explicit URL
+and parcellation choices remain authoritative. This permits Beryl-only releases
+without retaining the global Allen default or issuing a misleading empty
+payload. Dataset/parcellation changes clear stale hover, and
 regional-tree rerenders preserve current hover presentation. Projection and
 region-list hover also place a transient labeled marker at the hovered region's
 current statistic on the global observation histogram when the statistic shares
@@ -473,9 +483,9 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
    foundation;
 3. pull/audit `ibl_neuropixel_brainwide_01`, freeze the reviewed scalar catalog,
    and build the production cluster release;
-4. build the D038 preserved five-family legacy BWM release from the committed
-   local builder and run local-catalog browser acceptance; online catalog
-   publication remains deferred until authorized;
+4. keep the validated D038 preserved five-family BWM release and opt-in local
+   browser acceptance green; online catalog publication remains deferred until
+   authorized;
 5. provide artifact URLs and current-feature exports for launch; broader
    package/local-management UX is non-blocking;
 6. stage immutable assets on S3/CloudFront and finalize catalog/origin/default
