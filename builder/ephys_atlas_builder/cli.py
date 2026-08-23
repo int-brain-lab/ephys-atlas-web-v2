@@ -7,6 +7,10 @@ from .channels import DATASET_ID as CHANNELS_DATASET_ID
 from .channels import ChannelBuildConfig, build_channels_from_snapshot
 from .clusters import DATASET_ID as CLUSTERS_DATASET_ID
 from .clusters import ClusterBuildConfig, build_clusters_from_snapshot
+from .brainwide_map import (
+    BrainwideMapBuildConfig,
+    build_brainwide_map_from_sources,
+)
 from .fixture import generate_golden
 from .npz import inspect_volume_npz
 from .package import package_release
@@ -75,6 +79,30 @@ def main(argv: list[str] | None = None) -> int:
         "--builder-commit", required=True, help="pinned builder repository commit"
     )
     p.add_argument("--source-root", type=Path, default=Path("data/source"))
+    p.add_argument("--release-root", type=Path, default=Path("data/releases"))
+    p.add_argument("--schema-dir", type=Path, default=_schema_dir())
+
+    p = sub.add_parser(
+        "build-brainwide-map",
+        help="preserve the checksummed v1 website Brain-Wide Map tables as schema v1",
+    )
+    p.add_argument("release", help="immutable legacy snapshot release identifier")
+    p.add_argument(
+        "--created-at",
+        required=True,
+        help="ISO-8601 release timestamp recorded verbatim in provenance",
+    )
+    p.add_argument("--histogram-bins", type=int, default=50)
+    p.add_argument("--paper-snapshot", action="store_true")
+    p.add_argument(
+        "--builder-commit", required=True, help="pinned builder repository commit"
+    )
+    p.add_argument(
+        "--source-dir",
+        type=Path,
+        required=True,
+        help="directory containing the exact D038 v1 Parquet inputs",
+    )
     p.add_argument("--release-root", type=Path, default=Path("data/releases"))
     p.add_argument("--schema-dir", type=Path, default=_schema_dir())
 
@@ -216,6 +244,18 @@ def main(argv: list[str] | None = None) -> int:
                 builder_commit=args.builder_commit,
             )
             build_clusters_from_snapshot(source_snapshot, release_dir, config)
+            validate_release(release_dir, args.schema_dir)
+            print(f"built and validated: {release_dir}")
+        elif args.cmd == "build-brainwide-map":
+            release_dir = args.release_root / "brainwide_map" / args.release
+            config = BrainwideMapBuildConfig(
+                release_id=args.release,
+                created_at=args.created_at,
+                histogram_bins=args.histogram_bins,
+                paper_snapshot=args.paper_snapshot,
+                builder_commit=args.builder_commit,
+            )
+            build_brainwide_map_from_sources(args.source_dir, release_dir, config)
             validate_release(release_dir, args.schema_dir)
             print(f"built and validated: {release_dir}")
         elif args.cmd == "build":

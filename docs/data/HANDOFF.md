@@ -53,10 +53,14 @@ and freeze the final catalog after human review. See
 ## Brain-Wide Map release
 
 D038 resolves Q7 by preserving the five checksummed Beryl-only v1 website
-families: choice, feedback, stimulus, wheel speed, and wheel velocity. The new
-builder must verify the recorded Parquet bytes, reproduce the pinned v1
-generator semantics through equivalence evidence, and identify the output as a
-legacy website snapshot rather than a current paper-pipeline regeneration.
+families: choice, feedback, stimulus, wheel speed, and wheel velocity. The local
+schema-v1 builder now verifies the five recorded Parquet identities and their
+pinned Beryl metadata dependency before decoding. Deterministic tests reproduce
+the pinned generator's lateralization, arithmetic aggregation, six-significant-
+digit serialization, and `false=0.5`/`true=1.0` significance behavior. An
+exact-input local run produced 30 schema-valid features over 210 Beryl regions.
+The output identifies itself as a legacy website snapshot rather than a current
+paper-pipeline regeneration. Local catalog/browser acceptance remains.
 
 ## Volume releases
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -130,9 +130,13 @@ def write_feature_parcellation(
     groups: Sequence[np.ndarray],
     edges: np.ndarray,
     population_description: str,
+    numeric_transform: Callable[[float], float] | None = None,
 ) -> dict:
     grouped_values = [values[rows] for rows in groups]
     matrix = summary_matrix(grouped_values)
+    if numeric_transform is not None:
+        finite = np.isfinite(matrix)
+        matrix[finite] = [numeric_transform(value) for value in matrix[finite]]
     mean_index = SUMMARY_FIELDS.index("mean")
     regional_means = matrix[:, mean_index]
     finite_means = regional_means[np.isfinite(regional_means)]
@@ -160,11 +164,21 @@ def write_feature_parcellation(
         feature_root / f"{parcellation}.hist.u32", regional_histogram, "uint32"
     )
 
+    global_statistics = describe(values)
+    if numeric_transform is not None:
+        global_statistics = {
+            key: (
+                numeric_transform(value)
+                if isinstance(value, float) and value is not None
+                else value
+            )
+            for key, value in global_statistics.items()
+        }
     stats = {
         "schema_version": "1.0",
         "format": "ephys-atlas-regional-statistics-v1",
         "population": population_description,
-        "global": describe(values),
+        "global": global_statistics,
         "regional_summary": {"fields": SUMMARY_FIELDS, "values": summary_meta},
         "histogram": {
             "edges": edges.tolist(),

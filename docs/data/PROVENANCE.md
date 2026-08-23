@@ -150,12 +150,19 @@ clean sibling checkout on 2026-08-22 are:
 | `wheel_speed_bwm.pqt` | 12,371 | `58b63dd36f7ce3e7615624d1e11e47906fae00eff717f08653f7e299f057a7ca` |
 | `wheel_velocity_bwm.pqt` | 12,126 | `5da2ee7ae0added6996a433fd8c04796d8953bac15612cd89f46d8fb56688438` |
 
-The new builder must accept explicit source paths, verify these bytes before
-reading, preserve the legacy feature values and aggregation/significance
-semantics through equivalence fixtures, and identify the result as a preserved
-legacy website snapshot. The table records source identity; it does not fill
-the missing end-to-end provenance that produced the Parquet files and must not
-be presented as a newer paper-pipeline regeneration.
+The pinned generator also resolves region labels/names from
+`beryl_regions.pqt` in the same clean checkout. That metadata input is 21,865
+bytes with SHA-256
+`124dc20f137ebc4d47795e6ca53d0d8c7d71b03c0b2301851aa058ba854cfa50`.
+It is verified before Parquet decoding alongside the five scientific feature
+families; it is not a sixth analysis family.
+
+The builder accepts an explicit local source directory, verifies these bytes
+before reading, preserves the legacy feature values and
+aggregation/significance semantics through equivalence fixtures, and identifies
+the result as a preserved legacy website snapshot. The table records source
+identity; it does not fill the missing end-to-end provenance that produced the
+Parquet files and must not be presented as a newer paper-pipeline regeneration.
 
 ## `local`
 

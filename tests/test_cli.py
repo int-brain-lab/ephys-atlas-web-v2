@@ -50,3 +50,37 @@ def test_build_channels_omitted_features_use_upstream_catalog(monkeypatch, tmp_p
     assert captured["release_dir"] == release_root / "ephys_atlas_channels" / "2026_W32"
     assert captured["config"].features is None
     assert captured["config"].log_color_features == ("rms_ap.raw",)
+
+
+def test_build_brainwide_map_uses_explicit_local_sources(monkeypatch, tmp_path):
+    source_dir = tmp_path / "legacy"
+    release_root = tmp_path / "releases"
+    captured = {}
+
+    def fake_build(source, release, config):
+        captured.update(source=source, release=release, config=config)
+
+    monkeypatch.setattr(cli, "build_brainwide_map_from_sources", fake_build)
+    monkeypatch.setattr(cli, "validate_release", lambda *_args: None)
+
+    result = cli.main(
+        [
+            "build-brainwide-map",
+            "legacy-v1-1d908bea",
+            "--created-at",
+            "2026-08-23T00:00:00Z",
+            "--builder-commit",
+            "abcdef0",
+            "--source-dir",
+            str(source_dir),
+            "--release-root",
+            str(release_root),
+        ]
+    )
+
+    assert result == 0
+    assert captured["source"] == source_dir
+    assert captured["release"] == release_root / "brainwide_map" / "legacy-v1-1d908bea"
+    assert captured["config"].generator_commit == cli.BrainwideMapBuildConfig(
+        release_id="x", created_at="2026-08-23T00:00:00Z"
+    ).generator_commit

@@ -283,20 +283,29 @@ Acceptance reference: section 5 of the launch spec.
 
 ## M4 — `brainwide_map`
 
-Status: **legacy launch product defined; builder not implemented**.
+Status: **legacy launch product defined; deterministic local builder implemented;
+catalog/browser acceptance pending**.
 
 Q7 is resolved by D038. The launch product preserves the five existing
 Beryl-only v1 Parquet families with exact source hashes and semantic
 equivalence evidence; it is not a current paper-pipeline regeneration.
 
+Implemented locally:
+
+- fail-closed byte-size/SHA-256 verification before Parquet decoding for all
+  five families and the pinned Beryl metadata used by the legacy generator;
+- a deterministic Beryl-only schema-v1 adapter with explicit legacy-snapshot
+  provenance;
+- equivalence coverage for lateralization, aggregation, six-significant-digit
+  serialization, and boolean significance presentation;
+- exact-input local validation of 30 features over 210 Beryl regions.
+
 Next actions:
 
-1. ingest the five explicit Parquet paths and verify their recorded SHA-256
-   values before reading them;
-2. implement the smallest deterministic Beryl regional builder adapter;
-3. compare values/statistics against the pinned v1 `generate.py` behavior;
-4. record the legacy-snapshot provenance and validate;
-5. add the release to the public catalog and browser acceptance suite.
+1. build the immutable local release from a clean committed builder revision;
+2. add it to a local/test catalog and exercise browser acceptance without
+   publishing it online;
+3. add it to the public catalog only when publication is authorized.
 
 Acceptance reference: section 7 of the launch spec.
 

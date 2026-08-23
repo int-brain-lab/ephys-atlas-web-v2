@@ -114,6 +114,10 @@ data-pull dataset release="latest":
 data-build-channels release feature_mode population created_at ibleatools_commit iblatlas_commit builder_commit:
     {{uv-scientific}} ephys-atlas-data build-channels {{release}} --feature-mode {{feature_mode}} --population {{population}} --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
 
+# Preserve the exact D038-selected v1 website Brain-Wide Map snapshot locally.
+data-build-brainwide-map release created_at builder_commit source_dir="../atlas/data/pqt":
+    {{uv-scientific}} ephys-atlas-data build-brainwide-map {{release}} --created-at {{created_at}} --builder-commit {{builder_commit}} --source-dir {{source_dir}}
+
 # Validate a dataset-specific build output. Scientific transforms stay explicit recipes.
 data-build dataset release="latest":
     {{uv-test}} ephys-atlas-data build {{dataset}} {{release}}

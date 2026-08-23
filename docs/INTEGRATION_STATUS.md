@@ -277,6 +277,17 @@ legacy 14-feature scalar list as the review candidate. Production now waits on
 the content-addressed source pull/audit and human freeze of that catalog under
 Q6.
 
+### `brainwide_map`
+
+The deterministic local builder preserves the five D038-selected Beryl-only v1
+website families. It verifies every pinned family and the legacy Beryl metadata
+before Parquet decoding, reproduces left lateralization, arithmetic aggregation,
+six-significant-digit serialization, and the legacy significance encoding, and
+emits explicit preserved-snapshot provenance. Synthetic deterministic/schema
+tests and an exact-input local comparison cover all 30 features and 210 regions.
+The release has not been published or added to a public catalog; local browser
+acceptance remains.
+
 ## Regional viewer
 
 The schema-v1 regional path is implemented end to end for published HTTP and
@@ -461,8 +472,9 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
    foundation;
 3. pull/audit `ibl_neuropixel_brainwide_01`, freeze the reviewed scalar catalog,
    and build the production cluster release;
-4. build the D038 preserved five-family legacy BWM product now that Q7 is
-   resolved;
+4. build the D038 preserved five-family legacy BWM release from the committed
+   local builder and run local-catalog browser acceptance; online catalog
+   publication remains deferred until authorized;
 5. provide artifact URLs and current-feature exports for launch; broader
    package/local-management UX is non-blocking;
 6. stage immutable assets on S3/CloudFront and finalize catalog/origin/default
