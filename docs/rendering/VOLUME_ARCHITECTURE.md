@@ -141,6 +141,21 @@ the measurement covers additional feature distributions and a real HTTP/CDN
 origin; route fulfillment does not model production latency, caching headers,
 or contention.
 
+### Current `2026_W26` evidence
+
+The pinned 50 um W26 object has now been pulled and measured for the same three
+representative features. Depth-4 center packs transfer 0.20–0.36 MiB in three
+requests, compared with 0.41–0.75 MiB for depth 8. The 32³/64³ center unions
+require 36–136 requests and 1.35–4.56 MiB. Ten-trial local Chromium depth-4 cold
+p50 is 14.6–15.5 ms, compared with 24.3–26.2 ms for depth 8; both retain
+request-free cached navigation. Exact source identity, tables, limitations,
+reproduction commands, and raw-report paths are in
+`docs/data/VOLUME_2026_W26_EVIDENCE.md`.
+
+This confirms depth 4 as the local recommendation across representative W26
+distributions. It does not resolve Q5 because Playwright route fulfillment does
+not model the production cache and network profile.
+
 Reproduce it after `just bootstrap-scientific`:
 
 ```bash

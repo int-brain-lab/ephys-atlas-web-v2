@@ -92,11 +92,11 @@ tasks, and a 16.8 ms maximum frame gap. Full measurements, asset/bundle sizes,
 and the earlier v3 and Commit 5 baselines are in
 `docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.
 
-The checked-in real-volume browser evidence remains the 2026-08-20 transport
-benchmark against the historical `2026_W12` object. Commit 8 could not repeat
-it because neither the private source object nor prepared benchmark directory
-is present in this checkout. Treat it only as physical-format evidence; Q4/Q5
-still require the documented `2026_W26` object and eventual deployment origin.
+The checked-in real-volume evidence now includes the checksummed `2026_W26`
+50 um object and local layout/Chromium measurements for `psd_lfp`, `rms_ap`,
+and `polarity`; see `docs/data/VOLUME_2026_W26_EVIDENCE.md`. Q4 still requires
+authoritative scientific geometry, and Q5 still requires the eventual
+deployment-origin cache/network profile.
 
 ## 3-D
 
@@ -114,5 +114,5 @@ projection layers. See `docs/rendering/3D_EVALUATION.md`.
   measurements, not default CI gates.
 
 The cutover through Commit 8 is complete. The next rendering action is to
-obtain the authoritative Q4 volume geometry/validity semantics and Q5 real-data
-transport evidence before building Commit 9's production volume release.
+obtain the authoritative Q4 volume geometry/validity semantics and complete Q5
+at the production origin before building Commit 9's production volume release.

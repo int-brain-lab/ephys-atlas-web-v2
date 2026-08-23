@@ -99,10 +99,13 @@ def main() -> int:
     extracted = args.work_dir / f"{args.feature_id}.npy"
     extraction = extract_last_axis_feature(args.npz, extracted, args.feature_index)
     volume = np.load(extracted, mmap_mode="r")
+    with np.load(args.npz, allow_pickle=True) as source:
+        resolution_um = int(np.asarray(source["res_um"]).reshape(-1)[0])
     report = {
         "benchmark": "real-ephys-volume-browser-artifacts-v1",
         "feature_id": args.feature_id,
         "feature_index": args.feature_index,
+        "resolution_um": resolution_um,
         "axis_semantics": "physical axis0/axis1/axis2 labeled AP/ML/DV only for transport benchmarking",
         "source": {
             "path": args.npz.as_posix(),

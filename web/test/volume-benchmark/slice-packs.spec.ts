@@ -18,6 +18,7 @@ interface ArtifactManifest {
   benchmark: string;
   feature_id: string;
   feature_index: number;
+  resolution_um: number;
   axis_semantics: string;
   source: { path: string; bytes: number; sha256: string };
   layouts: LayoutManifest[];
@@ -59,7 +60,7 @@ test('real slice packs meet the request/cache path in Chromium', async ({ page, 
   let userAgent = '';
   for (const layout of manifest.layouts) {
     requests = [];
-    const metrics = await page.evaluate(async ({ featureId, layout }) => {
+    const metrics = await page.evaluate(async ({ featureId, layout, resolutionUm }) => {
       const [{ SchemaSlicePackVolumeSource }, { CanvasVolumeSliceRenderer }] = await Promise.all([
         import('/src/rendering/slice-pack-volume-source.ts'),
         import('/src/rendering/canvas-volume-renderer.ts'),
@@ -79,11 +80,18 @@ test('real slice packs meet the request/cache path in Chromium', async ({ page, 
             coordinateSystem: 'transport benchmark; not scientific geometry',
             referenceSpaceId: 'transport-benchmark',
             gridId: `transport-benchmark-${layout.depth}`,
-            voxelSizeUm: [25, 25, 25] as const,
+            voxelSizeUm: [resolutionUm, resolutionUm, resolutionUm] as const,
             originUm: [0, 0, 0] as const,
-            indexToWorldUm: [0, 25, 0, 0, 25, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 1],
-            worldToIndex: [0, 0.04, 0, 0, 0.04, 0, 0, 0, 0, 0, 0.04, 0, 0, 0, 0, 1],
-            voxelEdgeExtentUm: [-12.5, layout.shape[1] * 25 - 12.5, -12.5, layout.shape[0] * 25 - 12.5, -12.5, layout.shape[2] * 25 - 12.5] as const,
+            indexToWorldUm: [0, resolutionUm, 0, 0, resolutionUm, 0, 0, 0, 0, 0, resolutionUm, 0, 0, 0, 0, 1],
+            worldToIndex: [0, 1 / resolutionUm, 0, 0, 1 / resolutionUm, 0, 0, 0, 0, 0, 1 / resolutionUm, 0, 0, 0, 0, 1],
+            voxelEdgeExtentUm: [
+              -resolutionUm / 2,
+              layout.shape[1] * resolutionUm - resolutionUm / 2,
+              -resolutionUm / 2,
+              layout.shape[0] * resolutionUm - resolutionUm / 2,
+              -resolutionUm / 2,
+              layout.shape[2] * resolutionUm - resolutionUm / 2,
+            ] as const,
           },
           array: { dtype: 'float16' as const, endianness: 'little' as const, order: 'C' as const },
           resource: layout.resource,
@@ -135,7 +143,7 @@ test('real slice packs meet the request/cache path in Chromium', async ({ page, 
         initialPixels,
         userAgent: navigator.userAgent,
       };
-    }, { featureId: manifest.feature_id, layout });
+    }, { featureId: manifest.feature_id, layout, resolutionUm: manifest.resolution_um });
     userAgent = metrics.userAgent;
     const initialPaths = new Set(layout.files.filter((file) => {
       const match = /\/(\d+)\.f16\.gz$/.exec(file.path);

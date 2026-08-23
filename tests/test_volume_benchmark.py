@@ -11,7 +11,7 @@ def test_browser_benchmark_artifacts_preserve_exact_slice_pack_values(tmp_path: 
     source = np.arange(20 * 18 * 16 * 2, dtype=np.float16).reshape(20, 18, 16, 2)
     archive = tmp_path / "volume.npz"
     output = tmp_path / "artifacts"
-    np.savez_compressed(archive, ephys_atlas_vol=source)
+    np.savez_compressed(archive, ephys_atlas_vol=source, res_um=np.array([25], dtype=np.int32))
     script = Path(__file__).parents[1] / "benchmarks/rendering/prepare-volume-browser-benchmark.py"
 
     subprocess.run(
@@ -34,6 +34,7 @@ def test_browser_benchmark_artifacts_preserve_exact_slice_pack_values(tmp_path: 
     )
 
     manifest = json.loads((output / "benchmark-manifest.json").read_text())
+    assert manifest["resolution_um"] == 25
     layout = manifest["layouts"][0]
     assert layout["shape"] == [20, 18, 16]
     assert layout["axis_order"] == ["ap", "ml", "dv"]

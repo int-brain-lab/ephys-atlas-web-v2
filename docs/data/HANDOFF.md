@@ -74,14 +74,20 @@ The canonical implementation input is the private immutable
 `ea_active/2026_W26/brainwide_ephys_atlas_50um.npz` object. Its exact URI and
 official `ibleatools` access recipe are recorded in `docs/DATA_SOURCES.md`.
 The older `2026_W12` 25 µm object remains historical transport evidence.
+The W26 object has now been pulled and header-inspected locally: 238,954,924
+bytes, SHA-256
+`1f7509fe9e368a90704173bdb5c385827b199a7d5fa4b0aaa8fec5aca5402253`,
+with the documented shape/dtype and 41 features. Representative offline and
+Chromium depth-4/depth-8 results are in
+`docs/data/VOLUME_2026_W26_EVIDENCE.md`.
 
 The builder/schema/browser machinery supports both physical layouts, but no
 production scientific volume release may be built until Q4 supplies the
 authoritative axis mapping, affine/origin/directions, and any missing-value
 semantics beyond documented outside-brain zero. Q5 separately requires
-representative W26 and final-origin measurements before selecting the launch
-transport. Current evidence favors depth-four orthogonal slice packs without
-yet resolving that decision.
+final-origin measurements before selecting the launch transport. Completed W26
+local evidence favors depth-four orthogonal slice packs without yet resolving
+that decision.
 
 ## Source and provenance rules
 

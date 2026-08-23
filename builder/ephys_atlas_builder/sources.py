@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import re
 import shutil
@@ -15,6 +16,39 @@ DEFAULTS = {
     "ephys_atlas_clusters": {},
 }
 _LABEL_RE = re.compile(r"^\d{4}_W\d{2}$")
+
+
+def _download_encoding_volume(
+    data_module,
+    aws_module,
+    root: Path,
+    release: str,
+    project: str,
+    resolution_um: int,
+    one,
+    s3,
+    bucket_name: str,
+):
+    """Use the current ibleatools API, with its official AWS helper for older pins."""
+    downloader = data_module.download_encoding_volume
+    if "res_um" in inspect.signature(downloader).parameters:
+        return downloader(
+            root,
+            label=release,
+            project=project,
+            res_um=resolution_um,
+            one=one,
+        )
+    key = (
+        f"aggregates/atlas/encoding_volumes/{project}/{release}/"
+        f"brainwide_ephys_atlas_{resolution_um}um.npz"
+    )
+    return aws_module.s3_download_file(
+        key,
+        root / f"brainwide_ephys_atlas_{resolution_um}um.npz",
+        s3=s3,
+        bucket_name=bucket_name,
+    )
 
 
 def _files(root: Path) -> list[dict]:
@@ -86,7 +120,12 @@ def _latest_encoding_volume_label(s3, bucket_name: str, project: str) -> str:
 
 
 def _canonical_source(
-    dataset: str, bucket_name: str, project: str, release: str
+    dataset: str,
+    bucket_name: str,
+    project: str,
+    release: str,
+    *,
+    resolution_um: int | None = None,
 ) -> dict:
     if dataset == "ephys_atlas_channels":
         key = f"aggregates/atlas/features/{project}/{release}/agg_full/"
@@ -96,9 +135,11 @@ def _canonical_source(
             "uri": f"s3://{bucket_name}/{key}",
         }
     if dataset == "ephys_atlas_volumes":
+        if resolution_um is None:
+            raise ValueError("volume canonical source requires an explicit resolution_um")
         key = (
             f"aggregates/atlas/encoding_volumes/{project}/{release}/"
-            "brainwide_ephys_atlas_25um.npz"
+            f"brainwide_ephys_atlas_{resolution_um}um.npz"
         )
         return {"bucket": bucket_name, "key": key, "uri": f"s3://{bucket_name}/{key}"}
     if dataset == "ephys_atlas_clusters":
@@ -117,6 +158,7 @@ def pull(
     dest: Path,
     *,
     project: str | None = None,
+    resolution_um: int | None = None,
 ) -> Path:
     """Snapshot current canonical scientific artifacts without recomputing science.
 
@@ -146,6 +188,16 @@ def pull(
     elif project is not None:
         raise ValueError(
             f"--project is only configurable for ephys_atlas_clusters; {dataset} uses its canonical project"
+        )
+
+    if dataset == "ephys_atlas_volumes":
+        if resolution_um is None or resolution_um <= 0:
+            raise ValueError(
+                "pulling ephys_atlas_volumes requires an explicit positive --resolution-um"
+            )
+    elif resolution_um is not None:
+        raise ValueError(
+            f"--resolution-um is only configurable for ephys_atlas_volumes; {dataset} has no volume resolution"
         )
 
     try:
@@ -196,10 +248,24 @@ def pull(
                 root, label=release, project=project, one=one, verify=True
             )
         else:
-            ephysatlas.data.download_encoding_volume(
-                root, label=release, project=project, one=one
+            _download_encoding_volume(
+                ephysatlas.data,
+                aws,
+                root,
+                str(release),
+                project,
+                resolution_um,
+                one,
+                s3,
+                bucket_name,
             )
         files = _files(root)
+        if dataset == "ephys_atlas_volumes":
+            expected = root / f"brainwide_ephys_atlas_{resolution_um}um.npz"
+            if not expected.is_file():
+                raise RuntimeError(
+                    f"volume downloader did not produce expected artifact: {expected}"
+                )
 
     source = {
         "schema_version": "1.0",
@@ -208,7 +274,11 @@ def pull(
         "resolved_release": str(release),
         "project": project,
         "canonical_source": _canonical_source(
-            dataset, bucket_name, project, str(release)
+            dataset,
+            bucket_name,
+            project,
+            str(release),
+            resolution_um=resolution_um,
         ),
         "files": files,
     }

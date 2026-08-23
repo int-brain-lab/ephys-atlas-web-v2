@@ -93,6 +93,10 @@ The current implementation input is the immutable `2026_W26` 50 um object at
 the exact URI recorded in `docs/DATA_SOURCES.md`. The official `ibleatools`
 guide documents shape `(228, 264, 160, 41)`, float16 raw/unnormalized values,
 optional non-pre-applied z-scoring metadata, and outside-brain value `0.0`.
+The authenticated local snapshot is 238,954,924 bytes with SHA-256
+`1f7509fe9e368a90704173bdb5c385827b199a7d5fa4b0aaa8fec5aca5402253`;
+its header and transport evidence are recorded in
+`docs/data/VOLUME_2026_W26_EVIDENCE.md`.
 
 The older documented `2026_W12` vintage contains `ephys_atlas_vol` with shape
 `(456, 528, 320, 41)` and float16 values, feature names, per-feature mean/std,

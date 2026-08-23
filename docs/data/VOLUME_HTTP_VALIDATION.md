@@ -8,6 +8,10 @@ volume implementation should use the documented `2026_W26` 50 um object and
 official access recipe in `docs/DATA_SOURCES.md`, then repeat the relevant
 measurements rather than treating the values below as current-source facts.
 
+The W26 source has since been pulled, checksummed, header-inspected, and
+benchmarked locally. See `docs/data/VOLUME_2026_W26_EVIDENCE.md`. The HTTP
+observations below remain historical because no production origin is available.
+
 ## Source under test
 
 Canonical scientific source:

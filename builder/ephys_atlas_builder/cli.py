@@ -118,6 +118,11 @@ def main(argv: list[str] | None = None) -> int:
         "--project",
         help="required explicit project for ephys_atlas_clusters; other datasets use canonical projects",
     )
+    p.add_argument(
+        "--resolution-um",
+        type=int,
+        help="required explicit source resolution for ephys_atlas_volumes",
+    )
 
     p = sub.add_parser(
         "build-channels",
@@ -198,7 +203,13 @@ def main(argv: list[str] | None = None) -> int:
             validate_release(release, args.schema_dir)
             print(f"generated and validated: {release}")
         elif args.cmd == "pull":
-            path = pull(args.dataset, args.release, args.dest, project=args.project)
+            path = pull(
+                args.dataset,
+                args.release,
+                args.dest,
+                project=args.project,
+                resolution_um=args.resolution_um,
+            )
             print(path)
         elif args.cmd == "build-channels":
             resolved = resolve_source_release(

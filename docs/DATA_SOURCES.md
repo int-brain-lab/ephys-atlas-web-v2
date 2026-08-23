@@ -184,9 +184,8 @@ See `docs/IMPLEMENTATION_PLAN.md` for execution order. The highest-value source-
 1. freeze the paper channel vintage under Q2 and publish the already-validated
    development release to a non-production origin;
 2. resolve Q4 from authoritative atlas/producer evidence;
-3. inspect and checksum the `2026_W26` 50 um object, then repeat representative
-   encoding-volume browser transport benchmarks for Q5; retain `2026_W12`
-   results as explicitly historical evidence;
+3. repeat the completed local `2026_W26` 50 um representative transport
+   benchmarks under the eventual production cache/network profile for Q5;
 4. build and review the content-addressed `ibl_neuropixel_brainwide_01` cluster
    source audit and proposed scalar catalog;
 5. build the schema-v1 preserved legacy BWM release with equivalence evidence;

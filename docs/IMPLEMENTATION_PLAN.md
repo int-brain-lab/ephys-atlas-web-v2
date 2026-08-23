@@ -145,11 +145,10 @@ Ordered next actions before scientific resolution:
 
 1. rebuild external development releases under new schema-v1 release IDs
    before using the opt-in real-release suite; do not add a compatibility reader;
-2. pull, checksum, and header-inspect the documented `2026_W26` object, then
-   repeat the real-feature slice-pack benchmarks on representative feature
-   distributions and the eventual HTTP/CDN origin;
-3. compare the current depth-4 recommendation against depth 8 under production
-   cache headers/network profiles without selecting the winner prematurely;
+2. retain the completed checksum/header inspection and representative local
+   W26 depth-4/depth-8 layout and Chromium evidence;
+3. repeat the current depth-4 recommendation against depth 8 under production
+   cache headers/network profiles before selecting the winner;
 4. deploy the projection pack with immutable caching and transport-opaque gzip,
    and verify its headers and encoded hashes from the selected origin;
 5. keep failures explicit for invalid transforms, out-of-volume coordinates,

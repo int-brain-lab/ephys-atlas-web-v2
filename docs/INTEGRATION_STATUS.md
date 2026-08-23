@@ -418,21 +418,23 @@ cancellation cannot poison a current consumer.
 
 This proves the browser architecture, not the production science. Q4 still
 blocks the authoritative affine/axis mapping and any remaining missing-value
-semantics. Q5 remains
-open until representative features and the final HTTP/CDN origin confirm the
+semantics. Q5 remains open until the final HTTP/CDN origin confirms the
 transport choice.
 
 The current implementation input is the private immutable `ea_active`
 `2026_W26` 50 um object. Its exact URI and official `ibleatools` access recipe
-are recorded in `docs/DATA_SOURCES.md`; existing `2026_W12` 25 um results are
-historical transport evidence that must be repeated against the newer object.
+are recorded in `docs/DATA_SOURCES.md`. The authenticated snapshot is
+238,954,924 bytes with SHA-256
+`1f7509fe9e368a90704173bdb5c385827b199a7d5fa4b0aaa8fec5aca5402253`.
 
-Current evidence favors depth-four orthogonal slice packs. Offline real-volume
+Current W26 evidence favors depth-four orthogonal slice packs. Offline
 measurements for `psd_lfp`, `rms_ap`, and `polarity` require three center-plane
-objects and 0.83–3.32 MiB gzip, versus 136–534 cube requests and 5.21–21.77 MiB.
-The implemented real-`rms_ap` Chromium adapter measured 37.8/54.1 ms p50/p95
-for three cold planes, 0.8/1.5 ms cached neighbor navigation, and 3.7/8.7 ms for
-six-plane prepare-and-paint.
+objects and 0.20–0.36 MiB gzip, versus 36–136 cube requests and 1.35–4.56 MiB.
+Ten-trial local Chromium measurements put depth-4 cold planes at 14.6–15.5 ms
+p50 and 29.5–40.0 ms p95, cached navigation at 2.4–2.6 ms p50 with no requests,
+and six-plane paint at 1.7–2.3 ms p50. Depth 8 roughly doubles center bytes and
+raises cold p50 to 24.3–26.2 ms. The committed raw reports and limitations are
+summarized in `docs/data/VOLUME_2026_W26_EVIDENCE.md`.
 
 ## Local data and downloads
 

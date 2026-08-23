@@ -74,15 +74,15 @@ Schema v1 permits `chunks3d` and `orthogonal_slice_packs`. `chunks3d` is the det
 
 Resolution needed: benchmark representative real features and choose a layout using recorded request count, transferred bytes, decode latency, interaction latency, and memory. Benchmark multiple chunk/pack sizes as appropriate.
 
-Current evidence: real `2026_W12` offline benchmarks for `psd_lfp`, `rms_ap`,
-and `polarity` measure 32³/64³ chunks and 4/8-slice packs. Packs need only three
-center-plane objects and 0.83–3.32 MiB gzip versus 136/534 cube objects and
-5.21–21.77 MiB. A ten-trial real-`rms_ap` Chromium benchmark of the implemented
-adapter measured depth-4 cold planes at 37.8/54.1 ms p50/p95, cached navigation
-at 0.8/1.5 ms with zero requests, and six-plane prepare+paint at 3.7/8.7 ms.
-Depth 4 is the current recommendation; it still needs confirmation on more
-feature distributions and the final HTTP/CDN origin before this question is
-resolved.
+Current evidence: the checksummed `2026_W26` source was measured for `psd_lfp`,
+`rms_ap`, and `polarity`. Depth-4 packs require three center-plane objects and
+0.20–0.36 MiB gzip versus 36–136 cube objects and 1.35–4.56 MiB. Ten-trial local
+Chromium measurements put depth-4 cold planes at 14.6–15.5 ms p50 and
+29.5–40.0 ms p95, with cached navigation at 2.4–2.6 ms p50 and no requests.
+Depth 8 roughly doubles cold bytes and raises cold p50 to 24.3–26.2 ms. Depth 4
+remains the recommendation; Q5 still needs confirmation under production cache
+headers and network profiles. Exact evidence is in
+`docs/data/VOLUME_2026_W26_EVIDENCE.md`.
 
 Blocks: final browser volume transport and production packaging recipe.
 
