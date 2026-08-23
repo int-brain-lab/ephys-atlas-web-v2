@@ -98,6 +98,11 @@ and `polarity`; see `docs/data/VOLUME_2026_W26_EVIDENCE.md`. Q4 still requires
 authoritative scientific geometry, and Q5 still requires the eventual
 deployment-origin cache/network profile.
 
+The Q4 visual-review machinery is now a standalone local page, not another
+application renderer. It compares all eight shape-compatible direction
+candidates and the two coordinate conventions without selecting or installing
+an affine. See `docs/data/VOLUME_GEOMETRY_REVIEW.md`.
+
 ## 3-D
 
 The independent 3-D lab remains outside this viewport and the M2 acceptance

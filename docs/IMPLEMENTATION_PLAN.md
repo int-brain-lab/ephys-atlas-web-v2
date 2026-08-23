@@ -143,23 +143,27 @@ historical transport evidence, not the default input for new implementation.
 
 Ordered next actions before scientific resolution:
 
-1. rebuild external development releases under new schema-v1 release IDs
+1. have the scientific owner complete the local eight-candidate W26 geometry
+   review in `docs/data/VOLUME_GEOMETRY_REVIEW.md`, return the exported choice
+   and authoritative rationale, and record the resulting decision without
+   treating mask overlap as authority;
+2. rebuild external development releases under new schema-v1 release IDs
    before using the opt-in real-release suite; do not add a compatibility reader;
-2. retain the completed checksum/header inspection and representative local
+3. retain the completed checksum/header inspection and representative local
    W26 depth-4/depth-8 layout and Chromium evidence;
-3. repeat the current depth-4 recommendation against depth 8 under production
+4. repeat the current depth-4 recommendation against depth 8 under production
    cache headers/network profiles before selecting the winner;
-4. deploy the projection pack with immutable caching and transport-opaque gzip,
+5. deploy the projection pack with immutable caching and transport-opaque gzip,
    and verify its headers and encoded hashes from the selected origin;
-5. keep failures explicit for invalid transforms, out-of-volume coordinates,
+6. keep failures explicit for invalid transforms, out-of-volume coordinates,
    resource-integrity errors, and unsupported layouts.
 
 After Q4/Q5 resolution:
 
-6. encode the authoritative transform/outside semantics;
-7. select and document the production layout;
-8. build a real immutable `ephys_atlas_volumes` release;
-9. run linked-slice browser acceptance against it.
+7. encode the authoritative transform/outside semantics;
+8. select and document the production layout;
+9. build a real immutable `ephys_atlas_volumes` release;
+10. run linked-slice browser acceptance against it.
 
 Acceptance reference: `docs/LAUNCH_SPEC.md` sections 3 and 6.
 

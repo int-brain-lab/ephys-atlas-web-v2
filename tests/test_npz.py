@@ -1,7 +1,11 @@
 from pathlib import Path
 
 import numpy as np
-from ephys_atlas_builder.npz import extract_last_axis_feature, inspect_volume_npz
+from ephys_atlas_builder.npz import (
+    extract_last_axis_feature,
+    extract_last_axis_nonzero_mask,
+    inspect_volume_npz,
+)
 
 
 def test_inspect_volume_npz_reads_headers_without_loading_payloads(tmp_path: Path):
@@ -47,3 +51,19 @@ def test_extract_last_axis_feature_streams_exact_values(tmp_path: Path):
     assert report["dtype"] == "float16"
     assert report["dtype_descriptor"] == "<f2"
     assert report["feature_index"] == 1
+
+
+def test_extract_last_axis_nonzero_mask_streams_across_features(tmp_path: Path):
+    values = np.zeros((2, 3, 4, 3), dtype=np.float16)
+    values[0, 1, 2, 1] = 4
+    values[1, 2, 3, 2] = np.nan
+    archive = tmp_path / "volume.npz"
+    output = tmp_path / "mask.npy"
+    np.savez_compressed(archive, ephys_atlas_vol=values)
+
+    report = extract_last_axis_nonzero_mask(archive, output, block_voxels=5)
+    mask = np.load(output)
+    assert mask.dtype == np.bool_
+    assert report["output_shape"] == [2, 3, 4]
+    assert report["nonzero_count"] == 2
+    assert np.array_equal(mask, np.any(values != 0, axis=-1))

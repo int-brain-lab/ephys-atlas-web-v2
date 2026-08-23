@@ -424,6 +424,14 @@ blocks the authoritative affine/axis mapping and any remaining missing-value
 semantics. Q5 remains open until the final HTTP/CDN origin confirms the
 transport choice.
 
+A standalone, ignored local review artifact now compares the eight direction
+candidates permitted by the exact W26/Allen grid-shape match in linked
+orthogonal views. It also exposes voxel-center versus half-voxel-shifted
+coordinates and exports a reviewer choice without changing production state.
+The all-forward mask candidate currently ranks first, but no transform has been
+selected; procedure and limitations are in
+`docs/data/VOLUME_GEOMETRY_REVIEW.md`.
+
 The current implementation input is the private immutable `ea_active`
 `2026_W26` 50 um object. Its exact URI and official `ibleatools` access recipe
 are recorded in `docs/DATA_SOURCES.md`. The authenticated snapshot is

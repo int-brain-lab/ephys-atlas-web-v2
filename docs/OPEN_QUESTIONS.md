@@ -59,6 +59,13 @@ pre-applied, and `0.0` denotes outside-brain voxels. Shape and resolution alone
 are still not a scientific coordinate transform. The browser implementation
 deliberately requires an explicit `index_to_world_um` transform.
 
+A deterministic local review page now compares the eight direction candidates
+allowed by the exact W26/Allen shape match in three linked views, with
+voxel-center and half-voxel-shifted coordinate conventions. The current mask
+evidence ranks the all-forward candidate first (Dice `0.9940758117`), but does
+not prove handedness or the index-center convention. See
+`docs/data/VOLUME_GEOMETRY_REVIEW.md`. No candidate has been selected.
+
 Resolution needed: authoritative scientific axis mapping, origin/affine,
 handedness/directions, and any missing-value semantics distinct from the
 documented outside-brain zero. The measured C-order storage layout is a

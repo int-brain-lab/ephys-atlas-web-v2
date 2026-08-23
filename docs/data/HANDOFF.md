@@ -90,6 +90,12 @@ final-origin measurements before selecting the launch transport. Completed W26
 local evidence favors depth-four orthogonal slice packs without yet resolving
 that decision.
 
+The local, non-production eight-candidate geometry review is implemented and
+documented in `docs/data/VOLUME_GEOMETRY_REVIEW.md`. Its mask ranking is useful
+evidence but is not authoritative; the next Q4 action is scientific-owner
+visual review, an exported selection with rationale, and independent source or
+generator confirmation before recording a decision.
+
 ## Source and provenance rules
 
 - Pulled inputs receive a `source.json` inventory with paths, byte sizes,

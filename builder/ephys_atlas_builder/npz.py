@@ -127,3 +127,68 @@ def extract_last_axis_feature(
         "bytes": output_npy.stat().st_size,
         "sha256": sha256_file(output_npy),
     }
+
+
+def extract_last_axis_nonzero_mask(
+    npz_path: Path,
+    output_npy: Path,
+    *,
+    member: str = "ephys_atlas_vol.npy",
+    block_voxels: int = 131_072,
+) -> dict:
+    """Stream a C-order last-axis array into an any-feature nonzero mask."""
+    if block_voxels < 1:
+        raise ValueError("block_voxels must be positive")
+    npz_path = npz_path.resolve()
+    output_npy = output_npy.resolve()
+    output_npy.parent.mkdir(parents=True, exist_ok=True)
+    with ZipFile(npz_path) as archive, archive.open(member) as stream:
+        shape, fortran_order, dtype, _version = _npy_header(stream)
+        if fortran_order or len(shape) != 4:
+            raise ValueError(
+                "mask extraction requires a C-order 4-D array with a last feature axis"
+            )
+        spatial_shape = shape[:-1]
+        feature_count = shape[-1]
+        voxel_count = int(np.prod(spatial_shape, dtype=np.int64))
+        output = format.open_memmap(
+            output_npy, mode="w+", dtype=np.bool_, shape=spatial_shape
+        )
+        flat_output = output.reshape(-1)
+        row_bytes = feature_count * dtype.itemsize
+        offset = 0
+        nonzero_count = 0
+        while offset < voxel_count:
+            count = min(block_voxels, voxel_count - offset)
+            wanted = count * row_bytes
+            chunks = []
+            received = 0
+            while received < wanted:
+                chunk = stream.read(wanted - received)
+                if not chunk:
+                    raise ValueError(
+                        f"truncated {member}: expected {wanted} bytes at voxel {offset}"
+                    )
+                chunks.append(chunk)
+                received += len(chunk)
+            block = np.frombuffer(b"".join(chunks), dtype=dtype).reshape(
+                count, feature_count
+            )
+            mask = np.any(block != 0, axis=1)
+            flat_output[offset : offset + count] = mask
+            nonzero_count += int(mask.sum())
+            offset += count
+        if stream.read(1):
+            raise ValueError(f"{member} contains payload bytes beyond its declared shape")
+        output.flush()
+    return {
+        "source": str(npz_path),
+        "member": member,
+        "source_shape": list(shape),
+        "output": str(output_npy),
+        "output_shape": list(spatial_shape),
+        "dtype": "bool",
+        "nonzero_count": nonzero_count,
+        "bytes": output_npy.stat().st_size,
+        "sha256": sha256_file(output_npy),
+    }
