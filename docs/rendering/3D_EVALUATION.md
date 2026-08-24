@@ -1,12 +1,11 @@
 # 3-D brain-mesh evaluation and implementation plan
 
-Status: **approved independent non-production lab (2026-08-22)**. Production
-promotion remains optional and is tracked by Q12.
+Status: **lab complete; GLB-derived compiled-full geometry selected by D042
+(2026-08-24)**. Immutable deployment remains optional and non-blocking.
 
-The exact local regeneration and owner review handoff is now
-`docs/rendering/3D_PROMOTION_REVIEW.md`. The owner approved canonical bilateral
-regeneration for Allen 927, 526322264, and 599626923; this does not approve a
-production asset or final LOD.
+D042 supersedes the later canonical-annotation regeneration direction. The
+pinned GLB is the 3-D geometry authority; do not generate replacement surfaces
+from the annotation volume.
 
 The experiment is implemented in the frozen donor branch at `ba1e2d1`.
 Main-application promotion must follow `docs/rendering/3D_INTEGRATION_PLAN.md`;
@@ -144,8 +143,8 @@ Create one immutable `atlas-mesh-pack-v1` manifest. It records:
 - pack ID, format/version, creation tool/version/commit, and deterministic build
   command;
 - source GLB URL, byte size, SHA-256, and geometry inventory;
-- canonical annotation/LUT identities and hashes used for coordinate,
-  hemisphere, mapping, centroid, color, and coverage validation;
+- source inventory and reviewed coordinate, hemisphere, mapping, centroid,
+  color, and coverage evidence;
 - `reference_space_id`, separate geometry/grid and pack IDs, source/output
   axes, units, transform, handedness, and canonical brain center;
 - one record per geometry identity: positive source Allen ID, signed
@@ -315,18 +314,13 @@ and Safari:
 
 The lab slice is complete when:
 
-- every active signed region is present or explicitly blocked by Q12;
+- every selected GLB-derived signed surface is represented exactly once;
 - source, coordinate, mapping, centroid, color, compression, and output hashes
   validate deterministically;
-- the default LOD meets the small-view visual review and interaction remains
-  responsive on target browsers;
+- the selected compiled-full resource remains responsive on target browsers;
 - mapping/color/explode changes fetch no geometry and rebuild no mesh buffers;
-- default loading is one request, high loading is at most one additional
-  request, and 2-D remains usable under every 3-D failure;
+- compiled-full loading is one request and 2-D remains usable under every 3-D
+  failure;
 - the standalone lab and reusable modules are tested and `just check` is green;
-- production asset promotion and removal of the experimental label remain a
-  separate explicit Q12 decision.
-
-When resuming this work, do not infer review requirements from this historical
-evaluation narrative. Produce and walk through every artifact and sign-off row
-in `docs/rendering/3D_PROMOTION_REVIEW.md`.
+- immutable deployment and removal of the experimental label remain separate
+  operational work.

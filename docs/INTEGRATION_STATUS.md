@@ -131,29 +131,15 @@ creates an explicitly configured immutable viewport, pauses hidden work, shares
 presentation, selection, and camera state, isolates failures, and owns teardown.
 Without a descriptor the null host remains request-free. The canonical synthetic mesh is
 injected only by the browser-test server, never as a runtime fallback.
-Exact local production inputs have now been found and verified. The owner
-approved deepest-active grey matter, the Allen 545 source exclusion, the Allen
-898 open-midline exception, and nullable reduced mappings. Deterministic local
-inventory and canonical 10 um LUT centroid evidence machinery is present, but
-its fail-closed audit found four of 1,130 signed annotation centroids outside
-the pinned GLB bounds (three absolute Allen IDs; maximum 109.447 um). No
-production manifest was emitted. The owner has since approved canonical
-regeneration of the complete bilateral
-source identities for Allen 927, 526322264, and 599626923. Local candidate work
-implemented that exact scope, including deterministic ambiguous-contact
-separation, but a later source-scope gate found unilateral-only frozen-donor
-surfaces for Allen 222 and 763. The donor is 566 positive / 1,130 signed while
-canonical metadata is 566 / 1,132 and schema v1 requires bilateral sources;
-the planned 565 / 1,130 contract could not be emitted without a new scientific
-scope decision. On 2026-08-24 the owner authorized canonical bilateral
-regeneration for those two IDs. Candidate `local-review-a60a248df394fc58` now
-contains 566 positive / 1,132 signed regions and passes schema, complete graph,
-integrity, deterministic rebuild, topology, bounds, and retained-presentation
-browser gates. Its metrics, review UI, and screenshots are complete under
-ignored artifacts. The durable owner-review checklist is in
-`docs/rendering/3D_PROMOTION_REVIEW.md`. Q12 still blocks final human LOD/
-cross-browser review, immutable-origin deployment, and promotion; publication
-remains unapproved.
+D042 resolves the optional 3-D geometry and LOD direction using the frozen
+donor's GLB-derived compiled-full resource: 4,958,039 bytes, SHA-256
+`658d68d81619ef83f7dbd6b032533ecd751fb52d3e7dd734dc90b1086b95baaa`,
+989,811 retained triangles, and 1,130 signed surfaces from 566 in-scope GLB
+objects. It selects no smoothing, no triangle decimation, no voxel-derived
+replacement surfaces, and no upgrade LOD. The experimental main adapter and
+fixture-backed runtime remain implemented; immutable schema-v1 repackaging and
+deployment are non-blocking operational follow-up. Encoding volumes remain a
+separate linked 2-D slice path.
 
 The approved anatomy smoothing investigation has completed its first three
 implementation slices. A deterministic registry exposes exact geometry, GEOS
@@ -181,8 +167,9 @@ Optional main-application integration is approved through D037 and
 inside the existing secondary/context slot, backed by a sibling retained 3-D
 viewport and the application's one regional-presentation/state lifecycle.
 `ProjectionRegistry` remains 2-D-specific. The optional application integration
-is complete through Commit 6; production assets, promotion evidence, and
-removal of the experimental label remain blocked by Q12.
+is complete through Commit 6. D042 fixes its GLB-derived geometry/LOD direction;
+production asset deployment and removal of the experimental label remain
+non-blocking operational work.
 
 The regional UI keeps DOM concerns in its controller while region search/value/statistics derivation is pure/testable. Large dynamic tree interaction uses delegated events.
 The region browser defaults to the expandable anatomical hierarchy and offers

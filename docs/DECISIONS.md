@@ -621,22 +621,31 @@ leave every unaffected identity pinned to the GLB. This approval is local-only
 and does not authorize smoothing/manual repair, additional IDs, final LOD
 selection, publication, a default descriptor, removal of the experimental
 label, or donor retirement. The binding handoff is
-`docs/rendering/3D_PROMOTION_REVIEW.md`.
+`docs/rendering/3D_PROMOTION_REVIEW.md`. D042 subsequently supersedes this
+regeneration direction.
 
-Implementation of that exact six-surface regeneration exposed a separate
-unresolved donor-scope contradiction on 2026-08-24. The frozen donor has only
-the negative/left surface for Allen 222 (`RO`) and 763 (`OV`), yielding 566
-unique sources but 1,130 signed surfaces; canonical LUT metadata is fully
-bilateral at 566 / 1,132, while the approved checklist says 565 / 1,130.
-D041 makes no scientific choice for these IDs. Candidate generation therefore
-fails closed before manifest emission. Regeneration, exclusion, duplication,
-relabeling, or a bilateral-contract exception requires a new owner decision.
+## D042 — Freeze 3-D anatomy to the complete GLB-derived lab resource
 
-The owner supplied that decision on 2026-08-24: regenerate both signed halves
-of Allen 222 and 763 from the same pinned canonical bilateral LUT, extending
-the exact override allowlist to five positive IDs. The effective production
-candidate scope is consequently 566 positive / 1,132 signed regions. No donor
-surface is duplicated or relabeled. Candidate `local-review-a60a248df394fc58`
-passes the automated local gates; this decision still does not approve its
-geometry visually, select final LODs, authorize publication, or remove the
-experimental label.
+Supersede D041's canonical-annotation regeneration direction. The optional 3-D
+view exists only to show the Allen region surfaces supplied by the pinned
+public `atlas/meshes.glb`; it is not a geometric representation of an ephys
+feature volume and is not required to match the separately generated 2-D
+projection inventory region-for-region. Missing or unilateral GLB geometry is
+recorded as source provenance and is not synthesized from annotation voxels.
+
+Select the frozen donor lab's `source.eamh.gz` compiled-full resource as the
+geometry and LOD evidence baseline: 4,958,039 served bytes, SHA-256
+`658d68d81619ef83f7dbd6b032533ecd751fb52d3e7dd734dc90b1086b95baaa`,
+989,811 triangles, and 1,130 signed surfaces derived from 566 deepest-active
+grey-matter GLB objects. It retains every triangle after the already-reviewed
+product scope, exact ML=0 bilateral cut, and planar midline caps. Its 14-bit
+position and 8-bit normal quantization plus meshopt/gzip transport remain
+accepted; triangle decimation, smoothing, voxel-derived replacement geometry,
+and an upgrade LOD are not selected.
+
+The current snake_case schema-v1 runtime may repackage these exact selected
+surfaces into its EAM3 transport, but that conversion must preserve the
+selected source inventory and triangle topology and must not reopen scientific
+geometry review. Publication location and immutable deployment remain
+operational follow-up work. Ephys encoding volumes remain a separate product
+path rendered only as linked coronal, sagittal, and horizontal 2-D slices.

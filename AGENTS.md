@@ -101,14 +101,12 @@ Scientific provenance is part of the product contract, not optional metadata.
   facade. Build web mesh packs from pinned inputs with deterministic provenance,
   integrity, coverage, LOD, and visual-quality gates; do not serve the raw
   monolithic source GLB as the production contract.
-- For Q12, the repository owner has approved local canonical-annotation
-  regeneration of the complete bilateral source identities for Allen 927,
-  526322264, and 599626923. This does not authorize any other regenerated ID,
-  smoothing/manual repair, publication, final LOD selection, removal of the
-  experimental label, or donor retirement. Follow the exact implementation,
-  evidence, stop conditions, and owner review checklist in
-  `docs/rendering/3D_PROMOTION_REVIEW.md`; keep generated evidence under
-  ignored `artifacts/`.
+- The pinned public GLB is the geometry authority for the optional 3-D anatomy
+  view. D042 selects the donor lab's 4,958,039-byte compiled-full resource:
+  retain every in-scope GLB triangle after the already-reviewed grey-matter
+  scope, bilateral cut, and planar caps; do not smooth, decimate, regenerate
+  from annotation voxels, or require geometry absent from the GLB. The 3-D
+  view is independent of volume features, which remain linked 2-D slices.
 
 ## Frontend constraints
 

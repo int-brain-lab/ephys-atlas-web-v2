@@ -249,13 +249,10 @@ The following are not launch blockers unless later promoted by an explicit decis
 - full OAuth/user identity
 - broad compatibility with legacy custom-bucket URLs
 
-An isolated non-production 3-D brain-mesh lab may proceed concurrently with
-launch work. It remains optional, failure-isolated, and outside launch
-acceptance until it passes the promotion gates in
-`docs/rendering/3D_EVALUATION.md`. Any resumed promotion work must use the
-exact regeneration and owner-review handoff in
-`docs/rendering/3D_PROMOTION_REVIEW.md`; its existence must not delay or fork
-the launch-critical 2-D workspace.
+The optional 3-D anatomy view uses only the pinned GLB-derived compiled-full
+surface resource selected by D042. It remains failure-isolated and outside
+launch acceptance. It must not trigger voxel-derived mesh generation or delay
+the launch-critical linked 2-D volume workspace.
 
 ## Definition of launch-ready
 

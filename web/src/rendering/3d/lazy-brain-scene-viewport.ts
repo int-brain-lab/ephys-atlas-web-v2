@@ -74,7 +74,6 @@ class LazyBrainScene3DViewport implements BrainScene3DViewport {
   private inner: BrainScene3DViewport | null = null;
   private presentation: RegionalPresentation | null = null;
   private viewState: Scene3DViewState | null = null;
-  private focusedRegionId: number | null = null;
   private active = false;
   private destroyed = false;
 
@@ -95,12 +94,6 @@ class LazyBrainScene3DViewport implements BrainScene3DViewport {
     this.assertActiveObject();
     this.viewState = state;
     this.inner?.setViewState(state);
-  }
-
-  focusRegion(signedAllenId: number | null): void {
-    this.assertActiveObject();
-    this.focusedRegionId = signedAllenId;
-    this.inner?.focusRegion(signedAllenId);
   }
 
   activate(): void {
@@ -133,7 +126,6 @@ class LazyBrainScene3DViewport implements BrainScene3DViewport {
     this.inner = viewport;
     if (this.presentation) viewport.setPresentation(this.presentation);
     if (this.viewState) viewport.setViewState(this.viewState);
-    viewport.focusRegion(this.focusedRegionId);
     if (this.active) viewport.activate();
     else viewport.deactivate();
   }

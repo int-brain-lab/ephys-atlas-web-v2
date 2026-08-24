@@ -140,6 +140,8 @@ Current implementation input: the private immutable `ea_active` `2026_W26`
 50 um object. Its exact S3 URI and the official `ibleatools` access recipe are
 recorded in `docs/DATA_SOURCES.md`. The older `2026_W12` 25 um measurements are
 historical transport evidence, not the default input for new implementation.
+The complete cross-machine continuation contract is
+`docs/data/VOLUME_IMPLEMENTATION_HANDOFF.md`.
 
 Ordered next actions before scientific resolution:
 
@@ -197,8 +199,8 @@ scientific boundaries, and promotion stopping point are specified in
 
 ## P3D — Independent brain-mesh 3-D lab
 
-Status: **experiment implemented in frozen donor; main Commits 0-6 complete;
-production promotion blocked by Q12 and non-blocking for launch**.
+Status: **geometry and LOD direction resolved by D042; runtime integration
+complete through Commit 6; immutable deployment is non-blocking follow-up**.
 
 The explicitly authorized worktree described by `AGENTS.md` has completed its
 experimental purpose and now remains frozen as donor evidence. Its isolation
@@ -213,14 +215,10 @@ verified EAM3/meshopt loading, merged rendering, mapping/color/selection,
 press-referenced arcball controls, and grouped explode. It is evidence, not an
 integration branch: do not bulk merge or rebase it onto `main`.
 
-Reconstruct the approved integration on current `main` in the ordered commits
-defined by `docs/rendering/3D_INTEGRATION_PLAN.md`: converge one production
-asset contract; add the verified worker-owned source; extract a retained
-renderer and thin standalone lab; share regional presentation with 2-D;
-registry-drive context content and URL state; wire a thin application adapter;
-then complete Q12 evidence and cleanup. The existing secondary/context slot is
-the integration seam; the four workspace slots and 2-D projection registry do
-not gain a permanent fifth panel or 3-D projection.
+The approved integration was reconstructed on `main` in the ordered commits
+defined by `docs/rendering/3D_INTEGRATION_PLAN.md`. The existing
+secondary/context slot is the integration seam; the four workspace slots and
+2-D projection registry do not gain a permanent fifth panel or 3-D projection.
 
 Commit 0 recorded green current-main and frozen-donor baselines without copying
 or rebasing donor code. Commit 1 established the sole snake_case schema-v1
@@ -245,21 +243,15 @@ optional adapter: an explicitly configured immutable descriptor lazily creates
 the retained viewport, shared presentation/selection/camera state stays linked,
 hidden work pauses, failures remain isolated, and teardown is owned. The
 canonical fixture is injected only by the browser-test server and is never a
-runtime fallback. Commit 7 now has deterministic local active-inventory and
-canonical-centroid evidence machinery. Exact inputs were found and verified,
-and the owner approved scope, Allen 545, Allen 898, and nullable-mapping
-choices. The fail-closed audit found four signed centroids outside the pinned
-GLB bounds (three absolute Allen IDs; maximum 109.447 um). The owner has now
-approved canonical regeneration of all six bilateral halves for those three
-positive IDs, and that exact regeneration is implemented. The next scope gate
-found that frozen-donor Allen 222 and 763 have only left signed surfaces: the
-donor is 566 positive / 1,130 signed, canonical metadata is 566 / 1,132, and
-schema v1 requires bilateral sources. The owner authorized canonical bilateral
-regeneration for those IDs on 2026-08-24. The resulting 566 / 1,132 candidate
-passes deterministic build, graph, integrity, geometry, and automated browser
-evidence gates; its local review bundle is ready. See
-`docs/rendering/3D_PROMOTION_REVIEW.md`. Q12 still blocks owner LOD/
-cross-browser review, immutable-origin deployment, and promotion.
+runtime fallback.
+
+D042 closes the geometry/LOD question with the already reviewed donor
+compiled-full resource: pinned GLB geometry, 4,958,039 bytes, 989,811 retained
+triangles, no smoothing, no triangle decimation, and no upgrade LOD. The later
+canonical-annotation regeneration direction is retired. Remaining 3-D work is
+limited to schema-v1 repackaging that preserves the selected inventory and
+topology, immutable deployment, and ordinary cross-browser release checks. It
+is not the next product milestone and must not delay M2 volume work.
 
 Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 

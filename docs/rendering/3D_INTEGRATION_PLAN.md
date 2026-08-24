@@ -1,20 +1,17 @@
 # 3-D main-application integration plan
 
-Status: **Commits 0-6 complete on `main`; Commit 7 local regeneration is
-approved and unblocked, while final review, deployment, and promotion remain
-under Q12 (2026-08-22)**.
+Status: **Commits 0-6 complete on `main`; geometry/LOD resolved by D042;
+immutable deployment remains optional (2026-08-24)**.
 
 This document defines how to promote the completed independent brain-mesh lab
 into the v2 application without importing its experimental composition into the
 product architecture. It is the implementation authority for P3D integration.
-`docs/rendering/3D_EVALUATION.md` remains the experiment evidence source and
-Q12 remains the production-promotion gate.
+`docs/rendering/3D_EVALUATION.md` remains the experiment evidence source.
 
 The repository owner approved an optional, visibly experimental 3-D view in the
-main application and the scoped regeneration recorded in D041. That does not
-approve a production mesh asset, final LOD, publication, or removal of the
-experimental label. `docs/rendering/3D_PROMOTION_REVIEW.md` is the exact
-resumption and owner-review checklist.
+main application. D042 selects the frozen donor's complete GLB-derived resource
+and retires D041's annotation-derived regeneration direction. Immutable
+deployment and removal of the experimental label remain separate work.
 
 ## Evidence baseline and landing rule
 
@@ -414,36 +411,15 @@ manifest/LOD/WebGL failure; responsive/maximize/Escape/URL/history/teardown.
 
 ### Commit 7 — Produce and review a promotion candidate
 
-Status: **local candidate and automated review evidence complete; owner visual
-and LOD decisions pending**.
-The exact inputs were found and verified, and the owner approved the scientific
-scope/exceptions listed in D041. The canonical bilateral 10 um LUT audit found
-four signed centroids outside the pinned GLB bounds (Allen -927, -526322264,
-+526322264, and +599626923; maximum 109.447 um). The owner approved
-regenerating both hemispheres for all three positive source identities. Follow
-`docs/rendering/3D_PROMOTION_REVIEW.md`. The implementation then found that
-Allen 222 and 763 are unilateral-only in the frozen donor, producing 566
-positive / 1,130 signed surfaces instead of a fully bilateral 565 / 1,130
-contract. On 2026-08-24 the owner authorized canonical bilateral regeneration
-for those two identities. The exact five-ID allowlist now yields validated,
-byte-reproducible candidate `local-review-a60a248df394fc58` with 566 positive /
-1,132 signed regions. The review UI, complete per-region metrics, retained
-presentation browser evidence, and 320/480/800 screenshots are ready under
-ignored artifacts. Do not publish or choose final LODs on the owner's behalf.
+Status: **geometry and LOD selection complete by D042**.
 
-- Build outside Git from exact pinned GLB, annotation, LUT, projection pack,
-  and atlas catalog, then reproduce and graph-validate it.
-- Build the self-contained local 320/480/800 px review and measurement bundle.
-- Obtain the explicit geometry and LOD decisions in the review handoff. Scope,
-  exclusion, open-surface, nullable-mapping, and scoped-regeneration decisions
-  are already recorded in D041.
-- Only after separate owner authorization, deploy to an immutable
-  non-production origin with opaque gzip, verify headers/hashes, and record the
-  Chrome/Edge/Firefox/Safari transfer, decode, upload, first-frame, frame,
-  memory, picking, context-loss, and cache evidence.
-
-Only after Q12 is resolved may the production descriptor become default and
-the experimental label disappear. Promotion creates a new immutable pack.
+- Preserve the pinned GLB-derived inventory and all 989,811 selected triangles.
+- Use the 4,958,039-byte compiled-full resource as the evidence baseline.
+- Do not smooth, decimate, regenerate surfaces, or add an upgrade LOD.
+- A schema-v1 EAM3 repackaging may change only the container/manifest contract,
+  not the selected geometry or topology.
+- Immutable deployment and cross-browser release checks remain optional
+  operational work and must not delay production volume slices.
 
 ### Commit 8 — Close docs and retire donor
 
@@ -472,10 +448,10 @@ mesh schemas; direct unverified fetch; URL-only cache keys; one request/mesh/
 draw per region; interaction-time geometry rebuilds; a fifth panel; hidden RAF
 or leaked resources; 3-D-owned data/selection/URL/color state; compatibility
 inferred from units/shape/pack ID; silent substitution for null mappings,
-RSPd4, Allen 898, or non-grey scope; and any production label before Q12.
+  RSPd4, Allen 898, or non-grey scope; and any unreviewed production label.
 
-When blocked, retain testable machinery with the tiny fixture, record the exact
-Q12 blocker, and stop before a misleading release.
+When blocked, retain testable machinery with the tiny fixture and stop before a
+misleading release.
 
 ## Handoff protocol
 

@@ -183,51 +183,17 @@ required for launch.
 
 ## Q12 — 3-D production promotion and final LOD
 
-Status: **FOLLOW-UP**; does not block the independent lab or launch.
+Status: **RESOLVED by D042 (2026-08-24)**.
 
-D032 fixes the lab direction: Three.js WebGL2, a pinned derived mesh pack,
-14-bit position quantization, meshopt compression, a conservative default LOD,
-one optional higher LOD, dynamic regional presentation, and genuine radial
-explode. These are sufficient to implement and measure the experiment.
+Use the pinned GLB-derived donor `source.eamh.gz` evidence as the selected
+geometry and LOD baseline: 4,958,039 bytes, 989,811 triangles, no smoothing,
+no triangle decimation, and no upgrade LOD. Do not regenerate missing or
+mismatched surfaces from annotation voxels. The optional 3-D anatomy view is
+independent of ephys volumes, which render only as linked 2-D slices.
 
-The repository owner approved integration as an optional, visibly experimental
-main-application context view on 2026-08-22. This resolves whether integration
-machinery may be built. On the same date, the owner approved the deepest-active
-grey-matter scope, the explicit Allen 545 (`RSPd4`) source exclusion, the Allen
-898 open-midline exception, and nullable reduced mappings. D041 records those
-choices; they do not approve a final LOD, production asset, or scientific
-release.
-
-All exact local inputs have now been found and SHA-256 verified. A canonical
-10 um bilateral LUT audit checked all 1,130 signed source surfaces and found
-four annotation centroids outside the pinned GLB bounds: Allen -927,
--526322264, +526322264, and +599626923. The largest axis discrepancy is
-109.447 um. Candidate generation fails closed and writes its audit outside Git
-under `artifacts/mesh-production-candidate/pack/`; it does not clamp the
-centroids or claim a valid production pack.
-
-On 2026-08-22 the owner approved deterministic canonical-annotation
-regeneration of the complete bilateral source identities for Allen 927,
-526322264, and 599626923. That exact regeneration is implemented locally. A
-subsequent fail-closed scope gate found that the frozen donor contains only the
-left signed surfaces for Allen 222 (`RO`) and 763 (`OV`): 566 unique positive
-IDs produce 1,130 donor surfaces, whereas schema v1 requires every source to be
-bilateral and the approved checklist expects 565 positive IDs / 1,130 signed
-regions. Canonical LUT metadata instead has 566 / 1,132. On 2026-08-24 the
-owner authorized canonical bilateral regeneration for those two identities.
-Candidate `local-review-a60a248df394fc58` now passes schema, graph, integrity,
-coverage, topology, bounds, and byte-rebuild gates with 566 / 1,132. Its local
-review UI, metrics, browser evidence, and screenshots are complete; owner
-geometry/LOD review remains pending. The exact handoff is in
-`docs/rendering/3D_PROMOTION_REVIEW.md`.
-
-Resolution still needed before production promotion: the recorded 320/480/800
-px owner review; Chrome/Edge,
-Firefox, and Safari transfer/decode/first-frame/memory/picking results; final
-default/upgrade LODs; and the public immutable asset origin.
-
-Blocks: production 3-D asset publication and removal of the experimental label,
-not implementation of the optional context view with deterministic fixtures.
+Immutable schema-v1 repackaging/deployment and cross-browser release checks are
+operational follow-up tasks, not unresolved scientific choices and not launch
+blockers.
 
 ## Q13 — Top/Swanson deployed-fragment license coverage
 
