@@ -414,8 +414,8 @@ manifest/LOD/WebGL failure; responsive/maximize/Escape/URL/history/teardown.
 
 ### Commit 7 — Produce and review a promotion candidate
 
-Status: **partially executed locally; scoped canonical regeneration implemented
-but frozen-donor bilateral scope decision blocked**.
+Status: **local candidate and automated review evidence complete; owner visual
+and LOD decisions pending**.
 The exact inputs were found and verified, and the owner approved the scientific
 scope/exceptions listed in D041. The canonical bilateral 10 um LUT audit found
 four signed centroids outside the pinned GLB bounds (Allen -927, -526322264,
@@ -424,10 +424,12 @@ regenerating both hemispheres for all three positive source identities. Follow
 `docs/rendering/3D_PROMOTION_REVIEW.md`. The implementation then found that
 Allen 222 and 763 are unilateral-only in the frozen donor, producing 566
 positive / 1,130 signed surfaces instead of a fully bilateral 565 / 1,130
-contract. Candidate emission now fails closed pending an explicit owner scope
-decision; do not clamp centroids, expand the regeneration ID set, exclude or
-duplicate those identities, publish, or choose final LODs on the owner's
-behalf.
+contract. On 2026-08-24 the owner authorized canonical bilateral regeneration
+for those two identities. The exact five-ID allowlist now yields validated,
+byte-reproducible candidate `local-review-a60a248df394fc58` with 566 positive /
+1,132 signed regions. The review UI, complete per-region metrics, retained
+presentation browser evidence, and 320/480/800 screenshots are ready under
+ignored artifacts. Do not publish or choose final LODs on the owner's behalf.
 
 - Build outside Git from exact pinned GLB, annotation, LUT, projection pack,
   and atlas catalog, then reproduce and graph-validate it.

@@ -631,3 +631,12 @@ bilateral at 566 / 1,132, while the approved checklist says 565 / 1,130.
 D041 makes no scientific choice for these IDs. Candidate generation therefore
 fails closed before manifest emission. Regeneration, exclusion, duplication,
 relabeling, or a bilateral-contract exception requires a new owner decision.
+
+The owner supplied that decision on 2026-08-24: regenerate both signed halves
+of Allen 222 and 763 from the same pinned canonical bilateral LUT, extending
+the exact override allowlist to five positive IDs. The effective production
+candidate scope is consequently 566 positive / 1,132 signed regions. No donor
+surface is duplicated or relabeled. Candidate `local-review-a60a248df394fc58`
+passes the automated local gates; this decision still does not approve its
+geometry visually, select final LODs, authorize publication, or remove the
+experimental label.

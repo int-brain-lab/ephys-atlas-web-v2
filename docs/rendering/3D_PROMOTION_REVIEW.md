@@ -1,7 +1,7 @@
 # 3-D promotion candidate regeneration and review handoff
 
-Status: **approved regeneration implemented; source-scope contradiction blocks
-candidate emission and human review (2026-08-24)**.
+Status: **local candidate and automated evidence complete; owner visual/LOD
+review pending (2026-08-24)**.
 
 This is the single checklist for the next agent and the repository owner when
 resuming Q12. It narrows Commit 7 of `3D_INTEGRATION_PLAN.md`; it does not
@@ -22,12 +22,15 @@ The repository owner has explicitly approved:
 - nullable Beryl and Cosmos mappings; and
 - deterministic regeneration from the canonical bilateral 10 um annotation
   for positive Allen IDs 927 (`ACAd6b`), 526322264 (`FRP6b`), and 599626923
-  (`SCO`).
+  (`SCO`); and
+- deterministic bilateral regeneration for Allen 222 (`RO`) and 763 (`OV`),
+  approved on 2026-08-24 after the frozen donor was found to contain only their
+  negative/left surfaces.
 
 Regenerate the complete bilateral source identity for each of those three
 positive IDs, producing both signed hemispheres even where only one side failed
 the audit. Do not combine old geometry on one side with canonical geometry on
-the other. The remaining 562 positive source identities continue to come from
+the other. The remaining 561 positive source identities continue to come from
 the pinned GLB.
 
 Keep all generated packs, reports, screenshots, and measurements under ignored
@@ -52,20 +55,23 @@ Candidate creation correctly stops before emitting a manifest. Never resolve
 this by clamping centroids, substituting mesh-derived centroids, expanding
 declared bounds, or marking bounds validation green.
 
-The approved six-surface regeneration now completes locally with exact pinned
+The initially approved six-surface regeneration completed locally with exact pinned
 inputs and topology-safe separation of ambiguous voxel contacts. Before pack
 emission, a second fail-closed gate found a contradiction in the frozen donor:
 Allen 222 (`RO`) and 763 (`OV`) each have only a negative/left signed surface.
 The donor therefore contains 566 unique positive source IDs and 1,130 signed
 surfaces, while the current schema and this checklist require 565 fully
 bilateral source IDs and 1,130 signed regions. Canonical metadata contains both
-signs for all 566 IDs (1,132 signed regions). The generated evidence is
-`artifacts/mesh-production-candidate/pack/source-scope-audit.json`.
+signs for all 566 IDs (1,132 signed regions).
 
-This is outside the approved regeneration set. Candidate creation must remain
-blocked until the owner explicitly chooses how Allen 222 and 763 enter the
-production scope. Do not regenerate them, exclude them, duplicate the donor
-surface, relabel them, or weaken the bilateral schema invariant by inference.
+On 2026-08-24 the owner explicitly authorized canonical bilateral regeneration
+for Allen 222 and 763. The resulting ten signed overrides produce 566 fully
+bilateral positive identities and 1,132 signed regions. Candidate
+`local-review-a60a248df394fc58` passes schema and complete-file-graph
+validation and reproduces byte-for-byte. Compact is 1,538,309 bytes and high is
+2,015,792 bytes. The review bundle, per-region metrics, retained-geometry
+browser evidence, and 320/480/800 screenshots are under
+`artifacts/mesh-production-candidate/review/`. Publication remains unapproved.
 
 ## Pinned inputs
 
@@ -121,9 +127,9 @@ The handoff is not ready for human review until it contains:
 
 - a schema-valid manifest and validation report;
 - deterministic rebuild equality for the manifest and every resource;
-- all 565 approved positive source IDs and all 1,130 signed regions;
+- all 566 approved positive source IDs and all 1,132 signed regions;
 - explicit Allen 545 exclusion and Allen 898 exception evidence;
-- six regenerated signed surfaces identified separately in provenance;
+- ten regenerated signed surfaces identified separately in provenance;
 - canonical region, explode-group, and whole-brain centroids from the LUT;
 - every canonical centroid inside its actual full-resolution surface bounds;
 - nonempty bilateral geometry, signed half-space checks, topology/component
@@ -153,14 +159,22 @@ link each screenshot/metric to pack and builder hashes.
 
 ## What the repository owner must review
 
-The next agent should open `artifacts/mesh-production-candidate/review/index.html`
-locally and guide the owner through these checks. Record pass/fail and a short
-note for every row; do not accept a blanket “looks good.”
+The next agent should serve the ignored bundle through the explicit local-only
+review plugin, then guide the owner through these checks:
+
+```bash
+cd web
+EPHYS_ATLAS_MESH_REVIEW_ROOT=../artifacts/mesh-production-candidate \
+  npm run dev -- --host 127.0.0.1 --port 4178
+```
+
+Open `http://127.0.0.1:4178/__mesh-review/review/index.html`. Record pass/fail
+and a short note for every row; do not accept a blanket “looks good.”
 
 ### A. Regenerated scientific geometry
 
-For both left and right hemispheres of ACAd6b (927), FRP6b (526322264), and SCO
-(599626923):
+For both left and right hemispheres of RO (222), OV (763), ACAd6b (927), FRP6b
+(526322264), and SCO (599626923):
 
 - compare the full-resolution canonical surface with its annotation mask in
   coronal, sagittal, and horizontal reference cuts;

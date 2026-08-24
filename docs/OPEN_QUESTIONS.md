@@ -213,14 +213,16 @@ subsequent fail-closed scope gate found that the frozen donor contains only the
 left signed surfaces for Allen 222 (`RO`) and 763 (`OV`): 566 unique positive
 IDs produce 1,130 donor surfaces, whereas schema v1 requires every source to be
 bilateral and the approved checklist expects 565 positive IDs / 1,130 signed
-regions. Canonical LUT metadata instead has 566 / 1,132. No choice for those
-two additional identities is approved, so candidate emission and owner visual
-review are blocked. Evidence and the exact handoff remain in
+regions. Canonical LUT metadata instead has 566 / 1,132. On 2026-08-24 the
+owner authorized canonical bilateral regeneration for those two identities.
+Candidate `local-review-a60a248df394fc58` now passes schema, graph, integrity,
+coverage, topology, bounds, and byte-rebuild gates with 566 / 1,132. Its local
+review UI, metrics, browser evidence, and screenshots are complete; owner
+geometry/LOD review remains pending. The exact handoff is in
 `docs/rendering/3D_PROMOTION_REVIEW.md`.
 
-Resolution still needed before production promotion: an explicit Allen
-222/763 scope decision; successful candidate validation; the recorded
-320/480/800 px owner review; Chrome/Edge,
+Resolution still needed before production promotion: the recorded 320/480/800
+px owner review; Chrome/Edge,
 Firefox, and Safari transfer/decode/first-frame/memory/picking results; final
 default/upgrade LODs; and the public immutable asset origin.
 

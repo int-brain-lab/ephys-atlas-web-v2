@@ -254,9 +254,11 @@ approved canonical regeneration of all six bilateral halves for those three
 positive IDs, and that exact regeneration is implemented. The next scope gate
 found that frozen-donor Allen 222 and 763 have only left signed surfaces: the
 donor is 566 positive / 1,130 signed, canonical metadata is 566 / 1,132, and
-schema v1 requires bilateral sources. Candidate emission now fails closed
-until the owner makes an explicit scope decision for those two IDs; see
-`docs/rendering/3D_PROMOTION_REVIEW.md`. Q12 also still blocks final LOD/
+schema v1 requires bilateral sources. The owner authorized canonical bilateral
+regeneration for those IDs on 2026-08-24. The resulting 566 / 1,132 candidate
+passes deterministic build, graph, integrity, geometry, and automated browser
+evidence gates; its local review bundle is ready. See
+`docs/rendering/3D_PROMOTION_REVIEW.md`. Q12 still blocks owner LOD/
 cross-browser review, immutable-origin deployment, and promotion.
 
 Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
