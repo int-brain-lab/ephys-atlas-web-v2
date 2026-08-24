@@ -46,6 +46,7 @@ def test_synthetic_glb_and_pack_rebuild_byte_for_byte(tmp_path: Path) -> None:
     assert expected_files == sorted(path.relative_to(output) for path in output.rglob("*") if path.is_file())
     for relative in expected_files:
         assert (output / relative).read_bytes() == (FIXTURE / "pack" / relative).read_bytes()
+    assert (output / "default.eam3.gz").read_bytes()[9] == 3
 
 
 def test_clipping_retains_exact_midline_caps_and_bilateral_half_spaces() -> None:

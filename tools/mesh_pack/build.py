@@ -27,6 +27,14 @@ def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _deterministic_gzip(data: bytes) -> bytes:
+    encoded = bytearray(gzip.compress(data, compresslevel=9, mtime=0))
+    # zlib may emit the host OS identifier when mtime is zero. Pin the header
+    # to Unix so identical inputs rebuild byte-for-byte on macOS and Linux.
+    encoded[9] = 3
+    return bytes(encoded)
+
+
 def _read_json(path: Path) -> tuple[dict[str, Any], bytes]:
     data = path.read_bytes()
     return json.loads(data), data
@@ -177,7 +185,7 @@ def build_pack(source_dir: Path, output: Path, *, builder_commit: str = "synthet
     regions = [region for region, _ in compiled]
     chunks = [_merge([(region, mesh) for region, mesh in compiled if region["hemisphere"] == hemisphere], hemisphere) for hemisphere in ("left", "right")]
     decoded = encode_raw_lod(chunks)
-    encoded = gzip.compress(decoded, compresslevel=9, mtime=0)
+    encoded = _deterministic_gzip(decoded)
     source_triangles = sum(region["triangle_count"] for region in regions)
     input_digest = _sha(b"".join(blobs[name] for name in sorted(blobs)))
     pack_id = f"synthetic-mesh-{input_digest[:12]}"
