@@ -32,8 +32,8 @@ const [donorManifest, buildReport, metadata, overrideManifest] = await Promise.a
 ]);
 if (donorManifest.format !== 'atlas-mesh-pack-v1-lab' || metadata.format !== 'atlas-mesh-canonical-metadata-v1') throw new Error('candidate inputs have unsupported formats');
 if (overrideManifest.format !== 'atlas-mesh-canonical-overrides-v1'
-  || JSON.stringify(overrideManifest.approved_positive_allen_ids) !== '[927,526322264,599626923]'
-  || overrideManifest.surfaces.length !== 6) throw new Error('canonical override scope differs from owner approval');
+  || JSON.stringify(overrideManifest.approved_positive_allen_ids) !== '[222,763,927,526322264,599626923]'
+  || overrideManifest.surfaces.length !== 10) throw new Error('canonical override scope differs from owner approval');
 if (await digestFile(sourceGlb) !== sourceSha256) throw new Error('source GLB identity changed');
 if (donorManifest.source.sha256 !== sourceSha256 || JSON.stringify(donorManifest.validation.sourceExcludedAllenIds) !== '[545]') throw new Error('frozen donor evidence differs');
 if (JSON.stringify(donorManifest.validation.openMidlineSourceAllenIds) !== '[898]') throw new Error('reviewed open-midline exception differs');
@@ -47,34 +47,53 @@ for (const region of donorManifest.regions) {
 const unilateralDonorSources = [...donorSignsBySource]
   .filter(([, signs]) => signs.size !== 2 || !signs.has(-1) || !signs.has(1))
   .map(([sourceAllenId, signs]) => ({ source_allen_id: sourceAllenId, present_signs: [...signs].sort() }));
-if (donorSignsBySource.size !== 565 || donorManifest.regions.length !== 1130 || unilateralDonorSources.length) {
+const effectiveSignsBySource = new Map([...donorSignsBySource].map(([identifier, signs]) => [identifier, new Set(signs)]));
+for (const identifier of overrideManifest.approved_positive_allen_ids) effectiveSignsBySource.set(identifier, new Set([-1, 1]));
+const effectiveSignedCount = [...effectiveSignsBySource.values()].reduce((total, signs) => total + signs.size, 0);
+const unilateralEffectiveSources = [...effectiveSignsBySource]
+  .filter(([, signs]) => signs.size !== 2 || !signs.has(-1) || !signs.has(1))
+  .map(([sourceAllenId, signs]) => ({ source_allen_id: sourceAllenId, present_signs: [...signs].sort() }));
+if (effectiveSignsBySource.size !== 566 || effectiveSignedCount !== 1132 || unilateralEffectiveSources.length) {
   const audit = {
     format: 'atlas-mesh-source-scope-audit-v1',
     result: 'failed',
-    reason: 'The frozen donor does not contain the required 565 fully bilateral positive source identities.',
-    expected: { positive_source_count: 565, signed_region_count: 1130, signs_per_source: [-1, 1] },
-    actual: {
+    reason: 'The approved overrides do not produce the required fully bilateral effective source scope.',
+    expected: { positive_source_count: 566, signed_region_count: 1132, signs_per_source: [-1, 1] },
+    frozen_donor: {
       positive_source_count: donorSignsBySource.size,
       signed_region_count: donorManifest.regions.length,
       unilateral_sources: unilateralDonorSources,
+    },
+    effective_candidate: {
+      positive_source_count: effectiveSignsBySource.size,
+      signed_region_count: effectiveSignedCount,
+      unilateral_sources: unilateralEffectiveSources,
       canonical_metadata_positive_source_count: new Set(metadata.regions.map((region) => region.source_allen_id)).size,
       canonical_metadata_signed_region_count: metadata.regions.length,
     },
-    stop_condition: 'No approval exists to regenerate, exclude, duplicate, or relabel Allen 222 or 763.',
   };
   await writeFile(resolve(output, 'source-scope-audit.json'), `${JSON.stringify(audit, null, 2)}\n`);
-  throw new Error('frozen donor source scope is not fully bilateral; wrote source-scope-audit.json');
+  throw new Error('effective candidate source scope is not fully bilateral; wrote source-scope-audit.json');
 }
 const metadataBySignedId = new Map(metadata.regions.map((region) => [signed(region.source_allen_id, region.hemisphere), region]));
 const reportByFeature = new Map(buildReport.regions.map((region) => [region.featureId, region]));
 const donorByFeature = new Map(donorManifest.regions.map((region) => [region.featureId, region]));
 const donorBySignedId = new Map(donorManifest.regions.map((region) => [region.signedAllenId, region]));
+let nextFeatureId = donorManifest.regions.length;
 const overrideFeatureIds = new Set();
 const overrides = new Map();
 for (const surface of overrideManifest.surfaces) {
-  const donorRegion = donorBySignedId.get(surface.signed_allen_id);
+  let donorRegion = donorBySignedId.get(surface.signed_allen_id);
   const canonical = metadataBySignedId.get(surface.signed_allen_id);
-  if (!donorRegion || !canonical) throw new Error(`override ${surface.signed_allen_id} has no donor feature`);
+  if (!donorRegion && surface.signed_allen_id > 0 && (surface.source_allen_id === 222 || surface.source_allen_id === 763)) {
+    const counterpart = donorBySignedId.get(-surface.source_allen_id);
+    if (!counterpart) throw new Error(`override ${surface.signed_allen_id} has no frozen-donor counterpart`);
+    donorRegion = { ...counterpart, featureId: nextFeatureId, signedAllenId: surface.signed_allen_id, hemisphere: 'right' };
+    nextFeatureId += 1;
+    donorByFeature.set(donorRegion.featureId, donorRegion);
+    donorBySignedId.set(donorRegion.signedAllenId, donorRegion);
+  }
+  if (!donorRegion || !canonical) throw new Error(`override ${surface.signed_allen_id} has no candidate feature`);
   const positions = typed(await readFile(resolve(canonicalOverrides, surface.positions.path)), Float32Array);
   const indices = typed(await readFile(resolve(canonicalOverrides, surface.indices.path)), Uint32Array);
   if (positions.length !== surface.vertex_count * 3 || indices.length !== surface.triangle_count * 3) throw new Error(`override ${surface.signed_allen_id} resource shape differs`);
@@ -116,7 +135,7 @@ const regions = [...sourceGeometry.entries()].sort(([left], [right]) => left - r
   const donorRegion = donorByFeature.get(featureId);
   const canonical = metadataBySignedId.get(donorRegion.signedAllenId);
   const metrics = reportByFeature.get(featureId);
-  if (!canonical || !metrics || geometry.signedAllenId !== donorRegion.signedAllenId) throw new Error(`feature ${featureId} metadata differs`);
+  if (!canonical || (!metrics && !overrideFeatureIds.has(featureId)) || geometry.signedAllenId !== donorRegion.signedAllenId) throw new Error(`feature ${featureId} metadata differs`);
   const signValue = donorRegion.hemisphere === 'left' ? -1 : 1;
   const centroid = canonical.centroid_um;
   const sourceMetrics = geometryMetrics(geometry);

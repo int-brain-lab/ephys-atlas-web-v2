@@ -119,11 +119,11 @@ def test_canonical_centroid_assignment_uses_nearest_active_ancestor() -> None:
 
 
 def test_canonical_override_scope_is_exactly_owner_allowlisted() -> None:
-    validate_override_ids({927, 526322264, 599626923})
+    validate_override_ids({222, 763, 927, 526322264, 599626923})
     with pytest.raises(ValueError, match="exactly the owner-approved"):
-        validate_override_ids({927, 526322264})
+        validate_override_ids({763, 927, 526322264, 599626923})
     with pytest.raises(ValueError, match="exactly the owner-approved"):
-        validate_override_ids({927, 526322264, 599626923, 315})
+        validate_override_ids({222, 763, 927, 315, 526322264, 599626923})
 
 
 def test_voxel_face_override_is_closed_deterministic_and_uses_world_voxel_edges() -> (

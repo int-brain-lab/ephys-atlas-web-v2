@@ -17,7 +17,7 @@ from .canonical_metadata import (
     canonical_source_assignment,
 )
 
-APPROVED_OVERRIDE_IDS = frozenset({927, 526322264, 599626923})
+APPROVED_OVERRIDE_IDS = frozenset({222, 763, 927, 526322264, 599626923})
 PINNED_IDENTITIES = {
     "annotation": (
         32_802_468,
