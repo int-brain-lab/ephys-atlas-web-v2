@@ -619,7 +619,7 @@ def build_clusters_from_snapshot(
             "sha256": sha256_file(source_json),
         },
         {
-            "role": "scientific-selection",
+            "role": "selection-freeze",
             "description": "Scientific-owner-approved legacy cluster catalog and display metadata",
             "repository": "rossant/ibl-ephys-atlas-web-v2",
             "path": "catalog-selection.json",
