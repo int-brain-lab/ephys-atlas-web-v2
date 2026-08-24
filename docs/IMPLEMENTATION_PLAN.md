@@ -313,7 +313,7 @@ Acceptance reference: section 7 of the launch spec.
 
 ## M5 — Downloads and local import completion
 
-Status: **local import hardened; regional and selected-comparison exports implemented; broader package/export UX remains**.
+Status: **launch download path implemented; direct-URL and broader package UX remain non-blocking follow-ups**.
 
 Completed:
 
@@ -326,14 +326,23 @@ Completed:
 - current regional statistic exports as CSV with dataset, immutable release, feature, representation, parcellation, statistic, unit, and region identity columns.
 - selected regions compare as independently sum-normalized distributions over a shared feature-value axis, with descriptive statistics and sample sizes;
 - selected comparison exports as CSV with scientific context, summaries, raw histogram bins, and normalized probabilities.
+- schema-v1 release and feature artifact descriptors survive browser validation
+  with their role, description, media type, byte size, hash, codec, and path;
+- one download dialog exposes contextual regional CSV plus every declared
+  feature/release artifact without implying that an artifact belongs to a
+  representation its description does not claim;
+- regional and volume views can download immutable artifact bytes through the
+  same published/local resource-reader boundary, preserving encoded gzip bytes
+  and verifying published byte size/SHA-256 before download;
+- artifact integrity failures remain explicit and do not produce corrupt
+  downloads; deterministic Chromium coverage exercises successful volume
+  artifact download and checksum failure.
 
 Goals:
 
-- production-grade local import validation for regional and supported volume releases;
-- volume-feature download/navigation;
-- immutable artifact URLs and current-feature/context-rich exports for launch;
+- optional direct immutable artifact URL display/navigation for published data;
 - deterministic whole-release package path as a non-blocking follow-up where practical;
-- visible provenance identifiers in exported data.
+- broader local-dataset management UX where practical.
 
 Requirements:
 

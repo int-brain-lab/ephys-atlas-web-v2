@@ -456,10 +456,16 @@ local from published content without a shadow scientific schema.
 
 Share copies complete URL state; Info exposes immutable release, feature
 semantics, and source/builder provenance; current regional statistics and
-selected-region comparisons export as context-rich CSV. Volume-feature
-artifact navigation/download remains in M5. Artifact URLs and current-feature
-exports are sufficient for initial launch; polished whole-release packaging
-and broader local-dataset management are non-blocking follow-ups under D040.
+selected-region comparisons export as context-rich CSV. Schema-v1 release and
+feature artifact metadata now survives runtime validation instead of being
+discarded. The Download action presents the contextual regional CSV alongside
+declared feature/release artifacts and remains available for volume features.
+Published artifacts pass through the verified immutable resource fetcher;
+browser-local artifacts use the same repository boundary after complete import
+validation. Encoded gzip bytes are preserved, and integrity failures remain
+visible without producing a corrupt download. Direct immutable URL display,
+polished whole-release packaging, and broader local-dataset management are
+non-blocking follow-ups under D040.
 
 ## Publishing
 
@@ -499,8 +505,8 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
 4. keep the validated D038 preserved five-family BWM release and opt-in local
    browser acceptance green; online catalog publication remains deferred until
    authorized;
-5. provide artifact URLs and current-feature exports for launch; broader
-   package/local-management UX is non-blocking;
+5. retain the completed artifact-backed and contextual current-feature exports;
+   direct URL display and broader package/local-management UX are non-blocking;
 6. stage immutable assets on S3/CloudFront and finalize catalog/origin/default
    alias/publishing choices in Q8-Q9;
 7. run final production-origin, performance, responsive, automated Chromium,
