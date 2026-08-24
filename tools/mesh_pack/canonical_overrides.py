@@ -63,25 +63,14 @@ def validate_override_ids(ids: set[int]) -> None:
 def voxel_face_surface(
     mask: np.ndarray, offset: tuple[int, int, int]
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Return a closed, unsmoothed triangle boundary at binary voxel edges."""
+    """Return a closed, unsmoothed boundary with ambiguous contacts sheet-separated."""
     if mask.ndim != 3 or mask.dtype != np.bool_ or not np.any(mask):
         raise ValueError(
             "surface mask must be a nonempty three-dimensional boolean array"
         )
     padded = np.pad(mask, 1, constant_values=False)
-    vertices: list[tuple[int, int, int]] = []
-    vertex_index: dict[tuple[int, int, int], int] = {}
-    triangles: list[tuple[int, int, int]] = []
+    faces: list[tuple[tuple[int, int, int], list[tuple[int, int, int]]]] = []
     directions = ((0, -1), (0, 1), (1, -1), (1, 1), (2, -1), (2, 1))
-
-    def vertex(doubled_local: tuple[int, int, int]) -> int:
-        existing = vertex_index.get(doubled_local)
-        if existing is not None:
-            return existing
-        index = len(vertices)
-        vertex_index[doubled_local] = index
-        vertices.append(doubled_local)
-        return index
 
     for axis, side in directions:
         neighbour = [slice(1, -1)] * 3
@@ -106,13 +95,87 @@ def voxel_face_surface(
             outward[world_axis] = side * SPACING_UM[world_axis]
             if float(np.dot(normal, outward)) < 0:
                 corners.reverse()
-            indices = [vertex(point) for point in corners]
-            triangles.extend(
+            faces.append((tuple(int(value) for value in coordinate), corners))
+
+    # Binary voxel masks can contain diagonal contacts. Four faces then occupy
+    # one geometric edge, even though they belong to two distinct boundary
+    # sheets. Connect face corners through ordinary two-face edges and pair
+    # four-face ambiguities by their owning occupied voxel. Positions stay on
+    # the exact same voxel edges; only coincident vertex identities separate.
+    parent = list(range(len(faces) * 4))
+
+    def find(value: int) -> int:
+        while parent[value] != value:
+            parent[value] = parent[parent[value]]
+            value = parent[value]
+        return value
+
+    def join(left: int, right: int) -> None:
+        left_root, right_root = find(left), find(right)
+        if left_root != right_root:
+            parent[right_root] = left_root
+
+    edges: dict[
+        tuple[tuple[int, int, int], tuple[int, int, int]],
+        list[tuple[int, tuple[int, int, int], int, int]],
+    ] = {}
+    for face_index, (owner, corners) in enumerate(faces):
+        for corner_index in range(4):
+            next_index = (corner_index + 1) % 4
+            left, right = corners[corner_index], corners[next_index]
+            key = tuple(sorted((left, right)))
+            edges.setdefault(key, []).append(
                 (
-                    (indices[0], indices[1], indices[2]),
-                    (indices[0], indices[2], indices[3]),
+                    face_index,
+                    owner,
+                    face_index * 4 + corner_index,
+                    face_index * 4 + next_index,
                 )
             )
+    for (left_point, right_point), occurrences in edges.items():
+        if len(occurrences) == 2:
+            groups = [occurrences]
+        elif len(occurrences) == 4:
+            by_owner: dict[
+                tuple[int, int, int], list[tuple[int, tuple[int, int, int], int, int]]
+            ] = {}
+            for occurrence in occurrences:
+                by_owner.setdefault(occurrence[1], []).append(occurrence)
+            groups = list(by_owner.values())
+            if sorted(len(group) for group in groups) != [2, 2]:
+                raise ValueError(
+                    "ambiguous voxel edge cannot be separated by occupied owner"
+                )
+        else:
+            raise ValueError(
+                f"voxel boundary edge has unexpected incidence {len(occurrences)}"
+            )
+        for first, second in groups:
+            for point in (left_point, right_point):
+                first_node = (
+                    first[2] if faces[first[0]][1][first[2] % 4] == point else first[3]
+                )
+                second_node = (
+                    second[2]
+                    if faces[second[0]][1][second[2] % 4] == point
+                    else second[3]
+                )
+                join(first_node, second_node)
+
+    vertex_index: dict[int, int] = {}
+    vertices: list[tuple[int, int, int]] = []
+    triangles: list[tuple[int, int, int]] = []
+    for face_index, (_owner, corners) in enumerate(faces):
+        indices = []
+        for corner_index, point in enumerate(corners):
+            root = find(face_index * 4 + corner_index)
+            if root not in vertex_index:
+                vertex_index[root] = len(vertices)
+                vertices.append(point)
+            indices.append(vertex_index[root])
+        triangles.extend(
+            ((indices[0], indices[1], indices[2]), (indices[0], indices[2], indices[3]))
+        )
 
     positions = np.asarray(
         [_world_from_doubled(point, offset) for point in vertices], dtype="<f4"

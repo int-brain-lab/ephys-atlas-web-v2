@@ -149,6 +149,23 @@ def test_voxel_face_override_is_closed_deterministic_and_uses_world_voxel_edges(
     assert np.allclose(first_positions.max(axis=0), [-5534, 5305, 37])
 
 
+def test_voxel_face_override_separates_diagonal_contact_sheets() -> None:
+    import numpy as np
+
+    mask = np.zeros((2, 2, 1), dtype=np.bool_)
+    mask[0, 0, 0] = True
+    mask[1, 1, 0] = True
+    positions, triangles = voxel_face_surface(mask, (0, 0, 0))
+    edges: dict[tuple[int, int], int] = {}
+    for triangle in triangles:
+        for left, right in zip(triangle, np.roll(triangle, -1)):
+            edge = tuple(sorted((int(left), int(right))))
+            edges[edge] = edges.get(edge, 0) + 1
+    assert positions.shape == (16, 3)
+    assert triangles.shape == (24, 3)
+    assert set(edges.values()) == {2}
+
+
 def test_manifest_enforces_signed_bilateral_and_bounds_semantics() -> None:
     manifest = json.loads((FIXTURE / "pack/manifest.json").read_text())
     left, right = manifest["regions"]
