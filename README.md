@@ -20,6 +20,10 @@ Before making changes, read:
 For fresh-checkout and local Codex setup, see
 [`docs/CODEX_HANDOFF.md`](docs/CODEX_HANDOFF.md). It is an operating runbook,
 not a second product-priority list.
+Apple-silicon setup is recorded in
+[`docs/MACOS_DEVELOPMENT.md`](docs/MACOS_DEVELOPMENT.md), and the active
+production-volume continuation is
+[`docs/data/VOLUME_IMPLEMENTATION_HANDOFF.md`](docs/data/VOLUME_IMPLEMENTATION_HANDOFF.md).
 
 The breaking pre-launch
 [`projection and volume architecture cutover`](docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md)

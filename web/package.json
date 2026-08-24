@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
     "dev": "vite",
     "dev:real": "VITE_DATASET_CATALOG_URL=/__real-data/catalog.json vite",

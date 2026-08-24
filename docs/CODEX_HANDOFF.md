@@ -9,12 +9,13 @@ At handoff, GitHub has a single branch: `main`.
 
 ## Fresh local checkout
 
-Install `uv` 0.12+, Node 22, and `just` first. Repository Python setup and
+Install `uv` 0.12+, Node 22, and `just` first. The committed `.node-version`
+and npm engine constraint make the Node major explicit. Repository Python setup and
 execution use only the committed uv lockfiles; no system `pip` installation is
 required.
 
 ```bash
-git clone https://github.com/rossant/ibl-ephys-atlas-web-v2.git
+git clone https://github.com/int-brain-lab/ephys-atlas-web-v2.git
 cd ibl-ephys-atlas-web-v2
 git checkout main
 git pull --ff-only origin main
@@ -53,6 +54,10 @@ required sequence in `AGENTS.md` rather than defining a competing order.
 
 There should be no need to provide the old ChatGPT Project conversations to a fresh agent.
 
+On macOS, follow `docs/MACOS_DEVELOPMENT.md`. For the current production-volume
+task, also read `docs/data/VOLUME_IMPLEMENTATION_HANDOFF.md` before acquiring
+private inputs or generating artifacts.
+
 ## Suggested first Codex instruction
 
 Use a task prompt along these lines:
@@ -69,15 +74,12 @@ this handoff intentionally does not duplicate it. If an action reaches an
 unresolved item in `docs/OPEN_QUESTIONS.md`, leave the scientific choice open
 and continue with the next independent action permitted by the plan.
 
-## Parallel 3-D lab exception
+## Historical 3-D lab exception
 
-The repository owner has explicitly authorized the isolated P3D experiment in
-`docs/IMPLEMENTATION_PLAN.md` and `docs/rendering/3D_EVALUATION.md`. It may use
-one short-lived worktree branch while M2 proceeds. The branch is not a second
-source of truth: rebase it frequently, coordinate the shared dependency
-lockfile, and land small reviewed green slices on `main`. Do not use this
-exception for unrelated product work or integrate the lab by importing/forking
-the main application.
+The isolated P3D experiment is complete and frozen at the donor commit recorded
+in `docs/rendering/3D_EVALUATION.md`. D042 records the selected GLB-derived
+result. A fresh checkout does not need the donor branch or its ignored artifact
+to continue M2 volume work. Do not resume annotation-derived mesh generation.
 
 ## Private data and credentials
 
