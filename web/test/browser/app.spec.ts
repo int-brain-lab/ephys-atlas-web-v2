@@ -690,7 +690,10 @@ test('region hover is linked across all anatomical projections', async ({ page }
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
 
   const source = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
-  await expect(source).toHaveAttribute('style', /fill:/);
+  // Geometry can arrive before the asynchronous feature presentation. Wait for
+  // the fixture value color so this captures the state whose hover persistence
+  // the test is intended to exercise, rather than a transient anatomy fill.
+  await expect(source).toHaveCSS('fill', 'rgb(46, 110, 142)');
   const sourceStyle = await source.getAttribute('style');
   await source.dispatchEvent('pointermove');
   await expect(page.locator('.region-row[data-region-id="-362"]')).toHaveAttribute('data-hovered', 'true');
