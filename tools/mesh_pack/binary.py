@@ -12,7 +12,9 @@ PREFIX_BYTES = 12
 
 
 def _canonical_json(value: Any) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), allow_nan=False
+    ).encode()
 
 
 def encode_raw_lod(chunks: list[dict[str, Any]]) -> bytes:
@@ -31,9 +33,20 @@ def encode_raw_lod(chunks: list[dict[str, Any]]) -> bytes:
             width = struct.calcsize(f"<{code}")
             padding = (-len(payload)) % width
             payload.extend(b"\0" * padding)
-            arrays[name] = {"byte_offset": len(payload), "count": len(values), "component_type": component_type, "item_size": item_size}
+            arrays[name] = {
+                "byte_offset": len(payload),
+                "count": len(values),
+                "component_type": component_type,
+                "item_size": item_size,
+            }
             payload.extend(struct.pack(f"<{len(values)}{code}", *values))
-        descriptors.append({"hemisphere": chunk["hemisphere"], "arrays": arrays, "ranges": chunk["ranges"]})
+        descriptors.append(
+            {
+                "hemisphere": chunk["hemisphere"],
+                "arrays": arrays,
+                "ranges": chunk["ranges"],
+            }
+        )
     header = _canonical_json({"encoding": "raw-v1", "chunks": descriptors})
     payload_offset = (PREFIX_BYTES + len(header) + 3) // 4 * 4
     output = bytearray(payload_offset + len(payload))
@@ -59,14 +72,64 @@ def inspect_lod(data: bytes) -> dict[str, Any]:
         header = json.loads(data[PREFIX_BYTES : PREFIX_BYTES + header_length])
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ValueError("mesh LOD header is invalid") from error
-    if header.get("encoding") != "raw-v1" or not isinstance(header.get("chunks"), list):
+    encoding = header.get("encoding")
+    if encoding not in {"raw-v1", "meshopt-quantized-v1"} or not isinstance(
+        header.get("chunks"), list
+    ):
         raise ValueError("mesh LOD encoding is unsupported")
+    if encoding == "meshopt-quantized-v1":
+        codecs = {
+            "vertices": ("meshopt-vertex", 8),
+            "normals": ("meshopt-oct", 4),
+            "indices": ("meshopt-index", 4),
+        }
+        for chunk in header["chunks"]:
+            vertex_count = chunk.get("vertex_count")
+            index_count = chunk.get("index_count")
+            if (
+                not isinstance(vertex_count, int)
+                or vertex_count <= 0
+                or not isinstance(index_count, int)
+                or index_count <= 0
+                or index_count % 3
+            ):
+                raise ValueError("meshopt chunk counts are invalid")
+            blocks = chunk.get("blocks")
+            if not isinstance(blocks, dict) or set(blocks) != set(codecs):
+                raise ValueError("meshopt chunk blocks are invalid")
+            for name, (codec, stride) in codecs.items():
+                descriptor = blocks[name]
+                offset = descriptor.get("byte_offset", -1)
+                length = descriptor.get("byte_length", -1)
+                if (
+                    descriptor.get("codec") != codec
+                    or descriptor.get("stride") != stride
+                    or not isinstance(offset, int)
+                    or offset < 0
+                    or not isinstance(length, int)
+                    or length <= 0
+                    or payload_offset + offset + length > len(data)
+                ):
+                    raise ValueError(f"meshopt {name} block is invalid")
+            chunk["arrays"] = {
+                "positions": {"count": vertex_count * 3},
+                "normals": {"count": vertex_count * 3},
+                "feature_ids": {"count": vertex_count},
+                "indices": {"count": index_count},
+            }
+        return header
     widths = {"float32": 4, "uint16": 2, "uint32": 4}
     for chunk in header["chunks"]:
         for descriptor in chunk.get("arrays", {}).values():
             width = widths.get(descriptor.get("component_type"))
-            if width is None or descriptor.get("byte_offset", -1) < 0 or descriptor.get("count", -1) < 0:
+            if (
+                width is None
+                or descriptor.get("byte_offset", -1) < 0
+                or descriptor.get("count", -1) < 0
+            ):
                 raise ValueError("mesh LOD array descriptor is invalid")
-            if payload_offset + descriptor["byte_offset"] + descriptor["count"] * width > len(data):
+            if payload_offset + descriptor["byte_offset"] + descriptor[
+                "count"
+            ] * width > len(data):
                 raise ValueError("mesh LOD array is out of bounds")
     return header

@@ -3,6 +3,7 @@ from __future__ import annotations
 import gzip
 import json
 import shutil
+import struct
 from copy import deepcopy
 from pathlib import Path
 
@@ -194,6 +195,53 @@ def test_raw_eam3_container_rejects_identity_version_and_ranges() -> None:
         inspect_lod(corrupt)
     with pytest.raises(ValueError, match="truncated"):
         inspect_lod(encoded[:8])
+
+
+def test_meshopt_eam3_inspection_validates_blocks_and_exposes_counts() -> None:
+    header = json.dumps(
+        {
+            "encoding": "meshopt-quantized-v1",
+            "chunks": [
+                {
+                    "hemisphere": "left",
+                    "vertex_count": 3,
+                    "index_count": 3,
+                    "blocks": {
+                        "vertices": {
+                            "byte_offset": 0,
+                            "byte_length": 1,
+                            "codec": "meshopt-vertex",
+                            "stride": 8,
+                        },
+                        "normals": {
+                            "byte_offset": 1,
+                            "byte_length": 1,
+                            "codec": "meshopt-oct",
+                            "stride": 4,
+                        },
+                        "indices": {
+                            "byte_offset": 2,
+                            "byte_length": 1,
+                            "codec": "meshopt-index",
+                            "stride": 4,
+                        },
+                    },
+                    "ranges": [],
+                }
+            ],
+        },
+        separators=(",", ":"),
+    ).encode()
+    payload_offset = (12 + len(header) + 3) // 4 * 4
+    encoded = bytearray(payload_offset + 3)
+    encoded[:4] = b"EAM3"
+    struct.pack_into("<II", encoded, 4, 1, len(header))
+    encoded[12 : 12 + len(header)] = header
+    inspected = inspect_lod(encoded)
+    assert inspected["chunks"][0]["arrays"]["indices"]["count"] == 3
+    encoded.pop()
+    with pytest.raises(ValueError, match="indices block"):
+        inspect_lod(encoded)
 
 
 def _copied_pack(tmp_path: Path) -> Path:

@@ -29,7 +29,7 @@ export async function decodeLabMeshopt(data) {
       geometries.set(range.featureId, {
         featureId: range.featureId,
         signedAllenId: range.signedAllenId,
-        explodeGroupId: range.explodeGroupId,
+        explodeGroupId: chunk.hemisphere === 'left' ? -Math.abs(range.explodeGroupId) : Math.abs(range.explodeGroupId),
         hemisphere: chunk.hemisphere,
         positions,
         indices: Uint32Array.from(rangeIndices, (value) => value - range.vertexStart),
