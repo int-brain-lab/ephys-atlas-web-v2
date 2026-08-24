@@ -122,6 +122,6 @@ generator confirmation before recording a decision.
 
 The next data work is the earliest unblocked action in the implementation plan:
 publish and validate the W32 channel development release at a non-production
-origin, repeat W26 volume inspection/benchmarks without inventing Q4/Q5, audit
-the selected cluster source/catalog, and implement the preserved legacy BWM
+origin, retain D043 while completing the W26 Q5 origin benchmarks, audit the
+selected cluster source/catalog, and implement the preserved legacy BWM
 builder.

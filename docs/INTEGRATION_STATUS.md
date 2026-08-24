@@ -7,9 +7,9 @@ Status: active pre-alpha implementation on `main`. The repository is being optim
 The repository is self-describing for a clean Apple-silicon continuation.
 `.node-version` and npm engines pin Node 22; `docs/MACOS_DEVELOPMENT.md` owns the
 macOS bootstrap; and `docs/data/VOLUME_IMPLEMENTATION_HANDOFF.md` owns exact
-W26 acquisition, checksum, current implementation boundaries, Q4/Q5 stop
-conditions, and the ordered next work. A tracked-files-only clone with no
-ignored artifacts or private data passed `just bootstrap` and the complete
+W26 acquisition, checksum, current implementation boundaries, the D043 geometry
+decision, the Q5 stop condition, and the ordered next work. A tracked-files-only
+clone with no ignored artifacts or private data passed `just bootstrap` and the complete
 `just check` gate on 2026-08-24. Chat history, the frozen donor worktree, and
 Fractal-local generated artifacts are not required to continue M2.
 
@@ -55,7 +55,8 @@ serves that release and has no synthetic ephys fallback; Playwright alone mounts
 the golden fixture through the local-release server. Encoded resources are verified before persistent caching; corrupt
 entries are evicted and retried, and decoded identity is SHA plus decode
 contract rather than path. Schema-v0.1 runtime code, schemas, fixtures, and
-compatibility tests are removed. Q4 and Q5 remain unresolved and continue to
+compatibility tests are removed. Q4 is resolved for the exact W26 object by
+D043; Q5 remains unresolved and continues to
 block a purported production volume release.
 
 The enabled 2-D projection registry exposes registered coronal, sagittal, and
@@ -427,18 +428,19 @@ shared by mask and scalar caches, is disposed on feature switching, and uses
 consumer-aware in-flight deduplication so obsolete-render or prefetch
 cancellation cannot poison a current consumer.
 
-This proves the browser architecture, not the production science. Q4 still
-blocks the authoritative affine/axis mapping and any remaining missing-value
-semantics. Q5 remains open until the final HTTP/CDN origin confirms the
-transport choice.
+This proves the browser architecture. D043 now supplies the authoritative W26
+affine/axis mapping and outside/missing semantics. Q5 remains open until the
+final HTTP/CDN origin confirms the transport choice.
 
 A standalone, ignored local review artifact now compares the eight direction
 candidates permitted by the exact W26/Allen grid-shape match in linked
 orthogonal views. It also exposes voxel-center versus half-voxel-shifted
 coordinates and exports a reviewer choice without changing production state.
-The all-forward mask candidate currently ranks first, but no transform has been
-selected; procedure and limitations are in
-`docs/data/VOLUME_GEOMETRY_REVIEW.md`.
+The all-forward mask candidate ranked first. The repository/scientific owner
+inspected all linked slices and authoritatively selected that candidate with
+voxel centers on 2026-08-24. D043 and
+`docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json` preserve the decision;
+procedure and limitations remain in `docs/data/VOLUME_GEOMETRY_REVIEW.md`.
 
 The current implementation input is the private immutable `ea_active`
 `2026_W26` 50 um object. Its exact URI and official `ibleatools` access recipe
@@ -457,11 +459,11 @@ memory, preserves raw float16 values, writes either schema-v1 chunks or
 orthogonal slice packs, and computes exhaustive valid/outside/missing summaries
 from explicit sentinel semantics. Reference space, grid identity, affine,
 outside value, missing policy, layout, and pack/chunk dimensions are all
-required inputs; deterministic tests prove omitted choices fail closed. The
-current public-source audit found an official `ibleatools` `x/y/z` storage-order
-declaration but no producer statement linking W26 to the complete `iblatlas`
-origin/direction/index convention, so Q4 remains unresolved and the builder has
-not been invoked to create a W26 release.
+required inputs; deterministic tests prove omitted choices fail closed. D043
+selects the all-forward ML/AP/DV voxel-center affine for this source, retains
+the documented `0.0` outside sentinel, and records that a full-value audit found
+no NaNs or infinities. The builder has not yet been invoked to create a W26
+release because Q5 remains unresolved.
 
 Current W26 evidence favors depth-four orthogonal slice packs. Offline
 measurements for `psd_lfp`, `rms_ap`, and `polarity` require three center-plane
@@ -522,7 +524,7 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
 1. expose the validated `2026_W32` channel development release through an
    authorized non-production origin and repeat real-value browser acceptance;
    freeze the paper release after Q2;
-2. extend volume browser/HTTP benchmarks, resolve Q4-Q5 authoritatively, and
+2. extend volume browser/HTTP benchmarks, resolve Q5 authoritatively, and
    build the real immutable volume release on the completed projection/schema
    foundation;
 3. review the completed `ibl_neuropixel_brainwide_01` audit, freeze the approved

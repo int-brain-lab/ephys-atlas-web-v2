@@ -3,8 +3,8 @@
 ## Scope
 
 This report records local source inspection and transport measurements for the
-current implementation input. It does not define the unresolved scientific
-axis mapping or simulate the eventual production HTTP/CDN origin.
+current implementation input. D043 now defines the scientific axis mapping;
+this report still does not simulate the eventual production HTTP/CDN origin.
 
 ## Canonical input
 
@@ -25,7 +25,9 @@ The official `ibleatools` guide at
 `fffe0c75810dd1a013a878abcbcf8ef6348a5a21` now describes the storage order as
 `x × y × z × features`. It does not declare the W26 origin or index-center
 convention or identify producer code tying those axes to the complete
-`iblatlas` Allen coordinate transform, so Q4 remains blocked.
+`iblatlas` Allen coordinate transform. The scientific owner supplied that
+authority on 2026-08-24; D043 and the machine-readable geometry selection
+record the resulting all-forward voxel-center affine.
 
 The pinned repository `ibleatools` predates the documented `res_um` downloader
 argument. The puller therefore uses that API when available and otherwise uses
@@ -77,7 +79,16 @@ roughly halves cold transfer and decode work relative to depth 8, and stays
 well inside the provisional local interaction budgets. Slice packs exchange
 roughly threefold full-feature storage for that request behavior. Q5 remains
 open until equivalent measurements run under production cache headers and
-network profiles. Q4 remains independently blocked on authoritative geometry.
+network profiles. Q4 is resolved for this exact W26 source by D043.
+
+## Value-validity audit
+
+A bounded streaming pass over all 394,859,520 float16 values found 230,814,914
+zeros, zero NaNs, and zero positive or negative infinities. The official W26
+documentation defines `0.0` as outside brain. The schema-v1 `nonfinite` missing
+policy therefore remains explicit but classifies no source values in this
+object. The audit result is preserved with the geometry confirmation in
+`docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json`.
 
 ## Reproduction
 

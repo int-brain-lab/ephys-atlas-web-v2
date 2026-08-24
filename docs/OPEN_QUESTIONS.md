@@ -49,7 +49,7 @@ the complete recipe in provenance.
 
 ## Q4 — Encoding-volume scientific transform and outside-brain semantics
 
-Status: **BLOCKER** for the production `ephys_atlas_volumes` release.
+Status: **RESOLVED** for the pinned `2026_W26` source by D043.
 
 Current official `ibleatools` documentation identifies the implementation input
 as the `ea_active/2026_W26/brainwide_ephys_atlas_50um.npz` object: a 50 um,
@@ -63,31 +63,31 @@ The current official `ibleatools` guide at
 `fffe0c75810dd1a013a878abcbcf8ef6348a5a21` additionally labels the stored
 shape `(nx, ny, nz, N)` and the main array `x × y × z × features`. The pinned
 `iblatlas` implementation separately defines its Allen `x/y/z` coordinates as
-ML/AP/DV with right/anterior/superior positive and a Bregma origin. No audited
-source yet identifies the W26 producer or explicitly states that its serialized
-`x/y/z` uses that exact `iblatlas` origin, directions, and integer-center
-convention. Combining the two sources would therefore still be an inference,
-not an authoritative production transform.
+ML/AP/DV with right/anterior/superior positive and a Bregma origin. The
+repository owner, acting as scientific owner, subsequently supplied the
+required authority for this exact W26 object after reviewing the candidate
+geometry.
 
-A deterministic local review page now compares the eight direction candidates
+A deterministic local review page compares the eight direction candidates
 allowed by the exact W26/Allen shape match in three linked views, with
-voxel-center and half-voxel-shifted coordinate conventions. The current mask
-evidence ranks the all-forward candidate first (Dice `0.9940758117`), but does
-not prove handedness or the index-center convention. See
-`docs/data/VOLUME_GEOMETRY_REVIEW.md`. No candidate has been selected.
+voxel-center and half-voxel-shifted coordinate conventions. On 2026-08-24 the
+scientific owner authoritatively selected
+`ml-forward_ap-forward_dv-forward` with voxel centers. D043 records the full
+affine, and `docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json` preserves the
+confirmation and pinned evidence.
 
-Resolution needed: authoritative scientific axis mapping, origin/affine,
-handedness/directions, and any missing-value semantics distinct from the
-documented outside-brain zero. The measured C-order storage layout is a
-transport fact and does not resolve the scientific axis mapping.
+Resolution: stored axes are ML/AP/DV, all-forward in array order, with integer
+indices at voxel centers and the D043 affine. Outside brain remains the
+officially documented `0.0` sentinel. A complete streaming audit found no NaN
+or infinite values among 394,859,520 source values, so the explicit `nonfinite`
+missing policy classifies no values in this object.
 
 The schema-v1 volume release builder now requires the reference space, grid
 identity, complete affine, outside sentinel, non-finite missing policy, and
 transport parameters as explicit inputs and has deterministic failure coverage
-when any is absent. This unblocks recipe development without resolving Q4 or
-creating a purported W26 scientific release.
-
-Blocks: scientifically valid volume navigation and production volume release.
+when any is absent. This now supplies the scientific inputs needed by the
+builder. Q5 independently blocks production transport selection and release
+packaging.
 
 ## Q5 — Production volume transport
 

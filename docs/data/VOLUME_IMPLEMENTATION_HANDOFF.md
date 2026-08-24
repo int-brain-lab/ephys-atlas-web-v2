@@ -58,26 +58,26 @@ On macOS, use `shasum -a 256` if `sha256sum` is unavailable. A different byte
 count or hash is a hard stop. Credentials remain outside Git. Do not substitute
 `latest`, W12, another resolution, or a copied synthetic fixture.
 
-## Scientific blocker: Q4
+## Scientific geometry: Q4 resolved for W26
 
-Shape, resolution, C-order storage, and mask overlap do not establish the
-scientific transform. Production still requires authoritative evidence for:
+D043 records the repository/scientific owner's 2026-08-24 authoritative
+selection of `ml-forward_ap-forward_dv-forward` with integer indices at voxel
+centers. Use `reference_space_id=allen-ccf-2017`,
+`grid_id=allen-ccf-2017-50um`, and this row-major affine for the exact pinned
+W26 object:
 
-- which stored axis is ML, AP, and DV;
-- direction/sign of each axis;
-- index-center convention and origin;
-- the complete `index_to_world_um` affine;
-- any missing-value semantics distinct from documented outside-brain zero.
+```text
+[ 50,   0,   0, -5739 ]
+[  0, -50,   0,  5400 ]
+[  0,   0, -50,   332 ]
+[  0,   0,   0,     1 ]
+```
 
-The ignored eight-candidate review in
-`docs/data/VOLUME_GEOMETRY_REVIEW.md` ranks all-forward mask overlap first, but
-that is evidence, not authority. A new agent should inspect the pinned producer
-code/metadata and existing IBL atlas conventions for an explicit declaration.
-If none exists, keep Q4 blocked and request one precise scientific-owner choice.
-Never promote the best-overlap candidate implicitly.
-
-Independent implementation and tests may use an explicit candidate transform
-only in fixtures or candidate-labeled ignored artifacts.
+Use the officially documented outside value `0.0` and explicit missing policy
+`nonfinite`. A complete streaming audit found no NaNs or infinities among all
+394,859,520 source values. The machine-readable confirmation and pinned review
+evidence are in `docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json`. Do not
+generalize this decision to another vintage, resolution, or source hash.
 
 ## Transport follow-up: Q5
 
@@ -97,16 +97,14 @@ with the intended immutable HTTP/cache headers and a realistic network profile.
 
 1. Bootstrap the clean checkout and run `just check` before product changes.
 2. Acquire and checksum the exact W26 source above.
-3. Retain the completed public-source audit: official `ibleatools` now labels
-   storage as `x × y × z`, and `iblatlas` defines an Allen coordinate object,
-   but no audited producer ties W26 to its complete origin/direction/index
-   convention. Obtain that authoritative link or a scientific-owner choice.
+3. Retain D043 and its machine-readable selection as the exact W26 geometry
+   authority; do not reuse it for a different source object.
 4. Retain the completed fail-closed real-release builder and its deterministic
-   synthetic tests; do not invoke it for W26 without the Q4 inputs.
+   synthetic tests.
 5. Re-run or extend representative depth-4/depth-8 real-volume evidence only
    where the existing reports leave a concrete gap.
-6. After Q4 and Q5 are resolved, invoke `build-volumes` with the approved
-   transform and transport parameters to build a new immutable schema-v1
+6. After Q5 is resolved, invoke `build-volumes` with the approved transform and
+   transport parameters to build a new immutable schema-v1
    release for all 41 discovered
    features, preserving source identity and transformation provenance.
 7. Validate the complete graph, then exercise feature switching, linked slice

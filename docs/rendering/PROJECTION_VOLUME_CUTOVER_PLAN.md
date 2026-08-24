@@ -594,13 +594,14 @@ is merely renamed or left unused.
 
 ### Commit 9 — Build and validate the production volume release
 
-This commit waits for Q4 and Q5. After authoritative resolution:
+Q4 is now resolved for the exact W26 source by D043. This commit waits for Q5.
+After authoritative transport resolution:
 
 - encode the approved grid, affine, axis, outside, and missing-value semantics;
 - publish the benchmark-selected transport with resource hashes and provenance;
 - build the immutable real release;
 - run production-origin, performance, memory, failure, and cross-browser QA;
-- record the evidence and resolve Q4/Q5 in durable docs.
+- record the evidence and resolve Q5 in durable docs.
 
 ## Optional subagent strategy
 
@@ -684,14 +685,15 @@ never merge an inferred scientific choice.
   current contract.
 - Regenerated feature descriptions do not repeat raw/denoised source-variant
   metadata already expressed by feature identity and structured provenance.
-- Q4/Q5 remain explicit until authoritative evidence resolves them.
+- D043 remains bound to the exact pinned W26 source, and Q5 remains explicit
+  until authoritative origin evidence resolves it.
 - `just check` is green, focused benchmarks are recorded, and durable docs state
   the actual implementation rather than this plan.
 
 ## First action for the next agent
 
-Do not select a production volume transport before Q5 evidence. Obtain the
-authoritative Q4 grid/affine/outside semantics and Q5 real-data browser/HTTP
-measurements, then execute Commit 9. In parallel, external development releases
+Do not select a production volume transport before Q5 evidence. Retain the D043
+grid/affine/outside semantics, obtain Q5 real-data browser/HTTP measurements,
+then execute Commit 9. In parallel, external development releases
 may be rebuilt under new immutable schema-v1 release IDs and the projection pack
 may be verified from the selected deployment origin with opaque gzip delivery.

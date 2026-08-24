@@ -53,16 +53,17 @@ match.
 6. Export the selection JSON and return it for repository review. Exporting it
    does not resolve Q4 or modify production code.
 
-The current real-data report ranks
+The real-data report ranks
 `ml-forward_ap-forward_dv-forward` first by whole-mask overlap (Dice
-`0.9940758117`, IoU `0.9882214021`). This is evidence, not a selected transform.
-The close ML-reversed score illustrates why mask overlap alone cannot establish
-handedness.
+`0.9940758117`, IoU `0.9882214021`). The close ML-reversed score illustrates why
+mask overlap alone cannot establish handedness.
 
 ## Required follow-up after owner review
 
-Before Q4 can be resolved, preserve the exported selection and its rationale,
-verify it against authoritative generator/source documentation or an identified
-scientific owner, and record the resulting decision in `docs/DECISIONS.md`.
-Only then may the transform and complete outside/missing-value semantics be
-encoded in a production volume release.
+The repository owner, acting as scientific owner, inspected all linked slices
+and authoritatively selected `ml-forward_ap-forward_dv-forward` with the
+voxel-center convention on 2026-08-24. D043 records the resulting affine. The
+machine-readable confirmation, review metrics, validity audit, and pinned
+source hashes are preserved in
+`docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json`. This resolves Q4 only for
+the exact W26 object; Q5 still blocks production transport selection.

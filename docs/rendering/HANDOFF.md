@@ -78,9 +78,9 @@ parcellation IDs, hover, selection, and tooltips. Responsive secondary switching
 and maximize/Escape restoration use the existing workspace state. Volume
 features are explicitly anatomy-only on affine-free maps.
 
-Q4 still blocks authoritative production volume geometry/outside semantics,
-and Q5 still blocks the production transport choice. Use synthetic fixtures
-until those questions are resolved; do not infer a production affine.
+D043 supplies authoritative production geometry/outside semantics for the exact
+pinned W26 source, while Q5 still blocks the production transport choice. Do
+not generalize the W26 affine to another source object.
 
 ## Performance evidence
 
@@ -94,14 +94,15 @@ and the earlier v3 and Commit 5 baselines are in
 
 The checked-in real-volume evidence now includes the checksummed `2026_W26`
 50 um object and local layout/Chromium measurements for `psd_lfp`, `rms_ap`,
-and `polarity`; see `docs/data/VOLUME_2026_W26_EVIDENCE.md`. Q4 still requires
-authoritative scientific geometry, and Q5 still requires the eventual
+and `polarity`; see `docs/data/VOLUME_2026_W26_EVIDENCE.md`. D043 records the
+authoritative W26 scientific geometry, and Q5 still requires the eventual
 deployment-origin cache/network profile.
 
-The Q4 visual-review machinery is now a standalone local page, not another
+The Q4 visual-review machinery is a standalone local page, not another
 application renderer. It compares all eight shape-compatible direction
-candidates and the two coordinate conventions without selecting or installing
-an affine. See `docs/data/VOLUME_GEOMETRY_REVIEW.md`.
+candidates and the two coordinate conventions. The scientific owner used it to
+select D043 without installing another runtime renderer. See
+`docs/data/VOLUME_GEOMETRY_REVIEW.md`.
 
 ## 3-D
 

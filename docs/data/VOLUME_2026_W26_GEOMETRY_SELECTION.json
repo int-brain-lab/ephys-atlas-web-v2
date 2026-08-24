@@ -1,0 +1,59 @@
+{
+  "schema": "ibl-volume-geometry-selection-v1",
+  "review_id": "adb6b687284ef1806610eef9a028e54dc0ec9c86f18ddf722cb6b9da0cf6b0c1",
+  "selected_at": "2026-08-24T09:43:25Z",
+  "reviewer_role": "repository owner and scientific owner",
+  "confirmation_source": "interactive repository review recorded by the implementation agent",
+  "candidate_id": "ml-forward_ap-forward_dv-forward",
+  "resolution_um": 50,
+  "reference_space_id": "allen-ccf-2017",
+  "grid_id": "allen-ccf-2017-50um",
+  "grid_shape": [228, 264, 160],
+  "axis_order": ["ml", "ap", "dv"],
+  "index_convention": "voxel_centers",
+  "index_to_world_um": [
+    50.0, 0.0, 0.0, -5739.0,
+    0.0, -50.0, 0.0, 5400.0,
+    0.0, 0.0, -50.0, 332.0,
+    0.0, 0.0, 0.0, 1.0
+  ],
+  "metrics": {
+    "candidate_count": 4001179,
+    "candidate_precision": 1.0,
+    "dice": 0.994075811721868,
+    "intersection": 4001179,
+    "iou": 0.9882214020754931,
+    "reference_count": 4048869,
+    "reference_coverage": 0.9882214020754931,
+    "union": 4048869
+  },
+  "rationale": "The scientific owner inspected the linked coronal, sagittal, and horizontal review slices and confirmed that all slices agree for the all-forward candidate. The scientific owner then authoritatively confirmed ml-forward_ap-forward_dv-forward using the voxel-centers convention for W26.",
+  "scientific_owner_confirmation": true,
+  "validity": {
+    "outside_value": 0.0,
+    "outside_authority": "official ibleatools W26 documentation",
+    "missing_values": "nonfinite",
+    "audited_value_count": 394859520,
+    "audited_nan_count": 0,
+    "audited_infinite_count": 0
+  },
+  "source": {
+    "volume": {
+      "uri": "s3://ibl-brain-wide-map-private/aggregates/atlas/encoding_volumes/ea_active/2026_W26/brainwide_ephys_atlas_50um.npz",
+      "bytes": 238954924,
+      "sha256": "1f7509fe9e368a90704173bdb5c385827b199a7d5fa4b0aaa8fec5aca5402253"
+    },
+    "annotation": {
+      "bytes": 880845,
+      "sha256": "84e7cecea1b03af16e923c3639602b8324929f833425ba03582bf56f962ea0d4"
+    },
+    "iblatlas": {
+      "repository": "int-brain-lab/iblatlas",
+      "commit": "52083adf44825d0622a503705e095699a5957587"
+    },
+    "review_generator": {
+      "repository": "rossant/ibl-ephys-atlas-web-v2",
+      "commit": "b5cf1825492d22efb6a121417b58ea03104ffcdf"
+    }
+  }
+}

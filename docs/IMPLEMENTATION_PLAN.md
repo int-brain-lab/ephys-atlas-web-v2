@@ -142,7 +142,7 @@ Volume foundations already implemented and green on the handoff baseline:
   transports, valid/outside/missing summaries, explicit affine/validity/layout
   inputs, and deterministic synthetic coverage.
 
-Blocked by: Q4 and Q5.
+Blocked by: Q5. Q4 is resolved for the exact pinned W26 object by D043.
 
 Current implementation input: the private immutable `ea_active` `2026_W26`
 50 um object. Its exact S3 URI and the official `ibleatools` access recipe are
@@ -151,14 +151,12 @@ historical transport evidence, not the default input for new implementation.
 The complete cross-machine continuation contract is
 `docs/data/VOLUME_IMPLEMENTATION_HANDOFF.md`.
 
-Ordered next actions before scientific resolution:
+Ordered next actions before production packaging:
 
-1. have the scientific owner complete the local eight-candidate W26 geometry
-   review in `docs/data/VOLUME_GEOMETRY_REVIEW.md`, return the exported choice
-   and authoritative rationale, and record the resulting decision without
-   treating mask overlap as authority; the public-source audit now narrows the
-   stored axes to `x/y/z` but still does not establish origin/directions/index
-   convention for this producer;
+1. retain D043 and
+   `docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json` as the exact-source
+   scientific geometry authority; do not generalize the affine to another
+   vintage, resolution, or source hash;
 2. rebuild external development releases under new schema-v1 release IDs
    before using the opt-in real-release suite; do not add a compatibility reader;
 3. retain the completed checksum/header inspection and representative local
@@ -170,9 +168,9 @@ Ordered next actions before scientific resolution:
 6. keep failures explicit for invalid transforms, out-of-volume coordinates,
    resource-integrity errors, and unsupported layouts.
 
-After Q4/Q5 resolution:
+After Q5 resolution:
 
-7. encode the authoritative transform/outside semantics;
+7. encode the D043 transform and documented outside semantics;
 8. select and document the production layout;
 9. build a real immutable `ephys_atlas_volumes` release;
 10. run linked-slice browser acceptance against it.

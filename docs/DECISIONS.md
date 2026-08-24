@@ -310,8 +310,8 @@ One ML/AP/DV world cursor remains authoritative. Registered anatomy and volume
 layers independently map it through their own declared transforms; an anatomy
 slice index or display calibration must never stand in for volume geometry.
 Volume transport remains independent from scientific geometry and is still
-selected only by Q5 evidence. Q4 continues to block production affine and
-outside/missing-value semantics.
+selected only by Q5 evidence. D043 supplies the exact-source W26 production
+affine and outside/missing-value semantics.
 
 Separate coordinate identity into `reference_space_id`, grid identity, and
 asset/pack identity. Only an exact reference-space match permits compositing;
@@ -649,3 +649,34 @@ selected source inventory and triangle topology and must not reopen scientific
 geometry review. Publication location and immutable deployment remain
 operational follow-up work. Ephys encoding volumes remain a separate product
 path rendered only as linked coronal, sagittal, and horizontal 2-D slices.
+
+## D043 — Select the W26 all-forward voxel-center geometry
+
+For the checksummed `ea_active/2026_W26` 50 um encoding volume, select stored
+axes `(x, y, z)` as `(ML, AP, DV)` with all-forward array directions and integer
+indices at voxel centers. Use `reference_space_id=allen-ccf-2017`,
+`grid_id=allen-ccf-2017-50um`, shape `(228, 264, 160)`, and this row-major
+`index_to_world_um` affine:
+
+```text
+[ 50,   0,   0, -5739 ]
+[  0, -50,   0,  5400 ]
+[  0,   0, -50,   332 ]
+[  0,   0,   0,     1 ]
+```
+
+The repository owner, acting as scientific owner, inspected the linked
+coronal, sagittal, and horizontal candidate review and authoritatively
+confirmed `ml-forward_ap-forward_dv-forward` with the voxel-center convention
+on 2026-08-24. The selected candidate has whole-mask Dice `0.9940758117`, IoU
+`0.9882214021`, and W26 precision `1.0` against the hash-pinned Allen 50 um
+annotation. Those measurements support the review but are not substituted for
+the owner's authority. The complete confirmation and source hashes are
+preserved in `docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json`.
+
+Retain the officially documented outside-brain sentinel `0.0`. A full streaming
+audit of all 394,859,520 values in the pinned W26 object found zero NaNs and
+zero infinities, so the schema-v1 `nonfinite` missing policy is explicit but
+classifies no W26 source values. This resolves Q4 for this exact source object
+only. It does not select the Q5 transport, authorize publication, or generalize
+the affine to another volume vintage, resolution, or source hash.
