@@ -11,28 +11,38 @@ export async function decodeLabMeshopt(data) {
   const payload = data.subarray(payloadOffset);
   const geometries = new Map();
   for (const chunk of header.chunks) {
-    const vertexBytes = new Uint8Array(chunk.vertexCount * 8);
-    const indices = new Uint32Array(chunk.indexCount);
-    MeshoptDecoder.decodeVertexBuffer(vertexBytes, chunk.vertexCount, 8, block(payload, chunk.blocks.vertices));
-    MeshoptDecoder.decodeIndexBuffer(new Uint8Array(indices.buffer), chunk.indexCount, 4, block(payload, chunk.blocks.indices));
+    const vertexCount = chunk.vertexCount ?? chunk.vertex_count;
+    const indexCount = chunk.indexCount ?? chunk.index_count;
+    const minimum = chunk.bounds.minimum ?? chunk.bounds.minimum_um;
+    const maximum = chunk.bounds.maximum ?? chunk.bounds.maximum_um;
+    const vertexBytes = new Uint8Array(vertexCount * 8);
+    const indices = new Uint32Array(indexCount);
+    MeshoptDecoder.decodeVertexBuffer(vertexBytes, vertexCount, 8, block(payload, chunk.blocks.vertices));
+    MeshoptDecoder.decodeIndexBuffer(new Uint8Array(indices.buffer), indexCount, 4, block(payload, chunk.blocks.indices));
     const quantized = new Uint16Array(vertexBytes.buffer);
     for (const range of chunk.ranges) {
-      const positions = new Float32Array(range.vertexCount * 3);
-      for (let vertex = 0; vertex < range.vertexCount; vertex += 1) {
+      const rangeVertexStart = range.vertexStart ?? range.vertex_start;
+      const rangeVertexCount = range.vertexCount ?? range.vertex_count;
+      const rangeIndexStart = range.indexStart ?? range.index_start;
+      const rangeIndexCount = range.indexCount ?? range.index_count;
+      const featureId = range.featureId ?? range.feature_id;
+      const signedAllenId = range.signedAllenId ?? range.signed_allen_id;
+      const explodeGroupId = range.explodeGroupId ?? range.signed_explode_group_id;
+      const positions = new Float32Array(rangeVertexCount * 3);
+      for (let vertex = 0; vertex < rangeVertexCount; vertex += 1) {
         for (let axis = 0; axis < 3; axis += 1) {
-          const value = quantized[(range.vertexStart + vertex) * 4 + axis];
-          positions[vertex * 3 + axis] = chunk.bounds.minimum[axis]
-            + (chunk.bounds.maximum[axis] - chunk.bounds.minimum[axis]) * value / 16383;
+          const value = quantized[(rangeVertexStart + vertex) * 4 + axis];
+          positions[vertex * 3 + axis] = minimum[axis] + (maximum[axis] - minimum[axis]) * value / 16383;
         }
       }
-      const rangeIndices = indices.subarray(range.indexStart, range.indexStart + range.indexCount);
-      geometries.set(range.featureId, {
-        featureId: range.featureId,
-        signedAllenId: range.signedAllenId,
-        explodeGroupId: chunk.hemisphere === 'left' ? -Math.abs(range.explodeGroupId) : Math.abs(range.explodeGroupId),
+      const rangeIndices = indices.subarray(rangeIndexStart, rangeIndexStart + rangeIndexCount);
+      geometries.set(featureId, {
+        featureId,
+        signedAllenId,
+        explodeGroupId: chunk.hemisphere === 'left' ? -Math.abs(explodeGroupId) : Math.abs(explodeGroupId),
         hemisphere: chunk.hemisphere,
         positions,
-        indices: Uint32Array.from(rangeIndices, (value) => value - range.vertexStart),
+        indices: Uint32Array.from(rangeIndices, (value) => value - rangeVertexStart),
       });
     }
   }
@@ -248,5 +258,9 @@ function triangleQuality(positions, indices) {
 }
 
 function distance(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]); }
-function block(payload, descriptor) { return payload.subarray(descriptor.byteOffset, descriptor.byteOffset + descriptor.byteLength); }
+function block(payload, descriptor) {
+  const offset = descriptor.byteOffset ?? descriptor.byte_offset;
+  const length = descriptor.byteLength ?? descriptor.byte_length;
+  return payload.subarray(offset, offset + length);
+}
 function align4(value) { return Math.ceil(value / 4) * 4; }

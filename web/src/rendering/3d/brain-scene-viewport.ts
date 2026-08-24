@@ -18,6 +18,7 @@ export interface BrainScene3DInteractionSink {
 export interface BrainScene3DViewport {
   setPresentation(presentation: RegionalPresentation): void;
   setViewState(state: Scene3DViewState): void;
+  focusRegion(signedAllenId: number | null): void;
   activate(): void;
   deactivate(): void;
   destroy(): void;
@@ -92,6 +93,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
   private geometryUploads = 0;
   private pointerPress: { id: number; x: number; y: number } | null = null;
   private hovered: number | null = null;
+  private focusedRegionId: number | null = null;
 
   constructor(
     private readonly host: HTMLElement,
@@ -143,6 +145,15 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     for (const mesh of this.meshes) mesh.material.uniforms.uExplode!.value = explode;
     if (state.camera) this.applyCamera(state.camera);
     this.host.dataset.explode = String(explode);
+    if (this.focusedRegionId !== null) this.frameFocusedRegion();
+    this.scheduleRender();
+  }
+
+  focusRegion(signedAllenId: number | null): void {
+    this.assertActiveObject();
+    this.focusedRegionId = signedAllenId;
+    if (!this.manifest) return;
+    if (signedAllenId === null) this.frameCamera(); else this.frameFocusedRegion();
     this.scheduleRender();
   }
 
@@ -180,7 +191,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
       if (this.destroyed) return;
       this.manifest = manifest;
       this.installLod(lod);
-      this.frameCamera();
+      if (this.focusedRegionId === null) this.frameCamera(); else this.frameFocusedRegion();
       if (this.state.camera) this.applyCamera(this.state.camera);
       this.host.dataset.scene3dState = 'ready';
       this.host.dataset.lod = lod.id;
@@ -368,6 +379,27 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     this.camera.near = Math.max(.01, radius / 100);
     this.camera.far = radius * 20;
     this.camera.lookAt(sphere.center);
+    this.camera.updateProjectionMatrix();
+    this.controls.saveState();
+  }
+
+  private frameFocusedRegion(): void {
+    if (!this.manifest || this.focusedRegionId === null) return;
+    const region = this.manifest.regions.find((candidate) => candidate.signed_allen_id === this.focusedRegionId);
+    if (!region) throw new Error(`Signed Allen ${this.focusedRegionId} is absent from the mesh pack`);
+    const minimum = new THREE.Vector3(...region.bounds.minimum_um);
+    const maximum = new THREE.Vector3(...region.bounds.maximum_um);
+    const center = minimum.clone().add(maximum).multiplyScalar(.5);
+    const metadata = this.manifest as MeshPackV1 & ManifestGeometryMetadata;
+    const whole = new THREE.Vector3(...(metadata.whole_brain_centroid_um ?? [0, 0, 0]));
+    const group = metadata.explode_groups?.find((candidate) => candidate.signed_group_id === region.signed_explode_group_id);
+    if (group) center.add(new THREE.Vector3(...group.centroid_um).sub(whole).multiplyScalar(this.state.explode));
+    const radius = Math.max(10, minimum.distanceTo(maximum) * .5);
+    this.controls.target.copy(center);
+    this.camera.position.copy(center).add(new THREE.Vector3(0, -radius * 4, radius * 2.2));
+    this.camera.near = Math.max(.01, radius / 100);
+    this.camera.far = Math.max(radius * 20, 10_000);
+    this.camera.lookAt(center);
     this.camera.updateProjectionMatrix();
     this.controls.saveState();
   }

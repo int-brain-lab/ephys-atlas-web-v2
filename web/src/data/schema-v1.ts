@@ -159,6 +159,10 @@ export interface MeshRegionV1 {
   readonly signed_allen_id: number;
   readonly hemisphere: MeshHemisphereV1;
   readonly mappings: Readonly<Record<MeshMappingV1, number | null>>;
+  readonly bounds: {
+    readonly minimum_um: readonly [number, number, number];
+    readonly maximum_um: readonly [number, number, number];
+  };
   readonly signed_explode_group_id: number;
 }
 
