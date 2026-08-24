@@ -251,9 +251,12 @@ and the owner approved scope, Allen 545, Allen 898, and nullable-mapping
 choices. The fail-closed audit found four signed centroids outside the pinned
 GLB bounds (three absolute Allen IDs; maximum 109.447 um). The owner has now
 approved canonical regeneration of all six bilateral halves for those three
-positive IDs, so the next unblocked P3D slice is the local regeneration,
-candidate build, and exact review bundle defined in
-`docs/rendering/3D_PROMOTION_REVIEW.md`. Q12 still blocks final LOD/
+positive IDs, and that exact regeneration is implemented. The next scope gate
+found that frozen-donor Allen 222 and 763 have only left signed surfaces: the
+donor is 566 positive / 1,130 signed, canonical metadata is 566 / 1,132, and
+schema v1 requires bilateral sources. Candidate emission now fails closed
+until the owner makes an explicit scope decision for those two IDs; see
+`docs/rendering/3D_PROMOTION_REVIEW.md`. Q12 also still blocks final LOD/
 cross-browser review, immutable-origin deployment, and promotion.
 
 Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.

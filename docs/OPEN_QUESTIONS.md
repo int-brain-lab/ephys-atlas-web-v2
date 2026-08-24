@@ -208,12 +208,19 @@ centroids or claim a valid production pack.
 
 On 2026-08-22 the owner approved deterministic canonical-annotation
 regeneration of the complete bilateral source identities for Allen 927,
-526322264, and 599626923. Local implementation is therefore unblocked. The
-exact next-agent contract and owner sign-off form are in
+526322264, and 599626923. That exact regeneration is implemented locally. A
+subsequent fail-closed scope gate found that the frozen donor contains only the
+left signed surfaces for Allen 222 (`RO`) and 763 (`OV`): 566 unique positive
+IDs produce 1,130 donor surfaces, whereas schema v1 requires every source to be
+bilateral and the approved checklist expects 565 positive IDs / 1,130 signed
+regions. Canonical LUT metadata instead has 566 / 1,132. No choice for those
+two additional identities is approved, so candidate emission and owner visual
+review are blocked. Evidence and the exact handoff remain in
 `docs/rendering/3D_PROMOTION_REVIEW.md`.
 
-Resolution still needed before production promotion: successful regenerated
-geometry evidence; the recorded 320/480/800 px owner review; Chrome/Edge,
+Resolution still needed before production promotion: an explicit Allen
+222/763 scope decision; successful candidate validation; the recorded
+320/480/800 px owner review; Chrome/Edge,
 Firefox, and Safari transfer/decode/first-frame/memory/picking results; final
 default/upgrade LODs; and the public immutable asset origin.
 

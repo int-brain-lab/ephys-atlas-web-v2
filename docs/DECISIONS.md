@@ -622,3 +622,12 @@ and does not authorize smoothing/manual repair, additional IDs, final LOD
 selection, publication, a default descriptor, removal of the experimental
 label, or donor retirement. The binding handoff is
 `docs/rendering/3D_PROMOTION_REVIEW.md`.
+
+Implementation of that exact six-surface regeneration exposed a separate
+unresolved donor-scope contradiction on 2026-08-24. The frozen donor has only
+the negative/left surface for Allen 222 (`RO`) and 763 (`OV`), yielding 566
+unique sources but 1,130 signed surfaces; canonical LUT metadata is fully
+bilateral at 566 / 1,132, while the approved checklist says 565 / 1,130.
+D041 makes no scientific choice for these IDs. Candidate generation therefore
+fails closed before manifest emission. Regeneration, exclusion, duplication,
+relabeling, or a bilateral-contract exception requires a new owner decision.

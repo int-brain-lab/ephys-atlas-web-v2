@@ -1,7 +1,7 @@
 # 3-D promotion candidate regeneration and review handoff
 
-Status: **local regeneration approved; implementation and human review pending
-(2026-08-22)**.
+Status: **approved regeneration implemented; source-scope contradiction blocks
+candidate emission and human review (2026-08-24)**.
 
 This is the single checklist for the next agent and the repository owner when
 resuming Q12. It narrows Commit 7 of `3D_INTEGRATION_PLAN.md`; it does not
@@ -51,6 +51,21 @@ The audit is generated at
 Candidate creation correctly stops before emitting a manifest. Never resolve
 this by clamping centroids, substituting mesh-derived centroids, expanding
 declared bounds, or marking bounds validation green.
+
+The approved six-surface regeneration now completes locally with exact pinned
+inputs and topology-safe separation of ambiguous voxel contacts. Before pack
+emission, a second fail-closed gate found a contradiction in the frozen donor:
+Allen 222 (`RO`) and 763 (`OV`) each have only a negative/left signed surface.
+The donor therefore contains 566 unique positive source IDs and 1,130 signed
+surfaces, while the current schema and this checklist require 565 fully
+bilateral source IDs and 1,130 signed regions. Canonical metadata contains both
+signs for all 566 IDs (1,132 signed regions). The generated evidence is
+`artifacts/mesh-production-candidate/pack/source-scope-audit.json`.
+
+This is outside the approved regeneration set. Candidate creation must remain
+blocked until the owner explicitly chooses how Allen 222 and 763 enter the
+production scope. Do not regenerate them, exclude them, duplicate the donor
+surface, relabel them, or weaken the bilateral schema invariant by inference.
 
 ## Pinned inputs
 

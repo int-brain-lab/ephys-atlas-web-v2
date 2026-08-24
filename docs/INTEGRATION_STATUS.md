@@ -140,10 +140,15 @@ the pinned GLB bounds (three absolute Allen IDs; maximum 109.447 um). No
 production manifest was emitted. The owner has since approved canonical
 regeneration of the complete bilateral
 source identities for Allen 927, 526322264, and 599626923. Local candidate work
-is now unblocked and has one durable implementation/evidence/owner-review
-checklist in `docs/rendering/3D_PROMOTION_REVIEW.md`. Q12 still blocks final
-LOD/cross-browser review, immutable-origin deployment, and promotion;
-publication remains unapproved.
+implemented that exact scope, including deterministic ambiguous-contact
+separation, but a later source-scope gate found unilateral-only frozen-donor
+surfaces for Allen 222 and 763. The donor is 566 positive / 1,130 signed while
+canonical metadata is 566 / 1,132 and schema v1 requires bilateral sources;
+the planned 565 / 1,130 contract cannot be emitted without a new scientific
+scope decision. The durable audit and owner-review checklist are in
+`docs/rendering/3D_PROMOTION_REVIEW.md`. Q12 now blocks candidate emission as
+well as final LOD/cross-browser review, immutable-origin deployment, and
+promotion; publication remains unapproved.
 
 The approved anatomy smoothing investigation has completed its first three
 implementation slices. A deterministic registry exposes exact geometry, GEOS
