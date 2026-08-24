@@ -52,6 +52,10 @@ test-browser:
 test-brainwide-map-release:
     cd web && npm run test:brainwide-map-release
 
+# Opt-in browser acceptance for the ignored local D044 cluster release.
+test-cluster-release:
+    cd web && npm run test:cluster-release
+
 # Profile cold-pack, same-pack, and retained SVG navigation in Chromium.
 benchmark-anatomy:
     cd web && npm run benchmark:anatomy
@@ -129,6 +133,10 @@ data-pull-clusters release="latest":
 # Build the launch channel dataset. Raw/denoised and population are intentionally explicit.
 data-build-channels release feature_mode population created_at ibleatools_commit iblatlas_commit builder_commit:
     {{uv-scientific}} ephys-atlas-data build-channels {{release}} --feature-mode {{feature_mode}} --population {{population}} --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
+
+# Build the D044-approved cluster release from its machine-consumable catalog selection.
+data-build-clusters release created_at ibleatools_commit iblatlas_commit builder_commit:
+    {{uv-scientific}} ephys-atlas-data build-clusters {{release}} --project ibl_neuropixel_brainwide_01 --population all --catalog-selection docs/data/CLUSTERS_CATALOG_SELECTION.json --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
 
 # Build an explicitly local W26 slice-pack candidate from the committed D043 selection.
 data-build-volumes-candidate source_release release_id created_at pack_depth ibleatools_commit iblatlas_commit builder_commit:

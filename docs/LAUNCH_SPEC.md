@@ -119,9 +119,10 @@ Acceptance criteria:
 - the viewer requires no cluster-specific hardcoded feature list.
 
 D038 selects all rows from a content-addressed
-`ibl_neuropixel_brainwide_01/clusters.table.pqt` snapshot. Q6 remains open only
-until the source audit and human review freeze the proposed 14-feature scalar
-catalog.
+`ibl_neuropixel_brainwide_01/clusters.table.pqt` snapshot. D044 resolves Q6 by
+freezing all 14 scalar features and units from the pinned original website
+repository. The machine-consumable selection, deterministic immutable build,
+and local production-HTTP browser evidence are recorded under `docs/data/`.
 
 ## 6. `ephys_atlas_volumes`
 

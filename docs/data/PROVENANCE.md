@@ -77,10 +77,11 @@ A v2 immutable release therefore snapshots and checksums the exact source
 objects (or should use an S3 object version if publication infrastructure makes
 one available). The provisional puller assigns a content-derived snapshot id.
 
-**Do not guess:** all clusters vs `clusters_good`; the intended project;
-exact QC criterion (including current relaxed-RP alternatives); which scalar
-columns become web features; whether waveform/ACG/STPC/STLFP arrays are launch
-features or only downloads; source-object versioning policy.
+D038/D044 resolve the launch population, project, scalar catalog, unit mapping,
+and treatment of the large array products. The machine authority and exact
+source hashes are `docs/data/CLUSTERS_CATALOG_SELECTION.json`; do not substitute
+another project, population, feature list, table, or unit policy under the same
+release identity. Source-object publication/versioning remains operational.
 
 ## `ephys_atlas_volumes`
 

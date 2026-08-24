@@ -289,8 +289,11 @@ missing values. D044 resolves Q6 by approving all 14 features and the explicit
 unit map from the pinned original website repository. The committed catalog
 selection adds implementation-grounded descriptions and conservative display
 defaults while preserving all source values; the builder fails closed on any
-source/catalog mismatch. Immutable build and browser acceptance are next; see
-`docs/data/CLUSTERS_SOURCE_AUDIT.md`.
+source/catalog mismatch. The ignored 191-file immutable release validates and
+reproduces byte-for-byte across two builds. Opt-in Chromium acceptance switches
+all 14 dynamic features and all three parcellations and checks units,
+descriptions, scale defaults, and provenance through the production HTTP reader.
+It remains unpublished pending Q8/Q9. See `docs/data/CLUSTERS_RELEASE.md`.
 
 ### `brainwide_map`
 
@@ -546,8 +549,8 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
 2. extend volume browser/HTTP benchmarks, resolve Q5 authoritatively, and
    build the real immutable volume release on the completed projection/schema
    foundation;
-3. build the D044-approved immutable cluster release and run all-feature,
-   all-parcellation production-HTTP browser acceptance;
+3. keep the D044 cluster release reproducible and publish/retest its already-
+   built bytes only after Q8/Q9 authorization;
 4. keep the validated D038 preserved five-family BWM release and opt-in local
    browser acceptance green; online catalog publication remains deferred until
    authorized;

@@ -271,7 +271,7 @@ Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 
 ## M3 — `ephys_atlas_clusters`
 
-Status: **catalog approved; immutable release and browser acceptance next**.
+Status: **immutable local release and browser acceptance complete; online publication deferred**.
 
 Implemented:
 
@@ -284,13 +284,17 @@ The source project is `ibl_neuropixel_brainwide_01` by D038. D044 resolves Q6
 by approving every one of the original project's 14 scalar cluster features,
 its explicit unit map, implementation-grounded descriptions, and robust v2
 display policy. The checksummed selection is machine-consumable and fail-closed.
+The complete 14-feature, three-parcellation release validates under schema v1,
+reproduces byte-for-byte, and passes opt-in production-HTTP Chromium acceptance.
+Exact hashes and commands are in `docs/data/CLUSTERS_RELEASE.md`.
 
 Next actions:
 
-1. build and validate the immutable release;
-2. exercise all 14 features and three parcellations through the production HTTP
-   browser path without cluster-specific UI hardcoding;
-3. record deterministic release hashes and the exact reproduction command.
+1. keep the ignored immutable release reproducible and its opt-in acceptance
+   suite green;
+2. publish the already-built bytes and add the release to the public catalog
+   only when Q8/Q9 publication and default-alias decisions are authorized;
+3. repeat acceptance against the selected public origin.
 
 Acceptance reference: section 5 of the launch spec.
 

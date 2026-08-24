@@ -144,8 +144,11 @@ is both an Alyx project/cohort name and the source namespace:
 It is not a release identifier. Snapshot and checksum the exact aggregate
 objects before building. Use all rows of `clusters.table.pqt` under the recipe
 in `docs/data/CLUSTERS_RECIPE.md`; do not substitute `clusters_good.table.pqt`
-or the stricter paper `bwm_query` population. D038 names the 14-feature review
-candidate; the final scalar catalog remains explicit after source audit.
+or the stricter paper `bwm_query` population. D044 freezes all 14 features and
+the original website repository's explicit cluster-unit mapping. The final
+catalog remains an explicit checksummed build input in
+`docs/data/CLUSTERS_CATALOG_SELECTION.json`; see
+`docs/data/CLUSTERS_RELEASE.md` for the validated local release.
 
 ## Preserved legacy Brain-Wide Map
 
