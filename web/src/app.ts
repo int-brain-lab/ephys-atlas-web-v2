@@ -41,6 +41,7 @@ export interface AppOptions {
 export class AtlasApp {
   private readonly store: AppStore;
   private readonly localSource = new LocalDatasetSource();
+  private readonly repository: DatasetRepository;
   private readonly session: DatasetSession;
   private readonly urlController: UrlStateController;
   private readonly shell: AppShell;
@@ -55,8 +56,8 @@ export class AtlasApp {
     const defaultView = options.defaultView ?? DEFAULT_VIEW_STATE;
     this.store = createAppStore({ ...DEFAULT_APP_STATE, view: defaultView });
     const catalogUrl = new URL(options.catalogUrl ?? '/catalog.json', window.location.href).toString();
-    const repository = new DatasetRepository(new HttpDatasetSource(catalogUrl), this.localSource);
-    this.session = new DatasetSession(repository, this.store, () => this.render());
+    this.repository = new DatasetRepository(new HttpDatasetSource(catalogUrl), this.localSource);
+    this.session = new DatasetSession(this.repository, this.store, () => this.render());
     this.urlController = new UrlStateController(this.store, window, defaultView);
     this.viewportFactory = options.viewportFactory ?? new NullProjectionViewportFactory();
     this.shell = new AppShell(root, {
@@ -86,6 +87,7 @@ export class AtlasApp {
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       shareCurrentView: () => this.copyCurrentUrl(),
       downloadCurrentFeature: () => this.downloadCurrentFeature(),
+      downloadArtifact: (artifactId, featureId) => this.downloadArtifact(artifactId, featureId),
       importLocal: (files) => this.importLocal(files),
       reportError: (error) => this.reportRuntimeError(error),
     }, this.viewportFactory, options.scene3dFactory);
@@ -370,6 +372,19 @@ export class AtlasApp {
     this.triggerCsvDownload(csv, filename);
   }
 
+  private async downloadArtifact(artifactId: string, featureId?: string): Promise<void> {
+    const state = this.store.getState().view;
+    const payload = await this.repository.loadArtifact(state.dataset, artifactId, featureId);
+    const pathName = payload.artifact.resource.path.split('/').at(-1) ?? payload.artifact.id;
+    const filename = payload.artifact.resource.codec.name === 'gzip' && !pathName.endsWith('.gz')
+      ? `${pathName}.gz`
+      : pathName;
+    const mediaType = payload.artifact.resource.codec.name === 'gzip'
+      ? 'application/gzip'
+      : payload.artifact.resource.mediaType;
+    this.triggerBlobDownload(new Blob([payload.bytes], { type: mediaType }), filename);
+  }
+
   private downloadSelectedComparison(): void {
     const state = this.store.getState().view;
     const { manifest, feature, regions: featureRegions } = this.session.snapshot();
@@ -389,7 +404,11 @@ export class AtlasApp {
   }
 
   private triggerCsvDownload(csv: string, filename: string): void {
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    this.triggerBlobDownload(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename);
+  }
+
+  private triggerBlobDownload(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;

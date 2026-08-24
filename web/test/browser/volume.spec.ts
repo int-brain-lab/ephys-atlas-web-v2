@@ -1,4 +1,41 @@
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+
+test('volume features expose and download their immutable declared artifacts', async ({ page }) => {
+  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
+  await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
+
+  const actions = page.locator('.app-header__desktop-actions');
+  await expect(actions.getByRole('button', { name: 'Download' })).toBeEnabled();
+  await actions.getByRole('button', { name: 'Download' }).click();
+  const downloads = page.getByRole('dialog', { name: 'Download feature data' });
+  await expect(downloads).toContainText('Downloads preserve the bytes declared by this immutable release');
+  const artifact = downloads.getByRole('button', { name: /Human-readable regional fixture values/ });
+  await expect(artifact).toContainText('Current feature · rms_ap.csv · 45 B');
+
+  const downloadPromise = page.waitForEvent('download');
+  await artifact.click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('rms_ap.csv');
+  const path = await download.path();
+  expect(path).not.toBeNull();
+  expect(await readFile(path!, 'utf8')).toBe('atlas_id,mean\n-362,1\n-382,2\n-477,0\n-803,3.25\n');
+});
+
+test('volume artifact integrity failures remain explicit and do not download corrupt bytes', async ({ page }) => {
+  await page.route('**/features/rms_ap/rms_ap.csv', (route) => route.fulfill({
+    status: 200,
+    contentType: 'text/csv',
+    body: 'x'.repeat(45),
+  }));
+  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
+  const actions = page.locator('.app-header__desktop-actions');
+  await actions.getByRole('button', { name: 'Download' }).click();
+  const downloads = page.getByRole('dialog', { name: 'Download feature data' });
+  await downloads.getByRole('button', { name: /Human-readable regional fixture values/ }).click();
+  await expect(downloads.getByRole('alert')).toHaveText('Resource SHA-256 mismatch');
+  await expect(downloads).toBeVisible();
+});
 
 test('schema-v1 chunks3d volume renders all three orthogonal golden slices', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });

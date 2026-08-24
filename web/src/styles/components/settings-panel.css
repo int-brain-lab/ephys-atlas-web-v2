@@ -454,3 +454,59 @@
   font-size: .64rem;
   overflow-wrap: anywhere;
 }
+
+.download-dialog {
+  width: min(36rem, calc(100vw - 2rem));
+}
+
+.download-dialog__intro p,
+.download-dialog__empty {
+  max-width: 60ch;
+}
+
+.download-dialog__error {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid rgb(220 90 90 / 45%);
+  border-radius: var(--radius-sm);
+  background: rgb(130 35 35 / 18%);
+  color: #f0aaaa !important;
+}
+
+.download-dialog__list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.download-dialog__item {
+  display: grid;
+  gap: .28rem;
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-view);
+  color: var(--color-text);
+  text-align: left;
+}
+
+.download-dialog__item:hover {
+  border-color: rgb(var(--color-accent-rgb) / 55%);
+  background: var(--color-accent-soft);
+}
+
+.download-dialog__item:disabled {
+  cursor: progress;
+  opacity: .65;
+}
+
+.download-dialog__item strong {
+  font-size: .73rem;
+  font-weight: 600;
+}
+
+.download-dialog__item span {
+  color: var(--color-text-muted);
+  font-size: .64rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}

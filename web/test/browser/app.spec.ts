@@ -647,8 +647,11 @@ test('share, download and info expose the immutable scientific context', async (
   await expect(info).toContainText('Deterministic synthetic fixture seed');
   await info.getByRole('button', { name: 'Close' }).click();
 
-  const downloadPromise = page.waitForEvent('download');
   await actions.getByRole('button', { name: 'Download' }).click();
+  const downloads = page.getByRole('dialog', { name: 'Download feature data' });
+  await expect(downloads).toContainText('Human-readable regional fixture values');
+  const downloadPromise = page.waitForEvent('download');
+  await downloads.getByRole('button', { name: /Export Allen Median as CSV/ }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe('golden_fixture-golden-v1-rms_ap-allen-median.csv');
   const path = await download.path();

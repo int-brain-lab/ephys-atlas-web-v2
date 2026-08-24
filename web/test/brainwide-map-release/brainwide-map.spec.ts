@@ -91,8 +91,10 @@ test('feature switching and download retain immutable BWM context', async ({ pag
   await expect.poll(() => page.locator('.region-row[data-missing="false"]').count()).toBe(210);
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-total', '210');
 
-  const downloadPromise = page.waitForEvent('download');
   await page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Download' }).click();
+  const downloads = page.getByRole('dialog', { name: 'Download feature data' });
+  const downloadPromise = page.waitForEvent('download');
+  await downloads.getByRole('button', { name: /Export Beryl Mean as CSV/ }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(
     'brainwide_map-legacy-v1-1d908bea-wheel_velocity_glm_effect-beryl-mean.csv',

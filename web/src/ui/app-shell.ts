@@ -60,6 +60,7 @@ export interface AppShellCallbacks {
   clearSelection(): void;
   shareCurrentView(): Promise<void>;
   downloadCurrentFeature(): void;
+  downloadArtifact(artifactId: string, featureId?: string): Promise<void>;
   importLocal(files: FileList): Promise<void>;
   reportError(error: unknown): void;
 }
@@ -157,6 +158,12 @@ function titleCaseToken(value: string): string {
   return words ? words[0]?.toUpperCase() + words.slice(1) : 'Unavailable';
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0)} KiB`;
+  return `${(bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} MiB`;
+}
+
 export class AppShell {
   private readonly app: HTMLDivElement;
   private readonly regionPane: HTMLElement;
@@ -164,6 +171,8 @@ export class AppShell {
   private readonly backdrop: HTMLButtonElement;
   private readonly infoDialog: HTMLDialogElement;
   private readonly infoContent: HTMLElement;
+  private readonly downloadDialog: HTMLDialogElement;
+  private readonly downloadContent: HTMLElement;
   private readonly helpDialog: HTMLDialogElement;
   private analysisDialog!: HTMLDialogElement;
   private readonly shortcutStatus: HTMLElement;
@@ -257,6 +266,9 @@ export class AppShell {
     const info = this.createInfoDialog();
     this.infoDialog = info.dialog;
     this.infoContent = info.content;
+    const download = this.createDownloadDialog();
+    this.downloadDialog = download.dialog;
+    this.downloadContent = download.content;
     this.helpDialog = this.createHelpDialog();
     this.shortcutStatus = element('div', 'visually-hidden');
     this.shortcutStatus.setAttribute('role', 'status');
@@ -267,7 +279,15 @@ export class AppShell {
     const workspace = this.createWorkspace();
     body.append(this.regionPane, workspace, this.settingsPane);
 
-    this.app.append(header, body, this.backdrop, this.infoDialog, this.helpDialog, this.shortcutStatus);
+    this.app.append(
+      header,
+      body,
+      this.backdrop,
+      this.infoDialog,
+      this.downloadDialog,
+      this.helpDialog,
+      this.shortcutStatus,
+    );
     root.append(this.app);
 
     this.backdrop.addEventListener('click', () => this.closeDrawers());
@@ -295,9 +315,10 @@ export class AppShell {
     this.renderColorSettings(model);
     this.renderVolumeLayerSettings(model);
     this.renderInfo(model);
+    this.renderDownloads(model);
     this.setHeaderActionDisabled('share', false);
     this.setHeaderActionDisabled('info', manifest === null);
-    this.setHeaderActionDisabled('download', model.feature?.representation !== 'regional');
+    this.setHeaderActionDisabled('download', model.feature === null);
     this.syncWorkspaceState(view.workspace.activeCompactView, view.workspace.maximizedView);
     this.renderSecondaryView(model);
 
@@ -468,7 +489,7 @@ export class AppShell {
       return;
     }
     if (action === 'download') {
-      this.callbacks.downloadCurrentFeature();
+      if (!this.downloadDialog.open) this.downloadDialog.showModal();
       if (this.overflowActions) this.overflowActions.open = false;
       return;
     }
@@ -537,6 +558,25 @@ export class AppShell {
     const header = element('header', 'info-dialog__header');
     const title = heading('Dataset information', 2);
     title.id = 'info-dialog-title';
+    const close = element('button', 'info-dialog__close');
+    close.type = 'button';
+    close.textContent = 'Close';
+    close.addEventListener('click', () => dialog.close());
+    header.append(title, close);
+    const content = element('div', 'info-dialog__content');
+    dialog.append(header, content);
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    return { dialog, content };
+  }
+
+  private createDownloadDialog(): { dialog: HTMLDialogElement; content: HTMLElement } {
+    const dialog = element('dialog', 'info-dialog download-dialog');
+    dialog.setAttribute('aria-labelledby', 'download-dialog-title');
+    const header = element('header', 'info-dialog__header');
+    const title = heading('Download feature data', 2);
+    title.id = 'download-dialog-title';
     const close = element('button', 'info-dialog__close');
     close.type = 'button';
     close.textContent = 'Close';
@@ -837,6 +877,103 @@ export class AppShell {
     }
     sections.push(provenance);
     this.infoContent.replaceChildren(...sections);
+  }
+
+  private renderDownloads(model: ShellModel): void {
+    const { manifest, feature: payload, state } = model;
+    const feature = manifest?.features.find((item) => item.id === state.view.featureId);
+    if (!manifest || !feature || !payload) {
+      this.downloadContent.replaceChildren();
+      return;
+    }
+
+    const intro = element('section', 'info-dialog__section download-dialog__intro');
+    intro.append(heading(feature.label, 3), this.infoParagraph(
+      'Downloads preserve the bytes declared by this immutable release. File descriptions identify their scope; presentation settings do not alter them.',
+    ));
+    if (state.runtime.datasetStatus === 'error' && state.runtime.error) {
+      const error = element('p', 'download-dialog__error');
+      error.setAttribute('role', 'alert');
+      error.textContent = state.runtime.error;
+      intro.append(error);
+    }
+    const sections: HTMLElement[] = [intro];
+
+    if (payload.representation === 'regional') {
+      const derived = element('section', 'info-dialog__section');
+      derived.append(heading('Current view export', 3));
+      const button = this.downloadButton(
+        `Export ${titleCaseToken(state.view.parcellation)} ${titleCaseToken(state.view.coloring.statistic)} as CSV`,
+        'Generated from the loaded regional values with dataset, release, feature, representation, parcellation, statistic, unit, and region context.',
+        () => {
+          this.callbacks.downloadCurrentFeature();
+          this.downloadDialog.close();
+        },
+      );
+      derived.append(button);
+      sections.push(derived);
+    }
+
+    sections.push(this.artifactSection('Feature artifacts', feature.artifacts, feature.id));
+    if (manifest.artifacts.length) sections.push(this.artifactSection('Release artifacts', manifest.artifacts));
+    this.downloadContent.replaceChildren(...sections);
+  }
+
+  private artifactSection(
+    title: string,
+    artifacts: DatasetManifest['artifacts'],
+    featureId?: string,
+  ): HTMLElement {
+    const section = element('section', 'info-dialog__section');
+    section.append(heading(title, 3));
+    if (!artifacts.length) {
+      const empty = this.infoParagraph('This release declares no downloadable artifacts for the selected feature.');
+      empty.className = 'download-dialog__empty';
+      section.append(empty);
+      return section;
+    }
+    const list = element('div', 'download-dialog__list');
+    for (const artifact of artifacts) {
+      const filename = artifact.resource.path.split('/').at(-1) ?? artifact.id;
+      const description = artifact.description || `Declared ${titleCaseToken(artifact.role)} artifact`;
+      const button = this.downloadButton(
+        description,
+        `${titleCaseToken(artifact.role)} · ${filename} · ${formatBytes(artifact.resource.bytes)}`,
+        async (target) => {
+          target.disabled = true;
+          target.dataset.loading = 'true';
+          try {
+            await this.callbacks.downloadArtifact(artifact.id, featureId);
+            this.downloadDialog.close();
+          } catch (error) {
+            this.callbacks.reportError(error);
+          } finally {
+            target.disabled = false;
+            delete target.dataset.loading;
+          }
+        },
+      );
+      button.dataset.artifactId = artifact.id;
+      list.append(button);
+    }
+    section.append(list);
+    return section;
+  }
+
+  private downloadButton(
+    label: string,
+    detail: string,
+    activate: (button: HTMLButtonElement) => void | Promise<void>,
+  ): HTMLButtonElement {
+    const button = element('button', 'download-dialog__item');
+    button.type = 'button';
+    const labelNode = element('strong');
+    labelNode.textContent = label;
+    const detailNode = element('span');
+    detailNode.textContent = detail;
+    button.append(labelNode, detailNode);
+    button.addEventListener('click', () => void activate(button));
+    return button;
   }
 
   private infoParagraph(text: string): HTMLParagraphElement {
@@ -1709,7 +1846,7 @@ export class AppShell {
     if (event.defaultPrevented) return;
     if (this.analysisDialog.open && this.analysisDialog.dataset.presentation === 'modal-sheet') return;
     if (event.key === 'Escape') {
-      if (this.infoDialog.open || this.helpDialog.open) return;
+      if (this.infoDialog.open || this.downloadDialog.open || this.helpDialog.open) return;
       if (this.closeContextMenus()) return;
       const maximizedView = this.currentModel?.state.view.workspace.maximizedView ?? null;
       if (maximizedView) {
@@ -1723,7 +1860,7 @@ export class AppShell {
       if (this.overflowActions?.open) this.overflowActions.open = false;
       return;
     }
-    if (blocksGlobalShortcut(event) || this.infoDialog.open || this.helpDialog.open) return;
+    if (blocksGlobalShortcut(event) || this.infoDialog.open || this.downloadDialog.open || this.helpDialog.open) return;
     if (event.key === '/' && !event.altKey && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
       this.featureContext.open();
