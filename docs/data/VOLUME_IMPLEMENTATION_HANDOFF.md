@@ -22,6 +22,10 @@ Do not rebuild these boundaries:
 - verified immutable resources, consumer-safe cancellation, and bounded decoded
   caches;
 - deterministic golden unit and Chromium browser coverage.
+- a schema-v1 release builder that verifies the source snapshot before decode,
+  discovers NPZ features dynamically, preserves float16 values, supports both
+  physical layouts, and refuses to infer reference space, grid, affine,
+  outside/missing semantics, or layout parameters.
 
 `ProjectionViewportFactory` remains the 2-D renderer boundary. Do not add a
 volume-specific renderer facade or a 3-D volume renderer.
@@ -93,15 +97,17 @@ with the intended immutable HTTP/cache headers and a realistic network profile.
 
 1. Bootstrap the clean checkout and run `just check` before product changes.
 2. Acquire and checksum the exact W26 source above.
-3. Audit authoritative producer/atlas code for Q4. Record citations, exact
-   versions, and the conclusion in durable docs; do not infer.
-4. While Q4 is blocked, verify that the real-release builder accepts an explicit
-   affine and fails when it is absent. Add synthetic deterministic tests for any
-   missing builder slice.
+3. Retain the completed public-source audit: official `ibleatools` now labels
+   storage as `x × y × z`, and `iblatlas` defines an Allen coordinate object,
+   but no audited producer ties W26 to its complete origin/direction/index
+   convention. Obtain that authoritative link or a scientific-owner choice.
+4. Retain the completed fail-closed real-release builder and its deterministic
+   synthetic tests; do not invoke it for W26 without the Q4 inputs.
 5. Re-run or extend representative depth-4/depth-8 real-volume evidence only
    where the existing reports leave a concrete gap.
-6. After Q4 and Q5 are resolved, encode the approved transform and depth-four
-   transport in a new immutable schema-v1 release ID for all 41 discovered
+6. After Q4 and Q5 are resolved, invoke `build-volumes` with the approved
+   transform and transport parameters to build a new immutable schema-v1
+   release for all 41 discovered
    features, preserving source identity and transformation provenance.
 7. Validate the complete graph, then exercise feature switching, linked slice
    navigation, values, validity, caching, and failures through the production

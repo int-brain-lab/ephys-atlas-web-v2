@@ -445,6 +445,23 @@ The current implementation input is the private immutable `ea_active`
 are recorded in `docs/DATA_SOURCES.md`. The authenticated snapshot is
 238,954,924 bytes with SHA-256
 `1f7509fe9e368a90704173bdb5c385827b199a7d5fa4b0aaa8fec5aca5402253`.
+The same official pull completed independently on Apple silicon on 2026-08-24
+and reproduced both the byte count and hash. Header inspection again found the
+expected C-order `(228, 264, 160, 41)` little-endian float16 main array and all
+five metadata members.
+
+The real-release builder path is now implemented without claiming a scientific
+W26 release. It verifies the declared NPZ byte count/SHA before decoding,
+discovers the source feature catalog, extracts last-axis features with bounded
+memory, preserves raw float16 values, writes either schema-v1 chunks or
+orthogonal slice packs, and computes exhaustive valid/outside/missing summaries
+from explicit sentinel semantics. Reference space, grid identity, affine,
+outside value, missing policy, layout, and pack/chunk dimensions are all
+required inputs; deterministic tests prove omitted choices fail closed. The
+current public-source audit found an official `ibleatools` `x/y/z` storage-order
+declaration but no producer statement linking W26 to the complete `iblatlas`
+origin/direction/index convention, so Q4 remains unresolved and the builder has
+not been invoked to create a W26 release.
 
 Current W26 evidence favors depth-four orthogonal slice packs. Offline
 measurements for `psd_lfp`, `rms_ap`, and `polarity` require three center-plane

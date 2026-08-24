@@ -3,20 +3,22 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .channels import DATASET_ID as CHANNELS_DATASET_ID
-from .channels import ChannelBuildConfig, build_channels_from_snapshot
-from .clusters import DATASET_ID as CLUSTERS_DATASET_ID
-from .clusters import ClusterBuildConfig, build_clusters_from_snapshot
-from .cluster_audit import audit_cluster_snapshot
 from .brainwide_map import (
     BrainwideMapBuildConfig,
     build_brainwide_map_from_sources,
 )
+from .channels import DATASET_ID as CHANNELS_DATASET_ID
+from .channels import ChannelBuildConfig, build_channels_from_snapshot
+from .cluster_audit import audit_cluster_snapshot
+from .clusters import DATASET_ID as CLUSTERS_DATASET_ID
+from .clusters import ClusterBuildConfig, build_clusters_from_snapshot
 from .fixture import generate_golden
 from .npz import inspect_volume_npz
 from .package import package_release
 from .sources import pull, resolve_source_release
 from .validate import ValidationError, validate_release
+from .volumes import DATASET_ID as VOLUMES_DATASET_ID
+from .volumes import VolumeBuildConfig, build_volumes_from_snapshot
 
 
 def _schema_dir() -> Path:
@@ -107,6 +109,33 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--release-root", type=Path, default=Path("data/releases"))
     p.add_argument("--schema-dir", type=Path, default=_schema_dir())
 
+    p = sub.add_parser(
+        "build-volumes",
+        help="build ephys_atlas_volumes from a pinned NPZ with explicit scientific geometry",
+    )
+    p.add_argument("release", help="immutable encoding-volume vintage")
+    p.add_argument("--created-at", required=True)
+    p.add_argument("--resolution-um", type=int, required=True)
+    p.add_argument("--reference-space-id", required=True)
+    p.add_argument("--grid-id", required=True)
+    p.add_argument("--index-to-world-um", type=float, nargs=16, required=True)
+    p.add_argument("--outside-value", type=float, required=True)
+    p.add_argument("--missing-values", choices=("nonfinite",), required=True)
+    p.add_argument(
+        "--layout", choices=("chunks3d", "orthogonal_slice_packs"), required=True
+    )
+    p.add_argument("--pack-depth", type=int)
+    p.add_argument("--chunk-shape", type=int, nargs=3)
+    p.add_argument("--feature", action="append", dest="features")
+    p.add_argument("--histogram-bins", type=int, default=50)
+    p.add_argument("--paper-snapshot", action="store_true")
+    p.add_argument("--ibleatools-commit", required=True)
+    p.add_argument("--iblatlas-commit", required=True)
+    p.add_argument("--builder-commit", required=True)
+    p.add_argument("--source-root", type=Path, default=Path("data/source"))
+    p.add_argument("--release-root", type=Path, default=Path("data/releases"))
+    p.add_argument("--schema-dir", type=Path, default=_schema_dir())
+
     p = sub.add_parser("golden", help="generate the deterministic golden fixture")
     p.add_argument("output_dir", type=Path)
     p.add_argument("--schema-dir", type=Path, default=_schema_dir())
@@ -129,7 +158,9 @@ def main(argv: list[str] | None = None) -> int:
         "audit-clusters",
         help="audit an explicit candidate catalog against a pulled cluster snapshot",
     )
-    p.add_argument("release", help="content-addressed source release or pulled latest alias")
+    p.add_argument(
+        "release", help="content-addressed source release or pulled latest alias"
+    )
     p.add_argument("--project", required=True)
     p.add_argument("--feature", action="append", dest="features", required=True)
     p.add_argument("--histogram-bins", type=int, default=20)
@@ -291,6 +322,34 @@ def main(argv: list[str] | None = None) -> int:
                 builder_commit=args.builder_commit,
             )
             build_brainwide_map_from_sources(args.source_dir, release_dir, config)
+            validate_release(release_dir, args.schema_dir)
+            print(f"built and validated: {release_dir}")
+        elif args.cmd == "build-volumes":
+            resolved = resolve_source_release(
+                args.source_root, VOLUMES_DATASET_ID, args.release
+            )
+            source_snapshot = args.source_root / VOLUMES_DATASET_ID / resolved
+            release_dir = args.release_root / VOLUMES_DATASET_ID / resolved
+            config = VolumeBuildConfig(
+                release_id=resolved,
+                created_at=args.created_at,
+                resolution_um=args.resolution_um,
+                reference_space_id=args.reference_space_id,
+                grid_id=args.grid_id,
+                index_to_world_um=tuple(args.index_to_world_um),
+                outside_value=args.outside_value,
+                missing_values=args.missing_values,
+                layout=args.layout,
+                pack_depth=args.pack_depth,
+                chunk_shape=tuple(args.chunk_shape) if args.chunk_shape else None,
+                features=tuple(args.features) if args.features else None,
+                histogram_bins=args.histogram_bins,
+                paper_snapshot=args.paper_snapshot,
+                ibleatools_commit=args.ibleatools_commit,
+                iblatlas_commit=args.iblatlas_commit,
+                builder_commit=args.builder_commit,
+            )
+            build_volumes_from_snapshot(source_snapshot, release_dir, config)
             validate_release(release_dir, args.schema_dir)
             print(f"built and validated: {release_dir}")
         elif args.cmd == "build":

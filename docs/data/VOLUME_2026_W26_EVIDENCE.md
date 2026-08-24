@@ -12,11 +12,20 @@ axis mapping or simulate the eventual production HTTP/CDN origin.
 - bytes: `238954924`
 - SHA-256: `1f7509fe9e368a90704173bdb5c385827b199a7d5fa4b0aaa8fec5aca5402253`
 - pulled through authenticated ONE/IBL AWS helpers on 2026-08-23
+- independently reacquired through the repository's official ONE/IBL puller on
+  Apple silicon on 2026-08-24; the file again measured 238,954,924 bytes and
+  matched the declared SHA-256 exactly
 - main member: DEFLATE-compressed, C-order little-endian float16,
   shape `(228, 264, 160, 41)`, 789,719,168 uncompressed bytes
 - metadata members: `grid_shape`, `mean_per_feature`, `std_per_feature`,
   `res_um`, and 41-element `feature_names`
 - declared metadata: `grid_shape=[228,264,160]`, `res_um=[50]`
+
+The official `ibleatools` guide at
+`fffe0c75810dd1a013a878abcbcf8ef6348a5a21` now describes the storage order as
+`x × y × z × features`. It does not declare the W26 origin or index-center
+convention or identify producer code tying those axes to the complete
+`iblatlas` Allen coordinate transform, so Q4 remains blocked.
 
 The pinned repository `ibleatools` predates the documented `res_um` downloader
 argument. The puller therefore uses that API when available and otherwise uses

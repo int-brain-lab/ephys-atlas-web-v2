@@ -137,6 +137,10 @@ Volume foundations already implemented and green on the handoff baseline:
 - one active-feature decoded-memory budget, cancellation, and in-flight request
   deduplication;
 - golden unit and Playwright coverage.
+- fail-closed schema-v1 volume release machinery with dynamic NPZ feature
+  discovery, verified source identity, float16 value preservation, both
+  transports, valid/outside/missing summaries, explicit affine/validity/layout
+  inputs, and deterministic synthetic coverage.
 
 Blocked by: Q4 and Q5.
 
@@ -152,7 +156,9 @@ Ordered next actions before scientific resolution:
 1. have the scientific owner complete the local eight-candidate W26 geometry
    review in `docs/data/VOLUME_GEOMETRY_REVIEW.md`, return the exported choice
    and authoritative rationale, and record the resulting decision without
-   treating mask overlap as authority;
+   treating mask overlap as authority; the public-source audit now narrows the
+   stored axes to `x/y/z` but still does not establish origin/directions/index
+   convention for this producer;
 2. rebuild external development releases under new schema-v1 release IDs
    before using the opt-in real-release suite; do not add a compatibility reader;
 3. retain the completed checksum/header inspection and representative local

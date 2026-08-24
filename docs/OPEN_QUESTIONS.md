@@ -59,6 +59,16 @@ pre-applied, and `0.0` denotes outside-brain voxels. Shape and resolution alone
 are still not a scientific coordinate transform. The browser implementation
 deliberately requires an explicit `index_to_world_um` transform.
 
+The current official `ibleatools` guide at
+`fffe0c75810dd1a013a878abcbcf8ef6348a5a21` additionally labels the stored
+shape `(nx, ny, nz, N)` and the main array `x × y × z × features`. The pinned
+`iblatlas` implementation separately defines its Allen `x/y/z` coordinates as
+ML/AP/DV with right/anterior/superior positive and a Bregma origin. No audited
+source yet identifies the W26 producer or explicitly states that its serialized
+`x/y/z` uses that exact `iblatlas` origin, directions, and integer-center
+convention. Combining the two sources would therefore still be an inference,
+not an authoritative production transform.
+
 A deterministic local review page now compares the eight direction candidates
 allowed by the exact W26/Allen shape match in three linked views, with
 voxel-center and half-voxel-shifted coordinate conventions. The current mask
@@ -70,6 +80,12 @@ Resolution needed: authoritative scientific axis mapping, origin/affine,
 handedness/directions, and any missing-value semantics distinct from the
 documented outside-brain zero. The measured C-order storage layout is a
 transport fact and does not resolve the scientific axis mapping.
+
+The schema-v1 volume release builder now requires the reference space, grid
+identity, complete affine, outside sentinel, non-finite missing policy, and
+transport parameters as explicit inputs and has deterministic failure coverage
+when any is absent. This unblocks recipe development without resolving Q4 or
+creating a purported W26 scientific release.
 
 Blocks: scientifically valid volume navigation and production volume release.
 

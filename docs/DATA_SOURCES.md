@@ -80,6 +80,16 @@ outside the brain mask. These facts resolve the value-normalization and
 outside-brain parts of Q4, but not the authoritative axis-to-CCF mapping,
 origin/affine, or handedness.
 
+The official guide commit
+[`fffe0c75810dd1a013a878abcbcf8ef6348a5a21`](https://github.com/int-brain-lab/ibleatools/blob/fffe0c75810dd1a013a878abcbcf8ef6348a5a21/docs/source/how-to/load-encoding-volume.rst)
+calls the storage shape `(nx, ny, nz, N_features)` and the main array
+`x × y × z × features`. The pinned
+[`iblatlas` coordinate implementation](https://github.com/int-brain-lab/iblatlas/blob/52083adf44825d0622a503705e095699a5957587/iblatlas/atlas.py)
+defines Allen `x/y/z` as ML/AP/DV and supplies IBL direction/Bregma behavior,
+but the audited public material does not link the W26 producer to that complete
+coordinate object. Do not construct the W26 affine by joining those statements
+without producer or scientific-owner confirmation.
+
 The producer/source layout uses files of the form:
 
     encoding_volumes/{project}/{label}/brainwide_ephys_atlas_{res_um}um.npz

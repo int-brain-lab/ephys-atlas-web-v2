@@ -130,6 +130,10 @@ data-pull-clusters release="latest":
 data-build-channels release feature_mode population created_at ibleatools_commit iblatlas_commit builder_commit:
     {{uv-scientific}} ephys-atlas-data build-channels {{release}} --feature-mode {{feature_mode}} --population {{population}} --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
 
+# Build a slice-pack volume release only from explicitly approved scientific inputs.
+data-build-volumes-slice-packs release created_at resolution_um reference_space_id grid_id index_to_world_um outside_value missing_values pack_depth ibleatools_commit iblatlas_commit builder_commit:
+    {{uv-scientific}} ephys-atlas-data build-volumes {{release}} --created-at {{created_at}} --resolution-um {{resolution_um}} --reference-space-id {{reference_space_id}} --grid-id {{grid_id}} --index-to-world-um {{index_to_world_um}} --outside-value {{outside_value}} --missing-values {{missing_values}} --layout orthogonal_slice_packs --pack-depth {{pack_depth}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
+
 # Preserve the exact D038-selected v1 website Brain-Wide Map snapshot locally.
 data-build-brainwide-map release created_at builder_commit source_dir="../atlas/data/pqt":
     {{uv-scientific}} ephys-atlas-data build-brainwide-map {{release}} --created-at {{created_at}} --builder-commit {{builder_commit}} --source-dir {{source_dir}}
