@@ -680,3 +680,30 @@ zero infinities, so the schema-v1 `nonfinite` missing policy is explicit but
 classifies no W26 source values. This resolves Q4 for this exact source object
 only. It does not select the Q5 transport, authorize publication, or generalize
 the affine to another volume vintage, resolution, or source hash.
+
+## D044 — Publish the complete original cluster catalog
+
+Publish all 14 scalar cluster features declared by the original
+`int-brain-lab/ephys-atlas-web` repository at
+`1d908bea095be2616a750d939d143f3b4db2a641`. Use the exact unit mapping in that
+repository's `tools/ephys_units.py`: amplitudes in V, amplitude variability in
+dB, drift in um/h, firing rate in Hz, spike/presence variability in counts,
+noise cutoff in arbitrary units, and the remaining QC quantities as fractions.
+This is the repository owner's authoritative scientific approval of the D038
+catalog, including the audited negative, capped, binary, and heavy-tailed source
+values.
+
+Do not clip, winsorize, replace, filter, or reinterpret source observations.
+Descriptions may explain the pinned upstream implementation, including that
+`presence_ratio_std` is the standard deviation of raw binned spike counts,
+`missed_spikes_est` is capped at 0.5, `noise_cutoff` is signed, drift is an
+accumulated depth-change rate, and `slidingRP_viol=1` is the legacy pass value.
+These explanations do not change the stored quantity.
+
+Retire the legacy website's fixed `XLIMS` in favor of automatic robust v2
+bounds. Use a presentation-only log default only for audited strictly-positive
+heavy-tailed quantities; keep zero-bearing, signed, bounded, and capped metrics
+linear so valid zeros are never hidden. The machine authority is
+`docs/data/CLUSTERS_CATALOG_SELECTION.json`, and production builds must match
+its source snapshot/table hash, pinned legacy source files, complete feature
+catalog, units, descriptions, and display policy exactly. This resolves Q6.

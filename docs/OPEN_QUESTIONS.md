@@ -121,7 +121,7 @@ Blocks: final browser volume transport and production packaging recipe.
 
 ## Q6 — Cluster launch population and feature set
 
-Status: **PARTIALLY RESOLVED; BLOCKER** for the production `ephys_atlas_clusters` release.
+Status: **RESOLVED by D044 (2026-08-24)**.
 
 Resolved: use every row of `clusters.table.pqt`, not
 `clusters_good.table.pqt`. Apply no good-unit filter or insertion balancing.
@@ -141,12 +141,22 @@ the column/unit/missingness/range/distribution audit in
 pinned schema declares no units and several distributions require scientific
 review.
 
-Still needed: record human approval or adjustment of the final scalar catalog,
-units/descriptions, and any presentation-only log defaults. Units/transforms
-must remain null rather than being guessed when absent.
+Resolution: publish all 14 scalar cluster features declared by the pinned
+original `int-brain-lab/ephys-atlas-web` project repository. Use its explicit
+cluster-unit map, retain every raw source value without clipping or replacement,
+and use transparent implementation-derived descriptions for the otherwise
+undocumented metrics. Replace the legacy fixed plotting limits with the v2
+viewer's automatic robust bounds. Default to logarithmic presentation only for
+the audited strictly-positive heavy-tailed amplitude, spike-count variability,
+spike-count, and firing-rate quantities; signed, zero-bearing, bounded, and
+capped quantities remain linear. Presentation never changes statistics,
+histograms, or downloads.
 
-Blocks: the final production cluster release, not the source pull/audit or
-deterministic builder machinery.
+The machine-consumable authority is
+`docs/data/CLUSTERS_CATALOG_SELECTION.json`. It pins the project repository
+commit and source-file hashes, source snapshot/table identity, complete ordered
+catalog, units, descriptions, and display defaults. The builder must load it
+and fail closed on any mismatch.
 
 ## Q7 — Exact `brainwide_map` launch product
 

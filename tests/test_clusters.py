@@ -1,3 +1,5 @@
+from dataclasses import replace
+import hashlib
 import json
 from pathlib import Path
 
@@ -7,8 +9,11 @@ import pytest
 from ephys_atlas_builder.channels import RegionInfo
 from ephys_atlas_builder.clusters import (
     ClusterBuildConfig,
+    _verify_approved_cluster_table,
+    apply_cluster_catalog_selection,
     build_clusters_release_from_arrays,
     discover_cluster_project_dir,
+    load_cluster_catalog_selection,
 )
 from ephys_atlas_builder.statistics import SUMMARY_FIELDS
 from ephys_atlas_builder.validate import validate_release
@@ -135,7 +140,9 @@ def test_cluster_recipe_emits_explicit_log_color_defaults(tmp_path):
         [{"role": "canonical-data", "description": "display metadata test"}],
     )
     validate_release(release, ROOT / "schema" / "v1")
-    firing_rate = json.loads((release / "features/firing_rate/feature.json").read_text())
+    firing_rate = json.loads(
+        (release / "features/firing_rate/feature.json").read_text()
+    )
     amplitude = json.loads((release / "features/amp_median/feature.json").read_text())
     assert firing_rate["display"] == {"scale": "log"}
     assert "display" not in amplitude
@@ -168,6 +175,75 @@ def test_cluster_snapshot_build_requires_explicit_feature_catalog():
         features=("firing_rate",),
     )
     config.require_feature_catalog()
+
+
+def test_approved_cluster_catalog_is_machine_consumable():
+    selection = load_cluster_catalog_selection(
+        ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION.json"
+    )
+    assert selection.source_release_id == "sha256-9b5e55215b306f26"
+    assert selection.project == "ibl_neuropixel_brainwide_01"
+    assert [feature.source_column for feature in selection.features] == [
+        "amp_max",
+        "amp_min",
+        "amp_median",
+        "amp_std_dB",
+        "contamination",
+        "contamination_alt",
+        "drift",
+        "missed_spikes_est",
+        "noise_cutoff",
+        "presence_ratio",
+        "presence_ratio_std",
+        "slidingRP_viol",
+        "spike_count",
+        "firing_rate",
+    ]
+    assert {feature.source_column: feature.unit for feature in selection.features}[
+        "drift"
+    ] == "um/h"
+    assert selection.display["firing_rate"] == {"scale": "log"}
+    assert "noise_cutoff" not in selection.display
+
+
+def test_cluster_catalog_selection_fails_closed_on_mismatch(tmp_path):
+    selection_path = ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION.json"
+    selection = load_cluster_catalog_selection(selection_path)
+    config = ClusterBuildConfig(
+        release_id=selection.source_release_id,
+        created_at="2026-08-24T00:00:00Z",
+        project=selection.project,
+        features=("firing_rate",),
+        catalog_selection=selection_path,
+    )
+    with pytest.raises(ValueError, match="exactly match"):
+        apply_cluster_catalog_selection(config, selection)
+
+    document = json.loads(selection_path.read_text())
+    document["scientific_owner_confirmation"] = False
+    bad_path = tmp_path / "selection.json"
+    bad_path.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match="scientific-owner confirmation"):
+        load_cluster_catalog_selection(bad_path)
+
+
+def test_approved_cluster_table_is_verified_before_decode(tmp_path):
+    project_dir = tmp_path / "ibl_neuropixel_brainwide_01"
+    table = project_dir / "cells_aggregates/clusters.table.pqt"
+    table.parent.mkdir(parents=True)
+    table.write_bytes(b"approved")
+    selection = replace(
+        load_cluster_catalog_selection(
+            ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION.json"
+        ),
+        table_path=str(table.relative_to(tmp_path)),
+        table_bytes=table.stat().st_size,
+        table_sha256=hashlib.sha256(table.read_bytes()).hexdigest(),
+    )
+    assert _verify_approved_cluster_table(tmp_path, project_dir, selection) == table
+    table.write_bytes(b"corrupt!")
+    with pytest.raises(RuntimeError, match="SHA-256"):
+        _verify_approved_cluster_table(tmp_path, project_dir, selection)
 
 
 def test_discover_cluster_project_dir(tmp_path):

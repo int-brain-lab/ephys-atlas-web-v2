@@ -35,20 +35,20 @@ The build additionally requires the exact project name and Git commits for
 project/QC choice remain explicit inputs; the recipe does not guess a paper
 vintage or substitute a different cluster population.
 
-Every snapshot build must repeat `--feature` to define a nonempty catalog, and
-the resolved list is recorded in provenance. D038 identifies the legacy
-14-feature scalar list as the launch-review candidate, not an implicit CLI
-default. Before freezing it, report source column presence, dtype, units,
-finite/missing counts, ranges, and distributions for human approval. Units are
-copied only when the pinned upstream schema provides them; otherwise they
-remain null rather than being guessed. Large waveform, ACG, STPC, and STLFP
-arrays are not silently reduced into regional features.
+Every production snapshot build must load
+`docs/data/CLUSTERS_CATALOG_SELECTION.json`. D044 freezes the exact 14-feature
+catalog declared by the pinned original Ephys Atlas repository and its explicit
+cluster-unit mapping. The builder rejects any mismatch in project, source
+snapshot, table bytes/hash, catalog, or display defaults before Parquet decode.
+Large waveform, ACG, STPC, and STLFP arrays are not silently reduced into
+regional features.
 
 The D038 source audit is complete for content-addressed snapshot
 `sha256-9b5e55215b306f26`. All 14 candidates are present, but the pinned upstream
-schema declares no units and the distributions expose missingness and heavy
-tails that require human review. See `docs/data/CLUSTERS_SOURCE_AUDIT.md` and
-the raw JSON report it references. The catalog is not yet approved.
+schema declares no units, but the pinned original website repository supplies
+the cluster unit mapping. The scientific owner approved its complete feature
+set and the audited source semantics on 2026-08-24. See
+`docs/data/CLUSTERS_SOURCE_AUDIT.md` and the raw JSON report it references.
 
 ## Example
 
@@ -58,8 +58,7 @@ ephys-atlas-data pull ephys_atlas_clusters latest --project ibl_neuropixel_brain
 ephys-atlas-data build-clusters latest \
   --project ibl_neuropixel_brainwide_01 \
   --population all \
-  --feature firing_rate \
-  --feature amp_median \
+  --catalog-selection docs/data/CLUSTERS_CATALOG_SELECTION.json \
   --created-at 2026-08-20T00:00:00Z \
   --ibleatools-commit <commit> \
   --iblatlas-commit <commit> \

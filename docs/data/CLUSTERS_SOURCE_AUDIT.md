@@ -41,23 +41,21 @@ so units remain null. No candidate contains positive or negative infinity.
 The raw audit also records means, population standard deviations, q01/q25/q75/
 q99, zero/negative counts, and deterministic 20-bin full-range histograms.
 
-## Human review required
+## Human review resolution
 
-The audit does not approve or reject the candidate catalog. Before Q6 can be
-resolved, the scientific owner must decide:
+The repository/scientific owner approved all four review points on 2026-08-24:
 
-1. whether all 14 columns should remain in the launch catalog;
-2. authoritative units and descriptions, or explicit confirmation that each
-   unit must remain null;
-3. whether any presentation-only log defaults are appropriate for the strongly
-   heavy-tailed columns, without clipping or transforming source values;
-4. whether the observed negative `noise_cutoff` values, large maxima, capped
-   `missed_spikes_est`, and binary `slidingRP_viol` encoding are expected source
-   semantics.
+1. retain all 14 columns declared by the original Ephys Atlas repository;
+2. use that repository's explicit cluster-unit mapping and descriptions grounded
+   in the pinned upstream implementations;
+3. preserve every source value and replace legacy fixed plot limits with robust
+   automatic bounds plus conservative presentation-only log defaults;
+4. accept the observed negative, heavy-tailed, capped, and binary encodings as
+   the source product to publish, while describing them transparently.
 
-Until that review is recorded, do not build or present a production cluster
-release. The deterministic builder machinery and all-cluster aggregation recipe
-remain ready once the catalog is approved or adjusted.
+D044 records the decision. `CLUSTERS_CATALOG_SELECTION.json` pins the exact
+legacy repository sources, source table, catalog, units, descriptions, and
+display policy consumed by the builder. Q6 is resolved.
 
 ## Reproduction
 
