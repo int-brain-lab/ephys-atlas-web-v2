@@ -7,14 +7,14 @@ import shlex
 import shutil
 import tempfile
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from itertools import product
 from pathlib import Path
 
 import numpy as np
 
 from .io import json_resource, sha256_file, write_json
-from .npz import extract_last_axis_feature, inspect_volume_npz
+from .npz import extract_last_axis_features, inspect_volume_npz
 from .regional_release import histogram_edges
 from .statistics import describe, histogram
 from .volume import write_chunked_volume, write_slice_packed_volume
@@ -28,6 +28,7 @@ _IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 class VolumeBuildConfig:
     release_id: str
     created_at: str
+    source_release_id: str | None = None
     resolution_um: int | None = None
     reference_space_id: str | None = None
     grid_id: str | None = None
@@ -43,6 +44,8 @@ class VolumeBuildConfig:
     ibleatools_commit: str | None = None
     iblatlas_commit: str | None = None
     builder_commit: str | None = None
+    geometry_selection: Path | None = None
+    candidate: bool = False
 
     def validate(self) -> None:
         if not self.release_id:
@@ -124,6 +127,103 @@ class VolumeBuildConfig:
                 f"snapshot builds require reproducibility pins: {', '.join(missing)}"
             )
 
+
+@dataclass(frozen=True)
+class VolumeGeometrySelection:
+    path: Path
+    sha256: str
+    resolution_um: int
+    reference_space_id: str
+    grid_id: str
+    grid_shape: tuple[int, int, int]
+    index_to_world_um: tuple[float, ...]
+    outside_value: float
+    missing_values: str
+    source_uri: str
+    source_bytes: int
+    source_sha256: str
+    iblatlas_commit: str
+    audited_value_count: int
+
+
+def load_volume_geometry_selection(path: Path) -> VolumeGeometrySelection:
+    """Load one owner-approved geometry record and reject incomplete policy."""
+    path = path.resolve()
+    try:
+        document = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"cannot load volume geometry selection {path}") from error
+    try:
+        source = document["source"]
+        volume = source["volume"]
+        validity = document["validity"]
+        shape = tuple(document["grid_shape"])
+        affine = tuple(document["index_to_world_um"])
+    except (KeyError, TypeError) as error:
+        raise ValueError("volume geometry selection is incomplete") from error
+    if document.get("schema") != "ibl-volume-geometry-selection-v1":
+        raise ValueError("unsupported volume geometry selection schema")
+    if document.get("scientific_owner_confirmation") is not True:
+        raise ValueError("volume geometry selection lacks scientific-owner confirmation")
+    if document.get("axis_order") != ["ml", "ap", "dv"]:
+        raise ValueError("volume geometry selection must declare ML/AP/DV source axes")
+    if document.get("index_convention") != "voxel_centers":
+        raise ValueError("volume geometry selection must declare voxel centers")
+    if len(shape) != 3 or any(type(value) is not int or value < 1 for value in shape):
+        raise ValueError("volume geometry selection has an invalid grid shape")
+    if len(affine) != 16 or any(
+        isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
+        for value in affine
+    ):
+        raise ValueError("volume geometry selection has an invalid affine")
+    if validity.get("missing_values") != "nonfinite":
+        raise ValueError("volume geometry selection has an unsupported missing policy")
+    if not isinstance(validity.get("outside_value"), (int, float)) or not math.isfinite(
+        validity["outside_value"]
+    ):
+        raise ValueError("volume geometry selection has an invalid outside sentinel")
+    if type(validity.get("audited_value_count")) is not int or validity["audited_value_count"] < math.prod(shape):
+        raise ValueError("volume geometry selection has an invalid validity audit count")
+    if validity.get("audited_nan_count") != 0 or validity.get("audited_infinite_count") != 0:
+        raise ValueError("volume geometry selection validity audit is not the approved W26 policy")
+    sha = volume.get("sha256")
+    if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{64}", sha):
+        raise ValueError("volume geometry selection has an invalid source SHA-256")
+    selection = VolumeGeometrySelection(
+        path=path,
+        sha256=sha256_file(path),
+        resolution_um=int(document["resolution_um"]),
+        reference_space_id=str(document["reference_space_id"]),
+        grid_id=str(document["grid_id"]),
+        grid_shape=shape,
+        index_to_world_um=tuple(float(value) for value in affine),
+        outside_value=float(validity["outside_value"]),
+        missing_values=validity["missing_values"],
+        source_uri=str(volume["uri"]),
+        source_bytes=int(volume["bytes"]),
+        source_sha256=sha,
+        iblatlas_commit=str(source["iblatlas"]["commit"]),
+        audited_value_count=validity["audited_value_count"],
+    )
+    if selection.resolution_um <= 0 or not selection.reference_space_id or not selection.grid_id:
+        raise ValueError("volume geometry selection has invalid grid identity")
+    return selection
+
+
+def apply_volume_geometry_selection(
+    config: VolumeBuildConfig, selection: VolumeGeometrySelection
+) -> VolumeBuildConfig:
+    """Populate scientific geometry only from the reviewed selection record."""
+    return replace(
+        config,
+        resolution_um=selection.resolution_um,
+        reference_space_id=selection.reference_space_id,
+        grid_id=selection.grid_id,
+        index_to_world_um=selection.index_to_world_um,
+        outside_value=selection.outside_value,
+        missing_values=selection.missing_values,
+        geometry_selection=config.geometry_selection or selection.path,
+    )
 
 def _clean_floats(values: np.ndarray) -> list[float]:
     return [
@@ -308,7 +408,7 @@ def build_volumes_release_from_arrays(
     config.validate()
     if not feature_values:
         raise ValueError("at least one feature is required")
-    selected = tuple(config.features or sorted(feature_values))
+    selected = tuple(config.features or feature_values)
     missing = sorted(set(selected) - set(feature_values))
     if missing:
         raise ValueError(f"requested volume features are absent: {', '.join(missing)}")
@@ -343,26 +443,18 @@ def build_volumes_release_from_arrays(
     command = [
         "ephys-atlas-data",
         "build-volumes",
+        str(config.source_release_id or config.release_id),
+        "--release-id",
         config.release_id,
         "--created-at",
         config.created_at,
-        "--resolution-um",
-        str(config.resolution_um),
-        "--reference-space-id",
-        str(config.reference_space_id),
-        "--grid-id",
-        str(config.grid_id),
-        "--index-to-world-um",
-        *(f"{value:.17g}" for value in config.index_to_world_um or ()),
-        "--outside-value",
-        repr(config.outside_value),
-        "--missing-values",
-        str(config.missing_values),
         "--layout",
         str(config.layout),
         "--histogram-bins",
         str(config.histogram_bins),
     ]
+    if config.geometry_selection:
+        command.extend(("--geometry-selection", str(config.geometry_selection)))
     if config.layout == "orthogonal_slice_packs":
         command.extend(("--pack-depth", str(config.pack_depth)))
     else:
@@ -373,6 +465,8 @@ def build_volumes_release_from_arrays(
         command.extend(("--feature", feature))
     if config.paper_snapshot:
         command.append("--paper-snapshot")
+    if config.candidate:
+        command.append("--candidate")
     for name, value in (
         ("--ibleatools-commit", config.ibleatools_commit),
         ("--iblatlas-commit", config.iblatlas_commit),
@@ -384,7 +478,11 @@ def build_volumes_release_from_arrays(
         "schema_version": "1.0",
         "dataset_id": DATASET_ID,
         "title": "IBL Ephys Atlas encoding volumes",
-        "description": "Orthogonal scalar feature volumes derived from a pinned canonical encoding-volume object.",
+        "description": (
+            "Local non-published transport candidate derived from a pinned canonical encoding-volume object."
+            if config.candidate
+            else "Orthogonal scalar feature volumes derived from a pinned canonical encoding-volume object."
+        ),
         "release": {
             "release_id": config.release_id,
             "immutable": True,
@@ -443,6 +541,11 @@ def build_volumes_release_from_arrays(
             "notes": [
                 "The builder requires scientific geometry and validity choices as explicit inputs and never infers them from shape or mask overlap.",
                 "The browser transport is a deterministic physical transform; feature values are not normalized or otherwise changed.",
+                *(
+                    ["This release is an explicitly local candidate and is not approved for publication."]
+                    if config.candidate
+                    else []
+                ),
             ],
         },
         "parcellations": [],
@@ -468,9 +571,10 @@ def build_volumes_from_snapshot(
         raise RuntimeError(
             f"source snapshot is not {DATASET_ID}: {source.get('dataset_id')}"
         )
-    if str(source.get("resolved_release")) != config.release_id:
+    source_release_id = config.source_release_id or config.release_id
+    if str(source.get("resolved_release")) != source_release_id:
         raise RuntimeError(
-            f"source release {source.get('resolved_release')} does not match requested release {config.release_id}"
+            f"source release {source.get('resolved_release')} does not match requested source release {source_release_id}"
         )
     filename = f"brainwide_ephys_atlas_{config.resolution_um}um.npz"
     entries = [
@@ -486,6 +590,34 @@ def build_volumes_from_snapshot(
         or sha256_file(npz_path) != entry.get("sha256")
     ):
         raise RuntimeError(f"source snapshot identity mismatch: {npz_path}")
+
+    selection = (
+        load_volume_geometry_selection(config.geometry_selection)
+        if config.geometry_selection
+        else None
+    )
+    if selection:
+        canonical = source.get("canonical_source") or {}
+        mismatches = []
+        for label, actual, approved in (
+            ("source URI", canonical.get("uri"), selection.source_uri),
+            ("source bytes", entry.get("bytes"), selection.source_bytes),
+            ("source SHA-256", entry.get("sha256"), selection.source_sha256),
+            ("resolution", config.resolution_um, selection.resolution_um),
+            ("reference space", config.reference_space_id, selection.reference_space_id),
+            ("grid", config.grid_id, selection.grid_id),
+            ("affine", tuple(config.index_to_world_um or ()), selection.index_to_world_um),
+            ("outside sentinel", config.outside_value, selection.outside_value),
+            ("missing policy", config.missing_values, selection.missing_values),
+            ("iblatlas commit", config.iblatlas_commit, selection.iblatlas_commit),
+        ):
+            if actual != approved:
+                mismatches.append(label)
+        if mismatches:
+            raise RuntimeError(
+                "source/configuration does not exactly match geometry selection: "
+                + ", ".join(mismatches)
+            )
 
     report = inspect_volume_npz(npz_path)
     main = next(
@@ -517,6 +649,14 @@ def build_volumes_from_snapshot(
         raise RuntimeError(
             "canonical encoding-volume metadata does not match the main array"
         )
+    if selection and (
+        grid_shape != selection.grid_shape
+        or selection.grid_shape != tuple(main["shape"][:3])
+        or selection.audited_value_count != math.prod(main["shape"])
+    ):
+        raise RuntimeError(
+            "source grid or validity audit does not exactly match geometry selection"
+        )
     if resolution_um != config.resolution_um:
         raise RuntimeError(
             f"source resolution {resolution_um} does not match requested {config.resolution_um}"
@@ -544,13 +684,29 @@ def build_volumes_from_snapshot(
             "path": "source.json",
             "sha256": sha256_file(source_json),
         },
+        *(
+            [
+                {
+                    "role": "publication-input",
+                    "description": "Scientific-owner-approved W26 geometry and validity selection",
+                    "path": "geometry-selection.json",
+                    "sha256": selection.sha256,
+                }
+            ]
+            if selection
+            else []
+        ),
     ]
     with tempfile.TemporaryDirectory(prefix="ephys-atlas-volume-") as temporary:
         extracted: dict[str, np.ndarray] = {}
         indexes = {feature: index for index, feature in enumerate(feature_names)}
+        outputs = {
+            indexes[feature]: Path(temporary) / f"{feature}.npy"
+            for feature in selected
+        }
+        extract_last_axis_features(npz_path, outputs)
         for feature in selected:
-            output = Path(temporary) / f"{feature}.npy"
-            extract_last_axis_feature(npz_path, output, indexes[feature])
+            output = outputs[indexes[feature]]
             extracted[feature] = np.load(output, mmap_mode="r")
         result = build_volumes_release_from_arrays(
             release_dir,
@@ -559,4 +715,6 @@ def build_volumes_from_snapshot(
             provenance_sources,
         )
     shutil.copyfile(source_json, result / "source.json")
+    if selection:
+        shutil.copyfile(selection.path, result / "geometry-selection.json")
     return result

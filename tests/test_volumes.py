@@ -10,8 +10,10 @@ from ephys_atlas_builder.io import sha256_file, write_json
 from ephys_atlas_builder.validate import validate_release
 from ephys_atlas_builder.volumes import (
     VolumeBuildConfig,
+    apply_volume_geometry_selection,
     build_volumes_from_snapshot,
     build_volumes_release_from_arrays,
+    load_volume_geometry_selection,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -207,10 +209,105 @@ def test_snapshot_recipe_verifies_source_identity_and_discovers_features(tmp_pat
     command = manifest["provenance"]["builder"]["command"]
     assert "--pack-depth 2" in command
     assert "--feature polarity" in command
-    assert "--index-to-world-um 0 0 -50 100" in command
+    assert "--release-id synthetic-volume-v1" in command
     assert (release / "source.json").read_bytes() == (
         source / "source.json"
     ).read_bytes()
+
+
+def test_snapshot_recipe_loads_and_pins_machine_readable_geometry(tmp_path):
+    source = tmp_path / "source"
+    source.mkdir()
+    npz = source / "brainwide_ephys_atlas_50um.npz"
+    first = _features()["rms_ap"]
+    volume = np.stack((first, first + np.float16(1)), axis=-1)
+    np.savez_compressed(
+        npz,
+        ephys_atlas_vol=volume,
+        feature_names=np.array(["rms_ap", "polarity"], dtype=object),
+        grid_shape=np.array(first.shape, dtype=np.int32),
+        res_um=np.array([50], dtype=np.int32),
+    )
+    uri = "s3://official/synthetic-volume-v1.npz"
+    write_json(
+        source / "source.json",
+        {
+            "dataset_id": "ephys_atlas_volumes",
+            "resolved_release": "synthetic-source-v1",
+            "canonical_source": {"uri": uri},
+            "files": [
+                {
+                    "path": npz.name,
+                    "bytes": npz.stat().st_size,
+                    "sha256": sha256_file(npz),
+                }
+            ],
+        },
+    )
+    selection_path = tmp_path / "selection.json"
+    write_json(
+        selection_path,
+        {
+            "schema": "ibl-volume-geometry-selection-v1",
+            "scientific_owner_confirmation": True,
+            "resolution_um": 50,
+            "reference_space_id": "allen-ccf-2017",
+            "grid_id": "synthetic-50um-grid",
+            "grid_shape": list(first.shape),
+            "axis_order": ["ml", "ap", "dv"],
+            "index_convention": "voxel_centers",
+            "index_to_world_um": list(AFFINE),
+            "validity": {
+                "outside_value": 0.0,
+                "missing_values": "nonfinite",
+                "audited_value_count": int(volume.size),
+                "audited_nan_count": 0,
+                "audited_infinite_count": 0,
+            },
+            "source": {
+                "volume": {
+                    "uri": uri,
+                    "bytes": npz.stat().st_size,
+                    "sha256": sha256_file(npz),
+                },
+                "iblatlas": {"commit": "52083adf44825d0622a503705e095699a5957587"},
+            },
+        },
+    )
+    config = apply_volume_geometry_selection(
+        VolumeBuildConfig(
+            release_id="synthetic-candidate-depth4",
+            source_release_id="synthetic-source-v1",
+            created_at="2026-08-24T00:00:00Z",
+            layout="orthogonal_slice_packs",
+            pack_depth=2,
+            candidate=True,
+            ibleatools_commit="9bfa0623a16bc7a989a6b27a589887641beee0a8",
+            iblatlas_commit="52083adf44825d0622a503705e095699a5957587",
+            builder_commit="1234567",
+        ),
+        load_volume_geometry_selection(selection_path),
+    )
+
+    release = build_volumes_from_snapshot(source, tmp_path / "release", config)
+    validate_release(release, ROOT / "schema" / "v1")
+    manifest = json.loads((release / "manifest.json").read_text())
+    assert manifest["release"]["release_id"] == "synthetic-candidate-depth4"
+    assert manifest["provenance"]["recipe"]["features"] == ["rms_ap", "polarity"]
+    assert "Local non-published transport candidate" in manifest["description"]
+    command = manifest["provenance"]["builder"]["command"]
+    assert "--geometry-selection" in command
+    assert "--index-to-world-um" not in command
+    assert (release / "geometry-selection.json").read_bytes() == selection_path.read_bytes()
+
+    tampered = json.loads(selection_path.read_text())
+    tampered["source"]["volume"]["sha256"] = "0" * 64
+    write_json(selection_path, tampered)
+    bad = apply_volume_geometry_selection(
+        config, load_volume_geometry_selection(selection_path)
+    )
+    with pytest.raises(RuntimeError, match="source/configuration does not exactly match"):
+        build_volumes_from_snapshot(source, tmp_path / "bad-release", bad)
 
 
 def test_snapshot_recipe_rejects_tampered_source_before_decode(tmp_path):

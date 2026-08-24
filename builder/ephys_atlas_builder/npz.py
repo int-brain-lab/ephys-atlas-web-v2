@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 from zipfile import ZIP_BZIP2, ZIP_DEFLATED, ZIP_LZMA, ZIP_STORED, ZipFile
 
@@ -72,60 +73,106 @@ def extract_last_axis_feature(
     This is a physical extraction only. It deliberately assigns no anatomical
     meaning to the source axes and applies no value normalization or masking.
     """
+    reports = extract_last_axis_features(
+        npz_path,
+        {feature_index: output_npy},
+        member=member,
+        block_voxels=block_voxels,
+    )
+    return reports[feature_index]
+
+
+def extract_last_axis_features(
+    npz_path: Path,
+    outputs: Mapping[int, Path],
+    *,
+    member: str = "ephys_atlas_vol.npy",
+    block_voxels: int = 131_072,
+) -> dict[int, dict]:
+    """Extract several last-axis features in one bounded-memory NPZ pass."""
     if block_voxels < 1:
         raise ValueError("block_voxels must be positive")
+    if not outputs:
+        raise ValueError("at least one feature output is required")
+    if len(set(outputs.values())) != len(outputs):
+        raise ValueError("feature output paths must be unique")
     npz_path = npz_path.resolve()
-    output_npy = output_npy.resolve()
-    output_npy.parent.mkdir(parents=True, exist_ok=True)
-    with ZipFile(npz_path) as archive, archive.open(member) as stream:
-        shape, fortran_order, dtype, _version = _npy_header(stream)
-        if fortran_order or len(shape) < 2:
-            raise ValueError("feature extraction requires a C-order array with a last feature axis")
-        feature_count = shape[-1]
-        if not 0 <= feature_index < feature_count:
-            raise ValueError(
-                f"feature_index {feature_index} is outside [0, {feature_count})"
+    resolved_outputs = {index: path.resolve() for index, path in outputs.items()}
+    memmaps: dict[int, np.memmap] = {}
+    try:
+        with ZipFile(npz_path) as archive, archive.open(member) as stream:
+            shape, fortran_order, dtype, _version = _npy_header(stream)
+            if fortran_order or len(shape) < 2:
+                raise ValueError(
+                    "feature extraction requires a C-order array with a last feature axis"
+                )
+            feature_count = shape[-1]
+            invalid = sorted(
+                index for index in outputs if not 0 <= index < feature_count
             )
-        spatial_shape = shape[:-1]
-        voxel_count = int(np.prod(spatial_shape, dtype=np.int64))
-        output = format.open_memmap(
-            output_npy, mode="w+", dtype=dtype, shape=spatial_shape
-        )
-        flat_output = output.reshape(-1)
-        row_bytes = feature_count * dtype.itemsize
-        offset = 0
-        while offset < voxel_count:
-            count = min(block_voxels, voxel_count - offset)
-            wanted = count * row_bytes
-            chunks = []
-            received = 0
-            while received < wanted:
-                chunk = stream.read(wanted - received)
-                if not chunk:
-                    raise ValueError(
-                        f"truncated {member}: expected {wanted} bytes at voxel {offset}"
-                    )
-                chunks.append(chunk)
-                received += len(chunk)
-            block = np.frombuffer(b"".join(chunks), dtype=dtype).reshape(
-                count, feature_count
-            )
-            flat_output[offset : offset + count] = block[:, feature_index]
-            offset += count
-        if stream.read(1):
-            raise ValueError(f"{member} contains payload bytes beyond its declared shape")
-        output.flush()
+            if invalid:
+                raise ValueError(
+                    f"feature indexes {invalid} are outside [0, {feature_count})"
+                )
+            spatial_shape = shape[:-1]
+            voxel_count = int(np.prod(spatial_shape, dtype=np.int64))
+            for index, output_path in resolved_outputs.items():
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                memmaps[index] = format.open_memmap(
+                    output_path, mode="w+", dtype=dtype, shape=spatial_shape
+                )
+            flat_outputs = {
+                index: output.reshape(-1) for index, output in memmaps.items()
+            }
+            row_bytes = feature_count * dtype.itemsize
+            offset = 0
+            while offset < voxel_count:
+                count = min(block_voxels, voxel_count - offset)
+                wanted = count * row_bytes
+                chunks = []
+                received = 0
+                while received < wanted:
+                    chunk = stream.read(wanted - received)
+                    if not chunk:
+                        raise ValueError(
+                            f"truncated {member}: expected {wanted} bytes at voxel {offset}"
+                        )
+                    chunks.append(chunk)
+                    received += len(chunk)
+                block = np.frombuffer(b"".join(chunks), dtype=dtype).reshape(
+                    count, feature_count
+                )
+                for index, flat_output in flat_outputs.items():
+                    flat_output[offset : offset + count] = block[:, index]
+                offset += count
+            if stream.read(1):
+                raise ValueError(
+                    f"{member} contains payload bytes beyond its declared shape"
+                )
+            for output in memmaps.values():
+                output.flush()
+    except Exception:
+        for output in memmaps.values():
+            output._mmap.close()
+        for output_path in resolved_outputs.values():
+            output_path.unlink(missing_ok=True)
+        raise
+    for output in memmaps.values():
+        output._mmap.close()
     return {
-        "source": str(npz_path),
-        "member": member,
-        "feature_index": feature_index,
-        "source_shape": list(shape),
-        "output": str(output_npy),
-        "output_shape": list(spatial_shape),
-        "dtype": str(dtype),
-        "dtype_descriptor": dtype.str,
-        "bytes": output_npy.stat().st_size,
-        "sha256": sha256_file(output_npy),
+        index: {
+            "source": str(npz_path),
+            "member": member,
+            "feature_index": index,
+            "source_shape": list(shape),
+            "output": str(output_path),
+            "output_shape": list(spatial_shape),
+            "dtype": str(dtype),
+            "dtype_descriptor": dtype.str,
+            "bytes": output_path.stat().st_size,
+            "sha256": sha256_file(output_path),
+        }
+        for index, output_path in resolved_outputs.items()
     }
 
 

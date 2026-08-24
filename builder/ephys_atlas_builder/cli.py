@@ -18,7 +18,12 @@ from .package import package_release
 from .sources import pull, resolve_source_release
 from .validate import ValidationError, validate_release
 from .volumes import DATASET_ID as VOLUMES_DATASET_ID
-from .volumes import VolumeBuildConfig, build_volumes_from_snapshot
+from .volumes import (
+    VolumeBuildConfig,
+    apply_volume_geometry_selection,
+    build_volumes_from_snapshot,
+    load_volume_geometry_selection,
+)
 
 
 def _schema_dir() -> Path:
@@ -113,14 +118,19 @@ def main(argv: list[str] | None = None) -> int:
         "build-volumes",
         help="build ephys_atlas_volumes from a pinned NPZ with explicit scientific geometry",
     )
-    p.add_argument("release", help="immutable encoding-volume vintage")
+    p.add_argument("release", help="immutable source encoding-volume vintage")
+    p.add_argument(
+        "--release-id",
+        required=True,
+        help="immutable output release identifier; candidate builds must differ from the source vintage",
+    )
     p.add_argument("--created-at", required=True)
-    p.add_argument("--resolution-um", type=int, required=True)
-    p.add_argument("--reference-space-id", required=True)
-    p.add_argument("--grid-id", required=True)
-    p.add_argument("--index-to-world-um", type=float, nargs=16, required=True)
-    p.add_argument("--outside-value", type=float, required=True)
-    p.add_argument("--missing-values", choices=("nonfinite",), required=True)
+    p.add_argument(
+        "--geometry-selection",
+        type=Path,
+        required=True,
+        help="committed scientific-owner geometry/validity selection JSON",
+    )
     p.add_argument(
         "--layout", choices=("chunks3d", "orthogonal_slice_packs"), required=True
     )
@@ -129,6 +139,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--feature", action="append", dest="features")
     p.add_argument("--histogram-bins", type=int, default=50)
     p.add_argument("--paper-snapshot", action="store_true")
+    p.add_argument(
+        "--candidate",
+        action="store_true",
+        help="label the output explicitly as local and non-published",
+    )
     p.add_argument("--ibleatools-commit", required=True)
     p.add_argument("--iblatlas-commit", required=True)
     p.add_argument("--builder-commit", required=True)
@@ -329,26 +344,23 @@ def main(argv: list[str] | None = None) -> int:
                 args.source_root, VOLUMES_DATASET_ID, args.release
             )
             source_snapshot = args.source_root / VOLUMES_DATASET_ID / resolved
-            release_dir = args.release_root / VOLUMES_DATASET_ID / resolved
-            config = VolumeBuildConfig(
-                release_id=resolved,
+            release_dir = args.release_root / VOLUMES_DATASET_ID / args.release_id
+            config = apply_volume_geometry_selection(VolumeBuildConfig(
+                release_id=args.release_id,
+                source_release_id=resolved,
                 created_at=args.created_at,
-                resolution_um=args.resolution_um,
-                reference_space_id=args.reference_space_id,
-                grid_id=args.grid_id,
-                index_to_world_um=tuple(args.index_to_world_um),
-                outside_value=args.outside_value,
-                missing_values=args.missing_values,
                 layout=args.layout,
                 pack_depth=args.pack_depth,
                 chunk_shape=tuple(args.chunk_shape) if args.chunk_shape else None,
                 features=tuple(args.features) if args.features else None,
                 histogram_bins=args.histogram_bins,
                 paper_snapshot=args.paper_snapshot,
+                candidate=args.candidate,
                 ibleatools_commit=args.ibleatools_commit,
                 iblatlas_commit=args.iblatlas_commit,
                 builder_commit=args.builder_commit,
-            )
+                geometry_selection=args.geometry_selection,
+            ), load_volume_geometry_selection(args.geometry_selection))
             build_volumes_from_snapshot(source_snapshot, release_dir, config)
             validate_release(release_dir, args.schema_dir)
             print(f"built and validated: {release_dir}")
