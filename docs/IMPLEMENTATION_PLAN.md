@@ -22,6 +22,10 @@ Completed:
 - current integration/source status is refreshed, including the raw/denoised ambiguity;
 - GitHub lists only `main` as a branch;
 - Python, TypeScript typecheck, unit tests, production build, and Playwright are green on the handoff baseline.
+- Apple-silicon bootstrap, exact Node 22 selection, official private-data
+  acquisition, and the active W26 volume continuation are durable repository
+  instructions; a tracked-files-only clone passed `just bootstrap` and
+  `just check` on 2026-08-24 without ignored artifacts or private data.
 
 Routine product implementation should now move to local Codex on `main`.
 

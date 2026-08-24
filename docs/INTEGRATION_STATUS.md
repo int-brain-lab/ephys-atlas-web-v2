@@ -2,6 +2,17 @@
 
 Status: active pre-alpha implementation on `main`. The repository is being optimized for rapid future extension rather than compatibility with an installed user base.
 
+## Cross-machine development handoff
+
+The repository is self-describing for a clean Apple-silicon continuation.
+`.node-version` and npm engines pin Node 22; `docs/MACOS_DEVELOPMENT.md` owns the
+macOS bootstrap; and `docs/data/VOLUME_IMPLEMENTATION_HANDOFF.md` owns exact
+W26 acquisition, checksum, current implementation boundaries, Q4/Q5 stop
+conditions, and the ordered next work. A tracked-files-only clone with no
+ignored artifacts or private data passed `just bootstrap` and the complete
+`just check` gate on 2026-08-24. Chat history, the frozen donor worktree, and
+Fractal-local generated artifacts are not required to continue M2.
+
 ## Current architecture
 
 The product is organized around five browser responsibilities:
