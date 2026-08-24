@@ -463,7 +463,11 @@ required inputs; deterministic tests prove omitted choices fail closed. D043
 selects the all-forward ML/AP/DV voxel-center affine for this source, retains
 the documented `0.0` outside sentinel, and records that a full-value audit found
 no NaNs or infinities. The builder has not yet been invoked to create a W26
-release because Q5 remains unresolved.
+production release because Q5 remains unresolved. It now consumes the committed
+D043 selection directly, rejects any mismatch in source identity, grid,
+affine, validity policy, or audit extent, and removes manual affine transcription
+from the CLI. Multiple features are extracted in one bounded-memory NPZ pass
+rather than decompressing the 790 MB member once per feature.
 
 Current W26 evidence favors depth-four orthogonal slice packs. Offline
 measurements for `psd_lfp`, `rms_ap`, and `polarity` require three center-plane
@@ -473,6 +477,18 @@ p50 and 29.5–40.0 ms p95, cached navigation at 2.4–2.6 ms p50 with no reques
 and six-plane paint at 1.7–2.3 ms p50. Depth 8 roughly doubles center bytes and
 raises cold p50 to 24.3–26.2 ms. The committed raw reports and limitations are
 summarized in `docs/data/VOLUME_2026_W26_EVIDENCE.md`.
+
+Two ignored non-published candidates now contain all 41 features at depth 4 and
+depth 8. Their complete schema-v1 graphs contain 6,809/3,488 files and
+494,830,395/492,228,218 served bytes; deterministic graph digests, per-feature
+validity totals, and manifest hashes are committed as evidence. Opt-in Chromium
+acceptance serves the depth-4 candidate with CDN-like immutable/CORS/MIME and
+opaque-gzip behavior and covers all feature switches, linked D043 indices,
+exact inspected float16 values, outside voxels, cache reuse, cancellation, and
+integrity failure. Six worst linked-plane features were measured under local,
+20 ms/100 Mbps, and 80 ms/10 Mbps profiles. Depth 4 roughly halves cold bytes
+and decoded center-pack memory and remains the provisional recommendation; Q5
+still requires final-origin validation.
 
 ## Local data and downloads
 

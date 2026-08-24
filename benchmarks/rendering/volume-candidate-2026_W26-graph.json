@@ -1,0 +1,1301 @@
+{
+  "benchmark": "w26-volume-candidate-graph-v1",
+  "candidates": [
+    {
+      "candidate_label": "Local non-published transport candidate derived from a pinned canonical encoding-volume object.",
+      "complete_graph_sha256": "506f7a66ea7325b19095a30e06025e0d2c06a71ff182bde0f144760004348de5",
+      "feature_count": 41,
+      "features": [
+        {
+          "id": "rms_lf",
+          "linked_bregma_axis_bytes": [
+            60856,
+            53557,
+            5942
+          ],
+          "linked_bregma_pack_bytes": 120355,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9352831,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_lfp",
+          "linked_bregma_axis_bytes": [
+            61538,
+            53425,
+            5935
+          ],
+          "linked_bregma_pack_bytes": 120898,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9376542,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_alpha",
+          "linked_bregma_axis_bytes": [
+            63582,
+            54930,
+            6208
+          ],
+          "linked_bregma_pack_bytes": 124720,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9642023,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_beta",
+          "linked_bregma_axis_bytes": [
+            61706,
+            53123,
+            6048
+          ],
+          "linked_bregma_pack_bytes": 120877,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9431335,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_gamma",
+          "linked_bregma_axis_bytes": [
+            60518,
+            53071,
+            5864
+          ],
+          "linked_bregma_pack_bytes": 119453,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9383574,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_delta",
+          "linked_bregma_axis_bytes": [
+            59605,
+            51995,
+            5648
+          ],
+          "linked_bregma_pack_bytes": 117248,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9166245,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_theta",
+          "linked_bregma_axis_bytes": [
+            63975,
+            54264,
+            6213
+          ],
+          "linked_bregma_pack_bytes": 124452,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9616293,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_lfp_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            75120,
+            62794,
+            7012
+          ],
+          "linked_bregma_pack_bytes": 144926,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11219765,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_alpha_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            76853,
+            62980,
+            6929
+          ],
+          "linked_bregma_pack_bytes": 146762,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11450674,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_beta_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            75874,
+            62492,
+            6893
+          ],
+          "linked_bregma_pack_bytes": 145259,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11303727,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_gamma_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            74520,
+            63348,
+            6889
+          ],
+          "linked_bregma_pack_bytes": 144757,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11238749,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_delta_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            74457,
+            61904,
+            6671
+          ],
+          "linked_bregma_pack_bytes": 143032,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11207597,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_theta_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            78746,
+            64943,
+            6980
+          ],
+          "linked_bregma_pack_bytes": 150669,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11646845,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "rms_lf_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            86199,
+            69873,
+            7407
+          ],
+          "linked_bregma_pack_bytes": 163479,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 12670478,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_residual_lfp",
+          "linked_bregma_axis_bytes": [
+            91596,
+            75366,
+            7583
+          ],
+          "linked_bregma_pack_bytes": 174545,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 13313908,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_residual_alpha",
+          "linked_bregma_axis_bytes": [
+            114621,
+            90307,
+            7815
+          ],
+          "linked_bregma_pack_bytes": 212743,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 15530372,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_residual_beta",
+          "linked_bregma_axis_bytes": [
+            110479,
+            84889,
+            7761
+          ],
+          "linked_bregma_pack_bytes": 203129,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 15081984,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_residual_gamma",
+          "linked_bregma_axis_bytes": [
+            94732,
+            78549,
+            7462
+          ],
+          "linked_bregma_pack_bytes": 180743,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 13706834,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_residual_delta",
+          "linked_bregma_axis_bytes": [
+            112801,
+            88615,
+            8956
+          ],
+          "linked_bregma_pack_bytes": 210372,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 15663865,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_residual_theta",
+          "linked_bregma_axis_bytes": [
+            106409,
+            84800,
+            7640
+          ],
+          "linked_bregma_pack_bytes": 198849,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14669643,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "decay_fit_error",
+          "linked_bregma_axis_bytes": [
+            78488,
+            62268,
+            6870
+          ],
+          "linked_bregma_pack_bytes": 147626,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11331905,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "decay_fit_r_squared",
+          "linked_bregma_axis_bytes": [
+            60893,
+            49304,
+            5057
+          ],
+          "linked_bregma_pack_bytes": 115254,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 8992324,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "decay_n_peaks",
+          "linked_bregma_axis_bytes": [
+            85090,
+            69725,
+            7224
+          ],
+          "linked_bregma_pack_bytes": 162039,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 12291155,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "aperiodic_exponent",
+          "linked_bregma_axis_bytes": [
+            78930,
+            66017,
+            6616
+          ],
+          "linked_bregma_pack_bytes": 151563,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11791741,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "aperiodic_offset",
+          "linked_bregma_axis_bytes": [
+            58661,
+            51219,
+            5822
+          ],
+          "linked_bregma_pack_bytes": 115702,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9077971,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "cor_ratio",
+          "linked_bregma_axis_bytes": [
+            100214,
+            78675,
+            7808
+          ],
+          "linked_bregma_pack_bytes": 186697,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 13834106,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "rms_ap",
+          "linked_bregma_axis_bytes": [
+            54368,
+            39839,
+            4568
+          ],
+          "linked_bregma_pack_bytes": 98775,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 7757041,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "alpha_mean",
+          "linked_bregma_axis_bytes": [
+            94681,
+            75526,
+            7587
+          ],
+          "linked_bregma_pack_bytes": 177794,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 13297334,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "alpha_std",
+          "linked_bregma_axis_bytes": [
+            99729,
+            79710,
+            7705
+          ],
+          "linked_bregma_pack_bytes": 187144,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 13997844,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "spike_count",
+          "linked_bregma_axis_bytes": [
+            86179,
+            64928,
+            7558
+          ],
+          "linked_bregma_pack_bytes": 158665,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11852758,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "tip_time_secs",
+          "linked_bregma_axis_bytes": [
+            77004,
+            60078,
+            6588
+          ],
+          "linked_bregma_pack_bytes": 143670,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11115296,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "recovery_time_secs",
+          "linked_bregma_axis_bytes": [
+            68719,
+            54749,
+            5882
+          ],
+          "linked_bregma_pack_bytes": 129350,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 10021833,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "peak_time_secs",
+          "linked_bregma_axis_bytes": [
+            41594,
+            32174,
+            4949
+          ],
+          "linked_bregma_pack_bytes": 78717,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5633274,
+          "pack_bytes": 6121220,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 3997446
+        },
+        {
+          "id": "trough_time_secs",
+          "linked_bregma_axis_bytes": [
+            81515,
+            65255,
+            6457
+          ],
+          "linked_bregma_pack_bytes": 153227,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11703849,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "trough_val",
+          "linked_bregma_axis_bytes": [
+            108116,
+            81803,
+            8219
+          ],
+          "linked_bregma_pack_bytes": 198138,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14669356,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "tip_val",
+          "linked_bregma_axis_bytes": [
+            106336,
+            79949,
+            8030
+          ],
+          "linked_bregma_pack_bytes": 194315,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14402729,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "peak_val",
+          "linked_bregma_axis_bytes": [
+            107709,
+            81562,
+            8198
+          ],
+          "linked_bregma_pack_bytes": 197469,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14662567,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "recovery_slope",
+          "linked_bregma_axis_bytes": [
+            112232,
+            84287,
+            8362
+          ],
+          "linked_bregma_pack_bytes": 204881,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 15039906,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "depolarisation_slope",
+          "linked_bregma_axis_bytes": [
+            105027,
+            78937,
+            7961
+          ],
+          "linked_bregma_pack_bytes": 191925,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14259391,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "repolarisation_slope",
+          "linked_bregma_axis_bytes": [
+            110219,
+            81877,
+            8230
+          ],
+          "linked_bregma_pack_bytes": 200326,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14755673,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "polarity",
+          "linked_bregma_axis_bytes": [
+            105327,
+            79008,
+            8092
+          ],
+          "linked_bregma_pack_bytes": 192427,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14304363,
+          "pack_count": 163,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        }
+      ],
+      "file_count": 6809,
+      "geometry_selection_sha256": "bf657f99536255706f2aec791edd84663d634cb552c4fb9cfd6db42b96443631",
+      "grid_shape": [
+        228,
+        264,
+        160
+      ],
+      "manifest_sha256": "611510ab6ffb2c5489333d7176db6240ffc1f6d2f323bde6e82e77995144332f",
+      "missing_voxel_count_max": 0,
+      "release_id": "2026_W26-candidate-depth4",
+      "served_bytes": 494830395,
+      "source_sha256": "1f7509fe9e368a90704173bdb5c385827b199a7d5fa4b0aaa8fec5aca5402253",
+      "transport": {
+        "layout": "orthogonal_slice_packs",
+        "pack_depth": 4
+      },
+      "worst_linked_bregma_features": [
+        "psd_residual_alpha",
+        "psd_residual_delta",
+        "recovery_slope",
+        "psd_residual_beta",
+        "repolarisation_slope",
+        "psd_residual_theta",
+        "trough_val",
+        "peak_val"
+      ]
+    },
+    {
+      "candidate_label": "Local non-published transport candidate derived from a pinned canonical encoding-volume object.",
+      "complete_graph_sha256": "9fedde1b936fa373b2a1570abbd917184486a51609f4db87214ec3c8e1f13d86",
+      "feature_count": 41,
+      "features": [
+        {
+          "id": "rms_lf",
+          "linked_bregma_axis_bytes": [
+            143485,
+            105064,
+            6440
+          ],
+          "linked_bregma_pack_bytes": 254989,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9343846,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_lfp",
+          "linked_bregma_axis_bytes": [
+            145221,
+            104761,
+            6438
+          ],
+          "linked_bregma_pack_bytes": 256420,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9367741,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_alpha",
+          "linked_bregma_axis_bytes": [
+            149808,
+            108253,
+            6715
+          ],
+          "linked_bregma_pack_bytes": 264776,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9632693,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_beta",
+          "linked_bregma_axis_bytes": [
+            145462,
+            104350,
+            6556
+          ],
+          "linked_bregma_pack_bytes": 256368,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9422693,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_gamma",
+          "linked_bregma_axis_bytes": [
+            142790,
+            103734,
+            6349
+          ],
+          "linked_bregma_pack_bytes": 252873,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9374720,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_delta",
+          "linked_bregma_axis_bytes": [
+            140900,
+            101657,
+            6131
+          ],
+          "linked_bregma_pack_bytes": 248688,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9156374,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_theta",
+          "linked_bregma_axis_bytes": [
+            150719,
+            106941,
+            6731
+          ],
+          "linked_bregma_pack_bytes": 264391,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9606921,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_lfp_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            176474,
+            122728,
+            7578
+          ],
+          "linked_bregma_pack_bytes": 306780,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11209855,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_alpha_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            180654,
+            123789,
+            7466
+          ],
+          "linked_bregma_pack_bytes": 311909,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11441595,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_beta_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            178379,
+            122078,
+            7451
+          ],
+          "linked_bregma_pack_bytes": 307908,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11294151,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_gamma_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            175128,
+            123141,
+            7448
+          ],
+          "linked_bregma_pack_bytes": 305717,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11228856,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_delta_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            175013,
+            121289,
+            7200
+          ],
+          "linked_bregma_pack_bytes": 303502,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11198276,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_theta_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            185609,
+            127530,
+            7542
+          ],
+          "linked_bregma_pack_bytes": 320681,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11637441,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "rms_lf_csd_diff1",
+          "linked_bregma_axis_bytes": [
+            202876,
+            137194,
+            8005
+          ],
+          "linked_bregma_pack_bytes": 348075,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 12663510,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_residual_lfp",
+          "linked_bregma_axis_bytes": [
+            216547,
+            147382,
+            8248
+          ],
+          "linked_bregma_pack_bytes": 372177,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 13308222,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_residual_alpha",
+          "linked_bregma_axis_bytes": [
+            270231,
+            177740,
+            8516
+          ],
+          "linked_bregma_pack_bytes": 456487,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 15526255,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_residual_beta",
+          "linked_bregma_axis_bytes": [
+            260941,
+            165987,
+            8445
+          ],
+          "linked_bregma_pack_bytes": 435373,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 15076311,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_residual_gamma",
+          "linked_bregma_axis_bytes": [
+            223406,
+            154505,
+            8082
+          ],
+          "linked_bregma_pack_bytes": 385993,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 13700618,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_residual_delta",
+          "linked_bregma_axis_bytes": [
+            265158,
+            172322,
+            9656
+          ],
+          "linked_bregma_pack_bytes": 447136,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 15660772,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "psd_residual_theta",
+          "linked_bregma_axis_bytes": [
+            250577,
+            165110,
+            8311
+          ],
+          "linked_bregma_pack_bytes": 423998,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14663576,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "decay_fit_error",
+          "linked_bregma_axis_bytes": [
+            184481,
+            121889,
+            7402
+          ],
+          "linked_bregma_pack_bytes": 313772,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11323398,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "decay_fit_r_squared",
+          "linked_bregma_axis_bytes": [
+            143587,
+            97038,
+            5524
+          ],
+          "linked_bregma_pack_bytes": 246149,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 8983188,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "decay_n_peaks",
+          "linked_bregma_axis_bytes": [
+            200178,
+            136543,
+            7780
+          ],
+          "linked_bregma_pack_bytes": 344501,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 12284984,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "aperiodic_exponent",
+          "linked_bregma_axis_bytes": [
+            186666,
+            129098,
+            7149
+          ],
+          "linked_bregma_pack_bytes": 322913,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11782772,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "aperiodic_offset",
+          "linked_bregma_axis_bytes": [
+            138560,
+            100760,
+            6309
+          ],
+          "linked_bregma_pack_bytes": 245629,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 9069763,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "cor_ratio",
+          "linked_bregma_axis_bytes": [
+            236162,
+            153581,
+            8509
+          ],
+          "linked_bregma_pack_bytes": 398252,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 13830135,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "rms_ap",
+          "linked_bregma_axis_bytes": [
+            127857,
+            77591,
+            5034
+          ],
+          "linked_bregma_pack_bytes": 210482,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 7749742,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "alpha_mean",
+          "linked_bregma_axis_bytes": [
+            223299,
+            147978,
+            8237
+          ],
+          "linked_bregma_pack_bytes": 379514,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 13291410,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "alpha_std",
+          "linked_bregma_axis_bytes": [
+            235016,
+            155695,
+            8380
+          ],
+          "linked_bregma_pack_bytes": 399091,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 13995061,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "spike_count",
+          "linked_bregma_axis_bytes": [
+            202878,
+            125012,
+            8185
+          ],
+          "linked_bregma_pack_bytes": 336075,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11844330,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "tip_time_secs",
+          "linked_bregma_axis_bytes": [
+            181150,
+            117262,
+            7114
+          ],
+          "linked_bregma_pack_bytes": 305526,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11104361,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "recovery_time_secs",
+          "linked_bregma_axis_bytes": [
+            161664,
+            106352,
+            6384
+          ],
+          "linked_bregma_pack_bytes": 274400,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 10012737,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "peak_time_secs",
+          "linked_bregma_axis_bytes": [
+            97631,
+            62590,
+            5416
+          ],
+          "linked_bregma_pack_bytes": 165637,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5633274,
+          "pack_bytes": 6112710,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 3997446
+        },
+        {
+          "id": "trough_time_secs",
+          "linked_bregma_axis_bytes": [
+            192032,
+            127076,
+            6977
+          ],
+          "linked_bregma_pack_bytes": 326085,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 11695960,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "trough_val",
+          "linked_bregma_axis_bytes": [
+            254758,
+            158905,
+            8919
+          ],
+          "linked_bregma_pack_bytes": 422582,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14663146,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "tip_val",
+          "linked_bregma_axis_bytes": [
+            250521,
+            154940,
+            8730
+          ],
+          "linked_bregma_pack_bytes": 414191,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14396518,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "peak_val",
+          "linked_bregma_axis_bytes": [
+            253842,
+            158518,
+            8899
+          ],
+          "linked_bregma_pack_bytes": 421259,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14656973,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "recovery_slope",
+          "linked_bregma_axis_bytes": [
+            264823,
+            163949,
+            9062
+          ],
+          "linked_bregma_pack_bytes": 437834,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 15034810,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "depolarisation_slope",
+          "linked_bregma_axis_bytes": [
+            247685,
+            152970,
+            8660
+          ],
+          "linked_bregma_pack_bytes": 409315,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14252845,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "repolarisation_slope",
+          "linked_bregma_axis_bytes": [
+            259642,
+            159744,
+            8930
+          ],
+          "linked_bregma_pack_bytes": 428316,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14749561,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        },
+        {
+          "id": "polarity",
+          "linked_bregma_axis_bytes": [
+            248283,
+            152969,
+            8791
+          ],
+          "linked_bregma_pack_bytes": 410043,
+          "missing_voxel_count": 0,
+          "outside_voxel_count": 5629541,
+          "pack_bytes": 14298361,
+          "pack_count": 82,
+          "total_voxel_count": 9630720,
+          "valid_voxel_count": 4001179
+        }
+      ],
+      "file_count": 3488,
+      "geometry_selection_sha256": "bf657f99536255706f2aec791edd84663d634cb552c4fb9cfd6db42b96443631",
+      "grid_shape": [
+        228,
+        264,
+        160
+      ],
+      "manifest_sha256": "77fdacc4aca33fc34f2c1583b245e1b3b62f3a419702a570633f850e1d4511a9",
+      "missing_voxel_count_max": 0,
+      "release_id": "2026_W26-candidate-depth8",
+      "served_bytes": 492228218,
+      "source_sha256": "1f7509fe9e368a90704173bdb5c385827b199a7d5fa4b0aaa8fec5aca5402253",
+      "transport": {
+        "layout": "orthogonal_slice_packs",
+        "pack_depth": 8
+      },
+      "worst_linked_bregma_features": [
+        "psd_residual_alpha",
+        "psd_residual_delta",
+        "recovery_slope",
+        "psd_residual_beta",
+        "repolarisation_slope",
+        "psd_residual_theta",
+        "trough_val",
+        "peak_val"
+      ]
+    }
+  ]
+}

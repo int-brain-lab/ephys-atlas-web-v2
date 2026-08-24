@@ -19,7 +19,17 @@ interface RealDevelopmentRelease {
 
 function mediaType(filePath: string): string {
   if (filePath.endsWith('.json')) return 'application/json; charset=utf-8';
+  if (filePath.endsWith('.csv')) return 'text/csv; charset=utf-8';
   return 'application/octet-stream';
+}
+
+function setStaticHeaders(response: import('node:http').ServerResponse, immutable: boolean): void {
+  response.setHeader('Access-Control-Allow-Origin', '*');
+  response.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  response.setHeader(
+    'Cache-Control',
+    immutable ? 'public, max-age=31536000, immutable' : 'public, max-age=60, must-revalidate',
+  );
 }
 
 export async function loadRealDevelopmentRelease(
@@ -87,8 +97,8 @@ export function realReleasePlugin(release: RealDevelopmentRelease): Plugin {
         const pathname = request.url ? new URL(request.url, 'http://localhost').pathname : '';
         if (pathname === `${REAL_PREFIX}catalog.json`) {
           response.setHeader('Content-Type', 'application/json; charset=utf-8');
-          response.setHeader('Cache-Control', 'no-store');
-          response.end(JSON.stringify({
+          setStaticHeaders(response, false);
+          const body = JSON.stringify({
             schema_version: '1.0',
             datasets: [{
               dataset_id: datasetId,
@@ -106,7 +116,9 @@ export function realReleasePlugin(release: RealDevelopmentRelease): Plugin {
                 },
               }],
             }],
-          }));
+          });
+          response.setHeader('Content-Length', Buffer.byteLength(body));
+          response.end(body);
           return;
         }
         const releasePrefix = `${REAL_PREFIX}${datasetId}/${releaseId}/`;
@@ -119,9 +131,11 @@ export function realReleasePlugin(release: RealDevelopmentRelease): Plugin {
           return;
         }
         try {
-          if (!(await stat(target)).isFile()) return next();
+          const metadata = await stat(target);
+          if (!metadata.isFile()) return next();
           response.setHeader('Content-Type', mediaType(target));
-          response.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          response.setHeader('Content-Length', metadata.size);
+          setStaticHeaders(response, true);
           response.end(await readFile(target));
         } catch {
           next();

@@ -81,6 +81,65 @@ roughly threefold full-feature storage for that request behavior. Q5 remains
 open until equivalent measurements run under production cache headers and
 network profiles. Q4 is resolved for this exact W26 source by D043.
 
+## Full candidate releases and worst-case profiles
+
+Two ignored, explicitly non-published schema-v1 candidates were built from all
+41 dynamically discovered W26 features using builder commit `d43fda3` and the
+committed D043 selection. Both complete graphs passed schema-v1 validation.
+
+| candidate | files | served bytes | manifest SHA-256 | complete-graph SHA-256 |
+| --- | ---: | ---: | --- | --- |
+| `2026_W26-candidate-depth4` | 6,809 | 494,830,395 | `611510ab6ffb2c5489333d7176db6240ffc1f6d2f323bde6e82e77995144332f` | `506f7a66ea7325b19095a30e06025e0d2c06a71ff182bde0f144760004348de5` |
+| `2026_W26-candidate-depth8` | 3,488 | 492,228,218 | `77fdacc4aca33fc34f2c1583b245e1b3b62f3a419702a570633f850e1d4511a9` | `9fedde1b936fa373b2a1570abbd917184486a51609f4db87214ec3c8e1f13d86` |
+
+The complete-graph digest is SHA-256 over sorted records of
+`relative-path NUL byte-size NUL file-sha256 LF`. The committed generated report
+`benchmarks/rendering/volume-candidate-2026_W26-graph.json` records every
+feature's pack bytes and exhaustive valid/outside/missing counts. Every feature
+has zero missing voxels under the selected non-finite policy; its mutually
+exclusive counts sum to 9,630,720 grid voxels.
+
+The prior three representatives were not reused for the extension. Full
+candidate inventories identified these six worst linked-Bregma features:
+`psd_residual_alpha`, `psd_residual_delta`, `recovery_slope`,
+`psd_residual_beta`, `repolarisation_slope`, and `psd_residual_theta`.
+Three Chromium trials per feature/depth produced these ranges:
+
+| profile | depth | cold bytes | cold p50 ms | cached p50 ms | decoded center-pack cache | paint p50 ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| local route | 4 | 198,849–212,743 | 14.6–25.8 | 2.5–4.6 | 2,222,592 B | 0.3–0.7 |
+| local route | 8 | 423,998–456,487 | 18.1–28.7 | 2.4–2.8 | 4,445,184 B | 0.4–0.5 |
+| 20 ms / 100 Mbps | 4 | 198,849–212,743 | 37.9–46.7 | 2.3–2.5 | 2,222,592 B | 0.3–0.4 |
+| 20 ms / 100 Mbps | 8 | 423,998–456,487 | 50.8–61.8 | 2.4–4.0 | 4,445,184 B | 0.3–0.5 |
+| 80 ms / 10 Mbps | 4 | 198,849–212,743 | 187.9–196.2 | 3.5–4.6 | 2,222,592 B | 0.4–0.5 |
+| 80 ms / 10 Mbps | 8 | 423,998–456,487 | 320.2–332.8 | 2.9–3.8 | 4,445,184 B | 0.4–0.7 |
+
+All cold cases used exactly three requests and decoded-cache revisits used zero
+requests. The raw report records fetch/decode-plane estimates, paint timings,
+environment, and limitations in
+`benchmarks/rendering/real-volume-browser-2026_W26-candidate-profiles-results.json`.
+Latency/bandwidth were simulated at Playwright route fulfillment, so this is
+provisional local evidence rather than eventual CloudFront verification.
+
+Depth 4 is therefore the stronger provisional Q5 recommendation: depth 8 saves
+only 2,602,177 bytes across the complete 41-feature release while roughly
+doubling linked-plane transfer and decoded center-pack memory. Q5 deliberately
+remains open until the selected origin reproduces the header/cache behavior and
+real network measurements.
+
+## Production-style local browser acceptance
+
+The ignored depth-4 candidate is served through the opt-in real-release path
+with short-lived catalog caching, immutable release caching, wildcard read
+CORS, correct JSON/binary MIME types, declared content lengths, and opaque gzip
+bytes without `Content-Encoding`. Chromium acceptance covers all 41 feature
+switches, D043-derived Bregma-linked indices `(i0,i1,i2)=(115,108,7)`, exact
+inspected `rms_ap` values compared with the packed float16 bytes, explicit
+outside voxels, request-free same-pack navigation, rapid-switch cancellation,
+and encoded SHA-256 failure. Successful compositing with the active 10 um
+projection pack confirms exact shared `reference_space_id=allen-ccf-2017` while
+retaining distinct 50 um and 10 um grids.
+
 ## Value-validity audit
 
 A bounded streaming pass over all 394,859,520 float16 values found 230,814,914
@@ -106,3 +165,28 @@ The raw committed reports are
 `benchmarks/rendering/real-volume-layout.py` and
 `benchmarks/rendering/prepare-volume-browser-benchmark.py`, followed by
 `npm run benchmark:real-volume`, to regenerate them.
+
+Build and re-run the complete candidates/acceptance with:
+
+```bash
+just data-build-volumes-candidate 2026_W26 2026_W26-candidate-depth4 \
+  2026-08-24T12:00:00Z 4 \
+  9bfa0623a16bc7a989a6b27a589887641beee0a8 \
+  52083adf44825d0622a503705e095699a5957587 d43fda3
+just data-build-volumes-candidate 2026_W26 2026_W26-candidate-depth8 \
+  2026-08-24T12:00:00Z 8 \
+  9bfa0623a16bc7a989a6b27a589887641beee0a8 \
+  52083adf44825d0622a503705e095699a5957587 d43fda3
+uv run --project builder --extra test --locked python \
+  benchmarks/rendering/summarize-volume-candidate.py \
+  data/releases/ephys_atlas_volumes/2026_W26-candidate-depth4 \
+  data/releases/ephys_atlas_volumes/2026_W26-candidate-depth8 \
+  --output benchmarks/rendering/volume-candidate-2026_W26-graph.json
+cd web
+EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_volumes/2026_W26-candidate-depth4 \
+EPHYS_ATLAS_REAL_FEATURE=rms_lf npm run test:volume-candidate
+EPHYS_ATLAS_VOLUME_CANDIDATES=../data/releases/ephys_atlas_volumes/2026_W26-candidate-depth4,../data/releases/ephys_atlas_volumes/2026_W26-candidate-depth8 \
+EPHYS_ATLAS_VOLUME_CANDIDATE_BENCHMARK_OUTPUT=../benchmarks/rendering/real-volume-browser-2026_W26-candidate-profiles-results.json \
+npx playwright test --config playwright.volume-benchmark.config.ts \
+  candidate-profiles.spec.ts
+```

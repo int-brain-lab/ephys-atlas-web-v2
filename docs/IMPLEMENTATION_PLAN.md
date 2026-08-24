@@ -141,6 +141,12 @@ Volume foundations already implemented and green on the handoff baseline:
   discovery, verified source identity, float16 value preservation, both
   transports, valid/outside/missing summaries, explicit affine/validity/layout
   inputs, and deterministic synthetic coverage.
+- machine-consumable D043 selection loading with exact W26 source/grid/affine/
+  validity matching and no CLI affine transcription;
+- one-pass bounded-memory multi-feature NPZ extraction with corruption tests;
+- ignored, explicitly candidate-labelled 41-feature depth-4/depth-8 releases,
+  complete-graph hashes/validity evidence, production-style local browser
+  acceptance, and worst-feature simulated delivery profiles.
 
 Blocked by: Q5. Q4 is resolved for the exact pinned W26 object by D043.
 
@@ -153,16 +159,16 @@ The complete cross-machine continuation contract is
 
 Ordered next actions before production packaging:
 
-1. retain D043 and
+1. retain the implemented D043 machine-consumable gate and
    `docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json` as the exact-source
    scientific geometry authority; do not generalize the affine to another
    vintage, resolution, or source hash;
 2. rebuild external development releases under new schema-v1 release IDs
    before using the opt-in real-release suite; do not add a compatibility reader;
-3. retain the completed checksum/header inspection and representative local
-   W26 depth-4/depth-8 layout and Chromium evidence;
-4. repeat the current depth-4 recommendation against depth 8 under production
-   cache headers/network profiles before selecting the winner;
+3. retain the completed checksum/header inspection, full 41-feature candidates,
+   complete graph report, local production-style acceptance, and representative
+   plus worst-feature depth-4/depth-8 Chromium evidence;
+4. repeat the current depth-4 recommendation at the selected CloudFront origin;
 5. deploy the projection pack with immutable caching and transport-opaque gzip,
    and verify its headers and encoded hashes from the selected origin;
 6. keep failures explicit for invalid transforms, out-of-volume coordinates,

@@ -107,6 +107,16 @@ remains the recommendation; Q5 still needs confirmation under production cache
 headers and network profiles. Exact evidence is in
 `docs/data/VOLUME_2026_W26_EVIDENCE.md`.
 
+Extended local evidence now includes complete depth-4/depth-8 candidates for all
+41 features and simulated 20 ms/100 Mbps and 80 ms/10 Mbps delivery profiles
+over the six worst linked-plane features. Depth 4 used 198,849–212,743 cold
+bytes and 187.9–196.2 ms p50 in the constrained profile versus
+423,998–456,487 bytes and 320.2–332.8 ms for depth 8, while halving decoded
+center-pack memory. Production-style local headers, all-feature switching,
+registration, inspected values/validity, caching, cancellation, and integrity
+failures are green. This strengthens but does not finalize the depth-4
+recommendation because route simulation is not the eventual CloudFront origin.
+
 Blocks: final browser volume transport and production packaging recipe.
 
 ## Q6 — Cluster launch population and feature set

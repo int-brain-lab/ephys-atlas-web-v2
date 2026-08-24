@@ -26,6 +26,13 @@ Do not rebuild these boundaries:
   discovers NPZ features dynamically, preserves float16 values, supports both
   physical layouts, and refuses to infer reference space, grid, affine,
   outside/missing semantics, or layout parameters.
+- the snapshot recipe consumes the committed D043 JSON, rejects any mismatch in
+  W26 source identity, grid, affine, sentinel, validity policy, or audit extent,
+  and no longer accepts manually transcribed affine values from the CLI;
+- selected features are extracted together in one bounded-memory NPZ
+  decompression pass, with deterministic multi-feature and corruption coverage;
+- complete ignored 41-feature depth-4/depth-8 candidates, production-style
+  local Chromium acceptance, and simulated worst-feature network evidence.
 
 `ProjectionViewportFactory` remains the 2-D renderer boundary. Do not add a
 volume-specific renderer facade or a 3-D volume renderer.
@@ -101,9 +108,9 @@ with the intended immutable HTTP/cache headers and a realistic network profile.
    authority; do not reuse it for a different source object.
 4. Retain the completed fail-closed real-release builder and its deterministic
    synthetic tests.
-5. Re-run or extend representative depth-4/depth-8 real-volume evidence only
-   where the existing reports leave a concrete gap.
-6. After Q5 is resolved, invoke `build-volumes` with the approved transform and
+5. Retain the committed full-candidate graph and simulated-profile evidence;
+   repeat it only when the source, builder, browser, or transport changes.
+6. After Q5 is resolved at the eventual origin, invoke `build-volumes` with the approved transform and
    transport parameters to build a new immutable schema-v1
    release for all 41 discovered
    features, preserving source identity and transformation provenance.
