@@ -13,6 +13,8 @@ import {
 } from './validate.js';
 import { SCHEMA_VERSION } from './contracts.js';
 import type {
+  ArtifactDescriptor,
+  ArtifactPayload,
   BinaryArrayDescriptor,
   DatasetCatalog,
   DatasetCatalogEntry,
@@ -206,6 +208,25 @@ export class HttpDatasetSource implements DatasetSource {
     await this.loadFeature(ref, featureId, representation, parcellation, signal);
   }
 
+  async loadArtifact(
+    ref: DatasetRef,
+    artifactId: string,
+    featureId?: string,
+    signal?: AbortSignal,
+  ): Promise<ArtifactPayload> {
+    const { entry, release } = await this.resolveRelease(ref);
+    const manifest = await this.loadManifest(ref);
+    const artifact = this.findArtifact(manifest, artifactId, featureId);
+    const baseUrl = featureId === undefined
+      ? this.requireManifestUrl(entry.id, release.id)
+      : this.requireFeatureUrl(entry.id, release.id, featureId);
+    const reader = this.reader(release.immutable);
+    return {
+      artifact,
+      bytes: await reader.readBytes(reader.resolve(baseUrl, artifact.resource.path), signal, artifact.resource),
+    };
+  }
+
   private reader(immutable: boolean): ResourceReader {
     return new HttpResourceReader(this.fetcher, immutable);
   }
@@ -224,6 +245,17 @@ export class HttpDatasetSource implements DatasetSource {
     const feature = manifest.features.find((item) => item.id === featureId);
     if (!feature) throw new Error(`Feature not found: ${featureId}`);
     return feature;
+  }
+
+  private findArtifact(manifest: DatasetManifest, artifactId: string, featureId?: string): ArtifactDescriptor {
+    const artifacts = featureId === undefined
+      ? manifest.artifacts
+      : this.findFeature(manifest, featureId).artifacts;
+    const artifact = artifacts.find((item) => item.id === artifactId);
+    if (!artifact) {
+      throw new Error(`Artifact not found: ${featureId ? `${featureId}/` : ''}${artifactId}`);
+    }
+    return artifact;
   }
 
   private requireManifestUrl(datasetId: DatasetId, releaseId: string): string {

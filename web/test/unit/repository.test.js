@@ -23,6 +23,9 @@ function source(kind, datasetId) {
     async loadFeature() {
       return { schemaVersion: '1.0', featureId: 'x', representation: 'regional', parcellation: 'allen', regionIds: [], statistics: {} };
     },
+    async loadArtifact(_ref, artifactId, featureId) {
+      return { artifact: { id: artifactId, featureId }, bytes: new ArrayBuffer(0) };
+    },
   };
 }
 
@@ -34,6 +37,19 @@ test('repository merges published and local catalogs and routes local refs', asy
   assert.deepEqual(catalog.datasets.map((item) => item.id), ['ephys_atlas_channels', 'local']);
   const manifest = await repository.loadManifest({ datasetId: 'local', releaseId: 'r1' });
   assert.equal(manifest.dataset.id, 'local');
+});
+
+test('repository routes release and feature artifacts to the selected source', async () => {
+  const published = source('published', 'ephys_atlas_channels');
+  const local = source('local', 'local');
+  const repository = new DatasetRepository(published, local);
+  const payload = await repository.loadArtifact(
+    { datasetId: 'local', releaseId: 'r1' },
+    'volume-source',
+    'rms_ap',
+  );
+  assert.equal(payload.artifact.id, 'volume-source');
+  assert.equal(payload.artifact.featureId, 'rms_ap');
 });
 
 test('repository propagates cancellation to source prefetch', async () => {

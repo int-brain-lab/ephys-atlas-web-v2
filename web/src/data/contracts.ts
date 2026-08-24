@@ -26,6 +26,25 @@ export interface EncodedResourceDescriptor {
   codec: { name: 'none' | 'gzip'; decodedBytes: number; level?: number };
 }
 
+export type ArtifactRole =
+  | 'current-feature'
+  | 'selected-data'
+  | 'source-snapshot'
+  | 'auxiliary'
+  | 'whole-release';
+
+export interface ArtifactDescriptor {
+  id: string;
+  role: ArtifactRole;
+  resource: EncodedResourceDescriptor;
+  description?: string;
+}
+
+export interface ArtifactPayload {
+  artifact: ArtifactDescriptor;
+  bytes: ArrayBuffer;
+}
+
 export interface BinaryArrayDescriptor extends EncodedResourceDescriptor {
   format: 'raw-binary-array-v1';
   dtype: BinaryDType;
@@ -143,6 +162,7 @@ export interface DatasetManifestDocument {
   description: string;
   release: ReleaseMetadata;
   provenance: DatasetProvenance;
+  artifacts: readonly ArtifactDescriptor[];
   parcellations: readonly ParcellationDescriptor[];
   featureRefs: readonly FeatureReference[];
 }
@@ -232,6 +252,7 @@ export interface FeatureDescriptor {
   unit: string | null;
   valueSemantics: FeatureValueSemantics;
   display?: FeatureDisplay;
+  artifacts: readonly ArtifactDescriptor[];
   statistics: readonly StatisticId[];
   representations: {
     regional?: RegionalRepresentationDescriptor;
@@ -250,6 +271,7 @@ export interface DatasetManifest {
   };
   release: ReleaseMetadata;
   provenance: DatasetProvenance;
+  artifacts: readonly ArtifactDescriptor[];
   parcellations: readonly ParcellationId[];
   parcellationDescriptors: Partial<Record<ParcellationId, ParcellationDescriptor>>;
   features: readonly FeatureDescriptor[];
@@ -313,6 +335,12 @@ export interface DatasetSource {
     parcellation?: ParcellationId,
     signal?: AbortSignal,
   ): Promise<FeaturePayload>;
+  loadArtifact(
+    ref: DatasetRef,
+    artifactId: string,
+    featureId?: string,
+    signal?: AbortSignal,
+  ): Promise<ArtifactPayload>;
   prefetchFeature?(
     ref: DatasetRef,
     featureId: string,

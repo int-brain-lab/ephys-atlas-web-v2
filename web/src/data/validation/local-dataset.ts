@@ -16,6 +16,7 @@ import {
 } from './primitives.js';
 import { parseStatisticsDocument } from './statistics.js';
 import { parseVolumeResourceIndex, parseVolumeSummary } from './volume-v1.js';
+import { parseArtifactDescriptors } from './artifact.js';
 
 interface ArtifactExpectation {
   path: string;
@@ -39,14 +40,8 @@ export interface ValidatedLocalDataset {
 }
 
 function parseArtifacts(value: unknown, baseFile: string, context: string): ArtifactExpectation[] {
-  return array(value, context).map((raw, index) => {
-    const item = object(raw, `${context}[${index}]`);
-    const id = string(item.id, `${context}[${index}].id`);
-    if (!/^[a-z0-9][a-z0-9._-]*$/.test(id)) throw new Error(`${context}[${index}].id has an invalid format`);
-    if (!['current-feature', 'selected-data', 'source-snapshot', 'auxiliary'].includes(String(item.role))) {
-      throw new Error(`${context}[${index}].role is unsupported`);
-    }
-    const resource = parseEncodedResource(item.resource, `${context}[${index}].resource`);
+  return parseArtifactDescriptors(value, context).map((item, index) => {
+    const resource = item.resource;
     const path = resolveRelativePath(
       baseFile,
       resource.path,

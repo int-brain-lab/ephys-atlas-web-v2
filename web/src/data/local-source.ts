@@ -11,6 +11,8 @@ import {
 } from './validate.js';
 import { SCHEMA_VERSION } from './contracts.js';
 import type {
+  ArtifactDescriptor,
+  ArtifactPayload,
   BinaryArrayDescriptor,
   DatasetCatalog,
   DatasetManifest,
@@ -259,6 +261,25 @@ export class LocalDatasetSource implements DatasetSource {
     await this.loadFeature(ref, featureId, representation, parcellation, signal);
   }
 
+  async loadArtifact(
+    ref: DatasetRef,
+    artifactId: string,
+    featureId?: string,
+    signal?: AbortSignal,
+  ): Promise<ArtifactPayload> {
+    const manifest = await this.requireManifest(ref);
+    const artifact = this.findArtifact(manifest, artifactId, featureId);
+    const basePath = featureId === undefined ? 'manifest.json' : this.findFeature(manifest, featureId).path;
+    return {
+      artifact,
+      bytes: await this.reader(manifest).readBytes(
+        resolvePath(basePath, artifact.resource.path),
+        signal,
+        artifact.resource,
+      ),
+    };
+  }
+
   private async requireManifest(ref: DatasetRef): Promise<DatasetManifest> {
     if (!ref.releaseId) throw new Error('A local release id is required');
     return this.loadManifest(ref);
@@ -272,6 +293,17 @@ export class LocalDatasetSource implements DatasetSource {
     const feature = manifest.features.find((item) => item.id === featureId);
     if (!feature) throw new Error(`Feature not found: ${featureId}`);
     return feature;
+  }
+
+  private findArtifact(manifest: DatasetManifest, artifactId: string, featureId?: string): ArtifactDescriptor {
+    const artifacts = featureId === undefined
+      ? manifest.artifacts
+      : this.findFeature(manifest, featureId).artifacts;
+    const artifact = artifacts.find((item) => item.id === artifactId);
+    if (!artifact) {
+      throw new Error(`Artifact not found: ${featureId ? `${featureId}/` : ''}${artifactId}`);
+    }
+    return artifact;
   }
 
   async readResource(manifest: DatasetManifest, path: string): Promise<Blob> {

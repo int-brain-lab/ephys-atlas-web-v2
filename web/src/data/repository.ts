@@ -1,5 +1,12 @@
 import type { DatasetRef, ParcellationId, RepresentationKind } from '../domain/types.js';
-import type { DatasetCatalog, DatasetManifest, DatasetSource, FeaturePayload, RegionMetadata } from './contracts.js';
+import type {
+  ArtifactPayload,
+  DatasetCatalog,
+  DatasetManifest,
+  DatasetSource,
+  FeaturePayload,
+  RegionMetadata,
+} from './contracts.js';
 
 export class DatasetRepository {
   constructor(
@@ -30,6 +37,15 @@ export class DatasetRepository {
     parcellation?: ParcellationId,
   ): Promise<FeaturePayload> {
     return this.sourceFor(ref).loadFeature(ref, featureId, representation, parcellation);
+  }
+
+  loadArtifact(
+    ref: DatasetRef,
+    artifactId: string,
+    featureId?: string,
+    signal?: AbortSignal,
+  ): Promise<ArtifactPayload> {
+    return this.sourceFor(ref).loadArtifact(ref, artifactId, featureId, signal);
   }
 
   async prefetchFeature(

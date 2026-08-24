@@ -72,7 +72,31 @@ test('resolved manifest preserves schema-v1 release, provenance, dataset, and fe
   assert.equal(manifest.provenance.builder.command, 'ephys-atlas-data golden fixtures/golden-v1');
   assert.equal(manifest.provenance.recipe.id, 'golden-fixture-v1');
   assert.equal(feature.unit, 'dB rel. V');
+  assert.deepEqual(feature.artifacts.map(({ id, role, description, resource }) => ({
+    id, role, description, path: resource.path,
+  })), [{
+    id: 'rms_ap-csv',
+    role: 'current-feature',
+    description: 'Human-readable regional fixture values',
+    path: 'rms_ap.csv',
+  }]);
+  assert.deepEqual(manifest.artifacts, []);
   assert.equal(feature.representations.volume.grid.referenceSpaceId, 'allen-ccf-2017');
+});
+
+test('artifact metadata accepts every schema-v1 role and rejects duplicate ids', () => {
+  const valid = goldenManifest();
+  const resource = goldenFeature().artifacts[0].resource;
+  valid.artifacts = ['current-feature', 'selected-data', 'source-snapshot', 'auxiliary', 'whole-release']
+    .map((role, index) => ({ id: `Artifact-${index}`, role, resource }));
+  const document = parseDatasetManifestDocument(valid);
+  assert.deepEqual(document.artifacts.map((item) => item.role), [
+    'current-feature', 'selected-data', 'source-snapshot', 'auxiliary', 'whole-release',
+  ]);
+  assert.throws(
+    () => parseDatasetManifestDocument({ ...valid, artifacts: [valid.artifacts[0], valid.artifacts[0]] }),
+    /artifact.*ids must not contain duplicates/,
+  );
 });
 
 test('resolved manifest rejects mismatched dataset, feature, and parcellation identities', () => {

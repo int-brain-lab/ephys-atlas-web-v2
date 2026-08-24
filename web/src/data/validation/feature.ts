@@ -13,6 +13,7 @@ import {
   unique,
 } from './primitives.js';
 import { validateSchemaV1Document } from './schema-v1.js';
+import { parseArtifactDescriptors } from './artifact.js';
 
 function finiteNumber(value: unknown, context: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(`${context} must be finite`);
@@ -53,10 +54,7 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
   if (root.schema_version !== SCHEMA_VERSION) throw new Error(`${path}.schema_version must be ${SCHEMA_VERSION}`);
   const representations = object(root.representations, `${path}.representations`);
   const valueSemantics = object(root.value_semantics, `${path}.value_semantics`);
-  for (const [index, raw] of array(root.artifacts, `${path}.artifacts`).entries()) {
-    const artifact = object(raw, `${path}.artifacts[${index}]`);
-    parseEncodedResource(artifact.resource, `${path}.artifacts[${index}].resource`);
-  }
+  const artifacts = parseArtifactDescriptors(root.artifacts, `${path}.artifacts`);
   const featureId = string(root.id, `${path}.id`);
   if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(featureId)) throw new Error(`${path}.id has an invalid format`);
   let display: FeatureDescriptor['display'];
@@ -83,6 +81,7 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
     description: plainString(root.description, `${path}.description`),
     unit: root.unit === null ? null : plainString(root.unit, `${path}.unit`),
     ...(display !== undefined ? { display } : {}),
+    artifacts,
     valueSemantics: {
       quantity: string(valueSemantics.quantity, `${path}.value_semantics.quantity`),
       transform: string(valueSemantics.transform, `${path}.value_semantics.transform`),

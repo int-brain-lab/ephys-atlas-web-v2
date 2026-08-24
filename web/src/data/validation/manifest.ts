@@ -10,6 +10,7 @@ import {
   type ReleaseMetadata,
 } from '../contracts.js';
 import { parseBinaryArray, parseEncodedResource } from './binary.js';
+import { parseArtifactDescriptors } from './artifact.js';
 import {
   array,
   boolean,
@@ -109,10 +110,7 @@ export function parseDatasetManifestDocument(value: unknown): DatasetManifestDoc
   if (root.schema_version !== SCHEMA_VERSION) throw new Error(`manifest.schema_version must be ${SCHEMA_VERSION}`);
   const release = parseRelease(root.release);
   const provenance = parseProvenance(root.provenance);
-  for (const [index, raw] of array(root.artifacts, 'manifest.artifacts').entries()) {
-    const artifact = object(raw, `manifest.artifacts[${index}]`);
-    parseEncodedResource(artifact.resource, `manifest.artifacts[${index}].resource`);
-  }
+  const artifacts = parseArtifactDescriptors(root.artifacts, 'manifest.artifacts');
   const parcellations = array(root.parcellations, 'manifest.parcellations').map((value, index) => {
     const item = object(value, `manifest.parcellations[${index}]`);
     const metadataResource = parseEncodedResource(
@@ -151,6 +149,7 @@ export function parseDatasetManifestDocument(value: unknown): DatasetManifestDoc
     description: plainString(root.description, 'manifest.description'),
     release,
     provenance,
+    artifacts,
     parcellations,
     featureRefs,
   };
@@ -197,6 +196,7 @@ export function resolveDatasetManifest(
     },
     release: document.release,
     provenance: document.provenance,
+    artifacts: document.artifacts,
     parcellations: document.parcellations.map((item) => item.id),
     parcellationDescriptors,
     features,
