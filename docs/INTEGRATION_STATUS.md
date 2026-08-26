@@ -297,8 +297,9 @@ The cluster builder accepts an explicit content-addressed project snapshot and
 nonempty scalar feature catalog. It aggregates every finite row of
 `clusters.table.pqt` with equal cluster weight after left folding; it does not
 use `clusters_good.table.pqt`, insertion balancing, or hidden good-unit/QC
-filters. Its build inputs can separately declare presentation-only log-color
-defaults. D038 selects the frozen `ibl_neuropixel_brainwide_01` project and the
+filters. Its build inputs separately declare presentation-only Log defaults and
+exact Log-histogram capabilities. D038 selects the frozen
+`ibl_neuropixel_brainwide_01` project and the
 legacy 14-feature scalar list. Content-addressed
 snapshot `sha256-9b5e55215b306f26` and the all-row source audit are complete:
 all candidates exist, all source dtypes are double, and four columns contain
@@ -307,11 +308,13 @@ unit map from the pinned original website repository. The committed catalog
 selection adds implementation-grounded descriptions and conservative display
 defaults while preserving all source values; the builder fails closed on any
 source/catalog mismatch. The earlier ignored 191-file immutable release remains
-intact. D046's distinct 209-file dual-histogram candidate validates and
-reproduces byte-for-byte across two builds. Opt-in Chromium acceptance switches
-all 14 dynamic features and all three parcellations and checks units,
-histogram-axis defaults/toggling, color-scale defaults, and provenance through
-the production HTTP reader. Human visual comparison remains pending;
+intact. D046's distinct 209-file candidate also remains intact. D047's third
+209-file candidate records the owner's Linear Firing-rate preference while
+retaining all six exact Log alternatives; it validates and reproduces
+byte-for-byte across two Fractal builds. Opt-in Chromium acceptance switches all
+14 dynamic features and all three parcellations and checks units, synchronized
+value-scale behavior, safe Log unavailability, and provenance through the
+production HTTP reader. Final synchronized visual confirmation remains pending;
 publication remains deferred under Q8/Q9. See
 `docs/data/CLUSTERS_RELEASE.md`.
 
@@ -577,7 +580,7 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
 2. extend volume browser/HTTP benchmarks, resolve Q5 authoritatively, and
    build the real immutable volume release on the completed projection/schema
    foundation;
-3. keep the D044 cluster release reproducible and publish/retest its already-
+3. keep the D044/D047 cluster release reproducible and publish/retest its already-
    built bytes only after Q8/Q9 authorization;
 4. keep the validated D038 preserved five-family BWM release and opt-in local
    browser acceptance green; online catalog publication remains deferred until

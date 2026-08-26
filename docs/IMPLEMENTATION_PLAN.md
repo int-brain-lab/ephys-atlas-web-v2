@@ -284,9 +284,9 @@ Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 
 ## M3 — `ephys_atlas_clusters`
 
-Status: **D047 synchronized value-scale implementation and Firing-rate Linear
-decision complete locally; new immutable candidate rebuild pending; online
-publication deferred**.
+Status: **D047 synchronized value scale and Firing-rate Linear candidate built,
+reproduced, and automatically accepted; final visual confirmation pending;
+online publication deferred**.
 
 Implemented:
 
@@ -305,15 +305,13 @@ Exact hashes and commands are in `docs/data/CLUSTERS_RELEASE.md`.
 
 Next actions:
 
-1. rebuild D047's versioned selection under a third immutable release ID,
-   validate reproducibility, and repeat opt-in production-HTTP acceptance;
-2. perform one final guided check that Firing rate opens Linear and that both
+1. perform one final guided check that Firing rate opens Linear and that both
    controls, distributions, colors, and handles remain synchronized;
-3. keep all ignored immutable candidates reproducible and the selected
+2. keep all ignored immutable candidates reproducible and the selected
    candidate's opt-in acceptance suite green;
-4. publish the reviewed bytes and add the release to the public catalog
+3. publish the reviewed bytes and add the release to the public catalog
    only when Q8/Q9 publication and default-alias decisions are authorized;
-5. repeat acceptance against the selected public origin.
+4. repeat acceptance against the selected public origin.
 
 Acceptance reference: section 5 of the launch spec.
 
