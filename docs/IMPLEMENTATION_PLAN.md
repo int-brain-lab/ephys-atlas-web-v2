@@ -206,6 +206,11 @@ metric, failure-retention, synthetic-topology, deterministic report, pinned
 source-validation, stress-selection, exact-parent regeneration, and interactive
 offline review machinery. Slice 4 now requires human qualitative review before
 any shortlist; agents must not select a smoothing policy autonomously.
+The report defaults to a one-question guided A/B review with synchronized mouse
+navigation, adaptive representative/stress rounds, and an exportable decision
+record; the exhaustive evidence explorer is optional. Its recorded rule may
+recommend retaining exact geometry or investigating a safer method, but cannot
+promote the rejected diagnostic candidate or alter production geometry.
 Long report runs now use identity-bound atomic per-variant checkpoints, expose
 selection/percentage/ETA/heartbeat progress, and may evaluate independent
 variants with an explicit bounded process-worker count without changing

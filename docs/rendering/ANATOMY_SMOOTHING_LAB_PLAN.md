@@ -6,13 +6,17 @@ geometry decision**.
 Implementation status: Slices 1 through 3 are complete. The pure experiment core,
 deterministic self-contained report builder, synthetic offline report, pinned
 real-source validation, deterministic stress selection, and narrow exact-v2
-regeneration check are implemented. The interactive offline UI provides linked
-exact/candidate and anatomy modes, magnified inspection, presentation controls,
-status/failure evidence, sortable per-region metrics, exports, provenance, and
-fragment-persisted location. Synthetic wide/tablet and pinned-real coronal
-visual checks passed without runtime errors or horizontal overflow. Slice 4 is
-the human sample review and shortlist boundary; no smoothing policy or
-production asset has been selected.
+regeneration check are implemented. The interactive offline UI now defaults to
+a guided A/B review with one binary visual question at a time, synchronized
+wheel zoom and drag pan, representative and stress rounds, a conservative
+recorded recommendation rule, and a downloadable human-review record. The
+complete selectors, presentation controls, status/failure evidence, sortable
+per-region metrics, exports, and provenance remain available as optional
+advanced evidence. Existing report evidence can be re-rendered into the current
+UI without recomputing variants. Synthetic Chromium checks cover early stop,
+the complete second round, and linked navigation. Slice 4 remains at the human
+sample-review boundary; no answers, smoothing policy, or production asset have
+been selected.
 
 Long report builds now emit flushed selection, plan, per-variant percentage/ETA,
 and heartbeat progress. Independent variants may run in a bounded process pool
@@ -279,11 +283,27 @@ Provide JSON/CSV evidence export and a copyable reproduction command when this
 can remain fully local. These exports describe the lab run and never constitute
 a release artifact.
 
-Never use fill color alone to distinguish exact from candidate. Use labelled
-panels and distinct boundary dash/color treatment. Preserve actual SVG paths;
-do not smooth them through Canvas interpolation. If a geometric symmetric-
-difference overlay is expensive, begin with exact/candidate boundary overlays
-and add a generated difference layer later.
+Default to a guided review that presents exact geometry as option A and the
+7.5 um GEOS coverage candidate with a fixed outer boundary as option B. Keep
+both panels visually neutral and alternate their physical left/right placement
+to reduce position bias. Ask only whether B is clearly visually better; `No`
+also covers no meaningful difference. First ask one representative question
+per projection. Continue to every remaining default stress sample only after at
+least two representative `Yes` answers. Recommend investigating a safer method
+only after at least 75% `Yes` overall and a strict `Yes` majority in every
+projection; otherwise recommend retaining exact geometry. This is a review-lane
+recommendation, not an automatic geometry gate or production promotion. The B
+candidate remains visibly marked diagnostic when its quantitative gates fail.
+Export the exact questions, answers, candidate identity, source identity, and
+decision-rule version for the subsequent human/agent evidence record.
+
+Never use fill color alone to distinguish exact from candidate. The guided A/B
+panels use the same neutral presentation so styling cannot create a preference;
+their option labels remain explicit. The advanced evidence view uses labelled
+panels and distinct boundary dash/color treatment for technical diagnosis.
+Preserve actual SVG paths; do not smooth them through Canvas interpolation. If
+a geometric symmetric-difference overlay is expensive, begin with
+exact/candidate boundary overlays and add a generated difference layer later.
 
 The URL fragment may persist the selected projection, slice, strategy,
 parameter, and mode for sharing a location within the local report. It is not
@@ -354,6 +374,9 @@ Completion: two fixed runs from synthetic inputs are byte-identical, and a real
 - Implement the required selectors, comparison modes, linked hover, zoom,
   status/failure presentation, metric summary, worst-region table, and
   provenance panel.
+- Keep the advanced evidence explorer, but make the one-question guided A/B
+  workflow the default and support re-rendering completed evidence without
+  scientific recomputation.
 - Keep rendering functions pure where practical and add stable semantic DOM
   attributes for testing.
 - Add a browser smoke test against a tiny committed synthetic report fixture,

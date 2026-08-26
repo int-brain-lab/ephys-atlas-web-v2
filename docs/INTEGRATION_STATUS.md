@@ -170,9 +170,14 @@ choose a production smoothing budget. Its interactive report now supports
 linked exact/candidate and anatomy views, overlay/blink/boundary modes,
 magnified inspection, clearly separated presentation controls, permanent
 reference/eligible/rejected/unsafe status, full sortable per-region evidence,
-JSON/CSV exports, provenance, and fragment-persisted review location. Synthetic
-wide/tablet and pinned-real coronal visual checks passed. Slice 4 is intentionally
-paused at human qualitative review and shortlisting. Long evidence builds now
+JSON/CSV exports and provenance. The default interface is now a
+one-question-at-a-time A/B review with synchronized wheel zoom/drag pan,
+adaptive representative/stress rounds, an explicit conservative recommendation
+rule, and a downloadable answer record. Exhaustive controls remain under
+optional advanced evidence, and existing computed evidence can be re-rendered
+without recomputation. Synthetic wide/tablet, pinned-real coronal, and guided
+Chromium interaction checks passed. Slice 4 is intentionally paused at the
+repository owner's qualitative answers and shortlisting. Long evidence builds now
 support bounded process-parallel variant evaluation, flushed progress and
 heartbeat reporting with percentage/ETA, identity-bound atomic per-variant
 checkpoints, corruption-safe recomputation, worker-count-independent resume,

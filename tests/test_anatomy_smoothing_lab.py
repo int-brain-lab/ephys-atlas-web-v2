@@ -31,6 +31,10 @@ from tools.anatomy_smoothing_lab.build import (
     sha256_file,
     write_report,
 )
+from tools.anatomy_smoothing_lab.rerender import (
+    extract_embedded_report,
+    rerender_report,
+)
 from tools.anatomy_smoothing_lab.synthetic import synthetic_planes
 
 
@@ -337,6 +341,14 @@ def test_offline_ui_has_stable_semantic_controls_and_valid_javascript() -> None:
     parser.feed(template)
     assert parser.review_panels == {"exact", "candidate"}
     assert {
+        "guided-review",
+        "review-outcome",
+        "answer-yes",
+        "answer-no",
+        "reset-view",
+        "download-review",
+    } <= parser.ids
+    assert {
         "projection",
         "sample",
         "strategy",
@@ -353,6 +365,37 @@ def test_offline_ui_has_stable_semantic_controls_and_valid_javascript() -> None:
     assert {"status", "failures", "regions", "provenance", "reproduction"} <= parser.ids
     script = template.rsplit("<script>", 1)[1].split("</script>", 1)[0]
     subprocess.run(["node", "--check"], input=script, text=True, check=True)
+
+
+def test_existing_evidence_can_be_rerendered_without_recomputation(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).resolve().parents[1]
+    original_template = tmp_path / "original.html"
+    original_template.write_text(
+        '<script type="application/json" id="report-data">'
+        "__ANATOMY_SMOOTHING_LAB_DATA__</script><p>old</p>"
+    )
+    report = build_synthetic_report(_synthetic_args(tmp_path / "unused"), repository)
+    original = tmp_path / "original-report.html"
+    write_report(report, original_template, original)
+    output = tmp_path / "rerendered.html"
+
+    rerender_report(
+        original,
+        Path("tools/anatomy_smoothing_lab/template.html"),
+        output,
+    )
+
+    assert extract_embedded_report(output.read_bytes()) == extract_embedded_report(
+        original.read_bytes()
+    )
+    assert b"Guided anatomy review" in output.read_bytes()
+
+
+def test_rerender_rejects_non_smoothing_html() -> None:
+    with pytest.raises(ValueError, match="exactly one"):
+        extract_embedded_report(b"<html></html>")
 
 
 def test_report_inline_json_is_escaped_and_external_templates_are_rejected() -> None:
