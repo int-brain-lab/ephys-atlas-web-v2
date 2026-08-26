@@ -1,6 +1,10 @@
 import { DatasetSession } from './application/dataset-session.js';
 import { resolvePresentationScale } from './application/presentation-scale.js';
-import { regionalPresentationsEqual, resolveRegionalPresentation } from './application/regional-presentation.js';
+import {
+  regionalPresentationsEqual,
+  resolveRegionalPresentation,
+  retainRegionalPresentationWhileMappingLoads,
+} from './application/regional-presentation.js';
 import { maxRegionalSliceIndex } from './core/slice-calibration.js';
 import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
 import { HttpDatasetSource } from './data/http-source.js';
@@ -104,9 +108,15 @@ export class AtlasApp {
       downloadComparison: () => this.downloadSelectedComparison(),
     });
     this.viewportFactory.setInteractionSink({
-      hover: (hit) => this.setHoveredRegion(hit?.regionId ?? null),
+      hover: (hit) => this.setHoveredRegion(
+        this.projectionMappingIsCurrent() ? hit?.regionId ?? null : null,
+      ),
       inspect: (inspection) => this.inspectProjection(inspection),
-      toggleSelection: (hit) => this.store.dispatch({ type: 'selection/toggle', regionId: hit.regionId }),
+      toggleSelection: (hit) => {
+        if (this.projectionMappingIsCurrent()) {
+          this.store.dispatch({ type: 'selection/toggle', regionId: hit.regionId });
+        }
+      },
       stepSlice: (axis, delta) => this.stepSlice(axis, delta),
       moveCursor: (cursor) => this.store.dispatch({ type: 'cursor/set', cursor }),
       reportError: (error) => this.reportRuntimeError(error),
@@ -189,15 +199,20 @@ export class AtlasApp {
         : state.view.coloring.range,
       scale: presentationScale.effectiveScale,
     };
+    const nextRegionalPresentation = resolveRegionalPresentation({
+      mapping: state.view.parcellation,
+      feature: data.feature,
+      anatomyRegions,
+      coloring,
+      selectedRegionIds: state.view.selection,
+      hoveredRegionId: this.hoveredRegionId,
+    });
     const presentation: ProjectionPresentation = {
-      regional: resolveRegionalPresentation({
-        mapping: state.view.parcellation,
-        feature: data.feature,
-        anatomyRegions,
-        coloring,
-        selectedRegionIds: state.view.selection,
-        hoveredRegionId: this.hoveredRegionId,
-      }),
+      regional: retainRegionalPresentationWhileMappingLoads(
+        this.viewportPresentation?.regional ?? null,
+        nextRegionalPresentation,
+        data.feature,
+      ),
       feature: data.feature,
       coloring,
       volumeOpacity: state.view.layers.volumeOpacity,
@@ -264,6 +279,10 @@ export class AtlasApp {
     if (regionId === this.hoveredRegionId) return;
     this.hoveredRegionId = regionId;
     this.render();
+  }
+
+  private projectionMappingIsCurrent(): boolean {
+    return this.viewportPresentation?.regional.mapping === this.store.getState().view.parcellation;
   }
 
   private inspectRegion(inspection: RegionInspection | null): void {

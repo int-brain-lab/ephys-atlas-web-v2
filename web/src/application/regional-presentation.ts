@@ -44,11 +44,12 @@ export function resolveRegionalPresentation(input: RegionalPresentationInput): R
   const visibleRegionIds = regionalPresentationIds(input.anatomyRegions.map((region) => region.atlasId));
   const selectedRegionIds = regionalPresentationIds(input.selectedRegionIds);
   const highlightedRegionId = input.hoveredRegionId === null ? null : foldedId(input.hoveredRegionId);
-  const usesFeatureSide = input.coloring.mode === 'feature' && input.feature !== null;
+  const hasCompatibleRegionalFeature = input.feature?.representation === 'regional'
+    && input.feature.parcellation === input.mapping;
+  const usesFeatureSide = input.coloring.mode === 'feature'
+    && (input.feature?.representation === 'volume' || hasCompatibleRegionalFeature);
   let featureColors: ReadonlyMap<number, string> | null = null;
-  if (input.coloring.mode === 'feature'
-    && input.feature?.representation === 'regional'
-    && input.feature.parcellation === input.mapping) {
+  if (input.coloring.mode === 'feature' && hasCompatibleRegionalFeature) {
     featureColors = new Map([...regionalColorMap(input.feature, input.coloring)]
       .filter(([id]) => id !== 0)
       .map(([id, color]) => [-Math.abs(id), color]));
@@ -61,6 +62,29 @@ export function resolveRegionalPresentation(input: RegionalPresentationInput): R
     selectedRegionIds,
     highlightedRegionId,
     featureSide: usesFeatureSide ? 'left' : null,
+  };
+}
+
+/**
+ * Keep a coherent mapping/color pair while a newly selected parcellation is
+ * loading. Interaction state is cleared until that new mapping is ready.
+ */
+export function retainRegionalPresentationWhileMappingLoads(
+  previous: RegionalPresentation | null,
+  next: RegionalPresentation,
+  feature: FeaturePayload | null,
+): RegionalPresentation {
+  if (
+    previous === null
+    || feature?.representation !== 'regional'
+    || feature.parcellation !== previous.mapping
+    || feature.parcellation === next.mapping
+  ) return next;
+
+  return {
+    ...previous,
+    selectedRegionIds: new Set(),
+    highlightedRegionId: null,
   };
 }
 

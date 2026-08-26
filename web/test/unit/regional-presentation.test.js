@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   regionalPresentationColors,
   resolveRegionalPresentation,
+  retainRegionalPresentationWhileMappingLoads,
 } from '../../.test-dist/application/regional-presentation.js';
 
 const regions = [
@@ -47,14 +48,38 @@ test('feature semantics color only finite left values and retain right anatomy',
   assert.equal(colors.get(20), '#00ff00');
 });
 
-test('null mapping compatibility never substitutes feature colors', () => {
+test('mismatched regional payload retains bilateral anatomy colors as a safe fallback', () => {
   const presentation = resolveRegionalPresentation({
     mapping: 'beryl', feature, anatomyRegions: regions, coloring,
     selectedRegionIds: [], hoveredRegionId: null,
   });
   assert.equal(presentation.featureColors, null);
-  assert.equal(presentation.featureSide, 'left');
-  assert.deepEqual([...regionalPresentationColors(presentation, true).keys()], [10, 20]);
+  assert.equal(presentation.featureSide, null);
+  assert.deepEqual([...regionalPresentationColors(presentation, true).keys()], [-10, 10, -20, 20]);
+});
+
+test('parcellation loading retains the last coherent colors and clears interaction state', () => {
+  const previous = resolveRegionalPresentation({
+    mapping: 'allen', feature, anatomyRegions: regions, coloring,
+    selectedRegionIds: ['-10'], hoveredRegionId: '-20',
+  });
+  const pending = resolveRegionalPresentation({
+    mapping: 'beryl', feature, anatomyRegions: regions, coloring,
+    selectedRegionIds: [], hoveredRegionId: null,
+  });
+  const retained = retainRegionalPresentationWhileMappingLoads(previous, pending, feature);
+
+  assert.equal(retained.mapping, 'allen');
+  assert.equal(retained.featureColors, previous.featureColors);
+  assert.deepEqual([...retained.selectedRegionIds], []);
+  assert.equal(retained.highlightedRegionId, null);
+
+  const berylFeature = { ...feature, parcellation: 'beryl' };
+  const ready = resolveRegionalPresentation({
+    mapping: 'beryl', feature: berylFeature, anatomyRegions: regions, coloring,
+    selectedRegionIds: [], hoveredRegionId: null,
+  });
+  assert.equal(retainRegionalPresentationWhileMappingLoads(retained, ready, berylFeature), ready);
 });
 
 test('volume presentation reserves registered left feature space but static and 3-D can remain anatomy-only', () => {

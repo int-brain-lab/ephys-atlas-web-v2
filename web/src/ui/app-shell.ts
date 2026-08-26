@@ -1576,7 +1576,8 @@ export class AppShell {
     const nodes = this.staticFrames.get(content.projectionId);
     if (!nodes) return;
     const view = model.state.view;
-    const renderKey = [view.dataset.datasetId, view.dataset.releaseId ?? '', view.parcellation,
+    const projectionParcellation = model.regionalPresentation.mapping;
+    const renderKey = [view.dataset.datasetId, view.dataset.releaseId ?? '', projectionParcellation,
       model.feature?.featureId ?? '', model.feature?.representation ?? ''].join(':');
     if (renderKey === nodes.renderKey) return;
     nodes.renderKey = renderKey;
@@ -1584,7 +1585,7 @@ export class AppShell {
     nodes.notice.textContent = 'Loading static projection…';
     const pending = nodes.viewport.render({
       projectionId: content.projectionId,
-      parcellation: view.parcellation,
+      parcellation: projectionParcellation,
       feature: model.feature?.representation === 'regional' ? model.feature : null,
     });
     Promise.resolve(pending).then(() => {
@@ -1677,12 +1678,13 @@ export class AppShell {
     nodes.slider.value = String(displayOrdinal);
     nodes.slider.setAttribute('aria-valuetext', coordinate);
 
+    const projectionParcellation = model.regionalPresentation.mapping;
     const geometryKey = [
       view.dataset.datasetId,
       view.dataset.releaseId ?? '',
       view.representation,
       model.feature?.representation ?? '',
-      view.parcellation,
+      projectionParcellation,
       model.feature?.featureId ?? '',
       sliceIndex,
     ].join(':');
@@ -1724,7 +1726,7 @@ export class AppShell {
       axis,
       sliceIndex,
       cursor: view.cursor,
-      parcellation: view.parcellation,
+      parcellation: projectionParcellation,
       feature: model.feature,
     });
 

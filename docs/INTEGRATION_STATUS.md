@@ -380,7 +380,11 @@ that histogram's value axis. The histogram x-axis exposes its minimum and
 maximum bin edges together with the feature unit. It also mirrors the effective
 color interval with boundary guides, a subtle selected-range tint, and dimmed
 out-of-range tails; colorbar dragging and reset update this read-only analytical
-view immediately.
+view immediately. Parcellation changes retain the last coherent projection
+mapping and color presentation until the matching regional payload is ready,
+while clearing stale interaction state immediately; a failed or incompatible
+payload falls back to bilateral anatomy colors instead of an uncolored feature
+hemisphere.
 
 Schema v1 permits an exact precomputed Log histogram beside the mandatory
 Linear histogram. D047 supersedes the independent D046 controls: the viewer
