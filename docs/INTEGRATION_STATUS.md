@@ -318,7 +318,8 @@ production HTTP reader. D048 subsequently selects the final reviewed Log
 3.73–17.8 Hz Firing-rate automatic range. The fourth 209-file immutable
 candidate validates and reproduces byte-for-byte across two Fractal builds;
 production-HTTP acceptance passes across all 14 features and three
-parcellations, while final visual confirmation remains pending.
+parcellations, and the owner completed final guided visual confirmation in the
+complete atlas workspace on 2026-08-26.
 Publication remains deferred under Q8/Q9. See
 `docs/data/CLUSTERS_RELEASE.md`.
 

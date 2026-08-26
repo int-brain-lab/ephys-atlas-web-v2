@@ -8,7 +8,8 @@ locally and on Fractal on 2026-08-26. It is real scientific data, not a
 synthetic fixture. The generated directory remains ignored and has not been
 published or added to a public catalog. The owner selected Log with an automatic
 3.73–17.8 Hz range as the preferred Firing-rate presentation. Automated
-acceptance is complete; final visual confirmation remains pending.
+acceptance and final visual confirmation in the complete atlas workspace are
+complete.
 
 ## Immutable identity
 
@@ -85,6 +86,10 @@ Chromium acceptance passed for:
   Linear defaults for signed/zero-bearing features;
 - the all-cluster recipe and pinned legacy repository provenance in the Info
   dialog.
+
+On 2026-08-26, the repository owner completed the final guided visual review in
+the complete atlas workspace and confirmed the D048 defaults without further
+scientific or presentation changes.
 
 ## Publication boundary
 

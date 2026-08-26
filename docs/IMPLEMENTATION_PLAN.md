@@ -284,9 +284,8 @@ Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 
 ## M3 — `ephys_atlas_clusters`
 
-Status: **D048 Firing-rate Log 3.73–17.8 Hz candidate built, reproduced, and
-automatically accepted; final visual confirmation pending; online publication
-deferred**.
+Status: **D048 Firing-rate Log 3.73–17.8 Hz candidate built, reproduced,
+automatically accepted, and visually confirmed; online publication deferred**.
 
 Implemented:
 
@@ -305,13 +304,11 @@ Exact hashes and commands are in `docs/data/CLUSTERS_RELEASE.md`.
 
 Next actions:
 
-1. perform one final guided check that Firing rate opens with the reviewed Log
-   3.73–17.8 Hz automatic range;
-2. keep all ignored immutable candidates reproducible and the selected
+1. keep all ignored immutable candidates reproducible and the selected
    candidate's opt-in acceptance suite green;
-3. publish the reviewed bytes and add the release to the public catalog
+2. publish the reviewed bytes and add the release to the public catalog
    only when Q8/Q9 publication and default-alias decisions are authorized;
-4. repeat acceptance against the selected public origin.
+3. repeat acceptance against the selected public origin.
 
 Acceptance reference: section 5 of the launch spec.
 
