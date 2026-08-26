@@ -1,6 +1,18 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
+test('volume layer settings only appear for volume representations', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.locator('.volume-layer-settings')).toBeHidden();
+
+  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.locator('.volume-layer-settings')).toBeVisible();
+  await expect(page.getByRole('slider', { name: 'Volume opacity' })).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'Show anatomy outlines' })).toBeVisible();
+});
+
 test('volume features expose and download their immutable declared artifacts', async ({ page }) => {
   await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);

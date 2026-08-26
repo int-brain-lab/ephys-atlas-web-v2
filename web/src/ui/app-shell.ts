@@ -1101,7 +1101,7 @@ export class AppShell {
   }
 
   private createVolumeLayerSettings(): HTMLElement {
-    const group = element('section', 'settings-placeholder settings-controls');
+    const group = element('section', 'settings-placeholder settings-controls volume-layer-settings');
     group.append(heading('Volume layers', 3));
 
     const opacityRow = element('label', 'settings-control');
