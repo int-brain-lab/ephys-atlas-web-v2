@@ -707,3 +707,23 @@ linear so valid zeros are never hidden. The machine authority is
 `docs/data/CLUSTERS_CATALOG_SELECTION.json`, and production builds must match
 its source snapshot/table hash, pinned legacy source files, complete feature
 catalog, units, descriptions, and display policy exactly. This resolves Q6.
+
+## D045 — Retain exact 2-D anatomy geometry after human smoothing review
+
+Close the anatomy smoothing investigation without a shortlist. On 2026-08-26,
+the repository owner compared the exact option A against the visibly
+consequential 7.5 um GEOS whole-coverage option B with the outer boundary fixed.
+They selected `A clearly better` for the representative coronal, sagittal, and
+horizontal views. The predeclared guided rule therefore stopped before the
+stress round. Independently, B was already quantitatively rejected by the
+provisional IoU/error gates, while the eligible 2.5 and 5 um configurations did
+not move sampled geometry.
+
+Retain `allen-ccfv3-10um-bilateral-exact-599b5e0bbab1` as the presentation,
+scientific geometry, and affine authority. Do not run shortlist full-corpus
+validation, implement a shared-chain smoother, create a smoothing derivative,
+or migrate the active projection pack. Future smoothing work requires new
+evidence and an explicit reopened decision. The machine-readable answers and
+concise evidence are recorded in
+`docs/rendering/ANATOMY_SMOOTHING_SELECTION.json` and
+`docs/rendering/ANATOMY_SMOOTHING_REVIEW.md`.

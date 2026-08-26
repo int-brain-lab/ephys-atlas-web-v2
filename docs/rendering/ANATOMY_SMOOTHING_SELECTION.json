@@ -1,0 +1,95 @@
+{
+  "format": "ibl-anatomy-smoothing-human-review-v1",
+  "source_report": {
+    "format": "ibl-anatomy-smoothing-lab-v1",
+    "created_at": "2026-08-22T00:00:00Z",
+    "source_identity": "allen-ccfv3-10um-bilateral-exact-599b5e0bbab1",
+    "generator_commit": "c59fb13e51b1712631d56791dac7599d44eaef33",
+    "embedded_evidence_sha256": "50969055f32c98baa0630f9bdb7846baad8926ba5314ab0fec601b42360ff2d5"
+  },
+  "question": "Which judgement best matches this view?",
+  "answer_options": [
+    "a-better",
+    "no-difference",
+    "b-better"
+  ],
+  "decision_rule": {
+    "version": "2",
+    "representative_continue": "B clearly better in at least 2 of 3 representative views",
+    "investigate_safer_method": "B clearly better in at least 75% overall and a strict majority in every projection",
+    "otherwise": "retain exact geometry",
+    "production_effect": "none"
+  },
+  "answers": [
+    {
+      "ordinal": 1,
+      "round": 1,
+      "projection": "coronal",
+      "slice_index": 660,
+      "world_coordinate_um": -1200,
+      "selection_reasons": [
+        "central active-display plane"
+      ],
+      "option_a": {
+        "strategy_id": "exact",
+        "parameters": {}
+      },
+      "option_b": {
+        "strategy_id": "geos-coverage-simplify",
+        "parameters": {
+          "simplify_boundary": false,
+          "tolerance_um": 7.5
+        },
+        "eligibility": "rejected"
+      },
+      "answer": "a-better"
+    },
+    {
+      "ordinal": 2,
+      "round": 1,
+      "projection": "sagittal",
+      "slice_index": 566,
+      "world_coordinate_um": -79,
+      "selection_reasons": [
+        "central active-display plane"
+      ],
+      "option_a": {
+        "strategy_id": "exact",
+        "parameters": {}
+      },
+      "option_b": {
+        "strategy_id": "geos-coverage-simplify",
+        "parameters": {
+          "simplify_boundary": false,
+          "tolerance_um": 7.5
+        },
+        "eligibility": "rejected"
+      },
+      "answer": "a-better"
+    },
+    {
+      "ordinal": 3,
+      "round": 1,
+      "projection": "horizontal",
+      "slice_index": 393,
+      "world_coordinate_um": -3598,
+      "selection_reasons": [
+        "central active-display plane"
+      ],
+      "option_a": {
+        "strategy_id": "exact",
+        "parameters": {}
+      },
+      "option_b": {
+        "strategy_id": "geos-coverage-simplify",
+        "parameters": {
+          "simplify_boundary": false,
+          "tolerance_um": 7.5
+        },
+        "eligibility": "rejected"
+      },
+      "answer": "a-better"
+    }
+  ],
+  "recommendation": "retain-exact"
+}

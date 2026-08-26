@@ -1,7 +1,7 @@
 # Anatomy smoothing and simplification lab plan
 
-Status: **approved investigation lane; Slices 1-3 implemented; not a production
-geometry decision**.
+Status: **complete through Slice 4; D045 retains exact geometry and stops the
+lane without a shortlist**.
 
 Implementation status: Slices 1 through 3 are complete. The pure experiment core,
 deterministic self-contained report builder, synthetic offline report, pinned
@@ -14,9 +14,10 @@ complete selectors, presentation controls, status/failure evidence, sortable
 per-region metrics, exports, and provenance remain available as optional
 advanced evidence. Existing report evidence can be re-rendered into the current
 UI without recomputing variants. Synthetic Chromium checks cover early stop,
-the complete second round, and linked navigation. Slice 4 remains at the human
-sample-review boundary; no answers, smoothing policy, or production asset have
-been selected.
+the complete second round, and linked navigation. Slice 4 completed on
+2026-08-26: the repository owner preferred exact option A in all three
+representative projections. The guided rule stopped before the stress round,
+and D045 retains the active exact geometry without a shortlist or asset change.
 
 Long report builds now emit flushed selection, plan, per-variant percentage/ETA,
 and heartbeat progress. Independent variants may run in a bounded process pool
@@ -390,11 +391,12 @@ Completion: two fixed runs from synthetic inputs are byte-identical, and a real
 Completion: the report remains useful with networking disabled and makes it
 impossible to mistake a rejected or unsafe candidate for an accepted one.
 
-### Slice 4 — Real sample review and shortlist
+### Slice 4 — Real sample review and shortlist (complete — no shortlist)
 
 - Generate from a clean commit using the pinned 10 µm inputs.
-- Review all default stress samples and additional user-reported slices at
-  normal viewer scale and magnified scale.
+- Review one representative sample per projection first; review the remaining
+  default stress samples only if the recorded guided rule opens the stress
+  round.
 - Record qualitative notes by projection and configuration alongside the
   quantitative table; do not encode aesthetic judgement as an automatic gate.
 - Shortlist at most a few configurations. If none is consistently better,
@@ -403,7 +405,11 @@ impossible to mistake a rejected or unsafe candidate for an accepted one.
 Completion: commit a concise evidence summary and reproduction command, but
 not the generated HTML or large geometry.
 
-### Slice 5 — Full-corpus validation of the shortlist
+Result: exact option A was clearly preferred in all three representative views.
+The stress round did not open, no candidate was shortlisted, and the evidence
+summary is `ANATOMY_SMOOTHING_REVIEW.md`.
+
+### Slice 5 — Full-corpus validation of the shortlist (not required by D045)
 
 - Stream all 1,320 coronal, 1,140 sagittal, and 800 horizontal native planes so
   peak memory is bounded.

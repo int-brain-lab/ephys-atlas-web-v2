@@ -185,8 +185,8 @@ Acceptance reference: `docs/LAUNCH_SPEC.md` sections 3 and 6.
 
 ## P2S — Anatomy smoothing and simplification lab
 
-Status: **approved investigation; Slices 1-3 implemented and non-blocking for
-launch**.
+Status: **complete through human review; D045 retains exact geometry and stops
+without a shortlist**.
 
 The exact bilateral 10 µm registered paths preserve raster-cell boundaries and
 can look visibly stair-stepped when enlarged. Build a standalone, offline lab
@@ -204,8 +204,10 @@ and representative browser costs. This investigation should run before the
 production projection asset is frozen. Slices 1-3 now provide the pure strategy,
 metric, failure-retention, synthetic-topology, deterministic report, pinned
 source-validation, stress-selection, exact-parent regeneration, and interactive
-offline review machinery. Slice 4 now requires human qualitative review before
-any shortlist; agents must not select a smoothing policy autonomously.
+offline review machinery. Slice 4 is complete: the repository owner preferred
+exact option A in all three representative projections, so the predeclared rule
+stopped without a shortlist. D045 retains exact geometry; Slices 5-6 are not
+required and the lane is closed unless explicitly reopened with new evidence.
 The report defaults to a one-question guided A/B review with distinct A-better,
 no-meaningful-difference, and B-better responses, synchronized mouse navigation,
 fixed A-left/B-right placement, previous-answer correction, adaptive

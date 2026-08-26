@@ -178,8 +178,11 @@ correction, an explicit conservative recommendation rule, and a downloadable
 answer record. Exhaustive controls remain under
 optional advanced evidence, and existing computed evidence can be re-rendered
 without recomputation. Synthetic wide/tablet, pinned-real coronal, and guided
-Chromium interaction checks passed. Slice 4 is intentionally paused at the
-repository owner's qualitative answers and shortlisting. Long evidence builds now
+Chromium interaction checks passed. Slice 4 is complete: the repository owner
+selected exact A as clearly better in all three representative projections.
+D045 retains exact geometry, closes the lane without a shortlist, and makes
+full-corpus candidate validation and any asset migration unnecessary. The
+authoritative answers and evidence summary live under `docs/rendering/`. Long evidence builds now
 support bounded process-parallel variant evaluation, flushed progress and
 heartbeat reporting with percentage/ETA, identity-bound atomic per-variant
 checkpoints, corruption-safe recomputation, worker-count-independent resume,

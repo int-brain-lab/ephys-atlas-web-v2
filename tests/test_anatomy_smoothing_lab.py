@@ -44,12 +44,34 @@ POLICY = EvaluationPolicy(
     minimum_iou_area_um2=100,
 )
 
+SELECTION = Path("docs/rendering/ANATOMY_SMOOTHING_SELECTION.json")
+
 
 def test_tolerance_parsing_is_canonical_and_rejects_invalid_values() -> None:
     assert parse_tolerances_um("10, 0,2.5,10,-0") == (0.0, 2.5, 10.0)
     for invalid in ("", "nan", "inf", "-1", "one"):
         with pytest.raises(ValueError):
             parse_tolerances_um(invalid)
+
+
+def test_human_selection_retains_exact_across_representative_projections() -> None:
+    selection = json.loads(SELECTION.read_text())
+
+    assert selection["format"] == "ibl-anatomy-smoothing-human-review-v1"
+    assert selection["source_report"]["source_identity"] == (
+        "allen-ccfv3-10um-bilateral-exact-599b5e0bbab1"
+    )
+    assert selection["recommendation"] == "retain-exact"
+    assert {answer["projection"] for answer in selection["answers"]} == {
+        "coronal",
+        "sagittal",
+        "horizontal",
+    }
+    assert {answer["answer"] for answer in selection["answers"]} == {"a-better"}
+    assert all(
+        answer["option_a"] == {"strategy_id": "exact", "parameters": {}}
+        for answer in selection["answers"]
+    )
 
 
 def test_worker_and_checkpoint_cli_validation(tmp_path: Path) -> None:
