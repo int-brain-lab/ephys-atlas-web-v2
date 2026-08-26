@@ -304,11 +304,14 @@ missing values. D044 resolves Q6 by approving all 14 features and the explicit
 unit map from the pinned original website repository. The committed catalog
 selection adds implementation-grounded descriptions and conservative display
 defaults while preserving all source values; the builder fails closed on any
-source/catalog mismatch. The ignored 191-file immutable release validates and
+source/catalog mismatch. The earlier ignored 191-file immutable release remains
+intact. D046's distinct 209-file dual-histogram candidate validates and
 reproduces byte-for-byte across two builds. Opt-in Chromium acceptance switches
 all 14 dynamic features and all three parcellations and checks units,
-descriptions, scale defaults, and provenance through the production HTTP reader.
-It remains unpublished pending Q8/Q9. See `docs/data/CLUSTERS_RELEASE.md`.
+histogram-axis defaults/toggling, color-scale defaults, and provenance through
+the production HTTP reader. Human visual comparison remains pending;
+publication remains deferred under Q8/Q9. See
+`docs/data/CLUSTERS_RELEASE.md`.
 
 ### `brainwide_map`
 

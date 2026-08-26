@@ -3,7 +3,7 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 const releaseRoot = path.resolve(
-  '../data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26',
+  '../data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-hist-axis-v1',
 );
 const releaseId = path.basename(releaseRoot);
 
@@ -75,6 +75,16 @@ test('switches every approved parcellation without cluster-specific UI', async (
 
 test('exposes approved units, explanations, and conservative scale defaults', async ({ page }) => {
   await page.goto('/?v=4&feature=firing_rate');
+  const distribution = page.locator('.distribution-chart');
+  await expect(distribution).toHaveAttribute('data-axis-scale', 'log');
+  await expect(page.getByRole('button', { name: 'Log', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Linear', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Linear', exact: true }).click();
+  await expect(distribution).toHaveAttribute('data-axis-scale', 'linear');
+  await expect.poll(() => new URL(page.url()).searchParams.get('histScale')).toBe('linear');
+  await page.getByRole('button', { name: 'Log', exact: true }).click();
+  await expect(distribution).toHaveAttribute('data-axis-scale', 'log');
+  await expect.poll(() => new URL(page.url()).searchParams.get('histScale')).toBe('log');
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.getByLabel('Color scale').locator('option:checked')).toHaveText(
     'Auto (Logarithmic)',
@@ -82,6 +92,8 @@ test('exposes approved units, explanations, and conservative scale defaults', as
   await expect(page.locator('.color-legend__unit')).toHaveText('Hz');
 
   await page.goto('/?v=4&feature=noise_cutoff');
+  await expect(page.locator('.distribution-chart')).toHaveAttribute('data-axis-scale', 'linear');
+  await expect(page.getByRole('button', { name: 'Log', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.getByLabel('Color scale').locator('option:checked')).toHaveText(
     'Auto (Linear)',

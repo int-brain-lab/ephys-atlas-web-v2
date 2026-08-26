@@ -284,8 +284,8 @@ Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 
 ## M3 — `ephys_atlas_clusters`
 
-Status: **dual-histogram implementation in progress; earlier immutable local
-release retained; online publication deferred**.
+Status: **dual-histogram candidate built and automatically accepted; human
+visual comparison pending; online publication deferred**.
 
 Implemented:
 
@@ -304,9 +304,8 @@ Exact hashes and commands are in `docs/data/CLUSTERS_RELEASE.md`.
 
 Next actions:
 
-1. regenerate a distinct immutable candidate implementing D046's exact
-   linear/logarithmic histogram variants, validate it, and complete guided
-   visual review without altering the earlier candidate;
+1. complete guided visual review of D046's validated distinct immutable
+   linear/logarithmic candidate without altering the earlier candidate;
 2. keep both ignored immutable releases reproducible and the selected
    candidate's opt-in acceptance suite green;
 3. publish the reviewed bytes and add the release to the public catalog

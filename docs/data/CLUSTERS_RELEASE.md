@@ -2,49 +2,50 @@
 
 ## Status
 
-The D044-approved `ephys_atlas_clusters` release was built locally from the
-content-addressed `ibl_neuropixel_brainwide_01` snapshot and validated on
-2026-08-24. It is an immutable scientific release candidate, not a synthetic
-fixture. The generated directory remains ignored and has not been published or
-added to a public catalog.
-
-D046 retains this candidate as immutable evidence but supersedes its
-linear-only histogram presentation. A distinct output release is being built
-from the same source snapshot with exact linear/logarithmic histogram variants;
-the identity and validation evidence below continue to describe the earlier
-candidate until that replacement completes review.
+The D044/D046-approved `ephys_atlas_clusters` candidate was built on Fractal
+from the content-addressed `ibl_neuropixel_brainwide_01` snapshot and validated
+locally and on Fractal on 2026-08-26. It is real scientific data, not a
+synthetic fixture. The generated directory remains ignored and has not been
+published or added to a public catalog. Automated acceptance is complete;
+final human visual comparison of the histogram presentation remains pending.
 
 ## Immutable identity
 
-- release ID: `sha256-9b5e55215b306f26`
+- release ID: `sha256-9b5e55215b306f26-hist-axis-v1`
+- source snapshot ID: `sha256-9b5e55215b306f26`
 - source rows: 925,251 all-cluster observations
 - features: 14
 - parcellations: Allen, Beryl, Cosmos
-- files: 191
-- total served-file bytes: 3,979,061
+- files: 209
+- total served-file bytes: 5,105,307
 - manifest SHA-256:
-  `2407053b18a78b5f28ea559a901fd3313d510d6f72e867e5a369be72f12fe054`
+  `9db5cbd5763053f06915e8b97a516327490f4fdc5c417687b441fb852bba6b20`
 - deterministic graph SHA-256:
-  `6c686c42ab51ab888ffbdbe0e58544df6df793fff1d4724be78dd5c0a6bc687c`
+  `c53c205f640d73ed0165e46f3057934ed61a93fece58cbb7f40ec4e4fb8ea911`
 - catalog-selection SHA-256:
-  `05c84bc0935be224b7d1bb2506a2c433a58a9dda34dacddd858e14dccdd3b959`
+  `666a2a4acacf9253d7af2579a827b36825cf82a23db1b0fd9e8ed1a60f86e8e0`
 
 The graph digest is the SHA-256 of the sorted release-relative `sha256sum`
 records for every file. A second build in a fresh temporary directory produced
 the same digest byte-for-byte.
+
+The earlier 191-file candidate `sha256-9b5e55215b306f26` remains immutable
+evidence with manifest SHA-256 `2407053b18a78b5f28ea559a901fd3313d510d6f72e867e5a369be72f12fe054`.
+It is superseded for review only; no bytes were altered or deleted.
 
 ## Reproduction
 
 ```bash
 uv run --project builder --extra scientific --locked \
   ephys-atlas-data build-clusters sha256-9b5e55215b306f26 \
+  --release-id sha256-9b5e55215b306f26-hist-axis-v1 \
   --project ibl_neuropixel_brainwide_01 \
   --population all \
   --catalog-selection docs/data/CLUSTERS_CATALOG_SELECTION.json \
-  --created-at 2026-08-24T00:00:00Z \
+  --created-at 2026-08-26T00:00:00Z \
   --ibleatools-commit fffe0c75810dd1a013a878abcbcf8ef6348a5a21 \
   --iblatlas-commit 52083adf44825d0622a503705e095699a5957587 \
-  --builder-commit 3ef71b3 \
+  --builder-commit 4f84df2cee70ff814fb45df83be6ee2eda2c79f0 \
   --source-root data/source \
   --release-root data/releases
 ```
@@ -67,6 +68,10 @@ Chromium acceptance passed for:
 - dynamic discovery and switching of all 14 features;
 - Allen, Beryl, and Cosmos switching;
 - finite regional values and 50-bin observation distributions;
+- exact linear and logarithmic 50-bin variants for the six audited strictly
+  positive features, each summing to the same finite population;
+- release-preferred Log display, immediate Linear/Log switching, independent
+  URL persistence, and disabled Log for incompatible signed/zero-bearing data;
 - the approved units and implementation-grounded descriptions;
 - log defaults for strictly-positive heavy-tailed features and linear defaults
   for signed/zero-bearing features;
