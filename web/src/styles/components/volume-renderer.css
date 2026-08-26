@@ -25,7 +25,18 @@
 
 .projection-viewport[data-mode='composite'] .view-frame__slice-figure path.is-selected,
 .projection-viewport[data-mode='composite'] .view-frame__slice-figure path.is-highlighted {
-  fill-opacity: .12;
+  fill-opacity: 0;
+  stroke-opacity: 1;
+}
+
+.projection-viewport[data-mode='composite'] .view-frame__slice-figure path.is-selected {
+  stroke: rgb(235 247 255 / 96%);
+  stroke-width: 1.75;
+}
+
+.projection-viewport[data-mode='composite'] .view-frame__slice-figure path.is-highlighted:not(.is-selected) {
+  stroke: rgb(126 207 255 / 92%);
+  stroke-width: 1.2;
 }
 
 .view-frame__renderer[data-slice-asset='schema-volume-v1'] {

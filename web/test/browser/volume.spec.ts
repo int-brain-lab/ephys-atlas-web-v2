@@ -182,6 +182,25 @@ test('URL-persisted layer controls repaint retained layers without volume reques
   expect(chunks.length).toBe(baseline);
 });
 
+test('reduced-parcellation volume selection uses outlines without tinting scalar values', async ({ page }) => {
+  await page.goto('/?v=4&feature=rms_ap&repr=volume&parcel=cosmos&cursor=25,25,25');
+  await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
+  const projection = page.locator('[data-view="coronal"] .projection-viewport');
+  const source = projection.locator('path[data-cosmos-id]').first();
+  await source.dispatchEvent('pointerup');
+
+  await expect(projection.locator('path.is-selected').first()).toBeAttached();
+  for (const selected of await projection.locator('path.is-selected').all()) {
+    await expect(selected).toHaveCSS('fill-opacity', '0');
+    await expect(selected).toHaveCSS('stroke-width', '1.75px');
+  }
+  const unselected = projection.locator('path:not(.is-selected)').first();
+  await unselected.dispatchEvent('pointermove');
+  await expect(unselected).toHaveClass(/is-highlighted/);
+  await expect(unselected).toHaveCSS('fill-opacity', '0');
+  await expect(unselected).toHaveCSS('stroke-width', '1.2px');
+});
+
 test('volume navigation keeps composites visible and repaints only a changed scalar plane', async ({ page }) => {
   await page.addInitScript(() => {
     const original = CanvasRenderingContext2D.prototype.putImageData;

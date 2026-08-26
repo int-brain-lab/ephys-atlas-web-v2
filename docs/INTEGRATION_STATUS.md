@@ -471,6 +471,10 @@ no regional summary payloads. The UI labels this as anatomy parcellation;
 changing it updates outlines, region identity, inspection, and URL state but
 does not reload or alter the voxel feature. Regional features continue to
 offer only the parcellations explicitly declared by their release payload.
+Selected and hovered volume regions are emphasized with outlines only. This is
+especially important for reduced mappings, where one logical Beryl or Cosmos
+identity may cover several disconnected Allen contours: the full mapped region
+remains selected without applying an anatomy-color tint over scalar values.
 
 Volume plane selection applies the declared inverse affine to the shared world
 cursor and checks half-index voxel-edge bounds. An outside cursor fails
