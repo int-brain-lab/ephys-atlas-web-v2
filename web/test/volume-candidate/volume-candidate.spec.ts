@@ -107,6 +107,36 @@ test('loads all 41 dynamic features with D043-linked indices and cache reuse', a
   expect(packRequests).toHaveLength(baseline);
 });
 
+test('changes the anatomy parcellation without reloading or altering the volume', async ({ page }) => {
+  const featureRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/features/rms_lf/')) featureRequests.push(request.url());
+  });
+  await page.goto('/?v=4&repr=volume&feature=rms_lf&cursor=0,0,0');
+  await expect(page.locator('[data-volume-feature="rms_lf"]')).toHaveCount(3);
+  const volumeIndices = await page.locator('[data-volume-index]').evaluateAll((nodes) => (
+    nodes.map((node) => node.getAttribute('data-volume-index'))
+  ));
+  const baselineRequests = featureRequests.length;
+
+  const context = page.locator('[data-context-field="representation"]');
+  await expect(context.locator('.context-field__value')).toHaveText('Volume · Allen anatomy');
+  await context.locator('.context-menu__trigger').click();
+  await expect(context.locator('[data-context-group="Anatomy parcellation"]')).toBeVisible();
+  await expect(context.getByRole('option', { name: /^Allen|^Beryl|^Cosmos/ })).toHaveCount(3);
+  await context.getByRole('option', { name: /^Beryl/ }).click();
+
+  await expect(context.locator('.context-field__value')).toHaveText('Volume · Beryl anatomy');
+  await expect(page).toHaveURL(/parcel=beryl/);
+  await expect(page.locator('.projection-viewport[data-mode="composite"]')).toHaveCount(3);
+  await expect(page.locator('[data-volume-index]')).toHaveCount(3);
+  expect(await page.locator('[data-volume-index]').evaluateAll((nodes) => (
+    nodes.map((node) => node.getAttribute('data-volume-index'))
+  ))).toEqual(volumeIndices);
+  expect(featureRequests).toHaveLength(baselineRequests);
+  await expect(page.locator('[role="alert"]')).toHaveCount(0);
+});
+
 test('rapid feature switching cancels stale presentation and keeps the latest feature', async ({ page }) => {
   await page.route('**/features/rms_lf/volume/packs/**', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 100));

@@ -65,7 +65,7 @@ test('shortcuts stay out of text entry and expose the concise help guide', async
   const dataSection = guide.locator('.help-guide__section').filter({ hasText: 'Data and feature' });
   await dataSection.getByText('Data and feature').click();
   await expect(dataSection).toContainText('Parcellation');
-  await expect(dataSection).toContainText('changes the regions and their summaries, not only their labels');
+  await expect(dataSection).toContainText('for volumes it changes only the anatomical overlay and region inspection, never the voxel values');
   await expect(dataSection).toContainText('The observations included by the release’s scientific recipe');
   const visualizationSection = guide.locator('.help-guide__section').filter({ hasText: 'Set the visualization' });
   await visualizationSection.getByText('Set the visualization').click();

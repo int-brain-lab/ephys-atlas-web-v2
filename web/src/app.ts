@@ -147,8 +147,12 @@ export class AtlasApp {
       }
       if (action.type === 'feature/set') void this.session.loadCurrentFeature(true);
       if (action.type === 'parcellation/set') {
-        void this.session.loadRegions(state.view.dataset, state.view.parcellation);
-        void this.session.loadCurrentFeature(false);
+        // Regional parcellations are release payloads; volume parcellations are
+        // anatomy-overlay mappings supplied by the canonical atlas catalog.
+        if (state.view.representation === 'regional') {
+          void this.session.loadRegions(state.view.dataset, state.view.parcellation);
+          void this.session.loadCurrentFeature(false);
+        }
       }
     });
     this.render();

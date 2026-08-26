@@ -313,7 +313,13 @@ export class AppShell {
 
     this.datasetContext.setDisplay(datasetLabel, releaseLabel);
     this.featureContext.setDisplay(featureLabel, featureEntry?.unit ?? '');
-    this.representationContext.setDisplay(`${representationLabel} · ${titleCaseToken(view.parcellation)}`, 'Allen CCFv3 · 10 µm');
+    const parcellationLabel = titleCaseToken(view.parcellation);
+    this.representationContext.setDisplay(
+      view.representation === 'volume'
+        ? `${representationLabel} · ${parcellationLabel} anatomy`
+        : `${representationLabel} · ${parcellationLabel}`,
+      'Allen CCFv3 · 10 µm',
+    );
     this.renderContextMenus(model);
     this.renderColorSettings(model);
     this.renderVolumeLayerSettings(model);
@@ -684,7 +690,7 @@ export class AppShell {
           ['Dataset / release', 'The scientific product and the immutable snapshot being explored.'],
           ['Feature', 'The measured or derived quantity displayed by the viewer.'],
           ['Representation', 'How the feature is organized, such as regional summaries or a voxel volume.'],
-          ['Parcellation', 'The atlas region grouping used to aggregate and display regional data. Changing it changes the regions and their summaries, not only their labels.'],
+          ['Parcellation', 'The atlas region grouping. For regional data it changes the regions and their summaries; for volumes it changes only the anatomical overlay and region inspection, never the voxel values.'],
           ['Population', 'The observations included by the release’s scientific recipe. Check Info before interpreting results.'],
         ],
       },
@@ -836,7 +842,7 @@ export class AppShell {
       ['Dataset', manifest.dataset.id],
       ['Release', manifest.release.releaseId],
       ['Created', new Date(manifest.release.createdAt).toLocaleString()],
-      ['Parcellation', titleCaseToken(state.view.parcellation)],
+      [state.view.representation === 'volume' ? 'Anatomy parcellation' : 'Parcellation', titleCaseToken(state.view.parcellation)],
     ]));
 
     const sections: HTMLElement[] = [summary];
@@ -1169,9 +1175,11 @@ export class AppShell {
 
     const selectedFeature = manifest?.features.find((feature) => feature.id === state.view.featureId);
     const representations = selectedFeature ? this.featureRepresentations(selectedFeature) : [];
-    const availableParcellations = selectedFeature?.representations.regional && state.view.representation === 'regional'
-      ? Object.keys(selectedFeature.representations.regional.parcellations) as ParcellationId[]
-      : manifest?.parcellations ?? [];
+    const availableParcellations = state.view.representation === 'volume'
+      ? (['allen', 'beryl', 'cosmos'] as const)
+      : selectedFeature?.representations.regional
+        ? Object.keys(selectedFeature.representations.regional.parcellations) as ParcellationId[]
+        : manifest?.parcellations ?? [];
     const representationOptions: ContextMenuOption[] = representations.map((value) => ({
       id: `representation:${value}`,
       label: value === 'regional' ? 'Regional' : 'Volume',
@@ -1183,8 +1191,8 @@ export class AppShell {
       id: `parcellation:${value}`,
       label: value === 'allen' ? 'Allen' : value === 'beryl' ? 'Beryl' : 'Cosmos',
       description: value === 'allen' ? 'Full Allen ontology' : `${titleCaseToken(value)} reduced mapping`,
-      group: 'Parcellation',
-      disabled: state.view.representation !== 'regional' || availableParcellations.length < 2,
+      group: state.view.representation === 'volume' ? 'Anatomy parcellation' : 'Parcellation',
+      disabled: availableParcellations.length < 2,
     }));
     this.representationContext.setOptions(
       [...representationOptions, ...parcellationOptions],

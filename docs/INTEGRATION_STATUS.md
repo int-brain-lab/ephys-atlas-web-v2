@@ -465,6 +465,13 @@ coverage asserts stable composite mode during navigation, bounded paint counts
 for linked projections, and one non-aborted cold-pack request when several
 native inputs resolve to the same 50 um plane.
 
+Volume features expose Allen, Beryl, and Cosmos as anatomy-overlay mappings
+from the canonical atlas-region catalog even when their scientific release has
+no regional summary payloads. The UI labels this as anatomy parcellation;
+changing it updates outlines, region identity, inspection, and URL state but
+does not reload or alter the voxel feature. Regional features continue to
+offer only the parcellations explicitly declared by their release payload.
+
 Volume plane selection applies the declared inverse affine to the shared world
 cursor and checks half-index voxel-edge bounds. An outside cursor fails
 explicitly before any plane resource request; it is never clamped to the
