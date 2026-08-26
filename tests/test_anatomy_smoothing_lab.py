@@ -346,6 +346,8 @@ def test_offline_ui_has_stable_semantic_controls_and_valid_javascript() -> None:
         "answer-a",
         "answer-same",
         "answer-b",
+        "undo-answer",
+        "undo-outcome",
         "reset-view",
         "download-review",
     } <= parser.ids

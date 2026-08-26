@@ -173,8 +173,9 @@ reference/eligible/rejected/unsafe status, full sortable per-region evidence,
 JSON/CSV exports and provenance. The default interface is now a
 one-question-at-a-time A/B review with separate A-better, no-difference, and
 B-better responses, synchronized wheel zoom/drag pan, adaptive
-representative/stress rounds, an explicit conservative recommendation rule,
-and a downloadable answer record. Exhaustive controls remain under
+representative/stress rounds, fixed A-left/B-right placement, previous-answer
+correction, an explicit conservative recommendation rule, and a downloadable
+answer record. Exhaustive controls remain under
 optional advanced evidence, and existing computed evidence can be re-rendered
 without recomputation. Synthetic wide/tablet, pinned-real coronal, and guided
 Chromium interaction checks passed. Slice 4 is intentionally paused at the

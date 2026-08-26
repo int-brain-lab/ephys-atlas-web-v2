@@ -285,8 +285,10 @@ a release artifact.
 
 Default to a guided review that presents exact geometry as option A and the
 7.5 um GEOS coverage candidate with a fixed outer boundary as option B. Keep
-both panels visually neutral and alternate their physical left/right placement
-to reduce position bias. Ask one question with three distinct judgements: A is
+both panels visually neutral, with A fixed on the left and B fixed on the right
+to prevent option/position mistakes. Permit the immediately previous answer to
+be changed from either an active round or the outcome. Ask one question with
+three distinct judgements: A is
 clearly better, there is no meaningful difference, or B is clearly better.
 First ask one representative question per projection. Continue to every
 remaining default stress sample only after B is clearly better in at least two

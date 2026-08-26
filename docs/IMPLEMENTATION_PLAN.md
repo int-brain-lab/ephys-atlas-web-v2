@@ -208,7 +208,8 @@ offline review machinery. Slice 4 now requires human qualitative review before
 any shortlist; agents must not select a smoothing policy autonomously.
 The report defaults to a one-question guided A/B review with distinct A-better,
 no-meaningful-difference, and B-better responses, synchronized mouse navigation,
-adaptive representative/stress rounds, and an exportable decision record; the
+fixed A-left/B-right placement, previous-answer correction, adaptive
+representative/stress rounds, and an exportable decision record; the
 exhaustive evidence explorer is optional. Its recorded rule may
 recommend retaining exact geometry or investigating a safer method, but cannot
 promote the rejected diagnostic candidate or alter production geometry.
