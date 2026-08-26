@@ -10,6 +10,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
+from tools.anatomy_pack.build_v2 import _write_pack, slice_paths
 from tools.anatomy_smoothing_lab import (
     Eligibility,
     EvaluationPolicy,
@@ -17,19 +18,20 @@ from tools.anatomy_smoothing_lab import (
     parse_tolerances_um,
     run_experiment,
 )
-from tools.anatomy_smoothing_lab.synthetic import synthetic_planes
 from tools.anatomy_smoothing_lab.build import (
+    CHECKPOINT_FORMAT,
     DEFAULT_PARENT,
     DEFAULT_SAMPLED,
     _load_parent_slice,
     build_synthetic_report,
+    main,
     parse_args,
     render_report,
     select_stress_samples,
     sha256_file,
     write_report,
 )
-from tools.anatomy_pack.build_v2 import _write_pack, slice_paths
+from tools.anatomy_smoothing_lab.synthetic import synthetic_planes
 
 
 POLICY = EvaluationPolicy(
@@ -44,6 +46,27 @@ def test_tolerance_parsing_is_canonical_and_rejects_invalid_values() -> None:
     for invalid in ("", "nan", "inf", "-1", "one"):
         with pytest.raises(ValueError):
             parse_tolerances_um(invalid)
+
+
+def test_worker_and_checkpoint_cli_validation(tmp_path: Path) -> None:
+    output = tmp_path / "report.html"
+    assert _synthetic_args(output).workers == 1
+    with pytest.raises(SystemExit):
+        parse_args(
+            [
+                "--synthetic",
+                "--created-at",
+                "2026-08-22T00:00:00Z",
+                "--maximum-error-um",
+                "20",
+                "--minimum-iou",
+                "0.98",
+                "--workers",
+                "0",
+                "--output",
+                str(output),
+            ]
+        )
 
 
 def test_strategy_registry_has_stable_unique_identity() -> None:
@@ -170,10 +193,16 @@ def test_stress_selection_records_categories_and_uses_lower_ties() -> None:
     ordered = list(planes.values())
     selected = select_stress_samples(range(len(ordered)), ordered.__getitem__, int)
 
-    assert selected == select_stress_samples(range(len(ordered)), ordered.__getitem__, int)
+    assert selected == select_stress_samples(
+        range(len(ordered)), ordered.__getitem__, int
+    )
     assert list(selected) == sorted(selected)
-    assert any("central active-display plane" in reasons for reasons in selected.values())
-    assert any("bilateral signed-ID coverage" in reasons for reasons in selected.values())
+    assert any(
+        "central active-display plane" in reasons for reasons in selected.values()
+    )
+    assert any(
+        "bilateral signed-ID coverage" in reasons for reasons in selected.values()
+    )
 
 
 def _synthetic_args(output: Path):
@@ -226,6 +255,65 @@ def test_two_fixed_synthetic_reports_are_byte_identical(tmp_path: Path) -> None:
     )
 
 
+def _small_main_args(output: Path, checkpoint: Path, workers: int) -> list[str]:
+    return [
+        "--synthetic",
+        "--offline",
+        "--created-at",
+        "2026-08-22T00:00:00Z",
+        "--strategies",
+        "exact,geos-coverage-simplify",
+        "--tolerances-um",
+        "0,5",
+        "--maximum-error-um",
+        "20",
+        "--minimum-iou",
+        "0.98",
+        "--coronal-slices",
+        "0",
+        "--sagittal-slices",
+        "1",
+        "--horizontal-slices",
+        "2",
+        "--workers",
+        str(workers),
+        "--checkpoint-dir",
+        str(checkpoint),
+        "--output",
+        str(output),
+    ]
+
+
+def test_parallel_resume_and_corrupt_checkpoint_preserve_report_bytes(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    checkpoint = tmp_path / "checkpoint"
+    parallel = tmp_path / "parallel.html"
+    resumed = tmp_path / "resumed.html"
+    repaired = tmp_path / "repaired.html"
+
+    main(_small_main_args(parallel, checkpoint, workers=2))
+    first_progress = capsys.readouterr().err
+    assert "percent=100.0" in first_progress
+    assert (
+        json.loads((checkpoint / "manifest.json").read_text())["format"]
+        == CHECKPOINT_FORMAT
+    )
+
+    main(_small_main_args(resumed, checkpoint, workers=1))
+    resumed_progress = capsys.readouterr().err
+    assert "status=resumed" in resumed_progress
+    assert parallel.read_bytes() == resumed.read_bytes()
+
+    variant = next((checkpoint / "variants").rglob("*.json"))
+    variant.write_text("not json")
+    main(_small_main_args(repaired, checkpoint, workers=2))
+    repaired_progress = capsys.readouterr().err
+    assert "action=recompute" in repaired_progress
+    assert parallel.read_bytes() == repaired.read_bytes()
+    assert not list(tmp_path.rglob("*.tmp"))
+
+
 class _SemanticReportParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
@@ -272,7 +360,9 @@ def test_report_inline_json_is_escaped_and_external_templates_are_rejected() -> 
     rendered = render_report({"unsafe": "</script>"}, template)
     assert b"<\\/script>" in rendered
     with pytest.raises(ValueError, match="external resource"):
-        render_report({}, template + '<script src="https://example.test/x.js"></script>')
+        render_report(
+            {}, template + '<script src="https://example.test/x.js"></script>'
+        )
 
 
 def test_checked_in_sparse_inventory_is_bound_to_exact_parent() -> None:
@@ -285,11 +375,18 @@ def test_checked_in_sparse_inventory_is_bound_to_exact_parent() -> None:
     for projection in ("coronal", "sagittal", "horizontal"):
         indices = sampled["projections"][projection]["display_slice_indices"]
         assert indices == sorted(set(indices))
-        assert all(0 <= index < parent["projections"][projection]["slice_count"] for index in indices)
-        assert _load_parent_slice(DEFAULT_PARENT, parent, projection, indices[len(indices) // 2])
+        assert all(
+            0 <= index < parent["projections"][projection]["slice_count"]
+            for index in indices
+        )
+        assert _load_parent_slice(
+            DEFAULT_PARENT, parent, projection, indices[len(indices) // 2]
+        )
 
 
-def test_regenerated_paths_match_a_verified_temporary_parent_pack(tmp_path: Path) -> None:
+def test_regenerated_paths_match_a_verified_temporary_parent_pack(
+    tmp_path: Path,
+) -> None:
     regions = SimpleNamespace(
         id=np.asarray([0, -1, 1, 2], dtype=np.int64),
         mappings={name: np.arange(4) for name in ("Allen", "Beryl", "Cosmos")},
@@ -322,6 +419,7 @@ def test_regenerated_paths_match_a_verified_temporary_parent_pack(tmp_path: Path
 )
 def test_optional_real_plane_regenerates_checked_in_exact_bytes() -> None:
     from iblatlas.regions import BrainRegions
+
     from tools.anatomy_pack.build_v2 import plane_for_projection
 
     lut = np.load(os.environ["EPHYS_ATLAS_ANATOMY_10UM_LUT"], mmap_mode="r")
@@ -330,5 +428,10 @@ def test_optional_real_plane_regenerates_checked_in_exact_bytes() -> None:
     for projection in ("coronal", "sagittal", "horizontal"):
         sampled = json.loads((DEFAULT_SAMPLED / "manifest.json").read_text())
         index = sampled["projections"][projection]["display_slice_indices"][0]
-        paths, _validation = slice_paths(plane_for_projection(lut, projection, index), regions)
-        assert _load_parent_slice(DEFAULT_PARENT, parent, projection, index)["paths"] == paths
+        paths, _validation = slice_paths(
+            plane_for_projection(lut, projection, index), regions
+        )
+        assert (
+            _load_parent_slice(DEFAULT_PARENT, parent, projection, index)["paths"]
+            == paths
+        )

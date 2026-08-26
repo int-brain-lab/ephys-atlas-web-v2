@@ -97,12 +97,12 @@ anatomy-compare resolution="25":
     {{uv-anatomy}} python tools/anatomy_compare/build.py --resolution {{resolution}}
 
 # Build the deterministic synthetic anatomy-smoothing evidence report offline.
-anatomy-smoothing-lab tolerances="0,2.5,5,7.5,10,15,20" output="artifacts/anatomy-smoothing-lab/index.html":
-    {{uv-anatomy}} python -m tools.anatomy_smoothing_lab.build --synthetic --offline --created-at 2026-08-22T00:00:00Z --strategies exact,geos-coverage-simplify,independent-ring-rdp-unsafe --tolerances-um {{tolerances}} --maximum-error-um 20 --minimum-iou 0.98 --output {{output}}
+anatomy-smoothing-lab tolerances="0,2.5,5,7.5,10,15,20" output="artifacts/anatomy-smoothing-lab/index.html" workers="1":
+    {{uv-anatomy}} python -m tools.anatomy_smoothing_lab.build --synthetic --offline --created-at 2026-08-22T00:00:00Z --strategies exact,geos-coverage-simplify,independent-ring-rdp-unsafe --tolerances-um {{tolerances}} --maximum-error-um 20 --minimum-iou 0.98 --workers {{workers}} --output {{output}}
 
 # Build against explicit, hash-pinned real 10 um review inputs.
-anatomy-smoothing-lab-real source_lut annotation template_volume template_sha256 template_source output="artifacts/anatomy-smoothing-lab/index.html" tolerances="0,2.5,5,7.5,10,15,20":
-    {{uv-anatomy}} python -m tools.anatomy_smoothing_lab.build --offline --source-lut {{source_lut}} --annotation {{annotation}} --template-volume {{template_volume}} --template-sha256 {{template_sha256}} --template-source {{template_source}} --created-at 2026-08-22T00:00:00Z --strategies exact,geos-coverage-simplify,independent-ring-rdp-unsafe --tolerances-um {{tolerances}} --maximum-error-um 20 --minimum-iou 0.98 --output {{output}}
+anatomy-smoothing-lab-real source_lut annotation template_volume template_sha256 template_source output="artifacts/anatomy-smoothing-lab/index.html" tolerances="0,2.5,5,7.5,10,15,20" workers="1":
+    {{uv-anatomy}} python -m tools.anatomy_smoothing_lab.build --offline --source-lut {{source_lut}} --annotation {{annotation}} --template-volume {{template_volume}} --template-sha256 {{template_sha256}} --template-source {{template_source}} --created-at 2026-08-22T00:00:00Z --strategies exact,geos-coverage-simplify,independent-ring-rdp-unsafe --tolerances-um {{tolerances}} --maximum-error-um 20 --minimum-iou 0.98 --workers {{workers}} --output {{output}}
 
 # Build the ignored, local-only W26/Allen geometry candidate review page.
 volume-geometry-review annotation annotation_sha256 volume="data/source/ephys_atlas_volumes/2026_W26/brainwide_ephys_atlas_50um.npz" volume_sha256="1f7509fe9e368a90704173bdb5c385827b199a7d5fa4b0aaa8fec5aca5402253":

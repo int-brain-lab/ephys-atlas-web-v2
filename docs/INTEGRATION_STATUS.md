@@ -172,7 +172,12 @@ magnified inspection, clearly separated presentation controls, permanent
 reference/eligible/rejected/unsafe status, full sortable per-region evidence,
 JSON/CSV exports, provenance, and fragment-persisted review location. Synthetic
 wide/tablet and pinned-real coronal visual checks passed. Slice 4 is intentionally
-paused at human qualitative review and shortlisting.
+paused at human qualitative review and shortlisting. Long evidence builds now
+support bounded process-parallel variant evaluation, flushed progress and
+heartbeat reporting with percentage/ETA, identity-bound atomic per-variant
+checkpoints, corruption-safe recomputation, worker-count-independent resume,
+and atomic final report replacement. These execution controls do not enter or
+change deterministic scientific report bytes.
 
 Optional main-application integration is approved through D037 and
 `docs/rendering/3D_INTEGRATION_PLAN.md`. The target is a `brain-3d` content kind

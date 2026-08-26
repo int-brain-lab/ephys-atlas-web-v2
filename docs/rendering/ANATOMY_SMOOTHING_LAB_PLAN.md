@@ -14,6 +14,15 @@ visual checks passed without runtime errors or horizontal overflow. Slice 4 is
 the human sample review and shortlist boundary; no smoothing policy or
 production asset has been selected.
 
+Long report builds now emit flushed selection, plan, per-variant percentage/ETA,
+and heartbeat progress. Independent variants may run in a bounded process pool
+selected with `--workers`; ordered output remains byte-identical to the canonical
+single-worker run. Atomic per-variant checkpoints default to
+`<output>.checkpoint/`, are bound to the exact inputs, parameters, selection,
+and implementation hashes, and resume across worker-count changes. Invalid or
+partially written variant checkpoints are recomputed. The final HTML is also
+replaced atomically. Use `--no-checkpoint` only for short diagnostic runs.
+
 This document is an execution plan for a standalone, local lab that compares
 presentation-oriented smoothing and simplification of the active bilateral
 10 µm Allen anatomy. It is deliberately detailed enough for an implementation
@@ -437,9 +446,16 @@ to:
 
 ```bash
 just anatomy-smoothing-lab \
-  tolerances="0,2.5,5,7.5,10,15,20" \
-  output="artifacts/anatomy-smoothing-lab/index.html"
+  "0,2.5,5,7.5,10,15,20" \
+  "artifacts/anatomy-smoothing-lab/index.html" \
+  "1"
 ```
+
+For a machine with sufficient memory, increase the final `workers` argument
+explicitly (for example `"8"`). Each worker may hold full-plane geometry and metric
+state, so do not equate CPU count with a safe worker count. Checkpoints are
+written only by the parent process and a resumed run may use a different worker
+count without changing the deterministic report.
 
 Do not add the real 10 µm source, LUT, generated report, or full-corpus outputs
 to Git. Before each commit inspect `git status`, commit only intended files,
