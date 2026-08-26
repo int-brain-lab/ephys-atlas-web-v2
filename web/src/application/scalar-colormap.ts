@@ -3,13 +3,23 @@ import type { RegionalFeaturePayload } from '../data/contracts.js';
 import type { RegionMetadata } from '../data/contracts.js';
 import { paletteCssColor } from './colormap-palettes.js';
 
-export function regionalColorRange(feature: RegionalFeaturePayload, coloring: ColoringState): readonly [number, number] | null {
+export function regionalColorRange(
+  feature: RegionalFeaturePayload,
+  coloring: ColoringState,
+  automaticRange?: readonly [number, number],
+): readonly [number, number] | null {
   if (coloring.range.mode === 'fixed') {
     if (Number.isFinite(coloring.range.min) && Number.isFinite(coloring.range.max) && coloring.range.max > coloring.range.min) {
       return [coloring.range.min, coloring.range.max];
     }
     return null;
   }
+  if (
+    automaticRange
+    && Number.isFinite(automaticRange[0])
+    && Number.isFinite(automaticRange[1])
+    && automaticRange[1] > automaticRange[0]
+  ) return automaticRange;
   const global = feature.global;
   if (global?.q05 !== undefined && global.q95 !== undefined && global.q95 > global.q05) {
     return [global.q05, global.q95];

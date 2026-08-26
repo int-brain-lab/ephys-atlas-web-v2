@@ -74,6 +74,7 @@ export interface ShellModel {
   displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null;
   regionalPresentation: RegionalPresentation;
   presentationScale: ResolvedPresentationScale;
+  automaticRange: readonly [number, number] | undefined;
 }
 
 type LayoutMode = 'wide' | 'compact' | 'narrow' | 'phone';
@@ -1216,6 +1217,10 @@ export class AppShell {
       },
     ], view.coloring.scale);
     this.rangeModeSelect.value = view.coloring.range.mode;
+    this.syncOptions(this.rangeModeSelect, [
+      { value: 'auto', label: model.automaticRange ? 'Auto (release default)' : 'Robust auto' },
+      { value: 'fixed', label: 'Manual' },
+    ], view.coloring.range.mode);
     const featureColors = (view.coloring.mode ?? 'feature') === 'feature' && feature !== null;
     this.statisticSelect.disabled = !featureColors || statistics.length < 2;
     this.colormapSelect.disabled = !featureColors;
@@ -1223,19 +1228,22 @@ export class AppShell {
     this.rangeModeSelect.disabled = !featureColors;
 
     const range = feature?.representation === 'regional'
-      ? regionalColorRange(feature, view.coloring)
+      ? regionalColorRange(feature, view.coloring, model.automaticRange)
       : feature?.descriptor.valueRange?.every((value) => value !== null)
         ? feature.descriptor.valueRange as readonly [number, number]
         : null;
     if (feature && range) {
-      const usesRobustQuantiles = view.coloring.range.mode === 'auto'
+      const usesReleaseDefault = view.coloring.range.mode === 'auto' && model.automaticRange !== undefined;
+      const usesRobustQuantiles = !usesReleaseDefault && view.coloring.range.mode === 'auto'
         && feature.representation === 'regional'
         && feature.global?.q05 !== undefined
         && feature.global.q95 !== undefined;
       const scope = feature.representation === 'regional' ? 'Left hemisphere' : 'Volume';
       const context = view.coloring.range.mode === 'fixed'
         ? `${scope} · manual range`
-        : usesRobustQuantiles ? `${scope} · robust 5–95%` : `${scope} · automatic range`;
+        : usesReleaseDefault
+          ? `${scope} · release default`
+          : usesRobustQuantiles ? `${scope} · robust 5–95%` : `${scope} · automatic range`;
       this.colorRangeControl.render({
         feature,
         statistic: view.coloring.statistic,

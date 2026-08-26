@@ -36,12 +36,13 @@ project/QC choice remain explicit inputs; the recipe does not guess a paper
 vintage or substitute a different cluster population.
 
 Every new production snapshot build must load the current versioned authority,
-`docs/data/CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json`. D044 freezes the exact 14-feature
+`docs/data/CLUSTERS_CATALOG_SELECTION_FIRING_RATE_DEFAULTS.json`. D044 freezes the exact 14-feature
 catalog declared by the pinned original Ephys Atlas repository and its explicit
 cluster-unit mapping. The builder rejects any mismatch in project, source
 snapshot, table bytes/hash, catalog, display defaults, or exact Log-histogram
 capabilities before Parquet decode. D047 separates Log availability from the
-preferred value scale and records the owner's Linear preference for firing rate.
+preferred value scale; D048 records the owner's final reviewed Firing-rate Log
+and 3.73–17.8 Hz automatic display defaults.
 Large waveform, ACG, STPC, and STLFP arrays are not silently reduced into
 regional features.
 
@@ -60,7 +61,7 @@ ephys-atlas-data pull ephys_atlas_clusters latest --project ibl_neuropixel_brain
 ephys-atlas-data build-clusters latest \
   --project ibl_neuropixel_brainwide_01 \
   --population all \
-  --catalog-selection docs/data/CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json \
+  --catalog-selection docs/data/CLUSTERS_CATALOG_SELECTION_FIRING_RATE_DEFAULTS.json \
   --created-at 2026-08-20T00:00:00Z \
   --ibleatools-commit <commit> \
   --iblatlas-commit <commit> \

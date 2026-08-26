@@ -160,7 +160,13 @@ export class AtlasApp {
     const data = this.session.snapshot();
     const anatomyRegions = this.atlasRegions?.mappings[state.view.parcellation] ?? data.regions;
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
-    const presentationScale = resolvePresentationScale(data.feature, state.view.coloring, descriptor?.display?.scale);
+    const automaticRange = descriptor?.display?.range;
+    const presentationScale = resolvePresentationScale(
+      data.feature,
+      state.view.coloring,
+      descriptor?.display?.scale,
+      automaticRange,
+    );
     if (
       state.view.coloring.scale === 'log'
       && presentationScale.effectiveScale !== 'log'
@@ -176,7 +182,13 @@ export class AtlasApp {
         }
       });
     }
-    const coloring = { ...state.view.coloring, scale: presentationScale.effectiveScale };
+    const coloring = {
+      ...state.view.coloring,
+      range: state.view.coloring.range.mode === 'auto' && automaticRange
+        ? { mode: 'fixed' as const, min: automaticRange[0], max: automaticRange[1] }
+        : state.view.coloring.range,
+      scale: presentationScale.effectiveScale,
+    };
     const presentation: ProjectionPresentation = {
       regional: resolveRegionalPresentation({
         mapping: state.view.parcellation,
@@ -204,6 +216,7 @@ export class AtlasApp {
       displaySliceInventories: this.displaySliceInventories,
       regionalPresentation: this.viewportPresentation?.regional ?? presentation.regional,
       presentationScale,
+      automaticRange,
     };
     this.shell.render(model);
     this.regionalPanel.render({
@@ -214,6 +227,7 @@ export class AtlasApp {
       anatomyAtlas: this.atlasRegions?.atlas ?? null,
       hoveredRegionId: this.hoveredRegionId,
       presentationScale,
+      automaticRange,
     });
   }
 
@@ -411,7 +425,12 @@ export class AtlasApp {
     if (!manifest || feature?.representation !== 'regional' || state.selection.length === 0) return;
     const descriptor = manifest.features.find((item) => item.id === feature.featureId);
     const regions = this.atlasRegions?.mappings[state.parcellation] ?? featureRegions;
-    const presentationScale = resolvePresentationScale(feature, state.coloring, descriptor?.display?.scale);
+    const presentationScale = resolvePresentationScale(
+      feature,
+      state.coloring,
+      descriptor?.display?.scale,
+      descriptor?.display?.range,
+    );
     const exportFeature = presentationScale.histogram
       ? { ...feature, histogram: presentationScale.histogram }
       : feature;

@@ -32,6 +32,16 @@ test('one resolved scale selects coloring and the matching exact histogram', () 
   assert.equal(logarithmic.histogram, feature.histogramVariants.log);
 });
 
+test('release automatic range participates in log capability resolution', () => {
+  const withSignedRobustRange = {
+    ...feature,
+    global: { ...feature.global, q05: -1, q95: 80 },
+  };
+  const resolved = resolvePresentationScale(withSignedRobustRange, coloring, 'log', [3.73, 17.8]);
+  assert.equal(resolved.effectiveScale, 'log');
+  assert.equal(resolved.logAvailable, true);
+});
+
 test('invalid log selection fails safely to linear without dropping the range', () => {
   const fixed = { ...coloring, scale: 'log', range: { mode: 'fixed', min: -1, max: 20 } };
   const resolved = resolvePresentationScale(feature, fixed, 'log');

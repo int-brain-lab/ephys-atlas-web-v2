@@ -55,10 +55,11 @@ The repository/scientific owner approved all four review points on 2026-08-24:
 
 D044 records the catalog decision. The historical
 `CLUSTERS_CATALOG_SELECTION.json` reproduces the first two candidates; D047's
-`CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json` preserves the same exact legacy
-sources, table, catalog, units, and descriptions while separately recording Log
-histogram capability and the reviewed Linear Firing-rate preference. Q6 is
-resolved.
+`CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json` preserves the intermediate D047
+review. D048's `CLUSTERS_CATALOG_SELECTION_FIRING_RATE_DEFAULTS.json` preserves
+the same exact legacy sources, table, catalog, units, and descriptions while
+separately recording Log histogram capability and the final reviewed Log
+3.73–17.8 Hz Firing-rate default. Q6 is resolved.
 
 ## Reproduction
 

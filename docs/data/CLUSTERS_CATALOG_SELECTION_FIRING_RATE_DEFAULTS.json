@@ -1,0 +1,154 @@
+{
+  "schema": "ibl-cluster-catalog-selection-v2",
+  "scientific_owner_confirmation": true,
+  "confirmed_at": "2026-08-26",
+  "decision": "Publish every approved cluster feature; retain exact Linear and Log alternatives for audited positive heavy-tailed features and use the owner-reviewed Log 3.73–17.8 Hz presentation for firing rate.",
+  "source": {
+    "release_id": "sha256-9b5e55215b306f26",
+    "project": "ibl_neuropixel_brainwide_01",
+    "table": {
+      "path": "ibl_neuropixel_brainwide_01/cells_aggregates/clusters.table.pqt",
+      "bytes": 218957376,
+      "sha256": "07aa69542d59e7dc0d1f4e32dbf7941fcd7ddb5c47c216286ebb5005ee038df4"
+    }
+  },
+  "legacy_project_repository": {
+    "repository": "int-brain-lab/ephys-atlas-web",
+    "commit": "1d908bea095be2616a750d939d143f3b4db2a641",
+    "feature_source_path": "make_ephys.py",
+    "feature_source_sha256": "e1b1218b74a2ddae00b07ab50e6654a115f06bf872b5aec9528d089df4215664",
+    "unit_source_path": "tools/ephys_units.py",
+    "unit_source_sha256": "8641599d5733aaa63ddb4f0e09416be35855aa0fa910a66b229e9f2d2140504d"
+  },
+  "display_policy": "Raw values, statistics, regional summaries, and underlying-value downloads remain unchanged. Automatic robust bounds replace the legacy fixed XLIMS except where an owner-reviewed release default is declared. One value scale controls color normalization, both distribution views, and range geometry. Exact logarithmic histogram binnings remain available for the six audited strictly-positive heavy-tailed quantities. Firing rate defaults to Log with an automatic 3.73–17.8 Hz display range after visual review; the other five retain Log defaults with robust automatic ranges.",
+  "features": [
+    {
+      "id": "amp_max",
+      "source_column": "amp_max",
+      "label": "Maximum spike amplitude",
+      "description": "Maximum spike amplitude for each cluster, summarized regionally over all finite clusters.",
+      "unit": "V",
+      "display": {
+        "scale": "log"
+      }
+    },
+    {
+      "id": "amp_min",
+      "source_column": "amp_min",
+      "label": "Minimum spike amplitude",
+      "description": "Minimum spike amplitude for each cluster, summarized regionally over all finite clusters.",
+      "unit": "V",
+      "display": {
+        "scale": "log"
+      }
+    },
+    {
+      "id": "amp_median",
+      "source_column": "amp_median",
+      "label": "Median spike amplitude",
+      "description": "Geometric median spike amplitude for each cluster, summarized regionally over all finite clusters.",
+      "unit": "V",
+      "display": {
+        "scale": "log"
+      }
+    },
+    {
+      "id": "amp_std_dB",
+      "source_column": "amp_std_dB",
+      "label": "Spike amplitude variability",
+      "description": "Standard deviation of log-scaled spike amplitudes for each cluster, summarized regionally over all finite clusters.",
+      "unit": "dB"
+    },
+    {
+      "id": "contamination",
+      "source_column": "contamination",
+      "label": "Contamination estimate",
+      "description": "Refractory-period contamination estimate for each cluster; this source metric is not constrained to the interval zero to one.",
+      "unit": "fraction"
+    },
+    {
+      "id": "contamination_alt",
+      "source_column": "contamination_alt",
+      "label": "Alternative contamination estimate",
+      "description": "Alternative refractory-period contamination estimate for each cluster, summarized regionally over all finite clusters.",
+      "unit": "fraction"
+    },
+    {
+      "id": "drift",
+      "source_column": "drift",
+      "label": "Depth drift rate",
+      "description": "Accumulated absolute spike-depth change per recording hour for each cluster, summarized regionally over all finite clusters.",
+      "unit": "um/h"
+    },
+    {
+      "id": "missed_spikes_est",
+      "source_column": "missed_spikes_est",
+      "label": "Estimated missed spikes",
+      "description": "Estimated fraction of missed spikes from the amplitude distribution, capped by the source algorithm at 0.5.",
+      "unit": "fraction"
+    },
+    {
+      "id": "noise_cutoff",
+      "source_column": "noise_cutoff",
+      "label": "Noise cutoff score",
+      "description": "Signed standardized amplitude-histogram cutoff score for each cluster, summarized regionally over all finite clusters.",
+      "unit": "a.u."
+    },
+    {
+      "id": "presence_ratio",
+      "source_column": "presence_ratio",
+      "label": "Presence ratio",
+      "description": "Fraction of recording time bins containing at least one spike for each cluster, summarized regionally over all finite clusters.",
+      "unit": "fraction"
+    },
+    {
+      "id": "presence_ratio_std",
+      "source_column": "presence_ratio_std",
+      "label": "Spike-count variability",
+      "description": "Standard deviation of raw spike counts across presence-ratio time bins for each cluster; despite the source name, it is not the standard deviation of a bounded ratio.",
+      "unit": "count",
+      "display": {
+        "scale": "log"
+      }
+    },
+    {
+      "id": "slidingRP_viol",
+      "source_column": "slidingRP_viol",
+      "label": "Sliding refractory-period pass fraction",
+      "description": "Regional fraction of source clusters whose binary legacy sliding refractory-period metric equals one (pass).",
+      "unit": "fraction"
+    },
+    {
+      "id": "spike_count",
+      "source_column": "spike_count",
+      "label": "Spike count",
+      "description": "Number of spikes assigned to each cluster, summarized regionally over all finite clusters.",
+      "unit": "count",
+      "display": {
+        "scale": "log"
+      }
+    },
+    {
+      "id": "firing_rate",
+      "source_column": "firing_rate",
+      "label": "Firing rate",
+      "description": "Spike count divided by recording duration for each cluster, summarized regionally over all finite clusters.",
+      "unit": "Hz",
+      "display": {
+        "scale": "log",
+        "range": [
+          3.73,
+          17.8
+        ]
+      }
+    }
+  ],
+  "log_histogram_features": [
+    "amp_max",
+    "amp_min",
+    "amp_median",
+    "presence_ratio_std",
+    "spike_count",
+    "firing_rate"
+  ]
+}

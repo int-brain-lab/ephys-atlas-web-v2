@@ -36,6 +36,11 @@ test('auto regional color range prefers global robust quantiles', () => {
   assert.deepEqual(regionalColorRange(feature, coloring), [0.25, 1.75]);
 });
 
+test('release-declared automatic range takes precedence without becoming manual state', () => {
+  assert.deepEqual(regionalColorRange(feature, coloring, [0.5, 1.5]), [0.5, 1.5]);
+  assert.deepEqual(coloring.range, { mode: 'auto' });
+});
+
 test('regional colors are keyed by numeric atlas ids', () => {
   const colors = regionalColorMap(feature, coloring);
   assert.equal(colors.size, 3);

@@ -208,7 +208,7 @@ def test_cluster_snapshot_build_requires_explicit_feature_catalog():
 
 def test_approved_cluster_catalog_is_machine_consumable():
     selection = load_cluster_catalog_selection(
-        ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json"
+        ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION_FIRING_RATE_DEFAULTS.json"
     )
     assert selection.source_release_id == "sha256-9b5e55215b306f26"
     assert selection.project == "ibl_neuropixel_brainwide_01"
@@ -231,13 +231,16 @@ def test_approved_cluster_catalog_is_machine_consumable():
     assert {feature.source_column: feature.unit for feature in selection.features}[
         "drift"
     ] == "um/h"
-    assert "firing_rate" not in selection.display
+    assert selection.display["firing_rate"] == {
+        "scale": "log",
+        "range": [3.73, 17.8],
+    }
     assert "firing_rate" in selection.log_histogram_features
     assert "noise_cutoff" not in selection.display
 
 
 def test_cluster_catalog_selection_fails_closed_on_mismatch(tmp_path):
-    selection_path = ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json"
+    selection_path = ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION_FIRING_RATE_DEFAULTS.json"
     selection = load_cluster_catalog_selection(selection_path)
     config = ClusterBuildConfig(
         release_id=selection.source_release_id,
@@ -259,18 +262,18 @@ def test_cluster_catalog_selection_fails_closed_on_mismatch(tmp_path):
 
 def test_cluster_output_identity_is_independent_from_pinned_source_identity():
     selection = load_cluster_catalog_selection(
-        ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json"
+        ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION_FIRING_RATE_DEFAULTS.json"
     )
     config = apply_cluster_catalog_selection(
         ClusterBuildConfig(
-            release_id="sha256-9b5e55215b306f26-value-scale-v1",
+            release_id="sha256-9b5e55215b306f26-firing-defaults-v1",
             source_release_id=selection.source_release_id,
             created_at="2026-08-26T00:00:00Z",
             project=selection.project,
         ),
         selection,
     )
-    assert config.release_id == "sha256-9b5e55215b306f26-value-scale-v1"
+    assert config.release_id == "sha256-9b5e55215b306f26-firing-defaults-v1"
     assert config.source_release_id == selection.source_release_id
 
 

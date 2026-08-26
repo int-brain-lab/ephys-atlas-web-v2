@@ -31,6 +31,7 @@ export interface RegionalPanelModel {
   anatomyAtlas: string | null;
   hoveredRegionId: string | null;
   presentationScale: ResolvedPresentationScale;
+  automaticRange: readonly [number, number] | undefined;
 }
 
 export class RegionalPanelController {
@@ -98,7 +99,9 @@ export class RegionalPanelController {
     const displayFeature = feature && model.presentationScale.histogram
       ? { ...feature, histogram: model.presentationScale.histogram }
       : feature;
-    const range = feature ? regionalColorRange(feature, model.state.view.coloring) : null;
+    const range = feature
+      ? regionalColorRange(feature, model.state.view.coloring, model.automaticRange)
+      : null;
     if (
       feature === this.lastFeature
       && model.regions === this.lastRegions

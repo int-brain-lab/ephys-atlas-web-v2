@@ -8,7 +8,8 @@ locally and on Fractal on 2026-08-26. It is real scientific data, not a
 synthetic fixture. The generated directory remains ignored and has not been
 published or added to a public catalog. Automated acceptance is complete;
 the owner selected Linear as the preferred Firing-rate presentation, and a
-final synchronized-UI confirmation remains pending.
+continued review produced D048's Log 3.73–17.8 Hz Firing-rate preference. A new
+immutable candidate is required before this document promotes those defaults.
 
 ## Immutable identity
 

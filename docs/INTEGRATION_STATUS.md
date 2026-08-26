@@ -314,8 +314,10 @@ retaining all six exact Log alternatives; it validates and reproduces
 byte-for-byte across two Fractal builds. Opt-in Chromium acceptance switches all
 14 dynamic features and all three parcellations and checks units, synchronized
 value-scale behavior, safe Log unavailability, and provenance through the
-production HTTP reader. Final synchronized visual confirmation remains pending;
-publication remains deferred under Q8/Q9. See
+production HTTP reader. D048 subsequently selects the final reviewed Log
+3.73–17.8 Hz Firing-rate automatic range; frontend support and the versioned
+selection are complete, while its fourth immutable rebuild is pending.
+Publication remains deferred under Q8/Q9. See
 `docs/data/CLUSTERS_RELEASE.md`.
 
 ### `brainwide_map`

@@ -48,7 +48,7 @@ good-unit filter or insertion balancing. D038 selects
 legacy 14 scalar features. D044 resolves Q6 using the unit mapping from the
 pinned original website repository and the D047 owner-approved versioned
 machine selection in
-`docs/data/CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json`. Snapshot
+`docs/data/CLUSTERS_CATALOG_SELECTION_FIRING_RATE_DEFAULTS.json`. Snapshot
 `sha256-9b5e55215b306f26` and its exact all-row audit are complete. The ignored
 immutable release validates, reproduces byte-for-byte, and passes all-feature,
 all-parcellation production-HTTP Chromium acceptance. Exact commands and hashes

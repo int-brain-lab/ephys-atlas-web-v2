@@ -777,3 +777,20 @@ audited positive heavy-tailed cluster features retain their existing Log
 preference. Record availability separately from preference in the versioned
 catalog selection and rebuild a new immutable candidate; preserve both earlier
 candidates unchanged.
+
+The one-scale architecture remains active, but the Firing-rate preference is
+superseded by D048 after continued visual review.
+
+## D048 — Default firing rate to the reviewed Log range
+
+On 2026-08-26, after reviewing the synchronized implementation in the complete
+atlas workspace, the repository owner superseded D047's Firing-rate Linear
+preference. Default Firing rate to Log with the visually selected 3.73–17.8 Hz
+display interval, retaining Viridis and regional Mean. Treat that interval as
+the release-declared automatic default so Reset returns to it without writing a
+manual URL range; explicit user overrides remain shareable.
+
+This changes presentation metadata only. Retain the exact Linear and Log
+histogram variants and all 925,251 source observations unchanged. Record the
+new preference in another versioned catalog selection and build a fourth
+immutable candidate without changing or deleting the earlier three.

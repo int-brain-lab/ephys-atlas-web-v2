@@ -22,6 +22,7 @@ export function resolvePresentationScale(
   feature: FeaturePayload | null,
   coloring: ColoringState,
   featureDefault: ColorScale | undefined,
+  automaticRange?: readonly [number, number],
 ): ResolvedPresentationScale {
   const requestedAutomaticScale = featureDefault ?? 'linear';
   let histogram: RegionalHistogram | undefined;
@@ -32,7 +33,7 @@ export function resolvePresentationScale(
   if (feature?.representation === 'regional') {
     histogram = feature.histogram;
     logHistogram = feature.histogramVariants?.log;
-    positiveDomain = positiveRange(regionalColorRange(feature, coloring));
+    positiveDomain = positiveRange(regionalColorRange(feature, coloring, automaticRange));
     missingHistogram = logHistogram === undefined;
   } else if (feature?.representation === 'volume') {
     const range = feature.descriptor.valueRange;
