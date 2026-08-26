@@ -2,40 +2,40 @@
 
 ## Status
 
-The D044/D047-approved `ephys_atlas_clusters` candidate was built on Fractal
+The D044/D048-approved `ephys_atlas_clusters` candidate was built on Fractal
 from the content-addressed `ibl_neuropixel_brainwide_01` snapshot and validated
 locally and on Fractal on 2026-08-26. It is real scientific data, not a
 synthetic fixture. The generated directory remains ignored and has not been
-published or added to a public catalog. Automated acceptance is complete;
-the owner selected Linear as the preferred Firing-rate presentation, and a
-continued review produced D048's Log 3.73–17.8 Hz Firing-rate preference. A new
-immutable candidate is required before this document promotes those defaults.
+published or added to a public catalog. The owner selected Log with an automatic
+3.73–17.8 Hz range as the preferred Firing-rate presentation. Automated
+acceptance is complete; final visual confirmation remains pending.
 
 ## Immutable identity
 
-- release ID: `sha256-9b5e55215b306f26-value-scale-v1`
+- release ID: `sha256-9b5e55215b306f26-firing-defaults-v1`
 - source snapshot ID: `sha256-9b5e55215b306f26`
 - source rows: 925,251 all-cluster observations
 - features: 14
 - parcellations: Allen, Beryl, Cosmos
 - files: 209
-- total served-file bytes: 5,105,824
+- total served-file bytes: 5,106,203
 - manifest SHA-256:
-  `6c03d5f02e1baba81faf288133f7cff41dfca2cc8f0bfb69341a3bb30bc9b05f`
+  `98d24e66016f36872733b495f8c0e0a21aa0142e982c9f3c73098f3a3a2e75dc`
 - deterministic graph SHA-256:
-  `b5ebcae1b59798f3902df481f560fe98a6d351221a7522d3c2b5038cda0da1cd`
+  `db321e6461480dcf44ced7a05b2932a387226f2f0d02c2c037e46a4b62f028c1`
 - catalog-selection SHA-256:
-  `edcede48ec860d5ab8509b6f43c1d09d8ea7ce37b6a1f8daddf359125f2a5d68`
+  `238d52ba09ec391ce1a0ca010a734dddd0c71c93c5d96acba41863812895ae0c`
 
 The graph digest is the SHA-256 of the sorted release-relative `sha256sum`
 records for every file. A second build in a fresh temporary directory produced
 the same digest byte-for-byte.
 
-The earlier 191-file candidate `sha256-9b5e55215b306f26` and 209-file candidate
-`sha256-9b5e55215b306f26-hist-axis-v1` remain immutable evidence. Their manifest
-SHA-256 values are respectively
-`2407053b18a78b5f28ea559a901fd3313d510d6f72e867e5a369be72f12fe054`
-and `9db5cbd5763053f06915e8b97a516327490f4fdc5c417687b441fb852bba6b20`.
+The prior candidates `sha256-9b5e55215b306f26`,
+`sha256-9b5e55215b306f26-hist-axis-v1`, and
+`sha256-9b5e55215b306f26-value-scale-v1` remain immutable evidence. Their manifest
+SHA-256 values are `2407053b18a78b5f28ea559a901fd3313d510d6f72e867e5a369be72f12fe054`,
+`9db5cbd5763053f06915e8b97a516327490f4fdc5c417687b441fb852bba6b20`,
+and `6c03d5f02e1baba81faf288133f7cff41dfca2cc8f0bfb69341a3bb30bc9b05f`.
 No prior bytes were altered or deleted.
 
 ## Reproduction
@@ -43,14 +43,14 @@ No prior bytes were altered or deleted.
 ```bash
 uv run --project builder --extra scientific --locked \
   ephys-atlas-data build-clusters sha256-9b5e55215b306f26 \
-  --release-id sha256-9b5e55215b306f26-value-scale-v1 \
+  --release-id sha256-9b5e55215b306f26-firing-defaults-v1 \
   --project ibl_neuropixel_brainwide_01 \
   --population all \
-  --catalog-selection docs/data/CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json \
+  --catalog-selection docs/data/CLUSTERS_CATALOG_SELECTION_FIRING_RATE_DEFAULTS.json \
   --created-at 2026-08-26T00:00:00Z \
   --ibleatools-commit fffe0c75810dd1a013a878abcbcf8ef6348a5a21 \
   --iblatlas-commit 52083adf44825d0622a503705e095699a5957587 \
-  --builder-commit 2e9fbaa4b903f50b360b596706efb23b7171e8f2 \
+  --builder-commit 58d035cf548fa762031bb641b8fabb2e6797681d \
   --source-root data/source \
   --release-root data/releases
 ```
@@ -77,11 +77,12 @@ Chromium acceptance passed for:
   positive features, each summing to the same finite population;
 - one synchronized value scale for color normalization, global and compact
   distributions, range markers, handles, pointer inversion, and window drag;
-- preferred Linear display for Firing rate with its exact Log alternative still
-  available, one URL `scale` field, and disabled Log for incompatible data;
+- preferred Log display and automatic 3.73–17.8 Hz range for Firing rate with
+  its exact Linear alternative still available, one URL `scale` field, and
+  disabled Log for incompatible data;
 - the approved units and implementation-grounded descriptions;
-- Log defaults for the other five approved strictly-positive heavy-tailed
-  features and Linear defaults for Firing rate and signed/zero-bearing features;
+- Log defaults for all six approved strictly-positive heavy-tailed features and
+  Linear defaults for signed/zero-bearing features;
 - the all-cluster recipe and pinned legacy repository provenance in the Info
   dialog.
 

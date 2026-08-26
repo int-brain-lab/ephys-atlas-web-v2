@@ -315,8 +315,10 @@ byte-for-byte across two Fractal builds. Opt-in Chromium acceptance switches all
 14 dynamic features and all three parcellations and checks units, synchronized
 value-scale behavior, safe Log unavailability, and provenance through the
 production HTTP reader. D048 subsequently selects the final reviewed Log
-3.73–17.8 Hz Firing-rate automatic range; frontend support and the versioned
-selection are complete, while its fourth immutable rebuild is pending.
+3.73–17.8 Hz Firing-rate automatic range. The fourth 209-file immutable
+candidate validates and reproduces byte-for-byte across two Fractal builds;
+production-HTTP acceptance passes across all 14 features and three
+parcellations, while final visual confirmation remains pending.
 Publication remains deferred under Q8/Q9. See
 `docs/data/CLUSTERS_RELEASE.md`.
 

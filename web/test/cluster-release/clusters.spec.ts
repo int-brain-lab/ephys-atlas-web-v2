@@ -3,7 +3,7 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 const releaseRoot = path.resolve(
-  '../data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-value-scale-v1',
+  '../data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-firing-defaults-v1',
 );
 const releaseId = path.basename(releaseRoot);
 
@@ -77,20 +77,25 @@ test('exposes approved units, explanations, and conservative scale defaults', as
   await page.goto('/?v=4&feature=firing_rate');
   const distribution = page.locator('.distribution-chart');
   const compactDistribution = page.locator('.color-legend__bar');
-  await expect(distribution).toHaveAttribute('data-axis-scale', 'linear');
-  await expect(compactDistribution).toHaveAttribute('data-axis-scale', 'linear');
-  await expect(page.getByRole('button', { name: 'Linear', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('button', { name: 'Log', exact: true })).toBeEnabled();
-  await page.getByRole('button', { name: 'Log', exact: true }).click();
   await expect(distribution).toHaveAttribute('data-axis-scale', 'log');
   await expect(compactDistribution).toHaveAttribute('data-axis-scale', 'log');
-  await expect.poll(() => new URL(page.url()).searchParams.get('scale')).toBe('log');
+  await expect(page.getByRole('button', { name: 'Log', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '3.73');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '17.8');
   await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.locator('select[aria-label="Value scale"]')).toHaveValue('log');
-  await page.locator('select[aria-label="Value scale"]').selectOption('linear');
+  await expect(page.locator('select[aria-label="Value scale"] option:checked')).toHaveText('Auto (Logarithmic)');
+  await expect(page.locator('select[aria-label="Color range mode"] option:checked')).toHaveText('Auto (release default)');
+  await expect(page.locator('.color-legend__minimum')).toHaveText('3.73');
+  await expect(page.locator('.color-legend__maximum')).toHaveText('17.8');
+  await page.getByRole('button', { name: 'Close Visualization settings' }).click();
+  await page.getByRole('button', { name: 'Linear', exact: true }).click();
   await expect(distribution).toHaveAttribute('data-axis-scale', 'linear');
   await expect(compactDistribution).toHaveAttribute('data-axis-scale', 'linear');
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(page.locator('select[aria-label="Value scale"]')).toHaveValue('linear');
+  await page.locator('select[aria-label="Value scale"]').selectOption('auto');
+  await expect(distribution).toHaveAttribute('data-axis-scale', 'log');
+  await expect(compactDistribution).toHaveAttribute('data-axis-scale', 'log');
   await expect(page.locator('.color-legend__unit')).toHaveText('Hz');
 
   await page.goto('/?v=4&feature=noise_cutoff');
