@@ -343,8 +343,9 @@ def test_offline_ui_has_stable_semantic_controls_and_valid_javascript() -> None:
     assert {
         "guided-review",
         "review-outcome",
-        "answer-yes",
-        "answer-no",
+        "answer-a",
+        "answer-same",
+        "answer-b",
         "reset-view",
         "download-review",
     } <= parser.ids

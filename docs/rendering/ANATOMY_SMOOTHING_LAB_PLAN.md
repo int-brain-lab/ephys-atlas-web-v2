@@ -7,7 +7,7 @@ Implementation status: Slices 1 through 3 are complete. The pure experiment core
 deterministic self-contained report builder, synthetic offline report, pinned
 real-source validation, deterministic stress selection, and narrow exact-v2
 regeneration check are implemented. The interactive offline UI now defaults to
-a guided A/B review with one binary visual question at a time, synchronized
+a guided A/B review with one three-option visual question at a time, synchronized
 wheel zoom and drag pan, representative and stress rounds, a conservative
 recorded recommendation rule, and a downloadable human-review record. The
 complete selectors, presentation controls, status/failure evidence, sortable
@@ -286,11 +286,12 @@ a release artifact.
 Default to a guided review that presents exact geometry as option A and the
 7.5 um GEOS coverage candidate with a fixed outer boundary as option B. Keep
 both panels visually neutral and alternate their physical left/right placement
-to reduce position bias. Ask only whether B is clearly visually better; `No`
-also covers no meaningful difference. First ask one representative question
-per projection. Continue to every remaining default stress sample only after at
-least two representative `Yes` answers. Recommend investigating a safer method
-only after at least 75% `Yes` overall and a strict `Yes` majority in every
+to reduce position bias. Ask one question with three distinct judgements: A is
+clearly better, there is no meaningful difference, or B is clearly better.
+First ask one representative question per projection. Continue to every
+remaining default stress sample only after B is clearly better in at least two
+representative views. Recommend investigating a safer method only after B is
+clearly better in at least 75% overall and a strict majority in every
 projection; otherwise recommend retaining exact geometry. This is a review-lane
 recommendation, not an automatic geometry gate or production promotion. The B
 candidate remains visibly marked diagnostic when its quantitative gates fail.
