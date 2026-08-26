@@ -4,6 +4,7 @@ import { maxRegionalSliceIndex } from './core/slice-calibration.js';
 import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
 import { HttpDatasetSource } from './data/http-source.js';
 import { LocalDatasetSource } from './data/local-source.js';
+import { selectRegionalHistogram } from './data/regional-data.js';
 import { DatasetRepository } from './data/repository.js';
 import { DEFAULT_APP_STATE, DEFAULT_VIEW_STATE } from './domain/defaults.js';
 import { resolveColoringState } from './domain/color-scale.js';
@@ -94,6 +95,7 @@ export class AtlasApp {
     this.regionalPanel = new RegionalPanelController(root, {
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
       setRegionOrder: (order) => this.store.dispatch({ type: 'regions/order', order }),
+      setHistogramAxisScale: (scale) => this.store.dispatch({ type: 'histogram/axis-scale', scale }),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       hoverRegion: (regionId) => {
         this.shell.hideRegionTooltip();
@@ -391,10 +393,14 @@ export class AtlasApp {
     if (!manifest || feature?.representation !== 'regional' || state.selection.length === 0) return;
     const descriptor = manifest.features.find((item) => item.id === feature.featureId);
     const regions = this.atlasRegions?.mappings[state.parcellation] ?? featureRegions;
+    const selectedHistogram = selectRegionalHistogram(feature, state.histogramAxisScale);
+    const exportFeature = selectedHistogram.histogram
+      ? { ...feature, histogram: selectedHistogram.histogram }
+      : feature;
     const comparison = buildSelectedComparisonExport({
       datasetId: state.dataset.datasetId,
       releaseId: state.dataset.releaseId ?? manifest.release.releaseId,
-      feature,
+      feature: exportFeature,
       ...(descriptor ? { descriptor } : {}),
       regions,
       selectedRegionIds: state.selection,

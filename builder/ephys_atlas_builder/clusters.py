@@ -29,6 +29,7 @@ class ClusterBuildConfig:
     release_id: str
     created_at: str
     project: str
+    source_release_id: str | None = None
     population: str = "all"
     parcellations: tuple[str, ...] = DEFAULT_PARCELLATIONS
     features: tuple[str, ...] | None = None
@@ -232,7 +233,7 @@ def apply_cluster_catalog_selection(
     config: ClusterBuildConfig, selection: ClusterCatalogSelection
 ) -> ClusterBuildConfig:
     """Bind a build to the exact source and catalog approved by the owner."""
-    if config.release_id != selection.source_release_id:
+    if config.source_release_id is not None and config.source_release_id != selection.source_release_id:
         raise ValueError(
             "cluster catalog selection source release does not match the build"
         )
@@ -254,6 +255,7 @@ def apply_cluster_catalog_selection(
         )
     return replace(
         config,
+        source_release_id=selection.source_release_id,
         features=feature_ids,
         log_color_features=selected_logs,
         catalog_selection=selection.path,
@@ -316,6 +318,12 @@ def build_clusters_release_from_arrays(
     for feature_id in sorted(feature_values):
         values = np.asarray(feature_values[feature_id], dtype=np.float64)
         edges = histogram_edges(values, config.histogram_bins)
+        log_histogram = feature_id in config.log_color_features
+        alternate_histogram_edges = (
+            {"log": histogram_edges(values, config.histogram_bins, "log")}
+            if log_histogram
+            else None
+        )
         feature_root = release_dir / "features" / feature_id
         regional = [
             write_feature_parcellation(
@@ -325,6 +333,8 @@ def build_clusters_release_from_arrays(
                 group_rows[parcellation],
                 edges,
                 population_description,
+                alternate_histogram_edges=alternate_histogram_edges,
+                default_histogram_axis_scale="log" if log_histogram else "linear",
             )
             for parcellation in config.parcellations
         ]
@@ -416,7 +426,8 @@ def build_clusters_release_from_arrays(
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 **({"commit": config.builder_commit} if config.builder_commit else {}),
                 "command": (
-                    f"ephys-atlas-data build-clusters {config.release_id} "
+                    f"ephys-atlas-data build-clusters {config.source_release_id or config.release_id} "
+                    f"--release-id {config.release_id} "
                     f"--project {config.project} --population all "
                     "--catalog-selection catalog-selection.json"
                 ),
@@ -428,6 +439,10 @@ def build_clusters_release_from_arrays(
                 "parcellations": list(config.parcellations),
                 "features": sorted(feature_values),
                 "log_color_features": sorted(config.log_color_features),
+                "histogram_axis_scales": {
+                    "linear": "available for every feature",
+                    "log": "available only for audited strictly-positive log-default features",
+                },
                 **(
                     {"catalog_selection_sha256": sha256_file(config.catalog_selection)}
                     if config.catalog_selection is not None
@@ -585,9 +600,9 @@ def build_clusters_from_snapshot(
         raise RuntimeError(
             f"source snapshot is not {DATASET_ID}: {source.get('dataset_id')}"
         )
-    if str(source.get("resolved_release")) != config.release_id:
+    if str(source.get("resolved_release")) != config.source_release_id:
         raise RuntimeError(
-            f"source release {source.get('resolved_release')} does not match requested release {config.release_id}"
+            f"source release {source.get('resolved_release')} does not match requested source release {config.source_release_id}"
         )
     if source.get("project") != config.project:
         raise RuntimeError(
@@ -609,7 +624,7 @@ def build_clusters_from_snapshot(
         {
             "role": "canonical-data",
             "description": "Content-addressed ephysatlas all-cluster snapshot",
-            "release": config.release_id,
+            "release": config.source_release_id,
             **({"uri": canonical["uri"]} if canonical.get("uri") else {}),
         },
         {

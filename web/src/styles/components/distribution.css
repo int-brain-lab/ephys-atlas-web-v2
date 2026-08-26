@@ -26,6 +26,7 @@
   color: var(--color-text-muted);
   font-size: .58rem;
   line-height: 1.2;
+  align-items: center;
 }
 
 .distribution-chart__meta span {
@@ -33,6 +34,35 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.distribution-chart__scale-control {
+  flex: 0 0 auto;
+  display: inline-flex;
+  padding: 1px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: .28rem;
+  background: var(--color-surface);
+}
+
+.distribution-chart__scale-button {
+  border: 0;
+  border-radius: .2rem;
+  padding: .13rem .38rem;
+  color: var(--color-text-muted);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.distribution-chart__scale-button[aria-pressed='true'] {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-accent) 24%, transparent);
+}
+
+.distribution-chart__scale-button:disabled {
+  opacity: .38;
+  cursor: not-allowed;
 }
 
 .distribution-chart__plot {

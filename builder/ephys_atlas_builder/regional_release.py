@@ -42,13 +42,27 @@ def fold_region_ids_left(region_ids: np.ndarray) -> np.ndarray:
     return folded
 
 
-def histogram_edges(values: np.ndarray, bins: int) -> np.ndarray:
+def histogram_edges(
+    values: np.ndarray, bins: int, axis_scale: str = "linear"
+) -> np.ndarray:
     finite = np.asarray(values, dtype=np.float64)
     finite = finite[np.isfinite(finite)]
+    if axis_scale not in {"linear", "log"}:
+        raise ValueError(f"unsupported histogram axis scale: {axis_scale}")
     if finite.size == 0:
+        if axis_scale == "log":
+            raise ValueError("log histogram requires finite strictly-positive values")
         return np.linspace(0.0, 1.0, bins + 1, dtype=np.float64)
     lo = float(finite.min())
     hi = float(finite.max())
+    if axis_scale == "log":
+        if not lo > 0:
+            raise ValueError("log histogram requires all finite values to be positive")
+        if not hi > lo:
+            pad = max(abs(lo) * 1e-9, 1e-12)
+            lo = max(np.nextafter(0.0, 1.0), lo - pad)
+            hi += pad
+        return np.geomspace(lo, hi, bins + 1, dtype=np.float64)
     if not hi > lo:
         pad = max(abs(lo) * 1e-9, 1e-12)
         lo -= pad
@@ -131,6 +145,8 @@ def write_feature_parcellation(
     edges: np.ndarray,
     population_description: str,
     numeric_transform: Callable[[float], float] | None = None,
+    alternate_histogram_edges: Mapping[str, np.ndarray] | None = None,
+    default_histogram_axis_scale: str = "linear",
 ) -> dict:
     grouped_values = [values[rows] for rows in groups]
     matrix = summary_matrix(grouped_values)
@@ -159,6 +175,9 @@ def write_feature_parcellation(
     summary_meta = write_array(
         feature_root / f"{parcellation}.summary.f64", matrix, "float64"
     )
+    alternate_histogram_edges = alternate_histogram_edges or {}
+    if default_histogram_axis_scale not in {"linear", *alternate_histogram_edges}:
+        raise ValueError("default histogram axis scale is not available")
     regional_histogram = np.stack([histogram(group, edges) for group in grouped_values])
     histogram_meta = write_array(
         feature_root / f"{parcellation}.hist.u32", regional_histogram, "uint32"
@@ -174,6 +193,25 @@ def write_feature_parcellation(
             )
             for key, value in global_statistics.items()
         }
+    variants = {}
+    for axis_scale, variant_edges in sorted(alternate_histogram_edges.items()):
+        if axis_scale != "log":
+            raise ValueError(f"unsupported alternate histogram axis scale: {axis_scale}")
+        regional_variant = np.stack(
+            [histogram(group, variant_edges) for group in grouped_values]
+        )
+        variant_meta = write_array(
+            feature_root / f"{parcellation}.hist.{axis_scale}.u32",
+            regional_variant,
+            "uint32",
+        )
+        variants[axis_scale] = {
+            "edges": variant_edges.tolist(),
+            "global_counts": histogram(values, variant_edges).astype(int).tolist(),
+            "regional_counts": variant_meta,
+            "bin_rule": "left-closed-right-open-last-closed",
+        }
+
     stats = {
         "schema_version": "1.0",
         "format": "ephys-atlas-regional-statistics-v1",
@@ -181,10 +219,13 @@ def write_feature_parcellation(
         "global": global_statistics,
         "regional_summary": {"fields": SUMMARY_FIELDS, "values": summary_meta},
         "histogram": {
+            "axis_scale": "linear",
+            "default_axis_scale": default_histogram_axis_scale,
             "edges": edges.tolist(),
             "global_counts": histogram(values, edges).astype(int).tolist(),
             "regional_counts": histogram_meta,
             "bin_rule": "left-closed-right-open-last-closed",
+            **({"variants": variants} if variants else {}),
         },
     }
     statistics_path = feature_root / f"{parcellation}.statistics.json"

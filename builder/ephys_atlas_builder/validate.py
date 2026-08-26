@@ -170,12 +170,14 @@ def _check_statistics(
         )
     histogram = statistics.get("histogram")
     if histogram:
-        counts = histogram["regional_counts"]
-        _check_binary(path.parent, counts)
-        if counts["shape"] != [region_count, len(histogram["edges"]) - 1]:
-            raise ValidationError(
-                f"regional histogram shape does not match parcellation: {path}"
-            )
+        variants = [("linear", histogram), *histogram.get("variants", {}).items()]
+        for axis_scale, variant in variants:
+            counts = variant["regional_counts"]
+            _check_binary(path.parent, counts)
+            if counts["shape"] != [region_count, len(variant["edges"]) - 1]:
+                raise ValidationError(
+                    f"regional {axis_scale} histogram shape does not match parcellation: {path}"
+                )
     return statistics
 
 

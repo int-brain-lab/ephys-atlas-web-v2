@@ -369,6 +369,14 @@ color interval with boundary guides, a subtle selected-range tint, and dimmed
 out-of-range tails; colorbar dragging and reset update this read-only analytical
 view immediately.
 
+Schema v1 now permits an exact precomputed log histogram beside the mandatory
+linear histogram. The viewer resolves the release-preferred axis, exposes an
+instant Linear/Log control, disables unavailable log data, positions range and
+hover markers in the selected coordinate system, persists explicit choices as
+`histScale` independently of color scale, and identifies the selected binning
+in comparison exports. D046 requires a new immutable cluster candidate before
+these bytes replace the earlier validated linear-only candidate.
+
 The header Help action opens one scientific-workflow guide with a responsive,
 faithful map of the actual viewer layout. Five concise expandable sections
 cover the top-bar scientific context, region search/ranking/selection, linked

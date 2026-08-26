@@ -8,6 +8,12 @@ content-addressed `ibl_neuropixel_brainwide_01` snapshot and validated on
 fixture. The generated directory remains ignored and has not been published or
 added to a public catalog.
 
+D046 retains this candidate as immutable evidence but supersedes its
+linear-only histogram presentation. A distinct output release is being built
+from the same source snapshot with exact linear/logarithmic histogram variants;
+the identity and validation evidence below continue to describe the earlier
+candidate until that replacement completes review.
+
 ## Immutable identity
 
 - release ID: `sha256-9b5e55215b306f26`

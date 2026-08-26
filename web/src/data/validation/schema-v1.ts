@@ -204,6 +204,16 @@ function statisticsSemantics(document: JsonObject): void {
     const counts = integers(histogram.global_counts, 'regional histogram counts');
     increasing(edges, 'regional histogram edges');
     if (counts.length !== edges.length - 1 || counts.reduce((sum, count) => sum + count, 0) !== Number(object(document.global, 'global statistics').count)) fail('regional histogram counts are invalid');
+    const variants = histogram.variants === undefined ? {} : object(histogram.variants, 'regional histogram variants');
+    if (histogram.default_axis_scale === 'log' && variants.log === undefined) fail('regional default log histogram is unavailable');
+    if (variants.log !== undefined) {
+      const log = object(variants.log, 'regional log histogram');
+      const logEdges = array(log.edges, 'regional log histogram edges') as number[];
+      const logCounts = integers(log.global_counts, 'regional log histogram counts');
+      increasing(logEdges, 'regional log histogram edges');
+      if (logEdges.some((edge) => edge <= 0)) fail('regional log histogram edges must be positive');
+      if (logCounts.length !== logEdges.length - 1 || logCounts.reduce((sum, count) => sum + count, 0) !== Number(object(document.global, 'global statistics').count)) fail('regional log histogram counts are invalid');
+    }
   }
 }
 

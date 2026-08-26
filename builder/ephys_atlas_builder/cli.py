@@ -46,6 +46,10 @@ def main(argv: list[str] | None = None) -> int:
         "release", help="immutable content-derived release or pulled latest alias"
     )
     p.add_argument(
+        "--release-id",
+        help="output release identifier; defaults to the resolved source release",
+    )
+    p.add_argument(
         "--project", required=True, help="exact source project/cohort identifier"
     )
     p.add_argument("--population", required=True, choices=("all",))
@@ -302,9 +306,11 @@ def main(argv: list[str] | None = None) -> int:
                 args.source_root, CLUSTERS_DATASET_ID, args.release
             )
             source_snapshot = args.source_root / CLUSTERS_DATASET_ID / resolved
-            release_dir = args.release_root / CLUSTERS_DATASET_ID / resolved
+            output_release = args.release_id or resolved
+            release_dir = args.release_root / CLUSTERS_DATASET_ID / output_release
             config = ClusterBuildConfig(
-                release_id=resolved,
+                release_id=output_release,
+                source_release_id=resolved,
                 created_at=args.created_at,
                 project=args.project,
                 population=args.population,

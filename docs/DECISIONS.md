@@ -727,3 +727,24 @@ evidence and an explicit reopened decision. The machine-readable answers and
 concise evidence are recorded in
 `docs/rendering/ANATOMY_SMOOTHING_SELECTION.json` and
 `docs/rendering/ANATOMY_SMOOTHING_REVIEW.md`.
+
+## D046 — Offer exact linear/logarithmic histogram switching
+
+For regional observation distributions, retain the complete linear histogram
+and permit an additional complete logarithmic variant with its own edges,
+global counts, and regional typed-binary count arrays. Never implement the
+toggle by stretching counts already accumulated into another binning. A log
+variant is valid only when all finite source observations are strictly
+positive; otherwise the browser disables Log with an explanation.
+
+The viewer defaults to the release-declared preferred axis, exposes Linear and
+Log as immediate presentation choices, persists an explicit choice separately
+from color scaling in URL v4, and records the selected axis in comparison CSVs.
+This is presentation and descriptive binning only: source values, regional
+summaries, statistics, coloring, and underlying-value downloads do not change.
+
+For the D044 cluster catalog, generate both variants for the audited positive
+heavy-tailed features and prefer Log. Other cluster features remain linear-only.
+Regenerate under a new immutable output release ID while retaining the exact
+content-addressed source snapshot identity; never mutate the validated earlier
+candidate.

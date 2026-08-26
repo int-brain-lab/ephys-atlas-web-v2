@@ -104,6 +104,8 @@
         }
       },
       "histogram": {
+        "axis_scale": "linear",
+        "default_axis_scale": "log",
         "edges": [0, 2, 5],
         "global_counts": [1, 3],
         "regional_counts": {
@@ -120,7 +122,28 @@
           "order": "C",
           "endianness": "little"
         },
-        "bin_rule": "left-closed-right-open-last-closed"
+        "bin_rule": "left-closed-right-open-last-closed",
+        "variants": {
+          "log": {
+            "edges": [1, 2, 5],
+            "global_counts": [1, 3],
+            "regional_counts": {
+              "format": "raw-binary-array-v1",
+              "resource": {
+                "path": "data/hist-log.bin",
+                "media_type": "application/octet-stream",
+                "bytes": 8,
+                "sha256": "4545454545454545454545454545454545454545454545454545454545454545",
+                "codec": {"name": "none", "decoded_bytes": 8}
+              },
+              "dtype": "uint32",
+              "shape": [1, 2],
+              "order": "C",
+              "endianness": "little"
+            },
+            "bin_rule": "left-closed-right-open-last-closed"
+          }
+        }
       }
     },
     "volumeSummary": {
@@ -324,6 +347,8 @@
     {"name": "binary decoded length mismatch", "schema": "regional.schema.json", "valid": false, "document": "regional", "set": {"/parcellations/0/values/resource/codec/decoded_bytes": 8}},
     {"name": "regional statistics valid", "schema": "statistics.schema.json", "valid": true, "document": "statistics"},
     {"name": "regional histogram count mismatch", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/histogram/global_counts/1": 2}},
+    {"name": "regional log histogram must remain positive", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/histogram/variants/log/edges/0": 0}},
+    {"name": "regional log histogram count mismatch", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/histogram/variants/log/global_counts/1": 2}},
     {"name": "volume summary valid", "schema": "volume-summary.schema.json", "valid": true, "document": "volumeSummary"},
     {"name": "volume summary classifications not exhaustive", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/missing_voxel_count": 3}},
     {"name": "volume summary total differs from grid shape", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/grid_shape/2": 5}},

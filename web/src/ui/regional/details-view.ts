@@ -1,5 +1,5 @@
 import type { RegionMetadata, RegionalFeaturePayload } from '../../data/contracts.js';
-import type { ColorRange, StatisticId } from '../../domain/types.js';
+import type { ColorRange, HistogramAxisScale, HistogramAxisScaleSelection, StatisticId } from '../../domain/types.js';
 import { html, message } from './dom.js';
 import {
   buildRegionalValueMap,
@@ -23,10 +23,20 @@ function svgElement<K extends keyof SVGElementTagNameMap>(name: K): SVGElementTa
   return document.createElementNS(SVG_NS, name);
 }
 
-function histogramPosition(value: number, edges: readonly number[]): number | null {
+function histogramPosition(
+  value: number,
+  edges: readonly number[],
+  axisScale: HistogramAxisScale,
+): number | null {
   const firstEdge = edges[0];
   const lastEdge = edges.at(-1);
   if (firstEdge === undefined || lastEdge === undefined || lastEdge <= firstEdge) return null;
+  if (axisScale === 'log') {
+    if (value <= 0 || firstEdge <= 0) return null;
+    return Math.max(0, Math.min(CHART_WIDTH, (
+      (Math.log(value) - Math.log(firstEdge)) / (Math.log(lastEdge) - Math.log(firstEdge))
+    ) * CHART_WIDTH));
+  }
   return Math.max(0, Math.min(CHART_WIDTH, ((value - firstEdge) / (lastEdge - firstEdge)) * CHART_WIDTH));
 }
 
@@ -120,6 +130,9 @@ export function renderDistribution(
   statistic: StatisticId,
   unit: string | null,
   fixture: boolean,
+  axisScale: HistogramAxisScale,
+  logAvailable: boolean,
+  axisSelection: HistogramAxisScaleSelection,
 ): void {
   const histogram = feature.histogram;
   if (!histogram || histogram.globalCounts.length === 0) {
@@ -137,12 +150,30 @@ export function renderDistribution(
   const regionById = new Map(regions.map((region) => [region.id, region]));
   const chart = html('div', 'distribution-chart');
   chart.dataset.fixture = String(fixture);
+  chart.dataset.axisScale = axisScale;
   const meta = html('div', 'distribution-chart__meta');
   const label = html('span');
   label.textContent = `Observation distribution${unit ? ` · ${unit}` : ''}`;
   const population = html('span');
   population.textContent = feature.population ?? `${regions.length} regions`;
-  meta.append(label, population);
+  const scaleControl = html('div', 'distribution-chart__scale-control');
+  scaleControl.setAttribute('role', 'group');
+  scaleControl.setAttribute('aria-label', 'Histogram x-axis scale');
+  for (const [scale, text] of [['linear', 'Linear'], ['log', 'Log']] as const) {
+    const button = html('button', 'distribution-chart__scale-button');
+    button.type = 'button';
+    button.dataset.histogramAxisScale = scale;
+    button.textContent = text;
+    button.setAttribute('aria-pressed', String(axisScale === scale));
+    if (scale === 'log' && !logAvailable) {
+      button.disabled = true;
+      button.title = 'Logarithmic x-axis is unavailable because this release has no strictly-positive log histogram.';
+    } else if (axisSelection === 'auto' && axisScale === scale) {
+      button.title = `${text} is the release-recommended default for this feature.`;
+    }
+    scaleControl.append(button);
+  }
+  meta.append(label, population, scaleControl);
   const plot = html('div', 'distribution-chart__plot');
   const svg = svgElement('svg');
   svg.classList.add('distribution-chart__svg');
@@ -203,7 +234,7 @@ export function renderDistribution(
     const numericMarkerValue = markerValue ?? Number.NaN;
     const x = !Number.isFinite(numericMarkerValue)
       ? null
-      : histogramPosition(numericMarkerValue, histogram.edges);
+      : histogramPosition(numericMarkerValue, histogram.edges, axisScale);
     if (x !== null) {
       const marker = svgElement('line');
       marker.classList.add('distribution-chart__marker');
@@ -295,8 +326,8 @@ export function updateDistributionColorRange(
     return;
   }
 
-  const minimum = histogramPosition(range[0], feature.histogram.edges);
-  const maximum = histogramPosition(range[1], feature.histogram.edges);
+  const minimum = histogramPosition(range[0], feature.histogram.edges, feature.histogram.axisScale);
+  const maximum = histogramPosition(range[1], feature.histogram.edges, feature.histogram.axisScale);
   if (minimum === null || maximum === null) {
     layer.dataset.visible = 'false';
     return;
@@ -352,7 +383,7 @@ export function updateDistributionHover(
   const numericValue = value ?? Number.NaN;
   const x = !Number.isFinite(numericValue)
     ? null
-    : histogramPosition(numericValue, feature.histogram.edges);
+    : histogramPosition(numericValue, feature.histogram.edges, feature.histogram.axisScale);
   if (x === null) {
     hide();
     return;

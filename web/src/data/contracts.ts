@@ -292,6 +292,7 @@ export interface GlobalStatistics {
 }
 
 export interface RegionalHistogram {
+  axisScale: 'linear' | 'log';
   edges: readonly number[];
   globalCounts: readonly number[];
   regionalCounts?: readonly (readonly number[])[];
@@ -310,6 +311,8 @@ export interface RegionalFeaturePayload {
   population?: string;
   global?: GlobalStatistics;
   histogram?: RegionalHistogram;
+  histogramVariants?: Partial<Record<'log', RegionalHistogram>>;
+  histogramDefaultAxisScale?: 'linear' | 'log';
 }
 
 export interface VolumeFeaturePayload {

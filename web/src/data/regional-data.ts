@@ -2,6 +2,7 @@ import type {
   BinaryArrayDescriptor,
   GlobalStatistics,
   RegionMetadata,
+  RegionalFeaturePayload,
   RegionalHistogram,
 } from './contracts.js';
 import { parseBinaryArray } from './validate.js';
@@ -76,10 +77,50 @@ export interface RegionalStatisticsResource {
   population?: string;
   global?: GlobalStatistics;
   histogram?: {
+    axisScale: 'linear';
+    defaultAxisScale: 'linear' | 'log';
     edges: readonly number[];
     globalCounts: readonly number[];
     regionalCounts?: BinaryArrayDescriptor;
     binRule?: string;
+    variants: Partial<Record<'log', {
+      axisScale: 'log';
+      edges: readonly number[];
+      globalCounts: readonly number[];
+      regionalCounts: BinaryArrayDescriptor;
+      binRule?: string;
+    }>>;
+  };
+}
+
+function parseHistogramVariant(
+  value: unknown,
+  path: string,
+  axisScale: 'linear' | 'log',
+): {
+  axisScale: 'linear' | 'log';
+  edges: readonly number[];
+  globalCounts: readonly number[];
+  regionalCounts?: BinaryArrayDescriptor;
+  binRule?: string;
+} {
+  const histogram = object(value, path);
+  const edges = finiteNumberArray(histogram.edges, `${path}.edges`);
+  const globalCounts = finiteNumberArray(histogram.global_counts, `${path}.global_counts`);
+  if (edges.length !== globalCounts.length + 1) {
+    throw new Error(`${path} edges must be one longer than global counts`);
+  }
+  if (axisScale === 'log' && edges.some((edge) => edge <= 0)) {
+    throw new Error(`${path} log edges must be strictly positive`);
+  }
+  return {
+    axisScale,
+    edges,
+    globalCounts,
+    ...(histogram.regional_counts !== undefined
+      ? { regionalCounts: parseBinaryArray(histogram.regional_counts, `${path}.regional_counts`) }
+      : {}),
+    ...(typeof histogram.bin_rule === 'string' ? { binRule: histogram.bin_rule } : {}),
   };
 }
 
@@ -133,29 +174,40 @@ export function parseRegionalStatisticsResource(value: unknown): RegionalStatist
   }
   if (root.histogram !== undefined) {
     const histogram = object(root.histogram, 'statistics.histogram');
-    const edges = finiteNumberArray(histogram.edges, 'statistics.histogram.edges');
-    const globalCounts = finiteNumberArray(histogram.global_counts, 'statistics.histogram.global_counts');
-    if (edges.length !== globalCounts.length + 1) {
-      throw new Error('histogram edges must be one longer than global counts');
+    const primary = parseHistogramVariant(histogram, 'statistics.histogram', 'linear');
+    const variantsRaw = histogram.variants === undefined
+      ? {}
+      : object(histogram.variants, 'statistics.histogram.variants');
+    const log = variantsRaw.log === undefined
+      ? undefined
+      : parseHistogramVariant(variantsRaw.log, 'statistics.histogram.variants.log', 'log');
+    const defaultAxisScale = histogram.default_axis_scale === 'log' ? 'log' : 'linear';
+    if (defaultAxisScale === 'log' && !log) {
+      throw new Error('statistics.histogram default log axis is unavailable');
     }
     parsed.histogram = {
-      edges,
-      globalCounts,
-      ...(histogram.regional_counts !== undefined
-        ? { regionalCounts: parseBinaryArray(histogram.regional_counts, 'statistics.histogram.regional_counts') }
-        : {}),
-      ...(typeof histogram.bin_rule === 'string' ? { binRule: histogram.bin_rule } : {}),
+      ...primary,
+      axisScale: 'linear',
+      defaultAxisScale,
+      variants: log?.regionalCounts ? { log: { ...log, axisScale: 'log', regionalCounts: log.regionalCounts } } : {},
     };
   }
   return parsed;
 }
 
 export function materializeRegionalHistogram(
-  resource: NonNullable<RegionalStatisticsResource['histogram']>,
+  resource: {
+    axisScale: 'linear' | 'log';
+    edges: readonly number[];
+    globalCounts: readonly number[];
+    regionalCounts?: BinaryArrayDescriptor;
+    binRule?: string;
+  },
   flatCounts: readonly number[] | null,
   regionCount: number,
 ): RegionalHistogram {
   const histogram: RegionalHistogram = {
+    axisScale: resource.axisScale,
     edges: resource.edges,
     globalCounts: resource.globalCounts,
     ...(resource.binRule ? { binRule: resource.binRule } : {}),
@@ -174,4 +226,16 @@ export function materializeRegionalHistogram(
     (_, row) => flatCounts.slice(row * binCount, (row + 1) * binCount),
   );
   return histogram;
+}
+
+export function selectRegionalHistogram(
+  feature: RegionalFeaturePayload,
+  selection: 'auto' | 'linear' | 'log',
+): { histogram: RegionalHistogram | undefined; axisScale: 'linear' | 'log'; logAvailable: boolean } {
+  const log = feature.histogramVariants?.log;
+  const preferred = selection === 'auto'
+    ? feature.histogramDefaultAxisScale ?? 'linear'
+    : selection;
+  if (preferred === 'log' && log) return { histogram: log, axisScale: 'log', logAvailable: true };
+  return { histogram: feature.histogram, axisScale: 'linear', logAvailable: Boolean(log) };
 }

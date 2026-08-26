@@ -53,6 +53,8 @@ For a schema-v1 regional feature, the viewer must:
 - use one shared selection state for region-list and SVG interactions;
 - persist selection in URL state;
 - show global descriptive statistics and a distribution/histogram;
+- expose available linear/logarithmic histogram x-axis binnings explicitly,
+  preserving the chosen presentation in the URL without changing observations;
 - compare selected-region statistics/distributions with the global population;
 - clearly identify synthetic fixtures as non-scientific.
 

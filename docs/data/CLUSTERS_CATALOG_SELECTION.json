@@ -1,7 +1,7 @@
 {
   "schema": "ibl-cluster-catalog-selection-v1",
   "scientific_owner_confirmation": true,
-  "confirmed_at": "2026-08-24",
+  "confirmed_at": "2026-08-26",
   "decision": "Publish every cluster feature declared by the pinned original Ephys Atlas project repository.",
   "source": {
     "release_id": "sha256-9b5e55215b306f26",
@@ -20,7 +20,7 @@
     "unit_source_path": "tools/ephys_units.py",
     "unit_source_sha256": "8641599d5733aaa63ddb4f0e09416be35855aa0fa910a66b229e9f2d2140504d"
   },
-  "display_policy": "Raw values, statistics, histograms, and downloads remain unchanged. Automatic robust bounds replace the legacy fixed XLIMS. Log defaults are limited to audited strictly-positive heavy-tailed quantities.",
+  "display_policy": "Raw values, statistics, regional summaries, and underlying-value downloads remain unchanged. Automatic robust bounds replace the legacy fixed XLIMS. Exact linear and logarithmic histogram binnings are both emitted for audited strictly-positive heavy-tailed quantities, with Log preferred; other features remain linear-only.",
   "features": [
     {
       "id": "amp_max",

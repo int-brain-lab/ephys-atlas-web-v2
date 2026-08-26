@@ -149,8 +149,11 @@ undocumented metrics. Replace the legacy fixed plotting limits with the v2
 viewer's automatic robust bounds. Default to logarithmic presentation only for
 the audited strictly-positive heavy-tailed amplitude, spike-count variability,
 spike-count, and firing-rate quantities; signed, zero-bearing, bounded, and
-capped quantities remain linear. Presentation never changes statistics,
-histograms, or downloads.
+capped quantities remain linear. D046 subsequently adds exact dual linear/log
+histogram binnings and a presentation toggle for those strictly-positive
+features. It changes histogram binning only: source observations, descriptive
+statistics, regional summaries, and underlying-value downloads remain
+unchanged.
 
 The machine-consumable authority is
 `docs/data/CLUSTERS_CATALOG_SELECTION.json`. It pins the project repository

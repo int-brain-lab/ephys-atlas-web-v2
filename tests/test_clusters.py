@@ -146,6 +146,34 @@ def test_cluster_recipe_emits_explicit_log_color_defaults(tmp_path):
     amplitude = json.loads((release / "features/amp_median/feature.json").read_text())
     assert firing_rate["display"] == {"scale": "log"}
     assert "display" not in amplitude
+    statistics = json.loads(
+        (release / "features/firing_rate/allen.statistics.json").read_text()
+    )
+    histogram = statistics["histogram"]
+    assert histogram["axis_scale"] == "linear"
+    assert histogram["default_axis_scale"] == "log"
+    assert set(histogram["variants"]) == {"log"}
+    np.testing.assert_allclose(
+        histogram["variants"]["log"]["edges"],
+        np.geomspace(1.0, 100.0, 51),
+    )
+    assert sum(histogram["variants"]["log"]["global_counts"]) == 4
+    assert (release / "features/firing_rate/allen.hist.log.u32").is_file()
+
+
+def test_cluster_recipe_rejects_log_histogram_with_zero_values(tmp_path):
+    features, ids, metadata = _inputs()
+    features["firing_rate"][0] = 0
+    config = replace(_config(), log_color_features=("firing_rate",))
+    with pytest.raises(ValueError, match="strictly-positive|positive"):
+        build_clusters_release_from_arrays(
+            tmp_path / "release",
+            config,
+            features,
+            ids,
+            metadata,
+            [{"role": "canonical-data", "description": "invalid log histogram"}],
+        )
 
 
 def test_cluster_recipe_rejects_implicit_qc_population():
@@ -225,6 +253,23 @@ def test_cluster_catalog_selection_fails_closed_on_mismatch(tmp_path):
     bad_path.write_text(json.dumps(document))
     with pytest.raises(ValueError, match="scientific-owner confirmation"):
         load_cluster_catalog_selection(bad_path)
+
+
+def test_cluster_output_identity_is_independent_from_pinned_source_identity():
+    selection = load_cluster_catalog_selection(
+        ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION.json"
+    )
+    config = apply_cluster_catalog_selection(
+        ClusterBuildConfig(
+            release_id="sha256-9b5e55215b306f26-hist-axis-v1",
+            source_release_id=selection.source_release_id,
+            created_at="2026-08-26T00:00:00Z",
+            project=selection.project,
+        ),
+        selection,
+    )
+    assert config.release_id == "sha256-9b5e55215b306f26-hist-axis-v1"
+    assert config.source_release_id == selection.source_release_id
 
 
 def test_approved_cluster_table_is_verified_before_decode(tmp_path):

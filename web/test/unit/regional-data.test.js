@@ -30,6 +30,8 @@ test('statistics parser retains global and histogram resources', () => {
       },
     },
     histogram: {
+      axis_scale: 'linear',
+      default_axis_scale: 'log',
       edges: [0, 1, 2],
       global_counts: [2, 4],
       regional_counts: {
@@ -37,11 +39,25 @@ test('statistics parser retains global and histogram resources', () => {
         resource: { path: 'hist.u32', media_type: 'application/octet-stream', bytes: 16, sha256: '0'.repeat(64), codec: { name: 'none', decoded_bytes: 16 } },
       },
       bin_rule: 'left-closed-right-open-last-closed',
+      variants: {
+        log: {
+          edges: [0.1, 1, 10],
+          global_counts: [3, 3],
+          regional_counts: {
+            format: 'raw-binary-array-v1', dtype: 'uint32', shape: [2, 2], order: 'C', endianness: 'little',
+            resource: { path: 'hist.log.u32', media_type: 'application/octet-stream', bytes: 16, sha256: '1'.repeat(64), codec: { name: 'none', decoded_bytes: 16 } },
+          },
+          bin_rule: 'left-closed-right-open-last-closed',
+        },
+      },
     },
   });
   assert.equal(resource.population, 'fixture observations');
   assert.equal(resource.global.count, 6);
   assert.deepEqual(resource.histogram.globalCounts, [2, 4]);
+  assert.equal(resource.histogram.defaultAxisScale, 'log');
+  assert.deepEqual(resource.histogram.variants.log.edges, [0.1, 1, 10]);
   const histogram = materializeRegionalHistogram(resource.histogram, [1, 2, 1, 2], 2);
   assert.deepEqual(histogram.regionalCounts, [[1, 2], [1, 2]]);
+  assert.equal(histogram.axisScale, 'linear');
 });

@@ -40,3 +40,10 @@ evidence gate.
 The shared valid/invalid corpus under `tests/contract-fixtures/v1/` is executed
 by both Python and TypeScript validators and covers every top-level schema plus
 the common binary/resource semantics.
+
+Regional statistics always carry the exact linear observation histogram and
+may additionally carry an exact precomputed logarithmic variant. Each variant
+owns its bin edges, global counts, and regional count array; a preferred axis
+scale may be declared only when that variant exists. Log edges are strictly
+positive. This permits instantaneous, honest browser switching without
+shipping raw observation rows or stretching counts computed in another binning.

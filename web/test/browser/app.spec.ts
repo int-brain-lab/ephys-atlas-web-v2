@@ -239,6 +239,11 @@ test('schema v1 regional fixture drives values, coloring, selection and histogra
   await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '3.25');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-total', '11');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-probability-sum', '1');
+  await expect(page.locator('.distribution-chart')).toHaveAttribute('data-axis-scale', 'linear');
+  await expect(page.getByRole('button', { name: 'Linear', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Log', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Linear', exact: true }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('histScale')).toBe('linear');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('d', / C /);
   await expect(page.locator('.distribution-chart__global')).not.toHaveAttribute('d', /[HV]/);
   await expect(page.locator('.feature-summary__item')).toHaveCount(4);
@@ -342,7 +347,7 @@ test('schema v1 regional fixture drives values, coloring, selection and histogra
   const downloadPath = await download.path();
   expect(downloadPath).not.toBeNull();
   const comparisonCsv = await readFile(downloadPath!, 'utf8');
-  expect(comparisonCsv).toContain('dataset_id,release_id,feature_id,representation,parcellation,selected_statistic,unit,population,region_id');
+  expect(comparisonCsv).toContain('dataset_id,release_id,feature_id,representation,parcellation,selected_statistic,unit,population,histogram_axis_scale,region_id');
   expect(comparisonCsv).toContain('golden_fixture,golden-v1,rms_ap,regional,allen,mean,dB rel. V');
   expect(comparisonCsv.trim().split('\n')).toHaveLength(9);
   expect(comparisonCsv).toContain(',-362,MD,Mediodorsal nucleus of thalamus (left),');

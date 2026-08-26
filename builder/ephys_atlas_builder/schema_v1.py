@@ -221,6 +221,20 @@ def _statistics_semantics(document: dict[str, Any]) -> None:
         shape = histogram["regional_counts"]["shape"]
         if len(shape) != 2 or shape[1] != bins:
             _fail("regional histogram binary shape does not match edges")
+        variants = histogram.get("variants", {})
+        default_scale = histogram.get("default_axis_scale", "linear")
+        if default_scale != "linear" and default_scale not in variants:
+            _fail("regional histogram default axis scale is unavailable")
+        for scale, variant in variants.items():
+            _increasing(variant["edges"], f"regional {scale} histogram edges")
+            variant_bins = len(variant["edges"]) - 1
+            if len(variant["global_counts"]) != variant_bins:
+                _fail(f"regional {scale} histogram counts length does not match edges")
+            if sum(variant["global_counts"]) != document["global"]["count"]:
+                _fail(f"regional {scale} histogram counts do not sum to global count")
+            variant_shape = variant["regional_counts"]["shape"]
+            if variant_shape != [shape[0], variant_bins]:
+                _fail(f"regional {scale} histogram binary shape does not match primary histogram")
 
 
 def _registered_semantics(document: dict[str, Any]) -> None:

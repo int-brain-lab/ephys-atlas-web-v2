@@ -8,7 +8,37 @@ export interface StatisticsDocument {
   histogram?: {
     edges: readonly number[];
     regionalCounts: BinaryArrayDescriptor;
+    variants: readonly {
+      axisScale: 'log';
+      edges: readonly number[];
+      regionalCounts: BinaryArrayDescriptor;
+    }[];
   };
+}
+
+function parseHistogram(
+  value: unknown,
+  path: string,
+  requirePositive: boolean,
+): { edges: readonly number[]; regionalCounts: BinaryArrayDescriptor } {
+  const histogram = object(value, path);
+  const edges = array(histogram.edges, `${path}.edges`).map((item, index) => {
+    if (typeof item !== 'number' || !Number.isFinite(item)) throw new Error(`${path}.edges[${index}] must be finite`);
+    return item;
+  });
+  if (edges.length < 2 || edges.some((edge, index) => index > 0 && edge <= edges[index - 1]!)) {
+    throw new Error(`${path}.edges must be strictly increasing`);
+  }
+  if (requirePositive && edges.some((edge) => edge <= 0)) throw new Error(`${path}.edges must be positive`);
+  const globalCounts = array(histogram.global_counts, `${path}.global_counts`);
+  if (globalCounts.length !== edges.length - 1
+    || globalCounts.some((item) => typeof item !== 'number' || !Number.isInteger(item) || item < 0)) {
+    throw new Error(`${path}.global_counts must contain one non-negative integer per bin`);
+  }
+  if (histogram.bin_rule !== 'left-closed-right-open-last-closed') {
+    throw new Error(`${path}.bin_rule is unsupported`);
+  }
+  return { edges, regionalCounts: parseBinaryArray(histogram.regional_counts, `${path}.regional_counts`) };
 }
 
 export function parseStatisticsDocument(value: unknown): StatisticsDocument {
@@ -41,24 +71,12 @@ export function parseStatisticsDocument(value: unknown): StatisticsDocument {
   };
   if (root.histogram !== undefined) {
     const histogram = object(root.histogram, 'statistics.histogram');
-    const edges = array(histogram.edges, 'statistics.histogram.edges').map((item, index) => {
-      if (typeof item !== 'number' || !Number.isFinite(item)) throw new Error(`statistics.histogram.edges[${index}] must be finite`);
-      return item;
-    });
-    if (edges.length < 2 || edges.some((edge, index) => index > 0 && edge <= edges[index - 1]!)) {
-      throw new Error('statistics.histogram.edges must be strictly increasing');
-    }
-    const globalCounts = array(histogram.global_counts, 'statistics.histogram.global_counts');
-    if (globalCounts.length !== edges.length - 1
-      || globalCounts.some((item) => typeof item !== 'number' || !Number.isInteger(item) || item < 0)) {
-      throw new Error('statistics.histogram.global_counts must contain one non-negative integer per bin');
-    }
-    if (histogram.bin_rule !== 'left-closed-right-open-last-closed') {
-      throw new Error('statistics.histogram.bin_rule is unsupported');
-    }
+    const primary = parseHistogram(histogram, 'statistics.histogram', false);
+    const variants = histogram.variants === undefined ? {} : object(histogram.variants, 'statistics.histogram.variants');
+    const log = variants.log === undefined ? undefined : parseHistogram(variants.log, 'statistics.histogram.variants.log', true);
     result.histogram = {
-      edges,
-      regionalCounts: parseBinaryArray(histogram.regional_counts, 'statistics.histogram.regional_counts'),
+      ...primary,
+      variants: log ? [{ axisScale: 'log', ...log }] : [],
     };
   }
   return result;

@@ -295,18 +295,24 @@ export async function validateLocalDatasetFiles(
         }
         addBinaryResource(resources, statisticsPath, statistics.values, `${feature.id}/${parcellationId} regional summary`);
         if (statistics.histogram) {
-          const bins = statistics.histogram.edges.length - 1;
-          if (statistics.histogram.regionalCounts.shape.length !== 2
-            || statistics.histogram.regionalCounts.shape[0] !== count
-            || statistics.histogram.regionalCounts.shape[1] !== bins) {
-            throw new Error(`${feature.id}/${parcellationId} histogram shape must be [${count}, ${bins}]`);
+          const variants = [
+            { axisScale: 'linear', edges: statistics.histogram.edges, regionalCounts: statistics.histogram.regionalCounts },
+            ...statistics.histogram.variants,
+          ];
+          for (const variant of variants) {
+            const bins = variant.edges.length - 1;
+            if (variant.regionalCounts.shape.length !== 2
+              || variant.regionalCounts.shape[0] !== count
+              || variant.regionalCounts.shape[1] !== bins) {
+              throw new Error(`${feature.id}/${parcellationId} ${variant.axisScale} histogram shape must be [${count}, ${bins}]`);
+            }
+            addBinaryResource(
+              resources,
+              statisticsPath,
+              variant.regionalCounts,
+              `${feature.id}/${parcellationId} ${variant.axisScale} regional histogram`,
+            );
           }
-          addBinaryResource(
-            resources,
-            statisticsPath,
-            statistics.histogram.regionalCounts,
-            `${feature.id}/${parcellationId} regional histogram`,
-          );
         }
       }
     }

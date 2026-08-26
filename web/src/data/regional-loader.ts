@@ -83,12 +83,20 @@ export async function loadRegionalFeatureFromResources(options: {
 
   const statsDocument = parseRegionalStatisticsResource(statisticsRaw);
   const statsLocation = reader.resolve(featureLocation, regional.statistics);
-  const [matrix, histogramFlat] = await Promise.all([
+  const logHistogram = statsDocument.histogram?.variants.log;
+  const [matrix, histogramFlat, logHistogramFlat] = await Promise.all([
     reader.readArray(reader.resolve(statsLocation, statsDocument.values.path), statsDocument.values, signal),
     statsDocument.histogram?.regionalCounts
       ? reader.readArray(
           reader.resolve(statsLocation, statsDocument.histogram.regionalCounts.path),
           statsDocument.histogram.regionalCounts,
+          signal,
+        )
+      : Promise.resolve(null),
+    logHistogram
+      ? reader.readArray(
+          reader.resolve(statsLocation, logHistogram.regionalCounts.path),
+          logHistogram.regionalCounts,
           signal,
         )
       : Promise.resolve(null),
@@ -119,6 +127,12 @@ export async function loadRegionalFeatureFromResources(options: {
     ...(statsDocument.global ? { global: statsDocument.global } : {}),
     ...(statsDocument.histogram
       ? { histogram: materializeRegionalHistogram(statsDocument.histogram, histogramFlat, regionIds.length) }
+      : {}),
+    ...(statsDocument.histogram
+      ? { histogramDefaultAxisScale: statsDocument.histogram.defaultAxisScale }
+      : {}),
+    ...(logHistogram
+      ? { histogramVariants: { log: materializeRegionalHistogram(logHistogram, logHistogramFlat, regionIds.length) } }
       : {}),
   };
 }

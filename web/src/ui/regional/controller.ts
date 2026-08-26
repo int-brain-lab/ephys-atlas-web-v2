@@ -1,5 +1,6 @@
 import type { DatasetManifest, FeaturePayload, RegionMetadata } from '../../data/contracts.js';
-import type { AppState, RegionOrder, StatisticId } from '../../domain/types.js';
+import { selectRegionalHistogram } from '../../data/regional-data.js';
+import type { AppState, HistogramAxisScaleSelection, RegionOrder, StatisticId } from '../../domain/types.js';
 import { regionalColorRange } from '../../application/scalar-colormap.js';
 import { required, message } from './dom.js';
 import {
@@ -16,6 +17,7 @@ import { RegionalTreeView } from './tree-view.js';
 export interface RegionalPanelCallbacks {
   toggleSelection(regionId: string): void;
   setRegionOrder(order: RegionOrder): void;
+  setHistogramAxisScale(scale: HistogramAxisScaleSelection): void;
   clearSelection(): void;
   hoverRegion(regionId: string | null): void;
   downloadComparison(): void;
@@ -53,6 +55,7 @@ export class RegionalPanelController {
   private lastRegions: readonly RegionMetadata[] | null = null;
   private lastStatistic: StatisticId | null = null;
   private lastRegionOrder: RegionOrder | null = null;
+  private lastHistogramAxisScale: HistogramAxisScaleSelection | null = null;
   private lastSelectionKey = '';
   private lastFixture = false;
   private lastAnatomyAtlas: string | null = null;
@@ -64,6 +67,7 @@ export class RegionalPanelController {
     this.clearSelectionButton = required(root, '.selected-regions__clear');
     this.summary = required(root, '.secondary-view__summary');
     this.distribution = required(root, '.distribution-band__surface');
+    this.distribution.addEventListener('click', this.onDistributionClick);
     this.analysis = required(root, '.analysis-panel__surface');
     this.analysisPanel = required(root, '.analysis-panel');
     this.analysisToggle = required(root, '.analysis-panel__toggle');
@@ -90,28 +94,34 @@ export class RegionalPanelController {
     const regionOrder = model.state.view.regionOrder;
     const fixture = model.manifest?.dataset.fixture === true;
     const selectionKey = model.state.view.selection.join(',');
+    const histogramSelection = model.state.view.histogramAxisScale;
+    const selectedHistogram = feature ? selectRegionalHistogram(feature, histogramSelection) : null;
+    const displayFeature = feature && selectedHistogram?.histogram
+      ? { ...feature, histogram: selectedHistogram.histogram }
+      : feature;
     const range = feature ? regionalColorRange(feature, model.state.view.coloring) : null;
     if (
       feature === this.lastFeature
       && model.regions === this.lastRegions
       && statistic === this.lastStatistic
       && regionOrder === this.lastRegionOrder
+      && histogramSelection === this.lastHistogramAxisScale
       && selectionKey === this.lastSelectionKey
       && fixture === this.lastFixture
       && model.anatomyAtlas === this.lastAnatomyAtlas
     ) {
       this.tree.updateHoveredRegion(model.hoveredRegionId);
-      if (feature) {
-        const descriptor = model.manifest?.features.find((item) => item.id === feature.featureId);
+      if (displayFeature) {
+        const descriptor = model.manifest?.features.find((item) => item.id === displayFeature.featureId);
         updateDistributionColorRange(
           this.distribution,
-          feature,
+          displayFeature,
           range,
           model.state.view.coloring.range.mode,
         );
         updateDistributionHover(
           this.distribution,
-          feature,
+          displayFeature,
           model.regions,
           model.hoveredRegionId,
           statistic,
@@ -124,6 +134,7 @@ export class RegionalPanelController {
     this.lastRegions = model.regions;
     this.lastStatistic = statistic;
     this.lastRegionOrder = regionOrder;
+    this.lastHistogramAxisScale = histogramSelection;
     this.lastSelectionKey = selectionKey;
     this.lastFixture = fixture;
     this.lastAnatomyAtlas = model.anatomyAtlas;
@@ -150,24 +161,35 @@ export class RegionalPanelController {
         : `${model.state.view.parcellation.toUpperCase()} regional values`;
     this.tree.render(model.regions, values, statistic, unit, range, selected, regionOrder);
     renderSelectedRegions(this.detailsTargets(), model.regions, selected, values, statistic, unit);
-    if (feature) {
+    if (feature && displayFeature && selectedHistogram) {
       renderFeatureSummary(this.summary, feature, unit, descriptor?.description ?? '');
-      renderDistribution(this.distribution, feature, selected, model.regions, statistic, unit, fixture);
+      renderDistribution(
+        this.distribution,
+        displayFeature,
+        selected,
+        model.regions,
+        statistic,
+        unit,
+        fixture,
+        selectedHistogram.axisScale,
+        selectedHistogram.logAvailable,
+        histogramSelection,
+      );
       updateDistributionColorRange(
         this.distribution,
-        feature,
+        displayFeature,
         range,
         model.state.view.coloring.range.mode,
       );
       updateDistributionHover(
         this.distribution,
-        feature,
+        displayFeature,
         model.regions,
         model.hoveredRegionId,
         statistic,
         unit,
       );
-      renderAnalysis(this.analysis, feature, model.regions, selected, values, statistic, unit, fixture);
+      renderAnalysis(this.analysis, displayFeature, model.regions, selected, values, statistic, unit, fixture);
     } else {
       this.summary.replaceChildren();
       this.distribution.replaceChildren(message('No regional distribution loaded'));
@@ -178,6 +200,7 @@ export class RegionalPanelController {
 
   destroy(): void {
     this.tree.destroy();
+    this.distribution.removeEventListener('click', this.onDistributionClick);
     this.clearSelectionButton.removeEventListener('click', this.clearSelection);
     this.analysisToggle.removeEventListener('click', this.toggleAnalysis);
     this.analysisClose.removeEventListener('click', this.closeAnalysis);
@@ -215,6 +238,14 @@ export class RegionalPanelController {
   }
 
   private readonly clearSelection = (): void => this.callbacks.clearSelection();
+
+  private readonly onDistributionClick = (event: Event): void => {
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target?.closest<HTMLButtonElement>('[data-histogram-axis-scale]');
+    const scale = button?.dataset.histogramAxisScale;
+    if (!button || button.disabled || (scale !== 'linear' && scale !== 'log')) return;
+    this.callbacks.setHistogramAxisScale(scale);
+  };
 
   private readonly onSelectedClick = (event: Event): void => {
     const target = event.target instanceof Element ? event.target : null;
