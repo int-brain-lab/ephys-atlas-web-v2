@@ -1,5 +1,6 @@
 import type { FeaturePayload } from '../data/contracts.js';
-import type { StatisticId } from '../domain/types.js';
+import type { RegionalHistogram } from '../data/contracts.js';
+import type { ColorScale, StatisticId } from '../domain/types.js';
 
 export type NumericRange = readonly [number, number];
 
@@ -40,11 +41,12 @@ export function colorRangeDomain(
   feature: FeaturePayload,
   statistic: StatisticId,
   effectiveRange: NumericRange | null,
+  histogram?: RegionalHistogram,
 ): NumericRange | null {
   let domain: NumericRange | null = null;
   if (feature.representation === 'regional') {
     if (statistic !== 'count') {
-      const edges = feature.histogram?.edges;
+      const edges = histogram?.edges ?? feature.histogram?.edges;
       domain = edges ? validRange(edges[0], edges.at(-1)) : null;
     }
     domain ??= finiteExtent(feature.statistics[statistic] ?? feature.statistics.mean);
@@ -56,10 +58,26 @@ export function colorRangeDomain(
   return [Math.min(domain[0], effectiveRange[0]), Math.max(domain[1], effectiveRange[1])];
 }
 
-export function rangePosition(value: number, domain: NumericRange): number {
-  const span = domain[1] - domain[0];
+function transformedValue(value: number, scale: ColorScale): number {
+  return scale === 'log' ? Math.log(value) : value;
+}
+
+export function rangePosition(value: number, domain: NumericRange, scale: ColorScale = 'linear'): number {
+  if (scale === 'log' && (value <= 0 || domain[0] <= 0)) return 0;
+  const start = transformedValue(domain[0], scale);
+  const end = transformedValue(domain[1], scale);
+  const span = end - start;
   if (!(span > 0)) return 0;
-  return Math.max(0, Math.min(1, (value - domain[0]) / span));
+  return Math.max(0, Math.min(1, (transformedValue(value, scale) - start) / span));
+}
+
+export function rangeValueAtPosition(position: number, domain: NumericRange, scale: ColorScale = 'linear'): number {
+  const clamped = Math.max(0, Math.min(1, position));
+  if (scale === 'log') {
+    if (domain[0] <= 0) return domain[0];
+    return Math.exp(Math.log(domain[0]) + clamped * (Math.log(domain[1]) - Math.log(domain[0])));
+  }
+  return domain[0] + clamped * (domain[1] - domain[0]);
 }
 
 export function rangeSliderStep(domain: NumericRange): number {
@@ -72,9 +90,22 @@ export function clampRangeHandle(
   otherValue: number,
   domain: NumericRange,
   step = rangeSliderStep(domain),
+  scale: ColorScale = 'linear',
 ): number {
-  if (bound === 'min') return Math.max(domain[0], Math.min(value, otherValue - step));
-  return Math.min(domain[1], Math.max(value, otherValue + step));
+  if (scale === 'linear') {
+    if (bound === 'min') return Math.max(domain[0], Math.min(value, otherValue - step));
+    return Math.min(domain[1], Math.max(value, otherValue + step));
+  }
+  const separation = 1 / 1_000;
+  const position = rangePosition(value, domain, scale);
+  const otherPosition = rangePosition(otherValue, domain, scale);
+  return rangeValueAtPosition(
+    bound === 'min'
+      ? Math.max(0, Math.min(position, otherPosition - separation))
+      : Math.min(1, Math.max(position, otherPosition + separation)),
+    domain,
+    scale,
+  );
 }
 
 export function translateRangeWindow(range: NumericRange, delta: number, domain: NumericRange): NumericRange {
@@ -82,6 +113,24 @@ export function translateRangeWindow(range: NumericRange, delta: number, domain:
   if (width >= domain[1] - domain[0]) return [domain[0], domain[1]];
   const min = Math.max(domain[0], Math.min(range[0] + delta, domain[1] - width));
   return [min, min + width];
+}
+
+/** Translate a range in rendered coordinates, preserving additive or multiplicative width. */
+export function translateRangeWindowByPosition(
+  range: NumericRange,
+  delta: number,
+  domain: NumericRange,
+  scale: ColorScale,
+): NumericRange {
+  const low = rangePosition(range[0], domain, scale);
+  const high = rangePosition(range[1], domain, scale);
+  const width = high - low;
+  if (width >= 1) return [domain[0], domain[1]];
+  const nextLow = Math.max(0, Math.min(low + delta, 1 - width));
+  return [
+    rangeValueAtPosition(nextLow, domain, scale),
+    rangeValueAtPosition(nextLow + width, domain, scale),
+  ];
 }
 
 /** Places bound labels beside their handles while keeping them inside the track. */

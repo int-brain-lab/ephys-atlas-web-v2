@@ -53,9 +53,12 @@ The repository/scientific owner approved all four review points on 2026-08-24:
 4. accept the observed negative, heavy-tailed, capped, and binary encodings as
    the source product to publish, while describing them transparently.
 
-D044 records the decision. `CLUSTERS_CATALOG_SELECTION.json` pins the exact
-legacy repository sources, source table, catalog, units, descriptions, and
-display policy consumed by the builder. Q6 is resolved.
+D044 records the catalog decision. The historical
+`CLUSTERS_CATALOG_SELECTION.json` reproduces the first two candidates; D047's
+`CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json` preserves the same exact legacy
+sources, table, catalog, units, and descriptions while separately recording Log
+histogram capability and the reviewed Linear Firing-rate preference. Q6 is
+resolved.
 
 ## Reproduction
 

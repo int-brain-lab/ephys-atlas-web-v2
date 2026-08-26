@@ -1,13 +1,12 @@
 import { DatasetSession } from './application/dataset-session.js';
+import { resolvePresentationScale } from './application/presentation-scale.js';
 import { regionalPresentationsEqual, resolveRegionalPresentation } from './application/regional-presentation.js';
 import { maxRegionalSliceIndex } from './core/slice-calibration.js';
 import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
 import { HttpDatasetSource } from './data/http-source.js';
 import { LocalDatasetSource } from './data/local-source.js';
-import { selectRegionalHistogram } from './data/regional-data.js';
 import { DatasetRepository } from './data/repository.js';
 import { DEFAULT_APP_STATE, DEFAULT_VIEW_STATE } from './domain/defaults.js';
-import { resolveColoringState } from './domain/color-scale.js';
 import { deriveRegionalSliceIndices } from './domain/navigation.js';
 import { createAppStore, type AppStore } from './domain/store.js';
 import type { SliceAxis, ViewState } from './domain/types.js';
@@ -52,6 +51,7 @@ export class AtlasApp {
   private atlasRegions: AtlasRegionCatalog | null = null;
   private hoveredRegionId: string | null = null;
   private viewportPresentation: ProjectionPresentation | null = null;
+  private scaleReconciliationPending = false;
 
   constructor(root: HTMLElement, private readonly options: AppOptions = {}) {
     const defaultView = options.defaultView ?? DEFAULT_VIEW_STATE;
@@ -95,7 +95,7 @@ export class AtlasApp {
     this.regionalPanel = new RegionalPanelController(root, {
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
       setRegionOrder: (order) => this.store.dispatch({ type: 'regions/order', order }),
-      setHistogramAxisScale: (scale) => this.store.dispatch({ type: 'histogram/axis-scale', scale }),
+      setColorScale: (scale) => this.store.dispatch({ type: 'color/scale', scale }),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       hoverRegion: (regionId) => {
         this.shell.hideRegionTooltip();
@@ -160,7 +160,23 @@ export class AtlasApp {
     const data = this.session.snapshot();
     const anatomyRegions = this.atlasRegions?.mappings[state.view.parcellation] ?? data.regions;
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
-    const coloring = resolveColoringState(state.view.coloring, descriptor?.display?.scale);
+    const presentationScale = resolvePresentationScale(data.feature, state.view.coloring, descriptor?.display?.scale);
+    if (
+      state.view.coloring.scale === 'log'
+      && presentationScale.effectiveScale !== 'log'
+      && data.feature !== null
+      && data.feature.featureId === state.view.featureId
+      && !this.scaleReconciliationPending
+    ) {
+      this.scaleReconciliationPending = true;
+      queueMicrotask(() => {
+        this.scaleReconciliationPending = false;
+        if (this.store.getState().view.coloring.scale === 'log') {
+          this.store.dispatch({ type: 'color/scale', scale: 'linear', history: 'replace' });
+        }
+      });
+    }
+    const coloring = { ...state.view.coloring, scale: presentationScale.effectiveScale };
     const presentation: ProjectionPresentation = {
       regional: resolveRegionalPresentation({
         mapping: state.view.parcellation,
@@ -187,6 +203,7 @@ export class AtlasApp {
       feature: data.feature,
       displaySliceInventories: this.displaySliceInventories,
       regionalPresentation: this.viewportPresentation?.regional ?? presentation.regional,
+      presentationScale,
     };
     this.shell.render(model);
     this.regionalPanel.render({
@@ -196,6 +213,7 @@ export class AtlasApp {
       regions: anatomyRegions,
       anatomyAtlas: this.atlasRegions?.atlas ?? null,
       hoveredRegionId: this.hoveredRegionId,
+      presentationScale,
     });
   }
 
@@ -393,9 +411,9 @@ export class AtlasApp {
     if (!manifest || feature?.representation !== 'regional' || state.selection.length === 0) return;
     const descriptor = manifest.features.find((item) => item.id === feature.featureId);
     const regions = this.atlasRegions?.mappings[state.parcellation] ?? featureRegions;
-    const selectedHistogram = selectRegionalHistogram(feature, state.histogramAxisScale);
-    const exportFeature = selectedHistogram.histogram
-      ? { ...feature, histogram: selectedHistogram.histogram }
+    const presentationScale = resolvePresentationScale(feature, state.coloring, descriptor?.display?.scale);
+    const exportFeature = presentationScale.histogram
+      ? { ...feature, histogram: presentationScale.histogram }
       : feature;
     const comparison = buildSelectedComparisonExport({
       datasetId: state.dataset.datasetId,

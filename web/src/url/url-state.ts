@@ -142,9 +142,6 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
       explode: parseOpacity(params.get('explode3d'), defaults.scene3d.explode),
       camera: parseCameraPose(params.get('camera3d'), defaults.scene3d.camera),
     },
-    histogramAxisScale: params.get('histScale') === 'log' || params.get('histScale') === 'linear'
-      ? params.get('histScale') as 'linear' | 'log'
-      : 'auto',
     coloring: {
       mode: params.get('colors') === 'anatomy' ? 'anatomy' : 'feature',
       statistic,
@@ -184,7 +181,6 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   if (view.coloring.colormap !== defaults.coloring.colormap) params.set('cmap', view.coloring.colormap);
   if (view.coloring.range.mode === 'fixed') params.set('range', `${view.coloring.range.min},${view.coloring.range.max}`);
   if (view.coloring.scale !== 'auto') params.set('scale', view.coloring.scale);
-  if (view.histogramAxisScale !== 'auto') params.set('histScale', view.histogramAxisScale);
 
   const cursor = [view.cursor.xUm, view.cursor.yUm, view.cursor.zUm];
   const defaultCursor = [defaults.cursor.xUm, defaults.cursor.yUm, defaults.cursor.zUm];

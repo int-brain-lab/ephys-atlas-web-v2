@@ -22,7 +22,6 @@ export const DEFAULT_VIEW_STATE: ViewState = {
     anatomyOutlines: true,
   },
   scene3d: { explode: 0, camera: null },
-  histogramAxisScale: 'auto',
   coloring: {
     mode: 'feature',
     statistic: 'mean',

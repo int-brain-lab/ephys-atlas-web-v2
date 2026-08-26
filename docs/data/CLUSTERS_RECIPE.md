@@ -35,11 +35,13 @@ The build additionally requires the exact project name and Git commits for
 project/QC choice remain explicit inputs; the recipe does not guess a paper
 vintage or substitute a different cluster population.
 
-Every production snapshot build must load
-`docs/data/CLUSTERS_CATALOG_SELECTION.json`. D044 freezes the exact 14-feature
+Every new production snapshot build must load the current versioned authority,
+`docs/data/CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json`. D044 freezes the exact 14-feature
 catalog declared by the pinned original Ephys Atlas repository and its explicit
 cluster-unit mapping. The builder rejects any mismatch in project, source
-snapshot, table bytes/hash, catalog, or display defaults before Parquet decode.
+snapshot, table bytes/hash, catalog, display defaults, or exact Log-histogram
+capabilities before Parquet decode. D047 separates Log availability from the
+preferred value scale and records the owner's Linear preference for firing rate.
 Large waveform, ACG, STPC, and STLFP arrays are not silently reduced into
 regional features.
 
@@ -58,7 +60,7 @@ ephys-atlas-data pull ephys_atlas_clusters latest --project ibl_neuropixel_brain
 ephys-atlas-data build-clusters latest \
   --project ibl_neuropixel_brainwide_01 \
   --population all \
-  --catalog-selection docs/data/CLUSTERS_CATALOG_SELECTION.json \
+  --catalog-selection docs/data/CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json \
   --created-at 2026-08-20T00:00:00Z \
   --ibleatools-commit <commit> \
   --iblatlas-commit <commit> \

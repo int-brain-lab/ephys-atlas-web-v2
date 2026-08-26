@@ -15,8 +15,6 @@ export type ParcellationId = 'allen' | 'beryl' | 'cosmos';
 export type RepresentationKind = 'regional' | 'volume';
 export type ColorScale = 'linear' | 'log';
 export type ColorScaleSelection = 'auto' | ColorScale;
-export type HistogramAxisScale = 'linear' | 'log';
-export type HistogramAxisScaleSelection = 'auto' | HistogramAxisScale;
 export type ColorMode = 'feature' | 'anatomy';
 export type StatisticId = 'mean' | 'median' | 'min' | 'max' | 'count';
 export type ColorStatisticId = Exclude<StatisticId, 'count'>;
@@ -80,7 +78,6 @@ export interface ViewState {
   workspace: WorkspaceState;
   layers: VolumeLayerState;
   scene3d: Scene3DViewState;
-  histogramAxisScale: HistogramAxisScaleSelection;
   coloring: ColoringState;
 }
 

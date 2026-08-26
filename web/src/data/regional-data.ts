@@ -227,15 +227,3 @@ export function materializeRegionalHistogram(
   );
   return histogram;
 }
-
-export function selectRegionalHistogram(
-  feature: RegionalFeaturePayload,
-  selection: 'auto' | 'linear' | 'log',
-): { histogram: RegionalHistogram | undefined; axisScale: 'linear' | 'log'; logAvailable: boolean } {
-  const log = feature.histogramVariants?.log;
-  const preferred = selection === 'auto'
-    ? feature.histogramDefaultAxisScale ?? 'linear'
-    : selection;
-  if (preferred === 'log' && log) return { histogram: log, axisScale: 'log', logAvailable: true };
-  return { histogram: feature.histogram, axisScale: 'linear', logAvailable: Boolean(log) };
-}

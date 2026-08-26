@@ -34,6 +34,7 @@ class ClusterBuildConfig:
     parcellations: tuple[str, ...] = DEFAULT_PARCELLATIONS
     features: tuple[str, ...] | None = None
     log_color_features: tuple[str, ...] = ()
+    log_histogram_features: tuple[str, ...] = ()
     histogram_bins: int = 50
     paper_snapshot: bool = False
     ibleatools_commit: str | None = None
@@ -63,6 +64,8 @@ class ClusterBuildConfig:
             raise ValueError("at least one parcellation is required")
         if len(set(self.log_color_features)) != len(self.log_color_features):
             raise ValueError("log_color_features must not contain duplicates")
+        if len(set(self.log_histogram_features)) != len(self.log_histogram_features):
+            raise ValueError("log_histogram_features must not contain duplicates")
         for name, value in (
             ("ibleatools_commit", self.ibleatools_commit),
             ("iblatlas_commit", self.iblatlas_commit),
@@ -112,6 +115,7 @@ class ClusterCatalogSelection:
     legacy_unit_source_sha256: str
     features: tuple[FeatureInfo, ...]
     display: Mapping[str, dict]
+    log_histogram_features: tuple[str, ...]
 
 
 def load_cluster_catalog_selection(path: Path) -> ClusterCatalogSelection:
@@ -121,7 +125,11 @@ def load_cluster_catalog_selection(path: Path) -> ClusterCatalogSelection:
         document = json.loads(path.read_text())
     except (OSError, json.JSONDecodeError) as error:
         raise ValueError(f"cannot load cluster catalog selection {path}") from error
-    if document.get("schema") != "ibl-cluster-catalog-selection-v1":
+    selection_schema = document.get("schema")
+    if selection_schema not in {
+        "ibl-cluster-catalog-selection-v1",
+        "ibl-cluster-catalog-selection-v2",
+    }:
         raise ValueError("unsupported cluster catalog selection schema")
     if document.get("scientific_owner_confirmation") is not True:
         raise ValueError(
@@ -196,6 +204,23 @@ def load_cluster_catalog_selection(path: Path) -> ClusterCatalogSelection:
     feature_ids = [feature.source_column for feature in features]
     if len(set(feature_ids)) != len(feature_ids):
         raise ValueError("cluster catalog selection contains duplicate features")
+    raw_log_histograms = document.get("log_histogram_features")
+    if selection_schema == "ibl-cluster-catalog-selection-v2":
+        if not isinstance(raw_log_histograms, list):
+            raise ValueError("v2 cluster catalog selection must declare log histogram features")
+        if (
+            any(not isinstance(value, str) or not value for value in raw_log_histograms)
+            or len(set(raw_log_histograms)) != len(raw_log_histograms)
+            or set(raw_log_histograms) - set(feature_ids)
+        ):
+            raise ValueError("cluster catalog selection has invalid log histogram features")
+        log_histogram_features = tuple(raw_log_histograms)
+    else:
+        log_histogram_features = tuple(
+            feature_id
+            for feature_id in feature_ids
+            if display.get(feature_id, {}).get("scale") == "log"
+        )
     for name, value in (
         ("table SHA-256", table.get("sha256")),
         ("legacy feature-source SHA-256", legacy.get("feature_source_sha256")),
@@ -226,6 +251,7 @@ def load_cluster_catalog_selection(path: Path) -> ClusterCatalogSelection:
         legacy_unit_source_sha256=legacy["unit_source_sha256"],
         features=tuple(features),
         display=display,
+        log_histogram_features=log_histogram_features,
     )
 
 
@@ -249,15 +275,24 @@ def apply_cluster_catalog_selection(
         for feature_id in feature_ids
         if selection.display.get(feature_id, {}).get("scale") == "log"
     )
+    selected_log_histograms = selection.log_histogram_features
     if config.log_color_features and tuple(config.log_color_features) != selected_logs:
         raise ValueError(
             "explicit cluster log defaults do not exactly match the approved catalog"
+        )
+    if (
+        config.log_histogram_features
+        and tuple(config.log_histogram_features) != selected_log_histograms
+    ):
+        raise ValueError(
+            "explicit cluster log histogram features do not exactly match the approved catalog"
         )
     return replace(
         config,
         source_release_id=selection.source_release_id,
         features=feature_ids,
         log_color_features=selected_logs,
+        log_histogram_features=selected_log_histograms,
         catalog_selection=selection.path,
     )
 
@@ -285,6 +320,13 @@ def build_clusters_release_from_arrays(
     if unknown_log_features:
         raise ValueError(
             f"log color features are not in the release catalog: {', '.join(unknown_log_features)}"
+        )
+    unknown_log_histograms = sorted(
+        set(config.log_histogram_features) - set(feature_values)
+    )
+    if unknown_log_histograms:
+        raise ValueError(
+            f"log histogram features are not in the release catalog: {', '.join(unknown_log_histograms)}"
         )
     missing_parcellations = [
         p for p in config.parcellations if p not in parcellation_ids
@@ -318,7 +360,7 @@ def build_clusters_release_from_arrays(
     for feature_id in sorted(feature_values):
         values = np.asarray(feature_values[feature_id], dtype=np.float64)
         edges = histogram_edges(values, config.histogram_bins)
-        log_histogram = feature_id in config.log_color_features
+        log_histogram = feature_id in config.log_histogram_features
         alternate_histogram_edges = (
             {"log": histogram_edges(values, config.histogram_bins, "log")}
             if log_histogram
@@ -334,7 +376,17 @@ def build_clusters_release_from_arrays(
                 edges,
                 population_description,
                 alternate_histogram_edges=alternate_histogram_edges,
-                default_histogram_axis_scale="log" if log_histogram else "linear",
+                default_histogram_axis_scale=(
+                    "log"
+                    if (
+                        feature_display.get(feature_id, {}).get("scale") == "log"
+                        or (
+                            feature_id not in feature_display
+                            and feature_id in config.log_color_features
+                        )
+                    )
+                    else "linear"
+                ),
             )
             for parcellation in config.parcellations
         ]
@@ -439,9 +491,10 @@ def build_clusters_release_from_arrays(
                 "parcellations": list(config.parcellations),
                 "features": sorted(feature_values),
                 "log_color_features": sorted(config.log_color_features),
+                "log_histogram_features": sorted(config.log_histogram_features),
                 "histogram_axis_scales": {
                     "linear": "available for every feature",
-                    "log": "available only for audited strictly-positive log-default features",
+                    "log": "available only for explicitly audited strictly-positive features",
                 },
                 **(
                     {"catalog_selection_sha256": sha256_file(config.catalog_selection)}

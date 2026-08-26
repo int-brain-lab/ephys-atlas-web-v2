@@ -78,8 +78,9 @@ objects (or should use an S3 object version if publication infrastructure makes
 one available). The provisional puller assigns a content-derived snapshot id.
 
 D038/D044 resolve the launch population, project, scalar catalog, unit mapping,
-and treatment of the large array products. The machine authority and exact
-source hashes are `docs/data/CLUSTERS_CATALOG_SELECTION.json`; do not substitute
+and treatment of the large array products. D047's current versioned machine
+authority and exact source hashes are
+`docs/data/CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json`; do not substitute
 another project, population, feature list, table, or unit policy under the same
 release identity. Source-object publication/versioning remains operational.
 

@@ -58,14 +58,10 @@ test('color scale defaults are automatic while explicit overrides round-trip', (
   }
 });
 
-test('histogram x-axis scale defaults automatically and explicit choices round-trip independently', () => {
-  assert.equal(parseViewState('?v=4').histogramAxisScale, 'auto');
-  for (const scale of ['linear', 'log']) {
-    const parsed = parseViewState(`?v=4&histScale=${scale}&scale=linear`);
-    assert.equal(parsed.histogramAxisScale, scale);
-    assert.equal(parsed.coloring.scale, 'linear');
-    assert.match(serializeViewState(parsed), new RegExp(`histScale=${scale}`));
-  }
+test('obsolete independent histogram scale is ignored and removed canonically', () => {
+  const parsed = parseViewState('?v=4&histScale=log&scale=linear');
+  assert.equal(parsed.coloring.scale, 'linear');
+  assert.equal(serializeViewState(parsed).includes('histScale'), false);
 });
 
 test('unknown URL version falls back to defaults', () => {

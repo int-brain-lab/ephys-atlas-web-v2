@@ -214,10 +214,12 @@ translates both bounds together without changing its width. Feature magnitude
 statistics (`mean`, `median`, `min`, and `max`) are colorable; observation count
 remains supporting sample-size metadata in tooltips, comparisons, summaries,
 and exports rather than a feature-color statistic.
-Color scale selection defaults to `Auto`: the browser resolves optional
-feature-level `display.scale` metadata and otherwise uses linear color
-normalization. Explicit linear/logarithmic overrides persist in URLs, while
-values, statistics, histograms, tooltips, and exports remain unchanged.
+Value scale selection defaults to `Auto`: the browser resolves optional
+feature-level `display.scale` metadata and otherwise uses Linear. One resolved
+scale controls color normalization, both distribution views, and logarithmic-
+aware range geometry. Explicit Linear/Log overrides persist in one URL field;
+values, statistics, exact histogram arrays, tooltips, and exports remain
+unchanged.
 Regional SVGs, volume canvases, and the interactive color legend share one
 registry of full 256-step Matplotlib lookup tables. The concise sequential
 choice is Viridis, Cividis, or Magma; Cividis provides an accessibility- and
@@ -372,13 +374,13 @@ color interval with boundary guides, a subtle selected-range tint, and dimmed
 out-of-range tails; colorbar dragging and reset update this read-only analytical
 view immediately.
 
-Schema v1 now permits an exact precomputed log histogram beside the mandatory
-linear histogram. The viewer resolves the release-preferred axis, exposes an
-instant Linear/Log control, disables unavailable log data, positions range and
-hover markers in the selected coordinate system, persists explicit choices as
-`histScale` independently of color scale, and identifies the selected binning
-in comparison exports. D046 requires a new immutable cluster candidate before
-these bytes replace the earlier validated linear-only candidate.
+Schema v1 permits an exact precomputed Log histogram beside the mandatory
+Linear histogram. D047 supersedes the independent D046 controls: the viewer
+resolves one capability-aware value scale, exposes synchronized settings and
+distribution entry points, disables unavailable Log data with a reason,
+positions compact/global histograms, range and hover markers in the same
+coordinate system, and identifies the selected binning in comparison exports.
+Invalid explicit Log state reconciles to Linear without blank coloring.
 
 The header Help action opens one scientific-workflow guide with a responsive,
 faithful map of the actual viewer layout. Five concise expandable sections

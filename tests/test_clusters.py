@@ -130,6 +130,7 @@ def test_cluster_recipe_emits_explicit_log_color_defaults(tmp_path):
         created_at="2026-08-20T00:00:00Z",
         project="explicit-test-project",
         log_color_features=("firing_rate",),
+        log_histogram_features=("firing_rate",),
     )
     release = build_clusters_release_from_arrays(
         tmp_path / "release",
@@ -164,7 +165,7 @@ def test_cluster_recipe_emits_explicit_log_color_defaults(tmp_path):
 def test_cluster_recipe_rejects_log_histogram_with_zero_values(tmp_path):
     features, ids, metadata = _inputs()
     features["firing_rate"][0] = 0
-    config = replace(_config(), log_color_features=("firing_rate",))
+    config = replace(_config(), log_histogram_features=("firing_rate",))
     with pytest.raises(ValueError, match="strictly-positive|positive"):
         build_clusters_release_from_arrays(
             tmp_path / "release",
@@ -207,7 +208,7 @@ def test_cluster_snapshot_build_requires_explicit_feature_catalog():
 
 def test_approved_cluster_catalog_is_machine_consumable():
     selection = load_cluster_catalog_selection(
-        ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION.json"
+        ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json"
     )
     assert selection.source_release_id == "sha256-9b5e55215b306f26"
     assert selection.project == "ibl_neuropixel_brainwide_01"
@@ -230,12 +231,13 @@ def test_approved_cluster_catalog_is_machine_consumable():
     assert {feature.source_column: feature.unit for feature in selection.features}[
         "drift"
     ] == "um/h"
-    assert selection.display["firing_rate"] == {"scale": "log"}
+    assert "firing_rate" not in selection.display
+    assert "firing_rate" in selection.log_histogram_features
     assert "noise_cutoff" not in selection.display
 
 
 def test_cluster_catalog_selection_fails_closed_on_mismatch(tmp_path):
-    selection_path = ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION.json"
+    selection_path = ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json"
     selection = load_cluster_catalog_selection(selection_path)
     config = ClusterBuildConfig(
         release_id=selection.source_release_id,
@@ -257,18 +259,18 @@ def test_cluster_catalog_selection_fails_closed_on_mismatch(tmp_path):
 
 def test_cluster_output_identity_is_independent_from_pinned_source_identity():
     selection = load_cluster_catalog_selection(
-        ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION.json"
+        ROOT / "docs/data/CLUSTERS_CATALOG_SELECTION_VALUE_SCALE.json"
     )
     config = apply_cluster_catalog_selection(
         ClusterBuildConfig(
-            release_id="sha256-9b5e55215b306f26-hist-axis-v1",
+            release_id="sha256-9b5e55215b306f26-value-scale-v1",
             source_release_id=selection.source_release_id,
             created_at="2026-08-26T00:00:00Z",
             project=selection.project,
         ),
         selection,
     )
-    assert config.release_id == "sha256-9b5e55215b306f26-hist-axis-v1"
+    assert config.release_id == "sha256-9b5e55215b306f26-value-scale-v1"
     assert config.source_release_id == selection.source_release_id
 
 

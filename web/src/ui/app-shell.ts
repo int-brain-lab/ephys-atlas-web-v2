@@ -30,6 +30,7 @@ import type {
   VolumeInspection,
 } from '../rendering/projection-viewport.js';
 import { regionalColorRange } from '../application/scalar-colormap.js';
+import type { ResolvedPresentationScale } from '../application/presentation-scale.js';
 import { COLORMAPS } from '../application/colormap-palettes.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
 import { ColorRangeControl } from './color-range-control.js';
@@ -72,6 +73,7 @@ export interface ShellModel {
   feature: FeaturePayload | null;
   displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null;
   regionalPresentation: RegionalPresentation;
+  presentationScale: ResolvedPresentationScale;
 }
 
 type LayoutMode = 'wide' | 'compact' | 'narrow' | 'phone';
@@ -1081,9 +1083,10 @@ export class AppShell {
     this.colormapSelect = colormap.select;
     this.colormapSelect.setAttribute('aria-label', 'Feature colormap');
     this.colormapSelect.addEventListener('change', () => this.callbacks.setColormap(this.colormapSelect.value));
-    const scale = this.settingsSelect('Scale', [['auto', 'Auto (Linear)'], ['linear', 'Linear'], ['log', 'Logarithmic']]);
+    const scale = this.settingsSelect('Value scale', [['auto', 'Auto (Linear)'], ['linear', 'Linear'], ['log', 'Logarithmic']]);
     this.scaleSelect = scale.select;
-    this.scaleSelect.setAttribute('aria-label', 'Color scale');
+    this.scaleSelect.setAttribute('aria-label', 'Value scale');
+    this.scaleSelect.title = 'Controls color normalization, distribution spacing, and range-handle geometry.';
     this.scaleSelect.addEventListener('change', () => this.callbacks.setColorScale(this.scaleSelect.value as ColorScaleSelection));
     const rangeMode = this.settingsSelect('Range', [['auto', 'Robust auto'], ['fixed', 'Manual']]);
     this.rangeModeSelect = rangeMode.select;
@@ -1199,11 +1202,18 @@ export class AppShell {
       : (descriptor?.statistics ?? []).filter((statistic): statistic is ColorStatisticId => statistic !== 'count');
     this.syncOptions(this.statisticSelect, statistics.map((value) => ({ value, label: titleCaseToken(value) })), view.coloring.statistic);
     this.colormapSelect.value = view.coloring.colormap;
-    const automaticScale = descriptor?.display?.scale ?? 'linear';
+    const automaticScale = model.presentationScale.automaticScale;
     this.syncOptions(this.scaleSelect, [
       { value: 'auto', label: `Auto (${automaticScale === 'log' ? 'Logarithmic' : 'Linear'})` },
       { value: 'linear', label: 'Linear' },
-      { value: 'log', label: 'Logarithmic' },
+      {
+        value: 'log',
+        label: 'Logarithmic',
+        disabled: !model.presentationScale.logAvailable,
+        ...(model.presentationScale.logUnavailableReason
+          ? { title: model.presentationScale.logUnavailableReason }
+          : {}),
+      },
     ], view.coloring.scale);
     this.rangeModeSelect.value = view.coloring.range.mode;
     const featureColors = (view.coloring.mode ?? 'feature') === 'feature' && feature !== null;
@@ -1235,6 +1245,8 @@ export class AppShell {
         unit: descriptor?.unit ?? null,
         context,
         enabled: featureColors,
+        axisScale: model.presentationScale.effectiveScale,
+        histogram: model.presentationScale.histogram,
       });
     } else {
       this.colorRangeControl.hide();
@@ -1258,15 +1270,17 @@ export class AppShell {
 
   private syncOptions(
     select: HTMLSelectElement,
-    options: readonly { value: string; label: string }[],
+    options: readonly { value: string; label: string; disabled?: boolean; title?: string }[],
     selectedValue: string,
   ): void {
-    const signature = JSON.stringify(options.map(({ value, label }) => [value, label]));
+    const signature = JSON.stringify(options);
     if (select.dataset.options !== signature) {
-      select.replaceChildren(...options.map(({ value, label }) => {
+      select.replaceChildren(...options.map(({ value, label, disabled, title }) => {
         const option = document.createElement('option');
         option.value = value;
         option.textContent = label;
+        option.disabled = disabled ?? false;
+        if (title) option.title = title;
         return option;
       }));
       select.dataset.options = signature;

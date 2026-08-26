@@ -1,5 +1,6 @@
 import type { RegionMetadata, RegionalFeaturePayload } from '../../data/contracts.js';
-import type { ColorRange, HistogramAxisScale, HistogramAxisScaleSelection, StatisticId } from '../../domain/types.js';
+import type { ResolvedPresentationScale } from '../../application/presentation-scale.js';
+import type { ColorRange, ColorScale, StatisticId } from '../../domain/types.js';
 import { html, message } from './dom.js';
 import {
   buildRegionalValueMap,
@@ -26,7 +27,7 @@ function svgElement<K extends keyof SVGElementTagNameMap>(name: K): SVGElementTa
 function histogramPosition(
   value: number,
   edges: readonly number[],
-  axisScale: HistogramAxisScale,
+  axisScale: ColorScale,
 ): number | null {
   const firstEdge = edges[0];
   const lastEdge = edges.at(-1);
@@ -130,9 +131,7 @@ export function renderDistribution(
   statistic: StatisticId,
   unit: string | null,
   fixture: boolean,
-  axisScale: HistogramAxisScale,
-  logAvailable: boolean,
-  axisSelection: HistogramAxisScaleSelection,
+  presentationScale: ResolvedPresentationScale,
 ): void {
   const histogram = feature.histogram;
   if (!histogram || histogram.globalCounts.length === 0) {
@@ -150,7 +149,7 @@ export function renderDistribution(
   const regionById = new Map(regions.map((region) => [region.id, region]));
   const chart = html('div', 'distribution-chart');
   chart.dataset.fixture = String(fixture);
-  chart.dataset.axisScale = axisScale;
+  chart.dataset.axisScale = presentationScale.effectiveScale;
   const meta = html('div', 'distribution-chart__meta');
   const label = html('span');
   label.textContent = `Observation distribution${unit ? ` · ${unit}` : ''}`;
@@ -158,17 +157,17 @@ export function renderDistribution(
   population.textContent = feature.population ?? `${regions.length} regions`;
   const scaleControl = html('div', 'distribution-chart__scale-control');
   scaleControl.setAttribute('role', 'group');
-  scaleControl.setAttribute('aria-label', 'Histogram x-axis scale');
+  scaleControl.setAttribute('aria-label', 'Value scale');
   for (const [scale, text] of [['linear', 'Linear'], ['log', 'Log']] as const) {
     const button = html('button', 'distribution-chart__scale-button');
     button.type = 'button';
-    button.dataset.histogramAxisScale = scale;
+    button.dataset.valueScale = scale;
     button.textContent = text;
-    button.setAttribute('aria-pressed', String(axisScale === scale));
-    if (scale === 'log' && !logAvailable) {
+    button.setAttribute('aria-pressed', String(presentationScale.effectiveScale === scale));
+    if (scale === 'log' && !presentationScale.logAvailable) {
       button.disabled = true;
-      button.title = 'Logarithmic x-axis is unavailable because this release has no strictly-positive log histogram.';
-    } else if (axisSelection === 'auto' && axisScale === scale) {
+      button.title = presentationScale.logUnavailableReason ?? 'Logarithmic scale is unavailable.';
+    } else if (presentationScale.selection === 'auto' && presentationScale.effectiveScale === scale) {
       button.title = `${text} is the release-recommended default for this feature.`;
     }
     scaleControl.append(button);
@@ -234,7 +233,7 @@ export function renderDistribution(
     const numericMarkerValue = markerValue ?? Number.NaN;
     const x = !Number.isFinite(numericMarkerValue)
       ? null
-      : histogramPosition(numericMarkerValue, histogram.edges, axisScale);
+      : histogramPosition(numericMarkerValue, histogram.edges, presentationScale.effectiveScale);
     if (x !== null) {
       const marker = svgElement('line');
       marker.classList.add('distribution-chart__marker');

@@ -1,13 +1,14 @@
-import type { FeaturePayload } from '../data/contracts.js';
-import type { ColorRange, StatisticId } from '../domain/types.js';
+import type { FeaturePayload, RegionalHistogram } from '../data/contracts.js';
+import type { ColorRange, ColorScale, StatisticId } from '../domain/types.js';
 import { paletteCssGradient } from '../application/colormap-palettes.js';
 import {
   clampRangeHandle,
   colorRangeDomain,
   placeRangeLabels,
   rangePosition,
+  rangeValueAtPosition,
   rangeSliderStep,
-  translateRangeWindow,
+  translateRangeWindowByPosition,
   type NumericRange,
 } from './color-range.js';
 
@@ -20,6 +21,8 @@ export interface ColorRangeControlModel {
   unit: string | null;
   context: string;
   enabled: boolean;
+  axisScale: ColorScale;
+  histogram: RegionalHistogram | undefined;
 }
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className: string): HTMLElementTagNameMap[K] {
@@ -58,11 +61,12 @@ export class ColorRangeControl {
 
   private exactBound: 'min' | 'max' = 'min';
   private dragMode: 'min' | 'max' | 'window' | null = null;
-  private dragOriginValue = 0;
+  private dragOriginPosition = 0;
   private dragOriginRange: NumericRange | null = null;
   private commitFrame: number | null = null;
   private histogramSignature = '';
   private domain: NumericRange | null = null;
+  private axisScale: ColorScale = 'linear';
   private readonly labelResizeObserver = new ResizeObserver(() => this.positionValueLabels());
 
   constructor(private readonly setRange: (range: ColorRange) => void) {
@@ -107,7 +111,8 @@ export class ColorRangeControl {
   }
 
   render(model: ColorRangeControlModel): void {
-    this.domain = colorRangeDomain(model.feature, model.statistic, model.effectiveRange);
+    this.axisScale = model.axisScale;
+    this.domain = colorRangeDomain(model.feature, model.statistic, model.effectiveRange, model.histogram);
     const interactive = model.enabled && this.domain !== null;
     this.minSlider.disabled = !interactive;
     this.maxSlider.disabled = !interactive;
@@ -128,7 +133,8 @@ export class ColorRangeControl {
     this.minSlider.value = String(model.effectiveRange[0]);
     this.maxSlider.value = String(model.effectiveRange[1]);
     this.updatePresentation();
-    this.renderHistogram(model.feature, model.statistic);
+    this.renderHistogram(model.feature, model.statistic, model.histogram);
+    this.bar.dataset.axisScale = this.axisScale;
     this.context.textContent = model.context;
     this.bar.dataset.colormap = model.colormap;
     this.bar.style.setProperty('--color-range-gradient', paletteCssGradient(model.colormap));
@@ -184,7 +190,7 @@ export class ColorRangeControl {
     if (!this.domain) return;
     const slider = bound === 'min' ? this.minSlider : this.maxSlider;
     const other = bound === 'min' ? this.maxSlider : this.minSlider;
-    slider.value = String(clampRangeHandle(bound, slider.valueAsNumber, other.valueAsNumber, this.domain));
+    slider.value = String(clampRangeHandle(bound, slider.valueAsNumber, other.valueAsNumber, this.domain, undefined, this.axisScale));
     this.updatePresentation();
     this.scheduleCommit();
   }
@@ -195,12 +201,19 @@ export class ColorRangeControl {
     const direction = event.key === 'ArrowLeft' || event.key === 'ArrowDown' ? -1 : 1;
     const slider = bound === 'min' ? this.minSlider : this.maxSlider;
     const other = bound === 'min' ? this.maxSlider : this.minSlider;
-    const increment = rangeSliderStep(this.domain) * (event.shiftKey ? 10 : 1);
+    const increment = (event.shiftKey ? 10 : 1) / 1_000;
+    const nextValue = rangeValueAtPosition(
+      rangePosition(slider.valueAsNumber, this.domain, this.axisScale) + direction * increment,
+      this.domain,
+      this.axisScale,
+    );
     slider.value = String(clampRangeHandle(
       bound,
-      slider.valueAsNumber + direction * increment,
+      nextValue,
       other.valueAsNumber,
       this.domain,
+      rangeSliderStep(this.domain),
+      this.axisScale,
     ));
     this.updatePresentation();
     this.commitCurrentRange();
@@ -213,13 +226,14 @@ export class ColorRangeControl {
     else if (target?.classList.contains('color-range__handle--max')) this.dragMode = 'max';
     else if (target?.classList.contains('color-range__selection')) {
       this.dragMode = 'window';
-      this.dragOriginValue = this.valueAtClientX(event.clientX);
+      this.dragOriginPosition = this.positionAtClientX(event.clientX);
       this.dragOriginRange = [this.minSlider.valueAsNumber, this.maxSlider.valueAsNumber];
       this.bar.dataset.dragging = 'window';
     } else {
       const value = this.valueAtClientX(event.clientX);
-      this.dragMode = Math.abs(value - this.minSlider.valueAsNumber)
-        <= Math.abs(value - this.maxSlider.valueAsNumber) ? 'min' : 'max';
+      const position = rangePosition(value, this.domain, this.axisScale);
+      this.dragMode = Math.abs(position - rangePosition(this.minSlider.valueAsNumber, this.domain, this.axisScale))
+        <= Math.abs(position - rangePosition(this.maxSlider.valueAsNumber, this.domain, this.axisScale)) ? 'min' : 'max';
     }
     this.bar.setPointerCapture(event.pointerId);
     if (this.dragMode !== 'window') this.updateFromPointer(event.clientX);
@@ -242,10 +256,11 @@ export class ColorRangeControl {
     if (!this.domain || !this.dragMode) return;
     if (this.dragMode === 'window') {
       if (!this.dragOriginRange) return;
-      const translated = translateRangeWindow(
+      const translated = translateRangeWindowByPosition(
         this.dragOriginRange,
-        this.valueAtClientX(clientX) - this.dragOriginValue,
+        this.positionAtClientX(clientX) - this.dragOriginPosition,
         this.domain,
+        this.axisScale,
       );
       this.minSlider.value = String(translated[0]);
       this.maxSlider.value = String(translated[1]);
@@ -257,6 +272,8 @@ export class ColorRangeControl {
         this.valueAtClientX(clientX),
         other.valueAsNumber,
         this.domain,
+        rangeSliderStep(this.domain),
+        this.axisScale,
       ));
     }
     this.updatePresentation();
@@ -265,9 +282,12 @@ export class ColorRangeControl {
 
   private valueAtClientX(clientX: number): number {
     if (!this.domain) return 0;
+    return rangeValueAtPosition(this.positionAtClientX(clientX), this.domain, this.axisScale);
+  }
+
+  private positionAtClientX(clientX: number): number {
     const bounds = this.bar.getBoundingClientRect();
-    const position = Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width));
-    return this.domain[0] + position * (this.domain[1] - this.domain[0]);
+    return Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width));
   }
 
   private openExactEditor(bound: 'min' | 'max'): void {
@@ -313,14 +333,14 @@ export class ColorRangeControl {
     this.closeExactEditor();
   };
 
-  private renderHistogram(feature: FeaturePayload, statistic: StatisticId): void {
+  private renderHistogram(feature: FeaturePayload, statistic: StatisticId, histogram: RegionalHistogram | undefined): void {
     const counts = feature.representation === 'regional' && statistic !== 'count'
-      ? feature.histogram?.globalCounts ?? []
+      ? histogram?.globalCounts ?? []
       : [];
     const edges = feature.representation === 'regional' && statistic !== 'count'
-      ? feature.histogram?.edges ?? []
+      ? histogram?.edges ?? []
       : [];
-    const signature = JSON.stringify([this.domain, counts, edges]);
+    const signature = JSON.stringify([this.domain, this.axisScale, counts, edges]);
     if (signature === this.histogramSignature) return;
     this.histogramSignature = signature;
     const max = Math.max(0, ...counts);
@@ -328,8 +348,8 @@ export class ColorRangeControl {
       const bin = element('span', 'color-range__histogram-bin');
       bin.style.setProperty('--histogram-height', `${max > 0 ? count / max * 100 : 0}%`);
       if (this.domain) {
-        bin.style.setProperty('--histogram-left', `${rangePosition(edges[index] ?? this.domain[0], this.domain) * 100}%`);
-        bin.style.setProperty('--histogram-right', `${(1 - rangePosition(edges[index + 1] ?? this.domain[1], this.domain)) * 100}%`);
+        bin.style.setProperty('--histogram-left', `${rangePosition(edges[index] ?? this.domain[0], this.domain, this.axisScale) * 100}%`);
+        bin.style.setProperty('--histogram-right', `${(1 - rangePosition(edges[index + 1] ?? this.domain[1], this.domain, this.axisScale)) * 100}%`);
       }
       return bin;
     }));
@@ -340,8 +360,8 @@ export class ColorRangeControl {
     if (!this.domain) return;
     const min = this.minSlider.valueAsNumber;
     const max = this.maxSlider.valueAsNumber;
-    this.bar.style.setProperty('--range-low', `${rangePosition(min, this.domain) * 100}%`);
-    this.bar.style.setProperty('--range-high', `${rangePosition(max, this.domain) * 100}%`);
+    this.bar.style.setProperty('--range-low', `${rangePosition(min, this.domain, this.axisScale) * 100}%`);
+    this.bar.style.setProperty('--range-high', `${rangePosition(max, this.domain, this.axisScale) * 100}%`);
     this.minLabel.textContent = formatScalar(min);
     this.maxLabel.textContent = formatScalar(max);
     this.domainMinLabel.textContent = formatScalar(this.domain[0]);
@@ -356,8 +376,8 @@ export class ColorRangeControl {
     const placement = placeRangeLabels(
       trackWidth,
       [
-        rangePosition(this.minSlider.valueAsNumber, this.domain) * trackWidth,
-        rangePosition(this.maxSlider.valueAsNumber, this.domain) * trackWidth,
+        rangePosition(this.minSlider.valueAsNumber, this.domain, this.axisScale) * trackWidth,
+        rangePosition(this.maxSlider.valueAsNumber, this.domain, this.axisScale) * trackWidth,
       ],
       [this.minLabel.offsetWidth, this.maxLabel.offsetWidth],
     );

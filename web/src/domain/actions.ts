@@ -3,7 +3,6 @@ import type {
   ColorMode,
   ColorStatisticId,
   ColorScaleSelection,
-  HistogramAxisScaleSelection,
   CursorState,
   DatasetRef,
   ParcellationId,
@@ -47,7 +46,6 @@ type ViewActionPayload =
   | { type: 'layers/anatomy-outlines'; visible: boolean }
   | { type: 'scene3d/explode'; explode: number }
   | { type: 'scene3d/camera'; camera: BrainCameraPose | null }
-  | { type: 'histogram/axis-scale'; scale: HistogramAxisScaleSelection }
   | { type: 'color/statistic'; statistic: ColorStatisticId }
   | { type: 'color/mode'; mode: ColorMode }
   | { type: 'color/colormap'; colormap: string }

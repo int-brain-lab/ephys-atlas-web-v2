@@ -243,7 +243,7 @@ test('schema v1 regional fixture drives values, coloring, selection and histogra
   await expect(page.getByRole('button', { name: 'Linear', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('button', { name: 'Log', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Linear', exact: true }).click();
-  await expect.poll(() => new URL(page.url()).searchParams.get('histScale')).toBe('linear');
+  await expect.poll(() => new URL(page.url()).searchParams.get('scale')).toBe('linear');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('d', / C /);
   await expect(page.locator('.distribution-chart__global')).not.toHaveAttribute('d', /[HV]/);
   await expect(page.locator('.feature-summary__item')).toHaveCount(4);

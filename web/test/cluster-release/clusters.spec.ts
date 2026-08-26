@@ -76,28 +76,34 @@ test('switches every approved parcellation without cluster-specific UI', async (
 test('exposes approved units, explanations, and conservative scale defaults', async ({ page }) => {
   await page.goto('/?v=4&feature=firing_rate');
   const distribution = page.locator('.distribution-chart');
+  const compactDistribution = page.locator('.color-legend__bar');
   await expect(distribution).toHaveAttribute('data-axis-scale', 'log');
+  await expect(compactDistribution).toHaveAttribute('data-axis-scale', 'log');
   await expect(page.getByRole('button', { name: 'Log', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('button', { name: 'Linear', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Linear', exact: true }).click();
   await expect(distribution).toHaveAttribute('data-axis-scale', 'linear');
-  await expect.poll(() => new URL(page.url()).searchParams.get('histScale')).toBe('linear');
+  await expect(compactDistribution).toHaveAttribute('data-axis-scale', 'linear');
+  await expect.poll(() => new URL(page.url()).searchParams.get('scale')).toBe('linear');
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.locator('select[aria-label="Value scale"]')).toHaveValue('linear');
+  await page.getByRole('button', { name: 'Close panel' }).click();
   await page.getByRole('button', { name: 'Log', exact: true }).click();
   await expect(distribution).toHaveAttribute('data-axis-scale', 'log');
-  await expect.poll(() => new URL(page.url()).searchParams.get('histScale')).toBe('log');
+  await expect(compactDistribution).toHaveAttribute('data-axis-scale', 'log');
+  await expect.poll(() => new URL(page.url()).searchParams.get('scale')).toBe('log');
   await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.getByLabel('Color scale').locator('option:checked')).toHaveText(
-    'Auto (Logarithmic)',
-  );
+  await expect(page.locator('select[aria-label="Value scale"]')).toHaveValue('log');
   await expect(page.locator('.color-legend__unit')).toHaveText('Hz');
 
   await page.goto('/?v=4&feature=noise_cutoff');
   await expect(page.locator('.distribution-chart')).toHaveAttribute('data-axis-scale', 'linear');
   await expect(page.getByRole('button', { name: 'Log', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.getByLabel('Color scale').locator('option:checked')).toHaveText(
+  await expect(page.locator('select[aria-label="Value scale"] option:checked')).toHaveText(
     'Auto (Linear)',
   );
+  await expect(page.locator('select[aria-label="Value scale"] option[value="log"]')).toBeDisabled();
   await expect(page.locator('.color-legend__unit')).toHaveText('a.u.');
   await expect(page.locator('.feature-summary__description')).toContainText(
     'Signed standardized amplitude-histogram cutoff score',

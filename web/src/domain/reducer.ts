@@ -122,8 +122,6 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       if (action.camera !== null && camera === null) return state;
       return { ...state, view: { ...state.view, scene3d: { ...state.view.scene3d, camera } } };
     }
-    case 'histogram/axis-scale':
-      return { ...state, view: { ...state.view, histogramAxisScale: action.scale } };
     case 'color/statistic':
       return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, statistic: action.statistic } } };
     case 'color/mode':

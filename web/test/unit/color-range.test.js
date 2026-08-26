@@ -5,9 +5,11 @@ import {
   clampRangeHandle,
   colorRangeDomain,
   rangePosition,
+  rangeValueAtPosition,
   rangeSliderStep,
   placeRangeLabels,
   translateRangeWindow,
+  translateRangeWindowByPosition,
 } from '../../.test-dist/ui/color-range.js';
 
 test('range labels choose inward sides at the domain edges', () => {
@@ -54,4 +56,14 @@ test('range handle math positions, steps, and prevents crossing', () => {
   assert.equal(rangeSliderStep(domain), .01);
   assert.equal(clampRangeHandle('min', 9, 8, domain), 7.99);
   assert.equal(clampRangeHandle('max', 1, 2, domain), 2.01);
+});
+
+test('log range transforms round-trip and preserve multiplicative window width', () => {
+  const domain = [1, 1_000];
+  assert.ok(Math.abs(rangePosition(10, domain, 'log') - 1 / 3) < 1e-12);
+  assert.ok(Math.abs(rangeValueAtPosition(2 / 3, domain, 'log') - 100) < 1e-10);
+  const translated = translateRangeWindowByPosition([10, 100], 1 / 3, domain, 'log');
+  assert.ok(Math.abs(translated[0] - 100) < 1e-10);
+  assert.ok(Math.abs(translated[1] - 1_000) < 1e-9);
+  assert.ok(Math.abs(translated[1] / translated[0] - 10) < 1e-12);
 });

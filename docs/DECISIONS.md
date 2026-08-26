@@ -748,3 +748,32 @@ heavy-tailed features and prefer Log. Other cluster features remain linear-only.
 Regenerate under a new immutable output release ID while retaining the exact
 content-addressed source snapshot identity; never mutate the validated earlier
 candidate.
+
+The independent color/histogram controls and D044's Firing-rate Log preference
+are superseded by D047. The exact dual-histogram contract and immutable-release
+requirements remain in force.
+
+## D047 — Use one value scale and prefer Linear for firing rate
+
+Use one user-facing value-scale selection for color normalization, the global
+distribution x-axis, the compact range distribution, range handles, markers,
+pointer inversion, keyboard adjustment, and whole-window translation. Both the
+settings selector and distribution buttons edit the same URL-v4 `scale` state;
+retire the independent `histScale` field without a migration because the viewer
+is pre-alpha and unpublished. Exact linear and logarithmic histogram variants
+remain separate release artifacts and underlying observations do not change.
+
+Log is available only when the active presentation range is strictly positive
+and, for regional data, the release contains an exact Log histogram. An invalid
+explicit Log request reconciles canonically to Linear while preserving the
+feature and manual range; it must never blank regional coloring. Logarithmic
+range-window movement preserves width in transformed space, hence a
+multiplicative ratio rather than an additive difference.
+
+On 2026-08-26 the repository owner visually compared the exact Linear and Log
+Firing-rate distributions and judged Linear better. Therefore Firing rate now
+prefers Linear while retaining its exact Log alternative. The other five
+audited positive heavy-tailed cluster features retain their existing Log
+preference. Record availability separately from preference in the versioned
+catalog selection and rebuild a new immutable candidate; preserve both earlier
+candidates unchanged.
