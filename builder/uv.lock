@@ -850,6 +850,8 @@ scientific = [
     { name = "ibleatools" },
 ]
 test = [
+    { name = "pandas" },
+    { name = "pyarrow" },
     { name = "pytest" },
     { name = "shapely" },
 ]
@@ -862,6 +864,8 @@ requires-dist = [
     { name = "ibleatools", marker = "extra == 'scientific'", git = "https://github.com/int-brain-lab/ibleatools.git?rev=9bfa0623a16bc7a989a6b27a589887641beee0a8" },
     { name = "jsonschema", specifier = ">=4.20" },
     { name = "numpy", specifier = ">=1.26" },
+    { name = "pandas", marker = "extra == 'test'", specifier = ">=3,<4" },
+    { name = "pyarrow", marker = "extra == 'test'", specifier = ">=25,<26" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8" },
     { name = "referencing", specifier = ">=0.32" },
     { name = "scikit-image", marker = "extra == 'anatomy'", specifier = ">=0.26,<0.27" },

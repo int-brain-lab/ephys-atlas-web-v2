@@ -195,6 +195,7 @@ test('reduced-parcellation volume selection uses outlines without tinting scalar
     await expect(selected).toHaveCSS('stroke-width', '1.75px');
   }
   const unselected = projection.locator('path:not(.is-selected)').first();
+  await expect(unselected).toHaveCSS('fill-opacity', '0');
   await unselected.dispatchEvent('pointermove');
   await expect(unselected).toHaveClass(/is-highlighted/);
   await expect(unselected).toHaveCSS('fill-opacity', '0');

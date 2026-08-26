@@ -610,6 +610,7 @@ test('color range remains directly editable in the phone settings drawer', async
   const settings = page.getByRole('complementary', { name: 'Visualization settings' });
   await expect(settings).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
   const rangeBar = page.locator('.color-legend__bar');
+  await expect(rangeBar).toBeVisible();
   const barBounds = await rangeBar.boundingBox();
   const settingsBounds = await settings.boundingBox();
   expect(barBounds).not.toBeNull();

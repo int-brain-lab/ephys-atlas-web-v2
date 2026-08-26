@@ -29,6 +29,10 @@
   stroke-opacity: 1;
 }
 
+.projection-viewport[data-mode='composite'] .view-frame__brain-svg.has-region-selection path:not(.is-selected):not(.is-highlighted) {
+  fill-opacity: 0;
+}
+
 .projection-viewport[data-mode='composite'] .view-frame__slice-figure path.is-selected {
   stroke: rgb(235 247 255 / 96%);
   stroke-width: 1.75;

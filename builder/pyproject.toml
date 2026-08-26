@@ -10,7 +10,12 @@ requires-python = ">=3.11"
 dependencies = ["numpy>=1.26", "jsonschema>=4.20", "referencing>=0.32"]
 
 [project.optional-dependencies]
-test = ["pytest>=8", "shapely>=2.1,<2.2"]
+test = [
+    "pandas>=3,<4",
+    "pyarrow>=25,<26",
+    "pytest>=8",
+    "shapely>=2.1,<2.2",
+]
 scientific = [
     "iblatlas @ git+https://github.com/int-brain-lab/iblatlas.git@52083adf44825d0622a503705e095699a5957587",
     "ibleatools @ git+https://github.com/int-brain-lab/ibleatools.git@9bfa0623a16bc7a989a6b27a589887641beee0a8",
