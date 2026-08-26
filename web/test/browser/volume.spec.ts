@@ -65,6 +65,17 @@ test('schema-v1 chunks3d volume renders all three orthogonal golden slices', asy
     await expect(target.locator('svg.projection-viewport__regional')).toBeAttached();
     await expect(target.locator('.projection-viewport__scalar-host')).toHaveAttribute('width', /\d/);
     await expect(target.locator('canvas.view-frame__volume-canvas')).toHaveAttribute('data-flip-y', 'true');
+    const layerBoundsDelta = await target.evaluate((node) => {
+      const scalar = node.querySelector<SVGSVGElement>('svg.projection-viewport__scalar')!.getBoundingClientRect();
+      const regional = node.querySelector<SVGSVGElement>('svg.projection-viewport__regional')!.getBoundingClientRect();
+      return Math.max(
+        Math.abs(scalar.left - regional.left),
+        Math.abs(scalar.top - regional.top),
+        Math.abs(scalar.width - regional.width),
+        Math.abs(scalar.height - regional.height),
+      );
+    });
+    expect(layerBoundsDelta).toBeLessThan(0.1);
   }
 
   await expect(page.locator('[data-view="coronal"] canvas')).toHaveJSProperty('width', 6);
@@ -169,4 +180,73 @@ test('URL-persisted layer controls repaint retained layers without volume reques
   await expect.poll(() => new URL(page.url()).searchParams.get('opacity')).toBe('0.25');
   await expect.poll(() => new URL(page.url()).searchParams.has('outlines')).toBe(false);
   expect(chunks.length).toBe(baseline);
+});
+
+test('volume navigation keeps composites visible and repaints only a changed scalar plane', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = CanvasRenderingContext2D.prototype.putImageData;
+    const state = window as Window & { __volumePaintCounts?: Record<string, number> };
+    state.__volumePaintCounts = {};
+    CanvasRenderingContext2D.prototype.putImageData = function putImageData(
+      this: CanvasRenderingContext2D,
+      ...args: Parameters<CanvasRenderingContext2D['putImageData']>
+    ) {
+      const axis = this.canvas.closest<HTMLElement>('[data-view]')?.dataset.view;
+      if (axis) state.__volumePaintCounts![axis] = (state.__volumePaintCounts![axis] ?? 0) + 1;
+      return original.apply(this, args);
+    };
+  });
+  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
+  const frame = page.locator('[data-view="coronal"]');
+  await expect(frame.locator('[data-slice-asset="schema-volume-v1"]')).toBeAttached();
+  await expect(frame).toHaveAttribute('data-state', 'ready');
+  const initialVolumeIndex = await frame.locator('.view-frame__renderer').getAttribute('data-volume-index');
+  expect(initialVolumeIndex).not.toBeNull();
+  await page.evaluate(() => {
+    const state = window as Window & {
+      __volumeModeTransitions?: string[];
+      __volumeModeObservers?: MutationObserver[];
+      __volumePaintCounts?: Record<string, number>;
+    };
+    state.__volumePaintCounts = {};
+    state.__volumeModeTransitions = [];
+    state.__volumeModeObservers = [...document.querySelectorAll<HTMLElement>('.projection-viewport')].map((root) => {
+      const observer = new MutationObserver(() => state.__volumeModeTransitions!.push(root.dataset.mode ?? ''));
+      observer.observe(root, { attributes: true, attributeFilter: ['data-mode'] });
+      return observer;
+    });
+  });
+
+  await page.getByLabel('coronal slice').evaluate((node) => {
+    const slider = node as HTMLInputElement;
+    slider.value = String(slider.valueAsNumber - 1);
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.waitForTimeout(100);
+  expect(await page.evaluate(() => (
+    window as Window & { __volumePaintCounts?: Record<string, number> }
+  ).__volumePaintCounts)).toEqual({});
+
+  await page.evaluate(() => {
+    (window as Window & { __volumePaintCounts?: Record<string, number> }).__volumePaintCounts = {};
+  });
+  await page.getByLabel('coronal slice').evaluate((node) => {
+    const slider = node as HTMLInputElement;
+    slider.value = String(slider.valueAsNumber - 1);
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect.poll(() => frame.locator('.view-frame__renderer').getAttribute('data-volume-index'))
+    .not.toBe(initialVolumeIndex);
+
+  expect(await page.evaluate(() => (
+    window as Window & { __volumePaintCounts?: Record<string, number> }
+  ).__volumePaintCounts)).toEqual({ coronal: 1 });
+  expect(await page.evaluate(() => (
+    window as Window & { __volumeModeTransitions?: string[] }
+  ).__volumeModeTransitions)).toEqual([]);
+  await expect(page.locator('.projection-viewport[data-mode="composite"]')).toHaveCount(3);
+  await page.evaluate(() => {
+    const state = window as Window & { __volumeModeObservers?: MutationObserver[] };
+    state.__volumeModeObservers?.forEach((observer) => observer.disconnect());
+  });
 });

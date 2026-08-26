@@ -1694,8 +1694,9 @@ export class AppShell {
     const geometryChanged = nodes.geometryKey !== geometryKey;
     nodes.geometryKey = geometryKey;
     const token = ++nodes.renderToken;
-    const retainsAnatomy = view.representation !== 'volume'
-      && nodes.target.dataset.sliceAsset === 'projection-pack-v1';
+    const retainedSliceAsset = nodes.target.dataset.sliceAsset;
+    const retainsRenderedFrame = retainedSliceAsset === 'projection-pack-v1'
+      || retainedSliceAsset === 'schema-volume-v1';
     const stateMessage = nodes.frame.querySelector<HTMLElement>('.view-frame__state-message');
     if (nodes.loadingNoticeTimer !== null) {
       window.clearTimeout(nodes.loadingNoticeTimer);
@@ -1704,17 +1705,17 @@ export class AppShell {
     if (!geometryChanged && nodes.status.textContent === 'Loading slice…') nodes.status.textContent = '';
     if (geometryChanged) {
       this.hideRegionTooltip(axis);
-      nodes.frame.dataset.state = retainsAnatomy ? 'ready' : 'loading';
+      nodes.frame.dataset.state = retainsRenderedFrame ? 'ready' : 'loading';
       nodes.status.removeAttribute('aria-label');
-      nodes.status.textContent = retainsAnatomy ? '' : 'Loading';
-      if (retainsAnatomy) {
+      nodes.status.textContent = retainsRenderedFrame ? '' : 'Loading';
+      if (retainsRenderedFrame) {
         nodes.loadingNoticeTimer = window.setTimeout(() => {
           nodes.loadingNoticeTimer = null;
           if (nodes.renderToken === token) nodes.status.textContent = 'Loading slice…';
         }, SLICE_LOADING_NOTICE_DELAY_MS);
       }
       if (stateMessage) {
-        stateMessage.textContent = retainsAnatomy
+        stateMessage.textContent = retainsRenderedFrame
           ? ''
           : view.representation === 'volume'
             ? 'Loading scientific volume…'
@@ -1746,10 +1747,14 @@ export class AppShell {
         window.clearTimeout(nodes.loadingNoticeTimer);
         nodes.loadingNoticeTimer = null;
       }
-      const preservedAnatomy = nodes.target.dataset.sliceAsset === 'projection-pack-v1';
-      if (!geometryChanged || retainsAnatomy || preservedAnatomy) {
+      const preservedSliceAsset = nodes.target.dataset.sliceAsset;
+      const preservedFrame = preservedSliceAsset === 'projection-pack-v1'
+        || preservedSliceAsset === 'schema-volume-v1';
+      if (!geometryChanged || retainsRenderedFrame || preservedFrame) {
         nodes.frame.dataset.state = 'ready';
-        if (geometryChanged) nodes.status.textContent = preservedAnatomy ? 'Anatomy only' : 'Previous slice';
+        if (geometryChanged) {
+          nodes.status.textContent = preservedSliceAsset === 'projection-pack-v1' ? 'Anatomy only' : 'Previous slice';
+        }
         nodes.viewport.showError(error);
       } else {
         nodes.frame.dataset.state = 'error';

@@ -140,6 +140,18 @@ and encoded SHA-256 failure. Successful compositing with the active 10 um
 projection pack confirms exact shared `reference_space_id=allen-ccf-2017` while
 retaining distinct 50 um and 10 um grids.
 
+Integrated visual review on 2026-08-26 exposed two frontend-only composition
+defects without changing the candidate bytes, D043 geometry, or scientific
+navigation. The scalar layer now occupies the same full viewport as the
+regional SVG. Volume navigation retains the previous complete composite while
+loading, commits anatomy and scalar layers atomically, and reuses unchanged
+linked projections. A 20-step coronal native-grid sweep at 16 ms intervals
+produced four meaningful coronal scalar paints, zero sagittal or horizontal
+paints, zero composite-to-regional mode transitions, and one cold-pack request.
+A gated cold-pack test also confirmed that several native cursor inputs mapping
+to one 50 um plane retain the previous composite, issue one non-aborted request,
+and commit only the latest requested plane.
+
 ## Value-validity audit
 
 A bounded streaming pass over all 394,859,520 float16 values found 230,814,914

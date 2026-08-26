@@ -118,6 +118,61 @@ test('rapid feature switching cancels stale presentation and keeps the latest fe
   await expect(page.locator('[data-volume-feature="rms_lf"]')).toHaveCount(0);
 });
 
+test('rapid same-plane navigation keeps the previous composite and performs one cold-pack request', async ({ page }) => {
+  const requests: string[] = [];
+  const failures: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('/volume/packs/i1/34.f16.gz')) requests.push(request.url());
+  });
+  page.on('requestfailed', (request) => {
+    if (request.url().endsWith('/volume/packs/i1/34.f16.gz')) failures.push(request.failure()?.errorText ?? 'failed');
+  });
+  let releasePack!: () => void;
+  const packGate = new Promise<void>((resolve) => { releasePack = resolve; });
+  await page.route('**/volume/packs/i1/34.f16.gz', async (route) => {
+    await packGate;
+    await route.continue();
+  });
+
+  await page.goto('/?v=4&repr=volume&feature=rms_lf&cursor=-2500,-1200,-3700');
+  const frame = page.locator('[data-view="coronal"]');
+  const renderer = frame.locator('.view-frame__renderer');
+  await expect(renderer).toHaveAttribute('data-volume-index', '132');
+  await page.evaluate(() => {
+    const state = window as Window & { __volumeModes?: string[]; __volumeModeObserver?: MutationObserver };
+    const root = document.querySelector<HTMLElement>('[data-view="coronal"] .projection-viewport')!;
+    state.__volumeModes = [];
+    state.__volumeModeObserver = new MutationObserver(() => state.__volumeModes!.push(root.dataset.mode ?? ''));
+    state.__volumeModeObserver.observe(root, { attributes: true, attributeFilter: ['data-mode'] });
+  });
+
+  await page.getByLabel('coronal slice').evaluate(async (node) => {
+    const slider = node as HTMLInputElement;
+    for (const value of [678, 679, 680]) {
+      slider.value = String(value);
+      slider.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 16));
+    }
+  });
+  await page.waitForTimeout(100);
+
+  expect(requests).toHaveLength(1);
+  expect(failures).toEqual([]);
+  await expect(renderer).toHaveAttribute('data-volume-index', '132');
+  await expect(frame.locator('.projection-viewport')).toHaveAttribute('data-mode', 'composite');
+  await expect(frame.locator('.projection-viewport__scalar')).toHaveCSS('visibility', 'visible');
+
+  releasePack();
+  await expect(renderer).toHaveAttribute('data-volume-index', '136');
+  expect(failures).toEqual([]);
+  expect(await page.evaluate(() => (
+    window as Window & { __volumeModes?: string[] }
+  ).__volumeModes)).not.toContain('regional');
+  await page.evaluate(() => {
+    (window as Window & { __volumeModeObserver?: MutationObserver }).__volumeModeObserver?.disconnect();
+  });
+});
+
 test('outside voxels inspect explicitly and corrupt immutable bytes fail integrity', async ({ page }) => {
   await page.goto('/?v=4&repr=volume&feature=rms_ap&cursor=0,0,0');
   await expect(page.locator('[data-volume-feature="rms_ap"]')).toHaveCount(3);

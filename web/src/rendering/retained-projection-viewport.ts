@@ -44,6 +44,12 @@ interface PendingRender {
   readonly reject: (error: unknown) => void;
 }
 
+interface VolumeRenderTarget {
+  readonly feature: VolumeFeaturePayload;
+  readonly index: number | null;
+  readonly requestedIndex: number;
+}
+
 interface RetainedMount {
   readonly root: HTMLDivElement;
   readonly scalar: SVGSVGElement;
@@ -219,6 +225,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
   private pending: PendingRender | null = null;
   private inFlight = false;
   private activeRenderAbort: AbortController | null = null;
+  private activeVolumeTarget: VolumeRenderTarget | null = null;
   private volumePrefetchAbort: AbortController | null = null;
   private frame: RegionalSliceFrame | null = null;
   private volumeFeature: VolumeFeaturePayload | null = null;
@@ -245,8 +252,13 @@ class RetainedProjectionViewport implements ProjectionViewport {
   render(model: ProjectionRenderModel): Promise<void> {
     if (model.axis !== this.axis) return Promise.reject(new Error(`${this.axis} viewport cannot render ${model.axis}`));
     const token = ++this.renderToken;
-    this.activeRenderAbort?.abort();
-    this.volumePrefetchAbort?.abort();
+    const nextVolumeTarget = this.volumeRenderTarget(model);
+    if (!this.sameVolumeTarget(this.activeVolumeTarget, nextVolumeTarget)) this.activeRenderAbort?.abort();
+    const retainsPrefetchTarget = nextVolumeTarget !== null
+      && nextVolumeTarget.index !== null
+      && this.volumeFeature === nextVolumeTarget.feature
+      && this.volumeSlice?.index === nextVolumeTarget.index;
+    if (!retainsPrefetchTarget) this.volumePrefetchAbort?.abort();
     this.requestedIndex = model.sliceIndex;
     this.requestedParcellation = model.parcellation;
     this.hideError();
@@ -294,6 +306,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
     this.renderToken += 1;
     this.activeRenderAbort?.abort();
     this.activeRenderAbort = null;
+    this.activeVolumeTarget = null;
     this.volumePrefetchAbort?.abort();
     this.volumePrefetchAbort = null;
     this.pending?.resolve();
@@ -332,13 +345,34 @@ class RetainedProjectionViewport implements ProjectionViewport {
     this.inFlight = true;
     const abort = new AbortController();
     this.activeRenderAbort = abort;
+    this.activeVolumeTarget = this.volumeRenderTarget(request.model);
     void this.renderNow(request.model, request.token, abort.signal)
       .then(request.resolve, request.reject)
       .finally(() => {
         if (this.activeRenderAbort === abort) this.activeRenderAbort = null;
+        if (this.activeRenderAbort === null) this.activeVolumeTarget = null;
         this.inFlight = false;
         this.pump();
       });
+  }
+
+  private volumeRenderTarget(model: ProjectionRenderModel): VolumeRenderTarget | null {
+    const feature = model.feature;
+    if (!feature || feature.representation !== 'volume') return null;
+    const location = locateVolumePlane(feature, model.axis, cursorStateToWorld(model.cursor));
+    return {
+      feature,
+      index: location.status === 'out-of-grid' ? null : location.index,
+      requestedIndex: model.sliceIndex,
+    };
+  }
+
+  private sameVolumeTarget(left: VolumeRenderTarget | null, right: VolumeRenderTarget | null): boolean {
+    return left !== null
+      && right !== null
+      && left.feature === right.feature
+      && left.index === right.index
+      && (left.index !== null || left.requestedIndex === right.requestedIndex);
   }
 
   private async renderNow(model: ProjectionRenderModel, token: number, signal: AbortSignal): Promise<void> {
@@ -359,7 +393,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
       this.volumeFeature = null;
       this.volumeSlice = null;
       this.volumeRegistration = null;
-      this.mount.root.dataset.mode = 'regional';
+      if (this.mount.root.dataset.mode !== 'regional') this.mount.root.dataset.mode = 'regional';
       this.target.dataset.sliceAsset = 'projection-pack-v1';
       delete this.target.dataset.volumeIndex;
       delete this.target.dataset.volumeFeature;
@@ -394,43 +428,77 @@ class RetainedProjectionViewport implements ProjectionViewport {
     const feature = model.feature;
     if (!feature || feature.representation !== 'volume') throw new Error('Volume viewport requires a volume feature');
     const world = cursorStateToWorld(model.cursor);
+    const location = locateVolumePlane(feature, model.axis, world);
+    const sameRequestedGeometry = location.status !== 'out-of-grid'
+      && this.frame?.axis === model.axis
+      && this.frame.mapping === model.parcellation
+      && this.renderedRequestedIndex === model.sliceIndex
+      && this.volumeFeature === feature
+      && this.volumeSlice?.index === location.index;
+    if (sameRequestedGeometry && this.frame) {
+      const guides = await this.source.guidesForWorld(model.axis, world);
+      if (this.renderToken !== token) return;
+      this.frame = { ...this.frame, guides };
+      this.mount.regional.updateGuides(this.frame);
+      return;
+    }
+
     const [registration, anatomySlice, guides] = await Promise.all([
       this.source.getRegistration(model.axis),
       this.source.loadSlice(model.axis, model.sliceIndex, signal),
       this.source.guidesForWorld(model.axis, world),
     ]);
     if (this.renderToken !== token) return;
-    this.frame = regionalFrame(model, anatomySlice, guides, this.presentation());
-    this.mount.regional.render(this.frame);
-    this.volumeFeature = null;
-    this.volumeSlice = null;
-    this.volumeRegistration = null;
-    this.mount.root.dataset.mode = 'regional';
-    this.target.dataset.sliceAsset = 'projection-pack-v1';
-    this.target.dataset.assetIndex = String(anatomySlice.sliceIndex);
-    this.target.dataset.worldCoordinateUm = String(anatomySlice.worldCoordinateUm);
-    this.renderedRequestedIndex = model.sliceIndex;
     assertCompatibleReferenceSpace(registration, feature);
-    const location = locateVolumePlane(feature, model.axis, world);
     if (location.status === 'out-of-grid') {
+      this.frame = regionalFrame(model, anatomySlice, guides, this.presentation());
+      this.mount.regional.render(this.frame);
+      this.volumeFeature = null;
+      this.volumeSlice = null;
+      this.volumeRegistration = null;
+      this.mount.root.dataset.mode = 'regional';
+      this.target.dataset.sliceAsset = 'projection-pack-v1';
+      this.target.dataset.assetIndex = String(anatomySlice.sliceIndex);
+      this.target.dataset.worldCoordinateUm = String(anatomySlice.worldCoordinateUm);
+      delete this.target.dataset.volumeIndex;
+      delete this.target.dataset.volumeFeature;
+      this.renderedRequestedIndex = model.sliceIndex;
       throw new RangeError(`${model.axis} cursor is outside the declared volume extent`);
     }
     const volumeIndex = location.index;
-    const loader = this.volumeSource(feature);
-    const slice = await loader.loadSlice(model.axis, volumeIndex, signal);
+    const reusesVolume = this.volumeFeature === feature && this.volumeSlice?.index === volumeIndex;
+    const slice = reusesVolume
+      ? this.volumeSlice!
+      : await this.volumeSource(feature).loadSlice(model.axis, volumeIndex, signal);
     if (this.renderToken !== token) return;
-    this.placeVolume(registeredVolumeCanvasPlacement(feature, slice, registration));
-    this.paintVolume(feature, slice, this.presentation().coloring);
+    const nextFrame = regionalFrame(model, anatomySlice, guides, this.presentation());
+    const reusesAnatomy = this.frame?.axis === nextFrame.axis
+      && this.frame.index === nextFrame.index
+      && this.frame.mapping === nextFrame.mapping
+      && this.frame.svgFragment === nextFrame.svgFragment;
+
+    if (reusesAnatomy) this.mount.regional.updateGuides(nextFrame);
+    else this.mount.regional.render(nextFrame);
+    if (!reusesVolume) {
+      this.placeVolume(registeredVolumeCanvasPlacement(feature, slice, registration));
+      this.paintVolume(feature, slice, this.presentation().coloring);
+    }
+    this.frame = nextFrame;
     this.volumeFeature = feature;
     this.volumeSlice = slice;
     this.volumeRegistration = registration;
-    this.mount.root.dataset.mode = 'composite';
+    if (this.mount.root.dataset.mode !== 'composite') this.mount.root.dataset.mode = 'composite';
     this.target.dataset.sliceAsset = 'schema-volume-v1';
     this.target.dataset.volumeIndex = String(volumeIndex);
     this.target.dataset.volumeFeature = feature.featureId;
-    const prefetchAbort = new AbortController();
-    this.volumePrefetchAbort = prefetchAbort;
-    void loader.prefetchAdjacent?.(model.axis, volumeIndex, 1, prefetchAbort.signal)?.catch(() => undefined);
+    this.target.dataset.assetIndex = String(anatomySlice.sliceIndex);
+    this.target.dataset.worldCoordinateUm = String(anatomySlice.worldCoordinateUm);
+    this.renderedRequestedIndex = model.sliceIndex;
+    if (!reusesVolume) {
+      const prefetchAbort = new AbortController();
+      this.volumePrefetchAbort = prefetchAbort;
+      void this.volumeSource(feature).prefetchAdjacent?.(model.axis, volumeIndex, 1, prefetchAbort.signal)?.catch(() => undefined);
+    }
   }
 
   private placeVolume(placement: RegisteredVolumeCanvasPlacement): void {

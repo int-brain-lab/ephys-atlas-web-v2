@@ -103,6 +103,8 @@
 .projection-viewport__regional {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .projection-viewport[data-mode='regional'] .projection-viewport__scalar,

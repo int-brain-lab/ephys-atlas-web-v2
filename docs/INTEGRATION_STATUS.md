@@ -456,6 +456,15 @@ available above the scalar plane.
 Published and local releases share the same transport-independent volume
 payload contract.
 
+Retained volume navigation commits complete anatomy/scalar pairs atomically,
+leaving the previous composite visible while a new plane loads. Semantic
+same-plane navigation updates guides without repainting the scalar layer or
+reloading unchanged sparse anatomy, and request cancellation is keyed to the
+resolved volume target rather than every native-grid cursor input. Browser
+coverage asserts stable composite mode during navigation, bounded paint counts
+for linked projections, and one non-aborted cold-pack request when several
+native inputs resolve to the same 50 um plane.
+
 Volume plane selection applies the declared inverse affine to the shared world
 cursor and checks half-index voxel-edge bounds. An outside cursor fails
 explicitly before any plane resource request; it is never clamped to the
