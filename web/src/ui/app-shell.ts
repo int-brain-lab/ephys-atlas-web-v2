@@ -368,14 +368,17 @@ export class AppShell {
       const name = element('span', 'region-tooltip__name');
       name.textContent = model.name;
       nodes.tooltipIdentity.append(acronym, name);
-      nodes.tooltipValue.hidden = !model.valueLabel || !model.valueText;
+      nodes.tooltipValue.hidden = !model.valueText;
       nodes.tooltipValue.replaceChildren();
-      if (model.valueLabel && model.valueText) {
-        const label = element('span', 'region-tooltip__value-label');
-        label.textContent = model.valueLabel;
+      if (model.valueText) {
+        if (model.valueLabel) {
+          const label = element('span', 'region-tooltip__value-label');
+          label.textContent = model.valueLabel;
+          nodes.tooltipValue.append(label);
+        }
         const value = element('strong', 'region-tooltip__value-text');
         value.textContent = model.valueText;
-        nodes.tooltipValue.append(label, value);
+        nodes.tooltipValue.append(value);
       }
       nodes.tooltipMeta.textContent = model.meta;
     }

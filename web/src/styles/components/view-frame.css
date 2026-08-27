@@ -178,7 +178,7 @@
   top: 0;
   left: 0;
   box-sizing: border-box;
-  max-width: min(18rem, calc(100% - 1rem));
+  max-width: min(14rem, calc(100% - 1rem));
   display: grid;
   gap: 0.24rem;
   padding: 0.5rem 0.58rem;
@@ -209,11 +209,10 @@
 
 .region-tooltip__name {
   min-width: 0;
-  overflow: hidden;
   color: var(--color-text-secondary);
   font-size: 0.7rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .region-tooltip__value {
@@ -236,6 +235,8 @@
 
 .region-tooltip__meta {
   font-size: 0.61rem;
+  line-height: 1.35;
+  white-space: pre-line;
 }
 
 .view-frame[data-state='loading'] .view-frame__state-message,

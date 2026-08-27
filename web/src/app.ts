@@ -329,7 +329,7 @@ export class AtlasApp {
     const regions = this.atlasRegions?.mappings[inspection.parcellation] ?? data.regions;
     const region = inspection.regionId ? regions.find(({ id }) => id === inspection.regionId) : undefined;
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
-    const coordinate = (value: number, axis: string) => `${axis} ${value >= 0 ? '+' : ''}${(value / 1000).toFixed(2)} mm`;
+    const coordinate = (value: number, axis: string) => `${axis} ${value >= 0 ? '+' : ''}${(value / 1000).toFixed(2)}`;
     const coordinates = [
       coordinate(inspection.world.ml, 'ML'),
       coordinate(inspection.world.ap, 'AP'),
@@ -351,9 +351,11 @@ export class AtlasApp {
     this.shell.showVolumeTooltip(inspection, {
       acronym: region?.acronym ?? 'Voxel',
       name: region?.name.replace(/\s+\(left\)$/i, '') ?? 'Volume sample',
-      valueLabel: inspection.status === 'valid' ? 'Value' : 'Status',
       valueText,
-      meta: [statusLabel, voxel, ...coordinates].join(' · '),
+      meta: [
+        inspection.status === 'valid' ? voxel : `${statusLabel} · ${voxel}`,
+        `${coordinates.join(' · ')} mm`,
+      ].join('\n'),
     });
   }
 

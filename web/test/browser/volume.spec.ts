@@ -97,8 +97,14 @@ test('schema-v1 chunks3d volume renders all three orthogonal golden slices', asy
     }));
   });
   await expect(coronal.locator('.region-tooltip')).toBeVisible();
-  await expect(coronal.locator('.region-tooltip')).toContainText('Voxel');
-  await expect(coronal.locator('.region-tooltip')).toContainText(/voxel \d,\d,\d/);
+  const tooltip = coronal.locator('.region-tooltip');
+  await expect(tooltip).toContainText('Voxel');
+  await expect(tooltip).toContainText(/voxel \d,\d,\d/);
+  await expect(tooltip.locator('.region-tooltip__value-label')).toHaveCount(0);
+  await expect(tooltip.locator('.region-tooltip__meta')).toHaveCSS('white-space', 'pre-line');
+  expect(await tooltip.locator('.region-tooltip__meta').textContent()).toMatch(/voxel \d,\d,\d\nML /);
+  expect(await tooltip.locator('.region-tooltip__meta').textContent()).toMatch(/ML [^\n]+ · AP [^\n]+ · DV [^\n]+ mm$/);
+  expect((await tooltip.boundingBox())?.width).toBeLessThanOrEqual(224);
 });
 
 test('an out-of-grid world cursor fails explicitly without fetching a clamped edge plane', async ({ page }) => {
