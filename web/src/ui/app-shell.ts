@@ -169,6 +169,7 @@ function formatBytes(bytes: number): string {
 
 export class AppShell {
   private readonly app: HTMLDivElement;
+  private readonly header: HTMLElement;
   private readonly regionPane: HTMLElement;
   private readonly settingsPane: HTMLElement;
   private readonly backdrop: HTMLButtonElement;
@@ -277,13 +278,13 @@ export class AppShell {
     this.shortcutStatus.setAttribute('role', 'status');
     this.shortcutStatus.setAttribute('aria-live', 'polite');
 
-    const header = this.createHeader();
+    this.header = this.createHeader();
     const body = element('main', 'app-body');
     const workspace = this.createWorkspace();
     body.append(this.regionPane, workspace, this.settingsPane);
 
     this.app.append(
-      header,
+      this.header,
       body,
       this.backdrop,
       this.infoDialog,
@@ -1793,6 +1794,7 @@ export class AppShell {
   private syncWorkspaceState(activeCompactView: WorkspaceViewId, maximizedView: WorkspaceViewId | null): void {
     this.app.dataset.activeView = activeCompactView;
     if (maximizedView) this.closeDrawers();
+    this.header.inert = maximizedView !== null;
     if (maximizedView) this.app.dataset.maximizedView = maximizedView;
     else delete this.app.dataset.maximizedView;
     for (const [id, nodes] of this.viewFrames) {

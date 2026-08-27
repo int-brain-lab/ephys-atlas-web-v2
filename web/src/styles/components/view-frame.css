@@ -276,7 +276,7 @@
 .atlas-app[data-maximized-view] .drawer-backdrop {
   opacity: 1;
   visibility: visible;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 @media (max-width: 1099px) {

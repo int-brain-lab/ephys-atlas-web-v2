@@ -841,10 +841,13 @@ test('view maximize is reversible with Escape', async ({ page }) => {
   await page.getByRole('button', { name: 'Maximize coronal view' }).click();
   await expect(frame).toHaveAttribute('data-maximized', 'true');
   await expect(page.locator('.atlas-app')).toHaveAttribute('data-maximized-view', 'coronal');
+  await expect(page.locator('.app-header')).toHaveAttribute('inert', '');
+  await expect(page.locator('.drawer-backdrop')).toHaveCSS('pointer-events', 'auto');
   await expect.poll(() => new URL(page.url()).searchParams.get('max')).toBe('coronal');
   await page.keyboard.press('Escape');
   await expect(frame).toHaveAttribute('data-maximized', 'false');
   await expect(page.locator('.atlas-app')).not.toHaveAttribute('data-maximized-view', /.+/);
+  await expect(page.locator('.app-header')).not.toHaveAttribute('inert', '');
   await expect.poll(() => new URL(page.url()).searchParams.get('max')).toBeNull();
 });
 
