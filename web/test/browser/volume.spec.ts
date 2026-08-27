@@ -182,7 +182,7 @@ test('URL-persisted layer controls repaint retained layers without volume reques
   expect(chunks.length).toBe(baseline);
 });
 
-test('reduced-parcellation volume selection uses outlines without tinting scalar values', async ({ page }) => {
+test('reduced-parcellation volume selection keeps the target vivid under a neutral veil', async ({ page }) => {
   await page.goto('/?v=4&feature=rms_ap&repr=volume&parcel=cosmos&cursor=25,25,25');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
   const projection = page.locator('[data-view="coronal"] .projection-viewport');
@@ -195,7 +195,8 @@ test('reduced-parcellation volume selection uses outlines without tinting scalar
     await expect(selected).toHaveCSS('stroke-width', '1.75px');
   }
   const unselected = projection.locator('path:not(.is-selected)').first();
-  await expect(unselected).toHaveCSS('fill-opacity', '0');
+  await expect(unselected).toHaveCSS('fill', 'rgb(232, 242, 248)');
+  await expect(unselected).toHaveCSS('fill-opacity', '0.18');
   await unselected.dispatchEvent('pointermove');
   await expect(unselected).toHaveClass(/is-highlighted/);
   await expect(unselected).toHaveCSS('fill-opacity', '0');

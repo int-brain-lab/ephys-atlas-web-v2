@@ -30,7 +30,8 @@
 }
 
 .projection-viewport[data-mode='composite'] .view-frame__brain-svg.has-region-selection path:not(.is-selected):not(.is-highlighted) {
-  fill-opacity: 0;
+  fill: rgb(232 242 248);
+  fill-opacity: .18;
 }
 
 .projection-viewport[data-mode='composite'] .view-frame__slice-figure path.is-selected {

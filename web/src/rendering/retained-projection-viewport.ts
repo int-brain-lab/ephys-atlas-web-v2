@@ -211,7 +211,9 @@ function regionalFrame(
     svgFragment: slice.svgFragment,
     viewBox: slice.viewBox,
     guides,
-    regionColors: regionalPresentationColors(semantics, true),
+    ...(model.feature?.representation === 'volume'
+      ? {}
+      : { regionColors: regionalPresentationColors(semantics, true) }),
     selectedRegionIds: semantics.selectedRegionIds,
     highlightedRegionIds: semantics.highlightedRegionId == null
       ? new Set()
