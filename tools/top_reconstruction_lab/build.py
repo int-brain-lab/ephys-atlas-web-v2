@@ -177,18 +177,31 @@ def _variant(
     raw = fragment.encode() if fragment is not None else b""
     tolerance = float(parameters.get("tolerance_um", 0))
     suffix = "" if resolution_um == 25 else f"-{resolution_um}um"
-    identifier = (
-        f"reconstructed-exact{suffix}"
-        if strategy_id == "exact"
-        else f"coverage-{tolerance:g}um{suffix}"
-    )
+    if strategy_id == "exact":
+        identifier = f"reconstructed-exact{suffix}"
+        label = f"Reconstructed exact {resolution_um} µm"
+        conservative_rank = 0.0
+    elif strategy_id == "geos-coverage-simplify":
+        identifier = f"coverage-{tolerance:g}um{suffix}"
+        label = (
+            f"{resolution_um} µm source · coverage-safe {tolerance:g} µm simplification"
+        )
+        conservative_rank = tolerance
+    elif strategy_id == "shared-boundary-laplacian":
+        iterations = int(parameters["iterations"])
+        strength = float(parameters["strength"])
+        pass_label = "pass" if iterations == 1 else "passes"
+        identifier = f"shared-smooth-{iterations}pass-strength-{strength:g}{suffix}"
+        label = (
+            f"{resolution_um} µm source · shared-boundary smoothing "
+            f"{iterations} {pass_label} at {strength:g} strength"
+        )
+        conservative_rank = iterations * strength
+    else:
+        raise ValueError(f"unsupported Top reconstruction strategy {strategy_id!r}")
     return {
         "id": identifier,
-        "label": (
-            f"Reconstructed exact {resolution_um} µm"
-            if strategy_id == "exact"
-            else f"{resolution_um} µm source · coverage-safe {tolerance:g} µm simplification"
-        ),
+        "label": label,
         "strategy_id": strategy_id,
         "parameters": parameters,
         "eligibility": record["eligibility"],
@@ -200,7 +213,7 @@ def _variant(
             "raw_utf8_bytes": len(raw),
             "gzip_9_bytes": len(gzip.compress(raw, compresslevel=9, mtime=0)),
         },
-        "conservative_rank": tolerance,
+        "conservative_rank": conservative_rank,
     }
 
 
@@ -214,6 +227,8 @@ def build_report(
     source: dict[str, Any],
     generator: dict[str, Any],
     resolution_um: int = DEFAULT_RESOLUTION_UM,
+    smoothing_passes: Sequence[int] = (),
+    smoothing_strength: float = 0.25,
 ) -> dict[str, Any]:
     plane = np.asarray(surface_rows, dtype=np.int32)
     if plane.ndim != 2 or not np.any(plane):
@@ -223,6 +238,14 @@ def build_report(
     tolerances = tuple(sorted(set(float(value) for value in tolerances_um)))
     if any(not math.isfinite(value) or value <= 0 for value in tolerances):
         raise ValueError("candidate tolerances must be finite and positive")
+    passes = tuple(sorted(set(smoothing_passes)))
+    if any(
+        isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 32
+        for value in passes
+    ):
+        raise ValueError("smoothing passes must be integers between 1 and 32")
+    if not math.isfinite(smoothing_strength) or not 0 < smoothing_strength <= 0.5:
+        raise ValueError("smoothing strength must be finite and in (0, 0.5]")
     policy = EvaluationPolicy(
         maximum_error_um=2 * resolution_um,
         minimum_iou=0.98,
@@ -249,6 +272,17 @@ def build_report(
         )
         for tolerance in tolerances
     )
+    variants.extend(
+        _variant(
+            plane,
+            regions,
+            strategy_id="shared-boundary-laplacian",
+            parameters={"iterations": iterations, "strength": smoothing_strength},
+            policy=policy,
+            resolution_um=resolution_um,
+        )
+        for iterations in passes
+    )
     rows = sorted(int(value) for value in np.unique(plane) if int(value) != 0)
     metadata = _region_metadata(rows, regions)
     legacy_ids = sorted(
@@ -258,7 +292,7 @@ def build_report(
         }
     )
     candidate_ids = sorted(int(value) for value in metadata)
-    identity = {
+    identity: dict[str, Any] = {
         "format": FORMAT,
         "surface_labels_sha256": source["surface_labels"]["sha256"],
         "legacy_top_sha256": source["legacy_top"]["sha256"],
@@ -266,6 +300,11 @@ def build_report(
         "tolerances_um": list(tolerances),
         "generator_commit": generator["commit"],
     }
+    if passes:
+        identity.update(
+            smoothing_passes=list(passes),
+            smoothing_strength=smoothing_strength,
+        )
     return {
         "format": FORMAT,
         "review_id": hashlib.sha256(canonical_json(identity)).hexdigest(),
@@ -435,6 +474,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--tolerances-um", default=",".join(map(str, DEFAULT_TOLERANCES_UM))
     )
+    parser.add_argument("--smoothing-passes", default="")
+    parser.add_argument("--smoothing-strength", type=float, default=0.25)
     parser.add_argument(
         "--output",
         type=Path,
@@ -518,6 +559,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     tolerances = tuple(
         float(value.strip()) for value in args.tolerances_um.split(",") if value.strip()
     )
+    smoothing_passes = tuple(
+        int(value.strip())
+        for value in args.smoothing_passes.split(",")
+        if value.strip()
+    )
     report = build_report(
         plane,
         regions,
@@ -545,6 +591,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         },
         generator=_git_state(repository),
         resolution_um=args.resolution_um,
+        smoothing_passes=smoothing_passes,
+        smoothing_strength=args.smoothing_strength,
     )
     rendered = render_report(report, args.template.read_text())
     output.parent.mkdir(parents=True, exist_ok=True)

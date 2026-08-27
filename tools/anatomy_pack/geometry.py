@@ -215,10 +215,13 @@ def internal_background_components(
     if not geometries:
         return 0
     background = frame.difference(unary_union(geometries))
+    if background.is_empty:
+        return 0
     return sum(
         1
         for component in get_parts(background)
-        if component.boundary.intersection(frame.boundary).is_empty
+        if not component.is_empty
+        and component.boundary.intersection(frame.boundary).is_empty
     )
 
 
@@ -292,8 +295,8 @@ def simplify_coverage(
     adjacency_before = adjacency_pairs(exact)
     adjacency_after = adjacency_pairs(candidate)
     candidate_by_label = dict(zip(labels, candidate, strict=True))
-    uncovered_voxels, multiply_covered_voxels, wrong_label_voxels = (
-        voxel_center_errors(source_plane, candidate_by_label)
+    uncovered_voxels, multiply_covered_voxels, wrong_label_voxels = voxel_center_errors(
+        source_plane, candidate_by_label
     )
     internal_background_before = internal_background_components(source_plane, exact)
     internal_background_after = internal_background_components(source_plane, candidate)

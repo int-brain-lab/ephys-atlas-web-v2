@@ -285,6 +285,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         type=parse_tolerances_um,
         default=parse_tolerances_um(DEFAULT_TOLERANCES),
     )
+    parser.add_argument("--smoothing-passes", type=parse_indices, default=(1, 2, 4, 8))
+    parser.add_argument("--smoothing-strength", type=float, default=0.125)
     parser.add_argument("--maximum-error-um", type=float, required=True)
     parser.add_argument("--minimum-iou", type=float, required=True)
     parser.add_argument("--minimum-iou-area-mm2", type=float, default=0.01)
@@ -320,6 +322,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="disable resumable per-variant checkpoints",
     )
     args = parser.parse_args(argv)
+    if "shared-boundary-laplacian" in args.strategies:
+        if not args.smoothing_passes or any(
+            value == 0 for value in args.smoothing_passes
+        ):
+            parser.error("shared-boundary smoothing passes must be positive")
+        if (
+            not math.isfinite(args.smoothing_strength)
+            or not 0 < args.smoothing_strength <= 0.5
+        ):
+            parser.error("smoothing strength must be finite and in (0, 0.5]")
     if not args.synthetic:
         missing = [
             name
@@ -359,7 +371,7 @@ def _plane_properties(
     height, width = plane.shape
     frame = box(-0.5, -0.5, width - 0.5, height - 0.5)
     signed = [signed_id_for_label(label) for label in labels]
-    return {
+    identity = {
         "region_count": len(labels),
         "vertices": sum(len(get_coordinates(value.boundary)) for value in geometries),
         "adjacencies": len(adjacency_pairs(geometries)),
@@ -372,6 +384,7 @@ def _plane_properties(
             any(value < 0 for value in signed) and any(value > 0 for value in signed)
         ),
     }
+    return identity
 
 
 def select_stress_samples(
@@ -460,7 +473,10 @@ def _intensity_payload(plane: np.ndarray) -> dict[str, Any]:
 
 
 def _strategy_variants(
-    strategy_ids: Sequence[str], tolerances: Sequence[float]
+    strategy_ids: Sequence[str],
+    tolerances: Sequence[float],
+    smoothing_passes: Sequence[int] = (1, 2, 4, 8),
+    smoothing_strength: float = 0.125,
 ) -> list[tuple[str, dict[str, Any]]]:
     variants: list[tuple[str, dict[str, Any]]] = []
     for strategy_id in strategy_ids:
@@ -478,6 +494,14 @@ def _strategy_variants(
                             },
                         )
                     )
+        elif strategy_id == "shared-boundary-laplacian":
+            variants.extend(
+                (
+                    strategy_id,
+                    {"iterations": iterations, "strength": smoothing_strength},
+                )
+                for iterations in smoothing_passes
+            )
         else:
             variants.extend(
                 (strategy_id, {"tolerance_um": tolerance}) for tolerance in tolerances
@@ -788,7 +812,7 @@ def _checkpoint_identity(args: argparse.Namespace, repository: Path) -> dict[str
             "parent_manifest_sha256": sha256_file(args.parent / "manifest.json"),
             "sampled_manifest_sha256": sha256_file(args.sampled_pack / "manifest.json"),
         }
-    return {
+    identity = {
         "source": source,
         "created_at": args.created_at,
         "strategies": list(args.strategies),
@@ -811,6 +835,12 @@ def _checkpoint_identity(args: argparse.Namespace, repository: Path) -> dict[str
             "iblatlas_commit": IBLATLAS_COMMIT,
         },
     }
+    if "shared-boundary-laplacian" in args.strategies:
+        identity.update(
+            smoothing_passes=list(args.smoothing_passes),
+            smoothing_strength=args.smoothing_strength,
+        )
+    return identity
 
 
 def _checkpoint_for_args(
@@ -850,7 +880,12 @@ def build_synthetic_report(
 ) -> dict[str, Any]:
     source_planes = synthetic_planes()
     ordered = list(source_planes.items())
-    variants = _strategy_variants(args.strategies, args.tolerances_um)
+    variants = _strategy_variants(
+        args.strategies,
+        args.tolerances_um,
+        args.smoothing_passes,
+        args.smoothing_strength,
+    )
     policy = EvaluationPolicy(
         args.maximum_error_um, args.minimum_iou, args.minimum_iou_area_mm2 * 1_000_000
     )
@@ -954,7 +989,12 @@ def build_real_report(
     if template.shape != LABEL_SHAPE:
         raise ValueError("average-template grid shape mismatch")
     regions = BrainRegions()
-    variants = _strategy_variants(args.strategies, args.tolerances_um)
+    variants = _strategy_variants(
+        args.strategies,
+        args.tolerances_um,
+        args.smoothing_passes,
+        args.smoothing_strength,
+    )
     policy = EvaluationPolicy(
         args.maximum_error_um, args.minimum_iou, args.minimum_iou_area_mm2 * 1_000_000
     )
@@ -1096,6 +1136,12 @@ def _reproduction_command(args: argparse.Namespace) -> str:
         f"--maximum-error-um {args.maximum_error_um:g} --minimum-iou {args.minimum_iou:g} "
         f"--minimum-iou-area-mm2 {args.minimum_iou_area_mm2:g}"
     )
+    if "shared-boundary-laplacian" in args.strategies:
+        common += (
+            " --smoothing-passes "
+            f"{','.join(map(str, args.smoothing_passes))}"
+            f" --smoothing-strength {args.smoothing_strength:g}"
+        )
     selections = "".join(
         f" --{projection}-slices {','.join(map(str, getattr(args, f'{projection}_slices')))}"
         for projection in PROJECTION_NAMES

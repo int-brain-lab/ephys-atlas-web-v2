@@ -101,9 +101,14 @@ def test_strategy_registry_has_stable_unique_identity() -> None:
         "exact",
         "geos-coverage-simplify",
         "independent-ring-rdp-unsafe",
+        "shared-boundary-laplacian",
     ]
     assert all(item.version == "1" for item in definitions)
-    assert definitions[-1].unsafe_control
+    assert next(
+        item
+        for item in definitions
+        if item.strategy_id == "independent-ring-rdp-unsafe"
+    ).unsafe_control
 
 
 @pytest.mark.parametrize("name", synthetic_planes())
@@ -160,6 +165,40 @@ def test_coverage_strategy_is_deterministic_and_retains_complete_metrics() -> No
     assert first.metrics.worst_relative_area_change_region is not None
 
 
+@pytest.mark.parametrize("name", ["t_junction", "hole", "disconnected_islands"])
+def test_shared_boundary_smoothing_is_deterministic_and_keeps_the_coverage(
+    name: str,
+) -> None:
+    plane = synthetic_planes()[name]
+    smoothing_policy = EvaluationPolicy(
+        maximum_error_um=20,
+        minimum_iou=0.98,
+        minimum_iou_area_um2=10_000,
+    )
+    kwargs = dict(
+        strategy_id="shared-boundary-laplacian",
+        parameters={"iterations": 2, "strength": 0.25},
+        resolution_um=10,
+        policy=smoothing_policy,
+    )
+
+    first = run_experiment(plane, **kwargs)
+    second = run_experiment(plane, **kwargs)
+
+    assert first.deterministic_record() == second.deterministic_record()
+    assert first.eligibility == Eligibility.ELIGIBLE
+    assert first.generation_failure is None
+    assert first.metrics is not None
+    assert first.metrics.coverage_valid_after
+    assert first.metrics.geometries_valid_after
+    assert first.metrics.adjacency_preserved
+    assert first.metrics.background_topology_valid
+    assert first.metrics.uncovered_voxels == 0
+    assert first.metrics.multiply_covered_voxels == 0
+    assert first.metrics.wrong_label_voxels == 0
+    assert first.metrics.vertices_after > first.metrics.vertices_before
+
+
 def test_rejected_candidate_keeps_metrics_and_failure_reasons() -> None:
     plane = np.zeros((20, 20), dtype=np.int16)
     for row in range(2, 18):
@@ -209,6 +248,14 @@ def test_parameter_and_generation_failures_are_explicit() -> None:
             synthetic_planes()["hole"],
             strategy_id="unknown",
             parameters={},
+            resolution_um=10,
+            policy=POLICY,
+        )
+    with pytest.raises(ValueError, match="iterations must be between"):
+        run_experiment(
+            synthetic_planes()["hole"],
+            strategy_id="shared-boundary-laplacian",
+            parameters={"iterations": 0, "strength": 0.25},
             resolution_um=10,
             policy=POLICY,
         )

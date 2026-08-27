@@ -127,9 +127,12 @@ in the 116-path reconstruction. Exact and 12.5 µm variants pass the
 provisional single-map gates; 25 and 37.5 µm variants remain visibly rejected.
 The completed 25 µm review preferred reconstruction continuity but legacy
 smoothing and anatomical shape for every candidate, and requested refinement.
-No candidate advanced. The clean validated-10 µm report is now ready for human
-review: exact is the reference, 2.5 and 5 µm are identical eligible candidates,
-and 7.5 µm is a rejected visual diagnostic. This does not alter D045, resolve
+No candidate advanced. The validated-10 µm review repeated the same tradeoff
+for exact and every simplification candidate. A new refinement lane now smooths
+the globally noded boundary graph with fixed junctions before polygonizing the
+complete coverage once; independent region smoothing remains forbidden. A
+coarse 25 µm pilot retained all structural and voxel-centre invariants. The
+canonical 10 µm build and review are next. This does not alter D045, resolve
 Q13, or modify the active projection pack.
 
 The pre-Commit-1 contract is now explicit about separate reference-space,

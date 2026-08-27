@@ -40,6 +40,16 @@ existing deterministic coverage, geometry-validity, component/hole,
 adjacency, source-voxel, IoU, and boundary-error measurements remain attached
 to every candidate, including rejected candidates.
 
+The refinement lane uses a distinct shared-boundary Laplacian method. It merges
+the complete boundary network, segments long runs at one-source-voxel spacing,
+and moves every degree-two graph node toward its two neighbours. Multi-region
+junctions and endpoints remain fixed. The moved network is polygonized once
+and faces are assigned by maximum overlap with the reference coverage,
+including an explicit background comparison. Shared interfaces therefore
+cannot diverge independently. The same complete validation suite decides
+eligibility; smoothing is not assumed safe merely because it is visually
+continuous.
+
 The report fits each geometry's bounds independently with the same 3% padding
 for visual comparison. This is display-only silhouette registration and makes
 no scientific affine or coordinate claim. Original source view boxes remain in
@@ -103,7 +113,17 @@ the reference; 2.5 and 5 µm produce identical eligible geometry with 38,839
 vertices and exact sampled-voxel metrics; 7.5 µm is rejected with minimum IoU
 `0.8938257357184078` and maximum boundary-error upper bound `11.25 µm`.
 All candidates contain 116 signed Allen regions and differ from legacy only by
-bilateral `VISC1`. Human review is pending; the report remains evidence only.
+bilateral `VISC1`. The completed review repeated the 25 µm result for every
+candidate: reconstruction was better for continuity, while legacy was better
+for smoothing and anatomical shape. Every comparison requested refinement;
+no candidate advanced and production remains unchanged.
+
+The next report applies 1, 2, 4, and 8 shared-boundary smoothing passes at a
+conservative `0.125` per-pass strength to the 10 µm reconstruction. A 25 µm
+pilot retained all labels, valid coverage, adjacency, topology, and every
+source voxel centre at all four strengths. Its candidates were rejected only
+by the provisional per-region IoU gate, as expected for that coarser source.
+The canonical 10 µm metrics and human review remain the decision evidence.
 
 ## Reproduction
 
@@ -132,3 +152,13 @@ just top-reconstruction-lab-lut \
 This writes `artifacts/top-reconstruction-lab/10um/index.html`. Its expected
 source LUT is 2,407,680,128 bytes; the parent manifest binds it to annotation
 SHA-256 `a9e9654ef491f0af107dc0a61bd720dabe7f36e8f3e9239532bf3dbdc94ef24c`.
+
+Build the smoothing-only refinement report with the same four input arguments:
+
+```sh
+just top-reconstruction-lab-smoothing \
+  /path/to/annotation_10_lut_bilateral_v02.npy \
+  f8c26e2eb972cbff5caa2101fda8b7c5c2a2bdb985e3faad6bf0e57defcc27cb \
+  web/public/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/manifest.json \
+  data/releases/top-review-input/slices_top.json
+```

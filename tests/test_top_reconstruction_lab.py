@@ -189,6 +189,38 @@ def test_ten_micrometre_report_names_source_resolution_explicitly() -> None:
     assert report["candidates"][0]["label"] == "Reconstructed exact 10 µm"
 
 
+def test_shared_boundary_smoothing_candidates_are_separate_from_simplification() -> (
+    None
+):
+    plane = np.zeros((12, 12), dtype=np.int32)
+    plane[1:11, 1:6] = 4
+    plane[1:11, 6:11] = 1
+    report = build_report(
+        plane,
+        _regions(),
+        '<path class="atlas-region" fill-rule="evenodd" data-allen-id="-10" '
+        'data-beryl-id="-10" data-cosmos-id="-10" d="M0 0L1 0L1 1Z"/>',
+        tolerances_um=(),
+        smoothing_passes=(1, 4),
+        smoothing_strength=0.25,
+        created_at="2026-08-27T00:00:00Z",
+        source={
+            "surface_labels": {"sha256": "a" * 64},
+            "legacy_top": {"sha256": "b" * 64},
+        },
+        generator={"commit": "c" * 40, "dirty": False},
+        resolution_um=10,
+    )
+
+    assert [item["id"] for item in report["candidates"]] == [
+        "reconstructed-exact-10um",
+        "shared-smooth-1pass-strength-0.25-10um",
+        "shared-smooth-4pass-strength-0.25-10um",
+    ]
+    assert report["candidates"][1]["strategy_id"] == "shared-boundary-laplacian"
+    assert "shared-boundary smoothing" in report["candidates"][1]["label"]
+
+
 def test_self_contained_report_has_guided_three_answer_workflow() -> None:
     template = open("tools/top_reconstruction_lab/template.html").read()
     rendered = render_report(
