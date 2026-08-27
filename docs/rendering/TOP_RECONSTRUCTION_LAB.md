@@ -93,10 +93,17 @@ A better for smoothing quality and anatomical shape. Every comparison was
 therefore marked `needs-refinement`; no production candidate was selected and
 the legacy Top remains the fallback.
 
-The next experiment tests whether retaining the canonical 10 µm dorsal detail
-can close that tradeoff. It compares the exact 10 µm reconstruction plus
-coverage-safe 2.5, 5, and 7.5 µm simplification candidates in a distinct report.
-The result remains review evidence only.
+The canonical 10 µm experiment was built on Fractal from clean generator
+commit `de057da58a1b9e8aafe31ebdbba4cea3be9737b5`. The self-contained report has
+SHA-256 `4d9035dd52838f31b2e42c17db114f4b588ea2fea0462bdb770925254bd87435`
+and review ID
+`9d8b2f63eebbda7e29efa0ae3298d5a71fc0e3e10abd7d2b8998c214726ed265`.
+It contains exact plus coverage-safe 2.5, 5, and 7.5 µm candidates. Exact is
+the reference; 2.5 and 5 µm produce identical eligible geometry with 38,839
+vertices and exact sampled-voxel metrics; 7.5 µm is rejected with minimum IoU
+`0.8938257357184078` and maximum boundary-error upper bound `11.25 µm`.
+All candidates contain 116 signed Allen regions and differ from legacy only by
+bilateral `VISC1`. Human review is pending; the report remains evidence only.
 
 ## Reproduction
 

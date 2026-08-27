@@ -127,9 +127,10 @@ in the 116-path reconstruction. Exact and 12.5 µm variants pass the
 provisional single-map gates; 25 and 37.5 µm variants remain visibly rejected.
 The completed 25 µm review preferred reconstruction continuity but legacy
 smoothing and anatomical shape for every candidate, and requested refinement.
-No candidate advanced. The next evidence lane compares exact and 2.5, 5, and
-7.5 µm coverage-safe variants from the validated 10 µm LUT. This does not
-alter D045, resolve Q13, or modify the active projection pack.
+No candidate advanced. The clean validated-10 µm report is now ready for human
+review: exact is the reference, 2.5 and 5 µm are identical eligible candidates,
+and 7.5 µm is a rejected visual diagnostic. This does not alter D045, resolve
+Q13, or modify the active projection pack.
 
 The pre-Commit-1 contract is now explicit about separate reference-space,
 grid, and asset identities; verified-only persistent caching; independent

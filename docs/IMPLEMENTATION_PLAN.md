@@ -227,7 +227,7 @@ scientific boundaries, and promotion stopping point are specified in
 ## P2T — Top reconstruction lab
 
 Status: **25 µm review complete with refinement requested; canonical 10 µm
-experiment in progress**.
+experiment ready for review**.
 
 The guarded local lab reconstructs the affine-free dorsal Top map from the
 exact pinned Allen 25 µm annotation, compares legacy A/left with exact and
@@ -243,11 +243,14 @@ legacy for boundary continuity, but judged legacy better for smoothing and
 anatomical shape. All four comparisons requested another variant, so no
 candidate advanced and production remains unchanged.
 
-Next action: build and review exact and conservative coverage-safe variants
-from the validated bilateral 10 µm LUT. Do not modify the active pack or record
-a replacement decision until that evidence is inspected. The legacy Top
-remains the fallback, and Q13 remains independently unresolved. The contract
-and reproduction command are in
+The clean 10 µm build is complete. Exact is the reference; 2.5 and 5 µm
+produce the same eligible geometry, while 7.5 µm is rejected by the
+provisional IoU gate and remains available as a visual diagnostic.
+
+Next action: complete the guided human review of that report. Do not modify the
+active pack or record a replacement decision until that evidence is inspected.
+The legacy Top remains the fallback, and Q13 remains independently unresolved.
+The contract and reproduction command are in
 `docs/rendering/TOP_RECONSTRUCTION_LAB.md`.
 
 ## P3D — Independent brain-mesh 3-D lab
