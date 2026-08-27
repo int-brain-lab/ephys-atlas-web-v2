@@ -113,7 +113,9 @@ evidence lane for the Top source itself. It derives the dorsal first-visible
 label projection from the hash-pinned Allen 25 µm annotation, evaluates exact
 and GEOS whole-coverage variants with deterministic topology/scientific
 metrics, and embeds them beside the pinned legacy Top in one self-contained
-guided A/B report. Legacy remains fixed as A/left during screening; multiple
+guided A/B report. Legacy remains fixed as A/left during screening. Each
+assessment separates continuity/holes, smoothing, and anatomical shape,
+accepts a free-text observation and an explicit refinement request; multiple
 winners enter a finalist round, answers are correctable, and the exported
 recommendation has no production effect. Advanced overlay, boundary, linked
 zoom/pan, hover, failure, provenance, and inventory evidence remains optional.

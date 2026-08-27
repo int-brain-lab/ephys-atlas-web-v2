@@ -232,7 +232,8 @@ review pending**.
 The guarded local lab reconstructs the affine-free dorsal Top map from the
 exact pinned Allen 25 µm annotation, compares legacy A/left with exact and
 topology-safe reconstructed B/right variants, retains rejected candidates and
-their failures, and exports an adaptive guided decision record. The first
+their failures, and exports an adaptive guided decision record with separate
+continuity, smoothing, anatomical-shape, free-text, and refinement evidence. The first
 build reproduces all legacy signed Allen identities and adds only bilateral
 `VISC1`; exact and 12.5 µm candidates pass the provisional single-map gates,
 while 25 and 37.5 µm variants fail and remain diagnostic.

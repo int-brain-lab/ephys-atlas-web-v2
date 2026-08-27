@@ -35,16 +35,23 @@ the embedded evidence.
 
 ## Guided review
 
-The default workflow asks one question at a time. During screening, legacy is
-always option A on the left and one reconstruction is option B on the right.
-The reviewer answers `A is better`, `No meaningful difference`, or `B is
-better`. Answers can be corrected.
+The default workflow presents one comparison at a time. During screening,
+legacy is always option A on the left and one reconstruction is option B on
+the right. Each assessment records separate A/same/B judgements for boundary
+continuity/holes, smoothing quality, and anatomical shape, plus an optional
+free-text observation. The reviewer then chooses `Prefer A`, `No meaningful
+difference`, `Needs another variant`, or `Prefer B`. Assessments and their
+notes can be corrected.
 
-Every reconstruction that beats legacy enters an adaptive pairwise finalist
-round. A no-difference finalist answer conservatively retains the lower
-tolerance. The final result is either retain legacy, shortlist an eligible
-candidate, or investigate a visually preferred rejected candidate without
-promotion. The downloadable decision record has no production effect.
+Every reconstruction explicitly preferred over legacy enters an adaptive
+pairwise finalist round. A no-difference finalist answer conservatively retains
+the lower tolerance. If no candidate advances and any comparison identifies a
+tradeoff requiring refinement, the lab recommends another variant instead of
+forcing a false A/B winner. The final result is therefore retain legacy,
+shortlist an eligible candidate, design another variant, or investigate a
+visually preferred rejected candidate without promotion. The downloadable
+decision record preserves every criterion and note and has no production
+effect.
 
 Advanced evidence provides synchronized mouse-wheel zoom, drag pan,
 side-by-side, color-overlay, boundary-difference, individual variant views,

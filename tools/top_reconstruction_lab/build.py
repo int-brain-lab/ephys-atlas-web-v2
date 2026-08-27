@@ -27,7 +27,7 @@ from tools.projection_pack.build import (
 )
 
 FORMAT = "ibl-top-reconstruction-lab-v1"
-REVIEW_FORMAT = "ibl-top-reconstruction-human-review-v1"
+REVIEW_FORMAT = "ibl-top-reconstruction-human-review-v2"
 RESOLUTION_UM = 25
 RAW_SHAPE = (528, 456, 320)  # AP, ML, DV
 LEGACY_VIEW_BOX = [60, 20, 340, 300]
@@ -206,8 +206,19 @@ def build_report(
         "review_id": hashlib.sha256(canonical_json(identity)).hexdigest(),
         "created_at": created_at,
         "status": "local review evidence only; no production asset is selected or changed",
-        "question": "Which Top geometry is visually better?",
-        "answer_options": ["a-better", "no-difference", "b-better"],
+        "question": "How do these Top geometries differ?",
+        "review_criteria": [
+            {"id": "boundary_continuity", "label": "Boundary continuity / holes"},
+            {"id": "smoothing_quality", "label": "Smoothing quality"},
+            {"id": "anatomical_shape", "label": "Anatomical shape"},
+        ],
+        "criterion_options": ["a-better", "no-difference", "b-better"],
+        "disposition_options": [
+            "prefer-a",
+            "no-difference",
+            "needs-refinement",
+            "prefer-b",
+        ],
         "legacy": {
             "id": "legacy-top",
             "label": "Legacy Top",
@@ -236,7 +247,8 @@ def build_report(
         },
         "decision_rule": {
             "screening": "Legacy is A/left and each reconstruction is B/right.",
-            "finalists": "Every B-better reconstruction enters an adaptive pairwise finalist round.",
+            "finalists": "Every prefer-B reconstruction enters an adaptive pairwise finalist round.",
+            "refinement": "If no candidate advances and any comparison requests refinement, recommend another variant rather than forcing A or B.",
             "no_difference": "Keep the lower-tolerance (more conservative) finalist.",
             "promotion": "The result is a recommendation only; production replacement requires a separate reviewed decision.",
         },

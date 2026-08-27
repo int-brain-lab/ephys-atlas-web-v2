@@ -77,6 +77,12 @@ def test_report_retains_variants_metrics_inventory_and_no_production_effect() ->
     ]
     assert all(item["metrics"] for item in report["candidates"])
     assert report["inventory"]["only_in_candidate"] == []
+    assert [criterion["id"] for criterion in report["review_criteria"]] == [
+        "boundary_continuity",
+        "smoothing_quality",
+        "anatomical_shape",
+    ]
+    assert "needs-refinement" in report["disposition_options"]
     assert report["decision_rule"]["promotion"].startswith("The result is a recommendation")
 
 
@@ -89,9 +95,12 @@ def test_self_contained_report_has_guided_three_answer_workflow() -> None:
     parser = _Parser()
     parser.feed(rendered.decode())
 
-    assert b"A is better" in rendered
+    assert b"Boundary continuity / holes" not in rendered  # labels are report-driven
+    assert b"Prefer A" in rendered
     assert b"No meaningful difference" in rendered
-    assert b"B is better" in rendered
+    assert b"Needs another variant" in rendered
+    assert b"Prefer B" in rendered
+    assert b"Optional observation" in rendered
     assert b"Option A" in rendered and b"Option B" in rendered
     assert b"adaptive pairwise finalist" not in rendered  # prose stays concise
     assert b"<\\/script>" in rendered
