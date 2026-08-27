@@ -104,6 +104,9 @@ synthetic Swanson, records per-view source modes, and labels the browser view
 as license-unresolved and non-publishable. This lane supports visual Top
 iteration without claiming that Q13 is resolved or weakening the production
 builder's license-evidence gate.
+Set `EPHYS_ATLAS_PROJECTION_PACK` to that generated pack directory when
+starting Vite; the development server exposes only that rooted directory under
+`/__projection-pack/` with transport-opaque gzip bytes and no persistent cache.
 
 The pre-Commit-1 contract is now explicit about separate reference-space,
 grid, and asset identities; verified-only persistent caching; independent
