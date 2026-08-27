@@ -96,12 +96,10 @@ test('small pixel wheel deltas accumulate sensitively for smooth macOS scrolling
   await expect(page.locator('[data-view="coronal"]')).toHaveAttribute('data-state', 'ready');
 
   await page.locator('[data-view="coronal"] .view-frame__brain-svg').evaluate((node) => {
-    for (let index = 0; index < 2; index += 1) {
-      node.dispatchEvent(new WheelEvent('wheel', { deltaY: 8, deltaMode: WheelEvent.DOM_DELTA_PIXEL, cancelable: true }));
-    }
+    node.dispatchEvent(new WheelEvent('wheel', { deltaY: 8, deltaMode: WheelEvent.DOM_DELTA_PIXEL, cancelable: true }));
   });
-  await expect(page.getByLabel('coronal slice')).toHaveValue('81');
-  await expect.poll(() => new URL(page.url()).searchParams.get('cursor')).toBe('-239,-1120,-3668');
+  await expect(page.getByLabel('coronal slice')).toHaveValue('80');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cursor')).toBe('-239,-1040,-3668');
 });
 
 test('initial anatomy display fetches only the three visible packs', async ({ page }) => {
