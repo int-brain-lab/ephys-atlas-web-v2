@@ -1162,7 +1162,14 @@ export class AppShell {
     const datasetId = state.view.dataset.releaseId
       ? JSON.stringify([state.view.dataset.datasetId, state.view.dataset.releaseId])
       : '';
-    this.datasetContext.setOptions(datasetOptions, [datasetId], datasetOptions.length === 0);
+    this.datasetContext.setOptions(datasetOptions, [datasetId], {
+      emptyMessage: state.runtime.catalogStatus === 'error'
+        ? `Datasets unavailable: ${state.runtime.error ?? 'The catalog could not be loaded.'}`
+        : state.runtime.catalogStatus === 'loading' || state.runtime.catalogStatus === 'idle'
+          ? 'Loading datasets…'
+          : 'No datasets are available.',
+      busy: state.runtime.catalogStatus === 'loading' || state.runtime.catalogStatus === 'idle',
+    });
 
     this.featureRepresentation.clear();
     const featureOptions: ContextMenuOption[] = manifest?.features.map((feature) => {
@@ -1177,7 +1184,14 @@ export class AppShell {
         keywords: `${feature.id} ${feature.description} ${feature.valueSemantics.quantity}`,
       };
     }) ?? [];
-    this.featureContext.setOptions(featureOptions, state.view.featureId ? [state.view.featureId] : [], featureOptions.length === 0);
+    this.featureContext.setOptions(featureOptions, state.view.featureId ? [state.view.featureId] : [], {
+      emptyMessage: state.runtime.datasetStatus === 'error'
+        ? `Features unavailable: ${state.runtime.error ?? 'The release could not be loaded.'}`
+        : state.runtime.datasetStatus === 'loading' || state.runtime.datasetStatus === 'idle'
+          ? 'Loading features…'
+          : 'No features are available for this release.',
+      busy: state.runtime.datasetStatus === 'loading' || state.runtime.datasetStatus === 'idle',
+    });
 
     const selectedFeature = manifest?.features.find((feature) => feature.id === state.view.featureId);
     const representations = selectedFeature ? this.featureRepresentations(selectedFeature) : [];
@@ -1203,7 +1217,14 @@ export class AppShell {
     this.representationContext.setOptions(
       [...representationOptions, ...parcellationOptions],
       [`representation:${state.view.representation}`, `parcellation:${state.view.parcellation}`],
-      representationOptions.length + parcellationOptions.length === 0,
+      {
+        emptyMessage: state.runtime.datasetStatus === 'error'
+          ? `Representations unavailable: ${state.runtime.error ?? 'The release could not be loaded.'}`
+          : state.runtime.datasetStatus === 'loading' || state.runtime.datasetStatus === 'idle'
+            ? 'Loading representations…'
+            : 'Choose a feature to see its representations.',
+        busy: state.runtime.datasetStatus === 'loading' || state.runtime.datasetStatus === 'idle',
+      },
     );
   }
 

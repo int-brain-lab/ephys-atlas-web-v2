@@ -19,6 +19,11 @@ export interface ContextMenuConfig {
   onSelect(option: ContextMenuOption): void;
 }
 
+export interface ContextMenuAvailability {
+  emptyMessage: string;
+  busy?: boolean;
+}
+
 let menuSequence = 0;
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K] {
@@ -35,8 +40,10 @@ export class ContextMenu {
   private readonly panel: HTMLElement;
   private readonly search: HTMLInputElement | null;
   private readonly list: HTMLElement;
+  private readonly empty: HTMLElement;
   private options: readonly ContextMenuOption[] = [];
   private selectedIds = new Set<string>();
+  private unavailableMessage = 'No options are available.';
 
   constructor(private readonly config: ContextMenuConfig) {
     const panelId = `context-menu-${++menuSequence}`;
@@ -85,6 +92,10 @@ export class ContextMenu {
     this.list.setAttribute('role', 'listbox');
     this.list.setAttribute('aria-label', config.label);
     if (config.multiselectable) this.list.setAttribute('aria-multiselectable', 'true');
+    this.empty = element('div', 'context-menu__empty');
+    this.empty.setAttribute('role', 'status');
+    this.empty.hidden = true;
+    this.list.append(this.empty);
     this.panel.append(this.list);
     data.append(this.trigger, this.panel);
     this.field.append(label, data);
@@ -105,7 +116,12 @@ export class ContextMenu {
     this.trigger.setAttribute('aria-label', `${this.config.label}: ${value}${meta ? `, ${meta}` : ''}`);
   }
 
-  setOptions(options: readonly ContextMenuOption[], selectedIds: readonly string[], disabled = false): void {
+  setOptions(
+    options: readonly ContextMenuOption[],
+    selectedIds: readonly string[],
+    availability: ContextMenuAvailability,
+  ): void {
+    this.unavailableMessage = availability.emptyMessage;
     const signature = JSON.stringify(options);
     const selection = JSON.stringify(selectedIds);
     if (this.list.dataset.options !== signature || this.list.dataset.selection !== selection) {
@@ -115,8 +131,10 @@ export class ContextMenu {
       this.list.dataset.options = signature;
       this.list.dataset.selection = selection;
     }
-    this.trigger.disabled = disabled || options.length === 0;
-    if (this.trigger.disabled) this.close();
+    this.filter();
+    const busy = options.length === 0 && availability.busy === true;
+    this.trigger.setAttribute('aria-busy', String(busy));
+    this.list.setAttribute('aria-busy', String(busy));
   }
 
   get isOpen(): boolean {
@@ -202,7 +220,7 @@ export class ContextMenu {
       });
       fragment.append(button);
     }
-    this.list.replaceChildren(fragment);
+    this.list.replaceChildren(fragment, this.empty);
     this.filter();
   }
 
@@ -248,7 +266,10 @@ export class ContextMenu {
     for (const group of this.list.querySelectorAll<HTMLElement>('.context-menu__group')) {
       group.hidden = !visibleGroups.has(group.dataset.contextGroup ?? '');
     }
-    this.list.dataset.empty = String(this.visibleOptionButtons().length === 0);
+    const hasVisibleOptions = this.list.querySelector('.context-menu__option:not([hidden])') !== null;
+    this.empty.textContent = this.options.length === 0 ? this.unavailableMessage : 'No matching options';
+    this.empty.hidden = hasVisibleOptions;
+    this.list.dataset.empty = String(!hasVisibleOptions);
   };
 
   private visibleOptionButtons(): HTMLButtonElement[] {

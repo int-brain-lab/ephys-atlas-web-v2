@@ -433,6 +433,34 @@ test('long feature menus scroll without option descriptions overlapping', async 
   }))).toBe(true);
 });
 
+test('context menus explain release loading and failure instead of becoming inert', async ({ page }) => {
+  let releaseManifest: (() => void) | undefined;
+  const manifestGate = new Promise<void>((resolve) => {
+    releaseManifest = resolve;
+  });
+  await page.route('**/__real-data/**/manifest.json', async (route) => {
+    await manifestGate;
+    await route.fulfill({ status: 503, body: 'release unavailable' });
+  });
+  await page.goto('/');
+
+  const feature = page.locator('[data-context-field="feature"]');
+  const featureTrigger = feature.locator('.context-menu__trigger');
+  await expect(featureTrigger).toBeEnabled();
+  await expect(featureTrigger).toHaveAttribute('aria-busy', 'true');
+  await featureTrigger.click();
+  await expect(feature.getByRole('status')).toHaveText('Loading features…');
+
+  releaseManifest?.();
+  await expect(featureTrigger).toHaveAttribute('aria-busy', 'false');
+  await expect(feature.getByRole('status')).toContainText('Features unavailable:');
+
+  const representation = page.locator('[data-context-field="representation"]');
+  const representationTrigger = representation.locator('.context-menu__trigger');
+  await representationTrigger.click();
+  await expect(representation.getByRole('status')).toContainText('Representations unavailable:');
+});
+
 test('scientific context menus and color controls are driven by the loaded release', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');

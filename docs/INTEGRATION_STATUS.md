@@ -243,6 +243,9 @@ production asset deployment and removal of the experimental label remain
 non-blocking operational work.
 
 The regional UI keeps DOM concerns in its controller while region search/value/statistics derivation is pure/testable. Large dynamic tree interaction uses delegated events.
+Header context menus remain operable while a catalog or release manifest is
+loading and expose an explicit loading or request-failure message instead of
+silently presenting disabled feature and representation controls.
 The region browser defaults to the expandable anatomical hierarchy and offers
 URL-persisted ascending or descending value rankings as a flat selectable list.
 Its compact icon control cycles anatomy, descending value, then ascending value.
