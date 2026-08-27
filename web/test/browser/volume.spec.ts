@@ -196,7 +196,7 @@ test('reduced-parcellation volume selection keeps the target vivid under a neutr
   }
   const unselected = projection.locator('path:not(.is-selected)').first();
   await expect(unselected).toHaveCSS('fill', 'rgb(232, 242, 248)');
-  await expect(unselected).toHaveCSS('fill-opacity', '0.18');
+  await expect(unselected).toHaveCSS('fill-opacity', '0.35');
   await unselected.dispatchEvent('pointermove');
   await expect(unselected).toHaveClass(/is-highlighted/);
   await expect(unselected).toHaveCSS('fill-opacity', '0');

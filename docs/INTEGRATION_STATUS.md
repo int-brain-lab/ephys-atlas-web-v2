@@ -475,7 +475,7 @@ Selected and hovered volume regions are emphasized with outlines only. This is
 especially important for reduced mappings, where one logical Beryl or Cosmos
 identity may cover several disconnected Allen contours: the full mapped region
 remains selected without applying an anatomy-color tint over scalar values.
-While a selection is active, all other regions receive one uniform translucent
+While a selection is active, all other regions receive one uniform 35%-opaque
 neutral veil so the selected scalar area stays vivid without assigning
 scientific-looking categorical colors to the unselected anatomy.
 
