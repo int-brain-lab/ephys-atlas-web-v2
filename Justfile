@@ -62,7 +62,7 @@ benchmark-anatomy:
 
 # Exercise the anatomy contract, generator, artifact validator, and comparison cases.
 test-anatomy:
-    {{uv-anatomy}} python -m pytest -q tests/test_anatomy_pack.py tests/test_anatomy_pack_schema.py tests/test_anatomy_compare.py tests/test_anatomy_smoothing_lab.py tests/test_anatomy_pack_v2.py tests/test_anatomy_pack_v2_schema.py tests/test_svg_pack.py tests/test_sampled_svg_pack.py tests/test_projection_pack.py
+    {{uv-anatomy}} python -m pytest -q tests/test_anatomy_pack.py tests/test_anatomy_pack_schema.py tests/test_anatomy_compare.py tests/test_anatomy_smoothing_lab.py tests/test_top_reconstruction_lab.py tests/test_anatomy_pack_v2.py tests/test_anatomy_pack_v2_schema.py tests/test_svg_pack.py tests/test_sampled_svg_pack.py tests/test_projection_pack.py
 
 # Exercise the unified mesh-pack contract, compiler, binary, and graph gates.
 test-mesh-pack:
@@ -107,6 +107,10 @@ anatomy-smoothing-lab-real source_lut annotation template_volume template_sha256
 # Update only the UI around an existing report; scientific evidence is reused byte-for-byte.
 anatomy-smoothing-lab-rerender input output=input:
     {{uv-anatomy}} python -m tools.anatomy_smoothing_lab.rerender --input {{input}} --output {{output}}
+
+# Build the ignored, local-only legacy/reconstructed Top comparison lab.
+top-reconstruction-lab annotation legacy_top regions="web/public/atlas/allen-ccf-2017/regions.json" output="artifacts/top-reconstruction-lab/index.html" tolerances="12.5,25,37.5":
+    {{uv-anatomy}} python -m tools.top_reconstruction_lab.build --annotation {{annotation}} --legacy-top {{legacy_top}} --regions {{regions}} --created-at 2026-08-27T00:00:00Z --tolerances-um {{tolerances}} --output {{output}}
 
 # Build the ignored, local-only W26/Allen geometry candidate review page.
 volume-geometry-review annotation annotation_sha256 volume="data/source/ephys_atlas_volumes/2026_W26/brainwide_ephys_atlas_50um.npz" volume_sha256="1f7509fe9e368a90704173bdb5c385827b199a7d5fa4b0aaa8fec5aca5402253":

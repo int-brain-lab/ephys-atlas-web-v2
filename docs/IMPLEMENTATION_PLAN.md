@@ -224,6 +224,25 @@ The ordered implementation slices, metric contract, UI requirements,
 scientific boundaries, and promotion stopping point are specified in
 `docs/rendering/ANATOMY_SMOOTHING_LAB_PLAN.md`.
 
+## P2T — Top reconstruction lab
+
+Status: **review machinery and first real candidate evidence complete; human
+review pending**.
+
+The guarded local lab reconstructs the affine-free dorsal Top map from the
+exact pinned Allen 25 µm annotation, compares legacy A/left with exact and
+topology-safe reconstructed B/right variants, retains rejected candidates and
+their failures, and exports an adaptive guided decision record. The first
+build reproduces all legacy signed Allen identities and adds only bilateral
+`VISC1`; exact and 12.5 µm candidates pass the provisional single-map gates,
+while 25 and 37.5 µm variants fail and remain diagnostic.
+
+Next action: complete the guided human review. Do not modify the active pack or
+record a replacement decision until that evidence is inspected. The legacy
+Top remains the fallback, and Q13 remains independently unresolved. The
+contract and reproduction command are in
+`docs/rendering/TOP_RECONSTRUCTION_LAB.md`.
+
 ## P3D — Independent brain-mesh 3-D lab
 
 Status: **geometry and LOD direction resolved by D042; runtime integration

@@ -108,6 +108,21 @@ Set `EPHYS_ATLAS_PROJECTION_PACK` to that generated pack directory when
 starting Vite; the development server exposes only that rooted directory under
 `/__projection-pack/` with transport-opaque gzip bytes and no persistent cache.
 
+`tools/top_reconstruction_lab/` now provides a second, independent local-only
+evidence lane for the Top source itself. It derives the dorsal first-visible
+label projection from the hash-pinned Allen 25 µm annotation, evaluates exact
+and GEOS whole-coverage variants with deterministic topology/scientific
+metrics, and embeds them beside the pinned legacy Top in one self-contained
+guided A/B report. Legacy remains fixed as A/left during screening; multiple
+winners enter a finalist round, answers are correctable, and the exported
+recommendation has no production effect. Advanced overlay, boundary, linked
+zoom/pan, hover, failure, provenance, and inventory evidence remains optional.
+The first real build found all 114 legacy signed paths plus bilateral `VISC1`
+in the 116-path reconstruction. Exact and 12.5 µm variants pass the
+provisional single-map gates; 25 and 37.5 µm variants remain visibly rejected.
+Human review is pending. This does not alter D045, resolve Q13, or modify the
+active projection pack.
+
 The pre-Commit-1 contract is now explicit about separate reference-space,
 grid, and asset identities; verified-only persistent caching; independent
 secondary/compact/maximized workspace state; nearest-neighbor volume paint and

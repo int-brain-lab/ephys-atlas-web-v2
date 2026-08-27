@@ -255,6 +255,12 @@ domain.
 Blocks: production Top/Swanson asset ingestion/publication only. Synthetic
 static-map contract, builder, renderer, and interaction work remains unblocked.
 
+Independent evidence: the local-only Top reconstruction lab can derive a new
+topology-preserving dorsal candidate from the already pinned Allen 25 µm
+annotation and compare it with the legacy paths. That investigation neither
+asserts license coverage for the deployed bytes nor authorizes replacing or
+publishing either source. See `docs/rendering/TOP_RECONSTRUCTION_LAB.md`.
+
 ## How to resolve an item
 
 When authoritative evidence arrives:
