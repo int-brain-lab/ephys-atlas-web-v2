@@ -349,16 +349,27 @@ def _crosswalk(catalog_path: Path) -> tuple[dict[str, dict[int, int]], str]:
         if not isinstance(rows, list):
             raise ValueError(f"region crosswalk has no {mapping} mapping")
         lookup: dict[int, int] = {}
+        declared_legacy_indices: set[int] = set()
         for row in rows:
-            index = row.get("idx")
-            atlas_id = row.get("atlas_id")
-            if not isinstance(index, int) or not isinstance(atlas_id, int):
-                raise ValueError(f"region crosswalk has invalid {mapping} identities")
-            if atlas_id == 0:
+            if row.get("mapping_member") is not True:
                 continue
-            if index in lookup:
+            index = row.get("legacy_index")
+            atlas_id = row.get("atlas_id")
+            if (
+                not isinstance(index, int)
+                or index < 0
+                or not isinstance(atlas_id, int)
+            ):
+                raise ValueError(f"region crosswalk has invalid {mapping} identities")
+            if index in declared_legacy_indices:
                 raise ValueError(f"region crosswalk has duplicate {mapping} identities")
-            lookup[index] = atlas_id
+            declared_legacy_indices.add(index)
+            if atlas_id != 0:
+                lookup[index] = atlas_id
+        if declared_legacy_indices != set(range(len(declared_legacy_indices))):
+            raise ValueError(
+                f"region crosswalk has incomplete {mapping} legacy index domain"
+            )
         result[mapping] = lookup
     return result, _sha(raw)
 

@@ -287,8 +287,10 @@ attributes:
 ```
 
 For curated source geometry, preserve each path's `d` bytes while resolving
-legacy row/class identifiers at build time. The browser must not ship a legacy
-crosswalk or contact the legacy atlas host. Validate safe SVG content, exact
+legacy mapping-array/class identifiers at build time. Resolve the class suffix
+through the catalog's explicit `legacy_index`, not its distinct BrainRegions
+row `idx`. The browser must not ship a legacy crosswalk or contact the legacy
+atlas host. Validate safe SVG content, exact
 source hashes, path counts, complete declared mappings, deterministic output,
 compressed byte sizes, and output SHA-256.
 

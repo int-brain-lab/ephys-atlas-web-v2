@@ -12,7 +12,8 @@ the ontology fields supplied by the pinned `iblatlas` source:
 - official RGB color serialized as lowercase `#rrggbb`;
 - whether a node belongs to the selected mapping or is an Allen hierarchy
   container added to make a reduced mapping parent-closed;
-- source SVG/BrainRegions row index, retained as generation provenance but not
+- source BrainRegions row index plus the distinct legacy SVG mapping-array
+  position for mapping members, retained as generation provenance but not
   parsed into the browser's runtime region model.
 
 ## Provenance and identity
@@ -22,7 +23,7 @@ the ontology fields supplied by the pinned `iblatlas` source:
 - legacy deployed region-crosswalk SHA-256:
   `9fca5fe4feeb368c715853c25a97667cb199d5a7ce160385771833ba61cedfc8`;
 - emitted asset SHA-256:
-  `71a878043aad6c4dbf7a4ca92bd643cad9910984ed81231784e96ff5829afa8b`;
+  `3b0a547dba1c652ccdecde69044d912f462bc9baabf7e2c9f47933e9d2d4d677`;
 - emitted rows: 2,195 Allen, 787 Beryl, and 35 Cosmos before the browser
   selects the canonical negative-ID left hemisphere;
 - browser-visible left trees: 1,097 Allen nodes; 393 Beryl nodes (306 mapping
@@ -32,6 +33,9 @@ the ontology fields supplied by the pinned `iblatlas` source:
 The legacy crosswalk contributes only the numeric SVG row domain. Names,
 hierarchy, and RGB are re-read from the pinned `iblatlas` `BrainRegions`
 table; the historical deployed hex strings are not treated as color authority.
+`legacy_index` is the position addressed by `*_region_<n>` classes in the
+curated SVGs; `idx` is the corresponding BrainRegions row and must not be used
+as a substitute. They coincide for much of Allen but not for Beryl or Cosmos.
 For Beryl and Cosmos, the generator walks each mapping region's real Allen
 parent chain and emits the missing ancestors as `mapping_member: false`.
 Consequently every left catalog has one signed root and is parent-closed;
