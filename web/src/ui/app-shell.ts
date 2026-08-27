@@ -194,6 +194,7 @@ export class AppShell {
   private secondaryFrame!: HTMLElement;
   private secondaryMaximize!: HTMLButtonElement;
   private readonly headerActionButtons = new Map<HeaderAction, HTMLButtonElement[]>();
+  private headerActions!: HTMLElement;
   private readonly datasetContext: ContextMenu;
   private readonly featureContext: ContextMenu;
   private readonly representationContext: ContextMenu;
@@ -453,6 +454,7 @@ export class AppShell {
 
     const actions = element('nav', 'app-header__actions');
     actions.setAttribute('aria-label', 'Atlas actions');
+    this.headerActions = actions;
     actions.append(this.drawerButton('regions', 'Regions', '☰'), this.drawerButton('settings', 'Settings', '⚙'));
 
     const desktopActions = element('div', 'app-header__desktop-actions');
@@ -1794,7 +1796,7 @@ export class AppShell {
   private syncWorkspaceState(activeCompactView: WorkspaceViewId, maximizedView: WorkspaceViewId | null): void {
     this.app.dataset.activeView = activeCompactView;
     if (maximizedView) this.closeDrawers();
-    this.header.inert = maximizedView !== null;
+    this.headerActions.inert = maximizedView !== null;
     if (maximizedView) this.app.dataset.maximizedView = maximizedView;
     else delete this.app.dataset.maximizedView;
     for (const [id, nodes] of this.viewFrames) {

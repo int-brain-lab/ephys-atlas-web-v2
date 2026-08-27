@@ -279,6 +279,14 @@
   pointer-events: auto;
 }
 
+.atlas-app[data-maximized-view] .app-header {
+  z-index: 31;
+}
+
+.atlas-app[data-maximized-view] .app-header__actions {
+  opacity: 0.42;
+}
+
 @media (max-width: 1099px) {
   .view-frame {
     display: none;
