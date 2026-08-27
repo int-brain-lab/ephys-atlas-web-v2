@@ -274,9 +274,10 @@ fragment with declared compressed/decoded byte sizes and hashes. Its descriptor
 declares fragment format, media type, codec, view box, and path count. It has no
 slice index, `world_coordinate_um`, grid, registration, or affine; do not reuse
 the registered indexed-slice entry type. The official deployed fragments have
-no separate embedded license statement, so production ingestion waits for
-confirmation that the v1 repository's MIT license covers those artifacts;
-synthetic static fragments exercise the machinery until then.
+no separate embedded license statement. D049 supplies hash-bound MIT
+authorization for the exact Top/Swanson bytes; production packs embed that
+committed notice in their immutable file graph. Synthetic static fragments
+remain the checked-in test inputs.
 
 The deterministic builder converts every path to the same runtime identity
 attributes:
@@ -500,7 +501,7 @@ view-model tests; finish with `just check`.
 
 ### Commit 4 — Generate the unified five-projection pack
 
-Status: **implemented; production Top/Swanson output remains blocked by Q13**.
+Status: **implemented; D049 resolves production Top/Swanson license evidence**.
 
 - implement the projection-pack generator/validator from Commit 1;
 - carry forward registered orthogonal geometry, affine, sparse-display,
@@ -510,8 +511,8 @@ Status: **implemented; production Top/Swanson output remains blocked by Q13**.
 - verify every declared region ID, source/output hash, path count, compressed
   size, provenance record, and static map's absence of an affine.
 
-If source acquisition or licensing is not established, record the exact blocker
-and use synthetic static maps rather than publishing asserted production assets.
+Exact source bytes and the D049 notice are mandatory for production mode;
+otherwise use synthetic static maps rather than publishing asserted assets.
 
 Targeted gates: anatomy generator/contract/integrity tests and
 `just test-anatomy`; finish with `just check`.

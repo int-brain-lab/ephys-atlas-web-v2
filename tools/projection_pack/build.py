@@ -1,4 +1,5 @@
 """Build one immutable five-view projection pack from validated inputs."""
+
 from __future__ import annotations
 
 import argparse
@@ -25,6 +26,14 @@ StaticSourceMode = Literal["pinned-curated", "synthetic-fixture", "pinned-top-re
 REFERENCE_SPACE_ID = "allen-ccf-2017"
 GRID_ID = "allen-ccf-2017-10um"
 VIEW_BOX = [60, 20, 340, 300]
+STATIC_LICENSE_RELATIVE_PATH = Path("LICENSES/IBL-EPHYS-ATLAS-V1-STATIC-ASSETS-MIT.txt")
+STATIC_LICENSE_SHA256 = (
+    "f31adf14af0265cae0f866a515bda9b0750f7473d40cef5598c7f4305037ce37"
+)
+STATIC_LICENSE_EVIDENCE = (
+    f"MIT; repository-file={STATIC_LICENSE_RELATIVE_PATH.as_posix()};"
+    f"sha256={STATIC_LICENSE_SHA256}"
+)
 
 
 @dataclass(frozen=True)
@@ -61,7 +70,9 @@ _NORMALIZED_PATH = re.compile(
 
 
 def _canonical(value: Any) -> bytes:
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return json.dumps(
+        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
 
 
 def _sha(data: bytes) -> str:
@@ -70,18 +81,35 @@ def _sha(data: bytes) -> str:
 
 def _safe_relative(value: str) -> Path:
     path = Path(value)
-    if path.is_absolute() or ".." in path.parts or not path.parts or any(not part for part in path.parts):
+    if (
+        path.is_absolute()
+        or ".." in path.parts
+        or not path.parts
+        or any(not part for part in path.parts)
+    ):
         raise ValueError(f"unsafe projection-pack path: {value!r}")
     return path
 
 
-def _resource(path: Path, encoded: bytes, decoded_bytes: int, media_type: str) -> dict[str, Any]:
+def _resource(
+    path: Path, encoded: bytes, decoded_bytes: int, media_type: str
+) -> dict[str, Any]:
     return {
         "path": path.as_posix(),
         "media_type": media_type,
         "bytes": len(encoded),
         "sha256": _sha(encoded),
         "codec": {"name": "gzip", "decoded_bytes": decoded_bytes, "level": 9},
+    }
+
+
+def _plain_resource(path: Path, content: bytes, media_type: str) -> dict[str, Any]:
+    return {
+        "path": path.as_posix(),
+        "media_type": media_type,
+        "bytes": len(content),
+        "sha256": _sha(content),
+        "codec": {"name": "none", "decoded_bytes": len(content)},
     }
 
 
@@ -94,15 +122,33 @@ def _read_resource(root: Path, resource: dict[str, Any]) -> tuple[bytes, bytes]:
     if len(encoded) != resource["bytes"] or _sha(encoded) != resource["sha256"]:
         raise ValueError(f"projection-pack resource integrity mismatch: {path}")
     codec = resource["codec"]
-    if codec["name"] != "gzip":
+    if codec["name"] == "none":
+        decoded_bytes = encoded
+    elif codec["name"] == "gzip":
+        try:
+            decoded_bytes = gzip.decompress(encoded)
+        except (gzip.BadGzipFile, EOFError) as exc:
+            raise ValueError(
+                f"projection-pack resource is not valid gzip: {path}"
+            ) from exc
+    else:
         raise ValueError(f"projection-pack resource has unsupported codec: {path}")
-    try:
-        decoded_bytes = gzip.decompress(encoded)
-    except (gzip.BadGzipFile, EOFError) as exc:
-        raise ValueError(f"projection-pack resource is not valid gzip: {path}") from exc
     if len(decoded_bytes) != codec["decoded_bytes"]:
         raise ValueError(f"projection-pack decoded length mismatch: {path}")
     return encoded, decoded_bytes
+
+
+def _validated_static_license_notice() -> bytes:
+    repository = Path(__file__).resolve().parents[2]
+    try:
+        notice = (repository / STATIC_LICENSE_RELATIVE_PATH).read_bytes()
+    except FileNotFoundError as exc:
+        raise ValueError("production Top/Swanson license evidence is missing") from exc
+    if _sha(notice) != STATIC_LICENSE_SHA256:
+        raise ValueError(
+            "production Top/Swanson license evidence differs from authorization"
+        )
+    return notice
 
 
 def _extent(matrix: list[float], shape: list[int]) -> list[float]:
@@ -135,10 +181,16 @@ def _inverse(matrix: list[float]) -> list[float]:
 
 
 def _validate_registered_parent(manifest: dict[str, Any]) -> None:
-    if manifest.get("format") != "anatomy-pack-v3" or manifest.get("immutable") is not True:
+    if (
+        manifest.get("format") != "anatomy-pack-v3"
+        or manifest.get("immutable") is not True
+    ):
         raise ValueError("registered parent must be one immutable anatomy-pack-v3")
     schema = json.loads(
-        (Path(__file__).resolve().parents[2] / "schema/anatomy-pack-v3/manifest.schema.json").read_text()
+        (
+            Path(__file__).resolve().parents[2]
+            / "schema/anatomy-pack-v3/manifest.schema.json"
+        ).read_text()
     )
     Draft202012Validator(schema).validate(manifest)
     parent = manifest.get("parent")
@@ -162,10 +214,17 @@ def _validate_registered_parent(manifest: dict[str, Any]) -> None:
         if validation.get(key) != expected:
             raise ValueError(f"registered parent failed scientific gate {key}")
     source = parent.get("source")
-    if not isinstance(source, dict) or source.get("hemisphere") != "bilateral" or source.get("resolution_um") != 10:
+    if (
+        not isinstance(source, dict)
+        or source.get("hemisphere") != "bilateral"
+        or source.get("resolution_um") != 10
+    ):
         raise ValueError("registered parent is not the bilateral 10 um authority")
     region_ids = source.get("region_ids")
-    if not isinstance(region_ids, dict) or region_ids.get("domain") != "signed_allen_atlas_id":
+    if (
+        not isinstance(region_ids, dict)
+        or region_ids.get("domain") != "signed_allen_atlas_id"
+    ):
         raise ValueError("registered parent does not carry signed Allen identities")
     if len(parent.get("synchronization_sentinels") or []) < 2:
         raise ValueError("registered parent lacks synchronization evidence")
@@ -194,16 +253,25 @@ def _copy_registered_projection(
         try:
             decoded_bytes = gzip.decompress(encoded)
         except (gzip.BadGzipFile, EOFError) as exc:
-            raise ValueError(f"registered source is not valid gzip: {source_path}") from exc
+            raise ValueError(
+                f"registered source is not valid gzip: {source_path}"
+            ) from exc
         if len(decoded_bytes) != artifact["uncompressed_bytes"]:
-            raise ValueError(f"registered source decoded length mismatch: {source_path}")
+            raise ValueError(
+                f"registered source decoded length mismatch: {source_path}"
+            )
         pack = decode(decoded_bytes)
         if pack.projection != projection_id or pack.pack_id != artifact["pack_id"]:
             raise ValueError(f"registered source pack identity mismatch: {source_path}")
         slice_indices = [fragment.slice_index for fragment in pack.fragments]
-        if len(slice_indices) != artifact["slice_count"] or slice_indices[0] != artifact["first_slice_index"]:
+        if (
+            len(slice_indices) != artifact["slice_count"]
+            or slice_indices[0] != artifact["first_slice_index"]
+        ):
             raise ValueError(f"registered source inventory mismatch: {source_path}")
-        destination = Path("registered") / projection_id / f"{artifact['pack_index']}.isvg.gz"
+        destination = (
+            Path("registered") / projection_id / f"{artifact['pack_index']}.isvg.gz"
+        )
         target = stage / destination
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(encoded)
@@ -221,7 +289,9 @@ def _copy_registered_projection(
         )
         all_slices.extend(slice_indices)
     if all_slices != projection["display_slice_indices"]:
-        raise ValueError(f"registered {projection_id} resources do not cover the declared display inventory")
+        raise ValueError(
+            f"registered {projection_id} resources do not cover the declared display inventory"
+        )
 
     index = {
         "schema_version": "1.0",
@@ -250,11 +320,15 @@ def _copy_registered_projection(
         "view_box": projection["view_box"],
         "plane_index_to_world_um": matrix,
         "world_to_plane_index": _inverse(matrix),
-        "voxel_edge_extent_um": _extent(matrix, [projection["slice_count"], *slice_shape]),
+        "voxel_edge_extent_um": _extent(
+            matrix, [projection["slice_count"], *slice_shape]
+        ),
         "display_slices": all_slices,
         "resource_index": {
             "format": "atlas-registered-svg-resource-index-v1",
-            "resource": _resource(index_path, index_encoded, len(index_raw), "application/json"),
+            "resource": _resource(
+                index_path, index_encoded, len(index_raw), "application/json"
+            ),
         },
     }
     validate_schema_v1_document(result, "registered-projection.schema.json")
@@ -264,7 +338,10 @@ def _copy_registered_projection(
 def _crosswalk(catalog_path: Path) -> tuple[dict[str, dict[int, int]], str]:
     raw = catalog_path.read_bytes()
     document = json.loads(raw)
-    if document.get("format") != "ibl-atlas-regions-v1" or document.get("schema_version") != "1.0":
+    if (
+        document.get("format") != "ibl-atlas-regions-v1"
+        or document.get("schema_version") != "1.0"
+    ):
         raise ValueError("region crosswalk must be the pinned atlas-region catalog")
     result: dict[str, dict[int, int]] = {}
     for mapping in ("allen", "beryl", "cosmos"):
@@ -302,7 +379,9 @@ def _attributes(raw: str) -> dict[str, str]:
     return result
 
 
-def normalize_static_fragment(fragment: str, crosswalk: dict[str, dict[int, int]]) -> tuple[str, int]:
+def normalize_static_fragment(
+    fragment: str, crosswalk: dict[str, dict[int, int]]
+) -> tuple[str, int]:
     output: list[str] = []
     cursor = 0
     for match in _TAG.finditer(fragment):
@@ -315,15 +394,23 @@ def normalize_static_fragment(fragment: str, crosswalk: dict[str, dict[int, int]
             raise ValueError("static SVG path has missing or unsafe path data")
         ids: dict[str, int] = {}
         for mapping in ("allen", "beryl", "cosmos"):
-            matches = [value for value in classes if value.startswith(f"{mapping}_region_")]
+            matches = [
+                value for value in classes if value.startswith(f"{mapping}_region_")
+            ]
             if len(matches) != 1:
-                raise ValueError(f"static SVG path must declare one {mapping} legacy identity")
+                raise ValueError(
+                    f"static SVG path must declare one {mapping} legacy identity"
+                )
             suffix = matches[0].removeprefix(f"{mapping}_region_")
             if not re.fullmatch(r"-?\d+", suffix):
-                raise ValueError(f"static SVG path has malformed {mapping} legacy identity")
+                raise ValueError(
+                    f"static SVG path has malformed {mapping} legacy identity"
+                )
             legacy_index = int(suffix)
             if legacy_index not in crosswalk[mapping]:
-                raise ValueError(f"static SVG path has unknown {mapping} legacy identity {legacy_index}")
+                raise ValueError(
+                    f"static SVG path has unknown {mapping} legacy identity {legacy_index}"
+                )
             ids[mapping] = crosswalk[mapping][legacy_index]
         output.append(
             '<path class="atlas-region" fill-rule="evenodd" '
@@ -336,18 +423,26 @@ def normalize_static_fragment(fragment: str, crosswalk: dict[str, dict[int, int]
     return "".join(output), len(output)
 
 
-def _validate_normalized_static_fragment(fragment: str, expected_path_count: int) -> None:
+def _validate_normalized_static_fragment(
+    fragment: str, expected_path_count: int
+) -> None:
     cursor = 0
     path_count = 0
     for match in _NORMALIZED_PATH.finditer(fragment):
         if match.start() != cursor:
             raise ValueError("static projection contains non-canonical SVG markup")
-        if any(int(match.group(mapping)) == 0 for mapping in ("allen", "beryl", "cosmos")):
-            raise ValueError("static projection contains the reserved zero region identity")
+        if any(
+            int(match.group(mapping)) == 0 for mapping in ("allen", "beryl", "cosmos")
+        ):
+            raise ValueError(
+                "static projection contains the reserved zero region identity"
+            )
         cursor = match.end()
         path_count += 1
     if cursor != len(fragment) or path_count != expected_path_count:
-        raise ValueError("static projection path inventory does not match its descriptor")
+        raise ValueError(
+            "static projection path inventory does not match its descriptor"
+        )
 
 
 def validate_projection_pack(root: Path) -> dict[str, Any]:
@@ -369,7 +464,9 @@ def validate_projection_pack(root: Path) -> dict[str, Any]:
             try:
                 fragment = decoded_bytes.decode("utf-8", "strict")
             except UnicodeDecodeError as exc:
-                raise ValueError(f"static projection {projection_id} is not UTF-8") from exc
+                raise ValueError(
+                    f"static projection {projection_id} is not UTF-8"
+                ) from exc
             _validate_normalized_static_fragment(fragment, projection["path_count"])
             continue
 
@@ -379,10 +476,14 @@ def validate_projection_pack(root: Path) -> dict[str, Any]:
         try:
             index = json.loads(index_bytes)
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise ValueError(f"registered projection {projection_id} has an invalid resource index") from exc
+            raise ValueError(
+                f"registered projection {projection_id} has an invalid resource index"
+            ) from exc
         validate_schema_v1_document(index, "registered-svg-resource-index.schema.json")
         if index["projection_id"] != projection_id:
-            raise ValueError(f"registered projection {projection_id} resource index identity differs")
+            raise ValueError(
+                f"registered projection {projection_id} resource index identity differs"
+            )
         indexed_slices: list[int] = []
         for entry in index["resources"]:
             resource = entry["resource"]
@@ -391,21 +492,56 @@ def validate_projection_pack(root: Path) -> dict[str, Any]:
             try:
                 pack = decode(decoded_bytes)
             except ValueError as exc:
-                raise ValueError(f"registered projection {projection_id} contains invalid indexed SVG") from exc
+                raise ValueError(
+                    f"registered projection {projection_id} contains invalid indexed SVG"
+                ) from exc
             slices = [fragment.slice_index for fragment in pack.fragments]
             if pack.projection != projection_id or pack.pack_id != entry["pack_id"]:
-                raise ValueError(f"registered projection {projection_id} pack identity differs")
+                raise ValueError(
+                    f"registered projection {projection_id} pack identity differs"
+                )
             if slices != entry["slice_indices"]:
-                raise ValueError(f"registered projection {projection_id} pack inventory differs")
+                raise ValueError(
+                    f"registered projection {projection_id} pack inventory differs"
+                )
             indexed_slices.extend(slices)
         if indexed_slices != projection["display_slices"]:
-            raise ValueError(f"registered projection {projection_id} display inventory differs")
+            raise ValueError(
+                f"registered projection {projection_id} display inventory differs"
+            )
+
+    recipe = manifest["provenance"]["recipe"]
+    if recipe.get("static_source_mode") == "pinned-curated":
+        notice = recipe.get("license_notice")
+        if (
+            not isinstance(notice, dict)
+            or notice.get("format") != "ibl-static-asset-license-v1"
+        ):
+            raise ValueError(
+                "production projection pack has no static-asset license notice"
+            )
+        resource = notice.get("resource")
+        if not isinstance(resource, dict):
+            raise ValueError(
+                "production projection pack has invalid static-asset license notice"
+            )
+        _, notice_bytes = _read_resource(root, resource)
+        declared.add(_safe_relative(resource["path"]))
+        if (
+            resource["path"] != STATIC_LICENSE_RELATIVE_PATH.as_posix()
+            or _sha(notice_bytes) != STATIC_LICENSE_SHA256
+        ):
+            raise ValueError(
+                "production projection pack license notice differs from authorization"
+            )
 
     actual = {path.relative_to(root) for path in root.rglob("*") if path.is_file()}
     if actual != declared:
         missing = sorted(path.as_posix() for path in declared - actual)
         extra = sorted(path.as_posix() for path in actual - declared)
-        raise ValueError(f"projection pack file graph differs: missing={missing}, extra={extra}")
+        raise ValueError(
+            f"projection pack file graph differs: missing={missing}, extra={extra}"
+        )
     return manifest
 
 
@@ -420,11 +556,17 @@ def _static_projection(
     if len(source) != source_evidence.bytes or _sha(source) != source_evidence.sha256:
         raise ValueError(f"{projection_id} source bytes do not match pinned evidence")
     payload = json.loads(source)
-    if not isinstance(payload, dict) or set(payload) != {"0"} or not isinstance(payload["0"], str):
+    if (
+        not isinstance(payload, dict)
+        or set(payload) != {"0"}
+        or not isinstance(payload["0"], str)
+    ):
         raise ValueError(f"{projection_id} source must contain exactly static key 0")
     normalized, path_count = normalize_static_fragment(payload["0"], crosswalk)
     if path_count != source_evidence.path_count:
-        raise ValueError(f"{projection_id} source path count does not match pinned evidence")
+        raise ValueError(
+            f"{projection_id} source path count does not match pinned evidence"
+        )
     decoded = normalized.encode("utf-8", "strict")
     encoded = gzip.compress(decoded, compresslevel=9, mtime=0)
     # `.isvg.gz` is intentionally transport-opaque. Development/static hosts
@@ -466,10 +608,16 @@ def build_projection_pack(
         raise FileExistsError(f"refusing to overwrite projection pack: {output}")
     if set(static_sources) != set(STATIC_PROJECTIONS):
         raise ValueError("static sources must contain exactly top and swanson")
-    if static_mode == "pinned-curated" and not license_evidence:
-        raise ValueError("production Top/Swanson ingestion requires explicit license evidence")
     if static_mode not in ("pinned-curated", "synthetic-fixture", "pinned-top-review"):
         raise ValueError(f"unsupported static source mode {static_mode!r}")
+    license_notice: bytes | None = None
+    if static_mode == "pinned-curated":
+        license_notice = _validated_static_license_notice()
+        if license_evidence not in (None, STATIC_LICENSE_EVIDENCE):
+            raise ValueError(
+                "production Top/Swanson license evidence is not the authorized record"
+            )
+        license_evidence = STATIC_LICENSE_EVIDENCE
 
     registered_root = registered_root.resolve()
     manifest_path = registered_root / "manifest.json"
@@ -503,8 +651,14 @@ def build_projection_pack(
 
     stage_parent = output.parent
     stage_parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix=f".{output.name}-", dir=stage_parent) as temporary:
+    with tempfile.TemporaryDirectory(
+        prefix=f".{output.name}-", dir=stage_parent
+    ) as temporary:
         stage = Path(temporary)
+        if license_notice is not None:
+            license_target = stage / STATIC_LICENSE_RELATIVE_PATH
+            license_target.parent.mkdir(parents=True, exist_ok=True)
+            license_target.write_bytes(license_notice)
         registered = [
             _copy_registered_projection(
                 registered_root,
@@ -517,11 +671,15 @@ def build_projection_pack(
             for name in PROJECTIONS
         ]
         static_results = [
-            _static_projection(stage, name, static_sources[name], evidence[name], crosswalk)
+            _static_projection(
+                stage, name, static_sources[name], evidence[name], crosswalk
+            )
             for name in STATIC_PROJECTIONS
         ]
         static = [result[0] for result in static_results]
-        static_hashes = {name: result[1] for name, result in zip(STATIC_PROJECTIONS, static_results)}
+        static_hashes = {
+            name: result[1] for name, result in zip(STATIC_PROJECTIONS, static_results)
+        }
         identity = {
             "format": "atlas-projection-pack-v1",
             "registered_manifest_sha256": _sha(manifest_raw),
@@ -559,11 +717,13 @@ def build_projection_pack(
             projection_mode = static_projection_modes[name]
             source_description = {
                 "pinned-curated": "Pinned curated",
-                "pinned-review": "Pinned local-review-only; Q13 license coverage unresolved",
+                "pinned-review": "Pinned local-review-only",
                 "synthetic-fixture": "Synthetic fixture",
             }[projection_mode]
             source: dict[str, Any] = {
-                "role": "atlas-geometry" if projection_mode == "pinned-curated" else "user-input",
+                "role": "atlas-geometry"
+                if projection_mode == "pinned-curated"
+                else "user-input",
                 "description": f"{source_description} {name} SVG fragment",
                 "path": f"legacy/slices_{name}.json",
                 "sha256": static_hashes[name],
@@ -597,17 +757,33 @@ def build_projection_pack(
                 "registered_parent_pack_id": registered_manifest["pack_id"],
                 "registered_parent_manifest_sha256": _sha(manifest_raw),
                 "grid_id": grid_id,
+                **(
+                    {
+                        "license_notice": {
+                            "format": "ibl-static-asset-license-v1",
+                            "resource": _plain_resource(
+                                STATIC_LICENSE_RELATIVE_PATH,
+                                license_notice,
+                                "text/plain; charset=utf-8",
+                            ),
+                        }
+                    }
+                    if license_notice is not None
+                    else {}
+                ),
             },
             "notes": [
                 "Static maps are affine-free and carry no scientific navigation coordinates.",
                 *(
-                    ["Synthetic static geometry is test-only and is not a scientific atlas release."]
+                    [
+                        "Synthetic static geometry is test-only and is not a scientific atlas release."
+                    ]
                     if static_mode == "synthetic-fixture"
                     else []
                 ),
                 *(
                     [
-                        "Top uses exact pinned bytes for local visual review only; Q13 license coverage remains unresolved.",
+                        "Top uses exact pinned bytes in this historical local visual-review lane.",
                         "Swanson remains synthetic test geometry in this mixed review pack.",
                         "This review pack must not be published as a scientific release.",
                     ]
@@ -641,13 +817,20 @@ def main() -> None:
     parser.add_argument("--swanson", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--created-at", required=True)
-    parser.add_argument("--license-evidence", required=True)
+    parser.add_argument(
+        "--license-evidence",
+        help="optional assertion; if provided it must match the committed authorized record",
+    )
     parser.add_argument("--reference-space-id", default=REFERENCE_SPACE_ID)
     parser.add_argument("--grid-id", default=GRID_ID)
     args = parser.parse_args()
     repository = Path(__file__).resolve().parents[2]
     commit = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=repository, check=True, capture_output=True, text=True
+        ["git", "rev-parse", "HEAD"],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+        text=True,
     ).stdout.strip()
     dirty = subprocess.run(
         ["git", "status", "--porcelain", "--untracked-files=no"],

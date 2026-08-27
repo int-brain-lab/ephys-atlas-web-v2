@@ -92,8 +92,9 @@ secondary-tab, compact-view, and maximized-view state and explicitly resets
 unsupported versions. The deterministic five-projection pack builder now
 losslessly repackages validated sparse registered geometry, emits strict
 resource indexes, normalizes affine-free static fragments, and validates the
-complete immutable file graph. Q13 still blocks a production Top/Swanson pack,
-so the checked-in browser fixture uses conspicuously synthetic static fragments
+complete immutable file graph. D049 resolves the Top/Swanson license evidence
+and production packs now embed its exact MIT notice. The checked-in browser
+fixture continues to use conspicuously synthetic static fragments
 alongside the validated registered geometry. The browser now uses one retained
 `ProjectionViewport` per registered frame and
 the schema-v1 projection pack directly. The old `SliceRenderer` facade,
@@ -226,8 +227,8 @@ scientific boundaries, and promotion stopping point are specified in
 
 ## P2T — Top reconstruction lab
 
-Status: **25 and 10 µm reconstruction reviews complete with refinement
-requested; shared-boundary smoothing report ready for review**.
+Status: **complete; D049 retains the exact legacy Top and closes the
+reconstruction lane**.
 
 The guarded local lab reconstructs the affine-free dorsal Top map from the
 exact pinned Allen 25 µm annotation, compares legacy A/left with exact and
@@ -253,11 +254,13 @@ The canonical shared-boundary build is complete. All four strengths retain
 coverage, topology, adjacency, and sampled voxel centres, but all are rejected
 by the provisional per-region IoU gate. They are visual diagnostics only.
 
-Next action: complete the guided human review to decide whether this visual
-direction merits a safer follow-up method. Do not modify the active pack or
-record a replacement decision from these rejected candidates. The legacy Top
-remains the fallback, and Q13 remains independently unresolved. The contract
-and reproduction command are in
+The completed guided review gave all four the same result: reconstructed B was
+better for continuity, while legacy A was better for smoothing and anatomical
+shape. Every comparison requested refinement. The repository owner then chose
+to retain the exact legacy Top. Do not pursue another reconstruction or promote
+any rejected diagnostic. D049 also authorizes the exact pinned Top/Swanson
+bytes under MIT, so the next static-view implementation task is real Swanson
+integration. The closed lab contract and reproduction commands remain in
 `docs/rendering/TOP_RECONSTRUCTION_LAB.md`.
 
 ## P3D — Independent brain-mesh 3-D lab

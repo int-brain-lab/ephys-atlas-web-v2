@@ -1,6 +1,6 @@
 # Top reconstruction lab
 
-Status: **implemented as local review evidence; no production asset selected**.
+Status: **complete; D049 retains the exact legacy Top**.
 
 ## Purpose and boundary
 
@@ -11,9 +11,11 @@ uses the canonical bilateral 10 µm `BrainRegions`-row LUT already validated by
 the immutable anatomy-pack-v2 parent.
 It exists to determine whether topology-preserving regenerated geometry is a
 better visual source than the legacy simplified paths. It does not modify the
-active projection pack, resolve Q13, invent a Top affine, or publish an asset.
+active projection pack, invent a Top affine, or publish an asset. D049 resolves
+the separate license question after this experiment.
 
-The legacy Top remains the fallback throughout the investigation.
+The legacy Top was the fallback throughout the investigation and is now the
+selected geometry.
 
 ## Reconstruction recipe
 
@@ -133,8 +135,10 @@ boundary-error upper bounds are respectively 2.134, 2.908, 4.214, and 6.227 µm.
 All four are nevertheless rejected by the provisional per-region IoU gate;
 their minimum eligible-region IoUs are respectively 0.9595, 0.9264, 0.8762,
 and 0.8135. They remain explicit visual diagnostics and cannot be promoted.
-Human review must determine whether the visual direction merits a safer
-follow-up method.
+The completed review again judged every B better for continuity but legacy A
+better for smoothing and anatomical shape, with `needs-refinement` overall.
+The repository owner chose to retain legacy Top and close the reconstruction
+lane without another follow-up method.
 
 ## Reproduction
 

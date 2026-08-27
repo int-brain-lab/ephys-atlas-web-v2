@@ -236,8 +236,7 @@ blockers.
 
 ## Q13 — Top/Swanson deployed-fragment license coverage
 
-Status: **BLOCKER** for publishing the derived production static maps, not for
-schema/runtime work with synthetic fixtures.
+Status: **RESOLVED by D049 (2026-08-27)**.
 
 The official v1 source repository at
 `1d908bea095be2616a750d939d143f3b4db2a641` is MIT licensed and pins both view
@@ -246,20 +245,18 @@ boxes to `60 20 340 300`. The deployed `slices_top.json` and
 `docs/frontend/LEGACY_CURATED_ASSETS.md`, but the deployed JSON contains no
 separate license declaration and is not tracked in that source commit.
 
-Resolution needed: authoritative confirmation that the repository MIT license
-covers those official deployed curated artifacts, plus preservation of the
-required notice in the derived asset release. If it does not, provide an
-authorized equivalent source. Do not infer coverage merely from the hosting
-domain.
+On 2026-08-27 the repository owner explicitly authorized the two exact deployed
+artifacts under the source repository's MIT License. The durable authorization,
+full copyright/permission notice, source URLs, byte sizes, and exact SHA-256
+identities are committed at
+`LICENSES/IBL-EPHYS-ATLAS-V1-STATIC-ASSETS-MIT.txt` (SHA-256
+`f31adf14af0265cae0f866a515bda9b0750f7473d40cef5598c7f4305037ce37`).
 
-Blocks: production Top/Swanson asset ingestion/publication only. Synthetic
-static-map contract, builder, renderer, and interaction work remains unblocked.
-
-Independent evidence: the local-only Top reconstruction lab can derive a new
-topology-preserving dorsal candidate from the already pinned Allen 25 µm
-annotation and compare it with the legacy paths. That investigation neither
-asserts license coverage for the deployed bytes nor authorizes replacing or
-publishing either source. See `docs/rendering/TOP_RECONSTRUCTION_LAB.md`.
+Production projection packs copy that exact notice into their immutable file
+graph and fail if it is missing, altered, or replaced by a free-form claim.
+Files with different hashes are not covered by this decision merely because
+their names or host match. Q13 no longer blocks exact pinned Top/Swanson
+ingestion or publication.
 
 ## How to resolve an item
 

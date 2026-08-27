@@ -444,7 +444,7 @@ its manifest, three indexes, every transitive indexed-SVG/static resource,
 decoded inventories, and exact declared file graph validate together.
 Top/Swanson normalization accepts paths only and resolves legacy row indices
 through the pinned Allen/Beryl/Cosmos catalog. Production mode requires exact
-pinned source bytes and explicit Q13 license evidence; synthetic mode remains
+pinned source bytes and the D049 hash-bound MIT notice; synthetic mode remains
 clearly test-only and is not a scientific release.
 
 ## D035 — Atomic retained projection-viewport boundary
@@ -794,3 +794,31 @@ This changes presentation metadata only. Retain the exact Linear and Log
 histogram variants and all 925,251 source observations unchanged. Record the
 new preference in another versioned catalog selection and build a fourth
 immutable candidate without changing or deleting the earlier three.
+
+## D049 — Retain legacy Top and authorize exact Top/Swanson assets under MIT
+
+On 2026-08-27, after three guided reconstruction rounds, the repository owner
+chose to retain the exact deployed legacy Top geometry. The 25 µm, canonical
+10 µm, and shared-boundary smoothing experiments consistently improved
+boundary continuity but were consistently worse than legacy for smoothing and
+anatomical shape. Every shared-boundary candidate also failed the provisional
+per-region IoU gate. Close P2T without a reconstructed shortlist; do not pursue
+another Top reconstruction unless a future decision explicitly reopens it.
+
+The repository owner also explicitly authorized the following exact official
+IBL deployment artifacts under the MIT License of
+`int-brain-lab/ephys-atlas-web`:
+
+- `slices_top.json`, SHA-256
+  `4dc788df3da667c8dde5a9f1b0abc258715a916cb8609542bdd849f793815c30`;
+- `slices_swanson.json`, SHA-256
+  `347ad18c2eb0fad1012d30432ff4abf8a09dc0acc0f33b57efbdd2790826acba`.
+
+The complete authorization and MIT notice are committed at
+`LICENSES/IBL-EPHYS-ATLAS-V1-STATIC-ASSETS-MIT.txt`, itself pinned by SHA-256
+`f31adf14af0265cae0f866a515bda9b0750f7473d40cef5598c7f4305037ce37`.
+This resolves Q13 only for those exact byte sequences. A production projection
+pack must verify their pinned sizes, hashes, and path inventories; embed the
+exact committed notice as a verified plain-text resource in its immutable file
+graph; and record the evidence identity on both static sources. Missing,
+modified, differently hashed, or free-form substitute evidence fails closed.

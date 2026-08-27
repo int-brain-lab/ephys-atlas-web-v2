@@ -1,10 +1,8 @@
 # Legacy curated atlas slice assets
 
-Status: **inactive runtime; pinned cutover source evidence**. D023 supersedes
-these bundles as current v2 runtime geometry. The approved D031 cutover may
-ingest the exact Top/Swanson bytes as static-map build inputs after license
-coverage is confirmed. The default viewer currently makes no request to the
-legacy atlas host.
+Status: **inactive runtime; exact Top/Swanson authorized as pinned cutover
+inputs by D049**. D023 supersedes the orthogonal bundles as current v2 runtime
+geometry. The default viewer makes no request to the legacy atlas host.
 
 This note pins the exact legacy SVG-fragment bundles used by IBL Ephys Atlas Web v1 and validated for the v2 anatomical-view integration.
 
@@ -25,12 +23,12 @@ SHA-256
 the inspected `index.html` has SHA-256
 `677135c3a5bbdbd07c1a8c6b202eb636758d3e73bb535ddabeeb545044fe53eb`.
 
-No separate license declaration was found inside the deployed curated JSON
-fragments. Before publishing derived production Top/Swanson assets, confirm
-that the repository MIT license covers those official deployment artifacts and
-preserve the required copyright/license notice. Until then, the exact bytes may
-be pinned and tested as source evidence, while published fixtures remain
-synthetic.
+No separate license declaration exists inside the deployed curated JSON
+fragments. D049 records the repository owner's explicit MIT authorization for
+the exact Top and Swanson hashes. The complete notice is committed at
+`LICENSES/IBL-EPHYS-ATLAS-V1-STATIC-ASSETS-MIT.txt` and is copied into every
+production projection pack. Its own SHA-256 is
+`f31adf14af0265cae0f866a515bda9b0750f7473d40cef5598c7f4305037ce37`.
 
 ## Exact inventory
 
@@ -71,8 +69,7 @@ display inventories.
 The implementation repository records the immutable inventory and hashes but
 does not duplicate the 83.44 MiB of legacy deployment artifacts. The legacy
 renderer and runtime crosswalk have been deleted. Exact pinned Top/Swanson
-source bytes remain potential deterministic inputs to the projection-pack
-builder once Q13 license evidence is complete; the deployed host is never a
-runtime dependency.
+source bytes are authorized deterministic inputs to the projection-pack
+builder; the deployed host is never a runtime dependency.
 
 A release copy is valid only if all five SHA-256 hashes above match. Do not use the historical generation script as a substitute for the curated deployed files.

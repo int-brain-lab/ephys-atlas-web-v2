@@ -82,9 +82,10 @@ hashes, and decoded indexed-SVG identity. Top and Swanson pass through a
 path-only sanitizer and the pinned Allen/Beryl/Cosmos crosswalk before
 deterministic gzip encoding. The graph validator follows the three registered
 resource indexes and every static/registered resource and rejects integrity,
-inventory, missing-file, and undeclared-file errors. Production invocation
-requires explicit Q13 license evidence and exact pinned source bytes; no
-production static asset has been asserted while that evidence remains open.
+inventory, missing-file, and undeclared-file errors. D049 authorizes the exact
+pinned Top/Swanson bytes under MIT. Production invocation embeds the committed,
+hash-bound notice in the immutable file graph and rejects missing, altered, or
+free-form substitute evidence.
 
 The default development URL is a complete validated schema-v1 pack under
 `web/public/atlas/projections/synthetic-static-registered-v1/`. Its registered
@@ -93,17 +94,17 @@ are deterministic synthetic test paths exposed with an always-visible
 non-scientific warning. Static resources use transport-opaque `.isvg.gz` names
 so HTTP hosts do not transparently decode bytes before integrity verification.
 `tools/projection_pack/build_web_fixture.py` reproduces this fixture. It is
-neither a scientific release nor evidence that Q13 is resolved. Static maps
-share regional feature/anatomy coloring, Allen/Beryl/Cosmos identities, hover,
-selection, tooltips, responsive switching, and maximize/Escape restoration.
+not a scientific release and does not exercise the D049-authorized bytes.
+Static maps share regional feature/anatomy coloring, Allen/Beryl/Cosmos
+identities, hover, selection, tooltips, responsive switching, and
+maximize/Escape restoration.
 Volume features remain explicitly anatomy-only on affine-free maps.
 
-`tools/projection_pack/build_top_review.py` provides a separate fail-closed
+`tools/projection_pack/build_top_review.py` preserves the historical separate
 local review lane: it accepts only the exact pinned Top bytes, retains a
-synthetic Swanson, records per-view source modes, and labels the browser view
-as license-unresolved and non-publishable. This lane supports visual Top
-iteration without claiming that Q13 is resolved or weakening the production
-builder's license-evidence gate.
+synthetic Swanson, records per-view source modes, and remains non-publishable
+because it is a mixed review fixture. D049 supersedes its former license
+blocker; production uses both exact authorized sources and the embedded notice.
 Set `EPHYS_ATLAS_PROJECTION_PACK` to that generated pack directory when
 starting Vite; the development server exposes only that rooted directory under
 `/__projection-pack/` with transport-opaque gzip bytes and no persistent cache.
@@ -134,16 +135,17 @@ complete coverage once; independent region smoothing remains forbidden. A
 coarse 25 µm pilot retained all structural and voxel-centre invariants. The
 canonical 10 µm build also retains those invariants at all four strengths, but
 every candidate fails the provisional per-region IoU gate and is therefore a
-visual diagnostic only. Guided human review is next. This does not alter D045,
-resolve Q13, or modify the active projection pack.
+visual diagnostic only. The completed review retained legacy Top and closed the
+reconstruction lane. This does not alter D045 or modify the active projection
+pack.
 
 The pre-Commit-1 contract is now explicit about separate reference-space,
 grid, and asset identities; verified-only persistent caching; independent
 secondary/compact/maximized workspace state; nearest-neighbor volume paint and
 inspection; exhaustive validity counts; and affine-free Top/Swanson gzip SVG
-fragments with pinned `60 20 340 300` view boxes. The deployed static fragment
-license coverage still requires confirmation before production ingestion;
-synthetic fixtures are unblocked.
+fragments with pinned `60 20 340 300` view boxes. D049 resolves their license
+coverage for the exact pinned hashes; synthetic fixtures remain the checked-in
+test default until a production pack is built from those private inputs.
 
 An independent, non-production brain-mesh 3-D lab is implemented in the frozen
 donor branch `experiment/brain-mesh-3d-lab` at `ba1e2d1`. It demonstrates the
