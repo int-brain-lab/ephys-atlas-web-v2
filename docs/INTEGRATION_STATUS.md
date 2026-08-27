@@ -110,10 +110,13 @@ starting Vite; the development server exposes only that rooted directory under
 
 `tools/top_reconstruction_lab/` now provides a second, independent local-only
 evidence lane for the Top source itself. It derives the dorsal first-visible
-label projection from the hash-pinned Allen 25 µm annotation, evaluates exact
-and GEOS whole-coverage variants with deterministic topology/scientific
-metrics, and embeds them beside the pinned legacy Top in one self-contained
-guided A/B report. Legacy remains fixed as A/left during screening. Each
+label projection from either the hash-pinned Allen 25 µm annotation or the
+canonical bilateral 10 µm row LUT bound to its validated immutable
+anatomy-pack-v2 parent. The LUT is memory-mapped and reduced in bounded AP
+blocks. The lab evaluates exact and GEOS whole-coverage variants with
+deterministic topology/scientific metrics and embeds them beside the pinned
+legacy Top in one self-contained guided A/B report. Legacy remains fixed as
+A/left during screening. Each
 assessment separates continuity/holes, smoothing, and anatomical shape,
 accepts a free-text observation and an explicit refinement request; multiple
 winners enter a finalist round, answers are correctable, and the exported
@@ -122,8 +125,11 @@ zoom/pan, hover, failure, provenance, and inventory evidence remains optional.
 The first real build found all 114 legacy signed paths plus bilateral `VISC1`
 in the 116-path reconstruction. Exact and 12.5 µm variants pass the
 provisional single-map gates; 25 and 37.5 µm variants remain visibly rejected.
-Human review is pending. This does not alter D045, resolve Q13, or modify the
-active projection pack.
+The completed 25 µm review preferred reconstruction continuity but legacy
+smoothing and anatomical shape for every candidate, and requested refinement.
+No candidate advanced. The next evidence lane compares exact and 2.5, 5, and
+7.5 µm coverage-safe variants from the validated 10 µm LUT. This does not
+alter D045, resolve Q13, or modify the active projection pack.
 
 The pre-Commit-1 contract is now explicit about separate reference-space,
 grid, and asset identities; verified-only persistent caching; independent

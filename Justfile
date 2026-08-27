@@ -112,6 +112,10 @@ anatomy-smoothing-lab-rerender input output=input:
 top-reconstruction-lab annotation legacy_top regions="web/public/atlas/allen-ccf-2017/regions.json" output="artifacts/top-reconstruction-lab/index.html" tolerances="12.5,25,37.5":
     {{uv-anatomy}} python -m tools.top_reconstruction_lab.build --annotation {{annotation}} --legacy-top {{legacy_top}} --regions {{regions}} --created-at 2026-08-27T00:00:00Z --tolerances-um {{tolerances}} --output {{output}}
 
+# Build from a hash-pinned, memory-mappable bilateral BrainRegions-row LUT.
+top-reconstruction-lab-lut source_lut source_lut_sha256 source_parent_manifest legacy_top resolution_um="10" regions="web/public/atlas/allen-ccf-2017/regions.json" output="artifacts/top-reconstruction-lab/10um/index.html" tolerances="2.5,5,7.5":
+    {{uv-anatomy}} python -m tools.top_reconstruction_lab.build --source-lut {{source_lut}} --source-lut-sha256 {{source_lut_sha256}} --source-parent-manifest {{source_parent_manifest}} --resolution-um {{resolution_um}} --legacy-top {{legacy_top}} --regions {{regions}} --created-at 2026-08-27T00:00:00Z --tolerances-um {{tolerances}} --output {{output}}
+
 # Build the ignored, local-only W26/Allen geometry candidate review page.
 volume-geometry-review annotation annotation_sha256 volume="data/source/ephys_atlas_volumes/2026_W26/brainwide_ephys_atlas_50um.npz" volume_sha256="1f7509fe9e368a90704173bdb5c385827b199a7d5fa4b0aaa8fec5aca5402253":
     {{uv-anatomy}} python -m tools.volume_geometry_review.build --volume {{volume}} --volume-sha256 {{volume_sha256}} --annotation {{annotation}} --annotation-sha256 {{annotation_sha256}} --created-at 2026-08-23T00:00:00Z --output artifacts/volume-geometry-review

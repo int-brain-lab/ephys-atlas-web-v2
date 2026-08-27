@@ -4,8 +4,11 @@ Status: **implemented as local review evidence; no production asset selected**.
 
 ## Purpose and boundary
 
-The lab reconstructs an affine-free dorsal Top projection from the pinned Allen
-CCFv3 25 µm annotation and compares it with the surviving pinned legacy Top.
+The lab reconstructs an affine-free dorsal Top projection from a hash-pinned
+Allen CCFv3 source and compares it with the surviving pinned legacy Top. The
+first lane uses the 25 µm annotation directly. A second, separate review lane
+uses the canonical bilateral 10 µm `BrainRegions`-row LUT already validated by
+the immutable anatomy-pack-v2 parent.
 It exists to determine whether topology-preserving regenerated geometry is a
 better visual source than the legacy simplified paths. It does not modify the
 active projection pack, resolve Q13, invent a Top affine, or publish an asset.
@@ -14,12 +17,21 @@ The legacy Top remains the fallback throughout the investigation.
 
 ## Reconstruction recipe
 
-The input annotation has canonical `(AP, ML, DV)` array axes. DV world
+The source labels have canonical `(AP, ML, DV)` array axes. DV world
 coordinates decrease as the array index increases, so the dorsal visible label
 for each AP×ML column is the first non-background value encountered while
-scanning DV indices from zero upward. The builder maps those source Allen IDs
-to physical bilateral `BrainRegions` rows and emits direct signed Allen, Beryl,
-and Cosmos identities.
+scanning DV indices from zero upward. For the raw 25 µm annotation, the builder
+maps those source Allen IDs to physical bilateral `BrainRegions` rows. The 10 µm
+LUT already contains those bilateral rows and is read with memory mapping in
+bounded AP blocks. Both routes emit direct signed Allen, Beryl, and Cosmos
+identities.
+
+The LUT route requires its SHA-256 and the committed immutable
+anatomy-pack-v2 parent manifest. The builder verifies the actual LUT filename,
+size, and hash against that manifest, verifies the parent resolution and pinned
+annotation evidence, and requires the parent's topology, coverage, adjacency,
+geometry, and sampled-voxel gates to be green. This prevents a convenient but
+unproven array from becoming reconstruction evidence.
 
 All region geometry is polygonized from the complete two-dimensional label
 plane at once. Candidate simplification uses GEOS coverage simplification with
@@ -57,7 +69,7 @@ Advanced evidence provides synchronized mouse-wheel zoom, drag pan,
 side-by-side, color-overlay, boundary-difference, individual variant views,
 region hover, metrics, failures, source hashes, and inventory differences.
 
-## Current real-input evidence
+## Completed 25 µm review
 
 The first local build used:
 
@@ -75,9 +87,16 @@ whole-coverage candidate is eligible and changes no sampled source voxel
 centre. The 25 and 37.5 µm candidates are retained as rejected diagnostics
 because they change source voxel labels and fail provisional IoU/error gates.
 
-These measurements establish a credible reconstruction and expose the one
-inventory difference. Human visual review must decide whether to shortlist
-anything.
+The guided human review completed on 2026-08-27. For every exact or simplified
+25 µm reconstruction, the reviewer found B better for boundary continuity and
+A better for smoothing quality and anatomical shape. Every comparison was
+therefore marked `needs-refinement`; no production candidate was selected and
+the legacy Top remains the fallback.
+
+The next experiment tests whether retaining the canonical 10 µm dorsal detail
+can close that tradeoff. It compares the exact 10 µm reconstruction plus
+coverage-safe 2.5, 5, and 7.5 µm simplification candidates in a distinct report.
+The result remains review evidence only.
 
 ## Reproduction
 
@@ -92,3 +111,17 @@ just top-reconstruction-lab \
 The output is a self-contained ignored file at
 `artifacts/top-reconstruction-lab/index.html`. Serve that directory with any
 local static server. Never copy it into `web/public/`.
+
+For the canonical 10 µm LUT lane:
+
+```sh
+just top-reconstruction-lab-lut \
+  /path/to/annotation_10_lut_bilateral_v02.npy \
+  f8c26e2eb972cbff5caa2101fda8b7c5c2a2bdb985e3faad6bf0e57defcc27cb \
+  web/public/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/manifest.json \
+  data/releases/top-review-input/slices_top.json
+```
+
+This writes `artifacts/top-reconstruction-lab/10um/index.html`. Its expected
+source LUT is 2,407,680,128 bytes; the parent manifest binds it to annotation
+SHA-256 `a9e9654ef491f0af107dc0a61bd720dabe7f36e8f3e9239532bf3dbdc94ef24c`.
