@@ -213,12 +213,11 @@ def test_shared_boundary_smoothing_candidates_are_separate_from_simplification()
     )
 
     assert [item["id"] for item in report["candidates"]] == [
-        "reconstructed-exact-10um",
         "shared-smooth-1pass-strength-0.25-10um",
         "shared-smooth-4pass-strength-0.25-10um",
     ]
-    assert report["candidates"][1]["strategy_id"] == "shared-boundary-laplacian"
-    assert "shared-boundary smoothing" in report["candidates"][1]["label"]
+    assert report["candidates"][0]["strategy_id"] == "shared-boundary-laplacian"
+    assert "shared-boundary smoothing" in report["candidates"][0]["label"]
 
 
 def test_self_contained_report_has_guided_three_answer_workflow() -> None:

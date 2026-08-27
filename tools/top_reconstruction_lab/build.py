@@ -251,16 +251,21 @@ def build_report(
         minimum_iou=0.98,
         minimum_iou_area_um2=10_000,
     )
-    variants = [
-        _variant(
-            plane,
-            regions,
-            strategy_id="exact",
-            parameters={},
-            policy=policy,
-            resolution_um=resolution_um,
+    variants = []
+    # Exact remains the metric reference inside every smoothing experiment.
+    # Omit it only from a smoothing-only guided report because the reviewer has
+    # already assessed that unchanged reconstruction in the preceding round.
+    if tolerances or not passes:
+        variants.append(
+            _variant(
+                plane,
+                regions,
+                strategy_id="exact",
+                parameters={},
+                policy=policy,
+                resolution_um=resolution_um,
+            )
         )
-    ]
     variants.extend(
         _variant(
             plane,
