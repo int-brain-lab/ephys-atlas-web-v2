@@ -511,7 +511,8 @@ Status: **implemented; D049 resolves production Top/Swanson license evidence**.
 - carry forward registered orthogonal geometry, affine, sparse-display,
   topology, coverage, and synchronization evidence;
 - ingest, sanitize, and normalize pinned Top/Swanson source geometry;
-- emit deterministic immutable resources and a synthetic/focused test pack;
+- emit deterministic immutable resources, production curated fragments, and
+  synthetic focused-test outputs;
 - verify every declared region ID, source/output hash, path count, compressed
   size, provenance record, and static map's absence of an affine.
 

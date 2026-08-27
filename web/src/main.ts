@@ -9,7 +9,7 @@ const root = document.querySelector<HTMLElement>('#app');
 if (!root) throw new Error('Missing #app root element');
 
 const defaultProjectionPackUrl =
-  '/atlas/projections/synthetic-static-registered-v1/manifest.json';
+  '/atlas/projections/ibl-static-registered-v1/manifest.json';
 const projectionPackUrl = import.meta.env.VITE_PROJECTION_PACK_URL as string | undefined;
 const viewportFactory = new RetainedProjectionViewportFactory({
   projectionPackUrl: projectionPackUrl ?? defaultProjectionPackUrl,

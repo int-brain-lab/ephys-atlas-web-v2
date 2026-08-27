@@ -1,0 +1,44 @@
+IBL Ephys Atlas Web v1 curated static atlas assets
+
+Authorization recorded: 27 August 2026
+
+The repository owner explicitly authorized the following exact official
+International Brain Laboratory deployment artifacts for use, reproduction,
+modification, and redistribution under the MIT License reproduced below:
+
+* slices_top.json
+  Source: https://atlas.internationalbrainlab.org/data/json/slices_top.json
+  Bytes: 40,173
+  SHA-256: 4dc788df3da667c8dde5a9f1b0abc258715a916cb8609542bdd849f793815c30
+
+* slices_swanson.json
+  Source: https://atlas.internationalbrainlab.org/data/json/slices_swanson.json
+  Bytes: 192,565
+  SHA-256: 347ad18c2eb0fad1012d30432ff4abf8a09dc0acc0f33b57efbdd2790826acba
+
+This authorization covers those exact byte sequences and derived assets made
+from them. Derived distributions must retain this notice and the MIT License.
+It does not assign this license to files with different hashes merely because
+they have the same filenames or are served from the same host.
+
+MIT License
+
+Copyright (c) 2023 International Brain Laboratory
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

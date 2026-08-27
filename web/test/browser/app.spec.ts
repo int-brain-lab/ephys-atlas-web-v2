@@ -114,9 +114,9 @@ test('initial anatomy display fetches only the three visible packs', async ({ pa
   await page.waitForTimeout(250);
 
   expect(new Set(packRequests)).toEqual(new Set([
-    '/atlas/projections/synthetic-static-registered-v1/registered/coronal/10.isvg.gz',
-    '/atlas/projections/synthetic-static-registered-v1/registered/sagittal/8.isvg.gz',
-    '/atlas/projections/synthetic-static-registered-v1/registered/horizontal/6.isvg.gz',
+    '/atlas/projections/ibl-static-registered-v1/registered/coronal/10.isvg.gz',
+    '/atlas/projections/ibl-static-registered-v1/registered/sagittal/8.isvg.gz',
+    '/atlas/projections/ibl-static-registered-v1/registered/horizontal/6.isvg.gz',
   ]));
 });
 

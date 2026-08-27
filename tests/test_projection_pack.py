@@ -463,3 +463,37 @@ def test_rejects_registered_parent_that_failed_scientific_gates(tmp_path: Path) 
             generator_commit="abcdef0",
             static_mode="synthetic-fixture",
         )
+
+
+def test_checked_in_production_pack_is_complete_authorized_and_sanitized() -> None:
+    root = (
+        Path(__file__).resolve().parents[1]
+        / "web/public/atlas/projections/ibl-static-registered-v1"
+    )
+    manifest = validate_projection_pack(root)
+    assert manifest["pack_id"] == "ibl-atlas-projections-2363b6958fbf"
+    provenance = manifest["provenance"]
+    assert provenance["builder"]["commit"] == (
+        "f1deb17aee3e6879f4645fa7159ac04f2187046d"
+    )
+    assert provenance["recipe"]["static_source_mode"] == "pinned-curated"
+    sources = {source["path"]: source for source in provenance["sources"]}
+    assert sources["legacy/slices_top.json"]["sha256"] == (
+        "4dc788df3da667c8dde5a9f1b0abc258715a916cb8609542bdd849f793815c30"
+    )
+    assert sources["legacy/slices_swanson.json"]["sha256"] == (
+        "347ad18c2eb0fad1012d30432ff4abf8a09dc0acc0f33b57efbdd2790826acba"
+    )
+
+    projections = {
+        projection["id"]: projection for projection in manifest["projections"]
+    }
+    for projection_id, path_count in (("top", 114), ("swanson", 808)):
+        projection = projections[projection_id]
+        fragment = gzip.decompress(
+            (root / projection["fragment"]["resource"]["path"]).read_bytes()
+        ).decode("utf-8")
+        assert projection["path_count"] == path_count
+        assert fragment.count("<path ") == path_count
+        assert "_region_" not in fragment
+        assert "<script" not in fragment

@@ -28,15 +28,15 @@ SVG packs to the existing worker-owned 32 MiB decoded LRU. It resolves native
 10 µm indices to the nearest declared sparse display plane with lower-index
 tie breaking and derives guides from the manifest affine.
 
-The checked-in development fixture at
-`web/public/atlas/projections/synthetic-static-registered-v1/` combines the
-validated registered geometry with deterministic synthetic Top/Swanson paths.
-The static maps are exposed with an always-visible synthetic warning and must
-never be presented as scientific or licensing evidence. Their transport-opaque
-`.isvg.gz` names prevent HTTP hosts from decoding bytes before SHA verification.
-Rebuild the fixture with
-`tools/projection_pack/build_web_fixture.py` and validate it with
-`just projection-pack-validate <path>`.
+The checked-in production pack at
+`web/public/atlas/projections/ibl-static-registered-v1/` combines the validated
+registered geometry with compiled copies of the exact D049-authorized legacy
+Top/Swanson path geometry. Compilation removes executable/legacy markup,
+resolves canonical Allen/Beryl/Cosmos IDs, and preserves every reviewed `d`
+attribute. Its transport-opaque `.isvg.gz` resources prevent HTTP hosts from
+decoding bytes before SHA verification. Validate it with
+`just projection-pack-validate <path>`; synthetic static generation remains a
+test-only builder mode.
 
 The immutable v2/v3 anatomy artifacts remain the scientific and reproducible
 inputs to projection-pack generation, not supported browser formats. The

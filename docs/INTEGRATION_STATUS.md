@@ -87,14 +87,17 @@ pinned Top/Swanson bytes under MIT. Production invocation embeds the committed,
 hash-bound notice in the immutable file graph and rejects missing, altered, or
 free-form substitute evidence.
 
-The default development URL is a complete validated schema-v1 pack under
-`web/public/atlas/projections/synthetic-static-registered-v1/`. Its registered
-resources are the validated sparse bilateral geometry; its Top/Swanson inputs
-are deterministic synthetic test paths exposed with an always-visible
-non-scientific warning. Static resources use transport-opaque `.isvg.gz` names
-so HTTP hosts do not transparently decode bytes before integrity verification.
-`tools/projection_pack/build_web_fixture.py` reproduces this fixture. It is
-not a scientific release and does not exercise the D049-authorized bytes.
+The default development URL is the complete validated production pack
+`ibl-atlas-projections-2363b6958fbf` under
+`web/public/atlas/projections/ibl-static-registered-v1/`. Its registered
+resources are the validated sparse bilateral geometry. Its Top and Swanson
+resources compile the exact D049-authorized legacy path geometry into inert,
+normalized fragments with canonical Allen/Beryl/Cosmos IDs. Their source
+hashes and exact MIT notice are embedded in the immutable graph. Static
+resources use transport-opaque `.isvg.gz` names so HTTP hosts do not
+transparently decode bytes before integrity verification. Synthetic static
+generation remains available only for deterministic builder tests and is not a
+runtime default.
 Static maps share regional feature/anatomy coloring, Allen/Beryl/Cosmos
 identities, hover, selection, tooltips, responsive switching, and
 maximize/Escape restoration.

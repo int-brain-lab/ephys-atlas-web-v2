@@ -94,8 +94,8 @@ losslessly repackages validated sparse registered geometry, emits strict
 resource indexes, normalizes affine-free static fragments, and validates the
 complete immutable file graph. D049 resolves the Top/Swanson license evidence
 and production packs now embed its exact MIT notice. The checked-in browser
-fixture continues to use conspicuously synthetic static fragments
-alongside the validated registered geometry. The browser now uses one retained
+pack uses compiled copies of the exact pinned Top/Swanson geometry alongside
+the validated registered geometry. The browser now uses one retained
 `ProjectionViewport` per registered frame and
 the schema-v1 projection pack directly. The old `SliceRenderer` facade,
 hybrid switch, anatomy-pack readers, legacy renderer/crosswalk, URL migrations,
@@ -259,9 +259,9 @@ better for continuity, while legacy A was better for smoothing and anatomical
 shape. Every comparison requested refinement. The repository owner then chose
 to retain the exact legacy Top. Do not pursue another reconstruction or promote
 any rejected diagnostic. D049 also authorizes the exact pinned Top/Swanson
-bytes under MIT, so the next static-view implementation task is real Swanson
-integration. The closed lab contract and reproduction commands remain in
-`docs/rendering/TOP_RECONSTRUCTION_LAB.md`.
+bytes under MIT. Both are now compiled into the validated production projection
+pack without changing their path geometry. The closed lab contract and
+reproduction commands remain in `docs/rendering/TOP_RECONSTRUCTION_LAB.md`.
 
 ## P3D — Independent brain-mesh 3-D lab
 

@@ -9,25 +9,35 @@ test('Top and Swanson share regional presentation, interaction, URL state, and m
   await expect(page.getByRole('tab', { name: 'Top' })).toHaveAttribute('aria-selected', 'true');
   await expect(top).toBeVisible();
   await expect(top.locator('path')).toHaveCount(114);
-  await expect(top.locator('.secondary-projection__notice')).toContainText('not scientific data');
-  await expect(top.locator('.static-projection-viewport')).toHaveAttribute('data-synthetic-fixture', 'true');
+  await expect(top.locator('.secondary-projection__notice')).toBeHidden();
+  await expect(top.locator('.static-projection-viewport')).toHaveAttribute('data-synthetic-fixture', 'false');
   await expect(top.locator('.static-projection-viewport')).toHaveAttribute(
     'data-static-source-mode',
-    'synthetic-fixture',
+    'pinned-curated',
   );
 
-  // Synthetic fixture paths intentionally overlap; the final path owns the hit target.
   const path = top.locator('path').last();
+  const topRegionId = await path.getAttribute('data-allen-id');
+  expect(topRegionId).not.toBeNull();
+  const selectedTopRegionId = String(-Math.abs(Number(topRegionId)));
   await path.hover();
   await expect(path).toHaveClass(/is-highlighted/);
   await expect(top.locator('.region-tooltip')).toBeVisible();
   await path.click();
-  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toContain('-997');
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toContain(selectedTopRegionId);
 
   await page.getByRole('tab', { name: 'Swanson' }).click();
   const swanson = page.locator('[data-secondary-panel="swanson"]');
   await expect(swanson).toBeVisible();
   await expect(swanson.locator('path')).toHaveCount(808);
+  const swansonPath = swanson.locator('path').last();
+  const swansonRegionId = await swansonPath.getAttribute('data-allen-id');
+  expect(swansonRegionId).not.toBeNull();
+  const selectedSwansonRegionId = String(-Math.abs(Number(swansonRegionId)));
+  await swansonPath.hover();
+  await expect(swanson.locator('.region-tooltip')).toBeVisible();
+  await swansonPath.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toContain(selectedSwansonRegionId);
   await expect.poll(() => new URL(page.url()).searchParams.get('secondary')).toBe('swanson');
 
   await page.getByRole('button', { name: 'Maximize secondary panel' }).click();
@@ -56,7 +66,7 @@ test('volume features remain explicitly anatomy-only on affine-free static maps'
 
   const top = page.locator('[data-secondary-panel="top"]');
   await expect(top.locator('path')).toHaveCount(114);
-  await expect(top.locator('.secondary-projection__notice')).toContainText('anatomy only');
+  await expect(top.locator('.secondary-projection__notice')).toContainText(/anatomy only/i);
   await expect(top.locator('canvas')).toHaveCount(0);
   await top.locator('path').last().hover();
   const tooltip = top.locator('.region-tooltip');

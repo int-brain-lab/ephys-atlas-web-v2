@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import os from 'node:os';
 
-const manifestUrl = '/atlas/projections/synthetic-static-registered-v1/manifest.json';
+const manifestUrl = '/atlas/projections/ibl-static-registered-v1/manifest.json';
 const trials = 5;
 const output = process.env.EPHYS_ATLAS_ANATOMY_BENCHMARK_OUTPUT;
 const cases = [
