@@ -227,7 +227,7 @@ scientific boundaries, and promotion stopping point are specified in
 ## P2T — Top reconstruction lab
 
 Status: **25 and 10 µm reconstruction reviews complete with refinement
-requested; shared-boundary smoothing experiment in progress**.
+requested; shared-boundary smoothing report ready for review**.
 
 The guarded local lab reconstructs the affine-free dorsal Top map from the
 exact pinned Allen 25 µm annotation, compares legacy A/left with exact and
@@ -249,11 +249,15 @@ by the provisional IoU gate. All received the same visual assessment as the
 25 µm candidates: better continuity, but worse smoothing and anatomical
 shape than legacy.
 
-Next action: build and review the globally noded, fixed-junction shared-boundary
-Laplacian candidates on the validated 10 µm LUT. Do not modify the active pack
-or record a replacement decision until that evidence is inspected. The legacy
-Top remains the fallback, and Q13 remains independently unresolved. The
-contract and reproduction command are in
+The canonical shared-boundary build is complete. All four strengths retain
+coverage, topology, adjacency, and sampled voxel centres, but all are rejected
+by the provisional per-region IoU gate. They are visual diagnostics only.
+
+Next action: complete the guided human review to decide whether this visual
+direction merits a safer follow-up method. Do not modify the active pack or
+record a replacement decision from these rejected candidates. The legacy Top
+remains the fallback, and Q13 remains independently unresolved. The contract
+and reproduction command are in
 `docs/rendering/TOP_RECONSTRUCTION_LAB.md`.
 
 ## P3D — Independent brain-mesh 3-D lab

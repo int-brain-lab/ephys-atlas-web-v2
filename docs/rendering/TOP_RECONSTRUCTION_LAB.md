@@ -118,12 +118,23 @@ candidate: reconstruction was better for continuity, while legacy was better
 for smoothing and anatomical shape. Every comparison requested refinement;
 no candidate advanced and production remains unchanged.
 
-The next report applies 1, 2, 4, and 8 shared-boundary smoothing passes at a
-conservative `0.125` per-pass strength to the 10 µm reconstruction. A 25 µm
-pilot retained all labels, valid coverage, adjacency, topology, and every
-source voxel centre at all four strengths. Its candidates were rejected only
-by the provisional per-region IoU gate, as expected for that coarser source.
-The canonical 10 µm metrics and human review remain the decision evidence.
+The shared-boundary report applies 1, 2, 4, and 8 smoothing passes at a
+conservative `0.125` per-pass strength to the 10 µm reconstruction. It was
+built on Fractal from clean generator commit
+`23050a2d36271fbe95ec8a9a385b495d1ce42342`, has SHA-256
+`4a40cc0751de17286bba4655999340fbce41cf8cfd1fcb9b378b2fa6ad1eac06`,
+and review ID
+`0d2512c0870ac483696996a90efe4c45891b1a0348139f5712f21dcda7433482`.
+
+Every candidate retains all 116 labels, 656 components, 206 holes, valid
+coverage, adjacency, background topology, and zero uncovered,
+multiply-covered, or wrong-label source voxel centres. Their maximum
+boundary-error upper bounds are respectively 2.134, 2.908, 4.214, and 6.227 µm.
+All four are nevertheless rejected by the provisional per-region IoU gate;
+their minimum eligible-region IoUs are respectively 0.9595, 0.9264, 0.8762,
+and 0.8135. They remain explicit visual diagnostics and cannot be promoted.
+Human review must determine whether the visual direction merits a safer
+follow-up method.
 
 ## Reproduction
 

@@ -132,8 +132,10 @@ for exact and every simplification candidate. A new refinement lane now smooths
 the globally noded boundary graph with fixed junctions before polygonizing the
 complete coverage once; independent region smoothing remains forbidden. A
 coarse 25 µm pilot retained all structural and voxel-centre invariants. The
-canonical 10 µm build and review are next. This does not alter D045, resolve
-Q13, or modify the active projection pack.
+canonical 10 µm build also retains those invariants at all four strengths, but
+every candidate fails the provisional per-region IoU gate and is therefore a
+visual diagnostic only. Guided human review is next. This does not alter D045,
+resolve Q13, or modify the active projection pack.
 
 The pre-Commit-1 contract is now explicit about separate reference-space,
 grid, and asset identities; verified-only persistent caching; independent
