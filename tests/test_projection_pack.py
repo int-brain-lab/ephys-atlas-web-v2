@@ -9,6 +9,8 @@ import pytest
 
 from ephys_atlas_builder.schema_v1 import validate_schema_v1_document
 from tools.projection_pack.build import (
+    PINNED_STATIC_SOURCES,
+    PinnedStaticSource,
     build_projection_pack,
     normalize_static_fragment,
     validate_projection_pack,
@@ -272,6 +274,36 @@ def test_production_static_ingestion_requires_license_and_pinned_bytes(tmp_path:
             generator_commit="abcdef0",
             license_evidence="confirmed by repository owner",
         )
+
+
+def test_top_review_mode_is_mixed_explicit_and_non_publishable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    registered, catalog, sources = _inputs(tmp_path)
+    top_bytes = sources["top"].read_bytes()
+    monkeypatch.setitem(
+        PINNED_STATIC_SOURCES,
+        "top",
+        PinnedStaticSource(len(top_bytes), _sha(top_bytes), 114),
+    )
+    output = tmp_path / "top-review"
+    manifest = build_projection_pack(
+        registered,
+        catalog,
+        sources,
+        output,
+        created_at="2026-08-27T00:00:00Z",
+        generator_commit="abcdef0",
+        static_mode="pinned-top-review",
+    )
+    assert manifest["pack_id"].startswith("review-atlas-projections-")
+    recipe = manifest["provenance"]["recipe"]
+    assert recipe["static_projection_modes"] == {
+        "top": "pinned-review",
+        "swanson": "synthetic-fixture",
+    }
+    sources_by_path = {source["path"]: source for source in manifest["provenance"]["sources"]}
+    assert "license" not in sources_by_path["legacy/slices_top.json"]
+    assert "Q13 license coverage unresolved" in sources_by_path["legacy/slices_top.json"]["description"]
+    assert "must not be published" in manifest["provenance"]["notes"][-1]
 
 
 def test_rejects_registered_parent_that_failed_scientific_gates(tmp_path: Path) -> None:

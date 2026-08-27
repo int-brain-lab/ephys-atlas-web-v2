@@ -11,6 +11,10 @@ test('Top and Swanson share regional presentation, interaction, URL state, and m
   await expect(top.locator('path')).toHaveCount(114);
   await expect(top.locator('.secondary-projection__notice')).toContainText('not scientific data');
   await expect(top.locator('.static-projection-viewport')).toHaveAttribute('data-synthetic-fixture', 'true');
+  await expect(top.locator('.static-projection-viewport')).toHaveAttribute(
+    'data-static-source-mode',
+    'synthetic-fixture',
+  );
 
   // Synthetic fixture paths intentionally overlap; the final path owns the hit target.
   const path = top.locator('path').last();

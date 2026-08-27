@@ -50,6 +50,7 @@ export interface StaticProjectionFrame {
   readonly svgFragment: string;
   readonly viewBox: ViewBox;
   readonly syntheticFixture: boolean;
+  readonly sourceMode: 'pinned-curated' | 'pinned-review' | 'synthetic-fixture' | 'unknown';
 }
 
 export interface ProjectionPackSourceOptions {
@@ -165,14 +166,26 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
       throw new Error(`${resource.path} contains ${pathCount} paths, expected ${projection.path_count}`);
     }
     const recipe = manifest.provenance.recipe;
-    const syntheticFixture = Boolean(recipe && typeof recipe === 'object'
-      && 'static_source_mode' in recipe
-      && recipe.static_source_mode === 'synthetic-fixture');
+    const projectionModes = recipe && typeof recipe === 'object'
+      && 'static_projection_modes' in recipe
+      && recipe.static_projection_modes && typeof recipe.static_projection_modes === 'object'
+      ? recipe.static_projection_modes as Record<string, unknown>
+      : null;
+    const declaredMode = projectionModes?.[projectionId]
+      ?? (recipe && typeof recipe === 'object' && 'static_source_mode' in recipe
+        ? recipe.static_source_mode
+        : null);
+    const sourceMode = declaredMode === 'pinned-curated'
+      || declaredMode === 'pinned-review'
+      || declaredMode === 'synthetic-fixture'
+      ? declaredMode
+      : 'unknown';
     return {
       projectionId,
       svgFragment,
       viewBox: viewBox(projection.view_box),
-      syntheticFixture,
+      syntheticFixture: sourceMode === 'synthetic-fixture',
+      sourceMode,
     };
   }
 

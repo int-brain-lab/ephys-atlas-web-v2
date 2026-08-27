@@ -90,6 +90,7 @@ export class RetainedStaticProjectionViewport implements StaticProjectionViewpor
       this.renderedFrame = presentationFrame(frame, model, this.presentation());
       this.renderer.render(this.renderedFrame);
       this.root.dataset.syntheticFixture = String(frame.syntheticFixture);
+      this.root.dataset.staticSourceMode = frame.sourceMode;
       this.root.dataset.mode = model.feature?.representation === 'volume' ? 'anatomy-only' : 'regional';
     } finally {
       if (this.activeAbort === abort) this.activeAbort = null;

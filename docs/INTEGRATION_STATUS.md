@@ -98,6 +98,13 @@ share regional feature/anatomy coloring, Allen/Beryl/Cosmos identities, hover,
 selection, tooltips, responsive switching, and maximize/Escape restoration.
 Volume features remain explicitly anatomy-only on affine-free maps.
 
+`tools/projection_pack/build_top_review.py` provides a separate fail-closed
+local review lane: it accepts only the exact pinned Top bytes, retains a
+synthetic Swanson, records per-view source modes, and labels the browser view
+as license-unresolved and non-publishable. This lane supports visual Top
+iteration without claiming that Q13 is resolved or weakening the production
+builder's license-evidence gate.
+
 The pre-Commit-1 contract is now explicit about separate reference-space,
 grid, and asset identities; verified-only persistent caching; independent
 secondary/compact/maximized workspace state; nearest-neighbor volume paint and

@@ -21,6 +21,7 @@ from tools.svg_pack import decode
 
 PROJECTIONS = ("coronal", "sagittal", "horizontal")
 STATIC_PROJECTIONS = ("top", "swanson")
+StaticSourceMode = Literal["pinned-curated", "synthetic-fixture", "pinned-top-review"]
 REFERENCE_SPACE_ID = "allen-ccf-2017"
 GRID_ID = "allen-ccf-2017-10um"
 VIEW_BOX = [60, 20, 340, 300]
@@ -458,7 +459,7 @@ def build_projection_pack(
     generator_commit: str,
     reference_space_id: str = REFERENCE_SPACE_ID,
     grid_id: str = GRID_ID,
-    static_mode: Literal["pinned-curated", "synthetic-fixture"] = "pinned-curated",
+    static_mode: StaticSourceMode = "pinned-curated",
     license_evidence: str | None = None,
 ) -> dict[str, Any]:
     if output.exists():
@@ -467,7 +468,7 @@ def build_projection_pack(
         raise ValueError("static sources must contain exactly top and swanson")
     if static_mode == "pinned-curated" and not license_evidence:
         raise ValueError("production Top/Swanson ingestion requires explicit license evidence")
-    if static_mode not in ("pinned-curated", "synthetic-fixture"):
+    if static_mode not in ("pinned-curated", "synthetic-fixture", "pinned-top-review"):
         raise ValueError(f"unsupported static source mode {static_mode!r}")
 
     registered_root = registered_root.resolve()
@@ -477,17 +478,28 @@ def build_projection_pack(
     _validate_registered_parent(registered_manifest)
     crosswalk, crosswalk_sha = _crosswalk(region_catalog_path)
 
-    if static_mode == "pinned-curated":
-        evidence = PINNED_STATIC_SOURCES
-    else:
-        evidence = {
-            name: PinnedStaticSource(
+    static_projection_modes = {
+        name: (
+            "pinned-curated"
+            if static_mode == "pinned-curated"
+            else "pinned-review"
+            if static_mode == "pinned-top-review" and name == "top"
+            else "synthetic-fixture"
+        )
+        for name in STATIC_PROJECTIONS
+    }
+    evidence = {
+        name: (
+            PINNED_STATIC_SOURCES[name]
+            if static_projection_modes[name] != "synthetic-fixture"
+            else PinnedStaticSource(
                 static_sources[name].stat().st_size,
                 _sha(static_sources[name].read_bytes()),
                 PINNED_STATIC_SOURCES[name].path_count,
             )
-            for name in STATIC_PROJECTIONS
-        }
+        )
+        for name in STATIC_PROJECTIONS
+    }
 
     stage_parent = output.parent
     stage_parent.mkdir(parents=True, exist_ok=True)
@@ -520,9 +532,14 @@ def build_projection_pack(
             "generator_commit": generator_commit,
             "created_at": created_at,
             "static_source_mode": static_mode,
+            "static_projection_modes": static_projection_modes,
             "license_evidence": license_evidence,
         }
-        prefix = "synthetic-atlas-projections" if static_mode == "synthetic-fixture" else "ibl-atlas-projections"
+        prefix = {
+            "synthetic-fixture": "synthetic-atlas-projections",
+            "pinned-top-review": "review-atlas-projections",
+            "pinned-curated": "ibl-atlas-projections",
+        }[static_mode]
         pack_id = f"{prefix}-{_sha(_canonical(identity))[:12]}"
         sources: list[dict[str, Any]] = [
             {
@@ -539,21 +556,25 @@ def build_projection_pack(
             },
         ]
         for name in STATIC_PROJECTIONS:
-            source_description = (
-                "Pinned curated" if static_mode == "pinned-curated" else "Synthetic fixture"
-            )
+            projection_mode = static_projection_modes[name]
+            source_description = {
+                "pinned-curated": "Pinned curated",
+                "pinned-review": "Pinned local-review-only; Q13 license coverage unresolved",
+                "synthetic-fixture": "Synthetic fixture",
+            }[projection_mode]
             source: dict[str, Any] = {
-                "role": "atlas-geometry" if static_mode == "pinned-curated" else "user-input",
+                "role": "atlas-geometry" if projection_mode == "pinned-curated" else "user-input",
                 "description": f"{source_description} {name} SVG fragment",
                 "path": f"legacy/slices_{name}.json",
                 "sha256": static_hashes[name],
             }
-            if static_mode == "pinned-curated":
+            if projection_mode in ("pinned-curated", "pinned-review"):
                 source.update(
                     repository="int-brain-lab/ephys-atlas-web",
                     commit="1d908bea095be2616a750d939d143f3b4db2a641",
-                    license=license_evidence,
                 )
+            if projection_mode == "pinned-curated":
+                source["license"] = license_evidence
             sources.append(source)
         provenance = {
             "sources": sources,
@@ -562,12 +583,17 @@ def build_projection_pack(
                 "version": "1",
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 "commit": generator_commit,
-                "command": "python -m tools.projection_pack.build",
+                "command": (
+                    "python -m tools.projection_pack.build_top_review"
+                    if static_mode == "pinned-top-review"
+                    else "python -m tools.projection_pack.build"
+                ),
             },
             "recipe": {
                 "id": "atlas-projection-pack-v1",
                 "created_at": created_at,
                 "static_source_mode": static_mode,
+                "static_projection_modes": static_projection_modes,
                 "registered_parent_pack_id": registered_manifest["pack_id"],
                 "registered_parent_manifest_sha256": _sha(manifest_raw),
                 "grid_id": grid_id,
@@ -577,6 +603,15 @@ def build_projection_pack(
                 *(
                     ["Synthetic static geometry is test-only and is not a scientific atlas release."]
                     if static_mode == "synthetic-fixture"
+                    else []
+                ),
+                *(
+                    [
+                        "Top uses exact pinned bytes for local visual review only; Q13 license coverage remains unresolved.",
+                        "Swanson remains synthetic test geometry in this mixed review pack.",
+                        "This review pack must not be published as a scientific release.",
+                    ]
+                    if static_mode == "pinned-top-review"
                     else []
                 ),
             ],

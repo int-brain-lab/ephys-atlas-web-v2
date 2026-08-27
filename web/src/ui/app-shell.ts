@@ -1601,8 +1601,13 @@ export class AppShell {
     });
     Promise.resolve(pending).then(() => {
       if (nodes.renderToken !== token) return;
-      const fixture = nodes.target.querySelector<HTMLElement>('[data-synthetic-fixture="true"]') !== null;
-      nodes.notice.textContent = fixture
+      const viewport = nodes.target.querySelector<HTMLElement>('[data-static-source-mode]');
+      const sourceMode = viewport?.dataset.staticSourceMode;
+      nodes.notice.textContent = sourceMode === 'pinned-review'
+        ? model.feature?.representation === 'volume'
+          ? 'Pinned Top review · license unresolved · anatomy only; no volume scalars'
+          : 'Pinned Top review · license unresolved; do not publish'
+        : sourceMode === 'synthetic-fixture'
         ? model.feature?.representation === 'volume'
           ? 'Synthetic fixture — not scientific data · anatomy only; no volume scalars'
           : 'Synthetic fixture map — not scientific data'
