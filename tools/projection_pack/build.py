@@ -343,35 +343,27 @@ def _crosswalk(catalog_path: Path) -> tuple[dict[str, dict[int, int]], str]:
         or document.get("schema_version") != "1.0"
     ):
         raise ValueError("region crosswalk must be the pinned atlas-region catalog")
-    result: dict[str, dict[int, int]] = {}
+    mappings = document.get("mappings")
+    if not isinstance(mappings, dict):
+        raise ValueError("region crosswalk has no mappings")
     for mapping in ("allen", "beryl", "cosmos"):
-        rows = document.get("mappings", {}).get(mapping)
+        rows = mappings.get(mapping)
         if not isinstance(rows, list):
             raise ValueError(f"region crosswalk has no {mapping} mapping")
-        lookup: dict[int, int] = {}
-        declared_legacy_indices: set[int] = set()
-        for row in rows:
-            if row.get("mapping_member") is not True:
-                continue
-            index = row.get("legacy_index")
-            atlas_id = row.get("atlas_id")
-            if (
-                not isinstance(index, int)
-                or index < 0
-                or not isinstance(atlas_id, int)
-            ):
-                raise ValueError(f"region crosswalk has invalid {mapping} identities")
-            if index in declared_legacy_indices:
-                raise ValueError(f"region crosswalk has duplicate {mapping} identities")
-            declared_legacy_indices.add(index)
-            if atlas_id != 0:
-                lookup[index] = atlas_id
-        if declared_legacy_indices != set(range(len(declared_legacy_indices))):
-            raise ValueError(
-                f"region crosswalk has incomplete {mapping} legacy index domain"
-            )
-        result[mapping] = lookup
-    return result, _sha(raw)
+    lookup: dict[int, int] = {}
+    for row in mappings["allen"]:
+        index = row.get("idx")
+        atlas_id = row.get("atlas_id")
+        if not isinstance(index, int) or not isinstance(atlas_id, int):
+            raise ValueError("region crosswalk has invalid BrainRegions identities")
+        if atlas_id == 0:
+            continue
+        if index in lookup:
+            raise ValueError("region crosswalk has duplicate BrainRegions identities")
+        lookup[index] = atlas_id
+    return {
+        mapping: lookup.copy() for mapping in ("allen", "beryl", "cosmos")
+    }, _sha(raw)
 
 
 def _attributes(raw: str) -> dict[str, str]:

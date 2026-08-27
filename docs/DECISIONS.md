@@ -442,9 +442,9 @@ Registered v1 descriptors point to gzip-compressed
 `atlas-registered-svg-resource-index-v1` documents. A pack is valid only when
 its manifest, three indexes, every transitive indexed-SVG/static resource,
 decoded inventories, and exact declared file graph validate together.
-Top/Swanson normalization accepts paths only and resolves legacy mapping-array
-positions through the pinned Allen/Beryl/Cosmos catalog's explicit
-`legacy_index` (distinct from BrainRegions `idx`). Production mode requires
+Top/Swanson normalization accepts paths only and resolves every mapping class
+suffix through the pinned catalog's complete common BrainRegions `idx` domain,
+not through reduced-mapping array positions. Production mode requires
 exact pinned source bytes and the D049 hash-bound MIT notice; synthetic mode
 remains clearly test-only and is not a scientific release.
 

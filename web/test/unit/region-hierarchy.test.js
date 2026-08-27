@@ -91,6 +91,6 @@ test('catalog loading bypasses incompatible cached hierarchy metadata', async ()
   await loadAtlasRegionCatalog(undefined, fetchImpl);
 
   assert.equal(request.input, ALLEN_ATLAS_REGIONS_URL);
-  assert.match(request.input, /[?&]v=3$/);
+  assert.match(request.input, /[?&]v=2$/);
   assert.equal(request.init.cache, 'no-cache');
 });

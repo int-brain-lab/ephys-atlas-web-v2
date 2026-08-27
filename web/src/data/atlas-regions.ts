@@ -3,7 +3,7 @@ import type { RegionMetadata } from './contracts.js';
 
 // Version the stable public path so browsers cannot reuse an older catalog
 // whose schema predates parent-closed hierarchy metadata.
-export const ALLEN_ATLAS_REGIONS_URL = '/atlas/allen-ccf-2017/regions.json?v=3';
+export const ALLEN_ATLAS_REGIONS_URL = '/atlas/allen-ccf-2017/regions.json?v=2';
 
 export interface AtlasRegionCatalog {
   atlas: string;

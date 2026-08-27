@@ -139,47 +139,13 @@ def _catalog(path: Path) -> None:
                 "atlas": "synthetic",
                 "mappings": {
                     "allen": [
-                        {
-                            "idx": 101,
-                            "legacy_index": 0,
-                            "atlas_id": 0,
-                            "mapping_member": True,
-                        },
-                        {
-                            "idx": 111,
-                            "legacy_index": 1,
-                            "atlas_id": -10,
-                            "mapping_member": True,
-                        },
+                        {"idx": 0, "atlas_id": 0},
+                        {"idx": 1, "atlas_id": -10},
+                        {"idx": 2, "atlas_id": -20},
+                        {"idx": 3, "atlas_id": -30},
                     ],
-                    "beryl": [
-                        {
-                            "idx": 202,
-                            "legacy_index": 0,
-                            "atlas_id": 0,
-                            "mapping_member": True,
-                        },
-                        {
-                            "idx": 222,
-                            "legacy_index": 1,
-                            "atlas_id": -20,
-                            "mapping_member": True,
-                        },
-                    ],
-                    "cosmos": [
-                        {
-                            "idx": 303,
-                            "legacy_index": 0,
-                            "atlas_id": 0,
-                            "mapping_member": True,
-                        },
-                        {
-                            "idx": 333,
-                            "legacy_index": 1,
-                            "atlas_id": -30,
-                            "mapping_member": True,
-                        },
-                    ],
+                    "beryl": [{"idx": 0, "atlas_id": 0}],
+                    "cosmos": [{"idx": 0, "atlas_id": 0}],
                 },
             }
         )
@@ -188,7 +154,7 @@ def _catalog(path: Path) -> None:
 
 def _static(path: Path, count: int, *, unsafe: bool = False) -> None:
     fragment = (
-        '<path class="allen_region_1 beryl_region_1 cosmos_region_1" d="M0 0L1 0L1 1Z"/>'
+        '<path class="allen_region_1 beryl_region_2 cosmos_region_3" d="M0 0L1 0L1 1Z"/>'
         * count
     )
     if unsafe:
@@ -317,17 +283,17 @@ def test_static_normalization_rejects_markup_and_unknown_legacy_ids(
     _catalog(catalog)
     crosswalk = {
         "allen": {1: -10},
-        "beryl": {1: -20},
-        "cosmos": {1: -30},
+        "beryl": {2: -20},
+        "cosmos": {3: -30},
     }
     with pytest.raises(ValueError, match="content other than paths|unsupported markup"):
         normalize_static_fragment(
-            '<path class="allen_region_1 beryl_region_1 cosmos_region_1" d="M0 0Z"/><script/>',
+            '<path class="allen_region_1 beryl_region_2 cosmos_region_3" d="M0 0Z"/><script/>',
             crosswalk,
         )
     with pytest.raises(ValueError, match="unknown allen"):
         normalize_static_fragment(
-            '<path class="allen_region_99 beryl_region_1 cosmos_region_1" d="M0 0Z"/>',
+            '<path class="allen_region_99 beryl_region_2 cosmos_region_3" d="M0 0Z"/>',
             crosswalk,
         )
 

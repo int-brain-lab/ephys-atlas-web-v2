@@ -287,12 +287,12 @@ attributes:
 ```
 
 For curated source geometry, preserve each path's `d` bytes while resolving
-legacy mapping-array/class identifiers at build time. Resolve the class suffix
-through the catalog's explicit `legacy_index`, not its distinct BrainRegions
-row `idx`. The browser must not ship a legacy crosswalk or contact the legacy
-atlas host. Validate safe SVG content, exact
-source hashes, path counts, complete declared mappings, deterministic output,
-compressed byte sizes, and output SHA-256.
+legacy BrainRegions-row/class identifiers at build time. Every mapping class
+suffix uses the common complete Allen `idx` domain; do not reinterpret it as a
+position in the reduced Beryl or Cosmos arrays. The browser must not ship a
+legacy crosswalk or contact the legacy atlas host. Validate safe SVG content,
+exact source hashes, path counts, complete declared mappings, deterministic
+output, compressed byte sizes, and output SHA-256.
 
 The current validated anatomy artifacts may remain as reproducibility evidence
 or deterministic generator inputs. They cease to be supported browser formats

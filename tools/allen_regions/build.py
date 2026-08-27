@@ -51,9 +51,8 @@ def build_document(regions: Any, legacy: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(raw_rows, list):
             raise TypeError(f"legacy crosswalk has no {mapping} rows")
         mapping_indexes: set[int] = set()
-        legacy_index_by_region_index: dict[int, int] = {}
         hierarchy_indexes: set[int] = set()
-        for legacy_index, raw in enumerate(raw_rows):
+        for raw in raw_rows:
             atlas_id = int(raw["atlas_id"])
             index = int(raw["idx"])
             if index < 0 or index >= len(regions.id):
@@ -65,7 +64,6 @@ def build_document(regions: Any, legacy: dict[str, Any]) -> dict[str, Any]:
             if index in mapping_indexes:
                 raise ValueError(f"{mapping} legacy index {index} is duplicated")
             mapping_indexes.add(index)
-            legacy_index_by_region_index[index] = legacy_index
 
             # Beryl and Cosmos are subsets of Allen ontology nodes. Include their
             # actual Allen ancestors as non-mapping containers so the browser gets
@@ -98,7 +96,6 @@ def build_document(regions: Any, legacy: dict[str, Any]) -> dict[str, Any]:
                 "color_hex": color_hex,
                 "depth": int(regions.level[index]),
                 "idx": index,
-                "legacy_index": legacy_index_by_region_index.get(index),
                 "mapping_member": index in mapping_indexes,
                 "name": str(regions.name[index]),
                 "parent_id": None if math.isnan(float(parent)) else int(parent),
