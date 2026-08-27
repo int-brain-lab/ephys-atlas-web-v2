@@ -289,10 +289,12 @@ attributes:
 For curated source geometry, preserve each path's `d` bytes while resolving
 legacy BrainRegions-row/class identifiers at build time. Every mapping class
 suffix uses the common complete Allen `idx` domain; do not reinterpret it as a
-position in the reduced Beryl or Cosmos arrays. The browser must not ship a
-legacy crosswalk or contact the legacy atlas host. Validate safe SVG content,
-exact source hashes, path counts, complete declared mappings, deterministic
-output, compressed byte sizes, and output SHA-256.
+position in the reduced Beryl or Cosmos arrays. Resolve it through the pinned
+catalog's explicit signed `mapped_atlas_ids`, including when the source row is
+not itself a reduced-mapping member. The browser must not ship a legacy
+crosswalk or contact the legacy atlas host. Validate safe SVG content, exact
+source hashes, path counts, complete declared mappings, deterministic output,
+compressed byte sizes, and output SHA-256.
 
 The current validated anatomy artifacts may remain as reproducibility evidence
 or deterministic generator inputs. They cease to be supported browser formats

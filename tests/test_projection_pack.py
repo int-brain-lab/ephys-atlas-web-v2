@@ -139,10 +139,38 @@ def _catalog(path: Path) -> None:
                 "atlas": "synthetic",
                 "mappings": {
                     "allen": [
-                        {"idx": 0, "atlas_id": 0},
-                        {"idx": 1, "atlas_id": -10},
-                        {"idx": 2, "atlas_id": -20},
-                        {"idx": 3, "atlas_id": -30},
+                        {
+                            "idx": 0,
+                            "atlas_id": 0,
+                            "mapped_atlas_ids": {"allen": 0, "beryl": 0, "cosmos": 0},
+                        },
+                        {
+                            "idx": 1,
+                            "atlas_id": -10,
+                            "mapped_atlas_ids": {
+                                "allen": -10,
+                                "beryl": -110,
+                                "cosmos": -210,
+                            },
+                        },
+                        {
+                            "idx": 2,
+                            "atlas_id": -20,
+                            "mapped_atlas_ids": {
+                                "allen": -20,
+                                "beryl": -20,
+                                "cosmos": -220,
+                            },
+                        },
+                        {
+                            "idx": 3,
+                            "atlas_id": -30,
+                            "mapped_atlas_ids": {
+                                "allen": -30,
+                                "beryl": -130,
+                                "cosmos": -30,
+                            },
+                        },
                     ],
                     "beryl": [{"idx": 0, "atlas_id": 0}],
                     "cosmos": [{"idx": 0, "atlas_id": 0}],
@@ -238,6 +266,8 @@ def test_projection_pack_is_deterministic_and_complete(tmp_path: Path) -> None:
         ).decode()
         assert fragment.count("<path ") == count
         assert 'data-allen-id="-10"' in fragment
+        assert 'data-beryl-id="-20"' in fragment
+        assert 'data-cosmos-id="-30"' in fragment
         assert "allen_region_" not in fragment
     assert validate_projection_pack(outputs[0]) == manifests[0]
     assert all(

@@ -350,20 +350,28 @@ def _crosswalk(catalog_path: Path) -> tuple[dict[str, dict[int, int]], str]:
         rows = mappings.get(mapping)
         if not isinstance(rows, list):
             raise ValueError(f"region crosswalk has no {mapping} mapping")
-    lookup: dict[int, int] = {}
+    result: dict[str, dict[int, int]] = {
+        mapping: {} for mapping in ("allen", "beryl", "cosmos")
+    }
     for row in mappings["allen"]:
         index = row.get("idx")
-        atlas_id = row.get("atlas_id")
-        if not isinstance(index, int) or not isinstance(atlas_id, int):
+        mapped_atlas_ids = row.get("mapped_atlas_ids")
+        if not isinstance(index, int) or not isinstance(mapped_atlas_ids, dict):
             raise ValueError("region crosswalk has invalid BrainRegions identities")
-        if atlas_id == 0:
-            continue
-        if index in lookup:
-            raise ValueError("region crosswalk has duplicate BrainRegions identities")
-        lookup[index] = atlas_id
-    return {
-        mapping: lookup.copy() for mapping in ("allen", "beryl", "cosmos")
-    }, _sha(raw)
+        if set(mapped_atlas_ids) != set(result):
+            raise ValueError("region crosswalk has incomplete mapped identities")
+        for mapping, lookup in result.items():
+            atlas_id = mapped_atlas_ids[mapping]
+            if not isinstance(atlas_id, int):
+                raise ValueError("region crosswalk has invalid mapped identities")
+            if atlas_id == 0:
+                continue
+            if index in lookup:
+                raise ValueError(
+                    f"region crosswalk has duplicate {mapping} BrainRegions identities"
+                )
+            lookup[index] = atlas_id
+    return result, _sha(raw)
 
 
 def _attributes(raw: str) -> dict[str, str]:

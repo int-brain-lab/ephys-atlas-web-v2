@@ -45,6 +45,11 @@ def _download_legacy_crosswalk() -> dict[str, Any]:
 def build_document(regions: Any, legacy: dict[str, Any]) -> dict[str, Any]:
     """Join the pinned SVG row domain to authoritative iblatlas ontology fields."""
     index_by_id = {int(atlas_id): index for index, atlas_id in enumerate(regions.id)}
+    target_mappings = {
+        "allen": "Allen-lr",
+        "beryl": "Beryl-lr",
+        "cosmos": "Cosmos-lr",
+    }
     mappings: dict[str, list[dict[str, Any]]] = {}
     for mapping in ("allen", "beryl", "cosmos"):
         raw_rows = legacy.get(mapping)
@@ -96,6 +101,12 @@ def build_document(regions: Any, legacy: dict[str, Any]) -> dict[str, Any]:
                 "color_hex": color_hex,
                 "depth": int(regions.level[index]),
                 "idx": index,
+                "mapped_atlas_ids": {
+                    mapping_name: int(
+                        regions.id[regions.mappings[target_name][index]]
+                    )
+                    for mapping_name, target_name in target_mappings.items()
+                },
                 "mapping_member": index in mapping_indexes,
                 "name": str(regions.name[index]),
                 "parent_id": None if math.isnan(float(parent)) else int(parent),

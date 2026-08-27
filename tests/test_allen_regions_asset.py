@@ -29,6 +29,7 @@ def test_pinned_allen_region_asset_has_complete_identity_and_color_contract():
         "color_hex": "#ff90ff",
         "depth": 6,
         "idx": 2162,
+        "mapped_atlas_ids": {"allen": -10, "beryl": -294, "cosmos": -313},
         "mapping_member": True,
         "name": "Superior colliculus motor related intermediate gray layer (left)",
         "parent_id": -294,
@@ -36,11 +37,22 @@ def test_pinned_allen_region_asset_has_complete_identity_and_color_contract():
     for mapping, rows in document["mappings"].items():
         assert len({row["atlas_id"] for row in rows}) == len(rows), mapping
         assert len({row["idx"] for row in rows}) == len(rows), mapping
+        assert all(
+            set(row["mapped_atlas_ids"]) == {"allen", "beryl", "cosmos"}
+            for row in rows
+        )
+        assert all(
+            all(
+                isinstance(atlas_id, int)
+                for atlas_id in row["mapped_atlas_ids"].values()
+            )
+            for row in rows
+        )
         assert all(re.fullmatch(r"#[0-9a-f]{6}", row["color_hex"]) for row in rows)
         assert all(isinstance(row["mapping_member"], bool) for row in rows)
     assert (
         hashlib.sha256(raw).hexdigest()
-        == "71a878043aad6c4dbf7a4ca92bd643cad9910984ed81231784e96ff5829afa8b"
+        == "aa5615bdf76493a815ad20bd77441998415b13272bc58101cd8da674848ed3ad"
     )
 
 

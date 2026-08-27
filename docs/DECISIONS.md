@@ -444,9 +444,11 @@ its manifest, three indexes, every transitive indexed-SVG/static resource,
 decoded inventories, and exact declared file graph validate together.
 Top/Swanson normalization accepts paths only and resolves every mapping class
 suffix through the pinned catalog's complete common BrainRegions `idx` domain,
-not through reduced-mapping array positions. Production mode requires
-exact pinned source bytes and the D049 hash-bound MIT notice; synthetic mode
-remains clearly test-only and is not a scientific release.
+then through its explicit signed Allen/Beryl/Cosmos `mapped_atlas_ids`; do not
+use reduced-mapping array positions or assume the source row is itself a
+reduced-mapping member. Production mode requires exact pinned source bytes and
+the D049 hash-bound MIT notice; synthetic mode remains clearly test-only and is
+not a scientific release.
 
 ## D035 — Atomic retained projection-viewport boundary
 
