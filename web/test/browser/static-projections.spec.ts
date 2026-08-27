@@ -58,6 +58,11 @@ test('volume features remain explicitly anatomy-only on affine-free static maps'
   await expect(top.locator('path')).toHaveCount(114);
   await expect(top.locator('.secondary-projection__notice')).toContainText('anatomy only');
   await expect(top.locator('canvas')).toHaveCount(0);
+  await top.locator('path').last().hover();
+  const tooltip = top.locator('.region-tooltip');
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText(/(Left|Right) hemisphere/);
+  await expect(tooltip.locator('.region-tooltip__value')).toBeHidden();
 });
 
 test('static-map failures stay isolated from the registered projection frames', async ({ page }) => {

@@ -296,7 +296,9 @@ export class AtlasApp {
     }
     const state = this.store.getState();
     const data = this.session.snapshot();
-    if (state.view.representation !== 'regional' || inspection.parcellation !== state.view.parcellation) {
+    const staticAnatomyInspection = inspection.sliceIndex === null;
+    if ((!staticAnatomyInspection && state.view.representation !== 'regional')
+      || inspection.parcellation !== state.view.parcellation) {
       this.shell.hideRegionTooltip();
       return;
     }

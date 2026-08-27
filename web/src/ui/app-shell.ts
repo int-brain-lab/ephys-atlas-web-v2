@@ -1605,8 +1605,8 @@ export class AppShell {
       const sourceMode = viewport?.dataset.staticSourceMode;
       nodes.notice.textContent = sourceMode === 'pinned-review'
         ? model.feature?.representation === 'volume'
-          ? 'Pinned Top review · license unresolved · anatomy only; no volume scalars'
-          : 'Pinned Top review · license unresolved; do not publish'
+          ? 'Anatomy only — volume scalars are not defined on this map'
+          : ''
         : sourceMode === 'synthetic-fixture'
         ? model.feature?.representation === 'volume'
           ? 'Synthetic fixture — not scientific data · anatomy only; no volume scalars'
