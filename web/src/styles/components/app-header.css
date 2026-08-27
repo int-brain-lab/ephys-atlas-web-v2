@@ -535,6 +535,14 @@
     min-height: 2.35rem;
     font-size: 0.68rem;
   }
+
+  .app-header__desktop-actions {
+    display: none;
+  }
+
+  .app-header__overflow {
+    display: block;
+  }
 }
 
 @media (max-width: 759px) {
@@ -666,14 +674,6 @@
     gap: 0.18rem;
     padding: var(--space-1);
     border-left: 0;
-  }
-
-  .app-header__desktop-actions {
-    display: none;
-  }
-
-  .app-header__overflow {
-    display: block;
   }
 
   .app-header__panel-button,

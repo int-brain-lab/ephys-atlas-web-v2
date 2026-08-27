@@ -65,6 +65,17 @@ for (const viewport of reviewViewports) {
   });
 }
 
+test('intermediate header actions do not cover the representation menu', async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 800 });
+  await page.goto('/');
+
+  const representation = page.locator('[data-context-field="representation"]');
+  await representation.locator('.context-menu__trigger').click();
+  await expect(representation.locator('.context-menu__panel')).toBeVisible();
+  await expect(page.locator('.app-header__desktop-actions')).toBeHidden();
+  await expect(page.locator('.app-header__overflow')).toBeVisible();
+});
+
 test('slice control updates calibrated coordinate and renderer request', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
