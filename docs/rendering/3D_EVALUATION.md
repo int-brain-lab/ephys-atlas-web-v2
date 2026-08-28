@@ -93,7 +93,7 @@ The ignored local pack records:
 `just mesh-pack-validate artifacts/mesh-d042-schema-v1` passes, a second build
 is byte-identical, and `just validate-3d-local http://localhost:5173/` loads the
 integrated retained viewport in Chromium. Repeated local runs reached ready
-state in under 0.6 seconds, uploaded two hemisphere buffers, issued one manifest and one
+state in approximately 0.4–0.7 seconds, uploaded two hemisphere buffers, issued one manifest and one
 geometry request, and changed Beryl/Cosmos presentation without another
 geometry request or upload. Evidence and screenshots remain ignored under
 `artifacts/mesh-d042-browser-evidence/`.
