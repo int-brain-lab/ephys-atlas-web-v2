@@ -25,6 +25,7 @@ jobs:
           cache-dependency-glob: '**/uv.lock'
       - run: uv sync --project builder --python 3.12 --extra test --locked
       - run: uv sync --project publishing --python 3.12 --extra test --locked
+      - run: uv run --project builder --extra test --locked python -m tools.docs_check
       - run: uv run --project builder --extra test --locked python -m pytest -q tests
       - run: uv run --project publishing --extra test --locked python -m pytest -q publishing/tests
 

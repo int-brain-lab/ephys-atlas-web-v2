@@ -34,7 +34,7 @@ only part of the body; the index states what remains effective.
 | D023 | Generated anatomy authority | partially superseded | — | D024 pack/grid; D031 runtime compatibility |
 | D024 | Bilateral 10 µm anatomy | partially superseded | — | D031/D033 runtime/URL; D034/D045 retain geometry |
 | D025 | Retained SVG/indexed experiment | partially superseded | — | D026 transport; D031/D035 runtime boundary |
-| D026 | Sparse indexed SVG packs | partially superseded | — | projection pack replaces browser format; evidence remains |
+| D026 | Sparse indexed SVG packs | partially superseded | — | D034 projection pack replaces browser format; evidence remains |
 | D027 | Layered browser/open IDs | partially superseded | — | D031 replaces v0.1 wording; boundaries remain |
 | D028 | IBL visual identity | accepted | — | current brand contract |
 | D029 | History checkpoints | partially superseded | — | D031/D033 migrations; history intent remains |

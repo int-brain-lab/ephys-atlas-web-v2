@@ -1,11 +1,16 @@
 # Documentation rationalization plan
 
-Status: active repository-wide documentation refactor; implementation started
-on 2026-08-29.
+Status: frozen evidence; completed 2026-08-29.
 
 Baseline: `main` at `9c6ac3d` on 2026-08-29, after the D050 schema/frontend
 cutover, the D051 custom-authoring decision, the D052 partial Q14 selection,
 and the D053 compact-range correction.
+
+Completion measurement: the mandatory startup path in `AGENTS.md` is 850
+lines (`AGENTS.md`, system overview, launch specification, active plan, and
+open-question registry), down from the 3,439-line baseline by 75.3%. Deeper
+architecture, decision, status, schema, and evidence documents are now loaded
+through the task-specific authority map.
 
 ## Outcome
 
@@ -269,8 +274,8 @@ Acceptance:
 ### 6. Rationalize handoffs, plans, and historical evidence
 
 Prefer a virtual archive first: status banners plus indexes at stable paths.
-Do not perform a bulk move to `docs/history/` before links and code references
-are mechanically checked.
+Do not perform a bulk move into a new history directory before links and code
+references are mechanically checked.
 
 Split durable runbook content from transient next-action narration where they
 are currently mixed. In particular, preserve W26 acquisition, checksums,

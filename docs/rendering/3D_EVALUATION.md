@@ -317,9 +317,9 @@ semantics.
 The repository owner has authorized a short-lived isolated worktree for this
 lab. It is a development convenience, not a second integration branch.
 
-- Put the standalone entry/controller/styles under
-  `web/experiments/brain-mesh-3d/`, exposed locally as `/3d-lab/` by a dedicated
-  Vite script/config.
+- The experiment originally proposed a standalone entry/controller/styles
+  directory exposed locally as `/3d-lab/` by a dedicated Vite script/config;
+  the completed integration no longer retains that lab-only directory.
 - Put reusable technology-neutral contracts, verified pack loading, and Three.js
   rendering modules under `web/src/rendering/3d/`.
 - Put deterministic mesh tooling and schemas under focused

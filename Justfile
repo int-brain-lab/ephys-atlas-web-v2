@@ -46,6 +46,10 @@ test-publishing:
 # All Python gates used by CI.
 test-python: test-builder test-publishing
 
+# Validate documentation links, authorities, identifiers, and status registries.
+docs-check:
+    {{uv-test}} python -m tools.docs_check
+
 # TypeScript, unit tests, and production build.
 test-web:
     cd web && npm run typecheck
@@ -150,7 +154,7 @@ atlas-regions:
     {{uv-scientific}} python tools/allen_regions/build.py --force
 
 # Full local completion gate. Keep this aligned with .github/workflows/ci.yml.
-check: test-python test-web test-browser
+check: docs-check test-python test-web test-browser
 
 # Backward-compatible alias: repository tests mean the full gate.
 test: check
