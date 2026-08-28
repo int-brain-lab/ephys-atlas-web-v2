@@ -428,6 +428,9 @@ inferred. Existing immutable releases remain unchanged alongside new validated
 local candidates. D053 completes the compact-range usability correction: the
 compact histogram viewport follows Full/Focused without mutating color bounds,
 and off-scale bounds remain explicit rather than being clamped silently.
+The binding future-agent execution checklist for completing the remaining Q14
+audits, owner review, immutable rebuilds, and local validation is
+`docs/data/DISTRIBUTION_AUDIT.md` under “Future-agent handoff”.
 
 ## M5 — Downloads, custom authoring, and local import completion
 
