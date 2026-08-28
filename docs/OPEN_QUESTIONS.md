@@ -260,8 +260,8 @@ ingestion or publication.
 
 ## Q14 — Audited scale and focused-domain selections
 
-Status: **OPEN for new Signed-log/Focused scientific selections; no longer a
-blocker for the conservative Linear/Full contract rebuilds**.
+Status: **PARTIALLY RESOLVED for regional channel `peak_val.raw`; OPEN for all
+other new Signed-log/Focused scientific selections**.
 
 D050 approves Linear/Log/Signed-log value scales and independent Full/Focused
 distribution domains, but it deliberately does not select feature-specific
@@ -269,6 +269,14 @@ settings. Read-only audits must cover the complete finite channel, cluster, and
 `brainwide_map` populations and valid voxels for each volume. Candidate
 statistics or heuristics in an audit are evidence for review, not production
 defaults.
+
+On 2026-08-29 the repository/scientific owner reviewed the complete pinned
+regional channel `peak_val.raw` population and approved the first narrow Q14
+selection. It offers Linear and Signed log with exact raw-unit threshold
+`1.23`, offers Full and Focused with exact Focused bounds
+`[-9.467077467918395, 2.5583932574651715]`, and prefers Linear/Focused. This
+choice applies only to that feature in the regional channel representation;
+all other entries in the channel selection retain Linear/Full.
 
 Resolution needed: owner-reviewed, machine-consumable selections maintained
 separately for channel, cluster, `brainwide_map`, and volume representations.
@@ -285,10 +293,12 @@ immutable releases. D048's reviewed cluster Firing-rate Log preference and
 3.73–17.8 Hz automatic color interval remain authoritative for the current
 candidate unless the cluster selection explicitly supersedes them.
 
-Blocks: declaring new per-feature Signed-log or Focused availability and
-defaults. It does not block the schema/validator/frontend implementation or new
-immutable migration releases whose committed selections preserve Linear/Full
-and the already-reviewed D048 cluster Log choices.
+Blocks: declaring any further per-feature Signed-log or Focused availability
+and defaults. It no longer blocks the approved regional channel `peak_val.raw`
+selection. It does not block the schema/validator/frontend implementation or
+new immutable migration releases whose committed selections preserve
+Linear/Full, the approved `peak_val.raw` choice, and the already-reviewed D048
+cluster Log choices.
 
 ## How to resolve an item
 

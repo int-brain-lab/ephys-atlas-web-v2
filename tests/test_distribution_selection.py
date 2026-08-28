@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -10,6 +11,9 @@ from ephys_atlas_builder.distribution_selection import (
     selection_provenance,
 )
 from ephys_atlas_builder.io import sha256_file, write_json
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _document() -> dict:
@@ -120,3 +124,40 @@ def test_distribution_selection_requires_exact_source_and_feature_catalog(tmp_pa
             source_release_id="2026_W32",
             feature_ids=("polarity.denoised",),
         )
+
+
+def test_committed_channel_selection_changes_only_peak_val_raw():
+    selection = load_distribution_selection(
+        REPOSITORY_ROOT / "docs/data/CHANNELS_DISTRIBUTION_SELECTION.json",
+        dataset_id="ephys_atlas_channels",
+        representation="regional",
+    )
+
+    assert selection.selection_id == "channels-2026-w32-d050-peak-val-raw-v2"
+    peak = selection.features["peak_val.raw"]
+    assert peak == {
+        "scales": [
+            {"kind": "linear"},
+            {"kind": "symlog", "linear_threshold": 1.23},
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+            {"kind": "full"},
+            {
+                "kind": "focused",
+                "bounds": [-9.467077467918395, 2.5583932574651715],
+            },
+        ],
+        "preferred_distribution_domain": "focused",
+    }
+    baseline = {
+        "scales": [{"kind": "linear"}],
+        "preferred_scale": "linear",
+        "distribution_domains": [{"kind": "full"}],
+        "preferred_distribution_domain": "full",
+    }
+    assert all(
+        display == baseline
+        for feature_id, display in selection.features.items()
+        if feature_id != "peak_val.raw"
+    )

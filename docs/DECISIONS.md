@@ -952,3 +952,26 @@ The first vertical slice is regional scalar authoring plus ZIP import; explicit
 separately authorized operation over already-built releases and never becomes
 part of scientific transformation. The binding detailed plan is
 `docs/data/CUSTOM_DATA_AUTHORING.md`.
+
+## D052 — Default regional channel `peak_val.raw` to Linear/Focused
+
+For the pinned `2026_W32` regional channel population, expose `peak_val.raw`
+with Linear and Signed-log value scales, using the exact raw-unit Signed-log
+linear threshold `1.23`. Expose Full and Focused analytical domains, using the
+exact Focused raw-value bounds
+`[-9.467077467918395, 2.5583932574651715]`. Prefer Linear and Focused when the
+URL contains no explicit scale or distribution-domain override.
+
+This owner-reviewed choice follows a complete finite-population audit: 380,884
+finite values span `-4221.428899850252` to `1341.0694115214876`; the approved
+Focused interval is the exact 1st-to-99th percentile interval and has 3,809
+observations in each tail. Under Full Linear, the largest bin contains
+99.8534987030172% of observations, which obscures the central distribution.
+Ordinary Log is unavailable because the population contains both negative and
+positive values.
+
+Apply this choice only to `peak_val.raw` in the regional channel
+representation. Retain the D050 Linear/Full baseline for every other channel
+feature, keep representation-specific selections independent, and build a new
+immutable local release rather than changing an existing release. This is a
+partial Q14 resolution and does not authorize remote publication.

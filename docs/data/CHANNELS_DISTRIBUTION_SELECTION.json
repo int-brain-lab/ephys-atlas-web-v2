@@ -1,15 +1,15 @@
 {
   "schema": "ibl-scalar-distribution-selection-v1",
-  "selection_id": "channels-2026-w32-d050-linear-full-v1",
+  "selection_id": "channels-2026-w32-d050-peak-val-raw-v2",
   "dataset_id": "ephys_atlas_channels",
   "representation": "regional",
   "source_release_id": "2026_W32",
   "scientific_owner_confirmation": true,
-  "confirmed_at": "2026-08-28",
+  "confirmed_at": "2026-08-29",
   "reviewer_role": "repository owner and scientific owner",
-  "confirmation_source": "D050 local migration authorization recorded during implementation",
-  "decision": "Migrate the complete immutable 2026_W32 channel catalog to the D050 contract without introducing unreviewed scale or domain choices.",
-  "rationale": "Linear and Full are the mandatory non-inferred baseline. No channel Symlog threshold, Log eligibility/default, Focused bounds, color range, or palette has been scientifically selected.",
+  "confirmation_source": "D050 local migration authorization plus explicit repository/scientific-owner approval of the peak_val.raw presentation on 2026-08-29",
+  "decision": "Retain the conservative Linear/Full migration baseline for the complete immutable 2026_W32 channel catalog, except that peak_val.raw additionally exposes owner-approved Signed-log and Focused choices and defaults to Linear/Focused.",
+  "rationale": "For peak_val.raw, the 380884-value finite population spans -4221.428899850252 to 1341.0694115214876 while its owner-reviewed 1st-to-99th percentile analytical interval is -9.467077467918395 to 2.5583932574651715. Full Linear places 99.8534987030172% of observations in one bin. The owner approved Signed-log with raw-unit threshold 1.23 as an optional scale, retained Linear as the preferred scale, approved the exact percentile interval as Focused, and made Focused the preferred analytical domain. No choice was inferred for another feature or representation.",
   "features": [
     {
       "id": "alpha_mean.denoised",
@@ -408,15 +408,26 @@
         "scales": [
           {
             "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 1.23
           }
         ],
         "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "kind": "focused",
+            "bounds": [
+              -9.467077467918395,
+              2.5583932574651715
+            ]
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused"
       }
     },
     {

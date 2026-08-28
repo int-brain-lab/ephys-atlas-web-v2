@@ -388,7 +388,8 @@ Acceptance reference: section 7 of the launch spec.
 ## P4D — Unified scalar distributions and value scales
 
 Status: **schema-v1 producer/consumer cutover and immutable local scientific
-rebuilds complete and green; remote publication not authorized**.
+rebuilds complete and green; first owner-reviewed channel enhancement approved;
+remote publication not authorized**.
 
 This cross-cutting milestone applies to regional channel, cluster, and
 `brainwide_map` data and to global valid-voxel volume summaries. It introduces
@@ -417,12 +418,14 @@ Ordered work:
    run cross-language contract, deterministic builder, web, browser, export,
    and full `just check` gates before publication.
 
-Linear/Full remains mandatory. The four committed migration selections preserve
-that baseline for channels, `brainwide_map`, and volumes and preserve only the
-already-reviewed D048 Log choices for clusters. Q14 remains open for any new
-per-feature Signed-log threshold, focus interval, availability, or preferred
-default; none was inferred during the contract migration. Existing immutable
-releases remain unchanged alongside the validated local D050 candidates.
+Linear/Full remains mandatory. The baseline migration selections preserve it
+for channels, `brainwide_map`, and volumes and preserve only the
+already-reviewed D048 Log choices for clusters. D052 partially resolves Q14 for
+regional channel `peak_val.raw`: Linear and Signed log (`1.23`) plus Full and
+Focused (`[-9.467077467918395, 2.5583932574651715]`), defaulting to
+Linear/Focused. Every other new per-feature selection remains open, and none is
+inferred. Existing immutable releases remain unchanged alongside new validated
+local candidates.
 
 ## M5 — Downloads, custom authoring, and local import completion
 
