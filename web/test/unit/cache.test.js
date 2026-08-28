@@ -43,8 +43,10 @@ test('a corrupt persistent hit is evicted and replaced only after a verified ret
   try {
     const expected = 'release-two';
     let networkCalls = 0;
-    const fetcher = new ResourceFetcher(async () => {
+    let networkCacheMode;
+    const fetcher = new ResourceFetcher(async (_url, init) => {
       networkCalls += 1;
+      networkCacheMode = init?.cache;
       return new Response(expected);
     });
     const response = await fetcher.fetch('https://example.test/same/path.bin', {
@@ -56,6 +58,29 @@ test('a corrupt persistent hit is evicted and replaced only after a verified ret
     assert.equal(deletes, 1);
     assert.equal(puts, 1);
     assert.equal(networkCalls, 1);
+    assert.equal(networkCacheMode, 'reload');
+  } finally {
+    globalThis.caches = previousCaches;
+  }
+});
+
+test('an invalid HTTP cache response receives one cache-bypassing retry', async () => {
+  const previousCaches = globalThis.caches;
+  delete globalThis.caches;
+  try {
+    const expected = 'current-release';
+    const cacheModes = [];
+    const fetcher = new ResourceFetcher(async (_url, init) => {
+      cacheModes.push(init?.cache);
+      return new Response(init?.cache === 'reload' ? expected : 'stale-release');
+    });
+    const response = await fetcher.fetch('https://example.test/reused/path.bin', {
+      immutable: true,
+      integrity: { bytes: expected.length, sha256: await sha256(expected) },
+    });
+
+    assert.equal(await response.text(), expected);
+    assert.deepEqual(cacheModes, [undefined, 'reload']);
   } finally {
     globalThis.caches = previousCaches;
   }

@@ -53,7 +53,8 @@ contract exclusively. The real `2026_W32` channel source has been pulled and
 built into a validated ignored local schema-v1 release. Ordinary development
 serves that release and has no synthetic ephys fallback; Playwright alone mounts
 the golden fixture through the local-release server. Encoded resources are verified before persistent caching; corrupt
-entries are evicted and retried, and decoded identity is SHA plus decode
+entries are evicted and retried once with HTTP-cache reload semantics, and
+integrity-invalid HTTP-cache responses receive the same clean retry. Decoded identity is SHA plus decode
 contract rather than path. Schema-v0.1 runtime code, schemas, fixtures, and
 compatibility tests are removed. Q4 is resolved for the exact W26 object by
 D043; Q5 remains unresolved and continues to

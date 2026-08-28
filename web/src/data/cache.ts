@@ -41,6 +41,7 @@ export class ResourceFetcher {
 
   private async load(url: string, options: FetchOptions): Promise<Response> {
     const canPersist = options.immutable === true && options.integrity !== undefined && 'caches' in globalThis;
+    let cleanRetry = false;
     if (canPersist) {
       const cache = await caches.open(this.cacheName);
       const cached = await cache.match(url);
@@ -49,17 +50,33 @@ export class ResourceFetcher {
           return await this.verify(cached, options.integrity!);
         } catch {
           await cache.delete(url);
+          cleanRetry = true;
         }
       }
     }
 
-    const init: RequestInit = options.signal ? { signal: options.signal } : {};
-    const response = await this.fetchImpl(url, init);
-    if (!response.ok) throw new Error(`HTTP ${response.status} while loading ${url}`);
+    const request = async (reload: boolean): Promise<Response> => {
+      const init: RequestInit = {
+        ...(options.signal ? { signal: options.signal } : {}),
+        ...(reload ? { cache: 'reload' as const } : {}),
+      };
+      const response = await this.fetchImpl(url, init);
+      if (!response.ok) throw new Error(`HTTP ${response.status} while loading ${url}`);
+      return response;
+    };
 
-    const verified = options.integrity
-      ? await this.verify(response, options.integrity)
-      : response;
+    const response = await request(cleanRetry);
+    let verified: Response;
+    if (!options.integrity) {
+      verified = response;
+    } else {
+      try {
+        verified = await this.verify(response, options.integrity);
+      } catch (error) {
+        if (cleanRetry) throw error;
+        verified = await this.verify(await request(true), options.integrity);
+      }
+    }
 
     if (canPersist) {
       const cache = await caches.open(this.cacheName);

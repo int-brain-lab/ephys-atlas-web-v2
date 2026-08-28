@@ -22,7 +22,9 @@ should not be combined into one opaque cache.
 - A corrupt, incomplete, or evicted local release must fail explicitly rather
   than render partial or stale scientific data.
 - Persistent entries are admitted only after encoded byte-size/SHA-256
-  verification. A corrupt hit is evicted and receives one clean network retry.
+  verification. A corrupt hit is evicted and receives one clean network retry
+  using HTTP cache reload semantics; an integrity-invalid HTTP-cache response
+  receives the same single cache-bypassing retry.
 - Decoded identity uses resource SHA-256 plus its complete decoding contract,
   never a feature-relative path alone.
 - Persistent storage is an optimization and local-data feature, not the source
