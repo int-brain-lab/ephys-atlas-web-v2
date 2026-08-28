@@ -99,6 +99,33 @@ evidence but is not authoritative; the next Q4 action is scientific-owner
 visual review, an exported selection with rationale, and independent source or
 generator confirmation before recording a decision.
 
+## D050 local distribution releases
+
+Commit `ee44b2e81df49868f41b62407b3c51bcebd2b554` cut schema v1 over to
+representation-owned scalar displays and exact scale/domain distribution
+binnings. Four ignored immutable local releases were rebuilt from the pinned
+inputs and validated on 2026-08-28:
+
+- channels: `2026_W32-d050-linear-full-v1`, 70 features;
+- clusters: `sha256-9b5e55215b306f26-d050-d048-v1`, 14 features;
+- Brain-Wide Map: `legacy-v1-1d908bea-d050-linear-full-v1`, 30 features;
+- volume: `2026_W26-candidate-depth4-d050-linear-full-v1`, 41 features.
+
+The channel, Brain-Wide Map, and volume migration selections declare only the
+mandatory Linear/Full presentation. The cluster selection preserves only the
+six D048-reviewed Log alternatives/defaults and the 3.73–17.8 Hz firing-rate
+range. No Signed-log threshold or Focused interval was inferred. The exact D038
+Brain-Wide Map Parquets were recovered from Fractal and reverified against all
+six recorded byte sizes and SHA-256 identities before the normal builder ran.
+
+The complete `just check` gate passed with 307 builder tests (one skipped), 25
+publishing tests, 229 web unit tests, 21 rendering tests, a production build,
+and 89 browser tests. Real-release Chromium acceptance passed channels 3/3,
+clusters 3/3, Brain-Wide Map 3/3, and volume 6/6. `just
+validate-local-full` then visited every dataset plus Summary, Top, Swanson, and
+3-D with no browser errors; the D042 mesh reached `ready`. The local site is
+served by `just dev-local-full`. Nothing was published remotely.
+
 ## Source and provenance rules
 
 - Pulled inputs receive a `source.json` inventory with paths, byte sizes,

@@ -387,8 +387,8 @@ Acceptance reference: section 7 of the launch spec.
 
 ## P4D — Unified scalar distributions and value scales
 
-Status: **schema-v1 producer/consumer cutover implemented and green; immutable
-local scientific rebuilds in progress**.
+Status: **schema-v1 producer/consumer cutover and immutable local scientific
+rebuilds complete and green; remote publication not authorized**.
 
 This cross-cutting milestone applies to regional channel, cluster, and
 `brainwide_map` data and to global valid-voxel volume summaries. It introduces
@@ -422,7 +422,7 @@ that baseline for channels, `brainwide_map`, and volumes and preserve only the
 already-reviewed D048 Log choices for clusters. Q14 remains open for any new
 per-feature Signed-log threshold, focus interval, availability, or preferred
 default; none was inferred during the contract migration. Existing immutable
-releases remain unchanged while new local candidates are rebuilt.
+releases remain unchanged alongside the validated local D050 candidates.
 
 ## M5 — Downloads and local import completion
 

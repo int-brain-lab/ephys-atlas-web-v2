@@ -219,7 +219,7 @@ test('outside voxels inspect explicitly and corrupt immutable bytes fail integri
       clientY: bounds.top + bounds.height / 2,
     }));
   });
-  await expect(frame.locator('.region-tooltip__value-label')).toHaveText('Value');
+  await expect(frame.locator('.region-tooltip__value-label')).toHaveCount(0);
   const tooltip = await frame.locator('.region-tooltip').innerText();
   const match = /voxel (\d+),(\d+),(\d+)/.exec(tooltip);
   expect(match).not.toBeNull();
