@@ -368,6 +368,7 @@ export class AtlasApp {
     this.shell.showVolumeTooltip(inspection, {
       acronym: region?.acronym ?? 'Voxel',
       name: region?.name.replace(/\s+\(left\)$/i, '') ?? 'Volume sample',
+      valueLabel: 'Value',
       valueText,
       meta: [
         inspection.status === 'valid' ? voxel : `${statusLabel} · ${voxel}`,

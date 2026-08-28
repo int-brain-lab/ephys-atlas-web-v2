@@ -5,6 +5,7 @@ import type { Plugin } from 'vite';
 
 const REAL_PREFIX = '/__real-data/';
 const DATASET_ID = /^[a-z0-9][a-z0-9._-]*$/;
+const RELEASE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 export interface RealDevelopmentRelease {
   releaseRoot: string;
@@ -62,7 +63,7 @@ export async function loadRealDevelopmentRelease(
     throw new Error(`dev-real requires dataset title and description in ${manifestPath}`);
   }
   if (manifest.release?.immutable !== true || typeof manifest.release.release_id !== 'string'
-    || !DATASET_ID.test(manifest.release.release_id)) {
+    || !RELEASE_ID.test(manifest.release.release_id)) {
     throw new Error(`dev-real requires an immutable release identity in ${manifestPath}`);
   }
   if (!Array.isArray(manifest.features)

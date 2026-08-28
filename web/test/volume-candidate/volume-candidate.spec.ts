@@ -207,6 +207,8 @@ test('outside voxels inspect explicitly and corrupt immutable bytes fail integri
   await page.goto('/?v=4&repr=volume&feature=rms_ap&cursor=0,0,0');
   await expect(page.locator('[data-volume-feature="rms_ap"]')).toHaveCount(3);
   const frame = page.locator('[data-view="coronal"]');
+  await expect(frame.locator('.projection-viewport')).toHaveAttribute('data-mode', 'composite');
+  await expect(frame.locator('.projection-viewport__scalar')).toHaveCSS('visibility', 'visible');
   await frame.evaluate((node) => {
     const host = node.querySelector<SVGGraphicsElement>('.projection-viewport__scalar-host')!;
     const regional = node.querySelector<SVGSVGElement>('svg.projection-viewport__regional')!;
