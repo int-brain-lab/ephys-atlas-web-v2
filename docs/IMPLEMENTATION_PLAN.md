@@ -19,23 +19,25 @@ their current maturity; focused evidence lives under `docs/data/` and
 
 ## P4D — Complete audited distribution selections
 
-Status: active; read-only audits are the next unblocked scientific-data task.
+Status: blocked on owner review; the four read-only source audits and review
+tables were completed on 2026-08-29.
 
-Blocker: owner review is required before changing any Q14 selection. Audit and
-review-table generation are unblocked.
+Blocker: owner review is required before changing any Q14 selection. The exact
+local evidence identities and descriptive results are recorded in
+[`data/DISTRIBUTION_AUDIT_EVIDENCE.md`](data/DISTRIBUTION_AUDIT_EVIDENCE.md).
 
 Next testable actions:
 
-1. inventory the four validated local D050 releases named in
-   [`data/DISTRIBUTION_AUDIT.md`](data/DISTRIBUTION_AUDIT.md);
-2. audit every complete pinned source population not already covered by D052,
-   using valid finite voxels only for volumes;
-3. write deterministic ignored audit JSON and concise per-dataset review tables;
-4. stop and present candidate thresholds/bounds/defaults for owner review;
-5. after explicit approval, update complete selection artifacts, commit them
+1. review the four local tables and approve exact per-feature
+   scales/domains/thresholds/defaults, or retain the existing baseline;
+2. after explicit approval, update complete selection artifacts, commit them
    before building, create new immutable release IDs, validate exact tails and
    scale/domain cross-products, run dataset browser suites,
    `just validate-local-full`, and `just check`.
+
+The named D050 release directories were absent from this local workspace, so
+their inventory step remains unavailable; older pre-D050 regional releases are
+not scientific substitutes.
 
 Do not promote audit heuristics into release defaults. D052 applies only to
 regional channel `peak_val.raw`; D048 remains authoritative for the current

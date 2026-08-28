@@ -50,9 +50,11 @@ D050 is the sole implemented distribution contract. Linear, Log, and Signed
 log are synchronized value scales; Full and Focused are independent domains
 used by global, selected, and compact histograms with exact whole-population
 tails. D053 preserves off-scale color bounds without clamping. D052 approves
-only regional channel `peak_val.raw`; all other new Q14 choices await audit and
+only regional channel `peak_val.raw`. Complete read-only source audits and
+review tables now cover all four datasets; all other new Q14 choices await
 owner review. The four D050 local candidates and integrated local catalog are
-green; no remote publication occurred.
+green; no remote publication occurred. See
+[`data/DISTRIBUTION_AUDIT_EVIDENCE.md`](data/DISTRIBUTION_AUDIT_EVIDENCE.md).
 
 ## Volume exploration
 
@@ -103,7 +105,7 @@ under D040; the optional 3-D local matrix was completed on 2026-08-28.
 
 ## Remaining launch sequence
 
-1. Complete read-only Q14 audits and obtain owner review for any new choices.
+1. Obtain owner review of the completed Q14 audit tables for any new choices.
 2. Implement D051 regional authoring and ZIP import, then local management.
 3. Resolve Q8 staging details and deploy immutable projection/data assets.
 4. Confirm depth-four volume transport at that origin and resolve Q5.

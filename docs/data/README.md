@@ -29,6 +29,7 @@ choices; evidence reports retain hashes, measurements, and reproduction facts.
 | [`BRAINWIDE_MAP_RECIPE.md`](BRAINWIDE_MAP_RECIPE.md) | scientific recipe | accepted |
 | [`CUSTOM_DATA_AUTHORING.md`](CUSTOM_DATA_AUTHORING.md) | focused implementation plan | active |
 | [`DISTRIBUTION_AUDIT.md`](DISTRIBUTION_AUDIT.md) | audit and rollout runbook | runbook |
+| [`DISTRIBUTION_AUDIT_EVIDENCE.md`](DISTRIBUTION_AUDIT_EVIDENCE.md) | completed four-dataset source-audit record | frozen evidence |
 | [`DEVELOPMENT_RELEASE.md`](DEVELOPMENT_RELEASE.md) | channel release record | frozen evidence |
 | [`CLUSTERS_RELEASE.md`](CLUSTERS_RELEASE.md) | cluster release record | frozen evidence |
 | [`CLUSTERS_SOURCE_AUDIT.md`](CLUSTERS_SOURCE_AUDIT.md) | source audit | frozen evidence |

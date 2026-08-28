@@ -97,7 +97,10 @@ remain independent.
 Until reviewed, do not infer thresholds/bounds in the browser or builder, copy
 audit quantiles automatically, mutate immutable releases, or generalize D052.
 Read-only audits and review tables are unblocked; follow
-[`data/DISTRIBUTION_AUDIT.md`](data/DISTRIBUTION_AUDIT.md).
+[`data/DISTRIBUTION_AUDIT.md`](data/DISTRIBUTION_AUDIT.md). The four source
+audits are complete and recorded in
+[`data/DISTRIBUTION_AUDIT_EVIDENCE.md`](data/DISTRIBUTION_AUDIT_EVIDENCE.md);
+selection remains blocked on owner review.
 
 Blocks: only additional per-feature Signed-log/Focused availability or defaults.
 
