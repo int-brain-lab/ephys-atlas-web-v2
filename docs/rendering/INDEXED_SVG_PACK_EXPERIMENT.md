@@ -1,9 +1,8 @@
 # Indexed SVG pack experiment
 
-Status: experiment completed and accepted by D026; v3 is the active local
-runtime. Production-origin release QA remains. The normative sampling,
-manifest, and runtime contract is
-`docs/rendering/ANATOMY_PACK_V3_CONTRACT.md`.
+Status: superseded experiment; D026 accepted its transport, while D031/D034
+repackage it inside the projection-pack browser contract. The normative sparse
+derivation record is `docs/rendering/ANATOMY_PACK_V3_CONTRACT.md`.
 
 ## Goal
 

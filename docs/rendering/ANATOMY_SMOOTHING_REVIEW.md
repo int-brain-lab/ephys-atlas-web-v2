@@ -1,6 +1,6 @@
 # Anatomy smoothing human review
 
-Status: **complete — retain exact geometry (2026-08-26)**.
+Status: frozen evidence; D045 retains exact geometry (2026-08-26).
 
 This note closes Slice 4 of the anatomy smoothing investigation. The generated
 HTML and external atlas bytes remain ignored; the compact authoritative answer

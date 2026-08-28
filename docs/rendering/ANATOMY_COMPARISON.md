@@ -1,5 +1,7 @@
 # Anatomy SVG comparison lab
 
+Status: frozen evidence for the historical comparison methodology.
+
 The comparison lab is a generated, fully offline HTML file for choosing a
 bounded SVG simplification policy. It places three representations side by
 side:

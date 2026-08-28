@@ -1,5 +1,7 @@
 # Bilateral 10 µm anatomy packs
 
+Status: accepted scientific build and reproducibility contract.
+
 `tools/anatomy_pack/build_v2.py` builds `anatomy-pack-v2` directly from the
 real Allen CCFv3 10 µm annotation. It does not upscale or rescale the 25 µm
 v1 geometry. The complete source grid is `(AP, ML, DV) = (1320, 1140, 800)`.

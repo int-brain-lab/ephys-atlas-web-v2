@@ -1,5 +1,7 @@
 # Local Codex handoff
 
+Status: runbook for clean-checkout setup.
+
 This repository is the durable context for local Codex-based development.
 This file is the fresh-checkout/session runbook; current product priority and
 status live in `docs/IMPLEMENTATION_PLAN.md` and
@@ -42,15 +44,14 @@ Do not discard local changes shown by `git status`; reconcile them before pullin
 The root `AGENTS.md` already defines the required reading order. The essential durable context is:
 
 - `AGENTS.md`
+- `docs/SYSTEM_OVERVIEW.md`
 - `docs/LAUNCH_SPEC.md`
 - `docs/IMPLEMENTATION_PLAN.md`
 - `docs/OPEN_QUESTIONS.md`
-- `docs/ARCHITECTURE.md`
-- `docs/DECISIONS.md`
-- `docs/INTEGRATION_STATUS.md`
 
-Then use `docs/AGENTIC_DEVELOPMENT.md` for the work loop. This mirrors the
-required sequence in `AGENTS.md` rather than defining a competing order.
+Then use the overview to select only the relevant architecture, effective
+decisions, status, schema, source, and focused runbook documents. Use
+`docs/AGENTIC_DEVELOPMENT.md` for the work loop.
 
 There should be no need to provide the old ChatGPT Project conversations to a fresh agent.
 

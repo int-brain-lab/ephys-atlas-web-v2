@@ -1,5 +1,7 @@
 # Distribution-presentation audit
 
+Status: runbook for Q14 evidence and reviewed rollout.
+
 `builder/ephys_atlas_builder/distribution_audit.py` is the read-only evidence
 kernel for the planned Linear, Log, Signed log, Focused and Full distribution
 contract. It consumes the actual scalar observation population and writes a

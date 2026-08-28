@@ -1,5 +1,7 @@
 # Volume rendering and loading architecture
 
+Status: accepted rendering boundary and transport rationale.
+
 ## Launch recommendation
 
 Use a dependency-free Canvas2D renderer for the three orthogonal volume slices

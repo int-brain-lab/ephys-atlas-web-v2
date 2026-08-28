@@ -1,5 +1,7 @@
 # Anatomy pack contract v1
 
+Status: superseded runtime/build contract; retained as historical evidence.
+
 The production anatomy pack replaces mutable, legacy-host SVG bundles with an
 immutable, scientifically registered anatomy asset. Its JSON schemas are:
 

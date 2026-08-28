@@ -1,7 +1,7 @@
 # Anatomy smoothing and simplification lab plan
 
-Status: **complete through Slice 4; D045 retains exact geometry and stops the
-lane without a shortlist**.
+Status: frozen evidence; complete through Slice 4, with D045 retaining exact
+geometry and closing the lane without a shortlist.
 
 Implementation status: Slices 1 through 3 are complete. The pure experiment core,
 deterministic self-contained report builder, synthetic offline report, pinned

@@ -1,9 +1,8 @@
 # SVG slice reuse and calibration
 
-Status: **legacy fallback only**. D023 replaces these hand-registered assets in
-the default v2 runtime with a generated pack whose per-projection affines are
-scientific contract data. This note remains the calibration record required to
-re-enable the modular legacy provider.
+Status: frozen evidence for legacy display calibration. D031 removes the
+modular legacy runtime and compatibility path; this record does not authorize
+re-enabling it.
 
 ## What is being reused
 

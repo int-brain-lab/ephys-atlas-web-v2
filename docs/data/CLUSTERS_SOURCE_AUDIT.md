@@ -1,5 +1,7 @@
 # Cluster source audit for catalog review
 
+Status: frozen evidence supporting D044.
+
 ## Snapshot
 
 The D038-approved `ibl_neuropixel_brainwide_01` project was pulled on

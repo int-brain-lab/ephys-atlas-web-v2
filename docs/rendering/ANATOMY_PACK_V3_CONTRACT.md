@@ -1,7 +1,7 @@
 # Anatomy pack v3 contract
 
-Status: accepted immutable build/reproducibility contract; superseded as a
-browser runtime format by `atlas-projection-pack-v1`.
+Status: accepted sparse derivation/reproducibility contract; superseded only as
+a browser runtime format by `atlas-projection-pack-v1`.
 
 `anatomy-pack-v3` is a sparse display transport derived from a validated,
 immutable `anatomy-pack-v2`. It does not replace the parent's scientific

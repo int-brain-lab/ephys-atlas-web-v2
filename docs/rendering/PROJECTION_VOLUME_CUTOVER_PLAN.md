@@ -1,6 +1,7 @@
 # Projection and volume architecture cutover
 
-Status: **approved near-term implementation plan (2026-08-22)**.
+Status: frozen evidence; cutover Commits 1-8 are complete and only the linked
+Q5 production-origin gate remains active.
 
 This document is the focused handoff for the next rendering/data-contract unit
 of work. It intentionally permits a breaking pre-launch cutover. The product
@@ -8,9 +9,10 @@ has no installed v2 user base whose old dataset schemas, anatomy manifests,
 runtime adapters, or URL encodings must remain supported. Prefer one coherent
 long-term contract over compatibility layers.
 
-The ordered milestone remains `docs/IMPLEMENTATION_PLAN.md`. Scientific choices
-that an agent must not invent remain in `docs/OPEN_QUESTIONS.md`, especially Q4
-(volume geometry/outside semantics) and Q5 (production transport).
+The ordered milestone remains `docs/IMPLEMENTATION_PLAN.md`. D043 resolves Q4
+for the exact W26 source; Q5 still blocks production transport. Earlier
+imperative text below records the cutover plan at the time and is not a current
+task queue.
 
 ## Outcome
 

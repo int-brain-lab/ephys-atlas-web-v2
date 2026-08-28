@@ -1,5 +1,7 @@
 # Storage formats v1
 
+Status: accepted physical-format rationale.
+
 D010 separates **canonical scientific storage** from **browser transport**.
 Direct HTTP/object-store consumption is preferred when the canonical object
 meets browser access and performance requirements; a derived format is justified

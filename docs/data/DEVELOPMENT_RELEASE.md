@@ -4,7 +4,7 @@ This records the first end-to-end build against a real immutable channel source.
 It is reproducibility evidence and a browser-integration candidate, not the
 paper snapshot or a production publication.
 
-Status: pulled and rebuilt as schema v1 on 2026-08-22. The ignored local release
+Status: frozen evidence; pulled and rebuilt as schema v1 on 2026-08-22. The ignored local release
 at `data/releases/ephys_atlas_channels/2026_W32` validates and is the mandatory
 ordinary development dataset. It remains a development release rather than a
 paper snapshot or public publication.

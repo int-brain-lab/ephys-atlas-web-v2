@@ -41,7 +41,7 @@ anatomy-pack documents remain derivation and reproducibility authorities.
 | [`ANATOMY_COMPARISON.md`](ANATOMY_COMPARISON.md) | historical comparison methodology | frozen evidence |
 | [`INDEXED_SVG_PACK_EXPERIMENT.md`](INDEXED_SVG_PACK_EXPERIMENT.md) | accepted experiment that led to v3 | superseded |
 | [`SVG_CALIBRATION.md`](SVG_CALIBRATION.md) | legacy display calibration evidence | frozen evidence |
-| [`HANDOFF.md`](HANDOFF.md) | compatibility summary pending rationalization | superseded |
+| [`HANDOFF.md`](HANDOFF.md) | compatibility stub for older links | superseded |
 
 Generated selection JSON and immutable asset manifests remain at stable paths
 and are not replaced by this prose index.

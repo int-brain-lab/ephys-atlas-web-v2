@@ -1,7 +1,8 @@
 # 3-D main-application integration plan
 
-Status: **Commits 0-6 complete on `main`; geometry/LOD resolved by D042;
-immutable deployment remains optional (2026-08-24)**.
+Status: frozen evidence; Commits 0-6 are complete on `main`, D042 resolves
+geometry/LOD, and the 2026-08-28 Safari/Firefox owner matrix is complete.
+Immutable deployment remains optional.
 
 This document defines how to promote the completed independent brain-mesh lab
 into the v2 application without importing its experimental composition into the

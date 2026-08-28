@@ -1,5 +1,7 @@
 # Anatomy navigation performance
 
+Status: frozen performance evidence for the active projection-pack runtime.
+
 ## Reproducible browser instrumentation
 
 Run the controlled cold-cache benchmark with:

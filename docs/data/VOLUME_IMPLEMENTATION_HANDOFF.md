@@ -1,6 +1,6 @@
 # Production volume implementation handoff
 
-Status: **active M2 continuation contract (2026-08-24)**.
+Status: runbook for exact W26 acquisition and Q5 continuation.
 
 This is the focused entry point for a fresh Codex session, including a clean
 macOS checkout. The product renders a scalar ephys feature volume only as three
@@ -131,7 +131,8 @@ Stop rather than guess if:
 
 - official W26 access is unavailable;
 - downloaded bytes do not match the identity above;
-- the producer does not authoritatively define Q4;
+- the downloaded source or requested geometry does not match the exact D043
+  authority;
 - a requested production origin or credential is unspecified;
 - a change would reintroduce 3-D volume rendering or annotation-derived Allen
   meshes.

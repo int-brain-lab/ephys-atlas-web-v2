@@ -1,5 +1,7 @@
 # Encoding-volume HTTP validation
 
+Status: frozen evidence for the historical W12 source.
+
 Validated on 2026-08-19 against the current IBL S3 endpoints. The canonical
 `2026_W12` object was then pulled and inspected locally on 2026-08-20.
 

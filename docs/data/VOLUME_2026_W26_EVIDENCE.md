@@ -1,5 +1,7 @@
 # Encoding-volume `2026_W26` source and transport evidence
 
+Status: frozen evidence supporting D043 and the provisional Q5 recommendation.
+
 ## Scope
 
 This report records local source inspection and transport measurements for the

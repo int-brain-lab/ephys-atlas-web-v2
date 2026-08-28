@@ -1,6 +1,6 @@
 # Custom data authoring and ZIP import
 
-Status: approved product and architecture direction; implementation not started.
+Status: active focused implementation plan; D051 direction accepted.
 
 This document defines the planned workflow for scientists to prepare their own
 regional or volumetric scalar data and import it into IBL Ephys Atlas Web v2.

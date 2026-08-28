@@ -1,7 +1,8 @@
 # Publishing status and handoff
 
-Status: current supporting summary. Launch priority and deployment decisions
-remain in `docs/IMPLEMENTATION_PLAN.md` and `docs/OPEN_QUESTIONS.md`.
+Status: runbook for publishing deployment and operations. Launch priority and
+deployment decisions remain in `docs/IMPLEMENTATION_PLAN.md` and
+`docs/OPEN_QUESTIONS.md`.
 
 ## Implemented model
 

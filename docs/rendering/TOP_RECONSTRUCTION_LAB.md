@@ -1,6 +1,6 @@
 # Top reconstruction lab
 
-Status: **complete; D049 retains the exact legacy Top**.
+Status: frozen evidence; D049 retains the exact legacy Top.
 
 ## Purpose and boundary
 

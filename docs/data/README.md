@@ -38,7 +38,7 @@ choices; evidence reports retain hashes, measurements, and reproduction facts.
 | [`VOLUME_IMPLEMENTATION_HANDOFF.md`](VOLUME_IMPLEMENTATION_HANDOFF.md) | W26 acquisition and Q5 continuation runbook | runbook |
 | [`STORAGE_FORMATS.md`](STORAGE_FORMATS.md) | physical-format rationale | accepted |
 | [`PROVENANCE.md`](PROVENANCE.md) | cross-dataset provenance inventory | active |
-| [`HANDOFF.md`](HANDOFF.md) | compatibility summary pending rationalization | superseded |
+| [`HANDOFF.md`](HANDOFF.md) | compatibility stub for older links | superseded |
 
 Selection JSON and audit JSON are machine-readable authorities/evidence rather
 than prose documents; their validity and consumer paths are enforced by tests.

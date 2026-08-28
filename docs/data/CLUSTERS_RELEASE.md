@@ -1,5 +1,7 @@
 # Ephys Atlas cluster release
 
+Status: frozen evidence for a validated-real-local release.
+
 ## Status
 
 The D044/D048-approved `ephys_atlas_clusters` candidate was built on Fractal

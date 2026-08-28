@@ -1,5 +1,7 @@
 # Generated anatomy packs
 
+Status: superseded v1 build record; retained as historical evidence.
+
 `tools/anatomy_pack/build.py` converts the pinned 25 µm Allen CCFv3
 annotation into immutable, left-hemisphere SVG slice packs conforming to
 `schema/anatomy-pack-v1/`. The output is generated data and is not a manual
