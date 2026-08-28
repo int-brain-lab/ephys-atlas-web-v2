@@ -9,14 +9,14 @@ export type { BrainCameraPose, Scene3DViewState } from '../../domain/types.js';
 
 export type { RegionalPresentation } from '../../application/regional-presentation.js';
 
-/** Convert shared CSS palette colors into the linear bytes consumed by the GPU lookup texture. */
+/** Convert shared CSS palette colors into exact sRGB bytes for the GPU lookup texture. */
 export function regionalColorTextureRgb(color: string): readonly [number, number, number] {
-  const modernRgb = /^rgb\(\s*(\d+)\s+(\d+)\s+(\d+)\s*\)$/i.exec(color);
-  const compatibleColor = modernRgb
-    ? `rgb(${modernRgb[1]}, ${modernRgb[2]}, ${modernRgb[3]})`
-    : color;
-  const parsed = new THREE.Color(compatibleColor);
-  return [parsed.r, parsed.g, parsed.b].map((channel) => Math.round(channel * 255)) as [number, number, number];
+  const hex = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color);
+  if (hex) return [Number.parseInt(hex[1]!, 16), Number.parseInt(hex[2]!, 16), Number.parseInt(hex[3]!, 16)];
+  const rgb = /^rgb\(\s*(\d+)\s*(?:,\s*|\s+)(\d+)\s*(?:,\s*|\s+)(\d+)\s*\)$/i.exec(color);
+  if (rgb) return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])]
+    .map((channel) => Math.max(0, Math.min(255, channel))) as [number, number, number];
+  throw new Error(`Unsupported regional color: ${color}`);
 }
 
 export interface BrainScene3DInteractionSink {
@@ -257,8 +257,8 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
           transparent: true,
           side: THREE.DoubleSide,
           uniforms: { uLookup: { value: lookup }, uLookupWidth: { value: this.manifest!.regions.length }, uExplode: { value: this.state.explode } },
-          vertexShader: `attribute float featureId; attribute vec3 explodeOffset; uniform sampler2D uLookup; uniform float uLookupWidth; uniform float uExplode; varying vec3 vNormal; varying vec4 vColor; void main(){ vColor=texture2D(uLookup,vec2((featureId+.5)/uLookupWidth,.5)); vNormal=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position+explodeOffset*uExplode,1.); }`,
-          fragmentShader: `varying vec3 vNormal; varying vec4 vColor; void main(){ if(vColor.a<.01) discard; float light=.38+.62*abs(dot(normalize(vNormal),normalize(vec3(-.3,.4,.85)))); gl_FragColor=vec4(vColor.rgb*light,vColor.a); }`,
+          vertexShader: `attribute float featureId; attribute vec3 explodeOffset; uniform sampler2D uLookup; uniform float uLookupWidth; uniform float uExplode; varying vec4 vColor; void main(){ vColor=texture2D(uLookup,vec2((featureId+.5)/uLookupWidth,.5)); gl_Position=projectionMatrix*modelViewMatrix*vec4(position+explodeOffset*uExplode,1.); }`,
+          fragmentShader: `varying vec4 vColor; void main(){ if(vColor.a<.01) discard; gl_FragColor=linearToOutputTexel(vColor); }`,
         });
         const mesh = new THREE.Mesh(geometry, material);
         mesh.userData.hemisphere = chunk.hemisphere;
@@ -278,6 +278,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     const texture = new THREE.DataTexture(new Uint8Array(count * 4), count, 1, THREE.RGBAFormat);
     texture.magFilter = THREE.NearestFilter;
     texture.minFilter = THREE.NearestFilter;
+    texture.colorSpace = THREE.SRGBColorSpace;
     texture.needsUpdate = true;
     return texture;
   }
