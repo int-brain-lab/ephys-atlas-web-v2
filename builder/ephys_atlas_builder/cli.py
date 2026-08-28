@@ -11,7 +11,11 @@ from .channels import DATASET_ID as CHANNELS_DATASET_ID
 from .channels import ChannelBuildConfig, build_channels_from_snapshot
 from .cluster_audit import audit_cluster_snapshot
 from .distribution_inventory import audit_release_inventory
-from .distribution_audit import audit_npz_arrays
+from .distribution_audit import (
+    audit_npz_arrays,
+    audit_volume_source_npz,
+    write_audit_review_table,
+)
 from .clusters import DATASET_ID as CLUSTERS_DATASET_ID
 from .clusters import ClusterBuildConfig, build_clusters_from_snapshot
 from .fixture import generate_golden
@@ -205,6 +209,26 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--output", type=Path, required=True)
 
     p = sub.add_parser(
+        "summarize-distribution-audit",
+        help="write a concise non-authoritative Markdown review table",
+    )
+    p.add_argument("report", type=Path)
+    p.add_argument("--output", type=Path, required=True)
+
+    p = sub.add_parser(
+        "audit-volume-source",
+        help="read-only audit of a verified canonical last-axis volume NPZ",
+    )
+    p.add_argument("npz", type=Path)
+    p.add_argument("--dataset-id", required=True)
+    p.add_argument("--release-id", required=True)
+    p.add_argument("--outside-value", type=float, required=True)
+    p.add_argument("--expected-bytes", type=int, required=True)
+    p.add_argument("--expected-sha256", required=True)
+    p.add_argument("--histogram-bins", type=int, default=50)
+    p.add_argument("--output", type=Path, required=True)
+
+    p = sub.add_parser(
         "audit-source-arrays",
         help="read-only exact distribution audit over a pinned NPZ of named source arrays",
     )
@@ -338,6 +362,16 @@ def main(argv: list[str] | None = None) -> int:
                 population=args.population, observation_unit=args.observation_unit,
                 outside_value=args.outside_value, bins=args.histogram_bins,
             ))
+        elif args.cmd == "audit-volume-source":
+            print(audit_volume_source_npz(
+                args.npz, args.output, dataset_id=args.dataset_id,
+                release_id=args.release_id, outside_value=args.outside_value,
+                expected_bytes=args.expected_bytes,
+                expected_sha256=args.expected_sha256,
+                bins=args.histogram_bins,
+            ))
+        elif args.cmd == "summarize-distribution-audit":
+            print(write_audit_review_table(args.report, args.output))
         elif args.cmd == "build-channels":
             resolved = resolve_source_release(
                 args.source_root, CHANNELS_DATASET_ID, args.release

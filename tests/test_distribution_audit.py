@@ -9,7 +9,10 @@ from ephys_atlas_builder.distribution_audit import (
     audit_feature_arrays,
     audit_volume_feature_arrays,
     audit_npz_arrays,
+    audit_volume_source_npz,
+    write_audit_review_table,
 )
+from ephys_atlas_builder.io import sha256_file
 
 
 def test_distribution_audit_keeps_exact_counts_and_offers_no_default(tmp_path):
@@ -112,3 +115,84 @@ def test_npz_source_array_adapter_records_exact_input_evidence(tmp_path):
     assert evidence["path"] == str(source.resolve())
     assert evidence["bytes"] == source.stat().st_size
     assert len(evidence["sha256"]) == 64
+
+
+def test_verified_last_axis_volume_source_adapter(tmp_path):
+    source = tmp_path / "canonical-volume.npz"
+    values = np.array(
+        [[[[0.0, 0.0], [1.0, -2.0]], [[2.0, np.nan], [3.0, 4.0]]]],
+        dtype=np.float32,
+    )
+    np.savez(source, ephys_atlas_vol=values, feature_names=np.array(["one", "two"]))
+    output = tmp_path / "audit.json"
+
+    audit_volume_source_npz(
+        source,
+        output,
+        dataset_id="volumes",
+        release_id="source-v1",
+        outside_value=0.0,
+        expected_bytes=source.stat().st_size,
+        expected_sha256=sha256_file(source),
+        bins=2,
+    )
+
+    report = json.loads(output.read_text())
+    assert [feature["id"] for feature in report["features"]] == ["one", "two"]
+    assert report["features"][0]["validity_counts"] == {
+        "total_voxel_count": 4,
+        "valid_voxel_count": 3,
+        "outside_voxel_count": 1,
+        "missing_voxel_count": 0,
+    }
+    assert report["features"][1]["validity_counts"] == {
+        "total_voxel_count": 4,
+        "valid_voxel_count": 2,
+        "outside_voxel_count": 1,
+        "missing_voxel_count": 1,
+    }
+    assert report["source_array_evidence"]["sha256"] == sha256_file(source)
+
+
+def test_last_axis_volume_source_adapter_rejects_unverified_bytes(tmp_path):
+    source = tmp_path / "canonical-volume.npz"
+    np.savez(source, ephys_atlas_vol=np.zeros((1, 1, 1, 1)), feature_names=np.array(["one"]))
+
+    try:
+        audit_volume_source_npz(
+            source,
+            tmp_path / "audit.json",
+            dataset_id="volumes",
+            release_id="source-v1",
+            outside_value=0.0,
+            expected_bytes=source.stat().st_size,
+            expected_sha256="0" * 64,
+        )
+    except ValueError as error:
+        assert "SHA-256" in str(error)
+    else:
+        raise AssertionError("volume audit accepted an unverified source")
+
+
+def test_review_table_ranks_display_concentration_without_selecting_defaults(tmp_path):
+    report = tmp_path / "audit.json"
+    audit_feature_arrays(
+        {
+            "readable": np.array([1.0, 2.0, 3.0, 4.0]),
+            "collapsed": np.array([1.0, 1.0, 1.0, 1000.0]),
+        },
+        report,
+        dataset_id="synthetic",
+        release_id="r1",
+        representation="regional",
+        population="rows",
+        observation_unit="rows",
+        bins=4,
+    )
+    table = tmp_path / "review.md"
+    write_audit_review_table(report, table)
+
+    text = table.read_text()
+    assert text.index("`collapsed`") < text.index("`readable`")
+    assert "selects no scale, threshold, focused bounds, or default" in text
+    assert "| 1 |" in text

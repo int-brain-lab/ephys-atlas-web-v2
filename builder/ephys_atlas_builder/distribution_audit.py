@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import math
+import tempfile
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,7 @@ from typing import Any
 import numpy as np
 
 from .io import sha256_file, write_json
+from .npz import extract_last_axis_features, inspect_volume_npz
 
 
 AUDIT_ID = "ephys-atlas-distribution-audit-v1"
@@ -396,3 +398,150 @@ def audit_npz_arrays(
     }
     write_json(output, report)
     return result
+
+
+def audit_volume_source_npz(
+    npz_path: Path,
+    output: Path,
+    *,
+    dataset_id: str,
+    release_id: str,
+    outside_value: float,
+    expected_bytes: int,
+    expected_sha256: str,
+    bins: int = 50,
+    member: str = "ephys_atlas_vol.npy",
+    feature_names_member: str = "feature_names",
+) -> Path:
+    """Audit a verified canonical last-axis encoding-volume source NPZ.
+
+    The source identity is checked before metadata that may use NumPy's object
+    encoding is loaded. Feature planes are then extracted with bounded memory;
+    no intermediate source-array archive needs to be created or treated as a
+    new provenance authority.
+    """
+    npz_path = npz_path.resolve()
+    if expected_bytes < 1:
+        raise ValueError("expected_bytes must be positive")
+    if npz_path.stat().st_size != expected_bytes:
+        raise ValueError("volume source byte size does not match expected identity")
+    actual_sha256 = sha256_file(npz_path)
+    if actual_sha256 != expected_sha256:
+        raise ValueError("volume source SHA-256 does not match expected identity")
+
+    inspection = inspect_volume_npz(npz_path)
+    source_member = next(
+        (entry for entry in inspection["members"] if entry["path"] == member),
+        None,
+    )
+    if source_member is None or source_member["fortran_order"]:
+        raise ValueError(f"volume source must contain C-order member {member}")
+    if len(source_member["shape"]) != 4:
+        raise ValueError("volume source member must have three spatial axes and one feature axis")
+
+    with np.load(npz_path, allow_pickle=True) as archive:
+        if feature_names_member not in archive:
+            raise ValueError(f"volume source is missing {feature_names_member}")
+        feature_names = tuple(
+            str(value) for value in np.asarray(archive[feature_names_member]).tolist()
+        )
+    if len(feature_names) != source_member["shape"][-1]:
+        raise ValueError("volume feature-name count does not match the source feature axis")
+    if len(set(feature_names)) != len(feature_names) or any(not name for name in feature_names):
+        raise ValueError("volume feature names must be unique and non-empty")
+
+    with tempfile.TemporaryDirectory(prefix="ephys-atlas-volume-audit-") as temporary:
+        outputs = {
+            index: Path(temporary) / f"feature-{index}.npy"
+            for index in range(len(feature_names))
+        }
+        extract_last_axis_features(npz_path, outputs, member=member)
+        arrays = {
+            name: np.load(outputs[index], mmap_mode="r")
+            for index, name in enumerate(feature_names)
+        }
+        result = audit_volume_feature_arrays(
+            arrays,
+            output,
+            dataset_id=dataset_id,
+            release_id=release_id,
+            outside_value=outside_value,
+            bins=bins,
+        )
+
+    report = json.loads(output.read_text())
+    report["source_array_evidence"] = {
+        "path": str(npz_path),
+        "bytes": expected_bytes,
+        "sha256": actual_sha256,
+        "member": member,
+        "member_shape": source_member["shape"],
+        "member_dtype": source_member["dtype_descriptor"],
+        "feature_names_member": feature_names_member,
+    }
+    write_json(output, report)
+    return result
+
+
+def write_audit_review_table(report_path: Path, output: Path) -> Path:
+    """Write a compact, non-authoritative Markdown view of audit evidence."""
+    report = json.loads(report_path.read_text())
+    if report.get("audit_id") != AUDIT_ID or not isinstance(report.get("features"), list):
+        raise ValueError("input is not a distribution audit report")
+
+    def number(value: Any) -> str:
+        return format(float(value), ".17g")
+
+    ranked = sorted(
+        report["features"],
+        key=lambda feature: (
+            -float(feature.get("diagnostics", {}).get("full_linear_largest_bin_fraction", -1)),
+            str(feature.get("id", "")),
+        ),
+    )
+    lines = [
+        f"# {report.get('dataset_id', 'dataset')} distribution audit review",
+        "",
+        "Candidate evidence only. This table selects no scale, threshold, focused bounds, or default.",
+        "",
+        "Ranking is descending Full linear largest-bin fraction, a display-concentration diagnostic only.",
+        "",
+        "| Rank | Feature | Population | Sign (-/0/+) | Min / q01 / q99 / max | Full max bin | Focused bounds | Focus tails (low/high) | Log | Signed-log threshold candidates |",
+        "| ---: | --- | --- | --- | --- | ---: | --- | --- | --- | --- |",
+    ]
+    for rank, feature in enumerate(ranked, 1):
+        counts = feature["value_counts"]
+        validity = feature.get("validity_counts")
+        population = (
+            f"{validity['valid_voxel_count']}/{validity['total_voxel_count']} valid; "
+            f"{validity['outside_voxel_count']} outside; {validity['missing_voxel_count']} missing"
+            if validity
+            else f"{counts['finite_count']}/{counts['total_count']} finite; {counts['missing_count']} missing"
+        )
+        summary = feature.get("summary")
+        diagnostics = feature.get("diagnostics")
+        candidates = feature.get("candidates")
+        if summary is None or diagnostics is None or candidates is None:
+            range_summary = full_fraction = focused_bounds = tails = log = thresholds = "unavailable"
+        else:
+            range_summary = " / ".join(
+                number(summary[key]) for key in ("min", "q01", "q99", "max")
+            )
+            full_fraction = number(diagnostics["full_linear_largest_bin_fraction"])
+            focused = candidates["focused"]
+            focused_bounds = (
+                f"[{number(focused['bounds']['lower'])}, {number(focused['bounds']['upper'])}]"
+            )
+            tails = f"{focused['underflow_count']}/{focused['overflow_count']}"
+            log = candidates["full"]["log"]["availability"]
+            threshold_items = candidates["full"]["symlog"]["threshold_candidates"]
+            thresholds = ", ".join(number(item["linear_threshold"]) for item in threshold_items) or "none"
+        sign = f"{counts['negative_count']}/{counts['zero_count']}/{counts['positive_count']}"
+        identifier = str(feature.get("id", "")).replace("|", "\\|")
+        lines.append(
+            f"| {rank} | `{identifier}` | {population} | {sign} | {range_summary} | "
+            f"{full_fraction} | {focused_bounds} | {tails} | {log} | {thresholds} |"
+        )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return output

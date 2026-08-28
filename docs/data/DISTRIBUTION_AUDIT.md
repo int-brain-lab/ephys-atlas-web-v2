@@ -116,6 +116,37 @@ source adapter and must preserve its source hash/provenance beside the report.
 `audit-source-arrays` records the input NPZ's exact byte size and SHA-256 in
 `source_array_evidence`; its path is evidence for local review only.
 
+The canonical W26 encoding-volume NPZ already stores all features on one last
+axis. Audit it directly, without creating a second 790 MB intermediate archive,
+only after supplying its recorded identity and release-owned outside sentinel:
+
+```bash
+uv run --project builder --extra test --locked ephys-atlas-data \
+  audit-volume-source data/source/ephys_atlas_volumes/2026_W26/brainwide_ephys_atlas_50um.npz \
+  --dataset-id ephys_atlas_volumes --release-id 2026_W26 \
+  --outside-value 0 --expected-bytes 238954924 \
+  --expected-sha256 1f7509fe9e368a90704173bdb5c385827b199a7d5fa4b0aaa8fec5aca5402253 \
+  --output artifacts/distribution-audit/volumes-source.json
+```
+
+The adapter verifies the full NPZ before loading its feature-name metadata,
+streams each last-axis feature into bounded temporary storage, audits valid
+finite voxels, records the original NPZ/member identity, and deletes the
+temporary extraction after the report is written.
+
+Turn any audit report into the concise owner-review table required below with:
+
+```bash
+uv run --project builder --extra test --locked ephys-atlas-data \
+  summarize-distribution-audit artifacts/distribution-audit/volumes-source.json \
+  --output artifacts/distribution-audit/volumes-review.md
+```
+
+The table ranks only the measured Full linear largest-bin fraction and exposes
+the exact population/sign counts, range/quantiles, Focused tails, Log
+eligibility, and candidate Signed-log thresholds. It remains explicitly
+non-authoritative and makes no presentation selection.
+
 ## Future-agent handoff: complete Q14 audit and reviewed rollout
 
 Status: **NEXT DISTRIBUTION TASK; read-only audit first; no remote publication
