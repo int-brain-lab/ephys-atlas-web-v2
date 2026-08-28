@@ -200,7 +200,15 @@ data-inspect-volume path:
 
 golden:
     {{uv-test}} ephys-atlas-data golden fixtures/golden-v1
+    {{uv-test}} ephys-atlas-data bundle fixtures/golden-v1 fixtures/golden-v1.ibl-ephys-atlas.zip
 
 # Deterministic whole-release download artifact.
 data-package path output:
     {{uv-test}} ephys-atlas-data package {{path}} {{output}}
+
+# Create or validate the deterministic local-data interchange bundle.
+data-bundle path output:
+    {{uv-test}} ephys-atlas-data bundle {{path}} {{output}}
+
+data-bundle-validate path:
+    {{uv-test}} ephys-atlas-data validate-bundle {{path}}

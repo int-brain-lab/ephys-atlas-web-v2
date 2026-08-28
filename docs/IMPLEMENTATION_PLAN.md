@@ -48,20 +48,21 @@ Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 2 and 3; binding runbook
 
 ## M5 — Custom authoring and ZIP import
 
-Status: active; D051 direction is accepted and implementation has not started.
+Status: active; the deterministic validated ZIP boundary and canonical
+synthetic bundle fixture are complete, and browser ZIP import is next.
 
 Blocker: none for the regional scalar vertical slice.
 
 Next testable actions:
 
-1. add the public `ibl-ephys-atlas` distribution and `ibl_ephys_atlas`
-   namespace beside the shared schema-v1 serializer/validator;
-2. implement regional scalar authoring with explicit identity, aggregation,
-   provenance, and hemisphere-folding rules backed by `iblatlas`;
-3. write one deterministic `.ibl-ephys-atlas.zip` containing the schema-v1
-   graph at its root;
-4. replace the dormant directory import seam with bounded safe ZIP preview,
+1. replace the dormant directory import seam with bounded safe ZIP preview,
    complete integrity validation, and one atomic IndexedDB admission;
+2. add the public `ibl-ephys-atlas` distribution and `ibl_ephys_atlas`
+   namespace beside the shared schema-v1 serializer/validator;
+3. implement regional scalar authoring with explicit identity, aggregation,
+   provenance, and hemisphere-folding rules backed by `iblatlas`;
+4. write one deterministic `.ibl-ephys-atlas.zip` containing the schema-v1
+   graph at its root;
 5. add persistent Local identity, inventory/deletion, quota/recovery behavior,
    and local-URL disclosure;
 6. add explicit-grid volume authoring only after the regional slice is green.

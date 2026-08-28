@@ -7,6 +7,7 @@ from .brainwide_map import (
     BrainwideMapBuildConfig,
     build_brainwide_map_from_sources,
 )
+from .bundle import validate_bundle, write_bundle
 from .channels import DATASET_ID as CHANNELS_DATASET_ID
 from .channels import ChannelBuildConfig, build_channels_from_snapshot
 from .cluster_audit import audit_cluster_snapshot
@@ -318,6 +319,18 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("output", type=Path)
 
     p = sub.add_parser(
+        "bundle",
+        help="create an independently validated deterministic .ibl-ephys-atlas.zip",
+    )
+    p.add_argument("release_dir", type=Path)
+    p.add_argument("output", type=Path)
+    p.add_argument("--schema-dir", type=Path, default=_schema_dir())
+
+    p = sub.add_parser("validate-bundle", help="validate a .ibl-ephys-atlas.zip")
+    p.add_argument("bundle", type=Path)
+    p.add_argument("--schema-dir", type=Path, default=_schema_dir())
+
+    p = sub.add_parser(
         "inspect-volume",
         help="report ZIP/NPY physical metadata without materializing volume arrays",
     )
@@ -484,6 +497,12 @@ def main(argv: list[str] | None = None) -> int:
         elif args.cmd == "package":
             info = package_release(args.release_dir, args.output)
             print(f"{info['sha256']}  {info['bytes']}  {info['path']}")
+        elif args.cmd == "bundle":
+            info = write_bundle(args.release_dir, args.output, args.schema_dir)
+            print(f"{info['sha256']}  {info['bytes']}  {info['path']}")
+        elif args.cmd == "validate-bundle":
+            info = validate_bundle(args.bundle, args.schema_dir)
+            print(f"valid bundle: {info['sha256']}  {info['bytes']}  {info['path']}")
         elif args.cmd == "inspect-volume":
             import json
 

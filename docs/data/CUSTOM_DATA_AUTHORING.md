@@ -332,11 +332,22 @@ public abstraction without its consumer or deterministic evidence.
 
 ### Slice 0 — Contract and baseline
 
+Status: implemented on 2026-08-29 for the Python bundle boundary and canonical
+synthetic fixture; browser-reader measurement remains part of Slice 1.
+
 - retain D051 and this plan as the binding direction;
 - capture a green baseline and deterministic schema-v1 ZIP fixture;
 - choose a bounded browser ZIP reader from measured regional and representative
   volume archives and record the dependency rationale;
 - define archive limits and cross-browser capability/error behavior.
+
+The implemented `ephys-atlas-data bundle` command validates the source graph,
+requires the controlled bundle tree to contain only transitively declared
+resources, writes sorted root-level members with deterministic metadata,
+reopens and independently validates the archive, and atomically replaces its
+destination only after success. `fixtures/golden-v1.ibl-ephys-atlas.zip` is the
+exact regenerable synthetic contract fixture. This command is shared bundle
+machinery, not yet the public `ibl_ephys_atlas.Dataset.write_zip()` API.
 
 ### Slice 1 — ZIP-only browser import
 
