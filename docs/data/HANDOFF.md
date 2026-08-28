@@ -134,7 +134,10 @@ Signed log with threshold `1.23`, plus Full and Focused with exact bounds
 Focused binnings contain 373,266 observations with exact underflow and overflow
 counts of 3,809 each. All other channel features remain Linear/Full. Release
 validation and the four-test real-channel Chromium suite pass; the earlier
-channel release remains immutable and no remote publication occurred.
+channel release remains immutable and no remote publication occurred. The
+post-selection `just check` gate passes with 308 builder tests (one skipped),
+25 publishing tests, 229 web unit tests, 21 rendering tests, a production
+build, and 89 browser tests.
 
 ## Source and provenance rules
 
