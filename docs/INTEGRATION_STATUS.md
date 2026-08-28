@@ -619,6 +619,14 @@ integrity failure. Six worst linked-plane features were measured under local,
 and decoded center-pack memory and remains the provisional recommendation; Q5
 still requires final-origin validation.
 
+The browser now retains the already-fetched schema-v1 volume summary instead
+of reducing it to a color range. Volume Summary reports exhaustive
+valid/outside/missing voxel counts and valid-only mean, median, and standard
+deviation; Global Distribution renders the exact stored linear valid-voxel
+histogram without selected-region overlays or another request. Log remains
+unavailable until an immutable volume release declares an exact matching
+binning.
+
 ## Local data and downloads
 
 Local imports validate the complete supported regional/volume resource graph

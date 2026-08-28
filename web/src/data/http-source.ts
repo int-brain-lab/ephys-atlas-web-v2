@@ -165,16 +165,18 @@ export class HttpDatasetSource implements DatasetSource {
           descriptor.summaryResource,
         ),
       ]);
+      const summary = parseVolumeSummary(summaryRaw, descriptor);
       const resolvedDescriptor = {
         ...descriptor,
         resource: parseVolumeResourceIndex(resourceIndexRaw, descriptor),
-        valueRange: parseVolumeSummary(summaryRaw, descriptor),
+        valueRange: summary.valueRange,
       };
       return {
         schemaVersion: SCHEMA_VERSION,
         featureId,
         representation: 'volume',
         descriptor: resolvedDescriptor,
+        summary,
         baseUrl: featureUrl,
         loadResource: (path, resourceSignal, resource) => reader.readBytes(
           reader.resolve(featureUrl, path),

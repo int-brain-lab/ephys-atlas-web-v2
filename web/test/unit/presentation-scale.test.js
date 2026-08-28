@@ -56,3 +56,19 @@ test('regional log requires an exact log histogram', () => {
   assert.equal(resolved.effectiveScale, 'linear');
   assert.match(resolved.logUnavailableReason, /no exact/);
 });
+
+test('volume scale exposes its exact linear histogram and withholds log until exact bins exist', () => {
+  const histogram = { axisScale: 'linear', edges: [1, 10, 100], globalCounts: [2, 1] };
+  const volume = {
+    schemaVersion: '1.0',
+    featureId: 'volume',
+    representation: 'volume',
+    descriptor: { valueRange: [2, 80] },
+    summary: { histogram },
+  };
+  const resolved = resolvePresentationScale(volume, { ...coloring, scale: 'log' }, 'log');
+  assert.equal(resolved.effectiveScale, 'linear');
+  assert.equal(resolved.histogram, histogram);
+  assert.equal(resolved.logAvailable, false);
+  assert.match(resolved.logUnavailableReason, /no exact/);
+});

@@ -1,4 +1,4 @@
-import type { VolumeRepresentationDescriptor } from '../contracts.js';
+import type { VolumeFeatureSummary, VolumeRepresentationDescriptor, VolumeValidStatistics } from '../contracts.js';
 import { parseEncodedResource } from './binary.js';
 import { array, integerArray, numberArray, object, string, unique } from './primitives.js';
 
@@ -126,7 +126,7 @@ export function parseVolumeResourceIndex(
 export function parseVolumeSummary(
   value: unknown,
   descriptor: VolumeRepresentationDescriptor,
-): readonly [number | null, number | null] {
+): VolumeFeatureSummary {
   const root = object(value, 'volume summary');
   if (root.schema_version !== '1.0' || root.format !== 'ephys-atlas-volume-summary-v1') {
     throw new Error('volume summary format is unsupported');
@@ -134,15 +134,87 @@ export function parseVolumeSummary(
   if (root.grid_id !== descriptor.grid.gridId) throw new Error('volume summary grid identity differs from feature');
   const shape = integerArray(root.grid_shape, 3, 'volume summary.grid_shape');
   if (shape.some((size, index) => size !== descriptor.grid.shape[index])) throw new Error('volume summary shape differs from feature');
-  const total = Number(root.total_voxel_count);
-  const valid = Number(root.valid_voxel_count);
-  const outside = Number(root.outside_voxel_count);
-  const missing = Number(root.missing_voxel_count);
+  const count = (field: string): number => {
+    const result = root[field];
+    if (typeof result !== 'number' || !Number.isInteger(result) || result < 0) {
+      throw new Error(`volume summary.${field} must be a non-negative integer`);
+    }
+    return result;
+  };
+  const total = count('total_voxel_count');
+  const valid = count('valid_voxel_count');
+  const outside = count('outside_voxel_count');
+  const missing = count('missing_voxel_count');
   if (total !== shape.reduce((product, size) => product * size, 1) || total !== valid + outside + missing) {
     throw new Error('volume summary counts are inconsistent');
   }
   const statistics = object(root.valid_statistics, 'volume summary.valid_statistics');
-  if (valid === 0) return [null, null];
-  const range = numberArray([statistics.q05, statistics.q95], 2, 'volume summary robust range');
-  return range[1]! > range[0]! ? [range[0]!, range[1]!] : [statistics.min as number, statistics.max as number];
+  const statistic = (field: keyof VolumeValidStatistics): number | null => {
+    const result = statistics[field];
+    if (result !== null && (typeof result !== 'number' || !Number.isFinite(result))) {
+      throw new Error(`volume summary.valid_statistics.${field} must be finite or null`);
+    }
+    if ((valid === 0) !== (result === null)) {
+      throw new Error('volume summary valid-statistics nullability is inconsistent with the valid voxel count');
+    }
+    return result as number | null;
+  };
+  const validStatistics: VolumeValidStatistics = {
+    min: statistic('min'),
+    max: statistic('max'),
+    mean: statistic('mean'),
+    std: statistic('std'),
+    median: statistic('median'),
+    q05: statistic('q05'),
+    q25: statistic('q25'),
+    q75: statistic('q75'),
+    q95: statistic('q95'),
+  };
+  let valueRange: readonly [number | null, number | null] = [null, null];
+  if (valid > 0) {
+    const robust = numberArray([validStatistics.q05, validStatistics.q95], 2, 'volume summary robust range');
+    const extent = numberArray([validStatistics.min, validStatistics.max], 2, 'volume summary value extent');
+    const robustMinimum = robust[0]!;
+    const robustMaximum = robust[1]!;
+    valueRange = robustMaximum > robustMinimum
+      ? [robustMinimum, robustMaximum]
+      : [extent[0]!, extent[1]!];
+  }
+  let histogram: VolumeFeatureSummary['histogram'];
+  if (root.histogram !== undefined) {
+    const rawHistogram = object(root.histogram, 'volume summary.histogram');
+    const edges = array(rawHistogram.edges, 'volume summary.histogram.edges').map((edge, index) => {
+      if (typeof edge !== 'number' || !Number.isFinite(edge)) {
+        throw new Error(`volume summary.histogram.edges[${index}] must be finite`);
+      }
+      return edge;
+    });
+    if (edges.length < 2 || edges.some((edge, index) => index > 0 && edge <= edges[index - 1]!)) {
+      throw new Error('volume summary.histogram.edges must be strictly increasing');
+    }
+    const counts = array(rawHistogram.counts, 'volume summary.histogram.counts');
+    if (counts.length !== edges.length - 1
+      || counts.some((item) => typeof item !== 'number' || !Number.isInteger(item) || item < 0)
+      || (counts as number[]).reduce((sum, item) => sum + item, 0) !== valid) {
+      throw new Error('volume summary.histogram.counts must conserve the valid voxel population');
+    }
+    if (rawHistogram.bin_rule !== 'left-closed-right-open-last-closed') {
+      throw new Error('volume summary.histogram.bin_rule is unsupported');
+    }
+    histogram = {
+      axisScale: 'linear',
+      edges,
+      globalCounts: counts as number[],
+      binRule: rawHistogram.bin_rule,
+    };
+  }
+  return {
+    totalVoxelCount: total,
+    validVoxelCount: valid,
+    outsideVoxelCount: outside,
+    missingVoxelCount: missing,
+    validStatistics,
+    valueRange,
+    ...(histogram ? { histogram } : {}),
+  };
 }

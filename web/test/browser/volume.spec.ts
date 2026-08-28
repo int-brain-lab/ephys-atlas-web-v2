@@ -1,6 +1,44 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
+test('volume summary and exact valid-voxel distribution reuse the loaded summary resource', async ({ page }) => {
+  const summaryRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('/features/rms_ap/volume/summary.json')) summaryRequests.push(request.url());
+  });
+  await page.goto('/?v=4&feature=rms_ap&repr=volume&secondary=summary&selected=-362&cursor=25,25,25');
+  await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
+
+  const summary = page.locator('.secondary-view__summary');
+  await expect(summary).toContainText('Valid voxels');
+  await expect(summary).toContainText('191');
+  await expect(summary).toContainText('Mean');
+  await expect(summary).toContainText('9.6');
+  await expect(summary).toContainText(
+    '192 grid voxels: 191 valid, 0 outside, and 1 missing. Statistics and distribution use valid voxels only.',
+  );
+
+  const distribution = page.locator('.distribution-chart');
+  await expect(distribution).toHaveAttribute('data-axis-scale', 'linear');
+  await expect(distribution).toContainText('Valid-voxel distribution');
+  await expect(distribution).toContainText('Valid voxels · n=191');
+  await expect(distribution.locator('.distribution-chart__bin')).toHaveCount(8);
+  await expect(distribution.locator('.distribution-chart__global')).toHaveAttribute('data-total', '191');
+  await expect(distribution.locator('.distribution-chart__region')).toHaveCount(0);
+  const log = distribution.getByRole('button', { name: 'Log' });
+  await expect(log).toBeDisabled();
+  await expect(log).toHaveAttribute('title', /no exact strictly-positive log histogram/);
+  await expect(distribution.locator('.distribution-chart__color-range')).toHaveAttribute('data-visible', 'true');
+  await expect(distribution.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '1.050000011920929');
+  await expect(distribution.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '18.15000057220459');
+
+  expect(summaryRequests).toHaveLength(1);
+  await page.getByRole('tab', { name: 'Top' }).click();
+  await page.getByRole('tab', { name: 'Summary' }).click();
+  await expect(summary).toBeVisible();
+  expect(summaryRequests).toHaveLength(1);
+});
+
 test('volume layer settings only appear for volume representations', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Settings' }).click();

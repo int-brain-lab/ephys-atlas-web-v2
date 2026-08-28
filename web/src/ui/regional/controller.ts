@@ -1,6 +1,6 @@
 import type { DatasetManifest, FeaturePayload, RegionMetadata } from '../../data/contracts.js';
 import type { ResolvedPresentationScale } from '../../application/presentation-scale.js';
-import type { AppState, ColorScaleSelection, RegionOrder, StatisticId } from '../../domain/types.js';
+import type { AppState, ColorRange, ColorScaleSelection, RegionOrder, StatisticId } from '../../domain/types.js';
 import { regionalColorRange } from '../../application/scalar-colormap.js';
 import { required, message } from './dom.js';
 import {
@@ -32,6 +32,24 @@ export interface RegionalPanelModel {
   hoveredRegionId: string | null;
   presentationScale: ResolvedPresentationScale;
   automaticRange: readonly [number, number] | undefined;
+}
+
+function volumeColorRange(
+  feature: FeaturePayload | null,
+  range: ColorRange,
+): readonly [number, number] | null {
+  if (feature?.representation !== 'volume') return null;
+  if (range.mode === 'fixed') {
+    return Number.isFinite(range.min) && Number.isFinite(range.max) && range.max > range.min
+      ? [range.min, range.max]
+      : null;
+  }
+  const declared = feature.descriptor.valueRange;
+  return declared?.[0] !== null && declared?.[0] !== undefined
+    && declared[1] !== null && declared[1] !== undefined
+    && declared[1] > declared[0]
+    ? [declared[0], declared[1]]
+    : null;
 }
 
 export class RegionalPanelController {
@@ -91,17 +109,20 @@ export class RegionalPanelController {
   }
 
   render(model: RegionalPanelModel): void {
-    const feature = model.feature?.representation === 'regional' ? model.feature : null;
+    const feature = model.feature;
+    const regionalFeature = feature?.representation === 'regional' ? feature : null;
     const statistic = model.state.view.coloring.statistic;
     const regionOrder = model.state.view.regionOrder;
     const fixture = model.manifest?.dataset.fixture === true;
     const selectionKey = model.state.view.selection.join(',');
     const displayFeature = feature && model.presentationScale.histogram
-      ? { ...feature, histogram: model.presentationScale.histogram }
+      ? feature.representation === 'regional'
+        ? { ...feature, histogram: model.presentationScale.histogram }
+        : { ...feature, summary: { ...feature.summary, histogram: model.presentationScale.histogram } }
       : feature;
-    const range = feature
-      ? regionalColorRange(feature, model.state.view.coloring, model.automaticRange)
-      : null;
+    const range = regionalFeature
+      ? regionalColorRange(regionalFeature, model.state.view.coloring, model.automaticRange)
+      : volumeColorRange(feature, model.state.view.coloring.range);
     if (
       feature === this.lastFeature
       && model.regions === this.lastRegions
@@ -123,14 +144,16 @@ export class RegionalPanelController {
           range,
           model.state.view.coloring.range.mode,
         );
-        updateDistributionHover(
-          this.distribution,
-          displayFeature,
-          model.regions,
-          model.hoveredRegionId,
-          statistic,
-          descriptor?.unit ?? null,
-        );
+        if (displayFeature.representation === 'regional') {
+          updateDistributionHover(
+            this.distribution,
+            displayFeature,
+            model.regions,
+            model.hoveredRegionId,
+            statistic,
+            descriptor?.unit ?? null,
+          );
+        }
       }
       return;
     }
@@ -145,7 +168,8 @@ export class RegionalPanelController {
     this.pane.dataset.phase = feature || model.anatomyAtlas ? 'regional-data' : 'empty';
     this.pane.dataset.fixture = String(fixture);
 
-    if ((!feature && !model.anatomyAtlas) || model.regions.length === 0) {
+    if ((!feature && !model.anatomyAtlas)
+      || (feature?.representation !== 'volume' && model.regions.length === 0)) {
       this.renderEmpty(model);
       return;
     }
@@ -153,16 +177,18 @@ export class RegionalPanelController {
     const descriptor = feature
       ? model.manifest?.features.find((item) => item.id === feature.featureId)
       : undefined;
-    const values = feature ? buildRegionalValueMap(feature, statistic) : new Map<string, number>();
+    const values = regionalFeature ? buildRegionalValueMap(regionalFeature, statistic) : new Map<string, number>();
     const selected = new Set(model.state.view.selection);
     this.updateAnalysisDisclosure(selected.size);
     const unit = descriptor?.unit ?? null;
 
     this.tree.source.textContent = model.anatomyAtlas
       ? model.anatomyAtlas
-      : fixture
+      : fixture && regionalFeature
         ? 'Synthetic schema-v1 fixture'
-        : `${model.state.view.parcellation.toUpperCase()} regional values`;
+        : regionalFeature
+          ? `${model.state.view.parcellation.toUpperCase()} regional values`
+          : `${model.state.view.parcellation.toUpperCase()} anatomy overlay`;
     this.tree.render(model.regions, values, statistic, unit, range, selected, regionOrder);
     renderSelectedRegions(this.detailsTargets(), model.regions, selected, values, statistic, unit);
     if (feature && displayFeature) {
@@ -183,15 +209,19 @@ export class RegionalPanelController {
         range,
         model.state.view.coloring.range.mode,
       );
-      updateDistributionHover(
-        this.distribution,
-        displayFeature,
-        model.regions,
-        model.hoveredRegionId,
-        statistic,
-        unit,
-      );
-      renderAnalysis(this.analysis, displayFeature, model.regions, selected, values, statistic, unit, fixture);
+      if (displayFeature.representation === 'regional') {
+        updateDistributionHover(
+          this.distribution,
+          displayFeature,
+          model.regions,
+          model.hoveredRegionId,
+          statistic,
+          unit,
+        );
+        renderAnalysis(this.analysis, displayFeature, model.regions, selected, values, statistic, unit, fixture);
+      } else {
+        this.analysis.replaceChildren(message('Selected-region distributions are unavailable for voxel volumes'));
+      }
     } else {
       this.summary.replaceChildren();
       this.distribution.replaceChildren(message('No regional distribution loaded'));

@@ -36,10 +36,15 @@ export function resolvePresentationScale(
     positiveDomain = positiveRange(regionalColorRange(feature, coloring, automaticRange));
     missingHistogram = logHistogram === undefined;
   } else if (feature?.representation === 'volume') {
+    histogram = feature.summary.histogram;
     const range = feature.descriptor.valueRange;
     positiveDomain = range?.[0] !== null && range?.[1] !== null
       ? positiveRange(range as readonly [number, number])
       : false;
+    // Schema v1 volume summaries currently carry only an exact linear
+    // histogram. Keep the one-scale contract honest until a release declares
+    // an exact logarithmic volume binning.
+    missingHistogram = true;
   }
 
   const logAvailable = feature !== null && positiveDomain && !missingHistogram;

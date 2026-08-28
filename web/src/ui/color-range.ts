@@ -51,7 +51,9 @@ export function colorRangeDomain(
     }
     domain ??= finiteExtent(feature.statistics[statistic] ?? feature.statistics.mean);
   } else {
-    domain = validRange(feature.descriptor.valueRange?.[0], feature.descriptor.valueRange?.[1]);
+    const edges = histogram?.edges ?? feature.summary.histogram?.edges;
+    domain = edges ? validRange(edges[0], edges.at(-1)) : null;
+    domain ??= validRange(feature.descriptor.valueRange?.[0], feature.descriptor.valueRange?.[1]);
   }
   if (!domain) return effectiveRange;
   if (!effectiveRange) return domain;

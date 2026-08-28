@@ -299,6 +299,28 @@ export interface RegionalHistogram {
   binRule?: string;
 }
 
+export interface VolumeValidStatistics {
+  min: number | null;
+  max: number | null;
+  mean: number | null;
+  std: number | null;
+  median: number | null;
+  q05: number | null;
+  q25: number | null;
+  q75: number | null;
+  q95: number | null;
+}
+
+export interface VolumeFeatureSummary {
+  totalVoxelCount: number;
+  validVoxelCount: number;
+  outsideVoxelCount: number;
+  missingVoxelCount: number;
+  validStatistics: VolumeValidStatistics;
+  valueRange: readonly [number | null, number | null];
+  histogram?: RegionalHistogram;
+}
+
 export type RegionalStatisticId = StatisticId | 'missing_count' | 'std' | 'q05' | 'q25' | 'q75' | 'q95';
 
 export interface RegionalFeaturePayload {
@@ -320,6 +342,7 @@ export interface VolumeFeaturePayload {
   featureId: string;
   representation: 'volume';
   descriptor: VolumeRepresentationDescriptor;
+  summary: VolumeFeatureSummary;
   loadResource(path: string, signal?: AbortSignal, resource?: EncodedResourceDescriptor): Promise<ArrayBuffer>;
   baseUrl?: string;
 }

@@ -39,6 +39,15 @@ test('regional range domain uses observation histogram edges except for counts',
   assert.deepEqual(colorRangeDomain(regional, 'count', [12, 35]), [10, 40]);
 });
 
+test('volume range domain uses exact histogram edges around the robust color interval', () => {
+  const volume = {
+    representation: 'volume',
+    descriptor: { valueRange: [2, 8] },
+    summary: { histogram: { edges: [-10, 0, 10, 100] } },
+  };
+  assert.deepEqual(colorRangeDomain(volume, 'mean', [2, 8]), [-10, 100]);
+});
+
 test('range window translation preserves width and clamps at domain edges', () => {
   assert.deepEqual(translateRangeWindow([2, 6], 3, [0, 10]), [5, 9]);
   assert.deepEqual(translateRangeWindow([2, 6], 8, [0, 10]), [6, 10]);

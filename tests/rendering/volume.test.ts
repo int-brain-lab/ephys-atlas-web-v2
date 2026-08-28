@@ -100,6 +100,24 @@ function makeSlicePackFeature(axisOrder: readonly ['dv', 'ap', 'ml'] = ['dv', 'a
       },
       validity: { kind: 'sentinel', outsideValue: -9999 },
     },
+    summary: {
+      totalVoxelCount: shape.reduce((product, size) => product * size, 1),
+      validVoxelCount: shape.reduce((product, size) => product * size, 1),
+      outsideVoxelCount: 0,
+      missingVoxelCount: 0,
+      validStatistics: {
+        min: 0,
+        max: 1,
+        mean: 0.5,
+        std: 0.25,
+        median: 0.5,
+        q05: 0.05,
+        q25: 0.25,
+        q75: 0.75,
+        q95: 0.95,
+      },
+      valueRange: [0.05, 0.95],
+    },
     async loadResource(path: string): Promise<ArrayBuffer> {
       loads.set(path, (loads.get(path) ?? 0) + 1);
       const match = /^(coronal|sagittal|horizontal)\/(\d+)\.f32$/.exec(path);

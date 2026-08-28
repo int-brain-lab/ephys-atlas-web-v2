@@ -219,16 +219,18 @@ export class LocalDatasetSource implements DatasetSource {
         reader.readJson(reader.resolve(feature.path, descriptor.resourceIndexPath), signal),
         reader.readJson(reader.resolve(feature.path, descriptor.summaryPath), signal),
       ]);
+      const summary = parseVolumeSummary(summaryRaw, descriptor);
       const resolvedDescriptor = {
         ...descriptor,
         resource: parseVolumeResourceIndex(resourceIndexRaw, descriptor),
-        valueRange: parseVolumeSummary(summaryRaw, descriptor),
+        valueRange: summary.valueRange,
       };
       return {
         schemaVersion: SCHEMA_VERSION,
         featureId,
         representation: 'volume',
         descriptor: resolvedDescriptor,
+        summary,
         loadResource: (path, resourceSignal, resource) => reader.readBytes(
           reader.resolve(feature.path, path),
           resourceSignal,

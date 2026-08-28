@@ -1,4 +1,4 @@
-import type { RegionMetadata, RegionalFeaturePayload } from '../../data/contracts.js';
+import type { FeaturePayload, RegionMetadata, RegionalFeaturePayload } from '../../data/contracts.js';
 import type { ResolvedPresentationScale } from '../../application/presentation-scale.js';
 import type { ColorRange, ColorScale, StatisticId } from '../../domain/types.js';
 import { html, message } from './dom.js';
@@ -88,23 +88,30 @@ export function renderSelectedRegions(
 
 export function renderFeatureSummary(
   target: HTMLElement,
-  feature: RegionalFeaturePayload,
+  feature: FeaturePayload,
   unit: string | null,
   featureDescription: string,
 ): void {
-  if (!feature.global) {
+  if (feature.representation === 'regional' && !feature.global) {
     target.replaceChildren();
     return;
   }
-  const fields: readonly (readonly [string, number | undefined, StatisticId])[] = [
-    ['Observations', feature.global.count, 'count'],
-    ['Mean', feature.global.mean, 'mean'],
-    ['Median', feature.global.median, 'median'],
-    ['Std. deviation', feature.global.std, 'mean'],
-  ];
+  const fields: readonly (readonly [string, number | null | undefined, StatisticId])[] = feature.representation === 'regional'
+    ? [
+      ['Observations', feature.global?.count, 'count'],
+      ['Mean', feature.global?.mean, 'mean'],
+      ['Median', feature.global?.median, 'median'],
+      ['Std. deviation', feature.global?.std, 'mean'],
+    ]
+    : [
+      ['Valid voxels', feature.summary.validVoxelCount, 'count'],
+      ['Mean', feature.summary.validStatistics.mean, 'mean'],
+      ['Median', feature.summary.validStatistics.median, 'median'],
+      ['Std. deviation', feature.summary.validStatistics.std, 'mean'],
+    ];
   const list = html('dl', 'feature-summary');
   for (const [label, value, statistic] of fields) {
-    if (value === undefined || !Number.isFinite(value)) continue;
+    if (value === undefined || value === null || !Number.isFinite(value)) continue;
     const card = html('div', 'feature-summary__item');
     const term = html('dt', 'feature-summary__label');
     term.textContent = label;
@@ -114,9 +121,12 @@ export function renderFeatureSummary(
     list.append(card);
   }
   const content = html('div', 'feature-summary-content');
-  if (featureDescription) {
+  const summaryNote = feature.representation === 'volume'
+    ? `${feature.summary.totalVoxelCount.toLocaleString('en-US')} grid voxels: ${feature.summary.validVoxelCount.toLocaleString('en-US')} valid, ${feature.summary.outsideVoxelCount.toLocaleString('en-US')} outside, and ${feature.summary.missingVoxelCount.toLocaleString('en-US')} missing. Statistics and distribution use valid voxels only.`
+    : '';
+  if (featureDescription || summaryNote) {
     const description = html('p', 'feature-summary__description');
-    description.textContent = featureDescription;
+    description.textContent = [featureDescription, summaryNote].filter(Boolean).join(' ');
     content.append(description);
   }
   content.append(list);
@@ -125,7 +135,7 @@ export function renderFeatureSummary(
 
 export function renderDistribution(
   target: HTMLElement,
-  feature: RegionalFeaturePayload,
+  feature: FeaturePayload,
   selected: ReadonlySet<string>,
   regions: readonly RegionMetadata[],
   statistic: StatisticId,
@@ -133,28 +143,31 @@ export function renderDistribution(
   fixture: boolean,
   presentationScale: ResolvedPresentationScale,
 ): void {
-  const histogram = feature.histogram;
+  const regionalFeature = feature.representation === 'regional' ? feature : null;
+  const histogram = regionalFeature?.histogram ?? (feature.representation === 'volume' ? feature.summary.histogram : undefined);
   if (!histogram || histogram.globalCounts.length === 0) {
     target.replaceChildren(message('Histogram unavailable for this feature'));
     return;
   }
   const global = histogramDistribution(histogram.globalCounts);
-  const selectedDistributions = selectedRegionHistogramDistributions(feature, selected);
+  const selectedDistributions = regionalFeature ? selectedRegionHistogramDistributions(regionalFeature, selected) : [];
   const maxProbability = Math.max(
     0,
     ...global.probabilities,
     ...selectedDistributions.flatMap((distribution) => distribution.probabilities),
   );
-  const values = buildRegionalValueMap(feature, statistic);
+  const values = regionalFeature ? buildRegionalValueMap(regionalFeature, statistic) : new Map<string, number>();
   const regionById = new Map(regions.map((region) => [region.id, region]));
   const chart = html('div', 'distribution-chart');
   chart.dataset.fixture = String(fixture);
   chart.dataset.axisScale = presentationScale.effectiveScale;
   const meta = html('div', 'distribution-chart__meta');
   const label = html('span');
-  label.textContent = `Observation distribution${unit ? ` · ${unit}` : ''}`;
+  label.textContent = `${regionalFeature ? 'Observation' : 'Valid-voxel'} distribution${unit ? ` · ${unit}` : ''}`;
   const population = html('span');
-  population.textContent = feature.population ?? `${regions.length} regions`;
+  population.textContent = regionalFeature
+    ? regionalFeature.population ?? `${regions.length} regions`
+    : 'valid voxels only';
   const scaleControl = html('div', 'distribution-chart__scale-control');
   scaleControl.setAttribute('role', 'group');
   scaleControl.setAttribute('aria-label', 'Value scale');
@@ -178,14 +191,18 @@ export function renderDistribution(
   svg.classList.add('distribution-chart__svg');
   svg.setAttribute('viewBox', `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`);
   svg.setAttribute('preserveAspectRatio', 'none');
-  svg.setAttribute('aria-label', 'Normalized global and selected-region distributions');
+  svg.setAttribute(
+    'aria-label',
+    regionalFeature ? 'Normalized global and selected-region distributions' : 'Normalized valid-voxel distribution',
+  );
   const globalArea = svgElement('path');
   globalArea.classList.add('distribution-chart__global');
   globalArea.setAttribute('d', smoothHistogramPath(global.probabilities, maxProbability, true, CHART_WIDTH, CHART_HEIGHT));
   globalArea.dataset.total = String(global.total);
   globalArea.dataset.probabilitySum = probabilitySum(global.probabilities);
   const globalTitle = svgElement('title');
-  globalTitle.textContent = `Global population · n=${global.total.toLocaleString('en-US')}`;
+  const globalLabel = regionalFeature ? 'Global population' : 'Valid voxels';
+  globalTitle.textContent = `${globalLabel} · n=${global.total.toLocaleString('en-US')}`;
   globalArea.append(globalTitle);
   svg.append(globalArea);
 
@@ -299,7 +316,7 @@ export function renderDistribution(
   const legend = html('div', 'distribution-chart__legend');
   const globalLegend = html('span', 'distribution-chart__legend-item');
   globalLegend.dataset.series = 'global';
-  globalLegend.textContent = `Global · n=${global.total.toLocaleString('en-US')}`;
+  globalLegend.textContent = `${regionalFeature ? 'Global' : 'Valid voxels'} · n=${global.total.toLocaleString('en-US')}`;
   legend.append(globalLegend);
   selectedDistributions.forEach((distribution, selectionIndex) => {
     const item = html('span', 'distribution-chart__legend-item');
@@ -314,19 +331,20 @@ export function renderDistribution(
 
 export function updateDistributionColorRange(
   target: HTMLElement,
-  feature: RegionalFeaturePayload,
+  feature: FeaturePayload,
   range: readonly [number, number] | null,
   mode: ColorRange['mode'],
 ): void {
   const layer = target.querySelector<SVGGElement>('.distribution-chart__color-range');
   if (!layer) return;
-  if (!range || !feature.histogram) {
+  const histogram = feature.representation === 'regional' ? feature.histogram : feature.summary.histogram;
+  if (!range || !histogram) {
     layer.dataset.visible = 'false';
     return;
   }
 
-  const minimum = histogramPosition(range[0], feature.histogram.edges, feature.histogram.axisScale);
-  const maximum = histogramPosition(range[1], feature.histogram.edges, feature.histogram.axisScale);
+  const minimum = histogramPosition(range[0], histogram.edges, histogram.axisScale);
+  const maximum = histogramPosition(range[1], histogram.edges, histogram.axisScale);
   if (minimum === null || maximum === null) {
     layer.dataset.visible = 'false';
     return;
