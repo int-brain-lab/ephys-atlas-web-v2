@@ -258,6 +258,37 @@ Files with different hashes are not covered by this decision merely because
 their names or host match. Q13 no longer blocks exact pinned Top/Swanson
 ingestion or publication.
 
+## Q14 — Audited scale and focused-domain selections
+
+Status: **SCIENTIFIC RELEASE BLOCKER for D050 rebuilds; machinery is not
+blocked**.
+
+D050 approves Linear/Log/Signed-log value scales and independent Full/Focused
+distribution domains, but it deliberately does not select feature-specific
+settings. Read-only audits must cover the complete finite channel, cluster, and
+`brainwide_map` populations and valid voxels for each volume. Candidate
+statistics or heuristics in an audit are evidence for review, not production
+defaults.
+
+Resolution needed: owner-reviewed, machine-consumable selections maintained
+separately for channel, cluster, `brainwide_map`, and volume representations.
+For every feature/representation they must state the available scales, the
+finite positive raw-unit Signed-log threshold when Signed log is available,
+Focused availability and exact raw-value bounds, and the preferred scale and
+domain. Log may be offered only when the complete finite population is
+strictly positive. Regional and volume selections for the same feature must
+remain distinct.
+
+Until resolved, do not infer thresholds or bounds in the browser or builder,
+copy audit quantiles into a release automatically, or change existing
+immutable releases. D048's reviewed cluster Firing-rate Log preference and
+3.73–17.8 Hz automatic color interval remain authoritative for the current
+candidate unless the cluster selection explicitly supersedes them.
+
+Blocks: D050 scientific release rebuilds and promotion of the new distribution
+contract. Does not block schema/validator/frontend implementation with
+synthetic fixtures or continued use of current immutable releases.
+
 ## How to resolve an item
 
 When authoritative evidence arrives:

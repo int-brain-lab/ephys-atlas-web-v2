@@ -77,6 +77,50 @@ stable public validation facade. There is no v0.1 compatibility runtime.
 
 The Python builder validator and TypeScript runtime validator are independent implementations of the same contract. Shared valid/invalid fixture corpora should be used to prevent semantic drift; do not add a large runtime schema dependency solely to deduplicate validation code.
 
+## Scalar presentation and distributions
+
+D050 separates the value transform from the analytical distribution domain.
+Linear, Log, and Signed log are value scales; Full and Focused are independent
+distribution domains. One resolved scale continues to synchronize color
+normalization, both histogram presentations, range geometry, markers, and
+interaction transforms as required by D047. Focused affects the global and
+selected-region analytical distributions only. The compact color-range
+histogram remains Full under the same scale so analytical focus cannot mutate
+coloring or a manual range.
+
+Signed log is the invertible transform
+`sign(x) * ln(1 + abs(x) / c)`, with inverse
+`sign(y) * c * (exp(abs(y)) - 1)`. Its finite positive `c` is expressed in raw
+feature units and belongs to the immutable release; it is neither estimated by
+the browser nor persisted as mutable URL state. Log requires the complete
+finite population to be strictly positive. A focus interval cannot change
+scale eligibility.
+
+Every available scale/domain combination is binned directly from raw finite
+observations, or from valid voxels for volumes. Focused distributions preserve
+whole-population normalization and expose exact underflow and overflow counts;
+they never renormalize the visible bins. Edges are raw-unit values: underflow
+is below the first edge, overflow is above the last edge, bins are left-closed
+and right-open except that the final bin includes the last edge. Regional
+payloads additionally carry per-region counts over the same bins and tails.
+Volume distributions remain global valid-voxel summaries and do not synthesize
+regional curves. Full distributions cover the complete finite domain and have
+zero tails.
+
+Availability, the Signed-log threshold, focus bounds, and preferred
+scale/domain are release-owned per feature and representation. They are chosen
+from read-only source-population audits and owner-reviewed selection artifacts,
+not inferred at runtime. Regional and volume preferences therefore remain
+independent even when they describe the same feature. Linear/Full is mandatory
+for a nonempty scalar population; all additional choices form a rectangular
+scale-by-domain cross-product.
+
+This architecture requires one coherent schema-v1 contract cutover across all
+producers, validators, transports, materializers, UI state, and exports. There
+is no legacy adapter or parallel distribution model. Existing immutable
+releases remain readable only by the code version matching their contract;
+affected scientific data is rebuilt under new immutable release IDs.
+
 ## Frontend
 
 - TypeScript

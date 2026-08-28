@@ -825,3 +825,86 @@ pack must verify their pinned sizes, hashes, and path inventories; embed the
 exact committed notice as a verified plain-text resource in its immutable file
 graph; and record the evidence identity on both static sources. Missing,
 modified, differently hashed, or free-form substitute evidence fails closed.
+
+## D050 — Separate value scale from distribution domain
+
+Use two independent presentation controls for scalar feature distributions:
+
+- value scale: `linear`, `log`, or `symlog`, labelled Linear, Log, and Signed
+  log in the viewer;
+- distribution domain: `full` or `focused`, labelled Full and Focused.
+
+One resolved value scale continues to govern color normalization, the global
+distribution x-axis, the compact range distribution, range handles, markers,
+pointer inversion, keyboard adjustment, and whole-window translation. This
+preserves D047's synchronization invariant. Changing Full versus Focused
+changes only the global distribution and selected-region comparison domain;
+the compact color-range distribution remains Full under the resolved scale, so
+changing the analytical view does not silently change coloring or a manual
+color interval.
+
+Signed log uses the exact natural-log transform
+`T_c(x) = sign(x) * ln(1 + abs(x) / c)` and inverse
+`T_c^-1(y) = sign(y) * c * (exp(abs(y)) - 1)`, where `c` is finite, strictly
+positive, expressed in the feature's raw units, and owned by the immutable
+release. The browser and URL must never estimate or override `c`. Signed log
+does not imply a diverging colormap or a scientifically meaningful zero
+center. Log is available only when every finite observation in the complete
+representation population is strictly positive; focused bounds cannot make an
+otherwise ineligible feature eligible for Log.
+
+Every declared scale/domain combination is an exact binning computed from the
+raw finite observations, or from valid voxels for a volume. Counts must never
+be transformed or rebinned from another histogram. Focused binnings retain
+exact underflow and overflow counts and percentages against the complete
+population denominator; visible bins are not renormalized and may sum to less
+than one. Stored edges are strictly increasing raw-unit values. Underflow is
+`x < edges[0]`, overflow is `x > edges[-1]`, interior bins are left-closed and
+right-open, and the final bin includes `edges[-1]`; a value exactly on either
+domain endpoint is therefore visible. A reported tail percentage is exactly
+its tail count divided by the applicable complete finite-population count. For
+a regional feature, each selected region has exact counts over
+the same edges and tails, and
+`underflow + sum(bin_counts) + overflow` equals that region's finite
+observation count. The corresponding global equality uses the global finite
+count. A volume has a valid-voxel global distribution only, with the analogous
+equality against `valid_voxel_count`; it does not acquire regional curves.
+Full binnings cover the complete finite domain and therefore have zero tails.
+Linear/Full remains mandatory for every nonempty scalar population.
+
+Available scale/domain combinations form a rectangular cross-product so the
+two controls remain independent. A representation has one release-owned
+Signed-log threshold and, when Focused is offered, one release-owned raw-value
+focus interval shared by its scale variants. Raw domain endpoints must agree
+across all scale variants for a given domain. Scale availability, Signed-log
+threshold, Focused availability/bounds, and preferred scale/domain are
+feature-and-representation-specific release metadata. Regional and volume
+preferences must not overwrite one another when a feature exposes both.
+
+URL v4 persists only explicit user choices as `scale=linear|log|symlog` and
+`dist=full|focused`; omitted values resolve through release defaults. Thresholds
+and focus bounds are immutable release data and are not URL parameters. When a
+feature or representation does not support an explicit choice, canonicalize
+to Linear/Full while retaining the feature and any still-valid manual color
+range. Distribution exports record the resolved scale and domain, exact raw
+edges/counts/tails, complete-population denominator, Signed-log threshold when
+applicable, and focus bounds when applicable. Underlying-value exports remain
+unchanged.
+
+Implement this as one coherent in-place schema-v1 cutover across regional
+statistics, volume summaries, feature display metadata, Python and TypeScript
+validators, builders, the golden fixture, published and local readers, viewer
+state, and exports. Do not add compatibility adapters or a shadow distribution
+schema. Rebuild affected scientific products under new immutable release IDs;
+never mutate existing releases. D050 supersedes D046/D047 where they limit the
+contract to Linear/Log or one full-domain histogram, while retaining D047's
+single-scale synchronization and exact-binning requirements. D048's reviewed
+cluster firing-rate Log preference and 3.73–17.8 Hz automatic color interval
+remain the current release choice until an audited owner selection explicitly
+supersedes them.
+
+No per-feature Signed-log threshold, focus interval, availability set, or new
+preferred scale/domain is selected by this decision. Read-only audits must
+cover channel, cluster, `brainwide_map`, and volume source populations, with
+owner-reviewed representation-specific selection artifacts resolving Q14
+before scientific release rebuilds.

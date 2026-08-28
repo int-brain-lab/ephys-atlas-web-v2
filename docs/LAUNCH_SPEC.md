@@ -53,9 +53,13 @@ For a schema-v1 regional feature, the viewer must:
 - use one shared selection state for region-list and SVG interactions;
 - persist selection in URL state;
 - show global descriptive statistics and a distribution/histogram;
-- expose available linear/logarithmic value scales explicitly through one
-  synchronized control for coloring, distributions, and range geometry,
-  preserving the chosen presentation in the URL without changing observations;
+- expose available Linear, Log, and Signed-log value scales through one
+  synchronized control for coloring, distributions, and range geometry;
+- expose Full and Focused distribution domains independently, with exact
+  underflow/overflow disclosure and whole-population normalization in Focused;
+- preserve explicit scale/domain choices in the URL without changing source
+  observations, and obtain thresholds, focus bounds, availability, and defaults
+  only from immutable representation-specific release metadata;
 - compare selected-region statistics/distributions with the global population;
 - clearly identify synthetic fixtures as non-scientific.
 
@@ -71,6 +75,9 @@ For a schema-v1 volume feature, the viewer must:
 - expose a whole-feature summary whose mutually exclusive valid, outside, and
   missing counts sum to the grid voxel count and whose statistics/histogram use
   valid voxels only;
+- offer the same release-declared value-scale and distribution-domain controls
+  as regional data where available, while keeping volume distributions global
+  and valid-voxel-only rather than inventing regional comparison curves;
 - map linked anatomical coordinates to the volume using the declared scientific transform, never the curated SVG display calibration;
 - require the volume and anatomy to declare the same `reference_space_id`
   before compositing, while permitting distinct grid identities, resolutions,

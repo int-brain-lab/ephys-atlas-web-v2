@@ -280,6 +280,15 @@ scale controls color normalization, both distribution views, and logarithmic-
 aware range geometry. Explicit Linear/Log overrides persist in one URL field;
 values, statistics, exact histogram arrays, tooltips, and exports remain
 unchanged.
+
+D050 approves the next coherent distribution architecture: Linear, Log, and
+Signed log become the synchronized value-scale choices, while Full and Focused
+become an independent analytical-domain choice. Focused will affect global and
+selected-region distributions only, with exact whole-population tails; the
+compact range histogram will remain Full under the same scale. This is not yet
+the implemented release contract. Q14 audits and owner-reviewed,
+representation-specific selections are still required, and no Signed-log
+threshold, focus bound, availability set, or new default has been chosen.
 Regional SVGs, volume canvases, and the interactive color legend share one
 registry of full 256-step Matplotlib lookup tables. The concise sequential
 choice is Viridis, Cividis, or Magma; Cividis provides an accessibility- and
@@ -454,6 +463,14 @@ positions compact/global histograms, range and hover markers in the same
 coordinate system, and identifies the selected binning in comparison exports.
 Invalid explicit Log state reconciles to Linear without blank coloring.
 
+D050 supersedes the two-scale/full-domain limit for the next schema-v1
+cutover, while retaining this D047 synchronization. That cutover must update
+regional and volume producers and consumers together, compute each binning
+from raw observations or valid voxels, expose exact focused tails, preserve
+volume as global-only, and rebuild scientific products under new immutable
+release IDs without adapters. The currently validated releases continue to use
+the implemented Linear/Log contract until that coherent cutover lands.
+
 The header Help action opens one scientific-workflow guide with a responsive,
 faithful map of the actual viewer layout. Five concise expandable sections
 cover the top-bar scientific context, region search/ranking/selection, linked
@@ -627,6 +644,13 @@ histogram without selected-region overlays or another request. Log remains
 unavailable until an immutable volume release declares an exact matching
 binning.
 
+The approved D050 follow-up will make volume scale/domain availability and
+defaults representation-specific and release-owned. It will retain this
+global, valid-voxel-only summary: Focused distributions will expose exact
+underflow/overflow counts against `valid_voxel_count`, and no regional curves
+will be synthesized. Q14 still owns the audited threshold, bounds, and default
+selection; none has been inferred from the current candidates.
+
 ## Local data and downloads
 
 Local imports validate the complete supported regional/volume resource graph
@@ -680,16 +704,18 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
 2. extend volume browser/HTTP benchmarks, resolve Q5 authoritatively, and
    build the real immutable volume release on the completed projection/schema
    foundation;
-3. keep the D044/D047 cluster release reproducible and publish/retest its already-
+3. keep the D044/D048 cluster release reproducible and publish/retest its already-
    built bytes only after Q8/Q9 authorization;
 4. keep the validated D038 preserved five-family BWM release and opt-in local
    browser acceptance green; online catalog publication remains deferred until
    authorized;
-5. retain the completed artifact-backed and contextual current-feature exports;
+5. complete the D050 read-only distribution audits and resolve Q14, then land
+   the coherent schema-v1 producer/consumer cutover and new immutable rebuilds;
+6. retain the completed artifact-backed and contextual current-feature exports;
    direct URL display and broader package/local-management UX are non-blocking;
-6. stage immutable assets on S3/CloudFront and finalize catalog/origin/default
+7. stage immutable assets on S3/CloudFront and finalize catalog/origin/default
    alias/publishing choices in Q8-Q9;
-7. run final production-origin, performance, and responsive QA under resolved
+8. run final production-origin, performance, and responsive QA under resolved
    Q11; the repository owner completed the documented manual Firefox/Safari 3-D
    check on 2026-08-28, while automated Chromium remains green.
 
