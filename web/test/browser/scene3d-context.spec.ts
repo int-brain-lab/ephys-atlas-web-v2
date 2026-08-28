@@ -88,6 +88,7 @@ test('3-D shares presentation and selection without rebuilding geometry', async 
   await expect(host).toHaveAttribute('data-geometry-uploads', uploads!);
 
   const canvas = host.locator('canvas');
+  await canvas.dblclick();
   const box = await canvas.boundingBox();
   expect(box).not.toBeNull();
   await canvas.click({ position: { x: box!.width * .35, y: box!.height * .5 } });

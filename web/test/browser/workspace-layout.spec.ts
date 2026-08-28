@@ -42,6 +42,7 @@ test('low browser zoom keeps feature context from overwhelming projections', asy
 test('feature summary balances description space with compact statistics', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
+  await page.getByRole('tab', { name: 'Summary' }).click();
 
   const description = page.locator('.feature-summary__description');
   const statistic = page.locator('.feature-summary__item').first();

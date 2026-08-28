@@ -110,13 +110,13 @@ test('v4 cursor coordinates choose and snap to the nearest atlas planes', () => 
 });
 
 test('workspace dimensions round-trip independently and reject unknown identifiers', () => {
-  const parsed = parseViewState('?v=4&secondary=top&compact=secondary&max=sagittal');
+  const parsed = parseViewState('?v=4&secondary=swanson&compact=secondary&max=sagittal');
   assert.deepEqual(parsed.workspace, {
-    secondaryTab: 'top',
+    secondaryTab: 'swanson',
     activeCompactView: 'secondary',
     maximizedView: 'sagittal',
   });
-  assert.match(serializeViewState(parsed), /secondary=top/);
+  assert.match(serializeViewState(parsed), /secondary=swanson/);
   const invalid = parseViewState('?v=4&secondary=other&compact=top&max=summary');
   assert.deepEqual(invalid.workspace, DEFAULT_VIEW_STATE.workspace);
 });
@@ -142,6 +142,17 @@ test('malformed, degenerate, and unbounded 3-D cameras fall back as a whole', ()
     '0,0,0,0,0,0,0,0,1',
     '0,-5,3,0,0,0,0,-5,3',
     '10000001,0,0,0,0,0,0,0,1',
-  ]) assert.equal(parseViewState(`?v=4&camera3d=${camera}`).scene3d.camera, null);
+  ]) assert.deepEqual(parseViewState(`?v=4&camera3d=${camera}`).scene3d.camera, DEFAULT_VIEW_STATE.scene3d.camera);
   assert.equal(parseViewState('?v=4&explode3d=2').scene3d.explode, 0);
+});
+
+test('default workspace opens Top and uses the approved 3-D camera pose without URL noise', () => {
+  const parsed = parseViewState('?v=4');
+  assert.equal(parsed.workspace.secondaryTab, 'top');
+  assert.deepEqual(parsed.scene3d.camera, {
+    positionUm: [-12242.494, 12260.928, 10198.21],
+    targetUm: [-51.719, -1307.504, -3519.915],
+    up: [0.11, -0.091, 0.99],
+  });
+  assert.equal(serializeViewState(parsed), 'v=4');
 });

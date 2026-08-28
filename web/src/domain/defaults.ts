@@ -13,7 +13,7 @@ export const DEFAULT_VIEW_STATE: ViewState = {
   selection: [],
   cursor: { xUm: -239, yUm: -1200, zUm: -3668 },
   workspace: {
-    secondaryTab: 'summary',
+    secondaryTab: 'top',
     activeCompactView: 'coronal',
     maximizedView: null,
   },
@@ -21,7 +21,14 @@ export const DEFAULT_VIEW_STATE: ViewState = {
     volumeOpacity: 1,
     anatomyOutlines: true,
   },
-  scene3d: { explode: 0, camera: null },
+  scene3d: {
+    explode: 0,
+    camera: {
+      positionUm: [-12242.494, 12260.928, 10198.21],
+      targetUm: [-51.719, -1307.504, -3519.915],
+      up: [0.11, -0.091, 0.99],
+    },
+  },
   coloring: {
     mode: 'feature',
     statistic: 'mean',

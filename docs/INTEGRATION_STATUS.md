@@ -183,8 +183,11 @@ URL-v4 3-D state are implemented: `brain-3d` is context-registry content, not a
 projection or fifth workspace slot, and its null host performs no mesh request.
 Camera poses are finite, bounded, nondegenerate, normalized as a whole, and
 camera drag writes are debounced replacements; explode and camera fields are
-optional additions to URL v4. The thin optional application adapter now lazily
-creates an explicitly configured immutable viewport, pauses hidden work, shares
+optional additions to URL v4. The locally reviewed pose from the full D042
+deployment is now the canonical camera default, so it is omitted from clean
+URLs, and the secondary context slot opens on Top by default. The thin optional
+application adapter now lazily creates an explicitly configured immutable
+viewport, pauses hidden work, shares
 presentation, selection, and camera state, isolates failures, and owns teardown.
 Without a descriptor the null host remains request-free. The canonical synthetic mesh is
 injected only by the browser-test server, never as a runtime fallback.

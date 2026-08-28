@@ -109,7 +109,7 @@ export const WORKSPACE_VIEW_REGISTRY = [
     label: projection.label,
     projectionId: projection.id,
   })),
-  { kind: 'secondary', id: 'secondary', label: 'Context', defaultTab: 'summary' },
+  { kind: 'secondary', id: 'secondary', label: 'Context', defaultTab: 'top' },
 ] as const satisfies readonly WorkspaceViewDefinition[];
 
 export const WORKSPACE_VIEW_IDS = new Set<WorkspaceViewId>(WORKSPACE_VIEW_REGISTRY.map(({ id }) => id));
