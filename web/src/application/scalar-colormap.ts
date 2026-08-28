@@ -1,6 +1,7 @@
 import type { ColoringState, EffectiveColoringState } from '../domain/types.js';
 import type { RegionalFeaturePayload } from '../data/contracts.js';
 import type { RegionMetadata } from '../data/contracts.js';
+import { scaleDomainIsValid, scaleNormalize } from '../domain/scale-spec.js';
 import { paletteCssColor } from './colormap-palettes.js';
 
 export function regionalColorRange(
@@ -38,20 +39,14 @@ export function regionalColorMap(feature: RegionalFeaturePayload, coloring: Effe
   const range = regionalColorRange(feature, coloring);
   if (!values || !range) return new Map();
   const [min, max] = range;
-  if (coloring.scale === 'log' && !(min > 0 && max > min)) return new Map();
-  const span = max - min;
+  if (!scaleDomainIsValid(range, coloring.scale)) return new Map();
   const colors = new Map<number, string>();
   for (let index = 0; index < feature.regionIds.length; index += 1) {
     const regionId = Number(feature.regionIds[index]);
     const value = values[index];
     if (!Number.isInteger(regionId) || value === undefined || !Number.isFinite(value)) continue;
-    let normalized: number;
-    if (coloring.scale === 'log') {
-      if (value <= 0) continue;
-      normalized = (Math.log(value) - Math.log(min)) / (Math.log(max) - Math.log(min));
-    } else {
-      normalized = (value - min) / span;
-    }
+    const normalized = scaleNormalize(value, [min, max], coloring.scale);
+    if (normalized === null) continue;
     colors.set(regionId, paletteCssColor(coloring.colormap, normalized));
   }
   return colors;

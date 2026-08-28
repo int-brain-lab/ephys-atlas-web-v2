@@ -1,6 +1,7 @@
 import type { FeaturePayload, RegionMetadata, RegionalFeaturePayload } from '../../data/contracts.js';
 import type { ResolvedPresentationScale } from '../../application/presentation-scale.js';
 import type { ColorRange, ColorScale, StatisticId } from '../../domain/types.js';
+import { clampScalePosition, scaleNormalize } from '../../domain/scale-spec.js';
 import { html, message } from './dom.js';
 import {
   buildRegionalValueMap,
@@ -31,14 +32,9 @@ function histogramPosition(
 ): number | null {
   const firstEdge = edges[0];
   const lastEdge = edges.at(-1);
-  if (firstEdge === undefined || lastEdge === undefined || lastEdge <= firstEdge) return null;
-  if (axisScale === 'log') {
-    if (value <= 0 || firstEdge <= 0) return null;
-    return Math.max(0, Math.min(CHART_WIDTH, (
-      (Math.log(value) - Math.log(firstEdge)) / (Math.log(lastEdge) - Math.log(firstEdge))
-    ) * CHART_WIDTH));
-  }
-  return Math.max(0, Math.min(CHART_WIDTH, ((value - firstEdge) / (lastEdge - firstEdge)) * CHART_WIDTH));
+  if (firstEdge === undefined || lastEdge === undefined) return null;
+  const normalized = scaleNormalize(value, [firstEdge, lastEdge], axisScale);
+  return normalized === null ? null : clampScalePosition(normalized) * CHART_WIDTH;
 }
 
 export interface RegionalDetailsTargets {

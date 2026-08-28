@@ -1,6 +1,7 @@
 import type { FeaturePayload, RegionalHistogram } from '../data/contracts.js';
 import type { ColoringState, ColorScale, ColorScaleSelection } from '../domain/types.js';
 import { resolveColorScale } from '../domain/color-scale.js';
+import { scaleDomainIsValid } from '../domain/scale-spec.js';
 import { regionalColorRange } from './scalar-colormap.js';
 
 export interface ResolvedPresentationScale {
@@ -13,8 +14,7 @@ export interface ResolvedPresentationScale {
 }
 
 function positiveRange(range: readonly [number, number] | null): boolean {
-  return range !== null && Number.isFinite(range[0]) && Number.isFinite(range[1])
-    && range[0] > 0 && range[1] > range[0];
+  return range !== null && scaleDomainIsValid(range, 'log');
 }
 
 /** Resolve one presentation scale for coloring, distributions, and range geometry. */

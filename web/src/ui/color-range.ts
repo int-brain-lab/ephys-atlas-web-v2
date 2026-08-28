@@ -1,6 +1,11 @@
 import type { FeaturePayload } from '../data/contracts.js';
 import type { RegionalHistogram } from '../data/contracts.js';
 import type { ColorScale, StatisticId } from '../domain/types.js';
+import {
+  clampScalePosition,
+  scaleDenormalize,
+  scaleNormalize,
+} from '../domain/scale-spec.js';
 
 export type NumericRange = readonly [number, number];
 
@@ -60,26 +65,13 @@ export function colorRangeDomain(
   return [Math.min(domain[0], effectiveRange[0]), Math.max(domain[1], effectiveRange[1])];
 }
 
-function transformedValue(value: number, scale: ColorScale): number {
-  return scale === 'log' ? Math.log(value) : value;
-}
-
 export function rangePosition(value: number, domain: NumericRange, scale: ColorScale = 'linear'): number {
-  if (scale === 'log' && (value <= 0 || domain[0] <= 0)) return 0;
-  const start = transformedValue(domain[0], scale);
-  const end = transformedValue(domain[1], scale);
-  const span = end - start;
-  if (!(span > 0)) return 0;
-  return Math.max(0, Math.min(1, (transformedValue(value, scale) - start) / span));
+  const normalized = scaleNormalize(value, domain, scale);
+  return normalized === null ? 0 : clampScalePosition(normalized);
 }
 
 export function rangeValueAtPosition(position: number, domain: NumericRange, scale: ColorScale = 'linear'): number {
-  const clamped = Math.max(0, Math.min(1, position));
-  if (scale === 'log') {
-    if (domain[0] <= 0) return domain[0];
-    return Math.exp(Math.log(domain[0]) + clamped * (Math.log(domain[1]) - Math.log(domain[0])));
-  }
-  return domain[0] + clamped * (domain[1] - domain[0]);
+  return scaleDenormalize(clampScalePosition(position), domain, scale) ?? domain[0];
 }
 
 export function rangeSliderStep(domain: NumericRange): number {

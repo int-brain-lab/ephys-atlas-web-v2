@@ -1,4 +1,5 @@
 import type { ColoringState, EffectiveColoringState, SliceAxis } from '../domain/types.js';
+import { scaleDomainIsValid, scaleNormalize } from '../domain/scale-spec.js';
 import type { VolumeFeaturePayload } from '../data/contracts.js';
 import { applyAffine, cursorStateToWorld, worldToPlane, type Matrix4, type ViewBox } from './coordinate-space.js';
 import { regionalPresentationColors, regionalPresentationIds } from '../application/regional-presentation.js';
@@ -178,17 +179,14 @@ function rgbaForSlice(
   const rgba = new Uint8ClampedArray(slice.data.length * 4);
   if (!range) return rgba;
   const [min, max] = range;
-  if (coloring.scale === 'log' && !(min > 0 && max > min)) return rgba;
-  const log = coloring.scale === 'log';
-  const lo = log ? Math.log(min) : min;
-  const hi = log ? Math.log(max) : max;
-  const span = hi - lo;
+  if (!scaleDomainIsValid(range, coloring.scale)) return rgba;
   for (let index = 0; index < slice.data.length; index += 1) {
     const value = slice.data[index]!;
     const offset = index * 4;
-    if (!volumeValueIsVisible(feature, value, slice.validity?.[index]) || (log && value <= 0)) continue;
-    const scalar = log ? Math.log(value) : value;
-    const [r, g, b] = paletteRgb(coloring.colormap, span > 0 ? (scalar - lo) / span : 0.5);
+    if (!volumeValueIsVisible(feature, value, slice.validity?.[index])) continue;
+    const normalized = scaleNormalize(value, [min, max], coloring.scale);
+    if (normalized === null) continue;
+    const [r, g, b] = paletteRgb(coloring.colormap, normalized);
     rgba[offset] = r;
     rgba[offset + 1] = g;
     rgba[offset + 2] = b;
