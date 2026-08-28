@@ -20,11 +20,9 @@ default.
 ## Branch and commit model
 
 - Work on `main`. Do not create persistent `work/*`, `agent/*`, or other parallel product branches unless the repository owner explicitly asks for an isolated experiment.
-- The repository owner has explicitly authorized one short-lived isolated
-  worktree for the brain-mesh 3-D experiment described in
-  `docs/rendering/3D_EVALUATION.md`. Treat its branch as a disposable
-  development aid: rebase it frequently, land small reviewed green commits on
-  `main`, and do not let it become a second product branch or source of truth.
+- The former brain-mesh 3-D experiment worktree is frozen donor evidence. Its
+  reviewed behavior has been reconstructed on `main`; do not resume or merge
+  the donor branch without fresh repository-owner authorization.
 - Fetch the current remote `main` before starting a new unit of work. Fast-forward
   or rebase only from a clean worktree, and never overwrite unrelated local work.
 - Keep commits small enough to review and revert, but complete enough to leave the repository coherent.
@@ -37,7 +35,11 @@ default.
 Scientific provenance is part of the product contract, not optional metadata.
 
 - Never invent or infer a scientific choice just to unblock implementation.
-- Do not silently choose raw versus denoised ephys features, a QC/population filter, a paper vintage, a cluster population, a `brainwide_map` definition, or a volume affine. These are tracked in `docs/OPEN_QUESTIONS.md`.
+- Do not silently choose raw versus denoised ephys features, a QC/population
+  filter, a paper vintage, a cluster population, a `brainwide_map` definition,
+  or a volume affine. Accepted choices live in decisions, selection artifacts,
+  and the resolved-question index; only active blockers remain in
+  `docs/OPEN_QUESTIONS.md`.
 - If an unresolved scientific question blocks a production artifact, implement and test the machinery with synthetic fixtures, make the blocked choice explicit, and stop short of publishing a purported scientific release.
 - Published releases are immutable. Mutable aliases such as `latest` live outside immutable release directories.
 - The feature catalog is dynamic. Do not hardcode the complete set of features from one vintage.

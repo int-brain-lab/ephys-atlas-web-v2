@@ -77,8 +77,8 @@ The guide documents this vintage as a `(228, 264, 160, 41)` float16 array on a
 feature values, that `mean_per_feature` and `std_per_feature` are optional
 z-scoring metadata and are not pre-applied, and that `0.0` denotes voxels
 outside the brain mask. These facts resolve the value-normalization and
-outside-brain parts of Q4, but not the authoritative axis-to-CCF mapping,
-origin/affine, or handedness.
+outside-brain parts of the geometry review. D043 subsequently fixes the exact
+W26 axis-to-CCF mapping, origin/affine, handedness, and voxel-center convention.
 
 The official guide commit
 [`fffe0c75810dd1a013a878abcbcf8ef6348a5a21`](https://github.com/int-brain-lab/ibleatools/blob/fffe0c75810dd1a013a878abcbcf8ef6348a5a21/docs/source/how-to/load-encoding-volume.rst)
@@ -86,9 +86,11 @@ calls the storage shape `(nx, ny, nz, N_features)` and the main array
 `x × y × z × features`. The pinned
 [`iblatlas` coordinate implementation](https://github.com/int-brain-lab/iblatlas/blob/52083adf44825d0622a503705e095699a5957587/iblatlas/atlas.py)
 defines Allen `x/y/z` as ML/AP/DV and supplies IBL direction/Bregma behavior,
-but the audited public material does not link the W26 producer to that complete
-coordinate object. Do not construct the W26 affine by joining those statements
-without producer or scientific-owner confirmation.
+but the audited public material alone did not link the W26 producer to that
+complete coordinate object. The repository/scientific owner supplied that
+missing authority after linked visual review. The machine-consumable result is
+`docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json`; do not generalize it to a
+different vintage, resolution, or source hash.
 
 The producer/source layout uses files of the form:
 
@@ -106,13 +108,13 @@ transport benchmarks. It contains:
 
 A project collaborator recommends using the latest available encoding volumes from this source during development and switching to the public bucket when released. An HTTP object interface is expected to be available.
 
-### Scientific geometry is not implied by array shape
+### Scientific geometry is exact-source authority, not shape inference
 
-The known shape/resolution is insufficient to establish a scientific affine or
-axis direction. Those must come from authoritative atlas/producer metadata or
-code. The browser/schema therefore requires explicit geometry rather than
-inferring it from the NPZ shape. Outside-brain value semantics are documented
-above, but do not determine geometry. See Q4 in `docs/OPEN_QUESTIONS.md`.
+Shape/resolution alone remains insufficient to establish a scientific affine
+or axis direction. D043 selects the all-forward ML/AP/DV, integer-index
+voxel-center transform only for the checksummed W26 object. The browser/schema
+requires that explicit geometry rather than inferring it from an NPZ shape.
+Q5 independently blocks production transport selection.
 
 ### Canonical object versus browser transport
 
@@ -196,10 +198,8 @@ See `docs/IMPLEMENTATION_PLAN.md` for execution order. The highest-value source-
 
 1. freeze the paper channel vintage under Q2 and publish the already-validated
    development release to a non-production origin;
-2. resolve Q4 from authoritative atlas/producer evidence;
-3. repeat the completed local `2026_W26` 50 um representative transport
+2. repeat the completed local `2026_W26` 50 um representative transport
    benchmarks under the eventual production cache/network profile for Q5;
-4. review and approve or adjust the completed content-addressed
-   `ibl_neuropixel_brainwide_01` cluster audit and proposed scalar catalog;
-5. build the schema-v1 preserved legacy BWM release with equivalence evidence;
-6. re-test the final S3/CloudFront origin for CORS/Range/cache behavior when available.
+3. run the remaining complete-population distribution audits for owner review
+   without inferring Q14 selections;
+4. re-test the final S3/CloudFront origin for CORS/Range/cache behavior when available.

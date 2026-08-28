@@ -1,9 +1,15 @@
 # W26 volume geometry review
 
-This is a local, non-production visual review of the scientific geometry
+Status: frozen evidence; resolved by D043 on 2026-08-24.
+
+This local, non-production visual review produced the scientific-owner evidence
+for the checksummed W26 geometry. It does not alter the D043 selection, current
+browser configuration, build a release, or publish data. Any replacement would
+require a new authoritative review and decision.
+
+The review compares the scientific geometry
 candidates for the checksummed
-`ea_active/2026_W26/brainwide_ephys_atlas_50um.npz` volume. It does not select
-an affine, change browser configuration, build a release, or publish data.
+`ea_active/2026_W26/brainwide_ephys_atlas_50um.npz` volume.
 
 ## Inputs and constraints
 
@@ -50,8 +56,8 @@ match.
    alone cannot decide this convention.
 5. Select a candidate only if the reviewer has authoritative knowledge of how
    the W26 array was constructed. Record that basis in the rationale field.
-6. Export the selection JSON and return it for repository review. Exporting it
-   does not resolve Q4 or modify production code.
+6. Export the selection JSON as reproducibility evidence. Exporting a new file
+   does not supersede D043 or modify production code.
 
 The real-data report ranks
 `ml-forward_ap-forward_dv-forward` first by whole-mask overlap (Dice

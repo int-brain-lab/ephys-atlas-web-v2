@@ -170,8 +170,9 @@ def pull(
     if dataset not in DEFAULTS:
         if dataset == "brainwide_map":
             raise RuntimeError(
-                "brainwide_map v2 source selection is unresolved: do not guess between the paper freeze, "
-                "2026 aggregate tables, and legacy website analysis summaries; see docs/data/PROVENANCE.md"
+                "generic data-pull does not fetch the D038-preserved Brain-Wide Map snapshot; "
+                "use the verified five-family source directory required by the dataset-specific "
+                "builder (see docs/data/README.md)"
             )
         if dataset == "local":
             raise RuntimeError(

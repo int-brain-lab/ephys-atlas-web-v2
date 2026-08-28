@@ -397,26 +397,20 @@ independent Linear/Log/Signed-log scale and Full/Focused domain controls while
 preserving D047's one-scale synchronization across coloring, distributions,
 and range interaction.
 
-Ordered work:
+Next actions:
 
-1. complete read-only source-population audits for channel, cluster,
-   `brainwide_map`, and volume data, computing volume evidence from valid
-   voxels only and changing no source or release artifacts;
-2. resolve Q14 with separate owner-reviewed, machine-consumable selections for
-   each dataset/representation; select availability, exact raw-unit Signed-log
-   thresholds, exact raw-value focus bounds, and preferred scale/domain without
-   promoting audit heuristics into defaults automatically;
-3. cut schema v1 over once across regional statistics and typed counts, volume
-   summaries, feature display metadata, JSON Schema, Python/TypeScript
-   validators, builders, deterministic fixtures, published/local readers, URL
-   state, viewer controls, and exports, with no compatibility adapter or shadow
-   distribution schema;
-4. generate every declared scale/domain combination directly from raw finite
-   observations or valid voxels, validate exact global/regional tail identities,
-   and keep volume distributions global-only;
-5. rebuild affected scientific datasets under new immutable release IDs, then
-   run cross-language contract, deterministic builder, web, browser, export,
-   and full `just check` gates before publication.
+1. complete read-only source-population audits for every feature not already
+   covered by D052, computing volume evidence from valid voxels only and
+   changing no source or release artifacts;
+2. present separate channel, cluster, `brainwide_map`, and volume review tables
+   to the repository/scientific owner;
+3. after explicit approval, update complete machine-readable selections, build
+   new immutable release IDs, validate exact scale/domain/tail identities, and
+   run dataset browser suites plus `just check` before any publication.
+
+The schema, validators, builders, deterministic fixtures, published/local
+readers, URL state, viewer controls, exports, exact cross-product generation,
+and baseline immutable local rebuilds are already implemented and green.
 
 Linear/Full remains mandatory. The baseline migration selections preserve it
 for channels, `brainwide_map`, and volumes and preserve only the

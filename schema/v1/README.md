@@ -34,8 +34,9 @@ transitive registered/static resource, and the absence of undeclared files.
 signed bilateral Allen identities, nullable reduced mappings, an exact
 `reference_space_id`, explicit source-to-world evidence, manifest-selected
 default/upgrade LODs, and versioned EAM3 decoder contracts. Tiny committed
-packs are marked `test-only`; production promotion requires the separate Q12
-evidence gate.
+packs are marked `test-only`. D042 separately selects the pinned GLB-derived
+compiled-full geometry/LOD baseline; immutable deployment must retain its
+exact-source provenance, inventory/topology, integrity, and browser evidence.
 
 The shared valid/invalid corpus under `tests/contract-fixtures/v1/` is executed
 by both Python and TypeScript validators and covers every top-level schema plus

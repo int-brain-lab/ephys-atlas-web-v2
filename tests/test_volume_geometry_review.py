@@ -30,7 +30,8 @@ def test_review_report_ranks_exact_flip_without_selecting_production_geometry():
     )
 
     assert report["candidate_count"] == 8
-    assert report["status"].startswith("visual-review evidence only")
+    assert report["status"].startswith("frozen visual-review evidence")
+    assert "D043" in report["status"]
     best = report["candidates"][0]
     assert best["id"] == "ml-reverse_ap-forward_dv-forward"
     assert best["metrics"]["dice"] == 1

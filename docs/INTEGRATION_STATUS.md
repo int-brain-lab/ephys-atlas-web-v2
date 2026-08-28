@@ -151,13 +151,11 @@ fragments with pinned `60 20 340 300` view boxes. D049 resolves their license
 coverage for the exact pinned hashes; synthetic fixtures remain the checked-in
 test default until a production pack is built from those private inputs.
 
-An independent, non-production brain-mesh 3-D lab is implemented in the frozen
-donor branch `experiment/brain-mesh-3d-lab` at `ba1e2d1`. It demonstrates the
-offline compiler, verified EAM3/meshopt loading, merged bilateral rendering,
-mapping/color/selection, press-referenced arcball controls, and grouped radial
-explode. It has not been integrated on `main`, is not part of M2 or launch
-acceptance, and must not be bulk merged because it predates final projection
-cutover commits.
+The frozen donor branch `experiment/brain-mesh-3d-lab` at `ba1e2d1` remains
+historical evidence for the original independent experiment. It was not bulk
+merged because it predates the final projection cutover. Instead, reviewed
+Commits 0-6 were reconstructed on `main`, where the optional 3-D context is now
+integrated and remains outside launch acceptance.
 
 The approved main-integration Commits 0-6 are complete. The ordinary full gate
 is required at each landing point; at the unchanged donor
@@ -204,9 +202,10 @@ was demonstrated. The integrated real pack reaches ready state in local
 Chromium with two retained hemisphere uploads and no geometry work during
 mapping changes. The validator now permits source-authoritative one-sided
 objects—required for Allen 222 and 763—while still requiring every declared
-active source object to be represented. Immutable deployment and final
-cross-browser owner checks remain non-blocking operational follow-up. Encoding
-volumes remain a separate linked 2-D slice path.
+active source object to be represented. Immutable deployment remains a
+non-blocking operational follow-up. The owner completed the documented
+Safari/Firefox matrix on 2026-08-28. Encoding volumes remain a separate linked
+2-D slice path.
 
 The approved anatomy smoothing investigation has completed its first three
 implementation slices. A deterministic registry exposes exact geometry, GEOS
@@ -470,21 +469,13 @@ while clearing stale interaction state immediately; a failed or incompatible
 payload falls back to bilateral anatomy colors instead of an uncolored feature
 hemisphere.
 
-Schema v1 permits an exact precomputed Log histogram beside the mandatory
-Linear histogram. D047 supersedes the independent D046 controls: the viewer
-resolves one capability-aware value scale, exposes synchronized settings and
-distribution entry points, disables unavailable Log data with a reason,
-positions compact/global histograms, range and hover markers in the same
-coordinate system, and identifies the selected binning in comparison exports.
-Invalid explicit Log state reconciles to Linear without blank coloring.
-
-D050 supersedes the two-scale/full-domain limit for the next schema-v1
-cutover, while retaining this D047 synchronization. That cutover must update
-regional and volume producers and consumers together, compute each binning
-from raw observations or valid voxels, expose exact focused tails, preserve
-volume as global-only, and rebuild scientific products under new immutable
-release IDs without adapters. The currently validated releases continue to use
-the implemented Linear/Log contract until that coherent cutover lands.
+The implemented D050 schema-v1 contract extends D047's synchronized value scale
+to Linear, Log, and Signed log and adds independent Full/Focused distribution
+domains. Exact binnings come from raw observations or valid voxels, focused
+tails retain whole-population normalization, and volume remains global-only.
+D053 applies the selected domain to the compact range viewport without changing
+color bounds. D052 is the only new narrow Q14 choice; all other migration
+selections preserve the previously approved Linear/Full or D048 behavior.
 
 The header Help action opens one scientific-workflow guide with a responsive,
 faithful map of the actual viewer layout. Five concise expandable sections
@@ -659,12 +650,11 @@ histogram without selected-region overlays or another request. Log remains
 unavailable until an immutable volume release declares an exact matching
 binning.
 
-The approved D050 follow-up will make volume scale/domain availability and
-defaults representation-specific and release-owned. It will retain this
-global, valid-voxel-only summary: Focused distributions will expose exact
-underflow/overflow counts against `valid_voxel_count`, and no regional curves
-will be synthesized. Q14 still owns the audited threshold, bounds, and default
-selection; none has been inferred from the current candidates.
+The implemented D050 contract makes volume scale/domain availability and
+defaults representation-specific and release-owned while retaining the global,
+valid-voxel-only summary. The current validated volume candidate declares only
+Linear/Full. Further availability, thresholds, focus bounds, and defaults await
+Q14 owner review; no regional curves are synthesized.
 
 ## Local data and downloads
 
@@ -735,8 +725,9 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
 4. keep the validated D038 preserved five-family BWM release and opt-in local
    browser acceptance green; online catalog publication remains deferred until
    authorized;
-5. finish and validate the local D050 immutable rebuilds; separately resolve
-   Q14 before adding any new Signed-log or Focused feature selections;
+5. audit the remaining complete source populations and obtain Q14 owner review
+   before adding any new Signed-log or Focused feature selections; the D050
+   baseline rebuilds and D052 `peak_val.raw` release are already green;
 6. retain the completed artifact-backed and contextual current-feature exports,
    then implement D051's ZIP-only import and `ibl-ephys-atlas` regional
    authoring vertical slice; direct immutable URL display remains non-blocking;

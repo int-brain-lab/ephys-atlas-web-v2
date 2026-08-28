@@ -1,8 +1,8 @@
 # 3-D brain-mesh evaluation and implementation plan
 
-Status: **GLB-derived compiled-full geometry selected by D042 and losslessly
-repackaged into schema v1 for local validation (2026-08-28)**. Immutable public
-deployment and final cross-browser owner review remain optional follow-up.
+Status: **frozen evidence; GLB-derived compiled-full geometry selected by D042,
+losslessly repackaged into schema v1, and reviewed in Safari/Firefox
+(2026-08-28)**. Immutable public deployment remains optional follow-up.
 
 D042 supersedes the later canonical-annotation regeneration direction. The
 pinned GLB is the 3-D geometry authority; do not generate replacement surfaces

@@ -125,7 +125,7 @@ def build_review_report(
     return {
         "schema": SCHEMA,
         "review_id": hashlib.sha256(canonical_json(identity)).hexdigest(),
-        "status": "visual-review evidence only; no production affine selected",
+        "status": "frozen visual-review evidence; D043 selects the exact W26 affine",
         "shape_xyz": list(shape),
         "axis_order": list(AXIS_NAMES),
         "atlas_origin_um": list(origin_um),
@@ -140,7 +140,7 @@ def build_review_report(
             "Mask overlap can rank forward/reverse index directions but cannot by itself prove scientific handedness.",
             "The edge-shifted convention is displayed at half-voxel offset and shares discrete voxel-overlap metrics with its center candidate.",
             "A bilateral or near-symmetric mask may leave ML reversal visually ambiguous.",
-            "Exporting a selection does not change production configuration or resolve Q4 automatically.",
+            "Exporting a selection does not change production configuration or supersede D043.",
         ],
     }
 

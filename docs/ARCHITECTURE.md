@@ -201,8 +201,11 @@ The sole implemented geometry asset contract is the snake_case
 TypeScript semantic validators share the release-contract corpus. Offline
 compiler primitives emit versioned merged EAM3 resources; complete-graph
 validation follows every declared resource and rejects undeclared files. The
-committed fixture is synthetic and test-only. No production mesh is selected
-until Q12 is closed.
+committed fixture is synthetic and test-only. D042 selects the pinned
+GLB-derived compiled-full geometry with no smoothing, triangle decimation,
+voxel-derived replacement, or upgrade LOD. The exact selected payload has been
+losslessly repackaged and validated locally; immutable public deployment is an
+optional operational follow-up.
 
 Mesh discovery begins from an application-supplied immutable manifest
 descriptor and an injected verified `ResourceFetcher`; it does not fetch an

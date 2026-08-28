@@ -443,7 +443,7 @@ def main(argv: list[str] | None = None) -> int:
             if not (release_dir / "manifest.json").is_file():
                 raise RuntimeError(
                     f"no approved dataset-specific recipe has produced {release_dir}; "
-                    "scientific transforms are intentionally not guessed (see docs/data/HANDOFF.md)"
+                    "scientific transforms are intentionally not guessed (see docs/data/README.md)"
                 )
             validate_release(release_dir, args.schema_dir)
             print(f"validated built release: {release_dir}")
