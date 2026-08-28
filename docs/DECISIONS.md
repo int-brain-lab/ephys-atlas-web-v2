@@ -1,5 +1,68 @@
 # Decision log
 
+Status: accepted append-only decision record with effective-status index.
+
+Historical decision bodies below remain unchanged except for corrected
+cross-references. Use this index to identify the effective scope before applying
+an older decision. `Partially superseded` means the named replacement changes
+only part of the body; the index states what remains effective.
+
+| ID | Short title | Effective status | Date recorded | Effective scope or supersession |
+| --- | --- | --- | --- | --- |
+| D001 | Separate v2 | accepted | — | v1 separately deployable; no v2 runtime compatibility |
+| D002 | Frontend stack | accepted | — | TypeScript, Vite, plain DOM |
+| D003 | Launch datasets | accepted | — | launch scope |
+| D004 | Descriptive statistics | accepted | — | no launch inferential tests |
+| D005 | Immutable releases | accepted | — | aliases remain external |
+| D006 | Legacy compatibility | accepted | — | clean v2 contract and separate v1 fallback |
+| D007 | Curated SVG reuse | superseded | — | D023 replaces runtime; historical evidence retained |
+| D008 | Renderer-agnostic 3-D | partially superseded | — | D032 lab renderer; D037 integration; D042 geometry/LOD |
+| D009 | Publishing authentication | accepted | — | capability model |
+| D010 | Canonical source vs transport | accepted | — | source and web layout remain separate |
+| D011 | Dynamic feature catalog | accepted | — | manifest-driven catalog |
+| D012 | Latest vs paper vintage | accepted | — | Q2 remains for paper freeze |
+| D013 | Volume geometry vs layout | partially superseded | — | D031 replaces v0.1 wording; separation remains |
+| D014 | `SliceRenderer` boundary | superseded | — | D031/D035 |
+| D015 | Published/local parity | partially superseded | — | D031 replaces v0.1 wording; parity remains |
+| D016 | Curated SVG identity/navigation | superseded | — | D023-D026/D031 runtime; pinned evidence remains |
+| D017 | Single-main development | accepted | — | current workflow |
+| D018 | Explicit scientific inputs | accepted | — | fail closed |
+| D019 | Folded regional representation | accepted | — | current regional model |
+| D020 | Channel variants/value preservation | accepted | — | Q1/Q3 authority |
+| D021 | Cluster population/weighting | accepted | — | D038/D044 refine source/catalog |
+| D022 | Anatomy vs feature colors | accepted | — | shared presentation |
+| D023 | Generated anatomy authority | partially superseded | — | D024 pack/grid; D031 runtime compatibility |
+| D024 | Bilateral 10 µm anatomy | partially superseded | — | D031/D033 runtime/URL; D034/D045 retain geometry |
+| D025 | Retained SVG/indexed experiment | partially superseded | — | D026 transport; D031/D035 runtime boundary |
+| D026 | Sparse indexed SVG packs | partially superseded | — | projection pack replaces browser format; evidence remains |
+| D027 | Layered browser/open IDs | partially superseded | — | D031 replaces v0.1 wording; boundaries remain |
+| D028 | IBL visual identity | accepted | — | current brand contract |
+| D029 | History checkpoints | partially superseded | — | D031/D033 migrations; history intent remains |
+| D030 | Responsive comparison tray | accepted | — | current UI behavior |
+| D031 | Projection/volume/schema reset | accepted | 2026-08-22 | implemented; D033-D036 refine |
+| D032 | Independent 3-D lab | partially superseded | — | D037 integrates; D042 geometry/LOD |
+| D033 | URL v4/workspace state | accepted | — | current URL/workspace contract |
+| D034 | Projection-pack validation | accepted | — | D049 refines static inputs |
+| D035 | Retained projection viewport | accepted | — | current 2-D boundary |
+| D036 | Affine volume composition | accepted | — | current layering |
+| D037 | 3-D sibling integration | partially superseded | — | integration retained; D042 asset/LOD |
+| D038 | Cluster/BWM source freeze | accepted | 2026-08-22 | D044 refines cluster catalog |
+| D039 | Smoothing review protocol | superseded | — | D045 closes investigation |
+| D040 | S3/CloudFront/browser gate | accepted | 2026-08-22 | residual inputs remain Q8 |
+| D041 | 3-D scope/regeneration | partially superseded | 2026-08-22 | D042 replaces regeneration; source scope remains |
+| D042 | GLB-derived 3-D resource | accepted | 2026-08-24 | Q12 authority |
+| D043 | W26 volume geometry | accepted | 2026-08-24 | exact-source Q4 authority |
+| D044 | Complete cluster catalog | partially superseded | 2026-08-24 | catalog/units retained; D046-D050 presentation |
+| D045 | Retain exact 2-D geometry | accepted | 2026-08-26 | closes smoothing lane |
+| D046 | Linear/log histograms | partially superseded | — | D047/D050 expand; exact binning remains |
+| D047 | One value scale | partially superseded | 2026-08-26 | synchronization retained; D048/D050 refine |
+| D048 | Firing-rate Log range | accepted | 2026-08-26 | retained pending explicit later selection |
+| D049 | Legacy Top/static MIT assets | accepted | 2026-08-27 | exact hashes only |
+| D050 | Scale vs distribution domain | partially superseded | — | D053 replaces only compact-Full rule |
+| D051 | Custom authoring/ZIP import | accepted | — | implementation pending |
+| D052 | `peak_val.raw` Linear/Focused | accepted | 2026-08-29 | narrow partial Q14 selection |
+| D053 | Focused compact viewport | accepted | 2026-08-29 | current compact behavior |
+
 ## D001 — Separate v2
 
 Build v2 in this repository independently of the legacy `int-brain-lab/ephys-atlas-web`. Keep v1 deployable as fallback through launch.
@@ -526,7 +589,7 @@ donor-retirement protocol are in
 Use the current `ibleatools` frozen project
 `ibl_neuropixel_brainwide_01` as the launch source namespace for
 `ephys_atlas_clusters`. Build from every row of a content-addressed snapshot of
-`cells_aggregates/clusters.table.pqt`, retaining D006's equal-cluster,
+`cells_aggregates/clusters.table.pqt`, retaining D021's equal-cluster,
 feature-wise finite population with no good-unit filter or insertion
 balancing. The S3 project prefix is not an immutable release identity: the
 puller must record every source object and hash and derive the release identity
@@ -688,8 +751,8 @@ the affine to another volume vintage, resolution, or source hash.
 
 Publish all 14 scalar cluster features declared by the original
 `int-brain-lab/ephys-atlas-web` repository at
-`1d908bea095be2616a750d939d143f3b4db2a641`. Use the exact unit mapping in that
-repository's `tools/ephys_units.py`: amplitudes in V, amplitude variability in
+`1d908bea095be2616a750d939d143f3b4db2a641`. Use the exact unit mapping in
+`int-brain-lab/ephys-atlas-web/tools/ephys_units.py`: amplitudes in V, amplitude variability in
 dB, drift in um/h, firing rate in Hz, spike/presence variability in counts,
 noise cutoff in arbitrary units, and the remaining QC quantities as fractions.
 This is the repository owner's authoritative scientific approval of the D038
