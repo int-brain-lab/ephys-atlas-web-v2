@@ -4,12 +4,18 @@ import { chromium } from '@playwright/test';
 
 const baseUrl = process.argv[2] ?? 'http://localhost:5173/';
 const outputDir = path.resolve(process.argv[3] ?? '../artifacts/local-full-browser-evidence');
-const expected = [
-  ['ephys_atlas_channels', '2026_W32'],
-  ['ephys_atlas_clusters', 'sha256-9b5e55215b306f26-firing-defaults-v1'],
-  ['brainwide_map', 'legacy-v1-1d908bea'],
-  ['ephys_atlas_volumes', '2026_W26-candidate-depth4'],
-];
+const expected = (process.env.EPHYS_ATLAS_EXPECTED_RELEASES ?? [
+  'ephys_atlas_channels=2026_W32-d050-linear-full-v1',
+  'ephys_atlas_clusters=sha256-9b5e55215b306f26-d050-d048-v1',
+  'brainwide_map=legacy-v1-1d908bea-d050-linear-full-v1',
+  'ephys_atlas_volumes=2026_W26-candidate-depth4-d050-linear-full-v1',
+].join(',')).split(',').map((entry) => {
+  const separator = entry.indexOf('=');
+  if (separator <= 0 || separator === entry.length - 1) {
+    throw new Error(`Invalid EPHYS_ATLAS_EXPECTED_RELEASES entry: ${entry}`);
+  }
+  return [entry.slice(0, separator), entry.slice(separator + 1)];
+});
 const errors = [];
 const browser = await chromium.launch();
 try {

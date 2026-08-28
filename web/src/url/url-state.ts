@@ -147,8 +147,13 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
       statistic,
       colormap: params.get('cmap') || defaults.coloring.colormap,
       range: parseRange(params.get('range'), defaults.coloring.range),
-      scale: params.get('scale') === 'log' || params.get('scale') === 'linear'
-        ? params.get('scale') as 'linear' | 'log'
+      scale: params.get('scale') === 'log' || params.get('scale') === 'linear' || params.get('scale') === 'symlog'
+        ? params.get('scale') as 'linear' | 'log' | 'symlog'
+        : 'auto',
+    },
+    distribution: {
+      domain: params.get('dist') === 'full' || params.get('dist') === 'focused'
+        ? params.get('dist') as 'full' | 'focused'
         : 'auto',
     },
   };
@@ -181,6 +186,7 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   if (view.coloring.colormap !== defaults.coloring.colormap) params.set('cmap', view.coloring.colormap);
   if (view.coloring.range.mode === 'fixed') params.set('range', `${view.coloring.range.min},${view.coloring.range.max}`);
   if (view.coloring.scale !== 'auto') params.set('scale', view.coloring.scale);
+  if (view.distribution.domain !== 'auto') params.set('dist', view.distribution.domain);
 
   const cursor = [view.cursor.xUm, view.cursor.yUm, view.cursor.zUm];
   const defaultCursor = [defaults.cursor.xUm, defaults.cursor.yUm, defaults.cursor.zUm];

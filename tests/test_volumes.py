@@ -62,6 +62,35 @@ def _features() -> dict[str, np.ndarray]:
     return {"rms_ap": values}
 
 
+def _distribution_selection(
+    path: Path, *, source_release_id: str, features: tuple[str, ...]
+) -> Path:
+    write_json(
+        path,
+        {
+            "schema": "ibl-scalar-distribution-selection-v1",
+            "selection_id": "synthetic-d050-v1",
+            "scientific_owner_confirmation": True,
+            "dataset_id": "ephys_atlas_volumes",
+            "representation": "volume",
+            "source_release_id": source_release_id,
+            "features": [
+                {
+                    "id": feature,
+                    "display": {
+                        "scales": [{"kind": "linear"}],
+                        "preferred_scale": "linear",
+                        "distribution_domains": [{"kind": "full"}],
+                        "preferred_distribution_domain": "full",
+                    },
+                }
+                for feature in features
+            ],
+        },
+    )
+    return path
+
+
 @pytest.mark.parametrize(
     ("layout", "options"),
     [
@@ -95,7 +124,70 @@ def test_volume_recipe_builds_both_schema_layouts(tmp_path, layout, options):
         summary["outside_voxel_count"],
         summary["missing_voxel_count"],
     ) == (22, 1, 1)
-    assert sum(summary["histogram"]["counts"]) == 22
+    linear_full = summary["distribution"]["binnings"][0]
+    assert linear_full["id"] == "linear-full"
+    assert (
+        linear_full["global_underflow_count"]
+        + sum(linear_full["global_counts"])
+        + linear_full["global_overflow_count"]
+    ) == 22
+
+
+def test_volume_recipe_accepts_representation_specific_distribution_selection(tmp_path):
+    display = {
+        "scales": [
+            {"kind": "linear"},
+            {"kind": "log"},
+            {"kind": "symlog", "linear_threshold": 1.0},
+        ],
+        "preferred_scale": "log",
+        "distribution_domains": [
+            {"kind": "full"},
+            {"kind": "focused", "bounds": [2.0, 20.0]},
+        ],
+        "preferred_distribution_domain": "focused",
+    }
+    release = build_volumes_release_from_arrays(
+        tmp_path / "release",
+        _config(feature_display={"rms_ap": display}),
+        _features(),
+        [{"role": "canonical-data", "description": "explicit volume display selection"}],
+    )
+    validate_release(release, ROOT / "schema" / "v1")
+    summary = json.loads(
+        (release / "features/rms_ap/volume/summary.json").read_text()
+    )
+    assert [item["id"] for item in summary["distribution"]["binnings"]] == [
+        "linear-full",
+        "linear-focused",
+        "log-full",
+        "log-focused",
+        "symlog-full",
+        "symlog-focused",
+    ]
+    for binning in summary["distribution"]["binnings"]:
+        assert (
+            binning["global_underflow_count"]
+            + sum(binning["global_counts"])
+            + binning["global_overflow_count"]
+        ) == summary["valid_voxel_count"]
+
+
+def test_empty_volume_population_omits_distribution(tmp_path):
+    empty = np.zeros((2, 3, 4), dtype="<f2")
+    release = build_volumes_release_from_arrays(
+        tmp_path / "release",
+        _config(),
+        {"empty": empty},
+        [{"role": "canonical-data", "description": "empty volume test"}],
+    )
+    validate_release(release, ROOT / "schema" / "v1")
+    summary = json.loads(
+        (release / "features/empty/volume/summary.json").read_text()
+    )
+    assert summary["valid_voxel_count"] == 0
+    assert all(value is None for value in summary["valid_statistics"].values())
+    assert "distribution" not in summary
 
 
 def test_slice_pack_recipe_is_byte_deterministic_and_preserves_orientation(tmp_path):
@@ -196,10 +288,16 @@ def test_snapshot_recipe_verifies_source_identity_and_discovers_features(tmp_pat
         },
     )
     config = _config(
+        source_release_id="synthetic-volume-v1",
         features=("polarity",),
         ibleatools_commit="9bfa0623a16bc7a989a6b27a589887641beee0a8",
         iblatlas_commit="52083adf44825d0622a503705e095699a5957587",
         builder_commit="1234567",
+        distribution_selection=_distribution_selection(
+            tmp_path / "distribution-selection.json",
+            source_release_id="synthetic-volume-v1",
+            features=("polarity",),
+        ),
     )
     release = build_volumes_from_snapshot(source, tmp_path / "release", config)
     validate_release(release, ROOT / "schema" / "v1")
@@ -213,6 +311,7 @@ def test_snapshot_recipe_verifies_source_identity_and_discovers_features(tmp_pat
     assert (release / "source.json").read_bytes() == (
         source / "source.json"
     ).read_bytes()
+    assert (release / "distribution-selection.json").is_file()
 
 
 def test_snapshot_recipe_loads_and_pins_machine_readable_geometry(tmp_path):
@@ -285,6 +384,11 @@ def test_snapshot_recipe_loads_and_pins_machine_readable_geometry(tmp_path):
             ibleatools_commit="9bfa0623a16bc7a989a6b27a589887641beee0a8",
             iblatlas_commit="52083adf44825d0622a503705e095699a5957587",
             builder_commit="1234567",
+            distribution_selection=_distribution_selection(
+                tmp_path / "distribution-selection.json",
+                source_release_id="synthetic-source-v1",
+                features=("rms_ap", "polarity"),
+            ),
         ),
         load_volume_geometry_selection(selection_path),
     )
@@ -324,9 +428,15 @@ def test_snapshot_recipe_rejects_tampered_source_before_decode(tmp_path):
         },
     )
     config = _config(
+        source_release_id="synthetic-volume-v1",
         ibleatools_commit="9bfa0623a16bc7a989a6b27a589887641beee0a8",
         iblatlas_commit="52083adf44825d0622a503705e095699a5957587",
         builder_commit="1234567",
+        distribution_selection=_distribution_selection(
+            tmp_path / "distribution-selection.json",
+            source_release_id="synthetic-volume-v1",
+            features=("rms_ap",),
+        ),
     )
     with pytest.raises(RuntimeError, match="identity mismatch"):
         build_volumes_from_snapshot(source, tmp_path / "release", config)

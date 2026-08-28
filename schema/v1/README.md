@@ -41,9 +41,18 @@ The shared valid/invalid corpus under `tests/contract-fixtures/v1/` is executed
 by both Python and TypeScript validators and covers every top-level schema plus
 the common binary/resource semantics.
 
-Regional statistics always carry the exact linear observation histogram and
-may additionally carry an exact precomputed logarithmic variant. Each variant
-owns its bin edges, global counts, and regional count array; a preferred axis
-scale may be declared only when that variant exists. Log edges are strictly
-positive. This permits instantaneous, honest browser switching without
-shipping raw observation rows or stretching counts computed in another binning.
+Every nonempty scalar representation declares Linear/Full and may add reviewed
+Log or Signed-log scales and a Focused domain. The representation-specific
+feature display owns availability and preferences. Regional statistics and
+volume summaries use one extensible `distribution.binnings` shape containing
+the exact raw-value edges, global counts, and explicit underflow/overflow
+counts for every declared scale/domain combination. Regional binnings add one
+typed `uint32` matrix whose columns are exactly
+`underflow, bins..., overflow`. Every combination is computed directly from
+source observations or valid voxels; consumers never stretch or re-bin an
+existing histogram. Focused counts retain whole-population normalization, and
+volume distributions remain global valid-voxel-only.
+An empty regional observation population or zero-valid-voxel volume omits the
+distribution object entirely and therefore owns no distribution-count
+resources; its descriptive statistics are null. A nonempty population must
+declare a distribution and finite descriptive statistics.

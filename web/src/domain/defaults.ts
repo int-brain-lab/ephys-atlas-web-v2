@@ -36,6 +36,9 @@ export const DEFAULT_VIEW_STATE: ViewState = {
     range: { mode: 'auto' },
     scale: 'auto',
   },
+  distribution: {
+    domain: 'auto',
+  },
 };
 
 export const DEFAULT_APP_STATE: AppState = {

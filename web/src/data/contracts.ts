@@ -5,6 +5,7 @@ import type {
   RepresentationKind,
   StatisticId,
 } from '../domain/types.js';
+import type { ScaleSpec } from '../domain/scale-spec.js';
 
 export const SCHEMA_VERSION = '1.0' as const;
 export type SchemaVersion = typeof SCHEMA_VERSION;
@@ -176,10 +177,29 @@ export interface FeatureValueSemantics {
   qcFilter?: string;
 }
 
-export interface FeatureDisplay {
+export interface DistributionFullDomainSpec {
+  kind: 'full';
+}
+
+export interface DistributionFocusedDomainSpec {
+  kind: 'focused';
+  bounds: readonly [number, number];
+}
+
+export type DistributionDomainSpec = DistributionFullDomainSpec | DistributionFocusedDomainSpec;
+
+export interface RepresentationDisplay {
   colormap?: string;
   range?: readonly [number, number];
-  scale?: 'linear' | 'log';
+  scales: readonly ScaleSpec[];
+  preferredScale: ScaleSpec['kind'];
+  distributionDomains: readonly DistributionDomainSpec[];
+  preferredDistributionDomain: DistributionDomainSpec['kind'];
+}
+
+export interface FeatureDisplay {
+  regional?: RepresentationDisplay;
+  volume?: RepresentationDisplay;
 }
 
 export interface RegionalParcellationDescriptor {
@@ -241,7 +261,6 @@ export interface VolumeRepresentationDescriptor {
   summaryPath: string;
   summaryResource: EncodedResourceDescriptor;
   validity: VolumeValidityDescriptor;
-  valueRange?: readonly [number | null, number | null];
 }
 
 export interface FeatureDescriptor {
@@ -251,7 +270,7 @@ export interface FeatureDescriptor {
   description: string;
   unit: string | null;
   valueSemantics: FeatureValueSemantics;
-  display?: FeatureDisplay;
+  display: FeatureDisplay;
   artifacts: readonly ArtifactDescriptor[];
   statistics: readonly StatisticId[];
   representations: {
@@ -291,12 +310,24 @@ export interface GlobalStatistics {
   q95?: number;
 }
 
-export interface RegionalHistogram {
-  axisScale: 'linear' | 'log';
+export interface DistributionCounts {
+  binCounts: readonly number[];
+  underflowCount: number;
+  overflowCount: number;
+}
+
+export interface DistributionBinning {
+  id: string;
+  scale: ScaleSpec;
+  domain: DistributionDomainSpec;
   edges: readonly number[];
-  globalCounts: readonly number[];
-  regionalCounts?: readonly (readonly number[])[];
-  binRule?: string;
+  global: DistributionCounts;
+  regional?: readonly DistributionCounts[];
+  binRule: 'left-closed-right-open-last-closed';
+}
+
+export interface ScalarDistribution {
+  binnings: readonly DistributionBinning[];
 }
 
 export interface VolumeValidStatistics {
@@ -318,7 +349,7 @@ export interface VolumeFeatureSummary {
   missingVoxelCount: number;
   validStatistics: VolumeValidStatistics;
   valueRange: readonly [number | null, number | null];
-  histogram?: RegionalHistogram;
+  distribution?: ScalarDistribution;
 }
 
 export type RegionalStatisticId = StatisticId | 'missing_count' | 'std' | 'q05' | 'q25' | 'q75' | 'q95';
@@ -332,9 +363,7 @@ export interface RegionalFeaturePayload {
   statistics: Partial<Record<RegionalStatisticId, readonly number[]>>;
   population?: string;
   global?: GlobalStatistics;
-  histogram?: RegionalHistogram;
-  histogramVariants?: Partial<Record<'log', RegionalHistogram>>;
-  histogramDefaultAxisScale?: 'linear' | 'log';
+  distribution?: ScalarDistribution;
 }
 
 export interface VolumeFeaturePayload {

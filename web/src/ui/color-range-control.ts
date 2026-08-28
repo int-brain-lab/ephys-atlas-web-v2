@@ -1,5 +1,6 @@
-import type { FeaturePayload, RegionalHistogram } from '../data/contracts.js';
-import type { ColorRange, ColorScale, StatisticId } from '../domain/types.js';
+import type { DistributionBinning, FeaturePayload } from '../data/contracts.js';
+import type { ColorRange, StatisticId } from '../domain/types.js';
+import type { ScaleSpec } from '../domain/scale-spec.js';
 import { paletteCssGradient } from '../application/colormap-palettes.js';
 import {
   clampRangeHandle,
@@ -21,8 +22,8 @@ export interface ColorRangeControlModel {
   unit: string | null;
   context: string;
   enabled: boolean;
-  axisScale: ColorScale;
-  histogram: RegionalHistogram | undefined;
+  axisScale: ScaleSpec;
+  histogram: DistributionBinning | undefined;
 }
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className: string): HTMLElementTagNameMap[K] {
@@ -66,7 +67,7 @@ export class ColorRangeControl {
   private commitFrame: number | null = null;
   private histogramSignature = '';
   private domain: NumericRange | null = null;
-  private axisScale: ColorScale = 'linear';
+  private axisScale: ScaleSpec = { kind: 'linear' };
   private readonly labelResizeObserver = new ResizeObserver(() => this.positionValueLabels());
 
   constructor(private readonly setRange: (range: ColorRange) => void) {
@@ -134,7 +135,7 @@ export class ColorRangeControl {
     this.maxSlider.value = String(model.effectiveRange[1]);
     this.updatePresentation();
     this.renderHistogram(model.feature, model.statistic, model.histogram);
-    this.bar.dataset.axisScale = this.axisScale;
+    this.bar.dataset.axisScale = this.axisScale.kind;
     this.context.textContent = model.context;
     this.bar.dataset.colormap = model.colormap;
     this.bar.style.setProperty('--color-range-gradient', paletteCssGradient(model.colormap));
@@ -333,13 +334,9 @@ export class ColorRangeControl {
     this.closeExactEditor();
   };
 
-  private renderHistogram(feature: FeaturePayload, statistic: StatisticId, histogram: RegionalHistogram | undefined): void {
-    const counts = feature.representation === 'regional' && statistic !== 'count'
-      ? histogram?.globalCounts ?? []
-      : [];
-    const edges = feature.representation === 'regional' && statistic !== 'count'
-      ? histogram?.edges ?? []
-      : [];
+  private renderHistogram(_feature: FeaturePayload, statistic: StatisticId, histogram: DistributionBinning | undefined): void {
+    const counts = statistic !== 'count' ? histogram?.global.binCounts ?? [] : [];
+    const edges = statistic !== 'count' ? histogram?.edges ?? [] : [];
     const signature = JSON.stringify([this.domain, this.axisScale, counts, edges]);
     if (signature === this.histogramSignature) return;
     this.histogramSignature = signature;

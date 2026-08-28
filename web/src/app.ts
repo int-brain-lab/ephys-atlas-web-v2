@@ -1,5 +1,6 @@
 import { DatasetSession } from './application/dataset-session.js';
 import { resolvePresentationScale } from './application/presentation-scale.js';
+import { effectiveScalarColorRange } from './application/scalar-colormap.js';
 import {
   regionalPresentationsEqual,
   resolveRegionalPresentation,
@@ -55,7 +56,7 @@ export class AtlasApp {
   private atlasRegions: AtlasRegionCatalog | null = null;
   private hoveredRegionId: string | null = null;
   private viewportPresentation: ProjectionPresentation | null = null;
-  private scaleReconciliationPending = false;
+  private presentationReconciliationPending = false;
 
   constructor(root: HTMLElement, private readonly options: AppOptions = {}) {
     const defaultView = options.defaultView ?? DEFAULT_VIEW_STATE;
@@ -83,6 +84,7 @@ export class AtlasApp {
       setColormap: (colormap) => this.store.dispatch({ type: 'color/colormap', colormap }),
       setColorRange: (range) => this.store.dispatch({ type: 'color/range', range }),
       setColorScale: (scale) => this.store.dispatch({ type: 'color/scale', scale }),
+      setDistributionDomain: (domain) => this.store.dispatch({ type: 'distribution/domain', domain }),
       setVolumeOpacity: (opacity) => this.store.dispatch({ type: 'layers/volume-opacity', opacity }),
       setAnatomyOutlines: (visible) => this.store.dispatch({ type: 'layers/anatomy-outlines', visible }),
       setSlice: (axis, index) => this.setSlice(axis, index),
@@ -101,6 +103,7 @@ export class AtlasApp {
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
       setRegionOrder: (order) => this.store.dispatch({ type: 'regions/order', order }),
       setColorScale: (scale) => this.store.dispatch({ type: 'color/scale', scale }),
+      setDistributionDomain: (domain) => this.store.dispatch({ type: 'distribution/domain', domain }),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       hoverRegion: (regionId) => {
         this.shell.hideRegionTooltip();
@@ -175,34 +178,40 @@ export class AtlasApp {
     const data = this.session.snapshot();
     const anatomyRegions = this.atlasRegions?.mappings[state.view.parcellation] ?? data.regions;
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
-    const automaticRange = descriptor?.display?.range;
+    const representationDisplay = data.feature
+      ? descriptor?.display?.[data.feature.representation]
+      : undefined;
     const presentationScale = resolvePresentationScale(
       data.feature,
       state.view.coloring,
-      descriptor?.display?.scale,
-      automaticRange,
+      representationDisplay,
+      state.view.distribution.domain,
     );
+    const unsupportedExplicitScale = state.view.coloring.scale !== 'auto'
+      && presentationScale.effectiveScale !== state.view.coloring.scale;
+    const unsupportedExplicitDomain = state.view.distribution.domain !== 'auto'
+      && presentationScale.effectiveDistributionDomain !== state.view.distribution.domain;
     if (
-      state.view.coloring.scale === 'log'
-      && presentationScale.effectiveScale !== 'log'
+      (unsupportedExplicitScale || unsupportedExplicitDomain)
       && data.feature !== null
       && data.feature.featureId === state.view.featureId
-      && !this.scaleReconciliationPending
+      && !this.presentationReconciliationPending
     ) {
-      this.scaleReconciliationPending = true;
+      this.presentationReconciliationPending = true;
       queueMicrotask(() => {
-        this.scaleReconciliationPending = false;
-        if (this.store.getState().view.coloring.scale === 'log') {
-          this.store.dispatch({ type: 'color/scale', scale: 'linear', history: 'replace' });
-        }
+        this.presentationReconciliationPending = false;
+        this.store.dispatch({ type: 'presentation/reconcile', scale: 'linear', domain: 'full', history: 'replace' });
       });
     }
+    const effectiveRange = data.feature
+      ? effectiveScalarColorRange(data.feature, state.view.coloring, representationDisplay)
+      : null;
     const coloring = {
       ...state.view.coloring,
-      range: state.view.coloring.range.mode === 'auto' && automaticRange
-        ? { mode: 'fixed' as const, min: automaticRange[0], max: automaticRange[1] }
+      range: effectiveRange
+        ? { mode: 'fixed' as const, min: effectiveRange[0], max: effectiveRange[1] }
         : state.view.coloring.range,
-      scale: presentationScale.effectiveScale,
+      scale: presentationScale.effectiveScaleSpec,
     };
     const nextRegionalPresentation = resolveRegionalPresentation({
       mapping: state.view.parcellation,
@@ -236,7 +245,7 @@ export class AtlasApp {
       displaySliceInventories: this.displaySliceInventories,
       regionalPresentation: this.viewportPresentation?.regional ?? presentation.regional,
       presentationScale,
-      automaticRange,
+      representationDisplay,
     };
     this.shell.render(model);
     this.regionalPanel.render({
@@ -247,20 +256,25 @@ export class AtlasApp {
       anatomyAtlas: this.atlasRegions?.atlas ?? null,
       hoveredRegionId: this.hoveredRegionId,
       presentationScale,
-      automaticRange,
+      representationDisplay,
     });
   }
 
   private presentationChanged(next: ProjectionPresentation): boolean {
     const previous = this.viewportPresentation;
+    const sameRange = previous?.coloring.range.mode === next.coloring.range.mode
+      && (previous?.coloring.range.mode === 'auto'
+        || (next.coloring.range.mode === 'fixed'
+          && previous.coloring.range.min === next.coloring.range.min
+          && previous.coloring.range.max === next.coloring.range.max));
     return !previous
       || previous.feature !== next.feature
       || !regionalPresentationsEqual(previous.regional, next.regional)
       || previous.coloring.mode !== next.coloring.mode
       || previous.coloring.statistic !== next.coloring.statistic
       || previous.coloring.colormap !== next.coloring.colormap
-      || previous.coloring.range !== next.coloring.range
-      || previous.coloring.scale !== next.coloring.scale
+      || !sameRange
+      || JSON.stringify(previous.coloring.scale) !== JSON.stringify(next.coloring.scale)
       || previous.volumeOpacity !== next.volumeOpacity
       || previous.anatomyOutlines !== next.anatomyOutlines;
   }
@@ -456,16 +470,14 @@ export class AtlasApp {
     const presentationScale = resolvePresentationScale(
       feature,
       state.coloring,
-      descriptor?.display?.scale,
-      descriptor?.display?.range,
+      descriptor?.display?.regional,
+      state.distribution.domain,
     );
-    const exportFeature = presentationScale.histogram
-      ? { ...feature, histogram: presentationScale.histogram }
-      : feature;
     const comparison = buildSelectedComparisonExport({
       datasetId: state.dataset.datasetId,
       releaseId: state.dataset.releaseId ?? manifest.release.releaseId,
-      feature: exportFeature,
+      feature,
+      ...(presentationScale.histogram ? { binning: presentationScale.histogram } : {}),
       ...(descriptor ? { descriptor } : {}),
       regions,
       selectedRegionIds: state.selection,

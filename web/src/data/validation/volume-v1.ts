@@ -1,6 +1,7 @@
 import type { VolumeFeatureSummary, VolumeRepresentationDescriptor, VolumeValidStatistics } from '../contracts.js';
 import { parseEncodedResource } from './binary.js';
 import { array, integerArray, numberArray, object, string, unique } from './primitives.js';
+import { parseDistributionBinning, validateDistributionBinningSet } from './distribution.js';
 
 function decodedBlock(value: unknown, context: string) {
   const block = object(value, context);
@@ -136,8 +137,8 @@ export function parseVolumeSummary(
   if (shape.some((size, index) => size !== descriptor.grid.shape[index])) throw new Error('volume summary shape differs from feature');
   const count = (field: string): number => {
     const result = root[field];
-    if (typeof result !== 'number' || !Number.isInteger(result) || result < 0) {
-      throw new Error(`volume summary.${field} must be a non-negative integer`);
+    if (typeof result !== 'number' || !Number.isSafeInteger(result) || result < 0) {
+      throw new Error(`volume summary.${field} must be a non-negative safe integer`);
     }
     return result;
   };
@@ -180,34 +181,28 @@ export function parseVolumeSummary(
       ? [robustMinimum, robustMaximum]
       : [extent[0]!, extent[1]!];
   }
-  let histogram: VolumeFeatureSummary['histogram'];
-  if (root.histogram !== undefined) {
-    const rawHistogram = object(root.histogram, 'volume summary.histogram');
-    const edges = array(rawHistogram.edges, 'volume summary.histogram.edges').map((edge, index) => {
-      if (typeof edge !== 'number' || !Number.isFinite(edge)) {
-        throw new Error(`volume summary.histogram.edges[${index}] must be finite`);
-      }
-      return edge;
-    });
-    if (edges.length < 2 || edges.some((edge, index) => index > 0 && edge <= edges[index - 1]!)) {
-      throw new Error('volume summary.histogram.edges must be strictly increasing');
-    }
-    const counts = array(rawHistogram.counts, 'volume summary.histogram.counts');
-    if (counts.length !== edges.length - 1
-      || counts.some((item) => typeof item !== 'number' || !Number.isInteger(item) || item < 0)
-      || (counts as number[]).reduce((sum, item) => sum + item, 0) !== valid) {
-      throw new Error('volume summary.histogram.counts must conserve the valid voxel population');
-    }
-    if (rawHistogram.bin_rule !== 'left-closed-right-open-last-closed') {
-      throw new Error('volume summary.histogram.bin_rule is unsupported');
-    }
-    histogram = {
-      axisScale: 'linear',
-      edges,
-      globalCounts: counts as number[],
-      binRule: rawHistogram.bin_rule,
-    };
+  if (valid === 0 && root.distribution !== undefined) {
+    throw new Error('volume summary.distribution must be absent when there are no valid voxels');
   }
+  const binnings = valid > 0
+    ? (() => {
+        const distribution = object(root.distribution, 'volume summary.distribution');
+        const parsed = array(distribution.binnings, 'volume summary.distribution.binnings')
+          .map((item, index) => parseDistributionBinning(
+            item,
+            `volume summary.distribution.binnings[${index}]`,
+            false,
+          ));
+        validateDistributionBinningSet(
+          parsed,
+          valid,
+          'volume summary.distribution',
+          validStatistics.min,
+          validStatistics.max,
+        );
+        return parsed;
+      })()
+    : [];
   return {
     totalVoxelCount: total,
     validVoxelCount: valid,
@@ -215,6 +210,8 @@ export function parseVolumeSummary(
     missingVoxelCount: missing,
     validStatistics,
     valueRange,
-    ...(histogram ? { histogram } : {}),
+    ...(binnings.length > 0
+      ? { distribution: { binnings: binnings.map(({ regionalCounts: _regionalCounts, ...binning }) => binning) } }
+      : {}),
   };
 }

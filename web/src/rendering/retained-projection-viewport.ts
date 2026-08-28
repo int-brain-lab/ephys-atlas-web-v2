@@ -1,4 +1,4 @@
-import type { ColoringState, EffectiveColoringState, SliceAxis } from '../domain/types.js';
+import type { EffectiveColoringState, SliceAxis } from '../domain/types.js';
 import { scaleDomainIsValid, scaleNormalize } from '../domain/scale-spec.js';
 import type { VolumeFeaturePayload } from '../data/contracts.js';
 import { applyAffine, cursorStateToWorld, worldToPlane, type Matrix4, type ViewBox } from './coordinate-space.js';
@@ -16,6 +16,7 @@ import { VolumeValiditySliceSource } from './volume-validity-source.js';
 import { RetainedStaticProjectionViewport } from './static-projection-viewport.js';
 import { VolumeSliceLoader, type VolumeSlice, type VolumeSliceSource } from './volume.js';
 import { paletteRgb } from '../application/colormap-palettes.js';
+import { effectiveScalarColorRange } from '../application/scalar-colormap.js';
 import { regionIdFromPath } from './region-id.js';
 import {
   ProjectionPackSource,
@@ -137,7 +138,7 @@ const DEFAULT_PRESENTATION: ProjectionPresentation = {
     statistic: 'mean',
     colormap: 'viridis',
     range: { mode: 'auto' },
-    scale: 'linear',
+    scale: { kind: 'linear' },
   },
   volumeOpacity: 1,
   anatomyOutlines: true,
@@ -155,27 +156,12 @@ function finiteRange(values: Float32Array): readonly [number, number] | null {
   return max > min ? [min, max] : [min, min + 1];
 }
 
-function displayRange(
-  feature: VolumeFeaturePayload,
-  slice: VolumeSlice,
-  coloring: ColoringState,
-): readonly [number, number] | null {
-  if (coloring.range.mode === 'fixed') {
-    return coloring.range.max > coloring.range.min ? [coloring.range.min, coloring.range.max] : null;
-  }
-  const declared = feature.descriptor.valueRange;
-  if (declared && declared[0] != null && declared[1] != null && declared[1] > declared[0]) {
-    return [declared[0], declared[1]];
-  }
-  return finiteRange(slice.data);
-}
-
 function rgbaForSlice(
   feature: VolumeFeaturePayload,
   slice: VolumeSlice,
   coloring: EffectiveColoringState,
 ): Uint8ClampedArray {
-  const range = displayRange(feature, slice, coloring);
+  const range = effectiveScalarColorRange(feature, coloring) ?? finiteRange(slice.data);
   const rgba = new Uint8ClampedArray(slice.data.length * 4);
   if (!range) return rgba;
   const [min, max] = range;

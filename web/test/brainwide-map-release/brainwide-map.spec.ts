@@ -2,7 +2,10 @@ import { expect, test } from '@playwright/test';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
-const releaseRoot = path.resolve('../data/releases/brainwide_map/legacy-v1-1d908bea');
+const releaseRoot = path.resolve(
+  process.env.EPHYS_ATLAS_BRAINWIDE_MAP_RELEASE
+    ?? '../data/releases/brainwide_map/legacy-v1-1d908bea-d050-linear-full-v1',
+);
 const releaseId = path.basename(releaseRoot);
 
 test.beforeEach(async ({ page }) => {
@@ -97,12 +100,12 @@ test('feature switching and download retain immutable BWM context', async ({ pag
   await downloads.getByRole('button', { name: /Export Beryl Mean as CSV/ }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(
-    'brainwide_map-legacy-v1-1d908bea-wheel_velocity_glm_effect-beryl-mean.csv',
+    `brainwide_map-${releaseId}-wheel_velocity_glm_effect-beryl-mean.csv`,
   );
   const downloadPath = await download.path();
   expect(downloadPath).not.toBeNull();
   const csv = await readFile(downloadPath!, 'utf8');
   expect(csv).toContain(
-    'brainwide_map,legacy-v1-1d908bea,wheel_velocity_glm_effect,regional,beryl,mean',
+    `brainwide_map,${releaseId},wheel_velocity_glm_effect,regional,beryl,mean`,
   );
 });

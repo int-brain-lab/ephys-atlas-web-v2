@@ -15,12 +15,18 @@ from .channel_source import (
     load_channel_scientific_inputs,
 )
 from .io import json_resource, sha256_file, write_json
+from .distribution_selection import (
+    bind_distribution_selection,
+    load_distribution_selection,
+    selection_provenance,
+)
 from .regional_release import (
     DEFAULT_PARCELLATIONS,
     FeatureInfo,
     RegionInfo,
     fold_region_ids_left,
-    histogram_edges,
+    linear_full_display,
+    validate_scalar_display,
     write_feature_parcellation,
     write_parcellation,
 )
@@ -35,14 +41,15 @@ class ChannelBuildConfig:
     created_at: str
     feature_mode: str
     population: str
+    source_release_id: str | None = None
     parcellations: tuple[str, ...] = DEFAULT_PARCELLATIONS
     features: tuple[str, ...] | None = None
-    log_color_features: tuple[str, ...] = ()
     histogram_bins: int = 50
     paper_snapshot: bool = False
     ibleatools_commit: str | None = None
     iblatlas_commit: str | None = None
     builder_commit: str | None = None
+    distribution_selection: Path | None = None
 
     def validate(self) -> None:
         if self.feature_mode not in {"raw", "denoised", "both"}:
@@ -60,8 +67,6 @@ class ChannelBuildConfig:
             raise ValueError(f"unsupported parcellations: {', '.join(unknown)}")
         if not self.parcellations:
             raise ValueError("at least one parcellation is required")
-        if len(set(self.log_color_features)) != len(self.log_color_features):
-            raise ValueError("log_color_features must not contain duplicates")
         for name, value in (
             ("ibleatools_commit", self.ibleatools_commit),
             ("iblatlas_commit", self.iblatlas_commit),
@@ -92,6 +97,7 @@ def build_channels_release_from_arrays(
     region_metadata: Mapping[str, Mapping[int, RegionInfo]],
     provenance_sources: Sequence[dict],
     feature_metadata: Mapping[str, FeatureInfo] | None = None,
+    feature_display: Mapping[str, dict] | None = None,
 ) -> Path:
     """Build a schema-v1 regional channel release from already-selected arrays."""
     config.validate()
@@ -102,9 +108,11 @@ def build_channels_release_from_arrays(
 
     if not feature_values:
         raise ValueError("at least one feature is required")
-    unknown_log_features = sorted(set(config.log_color_features) - set(feature_values))
-    if unknown_log_features:
-        raise ValueError(f"log color features are not in the release catalog: {', '.join(unknown_log_features)}")
+    unknown_display = sorted(set(feature_display or {}) - set(feature_values))
+    if unknown_display:
+        raise ValueError(
+            f"channel display selections are not in the release catalog: {', '.join(unknown_display)}"
+        )
     missing_parcellations = [p for p in config.parcellations if p not in parcellation_ids]
     if missing_parcellations:
         raise ValueError(f"missing region ids for: {', '.join(missing_parcellations)}")
@@ -134,10 +142,14 @@ def build_channels_release_from_arrays(
         else "rows marked inside the atlas (outside == false)"
     )
     feature_metadata = feature_metadata or {}
+    feature_display = feature_display or {}
     features = []
     for feature_id in sorted(feature_values):
         values = np.asarray(feature_values[feature_id], dtype=np.float64)
-        edges = histogram_edges(values, config.histogram_bins)
+        display = validate_scalar_display(
+            feature_display.get(feature_id) or linear_full_display(),
+            values,
+        )
         feature_root = release_dir / "features" / feature_id
         regional = [
             write_feature_parcellation(
@@ -145,8 +157,9 @@ def build_channels_release_from_arrays(
                 parcellation,
                 values,
                 group_rows[parcellation],
-                edges,
+                config.histogram_bins,
                 population_description,
+                distribution_display=display,
             )
             for parcellation in config.parcellations
         ]
@@ -162,7 +175,7 @@ def build_channels_release_from_arrays(
                 else f"Channel feature {source_column} aggregated regionally by arithmetic mean."
             ),
             "unit": info.unit if info else None,
-            **({"display": {"scale": "log"}} if feature_id in config.log_color_features else {}),
+            "display": {"regional": display},
             "value_semantics": {
                 "quantity": source_column,
                 "transform": "identity from the selected source parquet; no outlier replacement or value clipping",
@@ -228,8 +241,10 @@ def build_channels_release_from_arrays(
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 **({"commit": config.builder_commit} if config.builder_commit else {}),
                 "command": (
-                    f"ephys-atlas-data build-channels {config.release_id} "
-                    f"--feature-mode {config.feature_mode} --population {config.population}"
+                    f"ephys-atlas-data build-channels {config.source_release_id or config.release_id} "
+                    f"--release-id {config.release_id} "
+                    f"--feature-mode {config.feature_mode} --population {config.population} "
+                    "--distribution-selection distribution-selection.json"
                 ),
             },
             "recipe": {
@@ -238,7 +253,11 @@ def build_channels_release_from_arrays(
                 "population": config.population,
                 "parcellations": list(config.parcellations),
                 "features": sorted(feature_values),
-                "log_color_features": sorted(config.log_color_features),
+                **(
+                    {"distribution_selection_sha256": sha256_file(config.distribution_selection)}
+                    if config.distribution_selection is not None
+                    else {}
+                ),
                 "regional_summary": "mean",
                 "histogram_bins": config.histogram_bins,
                 "hemisphere": "bilateral observations folded onto left atlas ids using -abs(id)",
@@ -262,6 +281,15 @@ def build_channels_from_snapshot(
     release_dir: Path,
     config: ChannelBuildConfig,
 ) -> Path:
+    if config.source_release_id is None:
+        raise ValueError("snapshot builds require an explicit channel source release id")
+    if config.distribution_selection is None:
+        raise ValueError("snapshot builds require an approved D050 distribution selection")
+    selection = load_distribution_selection(
+        config.distribution_selection,
+        dataset_id=DATASET_ID,
+        representation="regional",
+    )
     config.validate()
     config.require_scientific_pins()
     source_json = source_snapshot / "source.json"
@@ -270,9 +298,9 @@ def build_channels_from_snapshot(
     source = json.loads(source_json.read_text())
     if source.get("dataset_id") != DATASET_ID:
         raise RuntimeError(f"source snapshot is not {DATASET_ID}: {source.get('dataset_id')}")
-    if str(source.get("resolved_release")) != config.release_id:
+    if str(source.get("resolved_release")) != config.source_release_id:
         raise RuntimeError(
-            f"source release {source.get('resolved_release')} does not match requested release {config.release_id}"
+            f"source release {source.get('resolved_release')} does not match requested source release {config.source_release_id}"
         )
 
     canonical = source.get("canonical_source") or {}
@@ -280,7 +308,7 @@ def build_channels_from_snapshot(
         {
             "role": "canonical-data",
             "description": "Canonical ea_active channel feature snapshot",
-            "release": config.release_id,
+            "release": config.source_release_id,
             **({"uri": canonical["uri"]} if canonical.get("uri") else {}),
         },
         {
@@ -289,6 +317,7 @@ def build_channels_from_snapshot(
             "path": "source.json",
             "sha256": sha256_file(source_json),
         },
+        selection_provenance(selection),
     ]
     feature_values, parcellation_ids, region_metadata, feature_metadata = load_channel_scientific_inputs(
         source_snapshot,
@@ -296,6 +325,11 @@ def build_channels_from_snapshot(
         population=config.population,
         parcellations=config.parcellations,
         features=config.features,
+    )
+    feature_display = bind_distribution_selection(
+        selection,
+        source_release_id=config.source_release_id,
+        feature_ids=sorted(feature_values),
     )
     result = build_channels_release_from_arrays(
         release_dir,
@@ -305,6 +339,8 @@ def build_channels_from_snapshot(
         region_metadata,
         provenance_sources,
         feature_metadata,
+        feature_display,
     )
     shutil.copyfile(source_json, result / "source.json")
+    shutil.copyfile(selection.path, result / "distribution-selection.json")
     return result

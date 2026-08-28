@@ -4,7 +4,7 @@
   "title": "Feature descriptor v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "id", "label", "description", "unit", "value_semantics", "representations", "artifacts"],
+  "required": ["schema_version", "id", "label", "description", "unit", "value_semantics", "display", "representations", "artifacts"],
   "properties": {
     "schema_version": {"const": "1.0"},
     "id": {"$ref": "common.schema.json#/$defs/identifier"},
@@ -28,9 +28,8 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "colormap": {"type": "string"},
-        "range": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}},
-        "scale": {"enum": ["linear", "log"]}
+        "regional": {"$ref": "common.schema.json#/$defs/scalarDisplay"},
+        "volume": {"$ref": "common.schema.json#/$defs/scalarDisplay"}
       }
     },
     "representations": {

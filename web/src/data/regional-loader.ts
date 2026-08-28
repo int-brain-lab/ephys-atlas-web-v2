@@ -7,8 +7,9 @@ import type {
   RegionalFeaturePayload,
   RegionalStatisticId,
 } from './contracts.js';
-import { materializeRegionalHistogram, parseRegionMetadata, parseRegionalStatisticsResource } from './regional-data.js';
+import { materializeDistributionBinning, parseRegionMetadata, parseRegionalStatisticsResource } from './regional-data.js';
 import type { ResourceReader } from './resource-reader.js';
+import { validateDistributionMatchesDisplay } from './validation/distribution.js';
 
 const DISPLAY_STATISTICS = new Set<StatisticId>(['mean', 'median', 'min', 'max', 'count']);
 const REGIONAL_STATISTICS = new Set<RegionalStatisticId>([
@@ -82,24 +83,23 @@ export async function loadRegionalFeatureFromResources(options: {
   }
 
   const statsDocument = parseRegionalStatisticsResource(statisticsRaw);
+  const display = feature.display?.regional;
+  if (!display) throw new Error(`Feature ${feature.id} has no regional display contract`);
+  const distributionResources = statsDocument.distribution?.binnings ?? [];
+  if (statsDocument.distribution) {
+    validateDistributionMatchesDisplay(distributionResources, display, `${feature.id}/${parcellation}`);
+  }
   const statsLocation = reader.resolve(featureLocation, regional.statistics);
-  const logHistogram = statsDocument.histogram?.variants.log;
-  const [matrix, histogramFlat, logHistogramFlat] = await Promise.all([
+  const [matrix, ...distributionRows] = await Promise.all([
     reader.readArray(reader.resolve(statsLocation, statsDocument.values.path), statsDocument.values, signal),
-    statsDocument.histogram?.regionalCounts
-      ? reader.readArray(
-          reader.resolve(statsLocation, statsDocument.histogram.regionalCounts.path),
-          statsDocument.histogram.regionalCounts,
-          signal,
-        )
-      : Promise.resolve(null),
-    logHistogram
-      ? reader.readArray(
-          reader.resolve(statsLocation, logHistogram.regionalCounts.path),
-          logHistogram.regionalCounts,
-          signal,
-        )
-      : Promise.resolve(null),
+    ...distributionResources.map((binning) => {
+      if (!binning.regionalCounts) throw new Error(`${feature.id}/${parcellation}/${binning.id} has no regional counts`);
+      return reader.readArray(
+        reader.resolve(statsLocation, binning.regionalCounts.path),
+        binning.regionalCounts,
+        signal,
+      );
+    }),
   ]);
 
   const fieldCount = statsDocument.fields.length;
@@ -115,6 +115,21 @@ export async function loadRegionalFeatureFromResources(options: {
     if (!field || !REGIONAL_STATISTICS.has(field as RegionalStatisticId)) continue;
     statistics[field as RegionalStatisticId] = regionIds.map((_, row) => matrix[row * fieldCount + fieldIndex] ?? NaN);
   }
+  const regionalPopulationCounts = statistics.count;
+  if (!regionalPopulationCounts) throw new Error(`${feature.id}/${parcellation} regional statistics require count`);
+  const binnings = distributionResources.map((binning, index) => (
+    materializeDistributionBinning(binning, distributionRows[index]!, regionIds.length)
+  ));
+  for (const binning of binnings) {
+    binning.regional?.forEach((counts, row) => {
+      const total = counts.underflowCount
+        + counts.binCounts.reduce((sum, count) => sum + count, 0)
+        + counts.overflowCount;
+      if (total !== regionalPopulationCounts[row]) {
+        throw new Error(`${feature.id}/${parcellation}/${binning.id} region ${row} does not conserve its population`);
+      }
+    });
+  }
 
   return {
     schemaVersion: SCHEMA_VERSION,
@@ -125,14 +140,6 @@ export async function loadRegionalFeatureFromResources(options: {
     statistics,
     ...(statsDocument.population ? { population: statsDocument.population } : {}),
     ...(statsDocument.global ? { global: statsDocument.global } : {}),
-    ...(statsDocument.histogram
-      ? { histogram: materializeRegionalHistogram(statsDocument.histogram, histogramFlat, regionIds.length) }
-      : {}),
-    ...(statsDocument.histogram
-      ? { histogramDefaultAxisScale: statsDocument.histogram.defaultAxisScale }
-      : {}),
-    ...(logHistogram
-      ? { histogramVariants: { log: materializeRegionalHistogram(logHistogram, logHistogramFlat, regionIds.length) } }
-      : {}),
+    ...(binnings.length > 0 ? { distribution: { binnings } } : {}),
   };
 }

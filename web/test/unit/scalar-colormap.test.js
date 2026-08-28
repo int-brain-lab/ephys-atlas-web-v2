@@ -4,8 +4,8 @@ import {
   atlasRegionColorMap,
   bilateralAtlasRegionColorMap,
   darkThemeAtlasColor,
+  effectiveScalarColorRange,
   regionalColorMap,
-  regionalColorRange,
 } from '../../.test-dist/application/scalar-colormap.js';
 import { resolveColoringState } from '../../.test-dist/domain/color-scale.js';
 import {
@@ -33,12 +33,31 @@ const coloring = {
 };
 
 test('auto regional color range prefers global robust quantiles', () => {
-  assert.deepEqual(regionalColorRange(feature, coloring), [0.25, 1.75]);
+  assert.deepEqual(effectiveScalarColorRange(feature, coloring), [0.25, 1.75]);
 });
 
 test('release-declared automatic range takes precedence without becoming manual state', () => {
-  assert.deepEqual(regionalColorRange(feature, coloring, [0.5, 1.5]), [0.5, 1.5]);
+  const display = {
+    range: [0.5, 1.5], scales: [{ kind: 'linear' }], preferredScale: 'linear',
+    distributionDomains: [{ kind: 'full' }], preferredDistributionDomain: 'full',
+  };
+  assert.deepEqual(effectiveScalarColorRange(feature, coloring, display), [0.5, 1.5]);
   assert.deepEqual(coloring.range, { mode: 'auto' });
+});
+
+test('one color-range resolver shares manual, release, and robust precedence across representations', () => {
+  const display = {
+    range: [0.5, 1.5], scales: [{ kind: 'linear' }], preferredScale: 'linear',
+    distributionDomains: [{ kind: 'full' }], preferredDistributionDomain: 'full',
+  };
+  const manual = { ...coloring, range: { mode: 'fixed', min: -2, max: 8 } };
+  assert.deepEqual(effectiveScalarColorRange(feature, manual, display), [-2, 8]);
+  const volume = {
+    schemaVersion: '1.0', featureId: 'volume', representation: 'volume', descriptor: {},
+    summary: { valueRange: [10, 20], validVoxelCount: 2 },
+  };
+  assert.deepEqual(effectiveScalarColorRange(volume, coloring, display), [0.5, 1.5]);
+  assert.deepEqual(effectiveScalarColorRange(volume, coloring), [10, 20]);
 });
 
 test('regional colors are keyed by numeric atlas ids', () => {
@@ -67,9 +86,9 @@ test('Cividis colors regional values through the shared lookup table', () => {
 });
 
 test('automatic color scale resolves from the feature display default', () => {
-  assert.equal(resolveColoringState({ ...coloring, scale: 'auto' }, 'log').scale, 'log');
-  assert.equal(resolveColoringState({ ...coloring, scale: 'auto' }, undefined).scale, 'linear');
-  assert.equal(resolveColoringState({ ...coloring, scale: 'linear' }, 'log').scale, 'linear');
+  assert.deepEqual(resolveColoringState({ ...coloring, scale: 'auto' }, 'log').scale, { kind: 'log' });
+  assert.deepEqual(resolveColoringState({ ...coloring, scale: 'auto' }, undefined).scale, { kind: 'linear' });
+  assert.deepEqual(resolveColoringState({ ...coloring, scale: 'linear' }, 'log').scale, { kind: 'linear' });
 });
 
 test('log color mapping rejects an invalid domain and omits non-positive values', () => {

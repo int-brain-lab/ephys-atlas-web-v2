@@ -1,4 +1,234 @@
 {
+  "distribution": {
+    "binnings": [
+      {
+        "bin_rule": "left-closed-right-open-last-closed",
+        "domain": {
+          "kind": "full"
+        },
+        "edges": [
+          -0.5,
+          0.0,
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5
+        ],
+        "global_counts": [
+          1,
+          1,
+          2,
+          1,
+          2,
+          1,
+          1,
+          2
+        ],
+        "global_overflow_count": 0,
+        "global_underflow_count": 0,
+        "id": "linear-full",
+        "regional_count_layout": "underflow-bins-overflow",
+        "regional_counts": {
+          "dtype": "uint32",
+          "endianness": "little",
+          "format": "raw-binary-array-v1",
+          "order": "C",
+          "resource": {
+            "bytes": 160,
+            "codec": {
+              "decoded_bytes": 160,
+              "name": "none"
+            },
+            "media_type": "application/octet-stream",
+            "path": "allen.distribution.linear-full.u32",
+            "sha256": "c71d0deee10df2c3a5770c2218a4862f1231a8dd82da27b7a300ec78634e659e"
+          },
+          "shape": [
+            4,
+            10
+          ]
+        },
+        "scale": {
+          "kind": "linear"
+        }
+      },
+      {
+        "bin_rule": "left-closed-right-open-last-closed",
+        "domain": {
+          "bounds": [
+            0.0,
+            3.0
+          ],
+          "kind": "focused"
+        },
+        "edges": [
+          0.0,
+          0.375,
+          0.75,
+          1.125,
+          1.5,
+          1.875,
+          2.25,
+          2.625,
+          3.0
+        ],
+        "global_counts": [
+          1,
+          2,
+          1,
+          0,
+          2,
+          1,
+          1,
+          1
+        ],
+        "global_overflow_count": 1,
+        "global_underflow_count": 1,
+        "id": "linear-focused",
+        "regional_count_layout": "underflow-bins-overflow",
+        "regional_counts": {
+          "dtype": "uint32",
+          "endianness": "little",
+          "format": "raw-binary-array-v1",
+          "order": "C",
+          "resource": {
+            "bytes": 160,
+            "codec": {
+              "decoded_bytes": 160,
+              "name": "none"
+            },
+            "media_type": "application/octet-stream",
+            "path": "allen.distribution.linear-focused.u32",
+            "sha256": "5ead320434baf97fedede43e52c4cf8f99dfce1919a7358525b66580bfacae1a"
+          },
+          "shape": [
+            4,
+            10
+          ]
+        },
+        "scale": {
+          "kind": "linear"
+        }
+      },
+      {
+        "bin_rule": "left-closed-right-open-last-closed",
+        "domain": {
+          "kind": "full"
+        },
+        "edges": [
+          -0.5,
+          -0.2071067811865475,
+          5.551115123125783e-17,
+          0.20710678118654763,
+          0.5000000000000002,
+          0.9142135623730953,
+          1.5000000000000004,
+          2.3284271247461907,
+          3.5
+        ],
+        "global_counts": [
+          1,
+          1,
+          0,
+          2,
+          0,
+          3,
+          1,
+          3
+        ],
+        "global_overflow_count": 0,
+        "global_underflow_count": 0,
+        "id": "symlog-full",
+        "regional_count_layout": "underflow-bins-overflow",
+        "regional_counts": {
+          "dtype": "uint32",
+          "endianness": "little",
+          "format": "raw-binary-array-v1",
+          "order": "C",
+          "resource": {
+            "bytes": 160,
+            "codec": {
+              "decoded_bytes": 160,
+              "name": "none"
+            },
+            "media_type": "application/octet-stream",
+            "path": "allen.distribution.symlog-full.u32",
+            "sha256": "6574fe7fbc49705ec1bc66708726129384fa5a77e88853ad14b2baffbf154cbc"
+          },
+          "shape": [
+            4,
+            10
+          ]
+        },
+        "scale": {
+          "kind": "symlog",
+          "linear_threshold": 0.5
+        }
+      },
+      {
+        "bin_rule": "left-closed-right-open-last-closed",
+        "domain": {
+          "bounds": [
+            0.0,
+            3.0
+          ],
+          "kind": "focused"
+        },
+        "edges": [
+          0.0,
+          0.13768655342922706,
+          0.3132882808488929,
+          0.5372460015178235,
+          0.8228756555322954,
+          1.1871600347836377,
+          1.6517585353294255,
+          2.2442949684122864,
+          3.0
+        ],
+        "global_counts": [
+          1,
+          0,
+          2,
+          0,
+          1,
+          2,
+          1,
+          2
+        ],
+        "global_overflow_count": 1,
+        "global_underflow_count": 1,
+        "id": "symlog-focused",
+        "regional_count_layout": "underflow-bins-overflow",
+        "regional_counts": {
+          "dtype": "uint32",
+          "endianness": "little",
+          "format": "raw-binary-array-v1",
+          "order": "C",
+          "resource": {
+            "bytes": 160,
+            "codec": {
+              "decoded_bytes": 160,
+              "name": "none"
+            },
+            "media_type": "application/octet-stream",
+            "path": "allen.distribution.symlog-focused.u32",
+            "sha256": "a27fa2ca9a831dfc863ae94bcc30aab4067c1aa21889bdf90b774d9ac8206e17"
+          },
+          "shape": [
+            4,
+            10
+          ]
+        },
+        "scale": {
+          "kind": "symlog",
+          "linear_threshold": 0.5
+        }
+      }
+    ]
+  },
   "format": "ephys-atlas-regional-statistics-v1",
   "global": {
     "count": 11,
@@ -12,50 +242,6 @@
     "q75": 2.25,
     "q95": 3.25,
     "std": 1.2026142323020867
-  },
-  "histogram": {
-    "bin_rule": "left-closed-right-open-last-closed",
-    "edges": [
-      -0.5,
-      0.0,
-      0.5,
-      1.0,
-      1.5,
-      2.0,
-      2.5,
-      3.0,
-      3.5
-    ],
-    "global_counts": [
-      1,
-      1,
-      2,
-      1,
-      2,
-      1,
-      1,
-      2
-    ],
-    "regional_counts": {
-      "dtype": "uint32",
-      "endianness": "little",
-      "format": "raw-binary-array-v1",
-      "order": "C",
-      "resource": {
-        "bytes": 128,
-        "codec": {
-          "decoded_bytes": 128,
-          "name": "none"
-        },
-        "media_type": "application/octet-stream",
-        "path": "allen.hist.u32",
-        "sha256": "28a3ad061b2214499aaa189e6cf41b886b6a9cb5e3d7d055dc1e3564a068c90a"
-      },
-      "shape": [
-        4,
-        8
-      ]
-    }
   },
   "population": "synthetic fixture observations assigned to Allen fixture regions",
   "regional_summary": {

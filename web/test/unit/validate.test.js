@@ -43,6 +43,25 @@ test('regional payload validation rejects statistic arrays with wrong length', (
   }), /length must match regionIds/);
 });
 
+test('regional payload validation uses the shared distribution semantics', () => {
+  const counts = { binCounts: [1, 1], underflowCount: 0, overflowCount: 0 };
+  const regional = [{ binCounts: [1, 1], underflowCount: 0, overflowCount: 0 }];
+  const distribution = {
+    binnings: [{
+      id: 'linear-full', scale: { kind: 'linear' }, domain: { kind: 'full' }, edges: [1, 2, 3],
+      global: counts, regional, binRule: 'left-closed-right-open-last-closed',
+    }, {
+      id: 'symlog-full', scale: { kind: 'symlog', linearThreshold: 1 }, domain: { kind: 'full' },
+      edges: [1, 2, 3.00000000001], global: counts, regional,
+      binRule: 'left-closed-right-open-last-closed',
+    }],
+  };
+  assert.throws(() => parseFeaturePayload({
+    schemaVersion: '1.0', featureId: 'x', representation: 'regional', parcellation: 'allen',
+    regionIds: ['10'], statistics: { count: [2] }, distribution,
+  }), /endpoints must be identical across scales/);
+});
+
 test('binary decoder follows declared little-endian dtype', () => {
   const bytes = new ArrayBuffer(8);
   const view = new DataView(bytes);
@@ -122,13 +141,64 @@ test('manifest metadata validation rejects invalid release dates and provenance'
   assert.throws(() => parseDatasetManifestDocument({ ...valid, provenance: { ...valid.provenance, sources: [] } }), /sources must not be empty/);
 });
 
-test('feature metadata validates units and retains presentation-only color defaults', () => {
+test('feature metadata validates units and retains representation-specific scalar presentation', () => {
   const valid = goldenFeature();
   assert.throws(() => parseFeatureDescriptor({ ...valid, unit: 10 }, 'feature.json'), /feature.json.unit must be a string/);
-  assert.throws(() => parseFeatureDescriptor({ ...valid, display: { range: [0, 'high'] } }, 'feature.json'), /display.range must contain 2 finite numbers/);
-  assert.throws(() => parseFeatureDescriptor({ ...valid, display: { scale: 'symlog' } }, 'feature.json'), /display.scale must be linear or log/);
-  const feature = parseFeatureDescriptor({ ...valid, display: { colormap: 'magma', range: [0.1, 10], scale: 'log' } }, 'feature.json');
-  assert.deepEqual(feature.display, { colormap: 'magma', range: [0.1, 10], scale: 'log' });
+  assert.throws(() => parseFeatureDescriptor({
+    ...valid,
+    display: { ...valid.display, regional: { ...valid.display.regional, range: [0, 'high'] } },
+  }, 'feature.json'), /regional display range must contain 2 finite numbers|display.regional.range must contain 2 finite numbers/);
+  assert.throws(() => parseFeatureDescriptor({
+    ...valid,
+    display: {
+      ...valid.display,
+      regional: {
+        ...valid.display.regional,
+        scales: [{ kind: 'linear' }, { kind: 'symlog', linear_threshold: 0 }],
+      },
+    },
+  }, 'feature.json'), /signed-log threshold is invalid|linear_threshold must be positive/);
+  assert.throws(() => parseFeatureDescriptor({
+    ...valid,
+    display: {
+      ...valid.display,
+      regional: {
+        ...valid.display.regional,
+        range: [0, 10],
+        scales: [{ kind: 'linear' }, { kind: 'log' }],
+        preferred_scale: 'log',
+      },
+    },
+  }, 'feature.json'), /range shared with log must be positive/);
+  assert.throws(() => parseFeatureDescriptor({
+    ...valid,
+    display: {
+      ...valid.display,
+      regional: { ...valid.display.regional, scales: [{ kind: 'linear' }, { kind: 'unknown' }] },
+    },
+  }, 'feature.json'), /scale kind is invalid|kind is unsupported/);
+  const feature = parseFeatureDescriptor({
+    ...valid,
+    display: {
+      ...valid.display,
+      regional: {
+        colormap: 'magma',
+        range: [0.1, 10],
+        scales: [{ kind: 'linear' }, { kind: 'log' }],
+        preferred_scale: 'log',
+        distribution_domains: [{ kind: 'full' }],
+        preferred_distribution_domain: 'full',
+      },
+    },
+  }, 'feature.json');
+  assert.deepEqual(feature.display.regional, {
+    colormap: 'magma',
+    range: [0.1, 10],
+    scales: [{ kind: 'linear' }, { kind: 'log' }],
+    preferredScale: 'log',
+    distributionDomains: [{ kind: 'full' }],
+    preferredDistributionDomain: 'full',
+  });
 });
 
 test('volume parsing derives the exact inverse when the optional redundant matrix is absent', () => {
@@ -159,6 +229,27 @@ test('local import rejects a missing transitive regional resource', async () => 
   const files = goldenDatasetFiles();
   files.delete('features/rms_ap/allen.summary.f64');
   await assert.rejects(validateLocalDatasetFiles(files), /missing features\/rms_ap\/allen\.summary\.f64/i);
+});
+
+test('local import rejects regional distribution rows that do not conserve finite observations', async () => {
+  const files = goldenDatasetFiles();
+  const path = 'features/rms_ap/allen.distribution.linear-focused.u32';
+  const bytes = await files.get(path).arrayBuffer();
+  const counts = new Uint32Array(bytes.slice(0));
+  counts[0] += 1;
+  files.set(path, new Blob([counts.buffer]));
+  await assert.rejects(validateLocalDatasetFiles(files), /does not conserve its population/);
+});
+
+test('local import rejects a distribution whose full domain does not enclose the summary extrema', async () => {
+  const files = goldenDatasetFiles();
+  const path = 'features/rms_ap/allen.statistics.json';
+  const statistics = JSON.parse(await files.get(path).text());
+  for (const full of statistics.distribution.binnings.filter((binning) => binning.domain.kind === 'full')) {
+    full.edges[0] = statistics.global.min + 0.01;
+  }
+  files.set(path, new Blob([JSON.stringify(statistics)]));
+  await assert.rejects(validateLocalDatasetFiles(files), /population minimum|declared minimum/);
 });
 
 test('local import rejects same-size content with a wrong declared SHA-256', async () => {

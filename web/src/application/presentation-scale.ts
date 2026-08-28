@@ -1,68 +1,132 @@
-import type { FeaturePayload, RegionalHistogram } from '../data/contracts.js';
-import type { ColoringState, ColorScale, ColorScaleSelection } from '../domain/types.js';
-import { resolveColorScale } from '../domain/color-scale.js';
+import type {
+  DistributionBinning,
+  FeaturePayload,
+  RepresentationDisplay,
+} from '../data/contracts.js';
+import type {
+  ColoringState,
+  ColorScale,
+  ColorScaleSelection,
+  DistributionDomain,
+  DistributionDomainSelection,
+} from '../domain/types.js';
+import type { ScaleSpec } from '../domain/scale-spec.js';
 import { scaleDomainIsValid } from '../domain/scale-spec.js';
-import { regionalColorRange } from './scalar-colormap.js';
+import { effectiveScalarColorRange } from './scalar-colormap.js';
 
 export interface ResolvedPresentationScale {
   readonly selection: ColorScaleSelection;
   readonly automaticScale: ColorScale;
   readonly effectiveScale: ColorScale;
-  readonly histogram: RegionalHistogram | undefined;
-  readonly logAvailable: boolean;
-  readonly logUnavailableReason: string | null;
+  readonly effectiveScaleSpec: ScaleSpec;
+  /** Exact analytical binning selected by both value scale and domain. */
+  readonly histogram: DistributionBinning | undefined;
+  /** Exact Full binning for the compact color-range histogram. */
+  readonly fullHistogram: DistributionBinning | undefined;
+  readonly availableScales: readonly ColorScale[];
+  readonly unavailableScaleReasons: Readonly<Partial<Record<ColorScale, string>>>;
+  readonly distributionSelection: DistributionDomainSelection;
+  readonly automaticDistributionDomain: DistributionDomain;
+  readonly effectiveDistributionDomain: DistributionDomain;
+  readonly availableDistributionDomains: readonly DistributionDomain[];
+  readonly unavailableDistributionReasons: Readonly<Partial<Record<DistributionDomain, string>>>;
 }
 
-function positiveRange(range: readonly [number, number] | null): boolean {
-  return range !== null && scaleDomainIsValid(range, 'log');
+function distributionFor(feature: FeaturePayload | null): readonly DistributionBinning[] {
+  if (!feature) return [];
+  return feature.representation === 'regional'
+    ? feature.distribution?.binnings ?? []
+    : feature.summary.distribution?.binnings ?? [];
 }
 
-/** Resolve one presentation scale for coloring, distributions, and range geometry. */
+function matchingBinning(
+  binnings: readonly DistributionBinning[],
+  scale: ColorScale,
+  domain: DistributionDomain,
+): DistributionBinning | undefined {
+  return binnings.find((binning) => binning.scale.kind === scale && binning.domain.kind === domain);
+}
+
+function declaredScales(display: RepresentationDisplay | undefined): readonly ScaleSpec[] {
+  return display?.scales ?? [{ kind: 'linear' }];
+}
+
+function declaredDomains(display: RepresentationDisplay | undefined): readonly DistributionDomain[] {
+  return display?.distributionDomains.map(({ kind }) => kind) ?? ['full'];
+}
+
+/** Resolve release-owned scale/domain choices without estimating scientific parameters. */
 export function resolvePresentationScale(
   feature: FeaturePayload | null,
   coloring: ColoringState,
-  featureDefault: ColorScale | undefined,
-  automaticRange?: readonly [number, number],
+  display: RepresentationDisplay | undefined,
+  distributionSelection: DistributionDomainSelection = 'auto',
 ): ResolvedPresentationScale {
-  const requestedAutomaticScale = featureDefault ?? 'linear';
-  let histogram: RegionalHistogram | undefined;
-  let logHistogram: RegionalHistogram | undefined;
-  let positiveDomain = false;
-  let missingHistogram = false;
+  const binnings = distributionFor(feature);
+  const declared = declaredScales(display);
+  const declaredScaleKinds = declared.map(({ kind }) => kind);
+  const domains = declaredDomains(display);
+  const range = feature ? effectiveScalarColorRange(feature, coloring, display) : null;
 
-  if (feature?.representation === 'regional') {
-    histogram = feature.histogram;
-    logHistogram = feature.histogramVariants?.log;
-    positiveDomain = positiveRange(regionalColorRange(feature, coloring, automaticRange));
-    missingHistogram = logHistogram === undefined;
-  } else if (feature?.representation === 'volume') {
-    histogram = feature.summary.histogram;
-    const range = feature.descriptor.valueRange;
-    positiveDomain = range?.[0] !== null && range?.[1] !== null
-      ? positiveRange(range as readonly [number, number])
-      : false;
-    // Schema v1 volume summaries currently carry only an exact linear
-    // histogram. Keep the one-scale contract honest until a release declares
-    // an exact logarithmic volume binning.
-    missingHistogram = true;
+  const availableScales = declared.filter((spec) => (
+    range !== null
+    && scaleDomainIsValid(range, spec)
+    && domains.every((domain) => matchingBinning(binnings, spec.kind, domain) !== undefined)
+  )).map(({ kind }) => kind);
+  const unavailableScaleReasons: Partial<Record<ColorScale, string>> = {};
+  for (const scale of ['linear', 'log', 'symlog'] as const) {
+    if (availableScales.includes(scale)) continue;
+    const spec = declared.find(({ kind }) => kind === scale);
+    unavailableScaleReasons[scale] = !spec
+      ? `${scale === 'symlog' ? 'Signed-log' : scale === 'log' ? 'Logarithmic' : 'Linear'} scale is not declared by this release.`
+      : range === null || !scaleDomainIsValid(range, spec)
+        ? scale === 'log'
+          ? 'Logarithmic scale requires a strictly positive color range.'
+          : 'This scale is unavailable for the current color range.'
+        : 'This release has no exact histogram for every declared distribution domain.';
   }
 
-  const logAvailable = feature !== null && positiveDomain && !missingHistogram;
-  const automaticScale = requestedAutomaticScale === 'log' && logAvailable ? 'log' : 'linear';
-  const requestedScale = resolveColorScale(coloring.scale, automaticScale);
-  const effectiveScale = requestedScale === 'log' && logAvailable ? 'log' : 'linear';
-  const logUnavailableReason = logAvailable
-    ? null
-    : missingHistogram
-      ? 'Logarithmic scale is unavailable because this release has no exact strictly-positive log histogram.'
-      : 'Logarithmic scale requires a strictly positive value range.';
+  const preferredScale = display?.preferredScale ?? 'linear';
+  const automaticScale = availableScales.includes(preferredScale) ? preferredScale : 'linear';
+  const requestedScale = coloring.scale === 'auto' ? automaticScale : coloring.scale;
+  const unsupportedExplicitScale = coloring.scale !== 'auto' && !availableScales.includes(coloring.scale);
+  let effectiveScale = availableScales.includes(requestedScale) ? requestedScale : 'linear';
+
+  const availableDistributionDomains = domains.filter((domain) => (
+    matchingBinning(binnings, effectiveScale, domain) !== undefined
+  ));
+  const unavailableDistributionReasons: Partial<Record<DistributionDomain, string>> = {};
+  for (const domain of ['full', 'focused'] as const) {
+    if (availableDistributionDomains.includes(domain)) continue;
+    unavailableDistributionReasons[domain] = !domains.includes(domain)
+      ? `${domain === 'focused' ? 'Focused' : 'Full'} distribution is not declared by this release.`
+      : 'This release has no exact histogram for this scale and distribution domain.';
+  }
+  const preferredDomain = display?.preferredDistributionDomain ?? 'full';
+  const automaticDistributionDomain = availableDistributionDomains.includes(preferredDomain) ? preferredDomain : 'full';
+  const requestedDomain = distributionSelection === 'auto' ? automaticDistributionDomain : distributionSelection;
+  const unsupportedExplicitDomain = distributionSelection !== 'auto'
+    && !availableDistributionDomains.includes(distributionSelection);
+  let effectiveDistributionDomain = availableDistributionDomains.includes(requestedDomain) ? requestedDomain : 'full';
+  if (unsupportedExplicitScale || unsupportedExplicitDomain) {
+    effectiveScale = 'linear';
+    effectiveDistributionDomain = 'full';
+  }
+  const effectiveScaleSpec = declared.find(({ kind }) => kind === effectiveScale) ?? { kind: 'linear' };
 
   return {
     selection: coloring.scale,
     automaticScale,
     effectiveScale,
-    histogram: effectiveScale === 'log' ? logHistogram : histogram,
-    logAvailable,
-    logUnavailableReason,
+    effectiveScaleSpec,
+    histogram: matchingBinning(binnings, effectiveScale, effectiveDistributionDomain),
+    fullHistogram: matchingBinning(binnings, effectiveScale, 'full'),
+    availableScales,
+    unavailableScaleReasons,
+    distributionSelection,
+    automaticDistributionDomain,
+    effectiveDistributionDomain,
+    availableDistributionDomains,
+    unavailableDistributionReasons,
   };
 }

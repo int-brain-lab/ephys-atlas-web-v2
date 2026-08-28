@@ -3,7 +3,8 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 const releaseRoot = path.resolve(
-  '../data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-firing-defaults-v1',
+  process.env.EPHYS_ATLAS_CLUSTER_RELEASE
+    ?? '../data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-d050-d048-v1',
 );
 const releaseId = path.basename(releaseRoot);
 
@@ -83,7 +84,7 @@ test('exposes approved units, explanations, and conservative scale defaults', as
   await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '3.73');
   await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '17.8');
   await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.locator('select[aria-label="Value scale"] option:checked')).toHaveText('Auto (Logarithmic)');
+  await expect(page.locator('select[aria-label="Value scale"] option:checked')).toHaveText('Auto (Log)');
   await expect(page.locator('select[aria-label="Color range mode"] option:checked')).toHaveText('Auto (release default)');
   await expect(page.locator('.color-legend__minimum')).toHaveText('3.73');
   await expect(page.locator('.color-legend__maximum')).toHaveText('17.8');

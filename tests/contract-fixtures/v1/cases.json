@@ -103,47 +103,33 @@
           "endianness": "little"
         }
       },
-      "histogram": {
-        "axis_scale": "linear",
-        "default_axis_scale": "log",
-        "edges": [0, 2, 5],
-        "global_counts": [1, 3],
-        "regional_counts": {
-          "format": "raw-binary-array-v1",
-          "resource": {
-            "path": "data/hist.bin",
-            "media_type": "application/octet-stream",
-            "bytes": 8,
-            "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
-            "codec": {"name": "none", "decoded_bytes": 8}
+      "distribution": {
+        "binnings": [
+          {
+            "id": "linear-full", "scale": {"kind": "linear"}, "domain": {"kind": "full"},
+            "edges": [1, 2.5, 4], "global_counts": [2, 2], "global_underflow_count": 0, "global_overflow_count": 0,
+            "regional_counts": {"format": "raw-binary-array-v1", "resource": {"path": "data/dist-linear-full.bin", "media_type": "application/octet-stream", "bytes": 16, "sha256": "4444444444444444444444444444444444444444444444444444444444444444", "codec": {"name": "none", "decoded_bytes": 16}}, "dtype": "uint32", "shape": [1, 4], "order": "C", "endianness": "little"},
+            "regional_count_layout": "underflow-bins-overflow", "bin_rule": "left-closed-right-open-last-closed"
           },
-          "dtype": "uint32",
-          "shape": [1, 2],
-          "order": "C",
-          "endianness": "little"
-        },
-        "bin_rule": "left-closed-right-open-last-closed",
-        "variants": {
-          "log": {
-            "edges": [1, 2, 5],
-            "global_counts": [1, 3],
-            "regional_counts": {
-              "format": "raw-binary-array-v1",
-              "resource": {
-                "path": "data/hist-log.bin",
-                "media_type": "application/octet-stream",
-                "bytes": 8,
-                "sha256": "4545454545454545454545454545454545454545454545454545454545454545",
-                "codec": {"name": "none", "decoded_bytes": 8}
-              },
-              "dtype": "uint32",
-              "shape": [1, 2],
-              "order": "C",
-              "endianness": "little"
-            },
-            "bin_rule": "left-closed-right-open-last-closed"
+          {
+            "id": "linear-focused", "scale": {"kind": "linear"}, "domain": {"kind": "focused", "bounds": [1.5, 3.5]},
+            "edges": [1.5, 2.5, 3.5], "global_counts": [1, 1], "global_underflow_count": 1, "global_overflow_count": 1,
+            "regional_counts": {"format": "raw-binary-array-v1", "resource": {"path": "data/dist-linear-focused.bin", "media_type": "application/octet-stream", "bytes": 16, "sha256": "4545454545454545454545454545454545454545454545454545454545454545", "codec": {"name": "none", "decoded_bytes": 16}}, "dtype": "uint32", "shape": [1, 4], "order": "C", "endianness": "little"},
+            "regional_count_layout": "underflow-bins-overflow", "bin_rule": "left-closed-right-open-last-closed"
+          },
+          {
+            "id": "log-full", "scale": {"kind": "log"}, "domain": {"kind": "full"},
+            "edges": [1, 2, 4], "global_counts": [1, 3], "global_underflow_count": 0, "global_overflow_count": 0,
+            "regional_counts": {"format": "raw-binary-array-v1", "resource": {"path": "data/dist-log-full.bin", "media_type": "application/octet-stream", "bytes": 16, "sha256": "4646464646464646464646464646464646464646464646464646464646464646", "codec": {"name": "none", "decoded_bytes": 16}}, "dtype": "uint32", "shape": [1, 4], "order": "C", "endianness": "little"},
+            "regional_count_layout": "underflow-bins-overflow", "bin_rule": "left-closed-right-open-last-closed"
+          },
+          {
+            "id": "log-focused", "scale": {"kind": "log"}, "domain": {"kind": "focused", "bounds": [1.5, 3.5]},
+            "edges": [1.5, 2.25, 3.5], "global_counts": [1, 1], "global_underflow_count": 1, "global_overflow_count": 1,
+            "regional_counts": {"format": "raw-binary-array-v1", "resource": {"path": "data/dist-log-focused.bin", "media_type": "application/octet-stream", "bytes": 16, "sha256": "4747474747474747474747474747474747474747474747474747474747474747", "codec": {"name": "none", "decoded_bytes": 16}}, "dtype": "uint32", "shape": [1, 4], "order": "C", "endianness": "little"},
+            "regional_count_layout": "underflow-bins-overflow", "bin_rule": "left-closed-right-open-last-closed"
           }
-        }
+        ]
       }
     },
     "volumeSummary": {
@@ -156,7 +142,7 @@
       "outside_voxel_count": 4,
       "missing_voxel_count": 2,
       "valid_statistics": {"min": -1, "max": 8, "mean": 2, "std": 1.5, "q05": -0.5, "q25": 1, "median": 2, "q75": 3, "q95": 7},
-      "histogram": {"edges": [-1, 0, 4, 8], "counts": [2, 12, 4], "bin_rule": "left-closed-right-open-last-closed"}
+      "distribution": {"binnings": [{"id": "linear-full", "scale": {"kind": "linear"}, "domain": {"kind": "full"}, "edges": [-1, 0, 4, 8], "global_counts": [2, 12, 4], "global_underflow_count": 0, "global_overflow_count": 0, "bin_rule": "left-closed-right-open-last-closed"}]}
     },
     "chunkIndex": {
       "schema_version": "1.0",
@@ -233,7 +219,10 @@
       "description": "Contract-only feature",
       "unit": null,
       "value_semantics": {"quantity": "synthetic", "transform": "none", "source_population": "synthetic", "missing_values": "declared by representation"},
-      "display": {"colormap": "viridis", "range": [-1, 8], "scale": "linear"},
+      "display": {
+        "regional": {"colormap": "viridis", "range": [1, 4], "scales": [{"kind": "linear"}, {"kind": "log"}], "preferred_scale": "log", "distribution_domains": [{"kind": "full"}, {"kind": "focused", "bounds": [1.5, 3.5]}], "preferred_distribution_domain": "focused"},
+        "volume": {"colormap": "viridis", "range": [-1, 8], "scales": [{"kind": "linear"}], "preferred_scale": "linear", "distribution_domains": [{"kind": "full"}], "preferred_distribution_domain": "full"}
+      },
       "representations": {"regional": {"$fixture": "regional"}, "volume": {"$fixture": "volume"}},
       "artifacts": [{"$fixture": "artifact"}]
     },
@@ -346,13 +335,25 @@
     {"name": "regional and binary array valid", "schema": "regional.schema.json", "valid": true, "document": "regional"},
     {"name": "binary decoded length mismatch", "schema": "regional.schema.json", "valid": false, "document": "regional", "set": {"/parcellations/0/values/resource/codec/decoded_bytes": 8}},
     {"name": "regional statistics valid", "schema": "statistics.schema.json", "valid": true, "document": "statistics"},
-    {"name": "regional histogram count mismatch", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/histogram/global_counts/1": 2}},
-    {"name": "regional log histogram must remain positive", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/histogram/variants/log/edges/0": 0}},
-    {"name": "regional log histogram count mismatch", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/histogram/variants/log/global_counts/1": 2}},
+    {"name": "regional distribution count mismatch", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/distribution/binnings/0/global_counts/1": 1}},
+    {"name": "regional Full lower edge must enclose declared minimum", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/distribution/binnings/0/edges/0": 1.1}},
+    {"name": "regional Full upper edge must enclose declared maximum", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/distribution/binnings/0/edges/2": 3.9}},
+    {"name": "regional Full raw endpoints must match exactly across scales", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/distribution/binnings/2/edges/0": 1.0000000000000002}},
+    {"name": "regional Focused edge must equal its declared bound exactly", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/distribution/binnings/1/edges/0": 1.5000000000000002}},
+    {"name": "regional Focused domain must remain inside Full", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/distribution/binnings/1/domain/bounds": [0.5, 3.5], "/distribution/binnings/1/edges": [0.5, 2.5, 3.5], "/distribution/binnings/3/domain/bounds": [0.5, 3.5], "/distribution/binnings/3/edges": [0.5, 2.25, 3.5]}},
+    {"name": "regional nonempty population statistics cannot be null", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/global/median": null}},
+    {"name": "regional empty population must omit distribution", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/global/count": 0, "/global/missing_count": 4, "/global/min": null, "/global/max": null, "/global/mean": null, "/global/std": null, "/global/median": null}},
+    {"name": "regional log distribution must remain positive", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/distribution/binnings/2/edges/0": 0}},
+    {"name": "regional Signed-log threshold must be finite", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/distribution/binnings/2/id": "symlog-full", "/distribution/binnings/2/scale": {"kind": "symlog", "linear_threshold": 1e309}, "/distribution/binnings/3/id": "symlog-focused", "/distribution/binnings/3/scale": {"kind": "symlog", "linear_threshold": 1e309}}},
+    {"name": "regional focused tail mismatch", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/distribution/binnings/1/global_underflow_count": 0}},
+    {"name": "regional scale-domain binning cannot duplicate a combination", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/distribution/binnings/3/id": "linear-focused", "/distribution/binnings/3/scale": {"kind": "linear"}}},
+    {"name": "regional binning id must be canonical", "schema": "statistics.schema.json", "valid": false, "document": "statistics", "set": {"/distribution/binnings/0/id": "primary"}},
     {"name": "volume summary valid", "schema": "volume-summary.schema.json", "valid": true, "document": "volumeSummary"},
     {"name": "volume summary classifications not exhaustive", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/missing_voxel_count": 3}},
     {"name": "volume summary total differs from grid shape", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/grid_shape/2": 5}},
-    {"name": "volume summary histogram mismatch", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/histogram/counts/2": 3}},
+    {"name": "volume summary distribution mismatch", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/distribution/binnings/0/global_counts/2": 3}},
+    {"name": "volume Full upper edge must enclose declared maximum", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/distribution/binnings/0/edges/3": 7.9}},
+    {"name": "volume distribution cannot declare regional counts", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/distribution/binnings/0/regional_count_layout": "underflow-bins-overflow", "/distribution/binnings/0/regional_counts": {"$fixture": "binaryU8"}}},
     {"name": "chunk resource index valid", "schema": "volume-resource-index.schema.json", "valid": true, "document": "chunkIndex"},
     {"name": "slice pack resource index valid", "schema": "volume-resource-index.schema.json", "valid": true, "document": "slicePackIndex"},
     {"name": "chunk decoded length mismatch", "schema": "volume-resource-index.schema.json", "valid": false, "document": "chunkIndex", "set": {"/chunks/0/resource/codec/decoded_bytes": 92}},
@@ -364,6 +365,12 @@
     {"name": "volume voxel edge extent invalid", "schema": "volume.schema.json", "valid": false, "document": "volume", "set": {"/grid/voxel_edge_extent_um/0": 64}},
     {"name": "volume mask codes must differ", "schema": "volume.schema.json", "valid": false, "document": "volume", "set": {"/validity": {"kind": "mask", "mask": {"format": "raw-binary-array-v1", "resource": {"path": "volume/validity.u8", "media_type": "application/octet-stream", "bytes": 24, "sha256": "1212121212121212121212121212121212121212121212121212121212121212", "codec": {"name": "none", "decoded_bytes": 24}}, "dtype": "uint8", "shape": [2, 3, 4], "order": "C", "endianness": "not-applicable"}, "codes": {"valid": 0, "outside": 0, "missing": 2}, "classification_order": ["outside", "missing", "valid"]}}},
     {"name": "feature valid", "schema": "feature.schema.json", "valid": true, "document": "feature"},
+    {"name": "feature signed-log threshold must be positive", "schema": "feature.schema.json", "valid": false, "document": "feature", "set": {"/display/regional/scales/1": {"kind": "symlog", "linear_threshold": 0}}},
+    {"name": "feature signed-log threshold must be finite", "schema": "feature.schema.json", "valid": false, "document": "feature", "set": {"/display/regional/scales/1": {"kind": "symlog", "linear_threshold": 1e309}}},
+    {"name": "feature preferred scale must be declared", "schema": "feature.schema.json", "valid": false, "document": "feature", "set": {"/display/volume/preferred_scale": "symlog"}},
+    {"name": "feature preferred distribution domain must be declared", "schema": "feature.schema.json", "valid": false, "document": "feature", "set": {"/display/volume/preferred_distribution_domain": "focused"}},
+    {"name": "feature range shared with Log must be strictly positive", "schema": "feature.schema.json", "valid": false, "document": "feature", "set": {"/display/regional/range": [0, 4]}},
+    {"name": "feature focused bounds must increase", "schema": "feature.schema.json", "valid": false, "document": "feature", "set": {"/display/regional/distribution_domains/1/bounds": [3.5, 1.5]}},
     {"name": "dataset valid", "schema": "dataset.schema.json", "valid": true, "document": "dataset"},
     {"name": "dataset duplicate feature identifiers", "schema": "dataset.schema.json", "valid": false, "document": "dataset", "append": {"/features": {"id": "synthetic-feature", "descriptor": {"$fixture": "jsonResource"}}}},
     {"name": "registered SVG resource index valid", "schema": "registered-svg-resource-index.schema.json", "valid": true, "document": "registeredSvgIndex"},

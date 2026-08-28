@@ -123,15 +123,19 @@ def test_cluster_recipe_is_deterministic(tmp_path):
         assert (a / rel).read_bytes() == (b / rel).read_bytes(), rel
 
 
-def test_cluster_recipe_emits_explicit_log_color_defaults(tmp_path):
+def test_cluster_recipe_emits_explicit_reviewed_log_distribution(tmp_path):
     features, ids, metadata = _inputs()
     config = ClusterBuildConfig(
         release_id="sha256-1234567890abcdef",
         created_at="2026-08-20T00:00:00Z",
         project="explicit-test-project",
-        log_color_features=("firing_rate",),
-        log_histogram_features=("firing_rate",),
     )
+    display = {
+        "scales": [{"kind": "linear"}, {"kind": "log"}],
+        "preferred_scale": "log",
+        "distribution_domains": [{"kind": "full"}],
+        "preferred_distribution_domain": "full",
+    }
     release = build_clusters_release_from_arrays(
         tmp_path / "release",
         config,
@@ -139,41 +143,50 @@ def test_cluster_recipe_emits_explicit_log_color_defaults(tmp_path):
         ids,
         metadata,
         [{"role": "canonical-data", "description": "display metadata test"}],
+        feature_display={"firing_rate": display},
     )
     validate_release(release, ROOT / "schema" / "v1")
     firing_rate = json.loads(
         (release / "features/firing_rate/feature.json").read_text()
     )
     amplitude = json.loads((release / "features/amp_median/feature.json").read_text())
-    assert firing_rate["display"] == {"scale": "log"}
-    assert "display" not in amplitude
+    assert firing_rate["display"]["regional"]["preferred_scale"] == "log"
+    assert amplitude["display"]["regional"]["preferred_scale"] == "linear"
     statistics = json.loads(
         (release / "features/firing_rate/allen.statistics.json").read_text()
     )
-    histogram = statistics["histogram"]
-    assert histogram["axis_scale"] == "linear"
-    assert histogram["default_axis_scale"] == "log"
-    assert set(histogram["variants"]) == {"log"}
+    binnings = {
+        item["id"]: item for item in statistics["distribution"]["binnings"]
+    }
+    assert set(binnings) == {"linear-full", "log-full"}
     np.testing.assert_allclose(
-        histogram["variants"]["log"]["edges"],
+        binnings["log-full"]["edges"],
         np.geomspace(1.0, 100.0, 51),
     )
-    assert sum(histogram["variants"]["log"]["global_counts"]) == 4
-    assert (release / "features/firing_rate/allen.hist.log.u32").is_file()
+    assert sum(binnings["log-full"]["global_counts"]) == 4
+    assert (
+        release / "features/firing_rate/allen.distribution.log-full.u32"
+    ).is_file()
 
 
-def test_cluster_recipe_rejects_log_histogram_with_zero_values(tmp_path):
+def test_cluster_recipe_rejects_reviewed_log_with_zero_values(tmp_path):
     features, ids, metadata = _inputs()
     features["firing_rate"][0] = 0
-    config = replace(_config(), log_histogram_features=("firing_rate",))
+    display = {
+        "scales": [{"kind": "linear"}, {"kind": "log"}],
+        "preferred_scale": "log",
+        "distribution_domains": [{"kind": "full"}],
+        "preferred_distribution_domain": "full",
+    }
     with pytest.raises(ValueError, match="strictly-positive|positive"):
         build_clusters_release_from_arrays(
             tmp_path / "release",
-            config,
+            _config(),
             features,
             ids,
             metadata,
             [{"role": "canonical-data", "description": "invalid log histogram"}],
+            feature_display={"firing_rate": display},
         )
 
 
@@ -231,12 +244,8 @@ def test_approved_cluster_catalog_is_machine_consumable():
     assert {feature.source_column: feature.unit for feature in selection.features}[
         "drift"
     ] == "um/h"
-    assert selection.display["firing_rate"] == {
-        "scale": "log",
-        "range": [3.73, 17.8],
-    }
-    assert "firing_rate" in selection.log_histogram_features
-    assert "noise_cutoff" not in selection.display
+    assert not hasattr(selection, "display")
+    assert not hasattr(selection, "log_histogram_features")
 
 
 def test_cluster_catalog_selection_fails_closed_on_mismatch(tmp_path):

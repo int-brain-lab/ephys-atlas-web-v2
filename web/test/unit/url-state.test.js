@@ -51,11 +51,21 @@ test('URL state preserves selected-region order for stable identity colors', () 
 
 test('color scale defaults are automatic while explicit overrides round-trip', () => {
   assert.equal(parseViewState('?v=4').coloring.scale, 'auto');
-  for (const scale of ['linear', 'log']) {
+  for (const scale of ['linear', 'log', 'symlog']) {
     const parsed = parseViewState(`?v=4&scale=${scale}`);
     assert.equal(parsed.coloring.scale, scale);
     assert.match(serializeViewState(parsed), new RegExp(`scale=${scale}`));
   }
+});
+
+test('distribution domain defaults are automatic while explicit choices round-trip', () => {
+  assert.equal(parseViewState('?v=4').distribution.domain, 'auto');
+  for (const domain of ['full', 'focused']) {
+    const parsed = parseViewState(`?v=4&dist=${domain}`);
+    assert.equal(parsed.distribution.domain, domain);
+    assert.match(serializeViewState(parsed), new RegExp(`dist=${domain}`));
+  }
+  assert.equal(parseViewState('?v=4&dist=unknown').distribution.domain, 'auto');
 });
 
 test('obsolete independent histogram scale is ignored and removed canonically', () => {

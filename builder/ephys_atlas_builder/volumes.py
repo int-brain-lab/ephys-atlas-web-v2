@@ -14,9 +14,18 @@ from pathlib import Path
 import numpy as np
 
 from .io import json_resource, sha256_file, write_json
+from .distribution_selection import (
+    bind_distribution_selection,
+    load_distribution_selection,
+    selection_provenance,
+)
 from .npz import extract_last_axis_features, inspect_volume_npz
-from .regional_release import histogram_edges
-from .statistics import describe, histogram
+from .regional_release import (
+    build_global_distribution_binnings,
+    linear_full_display,
+    validate_scalar_display,
+)
+from .statistics import describe
 from .volume import write_chunked_volume, write_slice_packed_volume
 
 DATASET_ID = "ephys_atlas_volumes"
@@ -39,12 +48,14 @@ class VolumeBuildConfig:
     pack_depth: int | None = None
     chunk_shape: tuple[int, int, int] | None = None
     features: tuple[str, ...] | None = None
+    feature_display: Mapping[str, dict] | None = None
     histogram_bins: int = 50
     paper_snapshot: bool = False
     ibleatools_commit: str | None = None
     iblatlas_commit: str | None = None
     builder_commit: str | None = None
     geometry_selection: Path | None = None
+    distribution_selection: Path | None = None
     candidate: bool = False
 
     def validate(self) -> None:
@@ -311,6 +322,10 @@ def _write_volume_feature(
     missing = ~outside & ~np.isfinite(volume)
     valid = ~outside & ~missing
     valid_values = np.asarray(volume[valid], dtype=np.float64)
+    display = validate_scalar_display(
+        (config.feature_display or {}).get(feature_id) or linear_full_display(),
+        valid_values,
+    )
     stats = describe(valid_values)
     summary = {
         "schema_version": "1.0",
@@ -337,11 +352,10 @@ def _write_volume_feature(
         },
     }
     if valid_values.size:
-        edges = histogram_edges(valid_values, config.histogram_bins)
-        summary["histogram"] = {
-            "edges": edges.tolist(),
-            "counts": histogram(valid_values, edges).astype(int).tolist(),
-            "bin_rule": "left-closed-right-open-last-closed",
+        summary["distribution"] = {
+            "binnings": build_global_distribution_binnings(
+                valid_values, config.histogram_bins, display
+            )
         }
     summary_path = feature_root / "volume" / "summary.json"
     write_json(summary_path, summary)
@@ -352,6 +366,7 @@ def _write_volume_feature(
         "label": feature_id.replace("_", " "),
         "description": f"Raw, unnormalized {feature_id} scalar encoding volume.",
         "unit": None,
+        "display": {"volume": display},
         "value_semantics": {
             "quantity": feature_id,
             "transform": "identity; raw unnormalized source float16 values",
@@ -412,6 +427,11 @@ def build_volumes_release_from_arrays(
     missing = sorted(set(selected) - set(feature_values))
     if missing:
         raise ValueError(f"requested volume features are absent: {', '.join(missing)}")
+    unknown_display = sorted(set(config.feature_display or {}) - set(selected))
+    if unknown_display:
+        raise ValueError(
+            f"volume display selections are not in the release catalog: {', '.join(unknown_display)}"
+        )
     if len(set(selected)) != len(selected):
         raise ValueError("selected volume features must be unique")
     invalid = [feature for feature in selected if not _IDENTIFIER_RE.fullmatch(feature)]
@@ -455,6 +475,10 @@ def build_volumes_release_from_arrays(
     ]
     if config.geometry_selection:
         command.extend(("--geometry-selection", str(config.geometry_selection)))
+    if config.distribution_selection:
+        command.extend(
+            ("--distribution-selection", "distribution-selection.json")
+        )
     if config.layout == "orthogonal_slice_packs":
         command.extend(("--pack-depth", str(config.pack_depth)))
     else:
@@ -536,6 +560,15 @@ def build_volumes_release_from_arrays(
                 "classification_order": ["outside", "missing", "valid"],
                 "features": list(selected),
                 "histogram_bins": config.histogram_bins,
+                **(
+                    {
+                        "distribution_selection_sha256": sha256_file(
+                            config.distribution_selection
+                        )
+                    }
+                    if config.distribution_selection is not None
+                    else {}
+                ),
                 "transport": transport,
             },
             "notes": [
@@ -561,6 +594,17 @@ def build_volumes_from_snapshot(
     release_dir: Path,
     config: VolumeBuildConfig,
 ) -> Path:
+    if config.source_release_id is None:
+        raise ValueError("snapshot builds require an explicit volume source release id")
+    if config.distribution_selection is None:
+        raise ValueError(
+            "snapshot builds require an approved D050 distribution selection"
+        )
+    distribution_selection = load_distribution_selection(
+        config.distribution_selection,
+        dataset_id=DATASET_ID,
+        representation="volume",
+    )
     config.validate()
     config.require_scientific_pins()
     source_json = source_snapshot / "source.json"
@@ -571,7 +615,7 @@ def build_volumes_from_snapshot(
         raise RuntimeError(
             f"source snapshot is not {DATASET_ID}: {source.get('dataset_id')}"
         )
-    source_release_id = config.source_release_id or config.release_id
+    source_release_id = config.source_release_id
     if str(source.get("resolved_release")) != source_release_id:
         raise RuntimeError(
             f"source release {source.get('resolved_release')} does not match requested source release {source_release_id}"
@@ -667,13 +711,19 @@ def build_volumes_from_snapshot(
     missing = sorted(set(selected) - set(feature_names))
     if missing:
         raise ValueError(f"requested volume features are absent: {', '.join(missing)}")
+    feature_display = bind_distribution_selection(
+        distribution_selection,
+        source_release_id=source_release_id,
+        feature_ids=selected,
+    )
+    config = replace(config, feature_display=feature_display)
 
     canonical = source.get("canonical_source") or {}
     provenance_sources = [
         {
             "role": "canonical-data",
             "description": "Canonical ea_active encoding-volume NPZ",
-            "release": config.release_id,
+            "release": source_release_id,
             "path": filename,
             "sha256": entry["sha256"],
             **({"uri": canonical["uri"]} if canonical.get("uri") else {}),
@@ -696,6 +746,7 @@ def build_volumes_from_snapshot(
             if selection
             else []
         ),
+        selection_provenance(distribution_selection),
     ]
     with tempfile.TemporaryDirectory(prefix="ephys-atlas-volume-") as temporary:
         extracted: dict[str, np.ndarray] = {}
@@ -717,4 +768,7 @@ def build_volumes_from_snapshot(
     shutil.copyfile(source_json, result / "source.json")
     if selection:
         shutil.copyfile(selection.path, result / "geometry-selection.json")
+    shutil.copyfile(
+        distribution_selection.path, result / "distribution-selection.json"
+    )
     return result

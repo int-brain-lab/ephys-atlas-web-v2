@@ -6,7 +6,7 @@ test('volume summary and exact valid-voxel distribution reuse the loaded summary
   page.on('request', (request) => {
     if (request.url().endsWith('/features/rms_ap/volume/summary.json')) summaryRequests.push(request.url());
   });
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&secondary=summary&selected=-362&cursor=25,25,25');
+  await page.goto('/?v=4&feature=rms_ap&repr=volume&secondary=summary&selected=-362&cursor=25,25,25&scale=linear&dist=full');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
 
   const summary = page.locator('.secondary-view__summary');
@@ -25,12 +25,12 @@ test('volume summary and exact valid-voxel distribution reuse the loaded summary
   await expect(distribution.locator('.distribution-chart__bin')).toHaveCount(8);
   await expect(distribution.locator('.distribution-chart__global')).toHaveAttribute('data-total', '191');
   await expect(distribution.locator('.distribution-chart__region')).toHaveCount(0);
-  const log = distribution.getByRole('button', { name: 'Log' });
-  await expect(log).toBeDisabled();
-  await expect(log).toHaveAttribute('title', /no exact strictly-positive log histogram/);
+  const log = distribution.getByRole('button', { name: 'Log', exact: true });
+  await expect(log).toBeEnabled();
+  await expect(distribution.getByRole('button', { name: 'Signed log' })).toBeEnabled();
   await expect(distribution.locator('.distribution-chart__color-range')).toHaveAttribute('data-visible', 'true');
-  await expect(distribution.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '1.050000011920929');
-  await expect(distribution.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '18.15000057220459');
+  await expect(distribution.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '0.1');
+  await expect(distribution.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '19.1');
 
   expect(summaryRequests).toHaveLength(1);
   await page.getByRole('tab', { name: 'Top' }).click();
@@ -44,7 +44,7 @@ test('volume layer settings only appear for volume representations', async ({ pa
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.locator('.volume-layer-settings')).toBeHidden();
 
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
+  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25&scale=linear&dist=full');
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.locator('.volume-layer-settings')).toBeVisible();
   await expect(page.getByRole('slider', { name: 'Volume opacity' })).toBeVisible();
@@ -261,10 +261,12 @@ test('volume navigation keeps composites visible and repaints only a changed sca
       return original.apply(this, args);
     };
   });
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
+  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25&scale=linear&dist=full');
   const frame = page.locator('[data-view="coronal"]');
   await expect(frame.locator('[data-slice-asset="schema-volume-v1"]')).toBeAttached();
   await expect(frame).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('[data-view="sagittal"]')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('[data-view="horizontal"]')).toHaveAttribute('data-state', 'ready');
   const initialVolumeIndex = await frame.locator('.view-frame__renderer').getAttribute('data-volume-index');
   expect(initialVolumeIndex).not.toBeNull();
   await page.evaluate(() => {

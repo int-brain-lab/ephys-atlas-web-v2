@@ -18,22 +18,22 @@ bootstrap-scientific:
 bootstrap-anatomy:
     uv sync --project builder --python 3.12 --extra anatomy --extra scientific --extra test --locked
 
-# Run the browser app locally.
-dev:
-    cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/2026_W32 EPHYS_ATLAS_REAL_FEATURE=rms_ap.denoised npm run dev:real
+# Run the browser app against the rebuilt local D050 channel release.
+dev release="2026_W32-d050-linear-full-v1" feature="rms_ap.denoised":
+    cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/{{release}} EPHYS_ATLAS_REAL_FEATURE={{feature}} npm run dev:real
 
 # Run the viewer against a pinned local real channel release (development only).
-dev-real release="2026_W32" feature="rms_ap.denoised":
+dev-real release="2026_W32-d050-linear-full-v1" feature="rms_ap.denoised":
     cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/{{release}} EPHYS_ATLAS_REAL_FEATURE={{feature}} npm run dev:real
 
 # Run the real-data viewer with an explicit local production 3-D mesh pack.
-dev-3d mesh="../artifacts/mesh-d042-schema-v1" release="2026_W32" feature="rms_ap.denoised":
+dev-3d mesh="../artifacts/mesh-d042-schema-v1" release="2026_W32-d050-linear-full-v1" feature="rms_ap.denoised":
     cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/{{release}} EPHYS_ATLAS_REAL_FEATURE={{feature}} EPHYS_ATLAS_REAL_MESH_PACK={{mesh}} npm run dev:real
 
 # Run one local-only catalog containing channels, clusters, BWM, the validated
 # volume candidate, all projection views, and the immutable D042 mesh pack.
-dev-local-full mesh="../artifacts/mesh-d042-schema-v1" feature="rms_ap.denoised":
-    cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/2026_W32 EPHYS_ATLAS_REAL_FEATURE={{feature}} EPHYS_ATLAS_ADDITIONAL_RELEASES=../data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-firing-defaults-v1,../data/releases/brainwide_map/legacy-v1-1d908bea,../data/releases/ephys_atlas_volumes/2026_W26-candidate-depth4 EPHYS_ATLAS_REAL_MESH_PACK={{mesh}} npm run dev:real
+dev-local-full mesh="../artifacts/mesh-d042-schema-v1" feature="rms_ap.denoised" channels="2026_W32-d050-linear-full-v1" clusters="sha256-9b5e55215b306f26-d050-d048-v1" bwm="legacy-v1-1d908bea-d050-linear-full-v1" volume="2026_W26-candidate-depth4-d050-linear-full-v1":
+    cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/{{channels}} EPHYS_ATLAS_REAL_FEATURE={{feature}} EPHYS_ATLAS_ADDITIONAL_RELEASES=../data/releases/ephys_atlas_clusters/{{clusters}},../data/releases/brainwide_map/{{bwm}},../data/releases/ephys_atlas_volumes/{{volume}} EPHYS_ATLAS_REAL_MESH_PACK={{mesh}} npm run dev:real
 
 # Builder/schema tests.
 test-builder:
@@ -110,8 +110,8 @@ validate-3d-local url="http://127.0.0.1:5173/" output="../artifacts/mesh-d042-br
     cd web && node scripts/validate-local-d042.mjs {{url}} {{output}}
 
 # Validate every dataset and context view exposed by `just dev-local-full`.
-validate-local-full url="http://localhost:5173/" output="../artifacts/local-full-browser-evidence":
-    cd web && node scripts/validate-local-full.mjs {{url}} {{output}}
+validate-local-full url="http://localhost:5173/" output="../artifacts/local-full-browser-evidence" channels="2026_W32-d050-linear-full-v1" clusters="sha256-9b5e55215b306f26-d050-d048-v1" bwm="legacy-v1-1d908bea-d050-linear-full-v1" volume="2026_W26-candidate-depth4-d050-linear-full-v1":
+    cd web && EPHYS_ATLAS_EXPECTED_RELEASES=ephys_atlas_channels={{channels}},ephys_atlas_clusters={{clusters}},brainwide_map={{bwm}},ephys_atlas_volumes={{volume}} node scripts/validate-local-full.mjs {{url}} {{output}}
 
 # Generate the ignored, fully offline anatomy comparison lab.
 anatomy-compare resolution="25":
@@ -167,21 +167,21 @@ data-pull-volume release resolution_um:
 data-pull-clusters release="latest":
     {{uv-scientific}} ephys-atlas-data pull ephys_atlas_clusters {{release}} --project ibl_neuropixel_brainwide_01 --dest data/source
 
-# Build the launch channel dataset. Raw/denoised and population are intentionally explicit.
-data-build-channels release feature_mode population created_at ibleatools_commit iblatlas_commit builder_commit:
-    {{uv-scientific}} ephys-atlas-data build-channels {{release}} --feature-mode {{feature_mode}} --population {{population}} --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
+# Build a new channel release from a pinned source and reviewed D050 selection.
+data-build-channels source_release output_release feature_mode population distribution_selection created_at ibleatools_commit iblatlas_commit builder_commit:
+    {{uv-scientific}} ephys-atlas-data build-channels {{source_release}} --release-id {{output_release}} --feature-mode {{feature_mode}} --population {{population}} --distribution-selection {{distribution_selection}} --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
 
-# Build the D044-approved cluster release from its machine-consumable catalog selection.
-data-build-clusters release created_at ibleatools_commit iblatlas_commit builder_commit:
-    {{uv-scientific}} ephys-atlas-data build-clusters {{release}} --project ibl_neuropixel_brainwide_01 --population all --catalog-selection docs/data/CLUSTERS_CATALOG_SELECTION.json --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
+# Build a new cluster release from its catalog and reviewed D050 selections.
+data-build-clusters source_release output_release catalog_selection distribution_selection created_at ibleatools_commit iblatlas_commit builder_commit:
+    {{uv-scientific}} ephys-atlas-data build-clusters {{source_release}} --release-id {{output_release}} --project ibl_neuropixel_brainwide_01 --population all --catalog-selection {{catalog_selection}} --distribution-selection {{distribution_selection}} --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
 
 # Build an explicitly local W26 slice-pack candidate from the committed D043 selection.
-data-build-volumes-candidate source_release release_id created_at pack_depth ibleatools_commit iblatlas_commit builder_commit:
-    {{uv-scientific}} ephys-atlas-data build-volumes {{source_release}} --release-id {{release_id}} --created-at {{created_at}} --geometry-selection docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json --layout orthogonal_slice_packs --pack-depth {{pack_depth}} --candidate --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
+data-build-volumes-candidate source_release release_id distribution_selection created_at pack_depth ibleatools_commit iblatlas_commit builder_commit:
+    {{uv-scientific}} ephys-atlas-data build-volumes {{source_release}} --release-id {{release_id}} --created-at {{created_at}} --geometry-selection docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json --distribution-selection {{distribution_selection}} --layout orthogonal_slice_packs --pack-depth {{pack_depth}} --candidate --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
 
-# Preserve the exact D038-selected v1 website Brain-Wide Map snapshot locally.
-data-build-brainwide-map release created_at builder_commit source_dir="../atlas/data/pqt":
-    {{uv-scientific}} ephys-atlas-data build-brainwide-map {{release}} --created-at {{created_at}} --builder-commit {{builder_commit}} --source-dir {{source_dir}}
+# Preserve the exact D038 source as a new release with reviewed D050 presentation.
+data-build-brainwide-map source_release output_release distribution_selection created_at builder_commit source_dir="data/source/brainwide_map/legacy-v1-1d908bea":
+    {{uv-scientific}} ephys-atlas-data build-brainwide-map {{source_release}} --release-id {{output_release}} --distribution-selection {{distribution_selection}} --created-at {{created_at}} --builder-commit {{builder_commit}} --source-dir {{source_dir}}
 
 # Validate a dataset-specific build output. Scientific transforms stay explicit recipes.
 data-build dataset release="latest":

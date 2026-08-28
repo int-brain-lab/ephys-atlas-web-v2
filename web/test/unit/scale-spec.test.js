@@ -12,9 +12,10 @@ import {
   scaleValueIsValid,
 } from '../../.test-dist/domain/scale-spec.js';
 
-test('linear and logarithmic scale specifications share forward, inverse, and normalization math', () => {
+test('linear, logarithmic, and signed-log specifications share forward, inverse, and normalization math', () => {
   assert.deepEqual(scaleSpec('linear'), { kind: 'linear' });
   assert.deepEqual(scaleSpec('log'), { kind: 'log' });
+  assert.deepEqual(scaleSpec('symlog', 2), { kind: 'symlog', linearThreshold: 2 });
 
   assert.equal(scaleForward(12, 'linear'), 12);
   assert.equal(scaleInverse(12, 'linear'), 12);
@@ -25,6 +26,13 @@ test('linear and logarithmic scale specifications share forward, inverse, and no
   assert.ok(Math.abs(scaleInverse(Math.log(10), 'log') - 10) < 1e-12);
   assert.ok(Math.abs(scaleNormalize(10, [1, 1_000], 'log') - 1 / 3) < 1e-12);
   assert.ok(Math.abs(scaleDenormalize(2 / 3, [1, 1_000], 'log') - 100) < 1e-10);
+
+  const signed = scaleSpec('symlog', 2);
+  for (const value of [-100, -2, 0, 2, 100]) {
+    assert.ok(Math.abs(scaleInverse(scaleForward(value, signed), signed) - value) < 1e-10);
+  }
+  assert.equal(scaleNormalize(0, [-100, 100], signed), .5);
+  assert.ok(Math.abs(scaleDenormalize(.5, [-100, 100], signed)) < 1e-12);
 });
 
 test('scale validity remains explicit for invalid log values and domains', () => {
@@ -35,6 +43,7 @@ test('scale validity remains explicit for invalid log values and domains', () =>
   assert.equal(scaleDomainIsValid([1, 1], 'log'), false);
   assert.equal(scaleNormalize(0, [1, 10], 'log'), null);
   assert.equal(scaleDenormalize(.5, [0, 10], 'log'), null);
+  assert.throws(() => scaleSpec('symlog'), /release-owned threshold/);
   assert.equal(clampScalePosition(-.25), 0);
   assert.equal(clampScalePosition(1.25), 1);
 });

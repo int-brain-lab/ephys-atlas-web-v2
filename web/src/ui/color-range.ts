@@ -1,6 +1,7 @@
 import type { FeaturePayload } from '../data/contracts.js';
-import type { RegionalHistogram } from '../data/contracts.js';
-import type { ColorScale, StatisticId } from '../domain/types.js';
+import type { DistributionBinning } from '../data/contracts.js';
+import type { StatisticId } from '../domain/types.js';
+import type { ScaleSpec } from '../domain/scale-spec.js';
 import {
   clampScalePosition,
   scaleDenormalize,
@@ -46,31 +47,31 @@ export function colorRangeDomain(
   feature: FeaturePayload,
   statistic: StatisticId,
   effectiveRange: NumericRange | null,
-  histogram?: RegionalHistogram,
+  histogram?: DistributionBinning,
 ): NumericRange | null {
   let domain: NumericRange | null = null;
   if (feature.representation === 'regional') {
     if (statistic !== 'count') {
-      const edges = histogram?.edges ?? feature.histogram?.edges;
+      const edges = histogram?.edges;
       domain = edges ? validRange(edges[0], edges.at(-1)) : null;
     }
     domain ??= finiteExtent(feature.statistics[statistic] ?? feature.statistics.mean);
   } else {
-    const edges = histogram?.edges ?? feature.summary.histogram?.edges;
+    const edges = histogram?.edges;
     domain = edges ? validRange(edges[0], edges.at(-1)) : null;
-    domain ??= validRange(feature.descriptor.valueRange?.[0], feature.descriptor.valueRange?.[1]);
+    domain ??= validRange(feature.summary.valueRange?.[0], feature.summary.valueRange?.[1]);
   }
   if (!domain) return effectiveRange;
   if (!effectiveRange) return domain;
   return [Math.min(domain[0], effectiveRange[0]), Math.max(domain[1], effectiveRange[1])];
 }
 
-export function rangePosition(value: number, domain: NumericRange, scale: ColorScale = 'linear'): number {
+export function rangePosition(value: number, domain: NumericRange, scale: ScaleSpec = { kind: 'linear' }): number {
   const normalized = scaleNormalize(value, domain, scale);
   return normalized === null ? 0 : clampScalePosition(normalized);
 }
 
-export function rangeValueAtPosition(position: number, domain: NumericRange, scale: ColorScale = 'linear'): number {
+export function rangeValueAtPosition(position: number, domain: NumericRange, scale: ScaleSpec = { kind: 'linear' }): number {
   return scaleDenormalize(clampScalePosition(position), domain, scale) ?? domain[0];
 }
 
@@ -84,9 +85,9 @@ export function clampRangeHandle(
   otherValue: number,
   domain: NumericRange,
   step = rangeSliderStep(domain),
-  scale: ColorScale = 'linear',
+  scale: ScaleSpec = { kind: 'linear' },
 ): number {
-  if (scale === 'linear') {
+  if (scale.kind === 'linear') {
     if (bound === 'min') return Math.max(domain[0], Math.min(value, otherValue - step));
     return Math.min(domain[1], Math.max(value, otherValue + step));
   }
@@ -114,7 +115,7 @@ export function translateRangeWindowByPosition(
   range: NumericRange,
   delta: number,
   domain: NumericRange,
-  scale: ColorScale,
+  scale: ScaleSpec,
 ): NumericRange {
   const low = rangePosition(range[0], domain, scale);
   const high = rangePosition(range[1], domain, scale);

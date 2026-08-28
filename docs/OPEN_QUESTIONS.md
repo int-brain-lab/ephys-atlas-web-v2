@@ -260,8 +260,8 @@ ingestion or publication.
 
 ## Q14 — Audited scale and focused-domain selections
 
-Status: **SCIENTIFIC RELEASE BLOCKER for D050 rebuilds; machinery is not
-blocked**.
+Status: **OPEN for new Signed-log/Focused scientific selections; no longer a
+blocker for the conservative Linear/Full contract rebuilds**.
 
 D050 approves Linear/Log/Signed-log value scales and independent Full/Focused
 distribution domains, but it deliberately does not select feature-specific
@@ -285,9 +285,10 @@ immutable releases. D048's reviewed cluster Firing-rate Log preference and
 3.73–17.8 Hz automatic color interval remain authoritative for the current
 candidate unless the cluster selection explicitly supersedes them.
 
-Blocks: D050 scientific release rebuilds and promotion of the new distribution
-contract. Does not block schema/validator/frontend implementation with
-synthetic fixtures or continued use of current immutable releases.
+Blocks: declaring new per-feature Signed-log or Focused availability and
+defaults. It does not block the schema/validator/frontend implementation or new
+immutable migration releases whose committed selections preserve Linear/Full
+and the already-reviewed D048 cluster Log choices.
 
 ## How to resolve an item
 

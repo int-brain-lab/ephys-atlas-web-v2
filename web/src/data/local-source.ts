@@ -2,6 +2,7 @@ import type { DatasetRef, ParcellationId, RepresentationKind } from '../domain/t
 import { loadRegionalFeatureFromResources, loadRegionsFromResources } from './regional-loader.js';
 import type { ResourceReader } from './resource-reader.js';
 import { parseVolumeResourceIndex, parseVolumeSummary } from './validation/volume-v1.js';
+import { validateDistributionMatchesDisplay } from './validation/distribution.js';
 import {
   decodeBinaryArray,
   decodeResourceBytes,
@@ -220,10 +221,14 @@ export class LocalDatasetSource implements DatasetSource {
         reader.readJson(reader.resolve(feature.path, descriptor.summaryPath), signal),
       ]);
       const summary = parseVolumeSummary(summaryRaw, descriptor);
+      const display = feature.display?.volume;
+      if (!display) throw new Error(`Feature ${feature.id} has no volume display contract`);
+      if (summary.distribution) {
+        validateDistributionMatchesDisplay(summary.distribution.binnings, display, `${feature.id}/volume`);
+      }
       const resolvedDescriptor = {
         ...descriptor,
         resource: parseVolumeResourceIndex(resourceIndexRaw, descriptor),
-        valueRange: summary.valueRange,
       };
       return {
         schemaVersion: SCHEMA_VERSION,

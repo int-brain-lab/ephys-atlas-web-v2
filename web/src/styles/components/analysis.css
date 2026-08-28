@@ -258,6 +258,14 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+.regional-distribution__tails {
+  display: block;
+  margin-top: .14rem;
+  color: var(--color-text-muted);
+  font-size: .48rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .regional-distribution__global {
   fill: none;
   stroke: rgb(156 175 191 / 38%);

@@ -163,25 +163,59 @@ def _check_statistics(
     )
     validate_schema_v1_document(statistics, "statistics.schema.json")
     summary = statistics["regional_summary"]
-    _check_binary(path.parent, summary["values"])
+    summary_values = _read_binary(path.parent, summary["values"])
     if summary["values"]["shape"] != [region_count, len(summary["fields"])]:
         raise ValidationError(
             f"regional summary shape does not match parcellation: {path}"
         )
-    histogram = statistics.get("histogram")
-    if histogram:
-        variants = [("linear", histogram), *histogram.get("variants", {}).items()]
-        for axis_scale, variant in variants:
-            counts = variant["regional_counts"]
-            _check_binary(path.parent, counts)
-            if counts["shape"] != [region_count, len(variant["edges"]) - 1]:
+    distribution = statistics.get("distribution")
+    if distribution:
+        count_column = summary["fields"].index("count")
+        expected_counts = summary_values[:, count_column].astype(np.uint64)
+        for binning in distribution["binnings"]:
+            counts = _read_binary(path.parent, binning["regional_counts"])
+            if counts.shape != (region_count, len(binning["edges"]) + 1):
                 raise ValidationError(
-                    f"regional {axis_scale} histogram shape does not match parcellation: {path}"
+                    f"regional {binning['id']} distribution shape does not match parcellation: {path}"
+                )
+            if not np.array_equal(counts.sum(axis=1, dtype=np.uint64), expected_counts):
+                raise ValidationError(
+                    f"regional {binning['id']} distribution rows do not conserve regional finite counts: {path}"
                 )
     return statistics
 
 
-def _check_volume(feature_root: Path, volume: dict[str, Any]) -> None:
+def _check_display_distribution_match(
+    display: dict[str, Any], distribution: dict[str, Any] | None, description: str
+) -> None:
+    if distribution is None:
+        return
+    binnings = distribution["binnings"]
+    def scale_key(spec: dict[str, Any]) -> tuple[str, float | None]:
+        threshold = spec.get("linear_threshold")
+        return spec["kind"], float(threshold) if threshold is not None else None
+
+    def domain_key(spec: dict[str, Any]) -> tuple[str, float | None, float | None]:
+        bounds = spec.get("bounds")
+        return (
+            spec["kind"],
+            float(bounds[0]) if bounds is not None else None,
+            float(bounds[1]) if bounds is not None else None,
+        )
+
+    scales = {scale_key(item) for item in display["scales"]}
+    domains = {domain_key(item) for item in display["distribution_domains"]}
+    actual_scales = {scale_key(item["scale"]) for item in binnings}
+    actual_domains = {domain_key(item["domain"]) for item in binnings}
+    if actual_scales != scales or actual_domains != domains:
+        raise ValidationError(
+            f"{description} display availability does not match exact distribution binnings"
+        )
+
+
+def _check_volume(
+    feature_root: Path, volume: dict[str, Any], display: dict[str, Any]
+) -> None:
     from .schema_v1 import validate_schema_v1_document
 
     summary_path, summary = _check_json_resource(
@@ -193,6 +227,9 @@ def _check_volume(feature_root: Path, volume: dict[str, Any]) -> None:
         raise ValidationError(
             f"volume summary grid does not match feature descriptor: {summary_path}"
         )
+    _check_display_distribution_match(
+        display, summary.get("distribution"), "volume"
+    )
 
     index_path, index = _check_json_resource(
         feature_root,
@@ -314,6 +351,11 @@ def validate_release(release_dir: Path, schema_dir: Path) -> None:
                     item["statistics"],
                     region_counts[parcellation_id],
                 )
+                _check_display_distribution_match(
+                    feature["display"]["regional"],
+                    statistics.get("distribution"),
+                    f"regional {parcellation_id}",
+                )
                 if item["summary"] not in statistics["regional_summary"]["fields"]:
                     raise ValidationError(
                         f"regional summary {item['summary']} is not declared by statistics"
@@ -321,6 +363,6 @@ def validate_release(release_dir: Path, schema_dir: Path) -> None:
 
         volume = feature["representations"].get("volume")
         if volume:
-            _check_volume(feature_root, volume)
+            _check_volume(feature_root, volume, feature["display"]["volume"])
         for artifact in feature["artifacts"]:
             _check_resource(feature_root, artifact["resource"])

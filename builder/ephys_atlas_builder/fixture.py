@@ -8,7 +8,12 @@ from pathlib import Path
 import numpy as np
 
 from .io import encoded_resource, json_resource, write_array, write_json
-from .statistics import SUMMARY_FIELDS, describe, histogram, summary_matrix
+from .regional_release import (
+    REGIONAL_COUNT_LAYOUT,
+    build_global_distribution_binnings,
+    histogram_counts_and_tails,
+)
+from .statistics import SUMMARY_FIELDS, describe, summary_matrix
 from .volume import write_chunked_volume
 
 
@@ -53,25 +58,46 @@ def generate_golden(out: Path) -> Path:
     regional_values = np.array([np.nanmean(x) for x in samples], dtype=np.float32)
     feature_root = out / "features" / "rms_ap"
     values_meta = write_array(feature_root / "allen.values.f32", regional_values, "float32")
-    edges = np.linspace(-0.5, 3.5, 9, dtype=np.float64)
     stat_matrix = summary_matrix(samples)
     stat_meta = write_array(feature_root / "allen.summary.f64", stat_matrix, "float64")
-    regional_hist = np.stack([histogram(x, edges) for x in samples])
-    hist_meta = write_array(feature_root / "allen.hist.u32", regional_hist, "uint32")
     all_samples = np.concatenate(samples)
     global_stats = describe(all_samples)
+    regional_display = {
+        "colormap": "viridis",
+        "range": [-0.5, 3.5],
+        "scales": [
+            {"kind": "linear"},
+            {"kind": "symlog", "linear_threshold": 0.5},
+        ],
+        "preferred_scale": "symlog",
+        "distribution_domains": [
+            {"kind": "full"},
+            {"kind": "focused", "bounds": [0.0, 3.0]},
+        ],
+        "preferred_distribution_domain": "focused",
+    }
+    regional_binnings = build_global_distribution_binnings(
+        all_samples, 8, regional_display
+    )
+    for binning in regional_binnings:
+        edges = np.asarray(binning["edges"], dtype=np.float64)
+        rows = []
+        for sample in samples:
+            counts, underflow, overflow = histogram_counts_and_tails(sample, edges)
+            rows.append(np.concatenate(([underflow], counts, [overflow])))
+        binning["regional_counts"] = write_array(
+            feature_root / f"allen.distribution.{binning['id']}.u32",
+            np.asarray(rows, dtype=np.uint32),
+            "uint32",
+        )
+        binning["regional_count_layout"] = REGIONAL_COUNT_LAYOUT
     stats = {
         "schema_version": "1.0",
         "format": "ephys-atlas-regional-statistics-v1",
         "population": "synthetic fixture observations assigned to Allen fixture regions",
         "global": global_stats,
         "regional_summary": {"fields": SUMMARY_FIELDS, "values": stat_meta},
-        "histogram": {
-            "edges": edges.tolist(),
-            "global_counts": histogram(all_samples, edges).astype(int).tolist(),
-            "regional_counts": hist_meta,
-            "bin_rule": "left-closed-right-open-last-closed",
-        },
+        "distribution": {"binnings": regional_binnings},
     }
     statistics_path = feature_root / "allen.statistics.json"
     write_json(statistics_path, stats)
@@ -94,8 +120,22 @@ def generate_golden(out: Path) -> Path:
     write_json(resource_index_path, resource_index)
 
     finite_volume = volume[np.isfinite(volume)].astype(np.float64)
-    volume_edges = np.linspace(float(finite_volume.min()), float(finite_volume.max()), 9)
     volume_stats = describe(finite_volume)
+    volume_display = {
+        "colormap": "magma",
+        "range": [0.1, 19.1],
+        "scales": [
+            {"kind": "linear"},
+            {"kind": "log"},
+            {"kind": "symlog", "linear_threshold": 1.0},
+        ],
+        "preferred_scale": "log",
+        "distribution_domains": [
+            {"kind": "full"},
+            {"kind": "focused", "bounds": [1.0, 18.0]},
+        ],
+        "preferred_distribution_domain": "full",
+    }
     volume_summary = {
         "schema_version": "1.0",
         "format": "ephys-atlas-volume-summary-v1",
@@ -109,10 +149,10 @@ def generate_golden(out: Path) -> Path:
             field: volume_stats[field]
             for field in ("min", "max", "mean", "std", "q05", "q25", "median", "q75", "q95")
         },
-        "histogram": {
-            "edges": volume_edges.tolist(),
-            "counts": histogram(finite_volume, volume_edges).astype(int).tolist(),
-            "bin_rule": "left-closed-right-open-last-closed",
+        "distribution": {
+            "binnings": build_global_distribution_binnings(
+                finite_volume, 8, volume_display
+            )
         },
     }
     volume_summary_path = feature_root / "volume" / "summary.json"
@@ -131,6 +171,7 @@ def generate_golden(out: Path) -> Path:
         "label": "AP RMS (golden fixture)",
         "description": "Synthetic feature exercising regional values, descriptive statistics, histogram, volume chunks and download metadata.",
         "unit": "dB rel. V",
+        "display": {"regional": regional_display, "volume": volume_display},
         "value_semantics": {
             "quantity": "synthetic AP RMS-like scalar",
             "transform": "identity; fixture values are already display values",

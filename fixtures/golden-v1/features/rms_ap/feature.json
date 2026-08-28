@@ -17,6 +17,71 @@
     }
   ],
   "description": "Synthetic feature exercising regional values, descriptive statistics, histogram, volume chunks and download metadata.",
+  "display": {
+    "regional": {
+      "colormap": "viridis",
+      "distribution_domains": [
+        {
+          "kind": "full"
+        },
+        {
+          "bounds": [
+            0.0,
+            3.0
+          ],
+          "kind": "focused"
+        }
+      ],
+      "preferred_distribution_domain": "focused",
+      "preferred_scale": "symlog",
+      "range": [
+        -0.5,
+        3.5
+      ],
+      "scales": [
+        {
+          "kind": "linear"
+        },
+        {
+          "kind": "symlog",
+          "linear_threshold": 0.5
+        }
+      ]
+    },
+    "volume": {
+      "colormap": "magma",
+      "distribution_domains": [
+        {
+          "kind": "full"
+        },
+        {
+          "bounds": [
+            1.0,
+            18.0
+          ],
+          "kind": "focused"
+        }
+      ],
+      "preferred_distribution_domain": "full",
+      "preferred_scale": "log",
+      "range": [
+        0.1,
+        19.1
+      ],
+      "scales": [
+        {
+          "kind": "linear"
+        },
+        {
+          "kind": "log"
+        },
+        {
+          "kind": "symlog",
+          "linear_threshold": 1.0
+        }
+      ]
+    }
+  },
   "id": "rms_ap",
   "label": "AP RMS (golden fixture)",
   "representations": {
@@ -28,14 +93,14 @@
           "statistics": {
             "format": "ephys-atlas-regional-statistics-v1",
             "resource": {
-              "bytes": 1906,
+              "bytes": 6626,
               "codec": {
-                "decoded_bytes": 1906,
+                "decoded_bytes": 6626,
                 "name": "none"
               },
               "media_type": "application/json",
               "path": "allen.statistics.json",
-              "sha256": "0d060989be4b9b4228a8c6bd1df5887e1b71040912a08571189d6b64eefca51b"
+              "sha256": "f4d147ef96bec89868e34cf816d57760c9fb8c4409f38d9de3bdcd8e6773e107"
             }
           },
           "summary": "mean",
@@ -146,14 +211,14 @@
       "summary": {
         "format": "ephys-atlas-volume-summary-v1",
         "resource": {
-          "bytes": 999,
+          "bytes": 5122,
           "codec": {
-            "decoded_bytes": 999,
+            "decoded_bytes": 5122,
             "name": "none"
           },
           "media_type": "application/json",
           "path": "volume/summary.json",
-          "sha256": "c47d79570e239c407d2ff47e3192453f1f4132a647aa12aabf3bc0c1513832b1"
+          "sha256": "c0ff0298e9e7e64c8426a9645f8895b97ca79e570ce26814bd5bdad3eb0fc42c"
         }
       },
       "validity": {

@@ -10,12 +10,18 @@ from typing import Mapping, Sequence
 import numpy as np
 
 from .io import json_resource, sha256_file, write_json
+from .distribution_selection import (
+    bind_distribution_selection,
+    load_distribution_selection,
+    selection_provenance,
+)
 from .regional_release import (
     DEFAULT_PARCELLATIONS,
     FeatureInfo,
     RegionInfo,
     fold_region_ids_left,
-    histogram_edges,
+    linear_full_display,
+    validate_scalar_display,
     write_feature_parcellation,
     write_parcellation,
 )
@@ -33,14 +39,13 @@ class ClusterBuildConfig:
     population: str = "all"
     parcellations: tuple[str, ...] = DEFAULT_PARCELLATIONS
     features: tuple[str, ...] | None = None
-    log_color_features: tuple[str, ...] = ()
-    log_histogram_features: tuple[str, ...] = ()
     histogram_bins: int = 50
     paper_snapshot: bool = False
     ibleatools_commit: str | None = None
     iblatlas_commit: str | None = None
     builder_commit: str | None = None
     catalog_selection: Path | None = None
+    distribution_selection: Path | None = None
 
     def validate(self) -> None:
         if not self.release_id:
@@ -62,10 +67,6 @@ class ClusterBuildConfig:
             raise ValueError(f"unsupported parcellations: {', '.join(unknown)}")
         if not self.parcellations:
             raise ValueError("at least one parcellation is required")
-        if len(set(self.log_color_features)) != len(self.log_color_features):
-            raise ValueError("log_color_features must not contain duplicates")
-        if len(set(self.log_histogram_features)) != len(self.log_histogram_features):
-            raise ValueError("log_histogram_features must not contain duplicates")
         for name, value in (
             ("ibleatools_commit", self.ibleatools_commit),
             ("iblatlas_commit", self.iblatlas_commit),
@@ -114,8 +115,6 @@ class ClusterCatalogSelection:
     legacy_unit_source_path: str
     legacy_unit_source_sha256: str
     features: tuple[FeatureInfo, ...]
-    display: Mapping[str, dict]
-    log_histogram_features: tuple[str, ...]
 
 
 def load_cluster_catalog_selection(path: Path) -> ClusterCatalogSelection:
@@ -145,7 +144,6 @@ def load_cluster_catalog_selection(path: Path) -> ClusterCatalogSelection:
     if not isinstance(raw_features, list) or not raw_features:
         raise ValueError("cluster catalog selection must contain features")
     features: list[FeatureInfo] = []
-    display: dict[str, dict] = {}
     for item in raw_features:
         try:
             feature_id = item["id"]
@@ -175,52 +173,10 @@ def load_cluster_catalog_selection(path: Path) -> ClusterCatalogSelection:
             raise ValueError(
                 f"cluster catalog feature {feature_id} has an invalid unit"
             )
-        raw_display = item.get("display") or {}
-        if not isinstance(raw_display, dict) or set(raw_display) - {"scale", "range"}:
-            raise ValueError(
-                f"cluster catalog feature {feature_id} has invalid display metadata"
-            )
-        scale = raw_display.get("scale")
-        if scale is not None and scale not in {"linear", "log"}:
-            raise ValueError(
-                f"cluster catalog feature {feature_id} has an invalid display scale"
-            )
-        value_range = raw_display.get("range")
-        if value_range is not None and (
-            not isinstance(value_range, list)
-            or len(value_range) != 2
-            or any(
-                isinstance(value, bool) or not isinstance(value, (int, float))
-                for value in value_range
-            )
-            or not float(value_range[0]) < float(value_range[1])
-        ):
-            raise ValueError(
-                f"cluster catalog feature {feature_id} has an invalid display range"
-            )
-        if raw_display:
-            display[feature_id] = raw_display
         features.append(info)
     feature_ids = [feature.source_column for feature in features]
     if len(set(feature_ids)) != len(feature_ids):
         raise ValueError("cluster catalog selection contains duplicate features")
-    raw_log_histograms = document.get("log_histogram_features")
-    if selection_schema == "ibl-cluster-catalog-selection-v2":
-        if not isinstance(raw_log_histograms, list):
-            raise ValueError("v2 cluster catalog selection must declare log histogram features")
-        if (
-            any(not isinstance(value, str) or not value for value in raw_log_histograms)
-            or len(set(raw_log_histograms)) != len(raw_log_histograms)
-            or set(raw_log_histograms) - set(feature_ids)
-        ):
-            raise ValueError("cluster catalog selection has invalid log histogram features")
-        log_histogram_features = tuple(raw_log_histograms)
-    else:
-        log_histogram_features = tuple(
-            feature_id
-            for feature_id in feature_ids
-            if display.get(feature_id, {}).get("scale") == "log"
-        )
     for name, value in (
         ("table SHA-256", table.get("sha256")),
         ("legacy feature-source SHA-256", legacy.get("feature_source_sha256")),
@@ -250,8 +206,6 @@ def load_cluster_catalog_selection(path: Path) -> ClusterCatalogSelection:
         legacy_unit_source_path=legacy["unit_source_path"],
         legacy_unit_source_sha256=legacy["unit_source_sha256"],
         features=tuple(features),
-        display=display,
-        log_histogram_features=log_histogram_features,
     )
 
 
@@ -270,29 +224,10 @@ def apply_cluster_catalog_selection(
         raise ValueError(
             "explicit cluster features do not exactly match the approved catalog"
         )
-    selected_logs = tuple(
-        feature_id
-        for feature_id in feature_ids
-        if selection.display.get(feature_id, {}).get("scale") == "log"
-    )
-    selected_log_histograms = selection.log_histogram_features
-    if config.log_color_features and tuple(config.log_color_features) != selected_logs:
-        raise ValueError(
-            "explicit cluster log defaults do not exactly match the approved catalog"
-        )
-    if (
-        config.log_histogram_features
-        and tuple(config.log_histogram_features) != selected_log_histograms
-    ):
-        raise ValueError(
-            "explicit cluster log histogram features do not exactly match the approved catalog"
-        )
     return replace(
         config,
         source_release_id=selection.source_release_id,
         features=feature_ids,
-        log_color_features=selected_logs,
-        log_histogram_features=selected_log_histograms,
         catalog_selection=selection.path,
     )
 
@@ -316,18 +251,6 @@ def build_clusters_release_from_arrays(
 
     if not feature_values:
         raise ValueError("at least one cluster feature is required")
-    unknown_log_features = sorted(set(config.log_color_features) - set(feature_values))
-    if unknown_log_features:
-        raise ValueError(
-            f"log color features are not in the release catalog: {', '.join(unknown_log_features)}"
-        )
-    unknown_log_histograms = sorted(
-        set(config.log_histogram_features) - set(feature_values)
-    )
-    if unknown_log_histograms:
-        raise ValueError(
-            f"log histogram features are not in the release catalog: {', '.join(unknown_log_histograms)}"
-        )
     missing_parcellations = [
         p for p in config.parcellations if p not in parcellation_ids
     ]
@@ -359,13 +282,8 @@ def build_clusters_release_from_arrays(
     features = []
     for feature_id in sorted(feature_values):
         values = np.asarray(feature_values[feature_id], dtype=np.float64)
-        edges = histogram_edges(values, config.histogram_bins)
-        log_histogram = feature_id in config.log_histogram_features
-        alternate_histogram_edges = (
-            {"log": histogram_edges(values, config.histogram_bins, "log")}
-            if log_histogram
-            else None
-        )
+        raw_display = feature_display.get(feature_id, {})
+        display = validate_scalar_display(raw_display or linear_full_display(), values)
         feature_root = release_dir / "features" / feature_id
         regional = [
             write_feature_parcellation(
@@ -373,20 +291,9 @@ def build_clusters_release_from_arrays(
                 parcellation,
                 values,
                 group_rows[parcellation],
-                edges,
+                config.histogram_bins,
                 population_description,
-                alternate_histogram_edges=alternate_histogram_edges,
-                default_histogram_axis_scale=(
-                    "log"
-                    if (
-                        feature_display.get(feature_id, {}).get("scale") == "log"
-                        or (
-                            feature_id not in feature_display
-                            and feature_id in config.log_color_features
-                        )
-                    )
-                    else "linear"
-                ),
+                distribution_display=display,
             )
             for parcellation in config.parcellations
         ]
@@ -400,15 +307,7 @@ def build_clusters_release_from_arrays(
             if info
             else f"Cluster feature {source_column} aggregated regionally over all finite clusters.",
             "unit": info.unit if info else None,
-            **(
-                {"display": feature_display[feature_id]}
-                if feature_id in feature_display
-                else (
-                    {"display": {"scale": "log"}}
-                    if feature_id in config.log_color_features
-                    else {}
-                )
-            ),
+            "display": {"regional": display},
             "value_semantics": {
                 "quantity": source_column,
                 "transform": "identity from clusters.table.pqt; no value clipping or replacement",
@@ -481,7 +380,8 @@ def build_clusters_release_from_arrays(
                     f"ephys-atlas-data build-clusters {config.source_release_id or config.release_id} "
                     f"--release-id {config.release_id} "
                     f"--project {config.project} --population all "
-                    "--catalog-selection catalog-selection.json"
+                    "--catalog-selection catalog-selection.json "
+                    "--distribution-selection distribution-selection.json"
                 ),
             },
             "recipe": {
@@ -490,12 +390,11 @@ def build_clusters_release_from_arrays(
                 "population": "all",
                 "parcellations": list(config.parcellations),
                 "features": sorted(feature_values),
-                "log_color_features": sorted(config.log_color_features),
-                "log_histogram_features": sorted(config.log_histogram_features),
-                "histogram_axis_scales": {
-                    "linear": "available for every feature",
-                    "log": "available only for explicitly audited strictly-positive features",
-                },
+                **(
+                    {"distribution_selection_sha256": sha256_file(config.distribution_selection)}
+                    if config.distribution_selection is not None
+                    else {}
+                ),
                 **(
                     {"catalog_selection_sha256": sha256_file(config.catalog_selection)}
                     if config.catalog_selection is not None
@@ -640,8 +539,17 @@ def build_clusters_from_snapshot(
         raise ValueError(
             "snapshot builds require an approved cluster catalog selection"
         )
-    selection = load_cluster_catalog_selection(config.catalog_selection)
-    config = apply_cluster_catalog_selection(config, selection)
+    if config.distribution_selection is None:
+        raise ValueError(
+            "snapshot builds require an approved D050 distribution selection"
+        )
+    catalog_selection = load_cluster_catalog_selection(config.catalog_selection)
+    config = apply_cluster_catalog_selection(config, catalog_selection)
+    distribution_selection = load_distribution_selection(
+        config.distribution_selection,
+        dataset_id=DATASET_ID,
+        representation="regional",
+    )
     config.validate()
     config.require_scientific_pins()
     config.require_feature_catalog()
@@ -662,11 +570,11 @@ def build_clusters_from_snapshot(
             f"source project {source.get('project')} does not match requested project {config.project}"
         )
     source_files = {item.get("path"): item for item in source.get("files", [])}
-    source_table = source_files.get(selection.table_path)
+    source_table = source_files.get(catalog_selection.table_path)
     if source_table != {
-        "path": selection.table_path,
-        "bytes": selection.table_bytes,
-        "sha256": selection.table_sha256,
+        "path": catalog_selection.table_path,
+        "bytes": catalog_selection.table_bytes,
+        "sha256": catalog_selection.table_sha256,
     }:
         raise RuntimeError(
             "source snapshot manifest does not match the approved cluster table"
@@ -688,27 +596,36 @@ def build_clusters_from_snapshot(
         },
         {
             "role": "selection-freeze",
-            "description": "Scientific-owner-approved legacy cluster catalog and display metadata",
+            "description": "Scientific-owner-approved legacy cluster feature catalog and metadata",
             "repository": "rossant/ibl-ephys-atlas-web-v2",
             "path": "catalog-selection.json",
-            "sha256": selection.sha256,
+            "sha256": catalog_selection.sha256,
         },
+        selection_provenance(distribution_selection),
         {
             "role": "scientific-code",
             "description": "Legacy website cluster feature catalog and unit metadata",
-            "repository": selection.legacy_repository,
-            "commit": selection.legacy_commit,
+            "repository": catalog_selection.legacy_repository,
+            "commit": catalog_selection.legacy_commit,
         },
     ]
-    inputs = _cluster_scientific_inputs(source_snapshot, config, selection)
+    inputs = _cluster_scientific_inputs(source_snapshot, config, catalog_selection)
+    feature_display = bind_distribution_selection(
+        distribution_selection,
+        source_release_id=str(config.source_release_id),
+        feature_ids=sorted(inputs[0]),
+    )
     result = build_clusters_release_from_arrays(
         release_dir,
         config,
         *inputs[:3],
         provenance_sources,
         inputs[3],
-        selection.display,
+        feature_display,
     )
     shutil.copyfile(source_json, result / "source.json")
-    shutil.copyfile(selection.path, result / "catalog-selection.json")
+    shutil.copyfile(catalog_selection.path, result / "catalog-selection.json")
+    shutil.copyfile(
+        distribution_selection.path, result / "distribution-selection.json"
+    )
     return result

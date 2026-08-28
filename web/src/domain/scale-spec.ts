@@ -1,11 +1,6 @@
 import type { ColorScale } from './types.js';
 
-/**
- * The release-owned presentation contract will eventually supply richer scale
- * specifications (for example a signed-log transition).  Keep the existing
- * linear/log behaviour behind this small discriminated boundary so every
- * consumer uses the same transform semantics today.
- */
+/** Release-owned scale specifications shared by every scalar presentation. */
 export interface LinearScaleSpec {
   readonly kind: 'linear';
 }
@@ -14,14 +9,25 @@ export interface LogScaleSpec {
   readonly kind: 'log';
 }
 
-export type ScaleSpec = LinearScaleSpec | LogScaleSpec;
+export interface SymlogScaleSpec {
+  readonly kind: 'symlog';
+  /** Release-owned linear transition in raw feature units. */
+  readonly linearThreshold: number;
+}
+
+export type ScaleSpec = LinearScaleSpec | LogScaleSpec | SymlogScaleSpec;
 export type ScaleDomain = readonly [number, number];
 
 const LINEAR: LinearScaleSpec = { kind: 'linear' };
 const LOG: LogScaleSpec = { kind: 'log' };
 
-export function scaleSpec(scale: ColorScale): ScaleSpec {
-  return scale === 'log' ? LOG : LINEAR;
+export function scaleSpec(scale: ColorScale, symlogThreshold?: number): ScaleSpec {
+  if (scale === 'linear') return LINEAR;
+  if (scale === 'log') return LOG;
+  if (!(Number.isFinite(symlogThreshold) && (symlogThreshold ?? 0) > 0)) {
+    throw new Error('Signed-log scale requires a finite positive release-owned threshold');
+  }
+  return { kind: 'symlog', linearThreshold: symlogThreshold! };
 }
 
 export function scaleKind(scale: ScaleSpec | ColorScale): ColorScale {
@@ -30,7 +36,11 @@ export function scaleKind(scale: ScaleSpec | ColorScale): ColorScale {
 
 /** A logarithmic domain and its values must be strictly positive. */
 export function scaleValueIsValid(value: number, scale: ScaleSpec | ColorScale): boolean {
-  return scaleKind(scale) !== 'log' || value > 0;
+  if (!Number.isFinite(value)) return false;
+  if (scaleKind(scale) === 'log') return value > 0;
+  return scaleKind(scale) !== 'symlog'
+    || (typeof scale !== 'string' && scale.kind === 'symlog'
+      && Number.isFinite(scale.linearThreshold) && scale.linearThreshold > 0);
 }
 
 export function scaleDomainIsValid(domain: ScaleDomain, scale: ScaleSpec | ColorScale): boolean {
@@ -43,12 +53,22 @@ export function scaleDomainIsValid(domain: ScaleDomain, scale: ScaleSpec | Color
 /** Maps a raw value onto the selected presentation axis. */
 export function scaleForward(value: number, scale: ScaleSpec | ColorScale): number | null {
   if (!scaleValueIsValid(value, scale)) return null;
-  return scaleKind(scale) === 'log' ? Math.log(value) : value;
+  if (scaleKind(scale) === 'log') return Math.log(value);
+  if (scaleKind(scale) === 'symlog') {
+    const threshold = (scale as SymlogScaleSpec).linearThreshold;
+    return Math.sign(value) * Math.log1p(Math.abs(value) / threshold);
+  }
+  return value;
 }
 
 /** Maps a selected presentation-axis value back to the raw value. */
 export function scaleInverse(value: number, scale: ScaleSpec | ColorScale): number {
-  return scaleKind(scale) === 'log' ? Math.exp(value) : value;
+  if (scaleKind(scale) === 'log') return Math.exp(value);
+  if (scaleKind(scale) === 'symlog') {
+    if (typeof scale === 'string' || scale.kind !== 'symlog') throw new Error('Signed-log inverse requires its release-owned threshold');
+    return Math.sign(value) * scale.linearThreshold * Math.expm1(Math.abs(value));
+  }
+  return value;
 }
 
 /**

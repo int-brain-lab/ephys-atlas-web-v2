@@ -1,0 +1,712 @@
+{
+  "schema": "ibl-scalar-distribution-selection-v1",
+  "selection_id": "volumes-2026-w26-d050-linear-full-v1",
+  "dataset_id": "ephys_atlas_volumes",
+  "representation": "volume",
+  "source_release_id": "2026_W26",
+  "scientific_owner_confirmation": true,
+  "confirmed_at": "2026-08-28",
+  "reviewer_role": "repository owner and scientific owner",
+  "confirmation_source": "D050 local migration authorization retaining D043 recorded during implementation",
+  "decision": "Migrate the complete exact-source W26 volume catalog to the D050 contract while retaining D043 geometry and validity unchanged.",
+  "rationale": "Linear and Full are the mandatory non-inferred baseline. No W26 volume Symlog threshold, Log eligibility/default, Focused bounds, color range, or palette has been scientifically selected.",
+  "features": [
+    {
+      "id": "rms_lf",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_lfp",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_alpha",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_beta",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_gamma",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_delta",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_theta",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_lfp_csd_diff1",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_alpha_csd_diff1",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_beta_csd_diff1",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_gamma_csd_diff1",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_delta_csd_diff1",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_theta_csd_diff1",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "rms_lf_csd_diff1",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_residual_lfp",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_residual_alpha",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_residual_beta",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_residual_gamma",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_residual_delta",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "psd_residual_theta",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "decay_fit_error",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "decay_fit_r_squared",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "decay_n_peaks",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "aperiodic_exponent",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "aperiodic_offset",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "cor_ratio",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "rms_ap",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "alpha_mean",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "alpha_std",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "spike_count",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "tip_time_secs",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "recovery_time_secs",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "peak_time_secs",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "trough_time_secs",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "trough_val",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "tip_val",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "peak_val",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "recovery_slope",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "depolarisation_slope",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "repolarisation_slope",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "polarity",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    }
+  ]
+}

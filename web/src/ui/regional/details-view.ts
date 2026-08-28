@@ -1,7 +1,8 @@
-import type { FeaturePayload, RegionMetadata, RegionalFeaturePayload } from '../../data/contracts.js';
+import type { DistributionBinning, FeaturePayload, RegionMetadata, RegionalFeaturePayload } from '../../data/contracts.js';
 import type { ResolvedPresentationScale } from '../../application/presentation-scale.js';
-import type { ColorRange, ColorScale, StatisticId } from '../../domain/types.js';
-import { clampScalePosition, scaleNormalize } from '../../domain/scale-spec.js';
+import type { ColorRange, StatisticId } from '../../domain/types.js';
+import type { ScaleSpec } from '../../domain/scale-spec.js';
+import { scaleNormalize } from '../../domain/scale-spec.js';
 import { html, message } from './dom.js';
 import {
   buildRegionalValueMap,
@@ -28,13 +29,27 @@ function svgElement<K extends keyof SVGElementTagNameMap>(name: K): SVGElementTa
 function histogramPosition(
   value: number,
   edges: readonly number[],
-  axisScale: ColorScale,
+  axisScale: ScaleSpec,
 ): number | null {
   const firstEdge = edges[0];
   const lastEdge = edges.at(-1);
   if (firstEdge === undefined || lastEdge === undefined) return null;
   const normalized = scaleNormalize(value, [firstEdge, lastEdge], axisScale);
-  return normalized === null ? null : clampScalePosition(normalized) * CHART_WIDTH;
+  return normalized === null || normalized < 0 || normalized > 1
+    ? null
+    : normalized * CHART_WIDTH;
+}
+
+function histogramNormalizedPosition(
+  value: number,
+  edges: readonly number[],
+  axisScale: ScaleSpec,
+): number | null {
+  const firstEdge = edges[0];
+  const lastEdge = edges.at(-1);
+  return firstEdge === undefined || lastEdge === undefined
+    ? null
+    : scaleNormalize(value, [firstEdge, lastEdge], axisScale);
 }
 
 export interface RegionalDetailsTargets {
@@ -140,13 +155,13 @@ export function renderDistribution(
   presentationScale: ResolvedPresentationScale,
 ): void {
   const regionalFeature = feature.representation === 'regional' ? feature : null;
-  const histogram = regionalFeature?.histogram ?? (feature.representation === 'volume' ? feature.summary.histogram : undefined);
-  if (!histogram || histogram.globalCounts.length === 0) {
+  const histogram = presentationScale.histogram;
+  if (!histogram || histogram.global.binCounts.length === 0) {
     target.replaceChildren(message('Histogram unavailable for this feature'));
     return;
   }
-  const global = histogramDistribution(histogram.globalCounts);
-  const selectedDistributions = regionalFeature ? selectedRegionHistogramDistributions(regionalFeature, selected) : [];
+  const global = histogramDistribution(histogram.global);
+  const selectedDistributions = regionalFeature ? selectedRegionHistogramDistributions(regionalFeature, selected, histogram) : [];
   const maxProbability = Math.max(
     0,
     ...global.probabilities,
@@ -157,6 +172,7 @@ export function renderDistribution(
   const chart = html('div', 'distribution-chart');
   chart.dataset.fixture = String(fixture);
   chart.dataset.axisScale = presentationScale.effectiveScale;
+  chart.dataset.distributionDomain = presentationScale.effectiveDistributionDomain;
   const meta = html('div', 'distribution-chart__meta');
   const label = html('span');
   label.textContent = `${regionalFeature ? 'Observation' : 'Valid-voxel'} distribution${unit ? ` · ${unit}` : ''}`;
@@ -167,21 +183,38 @@ export function renderDistribution(
   const scaleControl = html('div', 'distribution-chart__scale-control');
   scaleControl.setAttribute('role', 'group');
   scaleControl.setAttribute('aria-label', 'Value scale');
-  for (const [scale, text] of [['linear', 'Linear'], ['log', 'Log']] as const) {
+  for (const [scale, text] of [['linear', 'Linear'], ['log', 'Log'], ['symlog', 'Signed log']] as const) {
     const button = html('button', 'distribution-chart__scale-button');
     button.type = 'button';
     button.dataset.valueScale = scale;
     button.textContent = text;
     button.setAttribute('aria-pressed', String(presentationScale.effectiveScale === scale));
-    if (scale === 'log' && !presentationScale.logAvailable) {
+    if (!presentationScale.availableScales.includes(scale)) {
       button.disabled = true;
-      button.title = presentationScale.logUnavailableReason ?? 'Logarithmic scale is unavailable.';
+      button.title = presentationScale.unavailableScaleReasons[scale] ?? `${text} is unavailable.`;
     } else if (presentationScale.selection === 'auto' && presentationScale.effectiveScale === scale) {
       button.title = `${text} is the release-recommended default for this feature.`;
     }
     scaleControl.append(button);
   }
-  meta.append(label, population, scaleControl);
+  const domainControl = html('div', 'distribution-chart__domain-control');
+  domainControl.setAttribute('role', 'group');
+  domainControl.setAttribute('aria-label', 'Distribution domain');
+  for (const [domain, text] of [['full', 'Full'], ['focused', 'Focused']] as const) {
+    const button = html('button', 'distribution-chart__domain-button');
+    button.type = 'button';
+    button.dataset.distributionDomain = domain;
+    button.textContent = text;
+    button.setAttribute('aria-pressed', String(presentationScale.effectiveDistributionDomain === domain));
+    if (!presentationScale.availableDistributionDomains.includes(domain)) {
+      button.disabled = true;
+      button.title = presentationScale.unavailableDistributionReasons[domain] ?? `${text} is unavailable.`;
+    } else if (presentationScale.distributionSelection === 'auto' && presentationScale.effectiveDistributionDomain === domain) {
+      button.title = `${text} is the release-recommended distribution domain for this feature.`;
+    }
+    domainControl.append(button);
+  }
+  meta.append(label, population, scaleControl, domainControl);
   const plot = html('div', 'distribution-chart__plot');
   const svg = svgElement('svg');
   svg.classList.add('distribution-chart__svg');
@@ -246,7 +279,7 @@ export function renderDistribution(
     const numericMarkerValue = markerValue ?? Number.NaN;
     const x = !Number.isFinite(numericMarkerValue)
       ? null
-      : histogramPosition(numericMarkerValue, histogram.edges, presentationScale.effectiveScale);
+      : histogramPosition(numericMarkerValue, histogram.edges, presentationScale.effectiveScaleSpec);
     if (x !== null) {
       const marker = svgElement('line');
       marker.classList.add('distribution-chart__marker');
@@ -279,7 +312,7 @@ export function renderDistribution(
   svg.append(hoverMarker);
 
   const bins = html('div', 'distribution-chart__bins');
-  histogram.globalCounts.forEach((count, bin) => {
+  histogram.global.binCounts.forEach((count, bin) => {
     const cell = html('div', 'distribution-chart__bin');
     const globalPercent = (global.probabilities[bin] ?? 0) * 100;
     const selectedText = selectedDistributions.map((distribution) => {
@@ -309,6 +342,23 @@ export function renderDistribution(
   );
   axis.append(minimum, axisUnit, maximum);
 
+  const tails = html('div', 'distribution-chart__tails');
+  tails.dataset.visible = String(global.underflowCount > 0 || global.overflowCount > 0);
+  if (global.underflowCount > 0) {
+    const underflow = html('span', 'distribution-chart__tail distribution-chart__tail--underflow');
+    underflow.textContent = `Below ${minimum.textContent}: ${global.underflowCount.toLocaleString('en-US')} (${(global.underflowProbability * 100).toFixed(2)}%)`;
+    tails.append(underflow);
+  }
+  if (global.overflowCount > 0) {
+    const overflow = html('span', 'distribution-chart__tail distribution-chart__tail--overflow');
+    overflow.textContent = `Above ${maximum.textContent}: ${global.overflowCount.toLocaleString('en-US')} (${(global.overflowProbability * 100).toFixed(2)}%)`;
+    tails.append(overflow);
+  }
+
+  const rangeNote = html('div', 'distribution-chart__range-note');
+  rangeNote.dataset.visible = 'false';
+  rangeNote.hidden = true;
+
   const legend = html('div', 'distribution-chart__legend');
   const globalLegend = html('span', 'distribution-chart__legend-item');
   globalLegend.dataset.series = 'global';
@@ -318,59 +368,104 @@ export function renderDistribution(
     const item = html('span', 'distribution-chart__legend-item');
     item.dataset.regionId = distribution.regionId;
     item.style.setProperty('--selection-color', selectionColor(selectionIndex));
-    item.textContent = `${regionById.get(distribution.regionId)?.acronym ?? distribution.regionId} · n=${distribution.total.toLocaleString('en-US')}`;
+    const tailCount = distribution.underflowCount + distribution.overflowCount;
+    item.textContent = `${regionById.get(distribution.regionId)?.acronym ?? distribution.regionId} · n=${distribution.total.toLocaleString('en-US')}${tailCount > 0 ? ` · ${tailCount.toLocaleString('en-US')} outside focus` : ''}`;
     legend.append(item);
   });
-  chart.append(meta, plot, axis, legend);
+  chart.append(meta, plot, axis, tails, rangeNote, legend);
   target.replaceChildren(chart);
 }
 
 export function updateDistributionColorRange(
   target: HTMLElement,
-  feature: FeaturePayload,
+  _feature: FeaturePayload,
+  histogram: DistributionBinning | undefined,
+  scale: ScaleSpec,
   range: readonly [number, number] | null,
   mode: ColorRange['mode'],
 ): void {
   const layer = target.querySelector<SVGGElement>('.distribution-chart__color-range');
+  const note = target.querySelector<HTMLElement>('.distribution-chart__range-note');
   if (!layer) return;
-  const histogram = feature.representation === 'regional' ? feature.histogram : feature.summary.histogram;
+  const hideNote = (): void => {
+    if (!note) return;
+    note.dataset.visible = 'false';
+    note.hidden = true;
+    note.textContent = '';
+  };
   if (!range || !histogram) {
     layer.dataset.visible = 'false';
+    hideNote();
     return;
   }
 
-  const minimum = histogramPosition(range[0], histogram.edges, histogram.axisScale);
-  const maximum = histogramPosition(range[1], histogram.edges, histogram.axisScale);
+  const minimum = histogramNormalizedPosition(range[0], histogram.edges, scale);
+  const maximum = histogramNormalizedPosition(range[1], histogram.edges, scale);
   if (minimum === null || maximum === null) {
     layer.dataset.visible = 'false';
+    if (note && histogram.domain.kind === 'focused') {
+      note.textContent = 'Color range is not valid on this value scale.';
+      note.dataset.visible = 'true';
+      note.hidden = false;
+    } else hideNote();
     return;
   }
   const low = Math.min(minimum, maximum);
   const high = Math.max(minimum, maximum);
+  const visibleLow = Math.max(0, low);
+  const visibleHigh = Math.min(1, high);
+  const position = (value: number): 'below' | 'inside' | 'above' => (
+    value < 0 ? 'below' : value > 1 ? 'above' : 'inside'
+  );
+  const minimumPosition = position(minimum);
+  const maximumPosition = position(maximum);
+  layer.dataset.minimum = String(range[0]);
+  layer.dataset.maximum = String(range[1]);
+  layer.dataset.minimumPosition = minimumPosition;
+  layer.dataset.maximumPosition = maximumPosition;
+  layer.dataset.mode = mode;
+  if (visibleHigh < visibleLow) {
+    layer.dataset.visible = 'false';
+  } else {
+    layer.dataset.visible = 'true';
+  }
   const setRectangle = (selector: string, x: number, width: number): void => {
     const rectangle = layer.querySelector<SVGRectElement>(selector);
     rectangle?.setAttribute('x', String(x));
     rectangle?.setAttribute('width', String(width));
   };
-  const setBoundary = (selector: string, x: number): void => {
+  const setBoundary = (selector: string, normalized: number): void => {
     const boundary = layer.querySelector<SVGLineElement>(selector);
-    boundary?.setAttribute('x1', String(x));
-    boundary?.setAttribute('x2', String(x));
+    if (!boundary) return;
+    const visible = normalized >= 0 && normalized <= 1;
+    boundary.setAttribute('visibility', visible ? 'visible' : 'hidden');
+    if (!visible) return;
+    boundary.setAttribute('x1', String(normalized * CHART_WIDTH));
+    boundary.setAttribute('x2', String(normalized * CHART_WIDTH));
   };
-  setRectangle('.distribution-chart__range-outside--left', 0, low);
-  setRectangle('.distribution-chart__range-selected', low, high - low);
-  setRectangle('.distribution-chart__range-outside--right', high, CHART_WIDTH - high);
-  setBoundary('.distribution-chart__range-boundary--min', low);
-  setBoundary('.distribution-chart__range-boundary--max', high);
-  layer.dataset.minimum = String(range[0]);
-  layer.dataset.maximum = String(range[1]);
-  layer.dataset.mode = mode;
-  layer.dataset.visible = 'true';
+  setRectangle('.distribution-chart__range-outside--left', 0, visibleLow * CHART_WIDTH);
+  setRectangle('.distribution-chart__range-selected', visibleLow * CHART_WIDTH, Math.max(0, visibleHigh - visibleLow) * CHART_WIDTH);
+  setRectangle('.distribution-chart__range-outside--right', visibleHigh * CHART_WIDTH, Math.max(0, 1 - visibleHigh) * CHART_WIDTH);
+  setBoundary('.distribution-chart__range-boundary--min', minimum);
+  setBoundary('.distribution-chart__range-boundary--max', maximum);
+
+  const below = minimumPosition === 'below' || maximumPosition === 'below';
+  const above = minimumPosition === 'above' || maximumPosition === 'above';
+  if (note && histogram.domain.kind === 'focused' && (below || above)) {
+    const relation = visibleHigh < visibleLow
+      ? below ? 'lies below' : 'lies above'
+      : below && above ? 'extends below and above' : below ? 'extends below' : 'extends above';
+    note.textContent = `Color range ${relation} the Focused interval.`;
+    note.dataset.visible = 'true';
+    note.hidden = false;
+  } else hideNote();
 }
 
 export function updateDistributionHover(
   target: HTMLElement,
   feature: RegionalFeaturePayload,
+  histogram: DistributionBinning | undefined,
+  scale: ScaleSpec,
   regions: readonly RegionMetadata[],
   hoveredRegionId: string | null,
   statistic: StatisticId,
@@ -386,7 +481,7 @@ export function updateDistributionHover(
     label.hidden = true;
     delete label.dataset.regionId;
   };
-  if (!hoveredRegionId || statistic === 'count' || !feature.histogram) {
+  if (!hoveredRegionId || statistic === 'count' || !histogram) {
     hide();
     return;
   }
@@ -396,7 +491,7 @@ export function updateDistributionHover(
   const numericValue = value ?? Number.NaN;
   const x = !Number.isFinite(numericValue)
     ? null
-    : histogramPosition(numericValue, feature.histogram.edges, feature.histogram.axisScale);
+    : histogramPosition(numericValue, histogram.edges, scale);
   if (x === null) {
     hide();
     return;
@@ -432,6 +527,7 @@ export function renderAnalysis(
   statistic: StatisticId,
   unit: string | null,
   fixture: boolean,
+  binning: DistributionBinning | undefined,
 ): void {
   if (selected.size === 0) {
     target.replaceChildren();
@@ -444,7 +540,7 @@ export function renderAnalysis(
     badge.textContent = 'Synthetic integration fixture';
     wrap.append(badge);
   }
-  wrap.append(renderComparisonTable(feature, regions, selected, statistic, unit));
+  wrap.append(renderComparisonTable(feature, regions, selected, statistic, unit, binning));
   target.replaceChildren(wrap);
 }
 
@@ -454,6 +550,7 @@ function renderComparisonTable(
   selected: ReadonlySet<string>,
   statistic: StatisticId,
   unit: string | null,
+  binning: DistributionBinning | undefined,
 ): HTMLElement {
   const regionById = new Map(regions.map((region) => [region.id, region]));
   const indexById = new Map(feature.regionIds.map((id, index) => [id, index]));
@@ -466,15 +563,15 @@ function renderComparisonTable(
   headerRow.append(download);
   const note = html('p', 'regional-comparison__note');
   const unitNote = unit ? `Feature values are shown in ${unit}.` : 'Feature units are not declared for this release.';
-  note.textContent = `Each curve is normalized within its own population; all rows share the feature-value axis and probability scale. ${unitNote}`;
+  note.textContent = `Each curve uses its complete population as the denominator; Focused distributions report observations outside the visible interval as exact tails. All rows share the feature-value axis and probability scale. ${unitNote}`;
   const scroller = html('div', 'regional-comparison__table-scroll');
   const table = html('table', 'regional-comparison__table');
   const caption = document.createElement('caption');
   caption.textContent = 'Normalized distributions and descriptive statistics for selected regions and the global population';
   const distributions = new Map(
-    selectedRegionHistogramDistributions(feature, selected).map((distribution) => [distribution.regionId, distribution]),
+    selectedRegionHistogramDistributions(feature, selected, binning).map((distribution) => [distribution.regionId, distribution]),
   );
-  const globalDistribution = feature.histogram ? histogramDistribution(feature.histogram.globalCounts) : null;
+  const globalDistribution = binning ? histogramDistribution(binning.global) : null;
   const maxProbability = Math.max(
     0,
     ...(globalDistribution?.probabilities ?? []),
@@ -514,7 +611,7 @@ function renderComparisonTable(
     row.append(identity);
     appendDistributionCell(
       row,
-      distributions.get(regionId)?.probabilities,
+      distributions.get(regionId),
       globalDistribution?.probabilities,
       maxProbability,
       `${region?.acronym ?? regionId} normalized distribution`,
@@ -540,7 +637,7 @@ function renderComparisonTable(
     row.append(identity);
     appendDistributionCell(
       row,
-      globalDistribution?.probabilities,
+      globalDistribution ?? undefined,
       undefined,
       maxProbability,
       'Global population normalized distribution',
@@ -554,8 +651,8 @@ function renderComparisonTable(
     body.append(row);
   }
   table.append(caption, head, body);
-  if (feature.histogram) {
-    table.append(renderDistributionAxis(feature, unit, columns.length));
+  if (binning) {
+    table.append(renderDistributionAxis(binning, unit, columns.length));
   }
   scroller.append(table);
   section.append(headerRow, note, scroller);
@@ -564,12 +661,13 @@ function renderComparisonTable(
 
 function appendDistributionCell(
   row: HTMLTableRowElement,
-  probabilities: readonly number[] | undefined,
+  distribution: ReturnType<typeof histogramDistribution> | undefined,
   globalProbabilities: readonly number[] | undefined,
   maxProbability: number,
   accessibleLabel: string,
   global: boolean,
 ): void {
+  const probabilities = distribution?.probabilities;
   const cell = document.createElement('td');
   cell.classList.add('regional-comparison__distribution-cell');
   cell.dataset.statistic = 'distribution';
@@ -596,11 +694,16 @@ function appendDistributionCell(
   populationArea.dataset.probabilitySum = probabilitySum(probabilities);
   plot.append(populationArea);
   cell.append(plot);
+  if (distribution && (distribution.underflowCount > 0 || distribution.overflowCount > 0)) {
+    const tails = html('span', 'regional-distribution__tails');
+    tails.textContent = `tails: ${distribution.underflowCount.toLocaleString('en-US')} below · ${distribution.overflowCount.toLocaleString('en-US')} above`;
+    cell.append(tails);
+  }
   row.append(cell);
 }
 
 function renderDistributionAxis(
-  feature: RegionalFeaturePayload,
+  binning: DistributionBinning,
   unit: string | null,
   columnCount: number,
 ): HTMLTableSectionElement {
@@ -611,8 +714,8 @@ function renderDistributionAxis(
   label.textContent = 'Feature value';
   const cell = document.createElement('td');
   const axis = html('div', 'regional-distribution__axis');
-  const firstEdge = feature.histogram?.edges[0];
-  const lastEdge = feature.histogram?.edges.at(-1);
+  const firstEdge = binning.edges[0];
+  const lastEdge = binning.edges.at(-1);
   axis.setAttribute('aria-label', `Feature-value axis${unit ? ` in ${unit}` : ''}`);
   const start = html('span');
   start.textContent = firstEdge === undefined ? '' : formatRegionalValue(firstEdge, 'mean', null);

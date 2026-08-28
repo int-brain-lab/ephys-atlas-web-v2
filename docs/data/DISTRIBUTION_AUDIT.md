@@ -35,6 +35,47 @@ This is evidence machinery only. A later reviewed selection document must bind
 any scale availability, signed-log threshold, focused bounds and defaults to a
 new immutable release.
 
+## Reviewed selection input
+
+D050 real-source builders require a separate owner-reviewed selection after the
+audit. The reviewed migration selections are
+`CHANNELS_DISTRIBUTION_SELECTION.json`,
+`CLUSTERS_DISTRIBUTION_SELECTION.json`,
+`BRAINWIDE_MAP_DISTRIBUTION_SELECTION.json`, and
+`VOLUME_2026_W26_DISTRIBUTION_SELECTION.json` in this directory. The versioned
+machine input has this shape (the values below illustrate the contract only and
+are not another scientific selection):
+
+```json
+{
+  "schema": "ibl-scalar-distribution-selection-v1",
+  "selection_id": "owner-assigned-versioned-id",
+  "scientific_owner_confirmation": true,
+  "dataset_id": "ephys_atlas_channels",
+  "representation": "regional",
+  "source_release_id": "exact-source-release-id",
+  "features": [
+    {
+      "id": "exact.output.feature.id",
+      "display": {
+        "scales": [{"kind": "linear"}],
+        "preferred_scale": "linear",
+        "distribution_domains": [{"kind": "full"}],
+        "preferred_distribution_domain": "full"
+      }
+    }
+  ]
+}
+```
+
+`representation` is `regional` for channels, clusters, and Brain-Wide Map and
+`volume` for encoding volumes. The selection must enumerate the exact complete
+output feature catalog. The builder rejects a dataset, representation, source
+release, feature, Log eligibility, Signed-log threshold, Focused interval, or
+display-range mismatch. It copies the exact reviewed bytes into the immutable
+release as `distribution-selection.json` and records their SHA-256 in provenance;
+it never derives a choice from the audit report or from a previous histogram.
+
 ## Release inventory and commands
 
 Use the inventory before mounting a source snapshot. It reports what exact

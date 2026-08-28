@@ -132,6 +132,17 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, range: action.range } } };
     case 'color/scale':
       return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, scale: action.scale } } };
+    case 'distribution/domain':
+      return { ...state, view: { ...state.view, distribution: { domain: action.domain } } };
+    case 'presentation/reconcile':
+      return {
+        ...state,
+        view: {
+          ...state.view,
+          coloring: { ...state.view.coloring, scale: action.scale },
+          distribution: { domain: action.domain },
+        },
+      };
     case 'runtime/catalog':
       return {
         ...state,

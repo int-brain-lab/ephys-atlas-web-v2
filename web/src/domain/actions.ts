@@ -3,6 +3,7 @@ import type {
   ColorMode,
   ColorStatisticId,
   ColorScaleSelection,
+  DistributionDomainSelection,
   CursorState,
   DatasetRef,
   ParcellationId,
@@ -50,7 +51,9 @@ type ViewActionPayload =
   | { type: 'color/mode'; mode: ColorMode }
   | { type: 'color/colormap'; colormap: string }
   | { type: 'color/range'; range: ColorRange }
-  | { type: 'color/scale'; scale: ColorScaleSelection };
+  | { type: 'color/scale'; scale: ColorScaleSelection }
+  | { type: 'distribution/domain'; domain: DistributionDomainSelection }
+  | { type: 'presentation/reconcile'; scale: 'linear'; domain: 'full' };
 
 export type ViewAction = ViewActionPayload & {
   /** Explicit browser-history intent; refinements replace by default. */

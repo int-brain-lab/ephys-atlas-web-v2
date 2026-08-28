@@ -1,11 +1,17 @@
 import type {
   BinaryArrayDescriptor,
+  DistributionBinning,
   GlobalStatistics,
   RegionMetadata,
   RegionalFeaturePayload,
-  RegionalHistogram,
 } from './contracts.js';
-import { parseBinaryArray } from './validate.js';
+import { parseBinaryArray } from './validation/binary.js';
+import {
+  parseDistributionBinning,
+  validateDistributionBinningSet,
+  type DistributionBinningResource,
+} from './validation/distribution.js';
+import { array } from './validation/primitives.js';
 
 function object(value: unknown, context: string): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -23,18 +29,13 @@ function finiteNumber(value: unknown, context: string): number {
 
 function integer(value: unknown, context: string): number {
   const parsed = finiteNumber(value, context);
-  if (!Number.isInteger(parsed)) throw new Error(`${context} must be an integer`);
+  if (!Number.isSafeInteger(parsed)) throw new Error(`${context} must be a safe integer`);
   return parsed;
 }
 
 function nonEmptyString(value: unknown, context: string): string {
   if (typeof value !== 'string' || !value) throw new Error(`${context} must be a non-empty string`);
   return value;
-}
-
-function finiteNumberArray(value: unknown, context: string): number[] {
-  if (!Array.isArray(value)) throw new Error(`${context} must be an array`);
-  return value.map((item, index) => finiteNumber(item, `${context}[${index}]`));
 }
 
 export function parseRegionMetadata(value: unknown): readonly RegionMetadata[] {
@@ -76,51 +77,8 @@ export interface RegionalStatisticsResource {
   values: BinaryArrayDescriptor;
   population?: string;
   global?: GlobalStatistics;
-  histogram?: {
-    axisScale: 'linear';
-    defaultAxisScale: 'linear' | 'log';
-    edges: readonly number[];
-    globalCounts: readonly number[];
-    regionalCounts?: BinaryArrayDescriptor;
-    binRule?: string;
-    variants: Partial<Record<'log', {
-      axisScale: 'log';
-      edges: readonly number[];
-      globalCounts: readonly number[];
-      regionalCounts: BinaryArrayDescriptor;
-      binRule?: string;
-    }>>;
-  };
-}
-
-function parseHistogramVariant(
-  value: unknown,
-  path: string,
-  axisScale: 'linear' | 'log',
-): {
-  axisScale: 'linear' | 'log';
-  edges: readonly number[];
-  globalCounts: readonly number[];
-  regionalCounts?: BinaryArrayDescriptor;
-  binRule?: string;
-} {
-  const histogram = object(value, path);
-  const edges = finiteNumberArray(histogram.edges, `${path}.edges`);
-  const globalCounts = finiteNumberArray(histogram.global_counts, `${path}.global_counts`);
-  if (edges.length !== globalCounts.length + 1) {
-    throw new Error(`${path} edges must be one longer than global counts`);
-  }
-  if (axisScale === 'log' && edges.some((edge) => edge <= 0)) {
-    throw new Error(`${path} log edges must be strictly positive`);
-  }
-  return {
-    axisScale,
-    edges,
-    globalCounts,
-    ...(histogram.regional_counts !== undefined
-      ? { regionalCounts: parseBinaryArray(histogram.regional_counts, `${path}.regional_counts`) }
-      : {}),
-    ...(typeof histogram.bin_rule === 'string' ? { binRule: histogram.bin_rule } : {}),
+  distribution?: {
+    binnings: readonly DistributionBinningResource[];
   };
 }
 
@@ -139,6 +97,7 @@ export function parseRegionalStatisticsResource(value: unknown): RegionalStatist
   if (root.schema_version !== '1.0' || root.format !== 'ephys-atlas-regional-statistics-v1') {
     throw new Error('statistics.format is unsupported');
   }
+  const population = nonEmptyString(root.population, 'statistics.population');
   const regional = object(root.regional_summary, 'statistics.regional_summary');
   if (!Array.isArray(regional.fields)) {
     throw new Error('statistics.regional_summary.fields must be an array');
@@ -146,17 +105,21 @@ export function parseRegionalStatisticsResource(value: unknown): RegionalStatist
   const fields = regional.fields.map((field, index) => (
     nonEmptyString(field, `statistics.regional_summary.fields[${index}]`)
   ));
-  const parsed: RegionalStatisticsResource = {
+  const supportedFields = new Set(['count', 'missing_count', 'min', 'max', 'mean', 'std', 'median', 'q05', 'q25', 'q75', 'q95']);
+  if (fields.length === 0 || fields.some((field) => !supportedFields.has(field)) || new Set(fields).size !== fields.length) {
+    throw new Error('statistics.regional_summary.fields contains duplicate or unsupported values');
+  }
+  const parsed: Omit<RegionalStatisticsResource, 'distribution'> = {
     fields,
     values: parseBinaryArray(regional.values, 'statistics.regional_summary.values'),
+    population,
   };
-  if (typeof root.population === 'string' && root.population) parsed.population = root.population;
-  if (root.global !== undefined) {
-    const source = object(root.global, 'statistics.global');
-    const global: GlobalStatistics = {};
-    const fieldMappings = [
-      ['count', 'count'],
-      ['missing_count', 'missingCount'],
+  const source = object(root.global, 'statistics.global');
+  const count = integer(source.count, 'statistics.global.count');
+  const missingCount = integer(source.missing_count, 'statistics.global.missing_count');
+  if (count < 0 || missingCount < 0) throw new Error('statistics.global counts must be non-negative');
+  const global: GlobalStatistics = { count, missingCount };
+  const fieldMappings = [
       ['min', 'min'],
       ['max', 'max'],
       ['mean', 'mean'],
@@ -166,64 +129,84 @@ export function parseRegionalStatisticsResource(value: unknown): RegionalStatist
       ['q25', 'q25'],
       ['q75', 'q75'],
       ['q95', 'q95'],
-    ] as const;
-    for (const [sourceKey, targetKey] of fieldMappings) {
+  ] as const;
+  const descriptiveFields = new Set(['min', 'max', 'mean', 'std', 'median']);
+  for (const [sourceKey, targetKey] of fieldMappings) {
+    const value = source[sourceKey];
+    if (descriptiveFields.has(sourceKey) && value === undefined) {
+      throw new Error(`statistics.global.${sourceKey} is required`);
+    }
+    if (value !== undefined && value !== null) {
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        throw new Error(`statistics.global.${sourceKey} must be finite or null`);
+      }
       optionalStatistic(source, sourceKey, targetKey, global);
     }
-    parsed.global = global;
   }
-  if (root.histogram !== undefined) {
-    const histogram = object(root.histogram, 'statistics.histogram');
-    const primary = parseHistogramVariant(histogram, 'statistics.histogram', 'linear');
-    const variantsRaw = histogram.variants === undefined
-      ? {}
-      : object(histogram.variants, 'statistics.histogram.variants');
-    const log = variantsRaw.log === undefined
-      ? undefined
-      : parseHistogramVariant(variantsRaw.log, 'statistics.histogram.variants.log', 'log');
-    const defaultAxisScale = histogram.default_axis_scale === 'log' ? 'log' : 'linear';
-    if (defaultAxisScale === 'log' && !log) {
-      throw new Error('statistics.histogram default log axis is unavailable');
-    }
-    parsed.histogram = {
-      ...primary,
-      axisScale: 'linear',
-      defaultAxisScale,
-      variants: log?.regionalCounts ? { log: { ...log, axisScale: 'log', regionalCounts: log.regionalCounts } } : {},
-    };
+  const descriptiveValues = ['min', 'max', 'mean', 'std', 'median']
+    .map((field) => source[field]);
+  if (count === 0 && descriptiveValues.some((value) => value !== null)) {
+    throw new Error('empty statistics require null descriptive values');
   }
-  return parsed;
+  if (count > 0 && descriptiveValues.some((value) => value === null)) {
+    throw new Error('nonempty statistics require finite descriptive values');
+  }
+  parsed.global = global;
+  const populationCount = parsed.global?.count;
+  if (populationCount === undefined || !Number.isSafeInteger(populationCount) || populationCount < 0) {
+    throw new Error('statistics.global.count is required for distribution validation');
+  }
+  if (root.distribution === undefined) {
+    if (populationCount > 0) throw new Error('nonempty statistics require a distribution');
+    return parsed;
+  }
+  if (populationCount === 0) throw new Error('empty statistics must omit its distribution');
+  const distribution = object(root.distribution, 'statistics.distribution');
+  const binnings = array(distribution.binnings, 'statistics.distribution.binnings')
+    .map((item, index) => parseDistributionBinning(
+      item,
+      `statistics.distribution.binnings[${index}]`,
+      true,
+    ));
+  validateDistributionBinningSet(
+    binnings,
+    populationCount,
+    'statistics.distribution',
+    parsed.global?.min,
+    parsed.global?.max,
+  );
+  return { ...parsed, distribution: { binnings } };
 }
 
-export function materializeRegionalHistogram(
-  resource: {
-    axisScale: 'linear' | 'log';
-    edges: readonly number[];
-    globalCounts: readonly number[];
-    regionalCounts?: BinaryArrayDescriptor;
-    binRule?: string;
-  },
-  flatCounts: readonly number[] | null,
+export function materializeDistributionBinning(
+  resource: DistributionBinningResource,
+  flatCounts: readonly number[],
   regionCount: number,
-): RegionalHistogram {
-  const histogram: RegionalHistogram = {
-    axisScale: resource.axisScale,
-    edges: resource.edges,
-    globalCounts: resource.globalCounts,
-    ...(resource.binRule ? { binRule: resource.binRule } : {}),
-  };
-  if (!resource.regionalCounts) return histogram;
+): DistributionBinning {
+  if (!resource.regionalCounts) throw new Error('regional distribution binning requires regional counts');
+  const binCount = resource.global.binCounts.length;
+  const rowWidth = binCount + 2;
   const shape = resource.regionalCounts.shape;
-  const binCount = resource.globalCounts.length;
-  if (shape.length !== 2 || shape[0] !== regionCount || shape[1] !== binCount) {
-    throw new Error(`regional histogram shape must be [${regionCount}, ${binCount}]`);
+  if (shape.length !== 2 || shape[0] !== regionCount || shape[1] !== rowWidth) {
+    throw new Error(`regional distribution shape must be [${regionCount}, ${rowWidth}]`);
   }
-  if (!flatCounts || flatCounts.length !== regionCount * binCount) {
-    throw new Error('regional histogram payload length is inconsistent');
+  if (flatCounts.length !== regionCount * rowWidth) {
+    throw new Error('regional distribution payload length is inconsistent');
   }
-  histogram.regionalCounts = Array.from(
-    { length: regionCount },
-    (_, row) => flatCounts.slice(row * binCount, (row + 1) * binCount),
-  );
-  return histogram;
+  return {
+    id: resource.id,
+    scale: resource.scale,
+    domain: resource.domain,
+    edges: resource.edges,
+    global: resource.global,
+    regional: Array.from({ length: regionCount }, (_, row) => {
+      const offset = row * rowWidth;
+      return {
+        underflowCount: flatCounts[offset]!,
+        binCounts: flatCounts.slice(offset + 1, offset + 1 + binCount),
+        overflowCount: flatCounts[offset + rowWidth - 1]!,
+      };
+    }),
+    binRule: resource.binRule,
+  };
 }

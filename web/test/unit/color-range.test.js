@@ -31,21 +31,26 @@ const regional = {
   parcellation: 'allen',
   regionIds: ['1', '2', '3'],
   statistics: { mean: [2, 4, 6], count: [10, 40, 20] },
-  histogram: { edges: [0, 2, 4, 8], globalCounts: [1, 3, 1] },
+  distribution: { binnings: [] },
+};
+const fullBinning = {
+  id: 'linear-full', scale: { kind: 'linear' }, domain: { kind: 'full' }, edges: [0, 2, 4, 8],
+  global: { binCounts: [1, 3, 1], underflowCount: 0, overflowCount: 0 },
+  binRule: 'left-closed-right-open-last-closed',
 };
 
 test('regional range domain uses observation histogram edges except for counts', () => {
-  assert.deepEqual(colorRangeDomain(regional, 'mean', [1, 7]), [0, 8]);
+  assert.deepEqual(colorRangeDomain(regional, 'mean', [1, 7], fullBinning), [0, 8]);
   assert.deepEqual(colorRangeDomain(regional, 'count', [12, 35]), [10, 40]);
 });
 
 test('volume range domain uses exact histogram edges around the robust color interval', () => {
   const volume = {
     representation: 'volume',
-    descriptor: { valueRange: [2, 8] },
-    summary: { histogram: { edges: [-10, 0, 10, 100] } },
+    descriptor: {},
+    summary: { valueRange: [2, 8] },
   };
-  assert.deepEqual(colorRangeDomain(volume, 'mean', [2, 8]), [-10, 100]);
+  assert.deepEqual(colorRangeDomain(volume, 'mean', [2, 8], { ...fullBinning, edges: [-10, 0, 10, 100] }), [-10, 100]);
 });
 
 test('range window translation preserves width and clamps at domain edges', () => {
@@ -55,7 +60,7 @@ test('range window translation preserves width and clamps at domain edges', () =
 });
 
 test('manual bounds outside the declared data extent remain reachable', () => {
-  assert.deepEqual(colorRangeDomain(regional, 'mean', [-2, 12]), [-2, 12]);
+  assert.deepEqual(colorRangeDomain(regional, 'mean', [-2, 12], fullBinning), [-2, 12]);
 });
 
 test('range handle math positions, steps, and prevents crossing', () => {
@@ -69,10 +74,22 @@ test('range handle math positions, steps, and prevents crossing', () => {
 
 test('log range transforms round-trip and preserve multiplicative window width', () => {
   const domain = [1, 1_000];
-  assert.ok(Math.abs(rangePosition(10, domain, 'log') - 1 / 3) < 1e-12);
-  assert.ok(Math.abs(rangeValueAtPosition(2 / 3, domain, 'log') - 100) < 1e-10);
-  const translated = translateRangeWindowByPosition([10, 100], 1 / 3, domain, 'log');
+  assert.ok(Math.abs(rangePosition(10, domain, { kind: 'log' }) - 1 / 3) < 1e-12);
+  assert.ok(Math.abs(rangeValueAtPosition(2 / 3, domain, { kind: 'log' }) - 100) < 1e-10);
+  const translated = translateRangeWindowByPosition([10, 100], 1 / 3, domain, { kind: 'log' });
   assert.ok(Math.abs(translated[0] - 100) < 1e-10);
   assert.ok(Math.abs(translated[1] - 1_000) < 1e-9);
   assert.ok(Math.abs(translated[1] / translated[0] - 10) < 1e-12);
+});
+
+test('signed-log range geometry spans zero and preserves transformed window width', () => {
+  const domain = [-100, 100];
+  const signed = { kind: 'symlog', linearThreshold: 2 };
+  assert.equal(rangePosition(0, domain, signed), .5);
+  assert.ok(Math.abs(rangeValueAtPosition(.5, domain, signed)) < 1e-12);
+  const original = [-10, 10];
+  const translated = translateRangeWindowByPosition(original, .1, domain, signed);
+  const originalWidth = rangePosition(original[1], domain, signed) - rangePosition(original[0], domain, signed);
+  const translatedWidth = rangePosition(translated[1], domain, signed) - rangePosition(translated[0], domain, signed);
+  assert.ok(Math.abs(originalWidth - translatedWidth) < 1e-12);
 });

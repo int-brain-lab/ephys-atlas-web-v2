@@ -1,5 +1,6 @@
 import type {
   FeatureDescriptor,
+  DistributionBinning,
   RegionalFeaturePayload,
   RegionMetadata,
 } from '../../data/contracts.js';
@@ -14,6 +15,7 @@ export interface ComparisonExportOptions {
   regions: readonly RegionMetadata[];
   selectedRegionIds: readonly string[];
   statistic: StatisticId;
+  binning?: DistributionBinning;
 }
 
 export interface ComparisonExport {
@@ -30,7 +32,11 @@ const FIELDS = [
   'selected_statistic',
   'unit',
   'population',
-  'histogram_axis_scale',
+  'value_scale',
+  'distribution_domain',
+  'symlog_linear_threshold',
+  'focus_lower_bound',
+  'focus_upper_bound',
   'region_id',
   'acronym',
   'region_name',
@@ -49,10 +55,15 @@ const FIELDS = [
   'bin_end',
   'bin_count',
   'bin_probability',
+  'population_denominator',
+  'underflow_count',
+  'underflow_probability',
+  'overflow_count',
+  'overflow_probability',
 ] as const;
 
 export function buildSelectedComparisonExport(options: ComparisonExportOptions): ComparisonExport {
-  const { datasetId, releaseId, feature, descriptor, regions, selectedRegionIds, statistic } = options;
+  const { datasetId, releaseId, feature, descriptor, regions, selectedRegionIds, statistic, binning } = options;
   const regionById = new Map(regions.map((region) => [region.id, region]));
   const indexById = new Map(feature.regionIds.map((id, index) => [id, index]));
   const rows: string[][] = [];
@@ -64,7 +75,7 @@ export function buildSelectedComparisonExport(options: ComparisonExportOptions):
       const number = feature.statistics[field]?.[rowIndex];
       return number !== undefined && Number.isFinite(number) ? String(number) : '';
     };
-    const counts = feature.histogram?.regionalCounts?.[rowIndex];
+    const counts = binning?.regional?.[rowIndex];
     const distribution = counts ? histogramDistribution(counts) : null;
     const binCount = distribution?.counts.length ?? 0;
     const iterations = Math.max(1, binCount);
@@ -78,7 +89,11 @@ export function buildSelectedComparisonExport(options: ComparisonExportOptions):
         statistic,
         descriptor?.unit ?? '',
         feature.population ?? '',
-        feature.histogram?.axisScale ?? '',
+        binning?.scale.kind ?? '',
+        binning?.domain.kind ?? '',
+        binning?.scale.kind === 'symlog' ? String(binning.scale.linearThreshold) : '',
+        binning?.domain.kind === 'focused' ? String(binning.domain.bounds[0]) : '',
+        binning?.domain.kind === 'focused' ? String(binning.domain.bounds[1]) : '',
         regionId,
         region?.acronym ?? '',
         region?.name ?? '',
@@ -93,10 +108,15 @@ export function buildSelectedComparisonExport(options: ComparisonExportOptions):
         value('q25'),
         value('q75'),
         value('q95'),
-        binCount > 0 ? String(feature.histogram?.edges[bin] ?? '') : '',
-        binCount > 0 ? String(feature.histogram?.edges[bin + 1] ?? '') : '',
+        binCount > 0 ? String(binning?.edges[bin] ?? '') : '',
+        binCount > 0 ? String(binning?.edges[bin + 1] ?? '') : '',
         binCount > 0 ? String(distribution?.counts[bin] ?? '') : '',
         binCount > 0 ? String(distribution?.probabilities[bin] ?? '') : '',
+        distribution ? String(distribution.total) : '',
+        distribution ? String(distribution.underflowCount) : '',
+        distribution ? String(distribution.underflowProbability) : '',
+        distribution ? String(distribution.overflowCount) : '',
+        distribution ? String(distribution.overflowProbability) : '',
       ]);
     }
   }

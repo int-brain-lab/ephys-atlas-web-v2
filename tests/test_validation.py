@@ -4,6 +4,7 @@ import json
 import shutil
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from ephys_atlas_builder.io import sha256_file
@@ -70,13 +71,13 @@ def test_duplicate_parcellation_ids_are_rejected(release: Path) -> None:
         validate_release(release, SCHEMA)
 
 
-def test_feature_display_scale_is_limited(release: Path) -> None:
+def test_feature_display_symlog_requires_positive_threshold(release: Path) -> None:
     path = feature_path(release)
     feature = load(path)
-    feature["display"] = {"scale": "symlog"}
+    feature["display"]["regional"]["scales"][1]["linear_threshold"] = 0
     save(path, feature)
     refresh_feature_reference(release)
-    with pytest.raises(ValidationError, match="display.*scale"):
+    with pytest.raises(ValidationError, match="linear_threshold|greater than"):
         validate_release(release, SCHEMA)
 
 
@@ -144,6 +145,53 @@ def test_regional_summary_shape_matches_fields(release: Path) -> None:
     refresh_feature_reference(release)
     with pytest.raises(ValidationError, match="regional summary shape does not match fields"):
         validate_release(release, SCHEMA)
+
+
+def test_regional_distribution_rows_conserve_each_region_count(release: Path) -> None:
+    stats_path = release / "features" / "rms_ap" / "allen.statistics.json"
+    statistics = load(stats_path)
+    binning = statistics["distribution"]["binnings"][0]
+    descriptor = binning["regional_counts"]
+    payload = stats_path.parent / descriptor["resource"]["path"]
+    counts = np.fromfile(payload, dtype="<u4")
+    counts[0] += 1
+    counts.tofile(payload)
+    refresh_resource(descriptor, payload)
+    save(stats_path, statistics)
+    feature_file = feature_path(release)
+    feature = load(feature_file)
+    refresh_resource(
+        feature["representations"]["regional"]["parcellations"][0]["statistics"],
+        stats_path,
+    )
+    save(feature_file, feature)
+    refresh_feature_reference(release)
+    with pytest.raises(ValidationError, match="do not conserve regional finite counts"):
+        validate_release(release, SCHEMA)
+
+
+def test_feature_display_must_match_exact_distribution_availability(release: Path) -> None:
+    path = feature_path(release)
+    feature = load(path)
+    feature["display"]["regional"]["scales"] = [{"kind": "linear"}]
+    feature["display"]["regional"]["preferred_scale"] = "linear"
+    save(path, feature)
+    refresh_feature_reference(release)
+    with pytest.raises(ValidationError, match="display availability does not match"):
+        validate_release(release, SCHEMA)
+
+
+def test_display_distribution_spec_matching_normalizes_numeric_spelling(
+    release: Path,
+) -> None:
+    path = feature_path(release)
+    feature = load(path)
+    # JSON integer and floating-point spellings represent the same raw bounds.
+    # Cross-document validation must compare their numeric value, not dumps text.
+    feature["display"]["regional"]["distribution_domains"][1]["bounds"] = [0, 3]
+    save(path, feature)
+    refresh_feature_reference(release)
+    validate_release(release, SCHEMA)
 
 
 def test_volume_summary_grid_identity_must_match(release: Path) -> None:

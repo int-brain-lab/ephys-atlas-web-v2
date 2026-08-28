@@ -4,16 +4,23 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 import re
+import shutil
 import subprocess
 
 import numpy as np
 
 from .io import json_resource, sha256_file, write_json
+from .distribution_selection import (
+    bind_distribution_selection,
+    load_distribution_selection,
+    selection_provenance,
+)
 from .regional_release import (
     FeatureInfo,
     RegionInfo,
     fold_region_ids_left,
-    histogram_edges,
+    linear_full_display,
+    validate_scalar_display,
     write_feature_parcellation,
     write_parcellation,
 )
@@ -46,10 +53,12 @@ class LegacyFamilyTable:
 class BrainwideMapBuildConfig:
     release_id: str
     created_at: str
+    source_release_id: str | None = None
     histogram_bins: int = 50
     paper_snapshot: bool = False
     generator_commit: str = LEGACY_GENERATOR_COMMIT
     builder_commit: str | None = None
+    distribution_selection: Path | None = None
 
     def validate(self) -> None:
         if not self.release_id:
@@ -104,6 +113,7 @@ def build_brainwide_map_release_from_tables(
     region_metadata: Mapping[int, RegionInfo],
     provenance_sources: Sequence[dict],
     feature_metadata: Mapping[str, FeatureInfo] | None = None,
+    feature_display: Mapping[str, dict] | None = None,
 ) -> Path:
     """Preserve the D038-selected v1 Beryl regional snapshot in schema v1."""
     config.validate()
@@ -132,6 +142,17 @@ def build_brainwide_map_release_from_tables(
         release_dir, "beryl", union_ids, region_metadata
     )
     feature_metadata = feature_metadata or {}
+    feature_display = feature_display or {}
+    expected_feature_ids = {
+        f"{family}_{source_column}"
+        for family, table in families.items()
+        for source_column in table.features
+    }
+    unknown_display = sorted(set(feature_display) - expected_feature_ids)
+    if unknown_display:
+        raise ValueError(
+            f"Brain-Wide Map display selections are not in the release catalog: {', '.join(unknown_display)}"
+        )
     feature_entries = []
     for family in LEGACY_FAMILY_SOURCES:
         table = families[family]
@@ -139,15 +160,19 @@ def build_brainwide_map_release_from_tables(
         for source_column in sorted(table.features):
             feature_id = f"{family}_{source_column}"
             transformed = _legacy_boolean_values(table.features[source_column])
+            display = validate_scalar_display(
+                feature_display.get(feature_id) or linear_full_display(), transformed
+            )
             feature_root = release_dir / "features" / feature_id
             regional = write_feature_parcellation(
                 feature_root,
                 "beryl",
                 transformed,
                 groups,
-                histogram_edges(transformed, config.histogram_bins),
+                config.histogram_bins,
                 f"rows in the preserved legacy {family}_bwm.pqt regional table",
                 numeric_transform=_legacy_float,
+                distribution_display=display,
             )
             info = feature_metadata.get(feature_id)
             is_significance = source_column.endswith("_significant")
@@ -161,6 +186,7 @@ def build_brainwide_map_release_from_tables(
                     else "Preserved legacy v1 Brain-Wide Map regional feature."
                 ),
                 "unit": info.unit if info else None,
+                "display": {"regional": display},
                 "value_semantics": {
                     "quantity": source_column,
                     "transform": (
@@ -225,13 +251,27 @@ def build_brainwide_map_release_from_tables(
                     if config.builder_commit
                     else {}
                 ),
-                "command": f"ephys-atlas-data build-brainwide-map {config.release_id}",
+                "command": (
+                    f"ephys-atlas-data build-brainwide-map "
+                    f"{config.source_release_id or config.release_id} "
+                    f"--release-id {config.release_id} "
+                    "--distribution-selection distribution-selection.json"
+                ),
             },
             "recipe": {
                 "id": "brainwide-map-legacy-website-regional-v1",
                 "families": list(LEGACY_FAMILY_SOURCES),
                 "parcellations": ["beryl"],
                 "features": [entry["id"] for entry in feature_entries],
+                **(
+                    {
+                        "distribution_selection_sha256": sha256_file(
+                            config.distribution_selection
+                        )
+                    }
+                    if config.distribution_selection is not None
+                    else {}
+                ),
                 "regional_summary": "pinned v1 arithmetic mean after left lateralization",
                 "significance_encoding": "false=0.5, true=1.0",
                 "numeric_serialization": "six significant digits before schema-v1 packaging",
@@ -354,6 +394,19 @@ def build_brainwide_map_from_sources(
     release_dir: Path,
     config: BrainwideMapBuildConfig,
 ) -> Path:
+    if config.source_release_id is None:
+        raise ValueError(
+            "source builds require an explicit Brain-Wide Map source release id"
+        )
+    if config.distribution_selection is None:
+        raise ValueError(
+            "source builds require an approved D050 distribution selection"
+        )
+    distribution_selection = load_distribution_selection(
+        config.distribution_selection,
+        dataset_id=DATASET_ID,
+        representation="regional",
+    )
     config.validate()
     if config.builder_commit is not None:
         require_local_builder_commit(
@@ -361,10 +414,21 @@ def build_brainwide_map_from_sources(
         )
     verified = verify_legacy_sources(source_dir)
     families, metadata = _load_verified_tables(verified)
+    feature_ids = sorted(
+        f"{family}_{source_column}"
+        for family, table in families.items()
+        for source_column in table.features
+    )
+    feature_display = bind_distribution_selection(
+        distribution_selection,
+        source_release_id=config.source_release_id,
+        feature_ids=feature_ids,
+    )
     sources = [
         {
             "role": "canonical-data",
             "description": f"Preserved v1 website {family} Brain-Wide Map table",
+            "release": config.source_release_id,
             "path": path.name,
             "sha256": LEGACY_FAMILY_SOURCES[family][1],
         }
@@ -379,6 +443,16 @@ def build_brainwide_map_from_sources(
             "sha256": LEGACY_REGION_SOURCE[1],
         }
     )
-    return build_brainwide_map_release_from_tables(
-        release_dir, config, families, metadata, sources
+    sources.append(selection_provenance(distribution_selection))
+    result = build_brainwide_map_release_from_tables(
+        release_dir,
+        config,
+        families,
+        metadata,
+        sources,
+        feature_display=feature_display,
     )
+    shutil.copyfile(
+        distribution_selection.path, result / "distribution-selection.json"
+    )
+    return result

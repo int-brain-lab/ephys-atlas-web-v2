@@ -16,11 +16,15 @@ const feature = {
   regionIds: ['1', '2'],
   values: [10, 20],
   statistics: { mean: [10, 20], median: [11, 21] },
-  histogram: {
-    edges: [0, 1, 2],
-    globalCounts: [3, 7],
-    regionalCounts: [[1, 2], [2, 5]],
-  },
+  distribution: { binnings: [{
+    id: 'linear-full', scale: { kind: 'linear' }, domain: { kind: 'full' }, edges: [0, 1, 2],
+    global: { binCounts: [3, 7], underflowCount: 0, overflowCount: 0 },
+    regional: [
+      { binCounts: [1, 2], underflowCount: 0, overflowCount: 0 },
+      { binCounts: [2, 5], underflowCount: 0, overflowCount: 0 },
+    ],
+    binRule: 'left-closed-right-open-last-closed',
+  }] },
 };
 
 test('regional model chooses statistic and indexes values by region', () => {
@@ -60,25 +64,33 @@ test('histograms normalize by their own population rather than the global peak',
     counts: [10, 30],
     probabilities: [0.25, 0.75],
     total: 40,
+    underflowCount: 0, overflowCount: 0, underflowProbability: 0, overflowProbability: 0,
   });
   assert.deepEqual(histogramDistribution([0, Number.NaN, -1]), {
     counts: [0, Number.NaN, -1],
     probabilities: [0, 0, 0],
     total: 0,
+    underflowCount: 0, overflowCount: 0, underflowProbability: 0, overflowProbability: 0,
+  });
+  assert.deepEqual(histogramDistribution({ binCounts: [1, 2], underflowCount: 3, overflowCount: 4 }), {
+    counts: [1, 2], probabilities: [0.1, 0.2], total: 10,
+    underflowCount: 3, overflowCount: 4, underflowProbability: 0.3, overflowProbability: 0.4,
   });
 });
 
 test('selected regional distributions retain separate normalized shapes and sample sizes', () => {
   const unequal = {
     ...feature,
-    histogram: {
-      ...feature.histogram,
-      globalCounts: [1000, 1000],
-      regionalCounts: [[1, 3], [30, 10]],
-    },
+    distribution: { binnings: [{ ...feature.distribution.binnings[0],
+      global: { binCounts: [1000, 1000], underflowCount: 0, overflowCount: 0 },
+      regional: [
+        { binCounts: [1, 3], underflowCount: 0, overflowCount: 0 },
+        { binCounts: [30, 10], underflowCount: 0, overflowCount: 0 },
+      ],
+    }] },
   };
   assert.deepEqual(selectedRegionHistogramDistributions(unequal, new Set(['1', '2'])), [
-    { regionId: '1', counts: [1, 3], probabilities: [0.25, 0.75], total: 4 },
-    { regionId: '2', counts: [30, 10], probabilities: [0.75, 0.25], total: 40 },
+    { regionId: '1', counts: [1, 3], probabilities: [0.25, 0.75], total: 4, underflowCount: 0, overflowCount: 0, underflowProbability: 0, overflowProbability: 0 },
+    { regionId: '2', counts: [30, 10], probabilities: [0.75, 0.25], total: 40, underflowCount: 0, overflowCount: 0, underflowProbability: 0, overflowProbability: 0 },
   ]);
 });

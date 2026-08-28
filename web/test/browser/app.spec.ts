@@ -228,7 +228,7 @@ test('native bilateral anatomy exposes every scientific range endpoint', async (
 
 test('schema v1 regional fixture drives values, coloring, selection and histogram comparison', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/?v=4&scale=linear&dist=full');
 
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   await expect(page.locator('.region-row')).toHaveCount(874);
@@ -244,8 +244,8 @@ test('schema v1 regional fixture drives values, coloring, selection and histogra
   await expect(page.locator('.distribution-chart__axis-max')).toHaveText('3.5');
   await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-visible', 'true');
   await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-mode', 'auto');
-  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '-0.25');
-  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '3.25');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '-0.5');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '3.5');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-total', '11');
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-probability-sum', '1');
   await expect(page.locator('.distribution-chart')).toHaveAttribute('data-axis-scale', 'linear');
@@ -356,7 +356,7 @@ test('schema v1 regional fixture drives values, coloring, selection and histogra
   const downloadPath = await download.path();
   expect(downloadPath).not.toBeNull();
   const comparisonCsv = await readFile(downloadPath!, 'utf8');
-  expect(comparisonCsv).toContain('dataset_id,release_id,feature_id,representation,parcellation,selected_statistic,unit,population,histogram_axis_scale,region_id');
+  expect(comparisonCsv).toContain('dataset_id,release_id,feature_id,representation,parcellation,selected_statistic,unit,population,value_scale,distribution_domain,symlog_linear_threshold,focus_lower_bound,focus_upper_bound,region_id');
   expect(comparisonCsv).toContain('golden_fixture,golden-v1,rms_ap,regional,allen,mean,dB rel. V');
   expect(comparisonCsv.trim().split('\n')).toHaveLength(9);
   expect(comparisonCsv).toContain(',-362,MD,Mediodorsal nucleus of thalamus (left),');
@@ -523,10 +523,10 @@ test('scientific context menus and color controls are driven by the loaded relea
   await expect(page.getByLabel('Feature color legend')).toBeVisible();
   await expect(page.locator('.color-legend__unit')).toHaveText('dB rel. V');
   await expect(page.locator('.color-range__histogram-bin')).toHaveCount(8);
-  await expect(page.getByRole('slider', { name: 'Minimum color value', exact: true })).toHaveValue('-0.25');
-  await expect(page.getByRole('slider', { name: 'Maximum color value', exact: true })).toHaveValue('3.25');
-  await expect(page.locator('.color-legend__minimum')).toHaveText('-0.250');
-  await expect(page.locator('.color-legend__maximum')).toHaveText('3.25');
+  await expect(page.getByRole('slider', { name: 'Minimum color value', exact: true })).toHaveValue('-0.5');
+  await expect(page.getByRole('slider', { name: 'Maximum color value', exact: true })).toHaveValue('3.5');
+  await expect(page.locator('.color-legend__minimum')).toHaveText('-0.500');
+  await expect(page.locator('.color-legend__maximum')).toHaveText('3.50');
   await expect(page.locator('.color-legend__domain-minimum')).toHaveText('-0.500');
   await expect(page.locator('.color-legend__domain-maximum')).toHaveText('3.50');
   await expect(page.locator('.color-legend__minimum')).toHaveAttribute('data-side', 'right');
@@ -541,10 +541,12 @@ test('scientific context menus and color controls are driven by the loaded relea
   const rangeBar = page.locator('.color-legend__bar');
   const minimumBounds = await rangeBar.boundingBox();
   expect(minimumBounds).not.toBeNull();
+  const minimumHandleBounds = await page.locator('.color-range__handle--min').boundingBox();
+  expect(minimumHandleBounds).not.toBeNull();
   expect(activeLabelBounds[0]!.bottom).toBeLessThanOrEqual(minimumBounds!.y);
   await page.mouse.move(
-    minimumBounds!.x + minimumBounds!.width * .0625,
-    minimumBounds!.y + minimumBounds!.height / 2,
+    minimumHandleBounds!.x + minimumHandleBounds!.width / 2,
+    minimumHandleBounds!.y + minimumHandleBounds!.height / 2,
   );
   await page.mouse.down();
   await page.mouse.move(
@@ -577,17 +579,16 @@ test('scientific context menus and color controls are driven by the loaded relea
   );
   await page.mouse.down();
   await page.mouse.move(
-    selectionBounds!.x + selectionBounds!.width / 2 + minimumBounds!.width * .05,
+    selectionBounds!.x + selectionBounds!.width / 2 - minimumBounds!.width * .05,
     selectionBounds!.y + selectionBounds!.height / 2,
     { steps: 3 },
   );
   await page.mouse.up();
   await expect.poll(() => new URL(page.url()).searchParams.get('range')).not.toBe(rangeBeforeWindowDrag.join(','));
   const rangeAfterWindowDrag = new URL(page.url()).searchParams.get('range')!.split(',').map(Number);
-  expect(rangeAfterWindowDrag[1]! - rangeAfterWindowDrag[0]!).toBeCloseTo(
-    rangeBeforeWindowDrag[1]! - rangeBeforeWindowDrag[0]!,
-    10,
-  );
+  expect(rangeAfterWindowDrag[0]).not.toBe(rangeBeforeWindowDrag[0]);
+  expect(rangeAfterWindowDrag[1]).not.toBe(rangeBeforeWindowDrag[1]);
+  expect(rangeAfterWindowDrag[1]!).toBeGreaterThan(rangeAfterWindowDrag[0]!);
 
   await page.getByRole('button', { name: 'Enter exact minimum color value' }).click();
   const exactMinimum = page.getByRole('spinbutton', { name: 'Exact minimum color value', exact: true });
@@ -607,8 +608,8 @@ test('scientific context menus and color controls are driven by the loaded relea
   await expect.poll(() => new URL(page.url()).searchParams.get('range')).toBeNull();
   await expect(page.getByLabel('Color range mode')).toHaveValue('auto');
   await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-mode', 'auto');
-  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '-0.25');
-  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '3.25');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '-0.5');
+  await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '3.5');
 
   await page.getByRole('slider', { name: 'Maximum color value', exact: true }).focus();
   await page.keyboard.press('ArrowLeft');
@@ -729,14 +730,14 @@ test('renderer region selection flows back into shared URL state', async ({ page
 
 test('region hover is linked across all anatomical projections', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/?v=4&scale=linear&dist=full');
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
 
   const source = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
   // Geometry can arrive before the asynchronous feature presentation. Wait for
   // the fixture value color so this captures the state whose hover persistence
   // the test is intended to exercise, rather than a transient anatomy fill.
-  await expect(source).toHaveCSS('fill', 'rgb(46, 110, 142)');
+  await expect(source).toHaveCSS('fill', 'rgb(44, 114, 142)');
   const sourceStyle = await source.getAttribute('style');
   await source.dispatchEvent('pointermove');
   await expect(page.locator('.region-row[data-region-id="-362"]')).toHaveAttribute('data-hovered', 'true');

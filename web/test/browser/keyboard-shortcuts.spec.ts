@@ -73,8 +73,8 @@ test('shortcuts stay out of text entry and expose the concise help guide', async
   await expect(visualizationSection).toContainText('not the underlying or downloaded values');
   const distributionSection = guide.locator('.help-guide__section').filter({ hasText: 'Read distributions and comparisons' });
   await distributionSection.getByText('Read distributions and comparisons').click();
-  await expect(distributionSection).toContainText('normalized independently');
-  await expect(distributionSection).toContainText('sample counts separately');
+  await expect(distributionSection).toContainText('complete population as denominator');
+  await expect(distributionSection).toContainText('exact below/above tail counts');
 
   await page.keyboard.press('Shift+ArrowDown');
   await expect(featureField.locator('.context-menu__trigger')).toContainText('AP RMS (golden fixture)');

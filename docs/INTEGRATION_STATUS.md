@@ -281,14 +281,16 @@ aware range geometry. Explicit Linear/Log overrides persist in one URL field;
 values, statistics, exact histogram arrays, tooltips, and exports remain
 unchanged.
 
-D050 approves the next coherent distribution architecture: Linear, Log, and
-Signed log become the synchronized value-scale choices, while Full and Focused
-become an independent analytical-domain choice. Focused will affect global and
-selected-region distributions only, with exact whole-population tails; the
-compact range histogram will remain Full under the same scale. This is not yet
-the implemented release contract. Q14 audits and owner-reviewed,
-representation-specific selections are still required, and no Signed-log
-threshold, focus bound, availability set, or new default has been chosen.
+D050 is now the coherent schema-v1 distribution contract: Linear, Log, and
+Signed log are synchronized value-scale choices, while Full and Focused are an
+independent analytical-domain choice. Focused affects global and selected-region
+distributions only, with exact whole-population tails; the compact range
+histogram remains Full under the same scale. Python and TypeScript validators,
+all four real builders, fixtures, URL state, controls, rendering, and exports
+share this contract. The committed migration selections preserve Linear/Full
+for channels, `brainwide_map`, and volumes and preserve only D048's reviewed
+cluster Log choices. Q14 remains open for any new Signed-log threshold, Focused
+bounds, availability, or default; none was chosen implicitly.
 Regional SVGs, volume canvases, and the interactive color legend share one
 registry of full 256-step Matplotlib lookup tables. The concise sequential
 choice is Viridis, Cividis, or Magma; Cividis provides an accessibility- and
@@ -709,8 +711,8 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
 4. keep the validated D038 preserved five-family BWM release and opt-in local
    browser acceptance green; online catalog publication remains deferred until
    authorized;
-5. complete the D050 read-only distribution audits and resolve Q14, then land
-   the coherent schema-v1 producer/consumer cutover and new immutable rebuilds;
+5. finish and validate the local D050 immutable rebuilds; separately resolve
+   Q14 before adding any new Signed-log or Focused feature selections;
 6. retain the completed artifact-backed and contextual current-feature exports;
    direct URL display and broader package/local-management UX are non-blocking;
 7. stage immutable assets on S3/CloudFront and finalize catalog/origin/default

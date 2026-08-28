@@ -1,4 +1,9 @@
-import { SCHEMA_VERSION, type FeaturePayload, type RegionalFeaturePayload } from '../contracts.js';
+import {
+  SCHEMA_VERSION,
+  type FeaturePayload,
+  type RegionalFeaturePayload,
+} from '../contracts.js';
+import { parseMaterializedDistribution } from './distribution.js';
 import { array, object, parcellation, statistic, string } from './primitives.js';
 
 export function parseFeaturePayload(value: unknown): FeaturePayload {
@@ -27,6 +32,9 @@ export function parseFeaturePayload(value: unknown): FeaturePayload {
       parcellation: parcellation(root.parcellation, 'feature.parcellation'),
       regionIds,
       statistics,
+      ...(root.distribution !== undefined
+        ? { distribution: parseMaterializedDistribution(root.distribution, regionIds.length, statistics.count) }
+        : {}),
     };
   }
   throw new Error('parseFeaturePayload currently validates decoded regional payloads only');

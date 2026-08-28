@@ -57,6 +57,21 @@ test('atlas anatomy color mode is explicit application state', () => {
   assert.equal(next.view.coloring.mode, 'anatomy');
 });
 
+test('unsupported scalar presentation reconciles atomically to Linear and Full while preserving range', () => {
+  const state = {
+    ...DEFAULT_APP_STATE,
+    view: {
+      ...DEFAULT_APP_STATE.view,
+      coloring: { ...DEFAULT_APP_STATE.view.coloring, scale: 'symlog', range: { mode: 'fixed', min: -2, max: 8 } },
+      distribution: { domain: 'focused' },
+    },
+  };
+  const next = reduceAppState(state, { type: 'presentation/reconcile', scale: 'linear', domain: 'full' });
+  assert.equal(next.view.coloring.scale, 'linear');
+  assert.equal(next.view.distribution.domain, 'full');
+  assert.deepEqual(next.view.coloring.range, { mode: 'fixed', min: -2, max: 8 });
+});
+
 test('region ordering is explicit application state', () => {
   const next = reduceAppState(DEFAULT_APP_STATE, { type: 'regions/order', order: 'value-desc' });
   assert.equal(next.view.regionOrder, 'value-desc');

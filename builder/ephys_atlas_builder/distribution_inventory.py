@@ -18,7 +18,7 @@ def _regional_inventory(feature_root: Path, feature: dict[str, Any]) -> list[dic
     output = []
     for parcellation in regional["parcellations"]:
         statistics = json.loads(_resource_path(feature_root, parcellation["statistics"]).read_text())
-        histogram = statistics["histogram"]
+        binnings = statistics["distribution"]["binnings"]
         output.append({
             "parcellation_id": parcellation["parcellation_id"],
             "population": statistics["population"],
@@ -30,12 +30,16 @@ def _regional_inventory(feature_root: Path, feature: dict[str, Any]) -> list[dic
                 "zero_count": None,
             },
             "exact_binnings_already_in_release": {
-                "linear": {"available": True, "bin_count": len(histogram["global_counts"])},
-                "log": {"available": "log" in histogram.get("variants", {}), "bin_count": len(histogram.get("variants", {}).get("log", {}).get("global_counts", []))},
+                binning["id"]: {
+                    "scale": binning["scale"],
+                    "domain": binning["domain"],
+                    "bin_count": len(binning["global_counts"]),
+                }
+                for binning in binnings
             },
             "new_candidate_binnings": {
                 "availability": "unavailable-from-release",
-                "reason": "The release stores accumulated bins, not raw observation values; exact signed-log or focused binning would require the pinned source rows.",
+                "reason": "The release stores only its declared accumulated binnings; any additional exact scale/domain combination requires the pinned source rows.",
             },
         })
     return output
@@ -44,7 +48,7 @@ def _regional_inventory(feature_root: Path, feature: dict[str, Any]) -> list[dic
 def _volume_inventory(feature_root: Path, feature: dict[str, Any]) -> dict[str, Any]:
     volume = feature["representations"]["volume"]
     summary = json.loads(_resource_path(feature_root, volume["summary"]).read_text())
-    histogram = summary.get("histogram")
+    binnings = summary.get("distribution", {}).get("binnings", [])
     return {
         "population": "valid finite voxels under the release-owned validity policy",
         "observation_unit": "valid voxels (spatially correlated; not independent scientific samples)",
@@ -53,12 +57,16 @@ def _volume_inventory(feature_root: Path, feature: dict[str, Any]) -> dict[str, 
             for key in ("total_voxel_count", "valid_voxel_count", "outside_voxel_count", "missing_voxel_count")
         },
         "exact_binnings_already_in_release": {
-            "linear": {"available": histogram is not None, "bin_count": len(histogram["counts"]) if histogram else 0},
-            "log": {"available": False, "bin_count": 0},
+            binning["id"]: {
+                "scale": binning["scale"],
+                "domain": binning["domain"],
+                "bin_count": len(binning["global_counts"]),
+            }
+            for binning in binnings
         },
         "new_candidate_binnings": {
             "availability": "unavailable-from-summary",
-            "reason": "summary.json stores only accumulated linear bins; use the pinned source NPZ or decoded valid voxels to compute exact signed-log or focused candidates.",
+            "reason": "summary.json stores only declared accumulated binnings; use the pinned source NPZ or decoded valid voxels to compute any additional exact candidates.",
         },
     }
 

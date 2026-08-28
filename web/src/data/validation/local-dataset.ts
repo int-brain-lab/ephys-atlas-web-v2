@@ -16,6 +16,7 @@ import {
 } from './primitives.js';
 import { parseStatisticsDocument } from './statistics.js';
 import { parseVolumeResourceIndex, parseVolumeSummary } from './volume-v1.js';
+import { validateDistributionMatchesDisplay } from './distribution.js';
 import { parseArtifactDescriptors } from './artifact.js';
 
 interface ArtifactExpectation {
@@ -293,25 +294,59 @@ export async function validateLocalDatasetFiles(
           || statistics.values.shape[1] !== statistics.fields.length) {
           throw new Error(`${feature.id}/${parcellationId} statistics shape must be [${count}, ${statistics.fields.length}]`);
         }
-        addBinaryResource(resources, statisticsPath, statistics.values, `${feature.id}/${parcellationId} regional summary`);
-        if (statistics.histogram) {
-          const variants = [
-            { axisScale: 'linear', edges: statistics.histogram.edges, regionalCounts: statistics.histogram.regionalCounts },
-            ...statistics.histogram.variants,
-          ];
-          for (const variant of variants) {
-            const bins = variant.edges.length - 1;
-            if (variant.regionalCounts.shape.length !== 2
-              || variant.regionalCounts.shape[0] !== count
-              || variant.regionalCounts.shape[1] !== bins) {
-              throw new Error(`${feature.id}/${parcellationId} ${variant.axisScale} histogram shape must be [${count}, ${bins}]`);
+        const summaryValuesPath = addBinaryResource(
+          resources,
+          statisticsPath,
+          statistics.values,
+          `${feature.id}/${parcellationId} regional summary`,
+        );
+        const countField = statistics.fields.indexOf('count');
+        if (countField < 0) throw new Error(`${feature.id}/${parcellationId} regional statistics require count`);
+        const summaryValuesFile = files.get(summaryValuesPath);
+        if (!summaryValuesFile) throw new Error(`Local dataset is missing ${summaryValuesPath}`);
+        const summaryValues = decodeBinaryArray(
+          await decodedBuffer(summaryValuesFile, statistics.values.codec.name, summaryValuesPath),
+          { ...statistics.values, path: summaryValuesPath },
+        );
+        const regionalDisplay = feature.display?.regional;
+        if (!regionalDisplay) throw new Error(`${feature.id} has no regional display contract`);
+        const distributionBinnings = statistics.distribution?.binnings ?? [];
+        if (statistics.distribution) {
+          validateDistributionMatchesDisplay(
+            distributionBinnings,
+            regionalDisplay,
+            `${feature.id}/${parcellationId}`,
+          );
+        }
+        for (const binning of distributionBinnings) {
+          if (!binning.regionalCounts) throw new Error(`${feature.id}/${parcellationId}/${binning.id} has no regional counts`);
+          const rowWidth = binning.edges.length + 1;
+          if (binning.regionalCounts.shape.length !== 2
+            || binning.regionalCounts.shape[0] !== count
+            || binning.regionalCounts.shape[1] !== rowWidth) {
+            throw new Error(`${feature.id}/${parcellationId} ${binning.id} distribution shape must be [${count}, ${rowWidth}]`);
+          }
+          const countsPath = addBinaryResource(
+            resources,
+            statisticsPath,
+            binning.regionalCounts,
+            `${feature.id}/${parcellationId} ${binning.id} regional distribution`,
+          );
+          const countsFile = files.get(countsPath);
+          if (!countsFile) throw new Error(`Local dataset is missing ${countsPath}`);
+          const distributionCounts = decodeBinaryArray(
+            await decodedBuffer(countsFile, binning.regionalCounts.codec.name, countsPath),
+            { ...binning.regionalCounts, path: countsPath },
+          );
+          for (let row = 0; row < count; row += 1) {
+            const populationCount = summaryValues[row * statistics.fields.length + countField];
+            const start = row * rowWidth;
+            const distributionCount = distributionCounts
+              .slice(start, start + rowWidth)
+              .reduce((sum, value) => sum + value, 0);
+            if (distributionCount !== populationCount) {
+              throw new Error(`${feature.id}/${parcellationId}/${binning.id} region ${row} does not conserve its population`);
             }
-            addBinaryResource(
-              resources,
-              statisticsPath,
-              variant.regionalCounts,
-              `${feature.id}/${parcellationId} ${variant.axisScale} regional histogram`,
-            );
           }
         }
       }
@@ -326,7 +361,12 @@ export async function validateLocalDatasetFiles(
       `${feature.id} volume summary`,
     );
     const summaryRaw = await parseJsonResource(files, summaryPath, `${feature.id} volume summary`);
-    parseVolumeSummary(summaryRaw, volume);
+    const summary = parseVolumeSummary(summaryRaw, volume);
+    const volumeDisplay = feature.display?.volume;
+    if (!volumeDisplay) throw new Error(`${feature.id} has no volume display contract`);
+    if (summary.distribution) {
+      validateDistributionMatchesDisplay(summary.distribution.binnings, volumeDisplay, `${feature.id}/volume`);
+    }
     const resourceIndexPath = addEncodedResource(
       resources,
       feature.path,

@@ -1,9 +1,10 @@
-import type { DatasetCatalog, DatasetManifest, FeaturePayload } from '../data/contracts.js';
+import type { DatasetCatalog, DatasetManifest, FeaturePayload, RepresentationDisplay } from '../data/contracts.js';
 import type {
   AppState,
   ColorMode,
   ColorRange,
   ColorScaleSelection,
+  DistributionDomainSelection,
   DatasetId,
   DatasetRef,
   ParcellationId,
@@ -29,7 +30,7 @@ import type {
   StaticProjectionViewport,
   VolumeInspection,
 } from '../rendering/projection-viewport.js';
-import { regionalColorRange } from '../application/scalar-colormap.js';
+import { effectiveScalarColorRange } from '../application/scalar-colormap.js';
 import type { ResolvedPresentationScale } from '../application/presentation-scale.js';
 import { COLORMAPS } from '../application/colormap-palettes.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
@@ -52,6 +53,7 @@ export interface AppShellCallbacks {
   setColormap(colormap: string): void;
   setColorRange(range: ColorRange): void;
   setColorScale(scale: ColorScaleSelection): void;
+  setDistributionDomain(domain: DistributionDomainSelection): void;
   setVolumeOpacity(opacity: number): void;
   setAnatomyOutlines(visible: boolean): void;
   setSlice(axis: SliceAxis, index: number): void;
@@ -75,7 +77,7 @@ export interface ShellModel {
   displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null;
   regionalPresentation: RegionalPresentation;
   presentationScale: ResolvedPresentationScale;
-  automaticRange: readonly [number, number] | undefined;
+  representationDisplay: RepresentationDisplay | undefined;
 }
 
 type LayoutMode = 'wide' | 'compact' | 'narrow' | 'phone';
@@ -209,6 +211,7 @@ export class AppShell {
   private statisticSelect!: HTMLSelectElement;
   private colormapSelect!: HTMLSelectElement;
   private scaleSelect!: HTMLSelectElement;
+  private distributionDomainSelect!: HTMLSelectElement;
   private rangeModeSelect!: HTMLSelectElement;
   private colorRangeControl!: ColorRangeControl;
   private volumeLayerSettings!: HTMLElement;
@@ -721,7 +724,7 @@ export class AppShell {
       },
       {
         title: 'Read distributions and comparisons',
-        description: 'The global histogram describes the release population. Selected-region curves are normalized independently to compare distribution shape, so consider their sample counts separately. Open the comparison to inspect descriptive statistics or export selected-region data.',
+        description: 'The global histogram describes the release population. Selected-region curves use their own complete population as denominator. Focused mode keeps exact below/above tail counts visible instead of renormalizing them away. Open the comparison to inspect descriptive statistics or export selected-region data.',
       },
     ];
     const guide = element('div', 'help-guide__sections');
@@ -1099,11 +1102,18 @@ export class AppShell {
     this.colormapSelect = colormap.select;
     this.colormapSelect.setAttribute('aria-label', 'Feature colormap');
     this.colormapSelect.addEventListener('change', () => this.callbacks.setColormap(this.colormapSelect.value));
-    const scale = this.settingsSelect('Value scale', [['auto', 'Auto (Linear)'], ['linear', 'Linear'], ['log', 'Logarithmic']]);
+    const scale = this.settingsSelect('Value scale', [['auto', 'Auto (Linear)'], ['linear', 'Linear'], ['log', 'Log'], ['symlog', 'Signed log']]);
     this.scaleSelect = scale.select;
     this.scaleSelect.setAttribute('aria-label', 'Value scale');
     this.scaleSelect.title = 'Controls color normalization, distribution spacing, and range-handle geometry.';
     this.scaleSelect.addEventListener('change', () => this.callbacks.setColorScale(this.scaleSelect.value as ColorScaleSelection));
+    const distributionDomain = this.settingsSelect('Distribution domain', [['auto', 'Auto (Full)'], ['full', 'Full'], ['focused', 'Focused']]);
+    this.distributionDomainSelect = distributionDomain.select;
+    this.distributionDomainSelect.setAttribute('aria-label', 'Distribution domain');
+    this.distributionDomainSelect.title = 'Changes analytical distributions only; coloring and the compact range histogram remain Full.';
+    this.distributionDomainSelect.addEventListener('change', () => this.callbacks.setDistributionDomain(
+      this.distributionDomainSelect.value as DistributionDomainSelection,
+    ));
     const rangeMode = this.settingsSelect('Range', [['auto', 'Robust auto'], ['fixed', 'Manual']]);
     this.rangeModeSelect = rangeMode.select;
     this.rangeModeSelect.setAttribute('aria-label', 'Color range mode');
@@ -1111,7 +1121,7 @@ export class AppShell {
 
     this.colorRangeControl = new ColorRangeControl((range) => this.callbacks.setColorRange(range));
 
-    group.append(colorMode.row, statistic.row, colormap.row, scale.row, rangeMode.row, this.colorRangeControl.element);
+    group.append(colorMode.row, statistic.row, colormap.row, scale.row, distributionDomain.row, rangeMode.row, this.colorRangeControl.element);
     return group;
   }
 
@@ -1243,35 +1253,45 @@ export class AppShell {
     this.colormapSelect.value = view.coloring.colormap;
     const automaticScale = model.presentationScale.automaticScale;
     this.syncOptions(this.scaleSelect, [
-      { value: 'auto', label: `Auto (${automaticScale === 'log' ? 'Logarithmic' : 'Linear'})` },
-      { value: 'linear', label: 'Linear' },
-      {
-        value: 'log',
-        label: 'Logarithmic',
-        disabled: !model.presentationScale.logAvailable,
-        ...(model.presentationScale.logUnavailableReason
-          ? { title: model.presentationScale.logUnavailableReason }
+      { value: 'auto', label: `Auto (${automaticScale === 'log' ? 'Log' : automaticScale === 'symlog' ? 'Signed log' : 'Linear'})` },
+      ...(['linear', 'log', 'symlog'] as const).map((value) => ({
+        value,
+        label: value === 'log' ? 'Log' : value === 'symlog' ? 'Signed log' : 'Linear',
+        disabled: !model.presentationScale.availableScales.includes(value),
+        ...(model.presentationScale.unavailableScaleReasons[value]
+          ? { title: model.presentationScale.unavailableScaleReasons[value] }
           : {}),
-      },
+      })),
     ], view.coloring.scale);
+    const automaticDomain = model.presentationScale.automaticDistributionDomain;
+    this.syncOptions(this.distributionDomainSelect, [
+      { value: 'auto', label: `Auto (${automaticDomain === 'focused' ? 'Focused' : 'Full'})` },
+      ...(['full', 'focused'] as const).map((value) => ({
+        value,
+        label: value === 'focused' ? 'Focused' : 'Full',
+        disabled: !model.presentationScale.availableDistributionDomains.includes(value),
+        ...(model.presentationScale.unavailableDistributionReasons[value]
+          ? { title: model.presentationScale.unavailableDistributionReasons[value] }
+          : {}),
+      })),
+    ], view.distribution.domain);
     this.rangeModeSelect.value = view.coloring.range.mode;
     this.syncOptions(this.rangeModeSelect, [
-      { value: 'auto', label: model.automaticRange ? 'Auto (release default)' : 'Robust auto' },
+      { value: 'auto', label: model.representationDisplay?.range ? 'Auto (release default)' : 'Robust auto' },
       { value: 'fixed', label: 'Manual' },
     ], view.coloring.range.mode);
     const featureColors = (view.coloring.mode ?? 'feature') === 'feature' && feature !== null;
     this.statisticSelect.disabled = !featureColors || statistics.length < 2;
     this.colormapSelect.disabled = !featureColors;
     this.scaleSelect.disabled = !featureColors;
+    this.distributionDomainSelect.disabled = feature === null;
     this.rangeModeSelect.disabled = !featureColors;
 
-    const range = feature?.representation === 'regional'
-      ? regionalColorRange(feature, view.coloring, model.automaticRange)
-      : feature?.descriptor.valueRange?.every((value) => value !== null)
-        ? feature.descriptor.valueRange as readonly [number, number]
-        : null;
+    const range = feature
+      ? effectiveScalarColorRange(feature, view.coloring, model.representationDisplay)
+      : null;
     if (feature && range) {
-      const usesReleaseDefault = view.coloring.range.mode === 'auto' && model.automaticRange !== undefined;
+      const usesReleaseDefault = view.coloring.range.mode === 'auto' && model.representationDisplay?.range !== undefined;
       const usesRobustQuantiles = !usesReleaseDefault && view.coloring.range.mode === 'auto'
         && feature.representation === 'regional'
         && feature.global?.q05 !== undefined
@@ -1291,8 +1311,8 @@ export class AppShell {
         unit: descriptor?.unit ?? null,
         context,
         enabled: featureColors,
-        axisScale: model.presentationScale.effectiveScale,
-        histogram: model.presentationScale.histogram,
+        axisScale: model.presentationScale.effectiveScaleSpec,
+        histogram: model.presentationScale.fullHistogram,
       });
     } else {
       this.colorRangeControl.hide();

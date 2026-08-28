@@ -1,0 +1,275 @@
+{
+  "schema": "ibl-scalar-distribution-selection-v1",
+  "selection_id": "clusters-sha256-9b5e55215b306f26-d050-d048-v1",
+  "dataset_id": "ephys_atlas_clusters",
+  "representation": "regional",
+  "source_release_id": "sha256-9b5e55215b306f26",
+  "scientific_owner_confirmation": true,
+  "confirmed_at": "2026-08-28",
+  "reviewer_role": "repository owner and scientific owner",
+  "confirmation_source": "D050 local migration authorization preserving D048 recorded during implementation",
+  "decision": "Migrate the complete D048-approved cluster catalog to D050 while preserving its six reviewed Log alternatives/defaults and the reviewed firing-rate range.",
+  "rationale": "D048 remains authoritative for amp_max, amp_median, amp_min, firing_rate, presence_ratio_std, and spike_count Log availability/defaults and firing_rate 3.73-17.8 Hz. All other choices use Linear and Full. No Symlog threshold or Focused bounds are selected.",
+  "features": [
+    {
+      "id": "amp_max",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "log"
+          }
+        ],
+        "preferred_scale": "log",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "amp_median",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "log"
+          }
+        ],
+        "preferred_scale": "log",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "amp_min",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "log"
+          }
+        ],
+        "preferred_scale": "log",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "amp_std_dB",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "contamination",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "contamination_alt",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "drift",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "firing_rate",
+      "display": {
+        "range": [
+          3.73,
+          17.8
+        ],
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "log"
+          }
+        ],
+        "preferred_scale": "log",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "missed_spikes_est",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "noise_cutoff",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "presence_ratio",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "presence_ratio_std",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "log"
+          }
+        ],
+        "preferred_scale": "log",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "slidingRP_viol",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    },
+    {
+      "id": "spike_count",
+      "display": {
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "log"
+          }
+        ],
+        "preferred_scale": "log",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    }
+  ]
+}

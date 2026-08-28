@@ -1,7 +1,7 @@
-import type { DatasetManifest, FeaturePayload, RegionMetadata } from '../../data/contracts.js';
+import type { DatasetManifest, FeaturePayload, RegionMetadata, RepresentationDisplay } from '../../data/contracts.js';
 import type { ResolvedPresentationScale } from '../../application/presentation-scale.js';
-import type { AppState, ColorRange, ColorScaleSelection, RegionOrder, StatisticId } from '../../domain/types.js';
-import { regionalColorRange } from '../../application/scalar-colormap.js';
+import type { AppState, ColorScaleSelection, DistributionDomainSelection, RegionOrder, StatisticId } from '../../domain/types.js';
+import { effectiveScalarColorRange } from '../../application/scalar-colormap.js';
 import { required, message } from './dom.js';
 import {
   renderAnalysis,
@@ -18,6 +18,7 @@ export interface RegionalPanelCallbacks {
   toggleSelection(regionId: string): void;
   setRegionOrder(order: RegionOrder): void;
   setColorScale(scale: ColorScaleSelection): void;
+  setDistributionDomain(domain: DistributionDomainSelection): void;
   clearSelection(): void;
   hoverRegion(regionId: string | null): void;
   downloadComparison(): void;
@@ -31,25 +32,7 @@ export interface RegionalPanelModel {
   anatomyAtlas: string | null;
   hoveredRegionId: string | null;
   presentationScale: ResolvedPresentationScale;
-  automaticRange: readonly [number, number] | undefined;
-}
-
-function volumeColorRange(
-  feature: FeaturePayload | null,
-  range: ColorRange,
-): readonly [number, number] | null {
-  if (feature?.representation !== 'volume') return null;
-  if (range.mode === 'fixed') {
-    return Number.isFinite(range.min) && Number.isFinite(range.max) && range.max > range.min
-      ? [range.min, range.max]
-      : null;
-  }
-  const declared = feature.descriptor.valueRange;
-  return declared?.[0] !== null && declared?.[0] !== undefined
-    && declared[1] !== null && declared[1] !== undefined
-    && declared[1] > declared[0]
-    ? [declared[0], declared[1]]
-    : null;
+  representationDisplay: RepresentationDisplay | undefined;
 }
 
 export class RegionalPanelController {
@@ -115,39 +98,39 @@ export class RegionalPanelController {
     const regionOrder = model.state.view.regionOrder;
     const fixture = model.manifest?.dataset.fixture === true;
     const selectionKey = model.state.view.selection.join(',');
-    const displayFeature = feature && model.presentationScale.histogram
-      ? feature.representation === 'regional'
-        ? { ...feature, histogram: model.presentationScale.histogram }
-        : { ...feature, summary: { ...feature.summary, histogram: model.presentationScale.histogram } }
-      : feature;
-    const range = regionalFeature
-      ? regionalColorRange(regionalFeature, model.state.view.coloring, model.automaticRange)
-      : volumeColorRange(feature, model.state.view.coloring.range);
+    const range = feature
+      ? effectiveScalarColorRange(feature, model.state.view.coloring, model.representationDisplay)
+      : null;
     if (
       feature === this.lastFeature
       && model.regions === this.lastRegions
       && statistic === this.lastStatistic
       && regionOrder === this.lastRegionOrder
       && model.presentationScale.effectiveScale === this.lastPresentationScale?.effectiveScale
+      && model.presentationScale.effectiveDistributionDomain === this.lastPresentationScale?.effectiveDistributionDomain
       && model.presentationScale.selection === this.lastPresentationScale.selection
-      && model.presentationScale.logAvailable === this.lastPresentationScale.logAvailable
+      && model.presentationScale.distributionSelection === this.lastPresentationScale.distributionSelection
       && selectionKey === this.lastSelectionKey
       && fixture === this.lastFixture
       && model.anatomyAtlas === this.lastAnatomyAtlas
     ) {
       this.tree.updateHoveredRegion(model.hoveredRegionId);
-      if (displayFeature) {
-        const descriptor = model.manifest?.features.find((item) => item.id === displayFeature.featureId);
+      if (feature) {
+        const descriptor = model.manifest?.features.find((item) => item.id === feature.featureId);
         updateDistributionColorRange(
           this.distribution,
-          displayFeature,
+          feature,
+          model.presentationScale.histogram,
+          model.presentationScale.effectiveScaleSpec,
           range,
           model.state.view.coloring.range.mode,
         );
-        if (displayFeature.representation === 'regional') {
+        if (feature.representation === 'regional') {
           updateDistributionHover(
             this.distribution,
-            displayFeature,
+            feature,
+            model.presentationScale.histogram,
+            model.presentationScale.effectiveScaleSpec,
             model.regions,
             model.hoveredRegionId,
             statistic,
@@ -191,11 +174,11 @@ export class RegionalPanelController {
           : `${model.state.view.parcellation.toUpperCase()} anatomy overlay`;
     this.tree.render(model.regions, values, statistic, unit, range, selected, regionOrder);
     renderSelectedRegions(this.detailsTargets(), model.regions, selected, values, statistic, unit);
-    if (feature && displayFeature) {
+    if (feature) {
       renderFeatureSummary(this.summary, feature, unit, descriptor?.description ?? '');
       renderDistribution(
         this.distribution,
-        displayFeature,
+        feature,
         selected,
         model.regions,
         statistic,
@@ -205,20 +188,34 @@ export class RegionalPanelController {
       );
       updateDistributionColorRange(
         this.distribution,
-        displayFeature,
+        feature,
+        model.presentationScale.histogram,
+        model.presentationScale.effectiveScaleSpec,
         range,
         model.state.view.coloring.range.mode,
       );
-      if (displayFeature.representation === 'regional') {
+      if (feature.representation === 'regional') {
         updateDistributionHover(
           this.distribution,
-          displayFeature,
+          feature,
+          model.presentationScale.histogram,
+          model.presentationScale.effectiveScaleSpec,
           model.regions,
           model.hoveredRegionId,
           statistic,
           unit,
         );
-        renderAnalysis(this.analysis, displayFeature, model.regions, selected, values, statistic, unit, fixture);
+        renderAnalysis(
+          this.analysis,
+          feature,
+          model.regions,
+          selected,
+          values,
+          statistic,
+          unit,
+          fixture,
+          model.presentationScale.histogram,
+        );
       } else {
         this.analysis.replaceChildren(message('Selected-region distributions are unavailable for voxel volumes'));
       }
@@ -273,10 +270,17 @@ export class RegionalPanelController {
 
   private readonly onDistributionClick = (event: Event): void => {
     const target = event.target instanceof Element ? event.target : null;
-    const button = target?.closest<HTMLButtonElement>('[data-value-scale]');
-    const scale = button?.dataset.valueScale;
-    if (!button || button.disabled || (scale !== 'linear' && scale !== 'log')) return;
-    this.callbacks.setColorScale(scale);
+    const scaleButton = target?.closest<HTMLButtonElement>('[data-value-scale]');
+    const scale = scaleButton?.dataset.valueScale;
+    if (scaleButton && !scaleButton.disabled && (scale === 'linear' || scale === 'log' || scale === 'symlog')) {
+      this.callbacks.setColorScale(scale);
+      return;
+    }
+    const domainButton = target?.closest<HTMLButtonElement>('[data-distribution-domain]');
+    const domain = domainButton?.dataset.distributionDomain;
+    if (domainButton && !domainButton.disabled && (domain === 'full' || domain === 'focused')) {
+      this.callbacks.setDistributionDomain(domain);
+    }
   };
 
   private readonly onSelectedClick = (event: Event): void => {

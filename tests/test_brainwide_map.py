@@ -120,6 +120,34 @@ def test_brainwide_map_build_is_byte_deterministic(tmp_path):
         assert (a / relative).read_bytes() == (b / relative).read_bytes(), relative
 
 
+def test_brainwide_map_distribution_uses_declared_six_digit_value_semantics(
+    tmp_path,
+):
+    families = _families()
+    feedback = families["feedback"]
+    families["feedback"] = LegacyFamilyTable(
+        region_ids=feedback.region_ids,
+        acronyms=feedback.acronyms,
+        features={"decoding_effect": np.array([1.1234549, np.nan, 3.0])},
+    )
+    release = build_brainwide_map_release_from_tables(
+        tmp_path / "release",
+        _config(),
+        families,
+        _metadata(),
+        [{"role": "canonical-data", "description": "rounding regression"}],
+    )
+    validate_release(release, ROOT / "schema" / "v1")
+    statistics = json.loads(
+        (
+            release
+            / "features/feedback_decoding_effect/beryl.statistics.json"
+        ).read_text()
+    )
+    assert statistics["global"]["min"] == 1.12345
+    assert statistics["distribution"]["binnings"][0]["edges"][0] == 1.12345
+
+
 def test_brainwide_map_requires_exact_five_families(tmp_path):
     families = _families()
     families.pop("stimulus")

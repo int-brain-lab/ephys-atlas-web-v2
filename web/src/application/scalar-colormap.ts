@@ -1,42 +1,48 @@
 import type { ColoringState, EffectiveColoringState } from '../domain/types.js';
-import type { RegionalFeaturePayload } from '../data/contracts.js';
-import type { RegionMetadata } from '../data/contracts.js';
+import type { FeaturePayload, RegionalFeaturePayload, RegionMetadata, RepresentationDisplay } from '../data/contracts.js';
 import { scaleDomainIsValid, scaleNormalize } from '../domain/scale-spec.js';
 import { paletteCssColor } from './colormap-palettes.js';
 
-export function regionalColorRange(
-  feature: RegionalFeaturePayload,
-  coloring: ColoringState,
-  automaticRange?: readonly [number, number],
+function validRange(range: readonly [number | null, number | null] | undefined): readonly [number, number] | null {
+  const minimum = range?.[0];
+  const maximum = range?.[1];
+  return minimum !== null && minimum !== undefined && Number.isFinite(minimum)
+    && maximum !== null && maximum !== undefined && Number.isFinite(maximum)
+    && maximum > minimum
+    ? [minimum, maximum]
+    : null;
+}
+
+/** Resolve the one feature-global color range shared by every presentation surface. */
+export function effectiveScalarColorRange(
+  feature: FeaturePayload,
+  coloring: Pick<ColoringState, 'range' | 'statistic'>,
+  display?: RepresentationDisplay,
 ): readonly [number, number] | null {
   if (coloring.range.mode === 'fixed') {
-    if (Number.isFinite(coloring.range.min) && Number.isFinite(coloring.range.max) && coloring.range.max > coloring.range.min) {
-      return [coloring.range.min, coloring.range.max];
-    }
-    return null;
+    return validRange([coloring.range.min, coloring.range.max]);
   }
-  if (
-    automaticRange
-    && Number.isFinite(automaticRange[0])
-    && Number.isFinite(automaticRange[1])
-    && automaticRange[1] > automaticRange[0]
-  ) return automaticRange;
-  const global = feature.global;
-  if (global?.q05 !== undefined && global.q95 !== undefined && global.q95 > global.q05) {
-    return [global.q05, global.q95];
-  }
+  const releaseRange = validRange(display?.range);
+  if (releaseRange) return releaseRange;
+  if (feature.representation === 'volume') return validRange(feature.summary.valueRange);
+  const robustRange = validRange([feature.global?.q05 ?? null, feature.global?.q95 ?? null]);
+  if (robustRange) return robustRange;
   const values = feature.statistics[coloring.statistic] ?? feature.statistics.mean;
   if (!values) return null;
-  const finite = values.filter(Number.isFinite);
-  if (!finite.length) return null;
-  const min = Math.min(...finite);
-  const max = Math.max(...finite);
-  return max > min ? [min, max] : [min, min + 1];
+  let minimum = Infinity;
+  let maximum = -Infinity;
+  for (const value of values) {
+    if (!Number.isFinite(value)) continue;
+    minimum = Math.min(minimum, value);
+    maximum = Math.max(maximum, value);
+  }
+  if (!Number.isFinite(minimum) || !Number.isFinite(maximum)) return null;
+  return maximum > minimum ? [minimum, maximum] : [minimum, minimum + 1];
 }
 
 export function regionalColorMap(feature: RegionalFeaturePayload, coloring: EffectiveColoringState): ReadonlyMap<number, string> {
   const values = feature.statistics[coloring.statistic] ?? feature.statistics.mean;
-  const range = regionalColorRange(feature, coloring);
+  const range = effectiveScalarColorRange(feature, coloring);
   if (!values || !range) return new Map();
   const [min, max] = range;
   if (!scaleDomainIsValid(range, coloring.scale)) return new Map();

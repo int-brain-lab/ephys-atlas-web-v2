@@ -1,4 +1,5 @@
 import type { CursorState, SliceAxis, SliceState } from '../core/spatial.js';
+import type { ScaleSpec } from './scale-spec.js';
 export type { CursorState, SliceAxis, SliceState } from '../core/spatial.js';
 
 export const LAUNCH_DATASET_IDS = [
@@ -13,8 +14,10 @@ export const LOCAL_DATASET_ID = 'local' as const;
 export type DatasetId = string;
 export type ParcellationId = 'allen' | 'beryl' | 'cosmos';
 export type RepresentationKind = 'regional' | 'volume';
-export type ColorScale = 'linear' | 'log';
+export type ColorScale = 'linear' | 'log' | 'symlog';
 export type ColorScaleSelection = 'auto' | ColorScale;
+export type DistributionDomain = 'full' | 'focused';
+export type DistributionDomainSelection = 'auto' | DistributionDomain;
 export type ColorMode = 'feature' | 'anatomy';
 export type StatisticId = 'mean' | 'median' | 'min' | 'max' | 'count';
 export type ColorStatisticId = Exclude<StatisticId, 'count'>;
@@ -64,7 +67,11 @@ export interface ColoringState {
   scale: ColorScaleSelection;
 }
 
-export type EffectiveColoringState = Omit<ColoringState, 'scale'> & { scale: ColorScale };
+export interface DistributionState {
+  domain: DistributionDomainSelection;
+}
+
+export type EffectiveColoringState = Omit<ColoringState, 'scale'> & { scale: ScaleSpec };
 
 export interface ViewState {
   urlVersion: 4;
@@ -79,6 +86,7 @@ export interface ViewState {
   layers: VolumeLayerState;
   scene3d: Scene3DViewState;
   coloring: ColoringState;
+  distribution: DistributionState;
 }
 
 export interface RuntimeState {

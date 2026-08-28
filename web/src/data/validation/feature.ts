@@ -1,5 +1,9 @@
 import type { ParcellationId, StatisticId } from '../../domain/types.js';
-import { SCHEMA_VERSION, type FeatureDescriptor } from '../contracts.js';
+import {
+  SCHEMA_VERSION,
+  type FeatureDescriptor,
+  type RepresentationDisplay,
+} from '../contracts.js';
 import { parseBinaryArray, parseEncodedResource } from './binary.js';
 import {
   array,
@@ -14,6 +18,7 @@ import {
 } from './primitives.js';
 import { validateSchemaV1Document } from './schema-v1.js';
 import { parseArtifactDescriptors } from './artifact.js';
+import { parseDistributionDomainSpec, parseScaleSpec } from './distribution.js';
 
 function finiteNumber(value: unknown, context: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(`${context} must be finite`);
@@ -49,38 +54,86 @@ function parseRegionalParcellation(value: unknown, context: string) {
   };
 }
 
+function parseRepresentationDisplay(value: unknown, context: string): RepresentationDisplay {
+  const raw = object(value, context);
+  const supported = new Set([
+    'colormap', 'range', 'scales', 'preferred_scale',
+    'distribution_domains', 'preferred_distribution_domain',
+  ]);
+  if (Object.keys(raw).some((key) => !supported.has(key))) throw new Error(`${context} contains unsupported fields`);
+  const scales = array(raw.scales, `${context}.scales`)
+    .map((item, index) => parseScaleSpec(item, `${context}.scales[${index}]`));
+  if (scales.length === 0 || scales[0]?.kind !== 'linear') {
+    throw new Error(`${context}.scales must declare linear first`);
+  }
+  unique(scales.map((scale) => scale.kind), `${context}.scales kinds`);
+  const preferredScale = raw.preferred_scale;
+  if (preferredScale !== 'linear' && preferredScale !== 'log' && preferredScale !== 'symlog') {
+    throw new Error(`${context}.preferred_scale is unsupported`);
+  }
+  if (!scales.some((scale) => scale.kind === preferredScale)) {
+    throw new Error(`${context}.preferred_scale must be available`);
+  }
+  const distributionDomains = array(raw.distribution_domains, `${context}.distribution_domains`)
+    .map((item, index) => parseDistributionDomainSpec(item, `${context}.distribution_domains[${index}]`));
+  if (distributionDomains.length === 0 || distributionDomains[0]?.kind !== 'full') {
+    throw new Error(`${context}.distribution_domains must declare full first`);
+  }
+  unique(distributionDomains.map((domain) => domain.kind), `${context}.distribution_domains kinds`);
+  const preferredDistributionDomain = raw.preferred_distribution_domain;
+  if (preferredDistributionDomain !== 'full' && preferredDistributionDomain !== 'focused') {
+    throw new Error(`${context}.preferred_distribution_domain is unsupported`);
+  }
+  if (!distributionDomains.some((domain) => domain.kind === preferredDistributionDomain)) {
+    throw new Error(`${context}.preferred_distribution_domain must be available`);
+  }
+  let range: readonly [number, number] | undefined;
+  if (raw.range !== undefined) {
+    const parsed = numberArray(raw.range, 2, `${context}.range`) as [number, number];
+    if (parsed[1] <= parsed[0]) throw new Error(`${context}.range must be strictly increasing`);
+    if (scales.some((scale) => scale.kind === 'log') && parsed[0] <= 0) {
+      throw new Error(`${context}.range shared with log must be positive`);
+    }
+    range = parsed;
+  }
+  return {
+    ...(raw.colormap !== undefined ? { colormap: string(raw.colormap, `${context}.colormap`) } : {}),
+    ...(range ? { range } : {}),
+    scales,
+    preferredScale,
+    distributionDomains,
+    preferredDistributionDomain,
+  };
+}
+
 export function parseFeatureDescriptor(value: unknown, path: string): FeatureDescriptor {
   const root = object(value, `feature ${path}`);
+  validateSchemaV1Document(root, 'feature.schema.json');
   if (root.schema_version !== SCHEMA_VERSION) throw new Error(`${path}.schema_version must be ${SCHEMA_VERSION}`);
   const representations = object(root.representations, `${path}.representations`);
   const valueSemantics = object(root.value_semantics, `${path}.value_semantics`);
   const artifacts = parseArtifactDescriptors(root.artifacts, `${path}.artifacts`);
   const featureId = string(root.id, `${path}.id`);
   if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(featureId)) throw new Error(`${path}.id has an invalid format`);
-  let display: FeatureDescriptor['display'];
-  if (root.display !== undefined) {
-    const rawDisplay = object(root.display, `${path}.display`);
-    const scale = rawDisplay.scale;
-    if (scale !== undefined && scale !== 'linear' && scale !== 'log') {
-      throw new Error(`${path}.display.scale must be linear or log`);
-    }
-    display = {
-      ...(rawDisplay.colormap !== undefined
-        ? { colormap: plainString(rawDisplay.colormap, `${path}.display.colormap`) }
-        : {}),
-      ...(rawDisplay.range !== undefined
-        ? { range: numberArray(rawDisplay.range, 2, `${path}.display.range`) as [number, number] }
-        : {}),
-      ...(scale !== undefined ? { scale } : {}),
-    };
+  const rawDisplay = object(root.display, `${path}.display`);
+  if (Object.keys(rawDisplay).some((key) => key !== 'regional' && key !== 'volume')) {
+    throw new Error(`${path}.display contains unsupported representations`);
   }
+  const display: FeatureDescriptor['display'] = {
+    ...(rawDisplay.regional !== undefined
+      ? { regional: parseRepresentationDisplay(rawDisplay.regional, `${path}.display.regional`) }
+      : {}),
+    ...(rawDisplay.volume !== undefined
+      ? { volume: parseRepresentationDisplay(rawDisplay.volume, `${path}.display.volume`) }
+      : {}),
+  };
   const descriptor: FeatureDescriptor = {
     id: featureId,
     path,
     label: string(root.label, `${path}.label`),
     description: plainString(root.description, `${path}.description`),
     unit: root.unit === null ? null : plainString(root.unit, `${path}.unit`),
-    ...(display !== undefined ? { display } : {}),
+    display,
     artifacts,
     valueSemantics: {
       quantity: string(valueSemantics.quantity, `${path}.value_semantics.quantity`),
@@ -210,6 +263,18 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
 
   if (!descriptor.representations.regional && !descriptor.representations.volume) {
     throw new Error(`${path} must provide regional and/or volume representation`);
+  }
+  if (descriptor.representations.regional && !descriptor.display?.regional) {
+    throw new Error(`${path}.display.regional is required for the regional representation`);
+  }
+  if (descriptor.representations.volume && !descriptor.display?.volume) {
+    throw new Error(`${path}.display.volume is required for the volume representation`);
+  }
+  if (descriptor.display?.regional && !descriptor.representations.regional) {
+    throw new Error(`${path}.display.regional requires the regional representation`);
+  }
+  if (descriptor.display?.volume && !descriptor.representations.volume) {
+    throw new Error(`${path}.display.volume requires the volume representation`);
   }
   return descriptor;
 }

@@ -109,15 +109,20 @@ def test_channel_recipe_is_deterministic(tmp_path):
         assert (a / rel).read_bytes() == (b / rel).read_bytes(), rel
 
 
-def test_channel_recipe_emits_explicit_log_color_defaults(tmp_path):
+def test_channel_recipe_emits_explicit_reviewed_log_distribution(tmp_path):
     features, ids, metadata = _inputs()
     config = ChannelBuildConfig(
         release_id="2026_W12",
         created_at="2026-08-20T00:00:00Z",
         feature_mode="denoised",
         population="inside",
-        log_color_features=("rms_ap",),
     )
+    display = {
+        "scales": [{"kind": "linear"}, {"kind": "log"}],
+        "preferred_scale": "log",
+        "distribution_domains": [{"kind": "full"}],
+        "preferred_distribution_domain": "full",
+    }
     release = build_channels_release_from_arrays(
         tmp_path / "release",
         config,
@@ -125,24 +130,75 @@ def test_channel_recipe_emits_explicit_log_color_defaults(tmp_path):
         ids,
         metadata,
         [{"role": "canonical-data", "description": "display metadata test"}],
+        feature_display={"rms_ap": display},
     )
     validate_release(release, ROOT / "schema" / "v1")
     rms = json.loads((release / "features/rms_ap/feature.json").read_text())
     polarity = json.loads((release / "features/polarity/feature.json").read_text())
     manifest = json.loads((release / "manifest.json").read_text())
-    assert rms["display"] == {"scale": "log"}
-    assert "display" not in polarity
-    assert manifest["provenance"]["recipe"]["log_color_features"] == ["rms_ap"]
+    assert rms["display"]["regional"]["preferred_scale"] == "log"
+    assert [item["kind"] for item in rms["display"]["regional"]["scales"]] == [
+        "linear",
+        "log",
+    ]
+    assert polarity["display"]["regional"]["preferred_scale"] == "linear"
+    statistics = json.loads(
+        (release / "features/rms_ap/allen.statistics.json").read_text()
+    )
+    assert [item["id"] for item in statistics["distribution"]["binnings"]] == [
+        "linear-full",
+        "log-full",
+    ]
+    assert "log_color_features" not in manifest["provenance"]["recipe"]
 
 
-def test_channel_recipe_rejects_unknown_log_color_feature(tmp_path):
+def test_channel_recipe_accepts_reviewed_symlog_and_focused_selection(tmp_path):
+    features, ids, metadata = _inputs()
+    display = {
+        "scales": [
+            {"kind": "linear"},
+            {"kind": "symlog", "linear_threshold": 0.1},
+        ],
+        "preferred_scale": "symlog",
+        "distribution_domains": [
+            {"kind": "full"},
+            {"kind": "focused", "bounds": [-0.6, 0.0]},
+        ],
+        "preferred_distribution_domain": "focused",
+    }
+    release = build_channels_release_from_arrays(
+        tmp_path / "release",
+        _config(),
+        features,
+        ids,
+        metadata,
+        [{"role": "canonical-data", "description": "explicit display selection"}],
+        feature_display={"polarity": display},
+    )
+    validate_release(release, ROOT / "schema" / "v1")
+    statistics = json.loads(
+        (release / "features/polarity/allen.statistics.json").read_text()
+    )
+    assert [item["id"] for item in statistics["distribution"]["binnings"]] == [
+        "linear-full",
+        "linear-focused",
+        "symlog-full",
+        "symlog-focused",
+    ]
+    focused = statistics["distribution"]["binnings"][1]
+    assert (focused["global_underflow_count"], focused["global_overflow_count"]) == (
+        1,
+        1,
+    )
+
+
+def test_channel_recipe_rejects_unknown_reviewed_display_feature(tmp_path):
     features, ids, metadata = _inputs()
     config = ChannelBuildConfig(
         release_id="2026_W12",
         created_at="2026-08-20T00:00:00Z",
         feature_mode="denoised",
         population="inside",
-        log_color_features=("missing",),
     )
     with pytest.raises(ValueError, match="not in the release catalog"):
         build_channels_release_from_arrays(
@@ -152,7 +208,28 @@ def test_channel_recipe_rejects_unknown_log_color_feature(tmp_path):
             ids,
             metadata,
             [{"role": "canonical-data", "description": "display metadata test"}],
+            feature_display={"missing": {"ignored": True}},
         )
+
+
+def test_channel_empty_population_omits_distribution_and_count_resources(tmp_path):
+    features, ids, metadata = _inputs()
+    features = {"empty": np.full(len(features["rms_ap"]), np.nan)}
+    release = build_channels_release_from_arrays(
+        tmp_path / "release",
+        _config(),
+        features,
+        ids,
+        metadata,
+        [{"role": "canonical-data", "description": "empty population test"}],
+    )
+    validate_release(release, ROOT / "schema" / "v1")
+    statistics = json.loads(
+        (release / "features/empty/allen.statistics.json").read_text()
+    )
+    assert statistics["global"]["count"] == 0
+    assert "distribution" not in statistics
+    assert not list((release / "features/empty").glob("*.distribution.*.u32"))
 
 
 def test_channel_recipe_requires_explicit_scientific_choices():

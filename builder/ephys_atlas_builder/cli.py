@@ -67,6 +67,12 @@ def main(argv: list[str] | None = None) -> int:
         help="committed scientific-owner-approved cluster catalog JSON",
     )
     p.add_argument(
+        "--distribution-selection",
+        type=Path,
+        required=True,
+        help="scientific-owner-approved D050 scalar distribution selection JSON",
+    )
+    p.add_argument(
         "--parcellation",
         action="append",
         choices=("allen", "beryl", "cosmos"),
@@ -93,7 +99,12 @@ def main(argv: list[str] | None = None) -> int:
         "build-brainwide-map",
         help="preserve the checksummed v1 website Brain-Wide Map tables as schema v1",
     )
-    p.add_argument("release", help="immutable legacy snapshot release identifier")
+    p.add_argument("release", help="immutable legacy source snapshot identifier")
+    p.add_argument(
+        "--release-id",
+        required=True,
+        help="new immutable output release identifier",
+    )
     p.add_argument(
         "--created-at",
         required=True,
@@ -109,6 +120,12 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         required=True,
         help="directory containing the exact D038 v1 Parquet inputs",
+    )
+    p.add_argument(
+        "--distribution-selection",
+        type=Path,
+        required=True,
+        help="scientific-owner-approved D050 scalar distribution selection JSON",
     )
     p.add_argument("--release-root", type=Path, default=Path("data/releases"))
     p.add_argument("--schema-dir", type=Path, default=_schema_dir())
@@ -129,6 +146,12 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         required=True,
         help="committed scientific-owner geometry/validity selection JSON",
+    )
+    p.add_argument(
+        "--distribution-selection",
+        type=Path,
+        required=True,
+        help="scientific-owner-approved D050 scalar distribution selection JSON",
     )
     p.add_argument(
         "--layout", choices=("chunks3d", "orthogonal_slice_packs"), required=True
@@ -210,6 +233,11 @@ def main(argv: list[str] | None = None) -> int:
         "release",
         help="immutable source vintage or latest alias already pulled locally",
     )
+    p.add_argument(
+        "--release-id",
+        required=True,
+        help="new immutable output release identifier",
+    )
     p.add_argument("--feature-mode", required=True, choices=("raw", "denoised", "both"))
     p.add_argument("--population", required=True, choices=("all", "inside"))
     p.add_argument(
@@ -224,10 +252,10 @@ def main(argv: list[str] | None = None) -> int:
         help="explicit feature id; repeat as needed; omit to resolve current voltage_features_set()",
     )
     p.add_argument(
-        "--log-color-feature",
-        action="append",
-        dest="log_color_features",
-        help="output feature id whose presentation-only default color scale is logarithmic; repeat as needed",
+        "--distribution-selection",
+        type=Path,
+        required=True,
+        help="scientific-owner-approved D050 scalar distribution selection JSON",
     )
     p.add_argument(
         "--parcellation",
@@ -315,20 +343,21 @@ def main(argv: list[str] | None = None) -> int:
                 args.source_root, CHANNELS_DATASET_ID, args.release
             )
             source_snapshot = args.source_root / CHANNELS_DATASET_ID / resolved
-            release_dir = args.release_root / CHANNELS_DATASET_ID / resolved
+            release_dir = args.release_root / CHANNELS_DATASET_ID / args.release_id
             config = ChannelBuildConfig(
-                release_id=resolved,
+                release_id=args.release_id,
+                source_release_id=resolved,
                 created_at=args.created_at,
                 feature_mode=args.feature_mode,
                 population=args.population,
                 parcellations=tuple(args.parcellations or ("allen", "beryl", "cosmos")),
                 features=tuple(args.features) if args.features else None,
-                log_color_features=tuple(args.log_color_features or ()),
                 histogram_bins=args.histogram_bins,
                 paper_snapshot=args.paper_snapshot,
                 ibleatools_commit=args.ibleatools_commit,
                 iblatlas_commit=args.iblatlas_commit,
                 builder_commit=args.builder_commit,
+                distribution_selection=args.distribution_selection,
             )
             build_channels_from_snapshot(source_snapshot, release_dir, config)
             validate_release(release_dir, args.schema_dir)
@@ -353,18 +382,21 @@ def main(argv: list[str] | None = None) -> int:
                 iblatlas_commit=args.iblatlas_commit,
                 builder_commit=args.builder_commit,
                 catalog_selection=args.catalog_selection,
+                distribution_selection=args.distribution_selection,
             )
             build_clusters_from_snapshot(source_snapshot, release_dir, config)
             validate_release(release_dir, args.schema_dir)
             print(f"built and validated: {release_dir}")
         elif args.cmd == "build-brainwide-map":
-            release_dir = args.release_root / "brainwide_map" / args.release
+            release_dir = args.release_root / "brainwide_map" / args.release_id
             config = BrainwideMapBuildConfig(
-                release_id=args.release,
+                release_id=args.release_id,
+                source_release_id=args.release,
                 created_at=args.created_at,
                 histogram_bins=args.histogram_bins,
                 paper_snapshot=args.paper_snapshot,
                 builder_commit=args.builder_commit,
+                distribution_selection=args.distribution_selection,
             )
             build_brainwide_map_from_sources(args.source_dir, release_dir, config)
             validate_release(release_dir, args.schema_dir)
@@ -391,6 +423,7 @@ def main(argv: list[str] | None = None) -> int:
                     iblatlas_commit=args.iblatlas_commit,
                     builder_commit=args.builder_commit,
                     geometry_selection=args.geometry_selection,
+                    distribution_selection=args.distribution_selection,
                 ),
                 load_volume_geometry_selection(args.geometry_selection),
             )

@@ -1,6 +1,8 @@
 import type {
   FeatureDescriptor,
   FeaturePayload,
+  DistributionBinning,
+  DistributionCounts,
   RegionMetadata,
   RegionalFeaturePayload,
 } from '../../data/contracts.js';
@@ -126,16 +128,18 @@ export function buildRegionTooltipModel(
 export function selectedHistogramCounts(
   feature: RegionalFeaturePayload,
   selected: ReadonlySet<string>,
+  binning: DistributionBinning | undefined = feature.distribution?.binnings.find(
+    ({ scale, domain }) => scale.kind === 'linear' && domain.kind === 'full',
+  ),
 ): readonly number[] {
-  const histogram = feature.histogram;
-  if (!histogram) return [];
-  const counts = new Array<number>(histogram.globalCounts.length).fill(0);
-  if (!histogram.regionalCounts || selected.size === 0) return counts;
+  if (!binning) return [];
+  const counts = new Array<number>(binning.global.binCounts.length).fill(0);
+  if (!binning.regional || selected.size === 0) return counts;
 
   const indexById = new Map(feature.regionIds.map((id, index) => [id, index]));
   for (const regionId of selected) {
     const row = indexById.get(regionId);
-    const regionCounts = row === undefined ? undefined : histogram.regionalCounts[row];
+    const regionCounts = row === undefined ? undefined : binning.regional[row]?.binCounts;
     if (!regionCounts) continue;
     regionCounts.forEach((count, bin) => {
       counts[bin] = (counts[bin] ?? 0) + count;
@@ -148,36 +152,50 @@ export interface HistogramDistribution {
   counts: readonly number[];
   probabilities: readonly number[];
   total: number;
+  underflowCount: number;
+  overflowCount: number;
+  underflowProbability: number;
+  overflowProbability: number;
 }
 
 export interface RegionalHistogramDistribution extends HistogramDistribution {
   regionId: string;
 }
 
-export function histogramDistribution(counts: readonly number[]): HistogramDistribution {
-  const total = counts.reduce((sum, count) => (
+export function histogramDistribution(counts: readonly number[] | DistributionCounts): HistogramDistribution {
+  const aggregate = 'binCounts' in counts
+    ? counts
+    : { binCounts: counts, underflowCount: 0, overflowCount: 0 };
+  const { binCounts, underflowCount, overflowCount } = aggregate;
+  const total = binCounts.reduce((sum: number, count: number) => (
     Number.isFinite(count) && count > 0 ? sum + count : sum
-  ), 0);
+  ), Math.max(0, underflowCount) + Math.max(0, overflowCount));
   return {
-    counts,
-    probabilities: counts.map((count) => (
+    counts: binCounts,
+    probabilities: binCounts.map((count: number) => (
       total > 0 && Number.isFinite(count) && count > 0 ? count / total : 0
     )),
     total,
+    underflowCount,
+    overflowCount,
+    underflowProbability: total > 0 ? underflowCount / total : 0,
+    overflowProbability: total > 0 ? overflowCount / total : 0,
   };
 }
 
 export function selectedRegionHistogramDistributions(
   feature: RegionalFeaturePayload,
   selected: ReadonlySet<string>,
+  binning: DistributionBinning | undefined = feature.distribution?.binnings.find(
+    ({ scale, domain }) => scale.kind === 'linear' && domain.kind === 'full',
+  ),
 ): readonly RegionalHistogramDistribution[] {
-  const histogram = feature.histogram;
-  if (!histogram?.regionalCounts) return [];
+  if (!binning?.regional) return [];
   const indexById = new Map(feature.regionIds.map((id, index) => [id, index]));
   const result: RegionalHistogramDistribution[] = [];
   for (const regionId of selected) {
     const row = indexById.get(regionId);
-    const counts = row === undefined ? undefined : histogram.regionalCounts[row];
+    const counts = row === undefined ? undefined : binning.regional[row];
     if (!counts) continue;
     result.push({ regionId, ...histogramDistribution(counts) });
   }
