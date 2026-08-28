@@ -37,13 +37,12 @@ const display = {
   preferredDistributionDomain: 'focused',
 };
 
-test('release defaults resolve Signed log and Focused while retaining an exact Full compact binning', () => {
+test('release defaults resolve one Signed-log Focused binning for analytical and compact views', () => {
   const resolved = resolvePresentationScale(feature, coloring, display, 'auto');
   assert.equal(resolved.effectiveScale, 'symlog');
   assert.deepEqual(resolved.effectiveScaleSpec, { kind: 'symlog', linearThreshold: 2 });
   assert.equal(resolved.effectiveDistributionDomain, 'focused');
   assert.equal(resolved.histogram, focusedSymlog);
-  assert.equal(resolved.fullHistogram, fullSymlog);
   assert.deepEqual(resolved.availableScales, ['linear', 'symlog']);
   assert.deepEqual(resolved.availableDistributionDomains, ['full', 'focused']);
 });

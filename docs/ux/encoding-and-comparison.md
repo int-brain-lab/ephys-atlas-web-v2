@@ -22,7 +22,11 @@ from visual encoding:
 The primary range editor combines a compact histogram with two draggable range handles and on-demand exact numeric entry.
 
 - The histogram provides context for clipping and saturation decisions.
-- The histogram's complete value extent is the stable drag domain; changing the selected interval must not continuously rescale the track beneath the pointer.
+- The histogram uses the resolved Full/Focused release binning as its stable
+  drag viewport; changing the selected color interval must not continuously
+  rescale the track beneath the pointer. Focused shows exact tail counts. Bounds
+  outside the viewport remain exact edge markers, with drag editing deferred to
+  Full while exact numeric entry remains available.
 - Dragging either handle, or clicking the track to move the nearest handle, switches an automatic range to manual while preserving the current bounds as the starting point.
 - The colormap gradient spans the selected interval between the handles; it does not remain stretched across the full histogram domain. Dragging the selected center band translates both bounds together while preserving `max - min` and clamping at the domain edges.
 - Bound values are compact clickable labels, not permanently visible text fields. Activating a label opens exact numeric entry for that endpoint.

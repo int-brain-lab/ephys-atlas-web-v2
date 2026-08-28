@@ -21,8 +21,6 @@ export interface ResolvedPresentationScale {
   readonly effectiveScaleSpec: ScaleSpec;
   /** Exact analytical binning selected by both value scale and domain. */
   readonly histogram: DistributionBinning | undefined;
-  /** Exact Full binning for the compact color-range histogram. */
-  readonly fullHistogram: DistributionBinning | undefined;
   readonly availableScales: readonly ColorScale[];
   readonly unavailableScaleReasons: Readonly<Partial<Record<ColorScale, string>>>;
   readonly distributionSelection: DistributionDomainSelection;
@@ -120,7 +118,6 @@ export function resolvePresentationScale(
     effectiveScale,
     effectiveScaleSpec,
     histogram: matchingBinning(binnings, effectiveScale, effectiveDistributionDomain),
-    fullHistogram: matchingBinning(binnings, effectiveScale, 'full'),
     availableScales,
     unavailableScaleReasons,
     distributionSelection,

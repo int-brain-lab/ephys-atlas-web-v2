@@ -45,6 +45,7 @@ export class ColorRangeControl {
   readonly element = element('figure', 'color-legend');
 
   private readonly context = element('div', 'color-legend__context');
+  private readonly tailSummary = element('div', 'color-legend__tails');
   private readonly reset = element('button', 'color-legend__reset');
   private readonly bar = element('div', 'color-legend__bar');
   private readonly histogram = element('div', 'color-range__histogram');
@@ -67,6 +68,7 @@ export class ColorRangeControl {
   private commitFrame: number | null = null;
   private histogramSignature = '';
   private domain: NumericRange | null = null;
+  private range: NumericRange | null = null;
   private axisScale: ScaleSpec = { kind: 'linear' };
   private readonly labelResizeObserver = new ResizeObserver(() => this.positionValueLabels());
 
@@ -76,7 +78,7 @@ export class ColorRangeControl {
     this.reset.type = 'button';
     this.reset.textContent = 'Reset';
     this.reset.addEventListener('click', this.setAutomaticRange);
-    header.append(this.context, this.reset);
+    header.append(this.context, this.tailSummary, this.reset);
 
     this.histogram.setAttribute('aria-hidden', 'true');
     const selectedRange = element('span', 'color-range__selection');
@@ -114,9 +116,13 @@ export class ColorRangeControl {
   render(model: ColorRangeControlModel): void {
     this.axisScale = model.axisScale;
     this.domain = colorRangeDomain(model.feature, model.statistic, model.effectiveRange, model.histogram);
+    this.range = model.effectiveRange;
     const interactive = model.enabled && this.domain !== null;
-    this.minSlider.disabled = !interactive;
-    this.maxSlider.disabled = !interactive;
+    const rangeInsideViewport = this.domain !== null
+      && model.effectiveRange[0] >= this.domain[0]
+      && model.effectiveRange[1] <= this.domain[1];
+    this.minSlider.disabled = !interactive || !rangeInsideViewport;
+    this.maxSlider.disabled = !interactive || !rangeInsideViewport;
     this.minLabel.disabled = !interactive;
     this.maxLabel.disabled = !interactive;
     this.reset.hidden = model.mode !== 'fixed';
@@ -131,12 +137,22 @@ export class ColorRangeControl {
       slider.min = String(this.domain[0]);
       slider.max = String(this.domain[1]);
     }
-    this.minSlider.value = String(model.effectiveRange[0]);
-    this.maxSlider.value = String(model.effectiveRange[1]);
+    this.syncSliderValues();
     this.updatePresentation();
     this.renderHistogram(model.feature, model.statistic, model.histogram);
     this.bar.dataset.axisScale = this.axisScale.kind;
+    this.bar.dataset.distributionDomain = model.histogram?.domain.kind ?? 'none';
+    this.bar.dataset.rangeEditable = String(rangeInsideViewport);
+    this.bar.title = rangeInsideViewport
+      ? ''
+      : 'A color bound is outside this viewport. Choose Full or enter an exact value to edit it.';
     this.context.textContent = model.context;
+    const below = model.histogram?.global.underflowCount ?? 0;
+    const above = model.histogram?.global.overflowCount ?? 0;
+    this.tailSummary.hidden = model.histogram?.domain.kind !== 'focused' || (below === 0 && above === 0);
+    this.tailSummary.textContent = this.tailSummary.hidden
+      ? ''
+      : `${below.toLocaleString()} below · ${above.toLocaleString()} above`;
     this.bar.dataset.colormap = model.colormap;
     this.bar.style.setProperty('--color-range-gradient', paletteCssGradient(model.colormap));
     this.unit.textContent = model.unit ?? '';
@@ -182,26 +198,27 @@ export class ColorRangeControl {
   }
 
   private commitFixedRange(): void {
-    const min = this.minSlider.valueAsNumber;
-    const max = this.maxSlider.valueAsNumber;
+    const [min, max] = this.range ?? [NaN, NaN];
     if (Number.isFinite(min) && Number.isFinite(max) && min < max) this.setRange({ mode: 'fixed', min, max });
   }
 
   private commitSliderRange(bound: 'min' | 'max'): void {
-    if (!this.domain) return;
+    if (!this.domain || !this.range) return;
     const slider = bound === 'min' ? this.minSlider : this.maxSlider;
-    const other = bound === 'min' ? this.maxSlider : this.minSlider;
-    slider.value = String(clampRangeHandle(bound, slider.valueAsNumber, other.valueAsNumber, this.domain, undefined, this.axisScale));
+    const other = bound === 'min' ? this.range[1] : this.range[0];
+    const value = clampRangeHandle(bound, slider.valueAsNumber, other, this.domain, undefined, this.axisScale);
+    this.range = bound === 'min' ? [value, other] : [other, value];
+    this.syncSliderValues();
     this.updatePresentation();
     this.scheduleCommit();
   }
 
   private onSliderKeyDown(event: KeyboardEvent, bound: 'min' | 'max'): void {
-    if (!this.domain || !['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'].includes(event.key)) return;
+    if (!this.domain || !this.range || !['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp'].includes(event.key)) return;
     event.preventDefault();
     const direction = event.key === 'ArrowLeft' || event.key === 'ArrowDown' ? -1 : 1;
     const slider = bound === 'min' ? this.minSlider : this.maxSlider;
-    const other = bound === 'min' ? this.maxSlider : this.minSlider;
+    const other = bound === 'min' ? this.range[1] : this.range[0];
     const increment = (event.shiftKey ? 10 : 1) / 1_000;
     const nextValue = rangeValueAtPosition(
       rangePosition(slider.valueAsNumber, this.domain, this.axisScale) + direction * increment,
@@ -211,11 +228,14 @@ export class ColorRangeControl {
     slider.value = String(clampRangeHandle(
       bound,
       nextValue,
-      other.valueAsNumber,
+      other,
       this.domain,
       rangeSliderStep(this.domain),
       this.axisScale,
     ));
+    const value = slider.valueAsNumber;
+    this.range = bound === 'min' ? [value, other] : [other, value];
+    this.syncSliderValues();
     this.updatePresentation();
     this.commitCurrentRange();
   }
@@ -228,7 +248,7 @@ export class ColorRangeControl {
     else if (target?.classList.contains('color-range__selection')) {
       this.dragMode = 'window';
       this.dragOriginPosition = this.positionAtClientX(event.clientX);
-      this.dragOriginRange = [this.minSlider.valueAsNumber, this.maxSlider.valueAsNumber];
+      this.dragOriginRange = this.range;
       this.bar.dataset.dragging = 'window';
     } else {
       const value = this.valueAtClientX(event.clientX);
@@ -254,7 +274,7 @@ export class ColorRangeControl {
   };
 
   private updateFromPointer(clientX: number): void {
-    if (!this.domain || !this.dragMode) return;
+    if (!this.domain || !this.range || !this.dragMode) return;
     if (this.dragMode === 'window') {
       if (!this.dragOriginRange) return;
       const translated = translateRangeWindowByPosition(
@@ -263,20 +283,21 @@ export class ColorRangeControl {
         this.domain,
         this.axisScale,
       );
-      this.minSlider.value = String(translated[0]);
-      this.maxSlider.value = String(translated[1]);
+      this.range = translated;
     } else {
       const slider = this.dragMode === 'min' ? this.minSlider : this.maxSlider;
-      const other = this.dragMode === 'min' ? this.maxSlider : this.minSlider;
-      slider.value = String(clampRangeHandle(
+      const other = this.dragMode === 'min' ? this.range[1] : this.range[0];
+      const value = clampRangeHandle(
         this.dragMode,
         this.valueAtClientX(clientX),
-        other.valueAsNumber,
+        other,
         this.domain,
         rangeSliderStep(this.domain),
         this.axisScale,
-      ));
+      );
+      this.range = this.dragMode === 'min' ? [value, other] : [other, value];
     }
+    this.syncSliderValues();
     this.updatePresentation();
     this.scheduleCommit();
   }
@@ -293,7 +314,7 @@ export class ColorRangeControl {
 
   private openExactEditor(bound: 'min' | 'max'): void {
     this.exactBound = bound;
-    const value = bound === 'min' ? this.minSlider.value : this.maxSlider.value;
+    const value = String(bound === 'min' ? this.range?.[0] ?? '' : this.range?.[1] ?? '');
     this.exactTitle.firstChild?.remove();
     this.exactTitle.prepend(`${bound === 'min' ? 'Minimum' : 'Maximum'} `);
     this.exactInput.setAttribute('aria-label', `Exact ${bound}imum color value`);
@@ -312,8 +333,9 @@ export class ColorRangeControl {
   private readonly submitExactRange = (event: SubmitEvent): void => {
     event.preventDefault();
     const value = this.exactInput.valueAsNumber;
-    const other = (this.exactBound === 'min' ? this.maxSlider : this.minSlider).valueAsNumber;
-    const valid = Number.isFinite(value) && (this.exactBound === 'min' ? value < other : value > other);
+    const other = this.exactBound === 'min' ? this.range?.[1] : this.range?.[0];
+    const valid = Number.isFinite(value) && other !== undefined
+      && (this.exactBound === 'min' ? value < other : value > other);
     if (!valid) {
       this.exactInput.setCustomValidity(this.exactBound === 'min'
         ? 'Minimum must be smaller than maximum'
@@ -354,27 +376,32 @@ export class ColorRangeControl {
   }
 
   private updatePresentation(): void {
-    if (!this.domain) return;
-    const min = this.minSlider.valueAsNumber;
-    const max = this.maxSlider.valueAsNumber;
+    if (!this.domain || !this.range) return;
+    const [min, max] = this.range;
     this.bar.style.setProperty('--range-low', `${rangePosition(min, this.domain, this.axisScale) * 100}%`);
     this.bar.style.setProperty('--range-high', `${rangePosition(max, this.domain, this.axisScale) * 100}%`);
     this.minLabel.textContent = formatScalar(min);
     this.maxLabel.textContent = formatScalar(max);
     this.domainMinLabel.textContent = formatScalar(this.domain[0]);
     this.domainMaxLabel.textContent = formatScalar(this.domain[1]);
+    const minimumPosition = min < this.domain[0] ? 'below' : min > this.domain[1] ? 'above' : 'inside';
+    const maximumPosition = max < this.domain[0] ? 'below' : max > this.domain[1] ? 'above' : 'inside';
+    this.bar.dataset.minimumPosition = minimumPosition;
+    this.bar.dataset.maximumPosition = maximumPosition;
+    this.element.querySelector<HTMLElement>('.color-range__handle--min')!.dataset.position = minimumPosition;
+    this.element.querySelector<HTMLElement>('.color-range__handle--max')!.dataset.position = maximumPosition;
     this.positionValueLabels();
   }
 
   private positionValueLabels(): void {
-    if (!this.domain) return;
+    if (!this.domain || !this.range) return;
     const trackWidth = this.valueLabels.clientWidth;
     if (!(trackWidth > 0)) return;
     const placement = placeRangeLabels(
       trackWidth,
       [
-        rangePosition(this.minSlider.valueAsNumber, this.domain, this.axisScale) * trackWidth,
-        rangePosition(this.maxSlider.valueAsNumber, this.domain, this.axisScale) * trackWidth,
+        rangePosition(this.range[0], this.domain, this.axisScale) * trackWidth,
+        rangePosition(this.range[1], this.domain, this.axisScale) * trackWidth,
       ],
       [this.minLabel.offsetWidth, this.maxLabel.offsetWidth],
     );
@@ -383,6 +410,12 @@ export class ColorRangeControl {
     this.minLabel.dataset.side = placement.min.side;
     this.maxLabel.dataset.side = placement.max.side;
     this.valueLabels.dataset.stacked = String(placement.stacked);
+  }
+
+  private syncSliderValues(): void {
+    if (!this.domain || !this.range) return;
+    this.minSlider.value = String(Math.max(this.domain[0], Math.min(this.domain[1], this.range[0])));
+    this.maxSlider.value = String(Math.max(this.domain[0], Math.min(this.domain[1], this.range[1])));
   }
 
   private scheduleCommit(): void {

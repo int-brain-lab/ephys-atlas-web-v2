@@ -1110,7 +1110,7 @@ export class AppShell {
     const distributionDomain = this.settingsSelect('Distribution domain', [['auto', 'Auto (Full)'], ['full', 'Full'], ['focused', 'Focused']]);
     this.distributionDomainSelect = distributionDomain.select;
     this.distributionDomainSelect.setAttribute('aria-label', 'Distribution domain');
-    this.distributionDomainSelect.title = 'Changes analytical distributions only; coloring and the compact range histogram remain Full.';
+    this.distributionDomainSelect.title = 'Changes the analytical and compact range histogram viewport without changing color bounds or brain coloring.';
     this.distributionDomainSelect.addEventListener('change', () => this.callbacks.setDistributionDomain(
       this.distributionDomainSelect.value as DistributionDomainSelection,
     ));
@@ -1312,7 +1312,7 @@ export class AppShell {
         context,
         enabled: featureColors,
         axisScale: model.presentationScale.effectiveScaleSpec,
-        histogram: model.presentationScale.fullHistogram,
+        histogram: model.presentationScale.histogram,
       });
     } else {
       this.colorRangeControl.hide();

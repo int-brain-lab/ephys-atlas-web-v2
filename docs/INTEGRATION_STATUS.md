@@ -283,9 +283,11 @@ unchanged.
 
 D050 is now the coherent schema-v1 distribution contract: Linear, Log, and
 Signed log are synchronized value-scale choices, while Full and Focused are an
-independent analytical-domain choice. Focused affects global and selected-region
-distributions only, with exact whole-population tails; the compact range
-histogram remains Full under the same scale. Python and TypeScript validators,
+independent analytical-domain choice. D053 applies Full/Focused to the global,
+selected-region, and compact color-range histogram viewports with exact
+whole-population tails. Color bounds and brain coloring remain unchanged;
+off-scale compact bounds retain their exact values and require Full or exact
+numeric entry for editing. Python and TypeScript validators,
 all four real builders, fixtures, URL state, controls, rendering, and exports
 share this contract. The baseline migration selections preserve Linear/Full
 for channels, `brainwide_map`, and volumes and preserve only D048's reviewed

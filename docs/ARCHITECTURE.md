@@ -83,10 +83,12 @@ D050 separates the value transform from the analytical distribution domain.
 Linear, Log, and Signed log are value scales; Full and Focused are independent
 distribution domains. One resolved scale continues to synchronize color
 normalization, both histogram presentations, range geometry, markers, and
-interaction transforms as required by D047. Focused affects the global and
-selected-region analytical distributions only. The compact color-range
-histogram remains Full under the same scale so analytical focus cannot mutate
-coloring or a manual range.
+interaction transforms as required by D047. Full/Focused selects the exact
+binning and x-axis viewport for global, selected-region, and compact color-range
+distributions. It never changes the actual automatic/manual color bounds or
+brain coloring. A color bound outside the Focused viewport remains authoritative
+and is shown as an off-scale edge marker; drag editing pauses until Full is
+selected, while exact numeric entry remains available.
 
 Signed log is the invertible transform
 `sign(x) * ln(1 + abs(x) / c)`, with inverse

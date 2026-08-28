@@ -523,6 +523,26 @@ test('scientific context menus and color controls are driven by the loaded relea
   await expect(page.getByLabel('Feature color legend')).toBeVisible();
   await expect(page.locator('.color-legend__unit')).toHaveText('dB rel. V');
   await expect(page.locator('.color-range__histogram-bin')).toHaveCount(8);
+  const rangeBar = page.locator('.color-legend__bar');
+  await expect(rangeBar).toHaveAttribute('data-distribution-domain', 'focused');
+  await expect(rangeBar).toHaveAttribute('data-range-editable', 'false');
+  await expect(rangeBar).toHaveAttribute('data-minimum-position', 'below');
+  await expect(rangeBar).toHaveAttribute('data-maximum-position', 'above');
+  await expect(page.locator('.color-legend__tails')).toHaveText('1 below · 1 above');
+  await expect(page.getByRole('slider', { name: 'Minimum color value', exact: true })).toBeDisabled();
+  await expect(page.getByRole('slider', { name: 'Maximum color value', exact: true })).toBeDisabled();
+  await expect(page.locator('.color-legend__minimum')).toHaveText('-0.500');
+  await expect(page.locator('.color-legend__maximum')).toHaveText('3.50');
+  await expect(page.locator('.color-legend__domain-minimum')).toHaveText('0.00');
+  await expect(page.locator('.color-legend__domain-maximum')).toHaveText('3.00');
+  await page.getByRole('button', { name: 'Enter exact minimum color value' }).click();
+  await expect(page.getByRole('spinbutton', { name: 'Exact minimum color value' })).toHaveValue('-0.5');
+  await page.getByRole('button', { name: 'Cancel' }).click();
+
+  await settings.getByLabel('Distribution domain').selectOption('full');
+  await expect(rangeBar).toHaveAttribute('data-distribution-domain', 'full');
+  await expect(rangeBar).toHaveAttribute('data-range-editable', 'true');
+  await expect(page.locator('.color-legend__tails')).toBeHidden();
   await expect(page.getByRole('slider', { name: 'Minimum color value', exact: true })).toHaveValue('-0.5');
   await expect(page.getByRole('slider', { name: 'Maximum color value', exact: true })).toHaveValue('3.5');
   await expect(page.locator('.color-legend__minimum')).toHaveText('-0.500');
@@ -538,7 +558,6 @@ test('scientific context menus and color controls are driven by the loaded relea
   expect(activeLabelBounds[0]!.right).toBeLessThan(activeLabelBounds[1]!.left);
   await expect(settings.getByRole('spinbutton')).toHaveCount(0);
 
-  const rangeBar = page.locator('.color-legend__bar');
   const minimumBounds = await rangeBar.boundingBox();
   expect(minimumBounds).not.toBeNull();
   const minimumHandleBounds = await page.locator('.color-range__handle--min').boundingBox();
@@ -656,6 +675,8 @@ test('color range remains directly editable in the phone settings drawer', async
   expect(barBounds!.x).toBeGreaterThanOrEqual(settingsBounds!.x);
   expect(barBounds!.x + barBounds!.width).toBeLessThanOrEqual(settingsBounds!.x + settingsBounds!.width);
 
+  await settings.getByLabel('Distribution domain').selectOption('full');
+  await expect(rangeBar).toHaveAttribute('data-range-editable', 'true');
   await rangeBar.click({ position: { x: barBounds!.width * .01, y: barBounds!.height / 2 } });
   await expect(page.getByLabel('Color range mode')).toHaveValue('fixed');
   await page.getByRole('button', { name: 'Enter exact minimum color value' }).click();

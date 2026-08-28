@@ -31,7 +31,7 @@ test('scale and analytical domain are release-aware, synchronized, and canonical
   await expect.poll(() => new URL(page.url()).searchParams.get('dist')).toBe('full');
 });
 
-test('Focused uses whole-population probabilities and keeps the compact color histogram Full', async ({ page }) => {
+test('Focused uses whole-population probabilities and gives the compact range the same viewport', async ({ page }) => {
   await page.goto('/?v=4&selected=-477,-803&scale=symlog&dist=focused');
   const chart = page.locator('.distribution-chart');
   await expect(chart.locator('.distribution-chart__tails')).toHaveAttribute('data-visible', 'true');
@@ -53,13 +53,25 @@ test('Focused uses whole-population probabilities and keeps the compact color hi
   await expect(chart.locator('.distribution-chart__hover-marker')).toHaveAttribute('data-visible', 'false');
   await expect(page.locator('.regional-distribution__tails').first()).toContainText('tails:');
 
-  // The compact range chart deliberately remains the matching exact Full binning.
+  const compactRange = page.locator('.color-legend__bar');
   const compactBins = page.locator('.color-range__histogram-bin');
+  await expect(compactRange).toHaveAttribute('data-distribution-domain', 'focused');
+  await expect(page.locator('.color-legend__domain-minimum')).toHaveText('0.00');
+  await expect(page.locator('.color-legend__domain-maximum')).toHaveText('3.00');
+  await expect(page.locator('.color-legend__tails')).toHaveText('1 below · 1 above');
+  await expect(compactRange).toHaveAttribute('data-range-editable', 'false');
+  await expect(compactRange).toHaveAttribute('data-minimum-position', 'below');
+  await expect(compactRange).toHaveAttribute('data-maximum-position', 'above');
   await expect(compactBins).toHaveCount(8);
 
   await page.getByRole('button', { name: 'Full', exact: true }).click();
   await expect(chart).toHaveAttribute('data-distribution-domain', 'full');
   await expect(chart.locator('.distribution-chart__tails')).toHaveAttribute('data-visible', 'false');
+  await expect(compactRange).toHaveAttribute('data-distribution-domain', 'full');
+  await expect(page.locator('.color-legend__domain-minimum')).toHaveText('-0.500');
+  await expect(page.locator('.color-legend__domain-maximum')).toHaveText('3.50');
+  await expect(page.locator('.color-legend__tails')).toBeHidden();
+  await expect(compactRange).toHaveAttribute('data-range-editable', 'true');
   await expect(compactBins).toHaveCount(8);
   await expect.poll(() => new URL(page.url()).searchParams.get('dist')).toBe('full');
 });

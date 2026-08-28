@@ -425,7 +425,9 @@ regional channel `peak_val.raw`: Linear and Signed log (`1.23`) plus Full and
 Focused (`[-9.467077467918395, 2.5583932574651715]`), defaulting to
 Linear/Focused. Every other new per-feature selection remains open, and none is
 inferred. Existing immutable releases remain unchanged alongside new validated
-local candidates.
+local candidates. D053 completes the compact-range usability correction: the
+compact histogram viewport follows Full/Focused without mutating color bounds,
+and off-scale bounds remain explicit rather than being clamped silently.
 
 ## M5 — Downloads, custom authoring, and local import completion
 

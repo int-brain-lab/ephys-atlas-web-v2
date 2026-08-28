@@ -50,18 +50,22 @@ export function colorRangeDomain(
   histogram?: DistributionBinning,
 ): NumericRange | null {
   let domain: NumericRange | null = null;
+  let exactHistogramDomain = false;
   if (feature.representation === 'regional') {
     if (statistic !== 'count') {
       const edges = histogram?.edges;
       domain = edges ? validRange(edges[0], edges.at(-1)) : null;
+      exactHistogramDomain = domain !== null;
     }
     domain ??= finiteExtent(feature.statistics[statistic] ?? feature.statistics.mean);
   } else {
     const edges = histogram?.edges;
     domain = edges ? validRange(edges[0], edges.at(-1)) : null;
+    exactHistogramDomain = domain !== null;
     domain ??= validRange(feature.summary.valueRange?.[0], feature.summary.valueRange?.[1]);
   }
   if (!domain) return effectiveRange;
+  if (exactHistogramDomain) return domain;
   if (!effectiveRange) return domain;
   return [Math.min(domain[0], effectiveRange[0]), Math.max(domain[1], effectiveRange[1])];
 }

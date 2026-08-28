@@ -55,8 +55,10 @@ For a schema-v1 regional feature, the viewer must:
 - show global descriptive statistics and a distribution/histogram;
 - expose available Linear, Log, and Signed-log value scales through one
   synchronized control for coloring, distributions, and range geometry;
-- expose Full and Focused distribution domains independently, with exact
-  underflow/overflow disclosure and whole-population normalization in Focused;
+- expose Full and Focused distribution domains independently across the global,
+  comparison, and compact color-range histogram viewports, with exact
+  underflow/overflow disclosure and whole-population normalization in Focused,
+  without changing the selected color bounds;
 - preserve explicit scale/domain choices in the URL without changing source
   observations, and obtain thresholds, focus bounds, availability, and defaults
   only from immutable representation-specific release metadata;

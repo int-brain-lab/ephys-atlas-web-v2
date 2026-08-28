@@ -841,7 +841,8 @@ preserves D047's synchronization invariant. Changing Full versus Focused
 changes only the global distribution and selected-region comparison domain;
 the compact color-range distribution remains Full under the resolved scale, so
 changing the analytical view does not silently change coloring or a manual
-color interval.
+color interval. D053 supersedes this compact-Full viewport rule while retaining
+the invariant that a domain change never mutates the color interval or coloring.
 
 Signed log uses the exact natural-log transform
 `T_c(x) = sign(x) * ln(1 + abs(x) / c)` and inverse
@@ -975,3 +976,24 @@ representation. Retain the D050 Linear/Full baseline for every other channel
 feature, keep representation-specific selections independent, and build a new
 immutable local release rather than changing an existing release. This is a
 partial Q14 resolution and does not authorize remote publication.
+
+## D053 — Apply Full/Focused to the compact range viewport
+
+Use the resolved Full/Focused distribution binning for the compact color-range
+histogram as well as the global and selected-region distributions. This makes a
+Focused viewport useful for highly skewed populations instead of compressing a
+robust color interval into an effectively immovable Full-domain slider. Show
+the exact focused underflow and overflow counts beside the compact histogram.
+
+Changing the distribution domain changes only histogram content and interaction
+coordinates. It must not change automatic or manual color bounds, colormap
+normalization, source values, or brain coloring. When an existing bound lies
+outside the current viewport, preserve and label its exact value, show an
+off-scale edge marker, and disable track dragging to prevent an accidental
+clamp. Exact numeric entry remains available, and selecting Full restores drag
+editing over the complete release-declared domain.
+
+This is a viewer interaction decision and requires no schema or release rebuild.
+It supersedes only D050's requirement that the compact histogram remain Full;
+D047/D050 scale synchronization, exact release-owned binnings, whole-population
+Focused normalization, URL state, and scientific selections remain unchanged.

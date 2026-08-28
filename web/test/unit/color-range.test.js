@@ -59,8 +59,8 @@ test('range window translation preserves width and clamps at domain edges', () =
   assert.deepEqual(translateRangeWindow([2, 6], -8, [0, 10]), [0, 4]);
 });
 
-test('manual bounds outside the declared data extent remain reachable', () => {
-  assert.deepEqual(colorRangeDomain(regional, 'mean', [-2, 12], fullBinning), [-2, 12]);
+test('exact histogram viewport does not expand around off-scale manual bounds', () => {
+  assert.deepEqual(colorRangeDomain(regional, 'mean', [-2, 12], fullBinning), [0, 8]);
 });
 
 test('range handle math positions, steps, and prevents crossing', () => {
