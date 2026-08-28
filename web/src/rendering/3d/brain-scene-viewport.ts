@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { RegionalPresentation } from '../../application/regional-presentation.js';
+import { regionalPresentationColors, type RegionalPresentation } from '../../application/regional-presentation.js';
 import type { BrainCameraPose, Scene3DViewState } from '../../domain/types.js';
 import type { MeshPackV1, MeshRegionV1 } from '../../data/schema-v1.js';
 import type { LoadedMeshLod, MeshPackSource } from './mesh-pack-source.js';
@@ -8,6 +8,16 @@ import { StableArcballControls, type CameraInteractionPhase } from './stable-arc
 export type { BrainCameraPose, Scene3DViewState } from '../../domain/types.js';
 
 export type { RegionalPresentation } from '../../application/regional-presentation.js';
+
+/** Convert shared CSS palette colors into the linear bytes consumed by the GPU lookup texture. */
+export function regionalColorTextureRgb(color: string): readonly [number, number, number] {
+  const modernRgb = /^rgb\(\s*(\d+)\s+(\d+)\s+(\d+)\s*\)$/i.exec(color);
+  const compatibleColor = modernRgb
+    ? `rgb(${modernRgb[1]}, ${modernRgb[2]}, ${modernRgb[3]})`
+    : color;
+  const parsed = new THREE.Color(compatibleColor);
+  return [parsed.r, parsed.g, parsed.b].map((channel) => Math.round(channel * 255)) as [number, number, number];
+}
 
 export interface BrainScene3DInteractionSink {
   regionPointer?(event: { type: 'hover' | 'leave' | 'select'; regionId: number | null; originalEvent: PointerEvent }): void;
@@ -274,6 +284,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
 
   private updateLookupTextures(): void {
     if (!this.manifest) return;
+    const regionColors = regionalPresentationColors(this.presentation, true);
     for (const mesh of this.meshes) {
       const texture = mesh.material.uniforms.uLookup!.value as THREE.DataTexture;
       const bytes = texture.image.data as Uint8Array;
@@ -283,15 +294,12 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
         const visible = id !== null && this.presentation.visibleRegionIds.has(id);
         const selected = id !== null && this.presentation.selectedRegionIds.has(id);
         const highlighted = id !== null && this.presentation.highlightedRegionId === id;
-        const featureColor = id === null || (this.presentation.featureSide === 'left' && region.hemisphere !== 'left')
-          ? undefined : this.presentation.featureColors?.get(id);
-        const color = new THREE.Color(featureColor
-          ?? (id === null ? undefined : this.presentation.anatomyColors.get(id)) ?? '#73818b');
+        const color = regionalColorTextureRgb(id === null ? '#73818b' : regionColors.get(id) ?? '#73818b');
         const intensity = selected ? 1.35 : highlighted ? 1.18 : 1;
         const offset = region.feature_id * 4;
-        bytes[offset] = Math.min(255, Math.round(color.r * 255 * intensity));
-        bytes[offset + 1] = Math.min(255, Math.round(color.g * 255 * intensity));
-        bytes[offset + 2] = Math.min(255, Math.round(color.b * 255 * intensity));
+        bytes[offset] = Math.min(255, Math.round(color[0] * intensity));
+        bytes[offset + 1] = Math.min(255, Math.round(color[1] * intensity));
+        bytes[offset + 2] = Math.min(255, Math.round(color[2] * intensity));
         bytes[offset + 3] = visible ? (this.presentation.selectedRegionIds.size && !selected ? 28 : 255) : 0;
       });
       texture.needsUpdate = true;
