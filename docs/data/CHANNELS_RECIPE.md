@@ -1,5 +1,7 @@
 # Ephys atlas channel release recipe
 
+Status: accepted scientific recipe and source authority.
+
 `ephys_atlas_channels` has an approved schema-v1 regional build path in
 `builder/ephys_atlas_builder/channels.py`.
 
@@ -115,6 +117,7 @@ uv run --project builder --extra scientific --locked ephys-atlas-data \
   build-channels 2026_W12 \
   --feature-mode both \
   --population inside \
+  --distribution-selection docs/data/CHANNELS_DISTRIBUTION_SELECTION.json \
   --created-at 2026-08-20T00:00:00Z \
   --ibleatools-commit <commit> \
   --iblatlas-commit <commit> \
@@ -131,4 +134,7 @@ the same commits recorded in the release.
 
 For publication, use both raw and denoised variants, the explicitly selected
 population, preserved source values, and pinned code commits. These choices are
-written into the manifest and each feature's value semantics.
+written into the manifest and each feature's value semantics. The independent
+reviewed distribution selection must enumerate the complete output feature
+catalog and is copied into release provenance; the builder never derives it
+from accumulated histograms.

@@ -1,25 +1,21 @@
 # Architecture
 
-## Direction
+Status: active stable-boundary reference.
 
-Canonical scientific data is transformed by deterministic Python tooling into versioned, immutable web releases. Public browser reads should remain static/object-storage reads wherever possible.
+This document defines durable system boundaries. Exact schema fields, formulas,
+asset inventories, codec mechanics, completed migrations, and benchmark values
+belong in schema, decision, contract, or evidence documents linked from the
+[`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md).
 
-```text
-canonical scientific data
-    -> Python scientific builders
-    -> deterministic release serializers + validators
-    -> immutable dataset release
-    -> object storage / CDN
-    -> browser resource adapters
-    -> application sessions
-    -> UI + rendering
-```
+## System direction
 
-The publishing API manages authorization, staging, validation, publication, aliases, and catalog generation. It does not perform scientific transformations.
+Canonical scientific inputs pass through deterministic dataset-specific
+builders into immutable schema-v1 releases. Public browser reads remain static
+object-storage/CDN reads wherever possible. Publishing manages authorization,
+staging, validation, publication, aliases, and catalogs; it never transforms
+scientific data.
 
-## Dependency boundaries
-
-The browser is intentionally framework-free. Modules should point inward toward stable concepts instead of letting infrastructure leak into domain code.
+## Browser dependency boundaries
 
 ```text
 UI -----------------\
@@ -30,228 +26,132 @@ rendering -----------/        |
 HTTP / IndexedDB adapters -> resource readers -> data materializers
 ```
 
-Required boundaries:
+- `core/` owns transport-, DOM-, and renderer-independent coordinates and
+  calibration primitives.
+- `domain/` owns typed application state, actions, and reducers.
+- `application/` owns asynchronous dataset/release/feature lifecycle,
+  reconciliation, and stale-work cancellation.
+- `data/` owns schema-v1 validation, resource materialization, integrity,
+  caching, and HTTP/local transport adapters.
+- `rendering/` owns retained rendering runtimes and format adapters.
+- `ui/` owns plain-DOM views/controllers; complex data shaping remains pure and
+  testable.
 
-- `core/` contains transport-, DOM-, and renderer-independent primitives such as atlas/world coordinates and slice calibration.
-- `domain/` contains application state, actions, and reducers. It must not depend on rendering or UI implementations.
-- `application/` owns asynchronous product workflows such as opening a dataset/release, switching parcellation, resolving features, and canceling stale work.
-- `data/` owns release contracts, validation, resource materialization, caching, and transport adapters.
-- `rendering/` owns rendering runtimes and their format-specific adapters. Parsing/version compatibility should be separated from runtime loading where practical.
-- `ui/` owns DOM views/controllers. Pure view-model construction should be kept separate from DOM mutation for complex controls.
+`AtlasApp` composes these responsibilities. Avoid dependency-injection
+frameworks, global service registries, or abstractions without an existing
+product variation.
 
-Avoid dependency-injection frameworks, global service registries, or abstractions that do not correspond to an existing product variation.
+## Dataset and release model
 
-## Dataset model
+A dataset ID is an opaque runtime identifier, not a closed frontend enum. A
+dataset contains features, and a feature may independently expose `regional`,
+`volume`, or future representations. Catalogs/manifests drive releases,
+features, ordering, representations, and parcellations.
 
-A dataset identifier is an opaque published identifier, not a closed frontend enum. Launch configuration may name a fixed set of datasets, but the runtime must also accept publisher-defined datasets.
+Schema v1 under `schema/v1/` is the sole producer/consumer release contract.
+Published and local data use the same manifest, feature, representation,
+statistics, volume, and resource contracts; IndexedDB changes only transport.
+The independent Python and TypeScript validators execute one shared semantic
+fixture corpus.
 
-A dataset contains features. A feature may expose independent representations:
+Immutable release contents include provenance and checksummed resources.
+Mutable aliases and catalogs live outside release directories. Existing
+immutable scientific releases are never changed to adopt a new contract or
+selection; builders emit a new release ID.
 
-- `regional`
-- `volume`
-- `points` (future-facing; not launch-critical)
+## Scientific transformation and publication
 
-Do not force distinct representations into one physical format. Feature availability, parcellations, releases, and representation availability should be manifest-driven rather than duplicated as frontend enumerations.
+Source acquisition/pinning, scientific recipe selection, transformation,
+serialization, validation, and publication are separate steps. Dataset-specific
+builders own scientific source loading and computation; shared builder code
+owns actual common release mechanics. Do not introduce a generic scientific
+pipeline DSL or move scientific choices into publishing.
 
-## Data access
+Every release records source identity, vintage/release, source hashes,
+population/QC, transformation/aggregation/validity semantics, builder command,
+and relevant tool versions wherever the contract permits. Unresolved choices
+fail closed rather than inheriting convenient defaults.
 
-HTTP and local/IndexedDB data use the same format-level materializers. Transport adapters implement a small resource-reader boundary and are responsible only for locating and reading JSON/bytes/arrays. Regional values, statistics, histograms, and region metadata are decoded once in shared code.
+## Data access, integrity, and caching
 
-Immutable-resource caching may be used for responsiveness, but failed in-flight
-loads must be retryable and persistent caches must remain explicitly clearable.
-Only bytes that match the resource's served-byte size and SHA-256 enter a
-persistent cache. Cache hits are verified before decode; an invalid entry is
-evicted and may be fetched once cleanly rather than poisoning every retry.
-Decoded-cache keys combine the SHA-256 with the complete decoding contract
-(codec, dtype, shape, byte order, axes/layout as applicable), never a
-feature-relative path alone. Artifact identity and release immutability are
-part of the data contract, not inferred from URL conventions.
+HTTP and IndexedDB implement the same small resource-reader boundary and feed
+shared materializers. Only bytes matching declared served-byte size and SHA-256
+may enter persistent cache or decode. A bad cached entry is evicted and may be
+retried cleanly. Decoded-cache identity combines resource hash with the complete
+decoding contract, never a feature-relative path alone. Failed in-flight loads
+remain retryable and multi-consumer cancellation must not poison active work.
 
-## Contracts and validation
+## Coordinate and asset identity
 
-The completed data-contract phase of the pre-launch cutover established schema
-v1 as the sole contract used by every producer and consumer. Browser validation remains organized by contract
-concern (primitive values, binary arrays, catalog/manifest, feature descriptors,
-statistics, decoded payloads, and complete local-release graphs) behind a
-stable public validation facade. There is no v0.1 compatibility runtime.
+Coordinate compatibility has three independent levels:
 
-The Python builder validator and TypeScript runtime validator are independent implementations of the same contract. Shared valid/invalid fixture corpora should be used to prevent semantic drift; do not add a large runtime schema dependency solely to deduplicate validation code.
+- `reference_space_id` names the world frame and is the only equality required
+  before independently gridded anatomy and volume layers composite;
+- grid identity includes shape, ordered axes, affine, integer-index centers,
+  and half-index voxel-edge extent;
+- asset, pack, and release IDs identify immutable encodings and never prove
+  scientific compatibility.
 
-## Scalar presentation and distributions
+Anatomy and volume independently map the one ML/AP/DV cursor through their
+declared transforms. Coincident dimensions, resolution labels, or pack IDs are
+not alignment evidence. Physical volume transport stays below a storage-neutral
+decoded-plane source and remains independent of scientific geometry.
 
-D050 separates the value transform from the analytical distribution domain.
-Linear, Log, and Signed log are value scales; Full and Focused are independent
-distribution domains. One resolved scale continues to synchronize color
-normalization, both histogram presentations, range geometry, markers, and
-interaction transforms as required by D047. Full/Focused selects the exact
-binning and x-axis viewport for global, selected-region, and compact color-range
-distributions. It never changes the actual automatic/manual color bounds or
-brain coloring. A color bound outside the Focused viewport remains authoritative
-and is shown as an off-scale edge marker; drag editing pauses until Full is
-selected, while exact numeric entry remains available.
+## Rendering boundaries
 
-Signed log is the invertible transform
-`sign(x) * ln(1 + abs(x) / c)`, with inverse
-`sign(y) * c * (exp(abs(y)) - 1)`. Its finite positive `c` is expressed in raw
-feature units and belongs to the immutable release; it is neither estimated by
-the browser nor persisted as mutable URL state. Log requires the complete
-finite population to be strictly positive. A focus interval cannot change
-scale eligibility.
+`ProjectionViewportFactory` is the retained 2-D application boundary. Each
+registered coronal/sagittal/horizontal viewport owns stable scalar Canvas,
+regional SVG, interaction, guide, and error layers. A capability-driven
+projection registry also exposes affine-free Top and Swanson static regional
+views without slice, crosshair, world-coordinate, or volume claims.
 
-Every available scale/domain combination is binned directly from raw finite
-observations, or from valid voxels for volumes. Focused distributions preserve
-whole-population normalization and expose exact underflow and overflow counts;
-they never renormalize the visible bins. Edges are raw-unit values: underflow
-is below the first edge, overflow is above the last edge, bins are left-closed
-and right-open except that the final bin includes the last edge. Regional
-payloads additionally carry per-region counts over the same bins and tails.
-Volume distributions remain global valid-voxel summaries and do not synthesize
-regional curves. Full distributions cover the complete finite domain and have
-zero tails.
+One world cursor is the scientific bridge across registered views. SVG remains
+the regional interaction representation because stable path IDs support
+delegated picking, selection, coloring, and guides. The projection pack is the
+only browser anatomy format; parent anatomy packs remain derivation and
+reproducibility evidence.
 
-Availability, the Signed-log threshold, focus bounds, and preferred
-scale/domain are release-owned per feature and representation. They are chosen
-from read-only source-population audits and owner-reviewed selection artifacts,
-not inferred at runtime. Regional and volume preferences therefore remain
-independent even when they describe the same feature. Linear/Full is mandatory
-for a nonempty scalar population; all additional choices form a rectangular
-scale-by-domain cross-product.
+The optional retained 3-D viewport is a sibling, not another 2-D facade. It
+shares reference-space identity, regional presentation, selection, and hover,
+while owning camera, explode, GPU resources, lifecycle, and failures. D042 fixes
+its GLB-derived geometry/LOD direction. Encoding volumes remain linked 2-D
+slices and are never converted into that anatomy mesh path.
 
-This architecture requires one coherent schema-v1 contract cutover across all
-producers, validators, transports, materializers, UI state, and exports. There
-is no legacy adapter or parallel distribution model. Existing immutable
-releases remain readable only by the code version matching their contract;
-affected scientific data is rebuilt under new immutable release IDs.
+## Scalar presentation
 
-## Frontend
+The immutable release owns representation-specific scale/domain availability,
+Signed-log threshold, focus bounds, and defaults. One resolved value scale
+synchronizes color normalization, all histograms, range geometry, markers, and
+interaction transforms. Full/Focused changes analytical viewport/binning, not
+source values or selected color bounds. Exact formulas, bin/tail rules, and
+selection procedure are defined by D047/D050/D052/D053, schema v1, and
+[`data/DISTRIBUTION_AUDIT.md`](data/DISTRIBUTION_AUDIT.md).
 
-- TypeScript
-- Vite
-- plain DOM / lightweight native components; no React or other frontend framework by default
-- semantic HTML/CSS
-- explicit typed application state and actions
-- application-session objects for asynchronous workflows
-- Web Workers for expensive decoding/transforms
-- IndexedDB and/or Cache Storage for persistent local datasets/cache where justified
-- Playwright for browser-level tests
+## Frontend and UI
 
-`AtlasApp` is a composition/presentation root, not a data-loading service. Long-lived workflows belong in `application/` objects such as `DatasetSession`.
-
-## Rendering
-
-The application rendering boundary is one retained layered 2-D
-projection viewport. It composes optional scalar-volume Canvas, regional SVG,
-selection/hover, and guide layers without replacing the mounted view. The
-previous `SliceRenderer`/hybrid boundary has been removed rather than wrapped.
-
-A projection registry distinguishes registered orthogonal slice stacks from
-static regional maps by capabilities. `SliceAxis` remains a scientific type
-for coronal/sagittal/horizontal only. Top and Swanson use the same regional SVG
-layer but declare no affine, volume, slider, wheel-navigation, or crosshair
-capability.
-
-The active regional anatomy content remains derived from validated bilateral
-Allen CCFv3 geometry. One logical projection-pack contract exposes all five 2-D
-views while preserving separate provenance for registered and curated static
-geometry. The completed browser supports only the current contract; older pack
-artifacts may remain build/reproducibility evidence rather than runtime formats.
-
-SVG remains the regional interaction representation because stable path IDs support delegated picking, selection, coloring, and linked guides. Expensive decode work belongs in workers and decoded geometry caches must be byte-bounded.
-
-One ML/AP/DV world cursor is the only scientific bridge among registered
-layers. Anatomy and volume sources independently map it through their declared
-transforms and then into screen space through an explicit plane registration;
-coincident CSS dimensions are not proof of scientific alignment. Physical
-volume transport remains below a storage-neutral decoded-plane source.
-
-Scientific coordinate identity has three deliberately separate levels:
-
-- `reference_space_id` names the world reference frame and is the only equality
-  required before compositing independently gridded layers;
-- grid identity includes shape, ordered index axes, affine, integer-index voxel
-  centers, and half-index voxel-edge extent, and normally differs between
-  anatomy and volume resolutions;
-- asset/release/pack IDs identify immutable encodings and are never scientific
-  compatibility evidence.
-
-The application remains renderer-agnostic for 3-D, while the first isolated
-brain-mesh lab uses Three.js WebGL2 to minimize implementation and browser risk.
-The secondary/context content registry distinguishes summary,
-`projection-2d`, and `scene-3d` content while the workspace retains its three
-orthogonal slots plus one secondary slot. `ProjectionRegistry` and
-`ProjectionViewport` remain specifically 2-D. A sibling retained 3-D viewport
-shares coordinate-space identity, regional presentation, selection, and hover
-through technology-neutral inputs, but owns camera, explode, GPU resources,
-lifecycle, and failure state. `AtlasApp` remains the composition root; neither
-the standalone lab nor the retained 3-D viewport duplicates its dataset
-session, URL reducer, colormap, or projection layers. D037 and
-`docs/rendering/3D_INTEGRATION_PLAN.md` define the integration boundary.
-
-Production mesh geometry is an immutable derived web asset, not the raw source
-GLB. Its manifest records source hashes, coordinate axes/units/transform,
-canonical signed regional IDs, hemisphere, centroids, LOD parameters, resource
-sizes, and SHA-256. Geometry may be merged into a few GPU-friendly chunks with
-a per-vertex feature ID; colors, visibility, selection, hover, and explode
-vectors remain dynamic presentation data. Future volume rendering shares the
-coordinate-space contract and global download/cache budget, not the mesh
-transport or renderer implementation.
-
-The sole implemented geometry asset contract is the snake_case
-`atlas-mesh-pack-v1` schema under `schema/v1/`. Its independent Python and
-TypeScript semantic validators share the release-contract corpus. Offline
-compiler primitives emit versioned merged EAM3 resources; complete-graph
-validation follows every declared resource and rejects undeclared files. The
-committed fixture is synthetic and test-only. D042 selects the pinned
-GLB-derived compiled-full geometry with no smoothing, triangle decimation,
-voxel-derived replacement, or upgrade LOD. The exact selected payload has been
-losslessly repackaged and validated locally; immutable public deployment is an
-optional operational follow-up.
-
-Mesh discovery begins from an application-supplied immutable manifest
-descriptor and an injected verified `ResourceFetcher`; it does not fetch an
-LOD. Manifest-selected geometry is verified before worker transfer, explicitly
-gunzipped and decoded in a module worker, and returned as transport-neutral
-merged hemisphere chunks. Shared requests preserve per-consumer cancellation.
-Decoded retention is byte-bounded and keyed by resource SHA plus the complete
-codec/EAM3/encoding/quantization contract, never by a relative path.
-
-## UI
-
-Large UI controllers should be decomposed by ownership, not by arbitrary file-size targets. Data shaping/search/statistics calculations should be pure and testable; DOM controllers own events, focus, accessibility, and mutation.
-
-Projection definitions drive view construction, supported layers, navigation
-controls, secondary-panel membership, responsive switching, and focus behavior.
-Do not maintain separate hardcoded desktop/mobile projection inventories.
-
-Event delegation is preferred for large dynamic lists such as the regional tree to avoid rebuilding large listener graphs on every render.
-
-## Builder
-
-Scientific source loading/computation stays dataset-specific. Deterministic release-format mechanics are shared.
-
-```text
-channels.py / clusters.py / future scientific builders
-                    |
-             regional_release.py
-                    |
-          binary/json release files
-```
-
-Do not introduce a generic scientific pipeline DSL. Shared code should represent an actual common output contract, not erase scientifically meaningful differences between datasets.
+The frontend uses strict TypeScript, Vite, semantic HTML/CSS, plain DOM,
+explicit state/actions, workers for expensive decode work, and Playwright for
+browser contracts. Projection/workspace registries drive desktop, responsive,
+navigation, maximize, and focus behavior. Large UI controllers are decomposed
+by ownership rather than arbitrary file size; event delegation is preferred
+for large dynamic lists.
 
 ## Publishing
 
-Publishing retains capability-style bearer authentication rather than introducing a user/OAuth platform. The service is intentionally small and stdlib-based.
-
-Filesystem publication is safe only if catalog/index/upload mutations are serialized across WSGI processes, not merely across threads. Request bodies are bounded separately for JSON metadata and binary chunks. Public reads remain lock-free static reads; mutation handlers acquire the process-wide filesystem lock.
-
-A database, ORM, queue, or web framework should be added only when deployment or product requirements make the filesystem model insufficient.
+Publishing retains revocable capability-style bearer authentication. Public
+reads are lock-free static reads. Filesystem-backed staging/catalog/alias
+mutations are serialized across WSGI processes and request bodies are bounded
+separately for metadata and binary chunks. Add a database, queue, framework, or
+OAuth platform only when an accepted requirement makes the current model
+insufficient.
 
 ## Engineering guardrails
 
-- Prefer deleting duplication to introducing a generic framework.
-- Preserve scientific provenance and deterministic serialization during refactors.
-- Treat URLs and persisted release formats as explicit versioned contracts.
-- During the approved pre-launch reset, update producers and consumers together
-  and delete superseded compatibility adapters before handoff.
-- Add architectural tests for dependency direction and contract parity where they prevent likely regressions.
+- Preserve scientific provenance and deterministic serialization during
+  refactors.
+- Treat URLs, release formats, and asset contracts as explicit versioned
+  interfaces.
+- Update producers and consumers coherently; do not add compatibility shadows.
+- Prefer deleting duplication to inventing a generic framework.
+- Add dependency and cross-language contract tests where they prevent likely
+  boundary drift.

@@ -1,5 +1,7 @@
 # Ephys atlas cluster release recipe
 
+Status: accepted scientific recipe and source authority.
+
 `ephys_atlas_clusters` is a separate regional dataset built from the scalar
 columns of `cells_aggregates/clusters.table.pqt`. It does not use BWM data or
 `clusters_good.table.pqt`.
@@ -35,14 +37,14 @@ The build additionally requires the exact project name and Git commits for
 project/QC choice remain explicit inputs; the recipe does not guess a paper
 vintage or substitute a different cluster population.
 
-Every new production snapshot build must load the current versioned authority,
-`docs/data/CLUSTERS_CATALOG_SELECTION_FIRING_RATE_DEFAULTS.json`. D044 freezes the exact 14-feature
-catalog declared by the pinned original Ephys Atlas repository and its explicit
-cluster-unit mapping. The builder rejects any mismatch in project, source
-snapshot, table bytes/hash, catalog, display defaults, or exact Log-histogram
-capabilities before Parquet decode. D047 separates Log availability from the
-preferred value scale; D048 records the owner's final reviewed Firing-rate Log
-and 3.73–17.8 Hz automatic display defaults.
+Every new production snapshot build must load the D048 catalog authority,
+`docs/data/CLUSTERS_CATALOG_SELECTION_FIRING_RATE_DEFAULTS.json`, and the
+separate D050 distribution authority,
+`docs/data/CLUSTERS_DISTRIBUTION_SELECTION.json`. D044 freezes the exact
+14-feature catalog and unit mapping; D048 fixes the reviewed Firing-rate Log
+and 3.73–17.8 Hz automatic color range; D050 owns exact scale/domain binnings.
+The builder rejects mismatched project, source snapshot, table hash, catalog,
+display policy, or distribution selection before Parquet decode.
 Large waveform, ACG, STPC, and STLFP arrays are not silently reduced into
 regional features.
 
@@ -62,6 +64,7 @@ ephys-atlas-data build-clusters latest \
   --project ibl_neuropixel_brainwide_01 \
   --population all \
   --catalog-selection docs/data/CLUSTERS_CATALOG_SELECTION_FIRING_RATE_DEFAULTS.json \
+  --distribution-selection docs/data/CLUSTERS_DISTRIBUTION_SELECTION.json \
   --created-at 2026-08-20T00:00:00Z \
   --ibleatools-commit <commit> \
   --iblatlas-commit <commit> \
