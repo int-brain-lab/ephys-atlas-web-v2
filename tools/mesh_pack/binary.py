@@ -59,14 +59,31 @@ def inspect_lod(data: bytes) -> dict[str, Any]:
         header = json.loads(data[PREFIX_BYTES : PREFIX_BYTES + header_length])
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ValueError("mesh LOD header is invalid") from error
-    if header.get("encoding") != "raw-v1" or not isinstance(header.get("chunks"), list):
+    if header.get("encoding") not in {"raw-v1", "meshopt-quantized-v1"} or not isinstance(header.get("chunks"), list):
         raise ValueError("mesh LOD encoding is unsupported")
-    widths = {"float32": 4, "uint16": 2, "uint32": 4}
-    for chunk in header["chunks"]:
-        for descriptor in chunk.get("arrays", {}).values():
-            width = widths.get(descriptor.get("component_type"))
-            if width is None or descriptor.get("byte_offset", -1) < 0 or descriptor.get("count", -1) < 0:
-                raise ValueError("mesh LOD array descriptor is invalid")
-            if payload_offset + descriptor["byte_offset"] + descriptor["count"] * width > len(data):
-                raise ValueError("mesh LOD array is out of bounds")
+    if header["encoding"] == "raw-v1":
+        widths = {"float32": 4, "uint16": 2, "uint32": 4}
+        for chunk in header["chunks"]:
+            for descriptor in chunk.get("arrays", {}).values():
+                width = widths.get(descriptor.get("component_type"))
+                if width is None or descriptor.get("byte_offset", -1) < 0 or descriptor.get("count", -1) < 0:
+                    raise ValueError("mesh LOD array descriptor is invalid")
+                if payload_offset + descriptor["byte_offset"] + descriptor["count"] * width > len(data):
+                    raise ValueError("mesh LOD array is out of bounds")
+    else:
+        expected = {"vertices": ("meshopt-vertex", 8), "normals": ("meshopt-oct", 4), "indices": ("meshopt-index", 4)}
+        for chunk in header["chunks"]:
+            if not isinstance(chunk.get("vertex_count"), int) or chunk["vertex_count"] < 1 or not isinstance(chunk.get("index_count"), int) or chunk["index_count"] < 3:
+                raise ValueError("mesh LOD meshopt counts are invalid")
+            blocks = chunk.get("blocks")
+            if not isinstance(blocks, dict) or set(blocks) != set(expected):
+                raise ValueError("mesh LOD meshopt blocks are invalid")
+            for name, (codec, stride) in expected.items():
+                descriptor = blocks[name]
+                offset = descriptor.get("byte_offset", -1)
+                length = descriptor.get("byte_length", -1)
+                if descriptor.get("codec") != codec or descriptor.get("stride") != stride or not isinstance(offset, int) or not isinstance(length, int) or offset < 0 or length < 1:
+                    raise ValueError("mesh LOD meshopt block descriptor is invalid")
+                if payload_offset + offset + length > len(data):
+                    raise ValueError("mesh LOD meshopt block is out of bounds")
     return header

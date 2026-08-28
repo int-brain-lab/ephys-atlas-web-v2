@@ -358,8 +358,6 @@ def _mesh_pack_semantics(document: dict[str, Any]) -> None:
         if any(low > high or center < low or center > high for low, high, center in zip(minimum, maximum, centroid)):
             _fail(f"mesh centroid or bounds are invalid for signed identity {signed_id}")
         signed_by_source.setdefault(source_id, set()).add(sign)
-    if any(signs != {-1, 1} for signs in signed_by_source.values()):
-        _fail("mesh source regions must have both signed hemispheres")
     if set(signed_by_source) != set(active):
         _fail("mesh region coverage differs from active Allen scope")
 

@@ -363,7 +363,7 @@ function meshPackSemantics(document: JsonObject): void {
     signs.add(sign);
     signsBySource.set(sourceId, signs);
   }
-  if (signsBySource.size !== active.length || [...signsBySource.values()].some((signs) => signs.size !== 2 || !signs.has(-1) || !signs.has(1))) fail('mesh region coverage differs from bilateral active Allen scope');
+  if (signsBySource.size !== active.length) fail('mesh region coverage differs from active Allen scope');
 
   const lods = array(document.lods, 'mesh LODs').map((value) => object(value, 'mesh LOD'));
   const lodIds = lods.map((lod) => lod.id);

@@ -314,10 +314,13 @@ runtime fallback.
 D042 closes the geometry/LOD question with the already reviewed donor
 compiled-full resource: pinned GLB geometry, 4,958,039 bytes, 989,811 retained
 triangles, no smoothing, no triangle decimation, and no upgrade LOD. The later
-canonical-annotation regeneration direction is retired. Remaining 3-D work is
-limited to schema-v1 repackaging that preserves the selected inventory and
-topology, immutable deployment, and ordinary cross-browser release checks. It
-is not the next product milestone and must not delay M2 volume work.
+canonical-annotation regeneration direction is retired. Lossless schema-v1
+repackaging and local Chromium integration validation are complete: the
+repacked EAM3 preserves the donor meshopt payload byte-for-byte and records
+1,130 source-authoritative signed surfaces, including the absent right halves
+for Allen 222 and 763 without inventing geometry. Remaining 3-D work is limited
+to immutable deployment and ordinary cross-browser release/owner checks. It is
+not the next product milestone and must not delay M2 volume work.
 
 Experiment evidence and budgets remain in `docs/rendering/3D_EVALUATION.md`.
 

@@ -382,6 +382,7 @@
     {"name": "mesh pack transform invertible", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/coordinate_system/source_to_world_um/0": 0}},
     {"name": "mesh pack signed hemisphere", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/regions/0/signed_allen_id": 315}},
     {"name": "mesh pack mapping null preserved", "schema": "mesh-pack.schema.json", "valid": true, "document": "meshPack", "set": {"/regions/0/mappings/beryl": null}},
+    {"name": "mesh pack source-authoritative one-sided regions", "schema": "mesh-pack.schema.json", "valid": true, "document": "meshPack", "set": {"/geometry_scope/active_allen_ids": [315, 316], "/sources/source_glb/inventory_allen_ids": [315, 316], "/regions/1/source_allen_id": 316, "/regions/1/signed_allen_id": 316, "/regions/1/mappings/allen": 316}},
     {"name": "mesh pack reduced mapping cannot use root", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/regions/0/mappings/beryl": -997}},
     {"name": "mesh pack active scope excludes source", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/geometry_scope/active_allen_ids/0": 8}},
     {"name": "mesh pack centroid inside bounds", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/regions/1/centroid_um/0": 3}},

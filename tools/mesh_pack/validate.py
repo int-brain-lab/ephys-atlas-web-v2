@@ -59,13 +59,14 @@ def validate_pack(pack: Path) -> dict[str, Any]:
         feature_ids = sorted(range_ ["feature_id"] for chunk in header["chunks"] for range_ in chunk.get("ranges", []))
         if feature_ids != list(range(len(manifest["regions"]))):
             raise ValueError(f"mesh LOD feature ranges differ: {lod['id']}")
-        index_count = sum(chunk["arrays"]["indices"]["count"] for chunk in header["chunks"])
+        meshopt = header["encoding"] == "meshopt-quantized-v1"
+        index_count = sum(chunk["index_count"] if meshopt else chunk["arrays"]["indices"]["count"] for chunk in header["chunks"])
         if index_count % 3 or index_count // 3 != lod["triangle_count"]:
             raise ValueError(f"mesh LOD triangle count differs: {lod['id']}")
         for chunk in header["chunks"]:
-            chunk_index_count = chunk["arrays"]["indices"]["count"]
-            chunk_vertex_count = chunk["arrays"]["feature_ids"]["count"]
-            if chunk["arrays"]["positions"]["count"] != chunk_vertex_count * 3 or chunk["arrays"]["normals"]["count"] != chunk_vertex_count * 3:
+            chunk_index_count = chunk["index_count"] if meshopt else chunk["arrays"]["indices"]["count"]
+            chunk_vertex_count = chunk["vertex_count"] if meshopt else chunk["arrays"]["feature_ids"]["count"]
+            if not meshopt and (chunk["arrays"]["positions"]["count"] != chunk_vertex_count * 3 or chunk["arrays"]["normals"]["count"] != chunk_vertex_count * 3):
                 raise ValueError(f"mesh LOD vertex arrays differ: {lod['id']}")
             for range_ in chunk["ranges"]:
                 if range_["index_start"] < 0 or range_["index_count"] <= 0 or range_["index_start"] + range_["index_count"] > chunk_index_count:

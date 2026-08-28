@@ -27,7 +27,9 @@ export interface LoadedMeshLod {
   readonly byteLength: number;
 }
 
-const DEFAULT_MAX_DECODED_BYTES = 16 * 1024 * 1024;
+// D042's selected compiled-full pack decodes to 24,840,006 bytes. Keep the
+// measured 25 MB acceptance ceiling explicit instead of sizing it to fixtures.
+const DEFAULT_MAX_DECODED_BYTES = 25_000_000;
 
 export function meshDecodedCacheKey(lod: MeshLodV1): string {
   return `${lod.resource.sha256}:${JSON.stringify({

@@ -3,6 +3,7 @@ from __future__ import annotations
 import gzip
 import json
 import shutil
+import struct
 from copy import deepcopy
 from pathlib import Path
 
@@ -91,7 +92,7 @@ def test_active_mesh_inventory_is_derived_from_projection_fragments(tmp_path: Pa
     assert document["sampled_resource_count"] == 1
 
 
-def test_manifest_enforces_signed_bilateral_and_bounds_semantics() -> None:
+def test_manifest_enforces_signed_identity_and_bounds_semantics() -> None:
     manifest = json.loads((FIXTURE / "pack/manifest.json").read_text())
     left, right = manifest["regions"]
     assert (left["signed_allen_id"], right["signed_allen_id"]) == (-315, 315)
@@ -104,6 +105,15 @@ def test_manifest_enforces_signed_bilateral_and_bounds_semantics() -> None:
     broken["regions"][1]["centroid_um"][0] = 3
     with pytest.raises(ValidationError, match="centroid or bounds"):
         validate_schema_v1_document(broken, "mesh-pack.schema.json")
+
+
+def test_manifest_allows_source_authoritative_one_sided_geometry() -> None:
+    manifest = deepcopy(json.loads((FIXTURE / "pack/manifest.json").read_text()))
+    manifest["geometry_scope"]["active_allen_ids"] = [315, 316]
+    manifest["sources"]["source_glb"]["inventory_allen_ids"] = [315, 316]
+    manifest["regions"][1].update({"source_allen_id": 316, "signed_allen_id": 316})
+    manifest["regions"][1]["mappings"]["allen"] = 316
+    validate_schema_v1_document(manifest, "mesh-pack.schema.json")
 
 
 def test_raw_eam3_container_rejects_identity_version_and_ranges() -> None:
@@ -119,6 +129,31 @@ def test_raw_eam3_container_rejects_identity_version_and_ranges() -> None:
         inspect_lod(corrupt)
     with pytest.raises(ValueError, match="truncated"):
         inspect_lod(encoded[:8])
+
+
+def test_meshopt_eam3_container_is_inspected_without_decoding() -> None:
+    header = {
+        "encoding": "meshopt-quantized-v1",
+        "chunks": [{
+            "hemisphere": "left", "vertex_count": 3, "index_count": 3,
+            "blocks": {
+                "vertices": {"byte_offset": 0, "byte_length": 1, "codec": "meshopt-vertex", "stride": 8},
+                "normals": {"byte_offset": 1, "byte_length": 1, "codec": "meshopt-oct", "stride": 4},
+                "indices": {"byte_offset": 2, "byte_length": 1, "codec": "meshopt-index", "stride": 4},
+            },
+            "ranges": [],
+        }],
+    }
+    header_bytes = json.dumps(header).encode()
+    offset = (12 + len(header_bytes) + 3) // 4 * 4
+    encoded = bytearray(offset + 3)
+    encoded[:4] = b"EAM3"
+    struct.pack_into("<II", encoded, 4, 1, len(header_bytes))
+    encoded[12 : 12 + len(header_bytes)] = header_bytes
+    assert inspect_lod(encoded)["encoding"] == "meshopt-quantized-v1"
+    encoded.pop()
+    with pytest.raises(ValueError, match="out of bounds"):
+        inspect_lod(encoded)
 
 
 def _copied_pack(tmp_path: Path) -> Path:

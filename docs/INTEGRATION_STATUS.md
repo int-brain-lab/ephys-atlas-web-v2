@@ -194,9 +194,16 @@ donor's GLB-derived compiled-full resource: 4,958,039 bytes, SHA-256
 989,811 retained triangles, and 1,130 signed surfaces from 566 in-scope GLB
 objects. It selects no smoothing, no triangle decimation, no voxel-derived
 replacement surfaces, and no upgrade LOD. The experimental main adapter and
-fixture-backed runtime remain implemented; immutable schema-v1 repackaging and
-deployment are non-blocking operational follow-up. Encoding volumes remain a
-separate linked 2-D slice path.
+fixture-backed runtime remain implemented. The exact donor is now losslessly
+repackaged for local use into schema-v1 EAM3: its compressed geometry payload
+hash is unchanged, graph/schema validation passes, and a byte-identical rebuild
+was demonstrated. The integrated real pack reaches ready state in local
+Chromium with two retained hemisphere uploads and no geometry work during
+mapping changes. The validator now permits source-authoritative one-sided
+objects—required for Allen 222 and 763—while still requiring every declared
+active source object to be represented. Immutable deployment and final
+cross-browser owner checks remain non-blocking operational follow-up. Encoding
+volumes remain a separate linked 2-D slice path.
 
 The approved anatomy smoothing investigation has completed its first three
 implementation slices. A deterministic registry exposes exact geometry, GEOS

@@ -1,7 +1,8 @@
 # 3-D brain-mesh evaluation and implementation plan
 
-Status: **lab complete; GLB-derived compiled-full geometry selected by D042
-(2026-08-24)**. Immutable deployment remains optional and non-blocking.
+Status: **GLB-derived compiled-full geometry selected by D042 and losslessly
+repackaged into schema v1 for local validation (2026-08-28)**. Immutable public
+deployment and final cross-browser owner review remain optional follow-up.
 
 D042 supersedes the later canonical-annotation regeneration direction. The
 pinned GLB is the 3-D geometry authority; do not generate replacement surfaces
@@ -64,9 +65,38 @@ viewer requires.
 The active projection corpus contains 672 absolute Allen, 307 Beryl, and 11
 Cosmos IDs, or 741 unique absolute IDs. The source GLB covers 740 of those 741.
 Allen 545 (`RSPd4`) is absent; the legacy ontology marked it as non-existing,
-while the canonical current 10 um projection corpus contains it. A production
-mesh pack must generate and validate this surface from the canonical annotation
-or record an authoritative exclusion. The lab must not silently omit it.
+while the canonical current 10 um projection corpus contains it. D042 records
+it as an authoritative exclusion and forbids generating geometry absent from
+the pinned GLB.
+
+### Schema-v1 local validation
+
+The D042 donor was recovered from Fractal and verified against its recorded
+4,958,039-byte SHA-256. `web/scripts/repack-d042-mesh.mjs` rewrites only the
+experimental EAM3 header and manifest metadata into the sole snake_case schema
+v1 contract. The meshopt payload is copied byte-for-byte: donor and repacked
+payload SHA-256 are both
+`506a1789450f65171a4c9d6cb5b18b6b5955d7c1b4b2711f9f85e8db02197a8a`.
+
+The ignored local pack records:
+
+- resource: 4,990,699 bytes, SHA-256
+  `b0c1c1a43aa874a661d0b38091f372272b366bccd639b1a79d1edcae4952424a`;
+- 989,811 triangles, 566 represented source objects, and 1,130 signed surfaces;
+- source-authoritative one-sided geometry for Allen 222 and 763; no missing
+  right-side geometry is invented;
+- no smoothing, triangle decimation, voxel-derived replacement, or upgrade
+  LOD;
+- 24,840,006 decoded typed-array bytes, within the explicit 25 MB runtime
+  ceiling.
+
+`just mesh-pack-validate artifacts/mesh-d042-schema-v1` passes, a second build
+is byte-identical, and `just validate-3d-local http://localhost:5173/` loads the
+integrated retained viewport in Chromium. Repeated local runs reached ready
+state in under 0.6 seconds, uploaded two hemisphere buffers, issued one manifest and one
+geometry request, and changed Beryl/Cosmos presentation without another
+geometry request or upload. Evidence and screenshots remain ignored under
+`artifacts/mesh-d042-browser-evidence/`.
 
 ### Coordinates and hemispheres
 

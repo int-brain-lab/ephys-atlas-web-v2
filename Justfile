@@ -26,6 +26,10 @@ dev:
 dev-real release="2026_W32" feature="rms_ap.denoised":
     cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/{{release}} EPHYS_ATLAS_REAL_FEATURE={{feature}} npm run dev:real
 
+# Run the real-data viewer with an explicit local production 3-D mesh pack.
+dev-3d mesh="../artifacts/mesh-d042-schema-v1" release="2026_W32" feature="rms_ap.denoised":
+    cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/{{release}} EPHYS_ATLAS_REAL_FEATURE={{feature}} EPHYS_ATLAS_REAL_MESH_PACK={{mesh}} npm run dev:real
+
 # Builder/schema tests.
 test-builder:
     {{uv-test}} python -m pytest -q tests
@@ -88,9 +92,17 @@ projection-pack-validate path:
 mesh-pack-fixture output="artifacts/mesh-pack-v1-fixture":
     {{uv-test}} python -m tools.mesh_pack.build --source-dir fixtures/mesh-pack-v1/source --output {{output}}
 
+# Losslessly repackage the exact D042 compiled-full donor into schema v1.
+mesh-pack-d042 donor="artifacts/mesh-d042-donor" output="artifacts/mesh-d042-schema-v1" projection="web/public/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1-display-80um-d8-f8277956e67a/manifest.json":
+    node web/scripts/repack-d042-mesh.mjs --donor-dir {{donor}} --projection-manifest {{projection}} --output {{output}} --builder-commit $(git rev-parse HEAD)
+
 # Validate schema, resources, decoder identity, and the complete file graph.
 mesh-pack-validate path:
     {{uv-test}} python -m tools.mesh_pack.validate {{path}}
+
+# Validate the locally served D042 pack in Chromium and write ignored evidence.
+validate-3d-local url="http://127.0.0.1:5173/" output="../artifacts/mesh-d042-browser-evidence":
+    cd web && node scripts/validate-local-d042.mjs {{url}} {{output}}
 
 # Generate the ignored, fully offline anatomy comparison lab.
 anatomy-compare resolution="25":
