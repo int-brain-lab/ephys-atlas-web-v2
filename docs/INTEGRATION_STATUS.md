@@ -1,756 +1,117 @@
 # Integration status
 
-Status: active pre-alpha implementation on `main`. The repository is being optimized for rapid future extension rather than compatibility with an installed user base.
+Status: active pre-launch capability matrix.
 
-## Cross-machine development handoff
+Last reviewed: 2026-08-29 on `main` after the D050-D053 distribution work and
+documentation authority repair.
 
-The repository is self-describing for a clean Apple-silicon continuation.
-`.node-version` and npm engines pin Node 22; `docs/MACOS_DEVELOPMENT.md` owns the
-macOS bootstrap; and `docs/data/VOLUME_IMPLEMENTATION_HANDOFF.md` owns exact
-W26 acquisition, checksum, current implementation boundaries, the D043 geometry
-decision, the Q5 stop condition, and the ordered next work. A tracked-files-only
-clone with no ignored artifacts or private data passed `just bootstrap` and the complete
-`just check` gate on 2026-08-24. Chat history, the frozen donor worktree, and
-Fractal-local generated artifacts are not required to continue M2.
+Code and tests are the implementation authority. This file summarizes current
+capability and artifact maturity; it links to evidence instead of repeating
+completed implementation diaries.
 
-## Current architecture
+## Product architecture
 
-The product is organized around five browser responsibilities:
+| Capability | Implemented state | Evidence/maturity | Remaining production work |
+| --- | --- | --- | --- |
+| Release contract | Schema v1 is the sole builder, browser HTTP/local, publishing, fixture, and download contract; no v0.1 adapters remain. | Cross-language valid/invalid corpus and deterministic golden fixture are green. | None for contract machinery. |
+| Browser boundaries | `core/domain`, `application`, `data`, `rendering`, and `ui` dependencies point inward; catalog IDs and feature catalogs remain open/data-driven. | Architecture tests and full gate are green. | None. |
+| 2-D workspace | One retained `ProjectionViewport` per registered frame composites scalar Canvas, regional SVG, guides, interaction, and errors. Top/Swanson use affine-free retained static viewports. | Production projection pack is committed; Chromium browser coverage is green. | Deploy and verify immutable bytes at the Q8 origin. |
+| Scientific navigation | One URL-v4 ML/AP/DV cursor drives the native bilateral 10 µm grid; sparse 80 µm SVG sampling changes display only. | Parent/sparse/projection-pack validation and performance evidence are complete. | Production-origin delivery verification. |
+| Optional 3-D context | A sibling retained Three.js viewport shares regional presentation/selection and owns camera, explode, GPU lifecycle, and failure isolation. Volume features remain anatomy-only in 3-D. | D042 real pack is losslessly repackaged and ready locally; Chromium plus owner Safari/Firefox review passed. | Optional immutable public deployment and experimental-label decision; not launch-blocking. |
+| Integrity/cache | Encoded resources are byte-size/SHA verified before persistent admission; corrupt entries are evicted/retried; decoded identity includes hash plus decode contract. | HTTP/local/mesh/projection/volume tests are green. | Verify final CDN headers and cache behavior. |
 
-- `core` / `domain`: renderer- and transport-independent state, atlas coordinates, slice calibration, actions, reducers;
-- `application`: asynchronous dataset/release/feature lifecycle and stale-work cancellation;
-- `data`: versioned contracts, validation, shared materialization, HTTP/local resource adapters, caching;
-- `rendering`: anatomy/volume/mesh rendering and format-specific runtime adapters behind application rendering boundaries;
-- `ui`: plain-DOM controllers and pure view models for complex data presentation.
+Stable boundaries and end-to-end flow are in
+[`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md) and
+[`ARCHITECTURE.md`](ARCHITECTURE.md). Rendering evidence is indexed by
+[`rendering/README.md`](rendering/README.md).
 
-Dataset IDs are runtime identifiers rather than a fixed launch enum. Dataset, feature, parcellation, release, and representation availability are expected to come from catalogs/manifests.
+## Scientific datasets
 
-HTTP and local datasets share the same regional materializer through a transport-independent resource-reader interface. The validation implementation is split by contract concern behind the existing public validation facade.
+| Dataset | Builder and browser machinery | Current real artifact maturity | Blocker/next action |
+| --- | --- | --- | --- |
+| `ephys_atlas_channels` | Dynamic raw/denoised discovery, explicit `inside` recipe, Allen/Beryl/Cosmos summaries, D050 distributions, provenance, HTTP acceptance. | Validated-real-local `2026_W32-d050-peak-val-raw-v2`; not paper-facing or published. | Q2 paper vintage; Q8 staging origin. Keep release/suite reproducible. |
+| `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048 presentation, D050 distributions, HTTP acceptance. | Validated-real-local `sha256-9b5e55215b306f26-d050-d048-v1`; owner-reviewed, not published. | Q8/Q9 publication/default authorization. |
+| `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | Validated-real-local `legacy-v1-1d908bea-d050-linear-full-v1`; not published. | Q8/Q9 publication/default authorization. |
+| `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | Validated-real-local depth-4 candidate `2026_W26-candidate-depth4-d050-linear-full-v1`; explicitly non-production. | Q5 confirmation at the Q8 CloudFront origin, then immutable production build. |
+| `local` | Same schema-v1 graph, complete integrity validation, atomic IndexedDB admission, shared materializers, explicit local/published distinction. | Deterministic golden import and corruption coverage. | Implement D051 ZIP authoring/import and local management UI. |
 
-## Completed architecture cutover
+Dataset source, recipe, selection, release, and audit ownership is indexed by
+[`data/README.md`](data/README.md). The final paper-facing source vintage and
+all remaining choices are governed by [`OPEN_QUESTIONS.md`](OPEN_QUESTIONS.md).
 
-D031 and `docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md` define the completed
-cutover and the gated production-volume follow-up. Schema v1 is the sole
-implemented data contract, and the browser now mounts one retained layered
-`ProjectionViewport` for each
-registered frame. `SliceRenderer`, the hybrid facade, v1/v2/v3 anatomy-pack
-readers, legacy renderer/crosswalk, and URL migrations have been removed. The
-viewport now composites reference-compatible volume and registered anatomy
-layers with background-capable voxel inspection, validity transparency, and
-URL-persisted layer controls. Top and Swanson now use the same regional SVG
-presentation and interaction path in the secondary workspace slot. The residue
-audit, architecture guards, and final performance/size rebaseline are complete.
+## Scalar exploration
 
-Commits 1 through 8 of the plan are implemented: `schema/v1/` defines the
-strict dataset, resource, regional, volume, summary/index, and five-projection
-contracts plus matching TypeScript types. Python and TypeScript semantic validators execute
-one deterministic valid/invalid corpus covering all top-level schemas, both
-volume transports, sentinel/mask validity, asymmetric signed affines and
-derived extents/inverses, exact static-map evidence, and cache identity.
-Builders, publishing, HTTP/local browser readers, IndexedDB namespaces,
-downloads, and the deterministic test-only `golden-v1` fixture now use that
-contract exclusively. The real `2026_W32` channel source has been pulled and
-built into a validated ignored local schema-v1 release. Ordinary development
-serves that release and has no synthetic ephys fallback; Playwright alone mounts
-the golden fixture through the local-release server. Encoded resources are verified before persistent caching; corrupt
-entries are evicted and retried once with HTTP-cache reload semantics, and
-integrity-invalid HTTP-cache responses receive the same clean retry. Decoded identity is SHA plus decode
-contract rather than path. Schema-v0.1 runtime code, schemas, fixtures, and
-compatibility tests are removed. Q4 is resolved for the exact W26 object by
-D043; Q5 remains unresolved and continues to
-block a purported production volume release.
+Regional HTTP/local exploration is implemented end to end: dynamic feature and
+parcellation discovery, region metadata/search/tree/ranking, shared list/SVG
+selection and hover, descriptive summaries, global/selected distributions,
+comparison tray/sheet, contextual CSV/artifact downloads, and URL state.
 
-The enabled 2-D projection registry exposes registered coronal, sagittal, and
-horizontal views plus affine-free Top and Swanson maps. The distinct workspace
-registry owns the three slice slots and responsive secondary slot; Summary,
-Top, and Swanson are secondary content rather than fake workspace or slice
-identities. `secondaryTab`, `activeCompactView`, and `maximizedView` are
-independent typed reducer state rather than `AppShell` fields. A single snapped
-ML/AP/DV cursor is stored; native indices, display
-ordinals, coordinate labels, renderer inputs, and guides are derived from it.
-URL v4 serializes the cursor and workspace state. Any non-current version is
-reset wholesale to the canonical current URL, with no partial legacy-field
-consumption. `AtlasApp` and `AppShell` depend only on the retained viewport
-factory; each frame keeps one stable Canvas/SVG/guide/error layer stack across
-navigation, and revisioned latest-only scheduling prevents stale geometry from
-committing.
+D050 is the sole implemented distribution contract. Linear, Log, and Signed
+log are synchronized value scales; Full and Focused are independent domains
+used by global, selected, and compact histograms with exact whole-population
+tails. D053 preserves off-scale color bounds without clamping. D052 approves
+only regional channel `peak_val.raw`; all other new Q14 choices await audit and
+owner review. The four D050 local candidates and integrated local catalog are
+green; no remote publication occurred.
 
-`tools/projection_pack/` builds and validates one self-contained immutable
-five-view pack. Registered coronal/sagittal/horizontal resources are copied
-losslessly only after validating their bilateral 10 um v2 scientific parent,
-v3 sparse inventories, topology, coverage, synchronization evidence, encoded
-hashes, and decoded indexed-SVG identity. Top and Swanson pass through a
-path-only sanitizer and the pinned Allen/Beryl/Cosmos crosswalk before
-deterministic gzip encoding. The graph validator follows the three registered
-resource indexes and every static/registered resource and rejects integrity,
-inventory, missing-file, and undeclared-file errors. D049 authorizes the exact
-pinned Top/Swanson bytes under MIT. Production invocation embeds the committed,
-hash-bound notice in the immutable file graph and rejects missing, altered, or
-free-form substitute evidence.
+## Volume exploration
 
-The default development URL is the complete validated production pack
-`ibl-atlas-projections-2363b6958fbf` under
-`web/public/atlas/projections/ibl-static-registered-v1/`. Its registered
-resources are the validated sparse bilateral geometry. Its Top and Swanson
-resources compile the exact D049-authorized legacy path geometry into inert,
-normalized fragments with canonical Allen/Beryl/Cosmos IDs. Their source
-hashes and exact MIT notice are embedded in the immutable graph. Static
-resources use transport-opaque `.isvg.gz` names so HTTP hosts do not
-transparently decode bytes before integrity verification. Synthetic static
-generation remains available only for deterministic builder tests and is not a
-runtime default.
-Static maps share regional feature/anatomy coloring, Allen/Beryl/Cosmos
-identities, hover, selection, tooltips, responsive switching, and
-maximize/Escape restoration.
-Volume features remain explicitly anatomy-only on affine-free maps.
+The retained volume path supports `chunks3d` and `orthogonal_slice_packs`,
+float16/float32, optional gzip, explicit storage axes, affine mapping,
+sentinel/mask validity, transparent invalid voxels, nearest-neighbor paint and
+inspection, atomic anatomy/scalar navigation, URL layer controls, consumer-safe
+cancellation, and one 96 MiB active-feature decoded budget.
 
-`tools/projection_pack/build_top_review.py` preserves the historical separate
-local review lane: it accepts only the exact pinned Top bytes, retains a
-synthetic Swanson, records per-view source modes, and remains non-publishable
-because it is a mixed review fixture. D049 supersedes its former license
-blocker; production uses both exact authorized sources and the embedded notice.
-Set `EPHYS_ATLAS_PROJECTION_PACK` to that generated pack directory when
-starting Vite; the development server exposes only that rooted directory under
-`/__projection-pack/` with transport-opaque gzip bytes and no persistent cache.
-
-`tools/top_reconstruction_lab/` now provides a second, independent local-only
-evidence lane for the Top source itself. It derives the dorsal first-visible
-label projection from either the hash-pinned Allen 25 µm annotation or the
-canonical bilateral 10 µm row LUT bound to its validated immutable
-anatomy-pack-v2 parent. The LUT is memory-mapped and reduced in bounded AP
-blocks. The lab evaluates exact and GEOS whole-coverage variants with
-deterministic topology/scientific metrics and embeds them beside the pinned
-legacy Top in one self-contained guided A/B report. Legacy remains fixed as
-A/left during screening. Each
-assessment separates continuity/holes, smoothing, and anatomical shape,
-accepts a free-text observation and an explicit refinement request; multiple
-winners enter a finalist round, answers are correctable, and the exported
-recommendation has no production effect. Advanced overlay, boundary, linked
-zoom/pan, hover, failure, provenance, and inventory evidence remains optional.
-The first real build found all 114 legacy signed paths plus bilateral `VISC1`
-in the 116-path reconstruction. Exact and 12.5 µm variants pass the
-provisional single-map gates; 25 and 37.5 µm variants remain visibly rejected.
-The completed 25 µm review preferred reconstruction continuity but legacy
-smoothing and anatomical shape for every candidate, and requested refinement.
-No candidate advanced. The validated-10 µm review repeated the same tradeoff
-for exact and every simplification candidate. A new refinement lane now smooths
-the globally noded boundary graph with fixed junctions before polygonizing the
-complete coverage once; independent region smoothing remains forbidden. A
-coarse 25 µm pilot retained all structural and voxel-centre invariants. The
-canonical 10 µm build also retains those invariants at all four strengths, but
-every candidate fails the provisional per-region IoU gate and is therefore a
-visual diagnostic only. The completed review retained legacy Top and closed the
-reconstruction lane. This does not alter D045 or modify the active projection
-pack.
-
-The pre-Commit-1 contract is now explicit about separate reference-space,
-grid, and asset identities; verified-only persistent caching; independent
-secondary/compact/maximized workspace state; nearest-neighbor volume paint and
-inspection; exhaustive validity counts; and affine-free Top/Swanson gzip SVG
-fragments with pinned `60 20 340 300` view boxes. D049 resolves their license
-coverage for the exact pinned hashes; synthetic fixtures remain the checked-in
-test default until a production pack is built from those private inputs.
-
-The frozen donor branch `experiment/brain-mesh-3d-lab` at `ba1e2d1` remains
-historical evidence for the original independent experiment. It was not bulk
-merged because it predates the final projection cutover. Instead, reviewed
-Commits 0-6 were reconstructed on `main`, where the optional 3-D context is now
-integrated and remains outside launch acceptance.
-
-The approved main-integration Commits 0-6 are complete. The ordinary full gate
-is required at each landing point; at the unchanged donor
-`ba1e2d1`, the focused compiler (5), web unit (18), and Chromium lab (4) tests
-passed. No donor history changed. Main now has one strict snake_case
-`atlas-mesh-pack-v1` contract with Python/TypeScript parity, deterministic
-offline GLB/clipping/ontology/EAM3 primitives, complete graph validation, and
-a byte-reproducible tiny bilateral pack marked test-only. The browser now has
-verified manifest/LOD transport, shared consumer-safe cancellation, a real
-gzip/EAM3/meshopt module worker, strict malformed-input rejection, and a
-decoder-identity-keyed bounded CPU LRU. A retained Three viewport now owns
-merged bilateral GPU resources, press-referenced arcball controls, lookup-
-texture presentation, shader-only explode, signed filtered picking, lazy atomic
-LOD replacement, demand-only frames, resize, WebGL context loss, and complete
-disposal. The thin `/3d-lab/` entry uses the canonical committed fixture through
-a development/test-only server route; it is covered by the ordinary Chromium
-gate and is not a production-data fallback. The obsolete exploratory renderer
-facade is gone. Regional semantics now resolve once in the application layer
-and feed registered 2-D, static 2-D, and retained 3-D applicators; renderer-
-local bilateral color/selection resolution is gone, while static volume views
-remain explicitly anatomy-only. Registry-driven context content and optional
-URL-v4 3-D state are implemented: `brain-3d` is context-registry content, not a
-projection or fifth workspace slot, and its null host performs no mesh request.
-Camera poses are finite, bounded, nondegenerate, normalized as a whole, and
-camera drag writes are debounced replacements; explode and camera fields are
-optional additions to URL v4. The locally reviewed pose from the full D042
-deployment is now the canonical camera default, so it is omitted from clean
-URLs, and the secondary context slot opens on Top by default. The thin optional
-application adapter now lazily creates an explicitly configured immutable
-viewport, pauses hidden work, shares
-presentation, selection, and camera state, isolates failures, and owns teardown.
-Without a descriptor the null host remains request-free. The canonical synthetic mesh is
-injected only by the browser-test server, never as a runtime fallback.
-D042 resolves the optional 3-D geometry and LOD direction using the frozen
-donor's GLB-derived compiled-full resource: 4,958,039 bytes, SHA-256
-`658d68d81619ef83f7dbd6b032533ecd751fb52d3e7dd734dc90b1086b95baaa`,
-989,811 retained triangles, and 1,130 signed surfaces from 566 in-scope GLB
-objects. It selects no smoothing, no triangle decimation, no voxel-derived
-replacement surfaces, and no upgrade LOD. The experimental main adapter and
-fixture-backed runtime remain implemented. The exact donor is now losslessly
-repackaged for local use into schema-v1 EAM3: its compressed geometry payload
-hash is unchanged, graph/schema validation passes, and a byte-identical rebuild
-was demonstrated. The integrated real pack reaches ready state in local
-Chromium with two retained hemisphere uploads and no geometry work during
-mapping changes. The validator now permits source-authoritative one-sided
-objects—required for Allen 222 and 763—while still requiring every declared
-active source object to be represented. Immutable deployment remains a
-non-blocking operational follow-up. The owner completed the documented
-Safari/Firefox matrix on 2026-08-28. Encoding volumes remain a separate linked
-2-D slice path.
-
-The approved anatomy smoothing investigation has completed its first three
-implementation slices. A deterministic registry exposes exact geometry, GEOS
-whole-coverage simplification with explicit outer-boundary policy, and a
-permanently unsafe independent-ring RDP control. Failure-preserving results
-measure coverage, geometry validity, components, holes, adjacency, source
-voxel centres, background topology, per-region IoU/area change, symmetric
-boundary error, and complexity across deterministic synthetic stress planes.
-The self-contained report builder validates pinned real annotation, LUT,
-average-template, exact-parent, and active sparse identities; chooses recorded
-stress samples deterministically; compares regenerated exact paths with
-verified parent bytes; and keeps all generated output under ignored
-`artifacts/`. The pinned real narrow run passed for all three projections. This
-is offline evidence machinery only; it does not alter the active anatomy or
-choose a production smoothing budget. Its interactive report now supports
-linked exact/candidate and anatomy views, overlay/blink/boundary modes,
-magnified inspection, clearly separated presentation controls, permanent
-reference/eligible/rejected/unsafe status, full sortable per-region evidence,
-JSON/CSV exports and provenance. The default interface is now a
-one-question-at-a-time A/B review with separate A-better, no-difference, and
-B-better responses, synchronized wheel zoom/drag pan, adaptive
-representative/stress rounds, fixed A-left/B-right placement, previous-answer
-correction, an explicit conservative recommendation rule, and a downloadable
-answer record. Exhaustive controls remain under
-optional advanced evidence, and existing computed evidence can be re-rendered
-without recomputation. Synthetic wide/tablet, pinned-real coronal, and guided
-Chromium interaction checks passed. Slice 4 is complete: the repository owner
-selected exact A as clearly better in all three representative projections.
-D045 retains exact geometry, closes the lane without a shortlist, and makes
-full-corpus candidate validation and any asset migration unnecessary. The
-authoritative answers and evidence summary live under `docs/rendering/`. Long evidence builds now
-support bounded process-parallel variant evaluation, flushed progress and
-heartbeat reporting with percentage/ETA, identity-bound atomic per-variant
-checkpoints, corruption-safe recomputation, worker-count-independent resume,
-and atomic final report replacement. These execution controls do not enter or
-change deterministic scientific report bytes.
-
-Optional main-application integration is approved through D037 and
-`docs/rendering/3D_INTEGRATION_PLAN.md`. The target is a `brain-3d` content kind
-inside the existing secondary/context slot, backed by a sibling retained 3-D
-viewport and the application's one regional-presentation/state lifecycle.
-`ProjectionRegistry` remains 2-D-specific. The optional application integration
-is complete through Commit 6. D042 fixes its GLB-derived geometry/LOD direction;
-production asset deployment and removal of the experimental label remain
-non-blocking operational work. The repository owner manually confirmed the
-integrated local 3-D view in Safari and Firefox on 2026-08-28, completing the
-documented cross-browser owner matrix.
-
-The regional UI keeps DOM concerns in its controller while region search/value/statistics derivation is pure/testable. Large dynamic tree interaction uses delegated events.
-Header context menus remain operable while a catalog or release manifest is
-loading and expose an explicit loading or request-failure message instead of
-silently presenting disabled feature and representation controls.
-The region browser defaults to the expandable anatomical hierarchy and offers
-URL-persisted ascending or descending value rankings as a flat selectable list.
-Its compact icon control cycles anatomy, descending value, then ascending value.
-Finite values rank globally, missing values remain last, and returning to
-anatomical order restores the prior expansion state.
-The feature color range is edited on a histogram-backed dual-handle colorbar.
-Pointer or keyboard interaction switches automatic bounds to a URL-persisted
-manual range, exact selected values follow the handles in collision-aware labels,
-and the stable data-domain endpoints remain below the histogram. Reset restores
-the robust automatic range without exposing permanent numeric fields.
-The colormap is confined to the selected interval, and dragging that interval
-translates both bounds together without changing its width. Feature magnitude
-statistics (`mean`, `median`, `min`, and `max`) are colorable; observation count
-remains supporting sample-size metadata in tooltips, comparisons, summaries,
-and exports rather than a feature-color statistic.
-Value scale selection defaults to `Auto`: the browser resolves optional
-feature-level `display.scale` metadata and otherwise uses Linear. One resolved
-scale controls color normalization, both distribution views, and logarithmic-
-aware range geometry. Explicit Linear/Log overrides persist in one URL field;
-values, statistics, exact histogram arrays, tooltips, and exports remain
-unchanged.
-
-D050 is now the coherent schema-v1 distribution contract: Linear, Log, and
-Signed log are synchronized value-scale choices, while Full and Focused are an
-independent analytical-domain choice. D053 applies Full/Focused to the global,
-selected-region, and compact color-range histogram viewports with exact
-whole-population tails. Color bounds and brain coloring remain unchanged;
-off-scale compact bounds retain their exact values and require Full or exact
-numeric entry for editing. Python and TypeScript validators,
-all four real builders, fixtures, URL state, controls, rendering, and exports
-share this contract. The baseline migration selections preserve Linear/Full
-for channels, `brainwide_map`, and volumes and preserve only D048's reviewed
-cluster Log choices. D052 now partially resolves Q14 for regional channel
-`peak_val.raw`: Linear and Signed log with threshold `1.23`, Full and Focused
-with bounds `[-9.467077467918395, 2.5583932574651715]`, and a
-Linear/Focused default. Q14 remains open for every other new selection; none
-was chosen implicitly.
-The four ignored local candidates now validate under this contract:
-`2026_W32-d050-peak-val-raw-v2`,
-`sha256-9b5e55215b306f26-d050-d048-v1`,
-`legacy-v1-1d908bea-d050-linear-full-v1`, and
-`2026_W26-candidate-depth4-d050-linear-full-v1`. Dataset-specific Chromium
-acceptance passes 4/4, 3/3, 3/3, and 6/6 respectively. Integrated local
-validation visits all four datasets and Summary, Top, Swanson, and 3-D without
-browser errors; the D042 mesh reaches `ready`. No remote publication occurred.
-Regional SVGs, volume canvases, and the interactive color legend share one
-registry of full 256-step Matplotlib lookup tables. The concise sequential
-choice is Viridis, Cividis, or Magma; Cividis provides an accessibility- and
-grayscale-oriented alternative. A diverging palette remains intentionally
-unavailable until the coloring contract exposes an explicit scientifically
-meaningful center instead of inferring one from the displayed range.
-
-## Brand identity
-
-The application header uses the official 2026 IBL Core colored-negative SVG
-lockup directly on the dark header without a separate background block. The
-institutional cyan is the primary interface accent; blue and magenta remain
-brand tokens. Scientific feature colormaps, Allen ontology colors, and
-categorical selection colors remain independent of branding. Asset identity
-and usage constraints are recorded in `docs/frontend/BRAND_IDENTITY.md` and
-D028.
-
-## Anatomy rendering
-
-The active regional anatomy display is the registered portion of
-`atlas-projection-pack-v1`. Its indexed-SVG bytes and 80 µm display inventories
-are copied losslessly from the validated sparse v3 artifact, whose bilateral
-10 µm v2 parent remains the scientific geometry and affine authority.
-Application/URL/cursor state remains in native 10 µm coordinates and display
-selection alone snaps to the nearest sparse plane.
-
-The immutable v2/v3 artifacts, schemas, generators, and validators remain as
-build/reproducibility evidence. They are no longer browser runtime formats;
-the browser has only the schema-v1 projection-pack source.
-
-## Scientific data/builders
-
-Schema v1 is the sole browser, builder, and publishing release contract.
-Regional release serialization is shared by channel and cluster builders;
-scientific source selection and computation remain dataset-specific.
-
-Current launch-critical dataset families are:
-
-- `ephys_atlas_channels`
-- `ephys_atlas_clusters`
-- `ephys_atlas_volumes`
-- `brainwide_map`
-
-The final paper-facing source vintages and unresolved scientific choices remain governed by `docs/OPEN_QUESTIONS.md`, `docs/LAUNCH_SPEC.md`, and focused data/source documentation. The browser must not hard-code the eventual feature catalog.
-
-The Python release validator and TypeScript runtime validator use a shared
-valid/invalid manifest corpus. Both enforce calendar-valid RFC 3339 release
-timestamps, unique feature/parcellation identities, safe binary descriptors,
-and matching manifest/feature relationships. The browser also rejects duplicate
-catalog dataset/release identities, mismatched production catalog/manifest
-dataset IDs, feature-reference mismatches, undeclared regional parcellations,
-and malformed display ranges. The deterministic golden fixture is the sole
-explicit catalog-identity exception: it may exercise launch selectors while
-retaining `golden_fixture` as its visible synthetic identity.
-
-### `ephys_atlas_channels`
-
-The deterministic channel-release recipe is implemented with explicit source
-project/vintage, raw and denoised variants, `inside` source population, no
-additional physiological QC, left-folded Allen/Beryl/Cosmos aggregation,
-source-value preservation, dynamic feature discovery, descriptive
-statistics/histograms, presentation-only log-color feature configuration, and
-pinned source/tool/builder provenance.
-
-The immutable `2026_W32` source snapshot has been pulled and built as a
-validated development release. Its real-release Playwright suite exercises all
-70 discovered features, all three parcellations, and promoted `float64` raw
-alpha arrays through the production HTTP loader. It is not the paper-facing
-release: Q2 still requires the final immutable `ea_active` vintage. See
-`docs/data/DEVELOPMENT_RELEASE.md`.
-
-### `ephys_atlas_clusters`
-
-The cluster builder accepts an explicit content-addressed project snapshot and
-nonempty scalar feature catalog. It aggregates every finite row of
-`clusters.table.pqt` with equal cluster weight after left folding; it does not
-use `clusters_good.table.pqt`, insertion balancing, or hidden good-unit/QC
-filters. Its build inputs separately declare presentation-only Log defaults and
-exact Log-histogram capabilities. D038 selects the frozen
-`ibl_neuropixel_brainwide_01` project and the
-legacy 14-feature scalar list. Content-addressed
-snapshot `sha256-9b5e55215b306f26` and the all-row source audit are complete:
-all candidates exist, all source dtypes are double, and four columns contain
-missing values. D044 resolves Q6 by approving all 14 features and the explicit
-unit map from the pinned original website repository. The committed catalog
-selection adds implementation-grounded descriptions and conservative display
-defaults while preserving all source values; the builder fails closed on any
-source/catalog mismatch. The earlier ignored 191-file immutable release remains
-intact. D046's distinct 209-file candidate also remains intact. D047's third
-209-file candidate records the owner's Linear Firing-rate preference while
-retaining all six exact Log alternatives; it validates and reproduces
-byte-for-byte across two Fractal builds. Opt-in Chromium acceptance switches all
-14 dynamic features and all three parcellations and checks units, synchronized
-value-scale behavior, safe Log unavailability, and provenance through the
-production HTTP reader. D048 subsequently selects the final reviewed Log
-3.73–17.8 Hz Firing-rate automatic range. The fourth 209-file immutable
-candidate validates and reproduces byte-for-byte across two Fractal builds;
-production-HTTP acceptance passes across all 14 features and three
-parcellations, and the owner completed final guided visual confirmation in the
-complete atlas workspace on 2026-08-26.
-Publication remains deferred under Q8/Q9. See
-`docs/data/CLUSTERS_RELEASE.md`.
-
-### `brainwide_map`
-
-The deterministic local builder preserves the five D038-selected Beryl-only v1
-website families. It verifies every pinned family and the legacy Beryl metadata
-before Parquet decoding, rejects nonexistent local builder-commit pins,
-reproduces left lateralization, arithmetic aggregation, six-significant-digit
-serialization, and the legacy significance encoding, and emits explicit
-preserved-snapshot provenance. Synthetic deterministic/schema tests and an
-exact-input local comparison cover all 30 features and 210 regions. A validated
-ignored local release was built from commit `9d2d37b`; it has not been published
-or added to a public catalog. The development server now exposes its manifest
-title/description through a test-only one-release catalog and the production
-HTTP reader. Opt-in Chromium acceptance covers the dynamic 30-feature catalog,
-automatic Beryl reconciliation, legacy `0.5`/`1.0` significance values,
-provenance, feature switching, 201/210-region populations, and contextual CSV
-download.
-
-## Regional viewer
-
-The schema-v1 regional path is implemented end to end for published HTTP and
-browser-local releases: catalog, immutable manifest, feature descriptors,
-parcellation metadata/index, typed values/statistics/histograms, region
-search/tree, scalar coloring, shared SVG/list selection and hover, URL state,
-provenance, and CSV export. The compact distribution overlays independently
-sum-normalized selected-region shapes on the global distribution. The expanded
-comparison places each selected region's normalized distribution and
-descriptive statistics in one aligned table, with the global population as a
-distinct reference row on the same axes, and exports selected regions with
-context, raw bins, normalized probabilities, and sample sizes. Histogram curves use presentation-only,
-shape-preserving interpolation while bin hover/export retains exact values. The
-comparison remains behind a compact launcher until opened. Desktop and tablet
-use a nonmodal tray anchored above that launcher, preserving interaction with
-the atlas and region browser while keeping scientific view geometry stable.
-The tray uses a strong top edge, elevation, selected-region count, slide-up
-motion, and an explicit minimize control to make the overlay state clear.
-Phones use a modal bottom sheet with a backdrop. Both presentations close with
-their minimize control or Escape, restore focus to the launcher, and scroll
-large comparisons internally; tapping the phone backdrop also closes the
-sheet. Synthetic fixtures are visibly identified as non-scientific.
-
-`DatasetSession` owns asynchronous catalog/release/region/feature lifecycle,
-generation-based stale-work suppression, and cancellable idle prefetch. Active
-prefetch aborts propagate through repositories, HTTP/local resource readers,
-and regional materialization without poisoning a foreground request for the
-same immutable resource. Dataset-derived feature/representation repair and
-explicit feature switching atomically reconcile unsupported parcellation state
-before requesting resources, with a replace-history URL update. Explicit URL
-and parcellation choices remain authoritative. This permits Beryl-only releases
-without retaining the global Allen default or issuing a misleading empty
-payload. Dataset/parcellation changes clear stale hover, and
-regional-tree rerenders preserve current hover presentation. Projection and
-region-list hover also place a transient labeled marker at the hovered region's
-current statistic on the global observation histogram when the statistic shares
-that histogram's value axis. The histogram x-axis exposes its minimum and
-maximum bin edges together with the feature unit. It also mirrors the effective
-color interval with boundary guides, a subtle selected-range tint, and dimmed
-out-of-range tails; colorbar dragging and reset update this read-only analytical
-view immediately. Parcellation changes retain the last coherent projection
-mapping and color presentation until the matching regional payload is ready,
-while clearing stale interaction state immediately; a failed or incompatible
-payload falls back to bilateral anatomy colors instead of an uncolored feature
-hemisphere.
-
-The implemented D050 schema-v1 contract extends D047's synchronized value scale
-to Linear, Log, and Signed log and adds independent Full/Focused distribution
-domains. Exact binnings come from raw observations or valid voxels, focused
-tails retain whole-population normalization, and volume remains global-only.
-D053 applies the selected domain to the compact range viewport without changing
-color bounds. D052 is the only new narrow Q14 choice; all other migration
-selections preserve the previously approved Linear/Full or D048 behavior.
-
-The header Help action opens one scientific-workflow guide with a responsive,
-faithful map of the actual viewer layout. Five concise expandable sections
-cover the top-bar scientific context, region search/ranking/selection, linked
-slice navigation, visualization parameters, and global/selected-region
-distributions and exports. The structure can accept future representation
-guidance without splitting Help into separate guides. App-specific definitions
-clarify dataset/release identity, features, representations, parcellations,
-populations, statistics, and presentation-only color mapping without attempting
-to teach general neuroscience. A collapsed About & credits section links to
-IBL Core, names Cyrille Rossant, Mayo Faulkner, Olivier Winter, Gaelle Chapuis,
-and Dan Birman, and reserves clearly non-clickable forthcoming entries for the
-paper and data release. Keyboard shortcuts remain
-available as a collapsed secondary reference. The
-global keyboard layer opens feature search with `/`, moves to adjacent
-manifest-ordered features with `Shift + Down` / `Shift + Up`, and opens Help
-with `?`. It is suppressed during text/form entry and modal dialogs, does not
-wrap feature boundaries, announces feature position, and keeps every action
-available through visible controls. Feature loading prefetches the immediate
-next and previous catalogue neighbours.
-
-Release-provided scientific feature descriptions are visible during discovery
-and after selection. Feature-picker results retain compact unit/representation
-metadata and add a two-line description that participates in search. The
-selected regional feature repeats that description above its global summary,
-while the Info dialog remains the complete view of value semantics and
-provenance. The frontend does not maintain a feature-description dictionary.
-The pinned channel-development release has authoritative upstream descriptions
-for 25 of 35 source features; the ten unresolved waveform descriptions and
-units are audited in `docs/data/CHANNELS_RECIPE.md` and must not be guessed by
-the browser or builder.
-
-The registered projection-pack content carries the immutable 80 µm v3 inventory: 165
-coronal, 142 sagittal, and 100 horizontal display planes in 52 depth-eight
-indexed packs totaling 5,604,696 compressed bytes. It is derived byte-for-byte
-from the validated bilateral 10 µm v2 parent, which remains the scientific and
-reproducibility authority. State, URLs, cursor coordinates, guides, and affines
-remain on the exact native 10 µm grid; display-plane selection alone snaps to
-the nearest sparse SVG with lower-index tie breaking.
-
-The projection-pack source verifies compressed bytes before cache admission. A
-module worker owns a 32 MiB decoded LRU and returns only requested fragments;
-each retained view caches parsed SVG layers. The current Linux Chromium sanity
-run measured 10.0–13.4 ms median cold commits, 1.4–2.7 ms same-pack commits,
-0.6–1.0 ms retained revisits, no long tasks, and a 16.8 ms maximum frame gap.
-See
-`docs/rendering/ANATOMY_NAVIGATION_PERFORMANCE.md`.
-
-## Volume viewer
-
-The browser/golden volume path supports `chunks3d` and
-`orthogonal_slice_packs`, float16/float32 decoding, optional gzip, explicit
-storage-axis permutation, declared `index_to_world_um` mapping, bounded decoded
-caches and Canvas2D scalar slices inside the retained viewport. A scalar Canvas
-is hosted in an SVG coordinate layer beneath the retained registered anatomy
-SVG. The runtime requires exact `reference_space_id` equality before requesting
-volume bytes, transforms half-index voxel edges through the volume and
-projection affines, preserves signed display orientation, and uses pixelated
-nearest-neighbor paint. Anatomy outlines, guides, picking, and selection remain
-available above the scalar plane.
-Published and local releases share the same transport-independent volume
-payload contract.
-
-Retained volume navigation commits complete anatomy/scalar pairs atomically,
-leaving the previous composite visible while a new plane loads. Semantic
-same-plane navigation updates guides without repainting the scalar layer or
-reloading unchanged sparse anatomy, and request cancellation is keyed to the
-resolved volume target rather than every native-grid cursor input. Browser
-coverage asserts stable composite mode during navigation, bounded paint counts
-for linked projections, and one non-aborted cold-pack request when several
-native inputs resolve to the same 50 um plane.
-
-Volume features expose Allen, Beryl, and Cosmos as anatomy-overlay mappings
-from the canonical atlas-region catalog even when their scientific release has
-no regional summary payloads. The UI labels this as anatomy parcellation;
-changing it updates outlines, region identity, inspection, and URL state but
-does not reload or alter the voxel feature. Regional features continue to
-offer only the parcellations explicitly declared by their release payload.
-Selected and hovered volume regions are emphasized with outlines only. This is
-especially important for reduced mappings, where one logical Beryl or Cosmos
-identity may cover several disconnected Allen contours: the full mapped region
-remains selected without applying an anatomy-color tint over scalar values.
-While a selection is active, all other regions receive one uniform 35%-opaque
-neutral veil so the selected scalar area stays vivid without assigning
-scientific-looking categorical colors to the unselected anatomy.
-
-Volume plane selection applies the declared inverse affine to the shared world
-cursor and checks half-index voxel-edge bounds. An outside cursor fails
-explicitly before any plane resource request; it is never clamped to the
-nearest edge slice. Volume failures preserve the loaded anatomy with an
-explicit error instead of clearing the frame. The golden fixture's synthetic
-values occupy an explicitly declared small Allen CCF 2017 subgrid solely to
-exercise compositing; they have no scientific interpretation. Pointer
-inspection follows the nearest-neighbor
-screen-to-projection-to-world-to-voxel chain even where no anatomical SVG path
-exists. Sentinel and checksummed mask validity produce the same
-valid/outside/missing classification used for transparent Canvas
-paint. URL v4 persists volume opacity and anatomy-outline visibility; opacity,
-outlines, recoloring, hover, and selection repaint retained layers without
-fetching or decoding. The active volume source owns one 96 MiB decoded budget
-shared by mask and scalar caches, is disposed on feature switching, and uses
-consumer-aware in-flight deduplication so obsolete-render or prefetch
-cancellation cannot poison a current consumer.
-
-This proves the browser architecture. D043 now supplies the authoritative W26
-affine/axis mapping and outside/missing semantics. Q5 remains open until the
-final HTTP/CDN origin confirms the transport choice.
-
-A standalone, ignored local review artifact now compares the eight direction
-candidates permitted by the exact W26/Allen grid-shape match in linked
-orthogonal views. It also exposes voxel-center versus half-voxel-shifted
-coordinates and exports a reviewer choice without changing production state.
-The all-forward mask candidate ranked first. The repository/scientific owner
-inspected all linked slices and authoritatively selected that candidate with
-voxel centers on 2026-08-24. D043 and
-`docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json` preserve the decision;
-procedure and limitations remain in `docs/data/VOLUME_GEOMETRY_REVIEW.md`.
-
-The current implementation input is the private immutable `ea_active`
-`2026_W26` 50 um object. Its exact URI and official `ibleatools` access recipe
-are recorded in `docs/DATA_SOURCES.md`. The authenticated snapshot is
-238,954,924 bytes with SHA-256
-`1f7509fe9e368a90704173bdb5c385827b199a7d5fa4b0aaa8fec5aca5402253`.
-The same official pull completed independently on Apple silicon on 2026-08-24
-and reproduced both the byte count and hash. Header inspection again found the
-expected C-order `(228, 264, 160, 41)` little-endian float16 main array and all
-five metadata members.
-
-The real-release builder path is now implemented without claiming a scientific
-W26 release. It verifies the declared NPZ byte count/SHA before decoding,
-discovers the source feature catalog, extracts last-axis features with bounded
-memory, preserves raw float16 values, writes either schema-v1 chunks or
-orthogonal slice packs, and computes exhaustive valid/outside/missing summaries
-from explicit sentinel semantics. Reference space, grid identity, affine,
-outside value, missing policy, layout, and pack/chunk dimensions are all
-required inputs; deterministic tests prove omitted choices fail closed. D043
-selects the all-forward ML/AP/DV voxel-center affine for this source, retains
-the documented `0.0` outside sentinel, and records that a full-value audit found
-no NaNs or infinities. The builder has not yet been invoked to create a W26
-production release because Q5 remains unresolved. It now consumes the committed
-D043 selection directly, rejects any mismatch in source identity, grid,
-affine, validity policy, or audit extent, and removes manual affine transcription
-from the CLI. Multiple features are extracted in one bounded-memory NPZ pass
-rather than decompressing the 790 MB member once per feature.
-
-Current W26 evidence favors depth-four orthogonal slice packs. Offline
-measurements for `psd_lfp`, `rms_ap`, and `polarity` require three center-plane
-objects and 0.20–0.36 MiB gzip, versus 36–136 cube requests and 1.35–4.56 MiB.
-Ten-trial local Chromium measurements put depth-4 cold planes at 14.6–15.5 ms
-p50 and 29.5–40.0 ms p95, cached navigation at 2.4–2.6 ms p50 with no requests,
-and six-plane paint at 1.7–2.3 ms p50. Depth 8 roughly doubles center bytes and
-raises cold p50 to 24.3–26.2 ms. The committed raw reports and limitations are
-summarized in `docs/data/VOLUME_2026_W26_EVIDENCE.md`.
-
-Two ignored non-published candidates now contain all 41 features at depth 4 and
-depth 8. Their complete schema-v1 graphs contain 6,809/3,488 files and
-494,830,395/492,228,218 served bytes; deterministic graph digests, per-feature
-validity totals, and manifest hashes are committed as evidence. Opt-in Chromium
-acceptance serves the depth-4 candidate with CDN-like immutable/CORS/MIME and
-opaque-gzip behavior and covers all feature switches, linked D043 indices,
-exact inspected float16 values, outside voxels, cache reuse, cancellation, and
-integrity failure. Six worst linked-plane features were measured under local,
-20 ms/100 Mbps, and 80 ms/10 Mbps profiles. Depth 4 roughly halves cold bytes
-and decoded center-pack memory and remains the provisional recommendation; Q5
-still requires final-origin validation.
-
-The browser now retains the already-fetched schema-v1 volume summary instead
-of reducing it to a color range. Volume Summary reports exhaustive
-valid/outside/missing voxel counts and valid-only mean, median, and standard
-deviation; Global Distribution renders the exact stored linear valid-voxel
-histogram without selected-region overlays or another request. Log remains
-unavailable until an immutable volume release declares an exact matching
-binning.
-
-The implemented D050 contract makes volume scale/domain availability and
-defaults representation-specific and release-owned while retaining the global,
-valid-voxel-only summary. The current validated volume candidate declares only
-Linear/Full. Further availability, thresholds, focus bounds, and defaults await
-Q14 owner review; no regional curves are synthesized.
+D043 fixes the exact W26 reference space, grid, affine, voxel-center convention,
+and `0.0` outside semantics. Full depth-4/depth-8 candidates and local/network-
+profile evidence favor depth four. Q5 remains open only because the provisional
+recommendation has not been repeated at the eventual CloudFront origin. See
+[`data/VOLUME_2026_W26_EVIDENCE.md`](data/VOLUME_2026_W26_EVIDENCE.md).
 
 ## Local data and downloads
 
-Local imports validate the complete supported regional/volume resource graph
-and every declared SHA-256 before an atomic IndexedDB write. Storage is
-namespaced by source dataset and immutable release, and the viewer distinguishes
-local from published content without a shadow scientific schema.
+Share, Info, current regional CSV, selected comparison CSV, and declared
+immutable artifact downloads are implemented through the shared resource-reader
+boundary. Published artifacts are verified before download; local artifacts
+use the same interface after complete import validation.
 
-D051 now approves the missing user-facing path: a public `ibl-ephys-atlas`
-Python authoring distribution in this repository writes one
-`.ibl-ephys-atlas.zip`, and the browser imports only that archive form. The ZIP
-is a container around the same schema-v1 graph; after bounded path/inventory and
-complete integrity validation, the browser will store individual resources in
-the existing IndexedDB transport and discard the archive. `iblatlas` remains
-the ontology, mapping, and supported-grid authority. This ZIP importer, public
-authoring namespace, preview/Local badge, management UI, and volume adapter are
-approved planned work, not current implementation. The ordered plan is
-`docs/data/CUSTOM_DATA_AUTHORING.md`.
+D051 approves one `.ibl-ephys-atlas.zip` containing the schema-v1 graph, a
+public `ibl-ephys-atlas` Python authoring package, `iblatlas` authority, and
+persistent Local management. That user-facing authoring/import path is planned,
+not implemented. The binding plan is
+[`data/CUSTOM_DATA_AUTHORING.md`](data/CUSTOM_DATA_AUTHORING.md).
 
-Share copies complete URL state; Info exposes immutable release, feature
-semantics, and source/builder provenance; current regional statistics and
-selected-region comparisons export as context-rich CSV. Schema-v1 release and
-feature artifact metadata now survives runtime validation instead of being
-discarded. The Download action presents the contextual regional CSV alongside
-declared feature/release artifacts and remains available for volume features.
-Published artifacts pass through the verified immutable resource fetcher;
-browser-local artifacts use the same repository boundary after complete import
-validation. Encoded gzip bytes are preserved, and integrity failures remain
-visible without producing a corrupt download. Direct immutable URL display,
-polished whole-release packaging, and broader local-dataset management are
-non-blocking follow-ups under D040.
+## Publishing and deployment
 
-## Publishing
+The capability-token publishing service supports resumable private staging,
+byte-size/SHA/schema validation, immutable publication, aliases, catalog
+generation, bounded requests, process-safe filesystem mutations, and external
+validation. Public reads remain static and unauthenticated.
 
-Publishing remains capability-token based with public reads and authenticated mutations. The implementation supports resumable staged uploads, byte-size/SHA verification, immutable releases, aliases, catalog generation, and external validation hooks.
-
-Mutation handling is designed for multi-process WSGI deployment with a filesystem lock around state-changing requests. JSON metadata and binary upload chunks have independent request-size limits. No OAuth/user platform, database, or queue is required for the current launch architecture.
-
-Metadata requests are bounded at a configurable 32 MiB by default, which
-accommodates representative 41-feature volume inventories and the supported
-100,000-artifact descriptor limit with measured headroom. Binary chunks retain
-a separate configurable 16 MiB cap. CLI, WSGI environment, systemd, nginx, and
-tests describe the same limits. Stale staging cleanup uses the same process-wide
-mutation lock as WSGI mutations.
+D040 selects IBL-owned S3 plus CloudFront. Q8 still requires concrete
+bucket/distribution/domain and publishing-topology choices; Q9 still requires
+the frozen paper release set and aliases. Nothing in the current repository
+state authorizes remote publication.
 
 ## Quality gates
 
-CI uses uv 0.12 with the committed builder and publishing locks, Python 3.12,
-and Node 22. The local Justfile uses the same uv boundary and never installs
-into system Python. CI runs Python builder/publishing tests plus
-TypeScript typechecking, browser unit/rendering tests, a production build, and
-Chromium Playwright tests. Architectural tests protect important dependency
-directions so domain/core code cannot silently acquire renderer/UI
-dependencies. `just check` remains the local completion gate.
+CI and local `just check` use Python 3.12 through committed uv locks, Node 22,
+Python builder/publishing tests, strict TypeScript, web unit/rendering tests,
+production build, and Chromium Playwright. The deterministic golden fixture is
+synthetic and test-only. Manual Firefox/Safari remains part of final release QA
+under D040; the optional 3-D local matrix was completed on 2026-08-28.
 
-## Remaining launch work
+## Remaining launch sequence
 
-The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
+1. Complete read-only Q14 audits and obtain owner review for any new choices.
+2. Implement D051 regional authoring and ZIP import, then local management.
+3. Resolve Q8 staging details and deploy immutable projection/data assets.
+4. Confirm depth-four volume transport at that origin and resolve Q5.
+5. Resolve Q2 and build the exact paper channel release.
+6. Resolve Q9, publish the frozen release set, and configure defaults.
+7. Run final production-origin, responsive, performance, failure, download,
+   local-import, Chromium, Firefox, and Safari QA.
 
-1. expose the validated `2026_W32` channel development release through an
-   authorized non-production origin and repeat real-value browser acceptance;
-   freeze the paper release after Q2;
-2. extend volume browser/HTTP benchmarks, resolve Q5 authoritatively, and
-   build the real immutable volume release on the completed projection/schema
-   foundation;
-3. keep the D044/D048 cluster release reproducible and publish/retest its already-
-   built bytes only after Q8/Q9 authorization;
-4. keep the validated D038 preserved five-family BWM release and opt-in local
-   browser acceptance green; online catalog publication remains deferred until
-   authorized;
-5. audit the remaining complete source populations and obtain Q14 owner review
-   before adding any new Signed-log or Focused feature selections; the D050
-   baseline rebuilds and D052 `peak_val.raw` release are already green;
-6. retain the completed artifact-backed and contextual current-feature exports,
-   then implement D051's ZIP-only import and `ibl-ephys-atlas` regional
-   authoring vertical slice; direct immutable URL display remains non-blocking;
-7. stage immutable assets on S3/CloudFront and finalize catalog/origin/default
-   alias/publishing choices in Q8-Q9;
-8. run final production-origin, performance, and responsive QA under resolved
-   Q11; the repository owner completed the documented manual Firefox/Safari 3-D
-   check on 2026-08-28, while automated Chromium remains green.
-
-Production promotion of the independent 3-D lab, AGEA, MERFISH, large point
-clouds, inferential statistics, full OAuth, and broad legacy custom-bucket
-compatibility remain deferred unless explicitly promoted.
-
-## Source of truth
-
-Use these documents in order when deciding what to build next:
-
-1. `AGENTS.md`
-2. `docs/LAUNCH_SPEC.md`
-3. `docs/IMPLEMENTATION_PLAN.md`
-4. `docs/OPEN_QUESTIONS.md`
-5. `docs/ARCHITECTURE.md`
-6. `docs/DECISIONS.md`
-7. this status document and focused implementation/source docs
-
-Historical implementation detail remains available in Git history; this file intentionally records the current integrated state rather than an append-only development diary.
+The executable order and stop conditions live in
+[`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md). Launch readiness remains
+defined only by [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md).
