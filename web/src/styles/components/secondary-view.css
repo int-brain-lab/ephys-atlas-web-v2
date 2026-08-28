@@ -58,6 +58,34 @@
   height: 100%;
 }
 
+.secondary-view__scene3d-controls {
+  position: absolute;
+  z-index: 3;
+  top: var(--space-2);
+  left: var(--space-2);
+  display: grid;
+  grid-template-columns: auto minmax(5rem, 8rem) 2.25rem;
+  align-items: center;
+  gap: var(--space-2);
+  padding: .3rem .45rem;
+  border: 1px solid rgb(var(--color-accent-rgb) / 25%);
+  border-radius: var(--radius-sm);
+  background: rgb(7 16 25 / 84%);
+  color: var(--color-text-muted);
+  font-size: .62rem;
+}
+
+.secondary-view__scene3d-explode {
+  width: 100%;
+  accent-color: var(--color-accent);
+}
+
+.secondary-view__scene3d-control-value {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 .secondary-view__scene3d-notice {
   position: absolute;
   inset: 50% auto auto 50%;

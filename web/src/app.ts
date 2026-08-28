@@ -89,6 +89,7 @@ export class AtlasApp {
       setActiveCompactView: (view) => this.store.dispatch({ type: 'workspace/compact-view', view }),
       setSecondaryTab: (tab) => this.store.dispatch({ type: 'workspace/secondary-tab', tab }),
       setMaximizedView: (view) => this.store.dispatch({ type: 'workspace/maximized-view', view }),
+      setScene3DExplode: (explode) => this.store.dispatch({ type: 'scene3d/explode', explode }),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       shareCurrentView: () => this.copyCurrentUrl(),
       downloadCurrentFeature: () => this.downloadCurrentFeature(),

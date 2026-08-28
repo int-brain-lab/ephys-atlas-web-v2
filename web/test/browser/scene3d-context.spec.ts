@@ -18,6 +18,9 @@ test('3-D context lazily loads its injected immutable fixture and persists respo
   await expect(host).toHaveAttribute('data-scene3d-state', 'ready');
   await expect(host).toHaveAttribute('data-geometry-uploads', '2');
   await expect(host).toHaveAttribute('data-explode', '0.4');
+  const explode = page.getByRole('slider', { name: 'Explode 3-D brain' });
+  await expect(explode).toHaveValue('0.4');
+  await expect(page.locator('.secondary-view__scene3d-control-value')).toHaveText('40%');
   await expect(panel).toContainText('Experimental 3-D context');
   await expect(panel.locator('canvas')).toHaveCount(1);
   expect(meshRequests.map((url) => new URL(url).pathname)).toEqual([
@@ -26,6 +29,11 @@ test('3-D context lazily loads its injected immutable fixture and persists respo
   ]);
   expect(new URL(page.url()).searchParams.get('explode3d')).toBe('0.4');
   expect(new URL(page.url()).searchParams.get('camera3d')).toBe('0,-5,3,0,0,0,0,0,1');
+
+  await explode.fill('0.7');
+  await expect(host).toHaveAttribute('data-explode', '0.7');
+  await expect(page.locator('.secondary-view__scene3d-control-value')).toHaveText('70%');
+  expect(new URL(page.url()).searchParams.get('explode3d')).toBe('0.7');
 
   const initialHistoryLength = await page.evaluate(() => history.length);
   const initialCamera = new URL(page.url()).searchParams.get('camera3d');

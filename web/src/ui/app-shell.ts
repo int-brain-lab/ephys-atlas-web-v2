@@ -58,6 +58,7 @@ export interface AppShellCallbacks {
   setActiveCompactView(view: WorkspaceViewId): void;
   setSecondaryTab(tab: SecondaryTabId): void;
   setMaximizedView(view: WorkspaceViewId | null): void;
+  setScene3DExplode(explode: number): void;
   clearSelection(): void;
   shareCurrentView(): Promise<void>;
   downloadCurrentFeature(): void;
@@ -187,6 +188,8 @@ export class AppShell {
   private readonly secondaryPanels = new Map<SecondaryTabId, HTMLElement>();
   private scene3dHost!: HTMLElement;
   private scene3dNotice!: HTMLElement;
+  private scene3dExplodeInput!: HTMLInputElement;
+  private scene3dExplodeValue!: HTMLOutputElement;
   private scene3dViewport: BrainScene3DViewport | null = null;
   private scene3dFailed = false;
   private scene3dPresentation: RegionalPresentation | null = null;
@@ -1587,9 +1590,28 @@ export class AppShell {
     const notice = element('p', 'secondary-view__scene3d-notice');
     notice.setAttribute('role', 'status');
     notice.textContent = 'Experimental 3-D context is not connected in this build.';
-    frame.append(host, notice);
+    const controls = element('label', 'secondary-view__scene3d-controls');
+    const label = element('span', 'secondary-view__scene3d-control-label');
+    label.textContent = 'Explode';
+    const explode = element('input', 'secondary-view__scene3d-explode');
+    explode.type = 'range';
+    explode.min = '0';
+    explode.max = '1';
+    explode.step = '0.05';
+    explode.value = '0';
+    explode.setAttribute('aria-label', 'Explode 3-D brain');
+    const value = element('output', 'secondary-view__scene3d-control-value');
+    value.value = '0%';
+    explode.addEventListener('input', () => {
+      value.value = `${Math.round(explode.valueAsNumber * 100)}%`;
+      this.callbacks.setScene3DExplode(explode.valueAsNumber);
+    });
+    controls.append(label, explode, value);
+    frame.append(host, controls, notice);
     this.scene3dHost = host;
     this.scene3dNotice = notice;
+    this.scene3dExplodeInput = explode;
+    this.scene3dExplodeValue = value;
     this.secondaryPanels.set('brain-3d', frame);
     return frame;
   }
@@ -1649,6 +1671,9 @@ export class AppShell {
 
   private renderScene3D(model: ShellModel, selected: boolean): void {
     const view = model.state.view;
+    this.scene3dExplodeInput.value = String(view.scene3d.explode);
+    this.scene3dExplodeValue.value = `${Math.round(view.scene3d.explode * 100)}%`;
+    this.scene3dExplodeInput.disabled = !this.scene3dFactory || this.scene3dFailed;
     const maximized = view.workspace.maximizedView;
     const visible = selected && (maximized === 'secondary'
       || (maximized === null && (window.innerWidth >= 1100 || view.workspace.activeCompactView === 'secondary')));

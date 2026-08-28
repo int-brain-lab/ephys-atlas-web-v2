@@ -257,8 +257,8 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
           transparent: true,
           side: THREE.DoubleSide,
           uniforms: { uLookup: { value: lookup }, uLookupWidth: { value: this.manifest!.regions.length }, uExplode: { value: this.state.explode } },
-          vertexShader: `attribute float featureId; attribute vec3 explodeOffset; uniform sampler2D uLookup; uniform float uLookupWidth; uniform float uExplode; varying vec4 vColor; void main(){ vColor=texture2D(uLookup,vec2((featureId+.5)/uLookupWidth,.5)); gl_Position=projectionMatrix*modelViewMatrix*vec4(position+explodeOffset*uExplode,1.); }`,
-          fragmentShader: `varying vec4 vColor; void main(){ if(vColor.a<.01) discard; gl_FragColor=linearToOutputTexel(vColor); }`,
+          vertexShader: `attribute float featureId; attribute vec3 explodeOffset; uniform sampler2D uLookup; uniform float uLookupWidth; uniform float uExplode; varying vec3 vNormal; varying vec4 vColor; void main(){ vColor=texture2D(uLookup,vec2((featureId+.5)/uLookupWidth,.5)); vNormal=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position+explodeOffset*uExplode,1.); }`,
+          fragmentShader: `varying vec3 vNormal; varying vec4 vColor; void main(){ if(vColor.a<.01) discard; float light=.82+.20*abs(dot(normalize(vNormal),normalize(vec3(-.3,.4,.85)))); gl_FragColor=linearToOutputTexel(vec4(vColor.rgb*light,vColor.a)); }`,
         });
         const mesh = new THREE.Mesh(geometry, material);
         mesh.userData.hemisphere = chunk.hemisphere;
