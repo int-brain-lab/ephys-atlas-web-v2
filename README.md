@@ -1,8 +1,9 @@
 # IBL Ephys Atlas Web v2
 
 A clean-slate v2 of the International Brain Laboratory Ephys Atlas web
-application. The historical application remains a separate source reference;
-it is not a runtime compatibility dependency or launch fallback requirement.
+application. The historical application remains separately deployed as an
+operational fallback during the initial launch window; it is not a runtime
+compatibility dependency inside v2.
 
 ## Development model
 
@@ -11,11 +12,14 @@ it is not a runtime compatibility dependency or launch fallback requirement.
 Before making changes, read:
 
 1. [`AGENTS.md`](AGENTS.md) — repository rules and scientific/engineering guardrails;
-2. [`docs/LAUNCH_SPEC.md`](docs/LAUNCH_SPEC.md) — executable launch acceptance criteria;
-3. [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) — ordered milestones and next unblocked work;
-4. [`docs/OPEN_QUESTIONS.md`](docs/OPEN_QUESTIONS.md) — choices an agent must not invent;
-5. [`docs/AGENTIC_DEVELOPMENT.md`](docs/AGENTIC_DEVELOPMENT.md) — local autonomous coding workflow;
-6. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/DECISIONS.md`](docs/DECISIONS.md), and [`docs/INTEGRATION_STATUS.md`](docs/INTEGRATION_STATUS.md) for accepted architecture and current state.
+2. [`docs/SYSTEM_OVERVIEW.md`](docs/SYSTEM_OVERVIEW.md) — end-to-end system and documentation map;
+3. [`docs/LAUNCH_SPEC.md`](docs/LAUNCH_SPEC.md) — executable launch acceptance criteria;
+4. [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) — active work and next unblocked action;
+5. [`docs/OPEN_QUESTIONS.md`](docs/OPEN_QUESTIONS.md) — choices an agent must not invent.
+
+Then read only the focused architecture, decision, status, source, or runbook
+documents linked by the selected task. [`docs/AGENTIC_DEVELOPMENT.md`](docs/AGENTIC_DEVELOPMENT.md)
+defines the local autonomous coding workflow.
 
 For fresh-checkout and local Codex setup, see
 [`docs/CODEX_HANDOFF.md`](docs/CODEX_HANDOFF.md). It is an operating runbook,
@@ -28,8 +32,8 @@ production-volume continuation is
 The breaking pre-launch
 [`projection and volume architecture cutover`](docs/rendering/PROJECTION_VOLUME_CUTOVER_PLAN.md)
 is complete through Commit 8. Future implementation agents should use its
-Commit 9 production-volume gates together with the ordered implementation plan;
-Q4 and Q5 must be resolved before selecting production geometry or transport.
+production-volume gates together with the ordered implementation plan. D043
+resolves Q4 for the exact W26 source; Q5 still blocks production transport.
 
 Historical/focused documents under `docs/data/`, `docs/frontend/`, `docs/rendering/`, `docs/publishing/`, and `docs/ux/` remain supporting evidence but do not override the active launch spec or decision log.
 

@@ -7,14 +7,15 @@ This repository is developed as a single integrated product. `main` is the only 
 Before changing code, read these files in order:
 
 1. `AGENTS.md`
-2. `docs/LAUNCH_SPEC.md`
-3. `docs/IMPLEMENTATION_PLAN.md`
-4. `docs/OPEN_QUESTIONS.md`
-5. `docs/ARCHITECTURE.md`
-6. `docs/DECISIONS.md`
-7. `docs/INTEGRATION_STATUS.md`
+2. `docs/SYSTEM_OVERVIEW.md`
+3. `docs/LAUNCH_SPEC.md`
+4. `docs/IMPLEMENTATION_PLAN.md`
+5. `docs/OPEN_QUESTIONS.md`
 
-Use `docs/DATA_SOURCES.md`, `schema/v1/README.md`, and the focused documents under `docs/data/`, `docs/frontend/`, `docs/rendering/`, and `docs/publishing/` when working in those areas.
+Then follow the overview's authority map and read the architecture, effective
+decisions, integration status, schema, source records, and focused runbooks
+relevant to the selected task. Do not read completed implementation diaries by
+default.
 
 ## Branch and commit model
 

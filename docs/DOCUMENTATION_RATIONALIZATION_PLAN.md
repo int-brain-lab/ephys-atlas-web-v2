@@ -1,7 +1,7 @@
 # Documentation rationalization plan
 
-Status: proposed repository-wide documentation refactor; implementation has not
-started.
+Status: active repository-wide documentation refactor; implementation started
+on 2026-08-29.
 
 Baseline: `main` at `9c6ac3d` on 2026-08-29, after the D050 schema/frontend
 cutover, the D051 custom-authoring decision, the D052 partial Q14 selection,
