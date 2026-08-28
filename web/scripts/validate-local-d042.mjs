@@ -11,7 +11,7 @@ const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
   page.on('request', (request) => {
-    if (request.url().includes('/__real-mesh-pack/')) meshRequests.push(new URL(request.url()).pathname);
+    if (request.url().includes('/__local-assets/mesh/')) meshRequests.push(new URL(request.url()).pathname);
   });
   page.on('pageerror', (error) => browserErrors.push(error.message));
   page.on('console', (message) => { if (message.type() === 'error') browserErrors.push(message.text()); });
@@ -30,7 +30,9 @@ try {
   if (state.scene3dState !== 'ready' || state.lod !== 'compiled-full' || state.geometryUploads !== '2' || state.canvases !== 1) {
     throw new Error(`D042 retained viewport state differs: ${JSON.stringify(state)}`);
   }
-  const manifest = await page.evaluate(async () => await (await fetch('/__real-mesh-pack/manifest.json', { cache: 'no-store' })).json());
+  const manifestPath = meshRequests.find((requestPath) => requestPath.endsWith('/manifest.json'));
+  if (!manifestPath) throw new Error('D042 immutable manifest request was not observed');
+  const manifest = await page.evaluate(async (requestPath) => await (await fetch(requestPath, { cache: 'no-store' })).json(), manifestPath);
   if (manifest.default_lod_id !== 'compiled-full' || manifest.upgrade_lod_id !== null
     || manifest.lods?.[0]?.triangle_count !== 989_811 || manifest.regions?.length !== 1_130) {
     throw new Error('D042 browser manifest selection or topology differs');
@@ -77,7 +79,7 @@ try {
     throw new Error('D042 responsive transition rebuilt or refetched geometry');
   }
   const resources = await page.evaluate(() => performance.getEntriesByType('resource')
-    .filter((entry) => entry.name.includes('/__real-mesh-pack/'))
+    .filter((entry) => entry.name.includes('/__local-assets/mesh/'))
     .map((entry) => ({ name: new URL(entry.name).pathname, duration_ms: entry.duration, transfer_bytes: entry.transferSize })));
   const evidence = {
     format: 'd042-local-browser-validation-v1',

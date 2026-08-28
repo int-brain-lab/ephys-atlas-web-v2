@@ -30,6 +30,11 @@ dev-real release="2026_W32" feature="rms_ap.denoised":
 dev-3d mesh="../artifacts/mesh-d042-schema-v1" release="2026_W32" feature="rms_ap.denoised":
     cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/{{release}} EPHYS_ATLAS_REAL_FEATURE={{feature}} EPHYS_ATLAS_REAL_MESH_PACK={{mesh}} npm run dev:real
 
+# Run one local-only catalog containing channels, clusters, BWM, the validated
+# volume candidate, all projection views, and the immutable D042 mesh pack.
+dev-local-full mesh="../artifacts/mesh-d042-schema-v1" feature="rms_ap.denoised":
+    cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/2026_W32 EPHYS_ATLAS_REAL_FEATURE={{feature}} EPHYS_ATLAS_ADDITIONAL_RELEASES=../data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-firing-defaults-v1,../data/releases/brainwide_map/legacy-v1-1d908bea,../data/releases/ephys_atlas_volumes/2026_W26-candidate-depth4 EPHYS_ATLAS_REAL_MESH_PACK={{mesh}} npm run dev:real
+
 # Builder/schema tests.
 test-builder:
     {{uv-test}} python -m pytest -q tests
@@ -103,6 +108,10 @@ mesh-pack-validate path:
 # Validate the locally served D042 pack in Chromium and write ignored evidence.
 validate-3d-local url="http://127.0.0.1:5173/" output="../artifacts/mesh-d042-browser-evidence":
     cd web && node scripts/validate-local-d042.mjs {{url}} {{output}}
+
+# Validate every dataset and context view exposed by `just dev-local-full`.
+validate-local-full url="http://localhost:5173/" output="../artifacts/local-full-browser-evidence":
+    cd web && node scripts/validate-local-full.mjs {{url}} {{output}}
 
 # Generate the ignored, fully offline anatomy comparison lab.
 anatomy-compare resolution="25":

@@ -1,4 +1,6 @@
 import { defineConfig } from 'vite';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { anatomyPackPlugin } from './dev/anatomy-pack-plugin.js';
 import { loadLocalMeshPack, localMeshPackPlugin } from './dev/mesh-pack-plugin.js';
 import { meshPackFixturePlugin } from './dev/mesh-pack-fixture-plugin.js';
@@ -7,6 +9,8 @@ import { loadRealDevelopmentRelease, realReleasePlugin } from './dev/real-data-p
 
 export default defineConfig(async () => {
   const releasePath = process.env.EPHYS_ATLAS_REAL_RELEASE;
+  const additionalReleasePaths = (process.env.EPHYS_ATLAS_ADDITIONAL_RELEASES ?? '')
+    .split(',').map((value) => value.trim()).filter(Boolean);
   const projectionPackPath = process.env.EPHYS_ATLAS_PROJECTION_PACK;
   const meshPackPath = process.env.EPHYS_ATLAS_REAL_MESH_PACK;
   const projectionPack = projectionPackPath
@@ -32,6 +36,14 @@ export default defineConfig(async () => {
     releasePath,
     process.env.EPHYS_ATLAS_REAL_FEATURE ?? 'rms_ap.denoised',
   );
+  const additionalReleases = await Promise.all(additionalReleasePaths.map(async (additionalPath) => {
+    const manifest = JSON.parse(await readFile(path.resolve(additionalPath, 'manifest.json'), 'utf8')) as {
+      features?: Array<{ id?: string }>;
+    };
+    const featureId = manifest.features?.find((feature) => typeof feature.id === 'string')?.id;
+    if (!featureId) throw new Error(`Additional local release has no feature: ${additionalPath}`);
+    return loadRealDevelopmentRelease(additionalPath, featureId);
+  }));
   return {
     define: {
       ...projectionDefine,
@@ -43,6 +55,6 @@ export default defineConfig(async () => {
         process.env.EPHYS_ATLAS_REAL_PARCELLATION ?? 'allen',
       ),
     },
-    plugins: [...plugins, realReleasePlugin(release)],
+    plugins: [...plugins, realReleasePlugin([release, ...additionalReleases])],
   };
 });

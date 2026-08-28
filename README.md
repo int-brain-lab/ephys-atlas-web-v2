@@ -45,6 +45,22 @@ just check
 just dev
 ```
 
+When the ignored validated real releases and D042 mesh artifact are present on
+this machine, the complete local-only catalog can be served without contacting
+or publishing to a remote service:
+
+```bash
+just dev-local-full
+just validate-local-full
+```
+
+This exposes channels, the approved cluster release, the preserved BWM release,
+and the explicitly candidate-labelled W26 volume transport in one local catalog.
+Registered slices, Top, Swanson, and the content-addressed D042 3-D pack are
+served by the same Vite process. Dataset/release resources and mesh bytes receive
+immutable HTTP cache headers; the catalog remains revalidated. No publishing API
+or remote destination participates in this workflow.
+
 `just check` is the local completion gate and mirrors CI: builder/schema tests, publishing tests, TypeScript typecheck, frontend unit tests, production build, and Playwright browser tests.
 
 All Python commands in the `Justfile` run through the committed builder and

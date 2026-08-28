@@ -6,7 +6,7 @@ import type { Plugin } from 'vite';
 const REAL_PREFIX = '/__real-data/';
 const DATASET_ID = /^[a-z0-9][a-z0-9._-]*$/;
 
-interface RealDevelopmentRelease {
+export interface RealDevelopmentRelease {
   releaseRoot: string;
   datasetId: string;
   title: string;
@@ -61,7 +61,8 @@ export async function loadRealDevelopmentRelease(
     || typeof manifest.description !== 'string') {
     throw new Error(`dev-real requires dataset title and description in ${manifestPath}`);
   }
-  if (manifest.release?.immutable !== true || typeof manifest.release.release_id !== 'string') {
+  if (manifest.release?.immutable !== true || typeof manifest.release.release_id !== 'string'
+    || !DATASET_ID.test(manifest.release.release_id)) {
     throw new Error(`dev-real requires an immutable release identity in ${manifestPath}`);
   }
   if (!Array.isArray(manifest.features)
@@ -80,16 +81,14 @@ export async function loadRealDevelopmentRelease(
   };
 }
 
-export function realReleasePlugin(release: RealDevelopmentRelease): Plugin {
-  const {
-    releaseRoot,
-    datasetId,
-    title,
-    description,
-    releaseId,
-    manifestBytes,
-    manifestSha256,
-  } = release;
+export function realReleasePlugin(configured: RealDevelopmentRelease | readonly RealDevelopmentRelease[]): Plugin {
+  const releases = Array.isArray(configured) ? configured : [configured];
+  const identities = new Set<string>();
+  for (const release of releases) {
+    const identity = `${release.datasetId}/${release.releaseId}`;
+    if (identities.has(identity)) throw new Error(`Duplicate real development release ${identity}`);
+    identities.add(identity);
+  }
   return {
     name: 'ephys-atlas-real-development-release',
     configureServer(server) {
@@ -98,34 +97,43 @@ export function realReleasePlugin(release: RealDevelopmentRelease): Plugin {
         if (pathname === `${REAL_PREFIX}catalog.json`) {
           response.setHeader('Content-Type', 'application/json; charset=utf-8');
           setStaticHeaders(response, false);
+          const datasets = new Map<string, RealDevelopmentRelease[]>();
+          for (const release of releases) {
+            const group = datasets.get(release.datasetId) ?? [];
+            group.push(release);
+            datasets.set(release.datasetId, group);
+          }
           const body = JSON.stringify({
             schema_version: '1.0',
-            datasets: [{
-              dataset_id: datasetId,
-              title,
-              description,
-              default_release: releaseId,
-              releases: [{
-                release_id: releaseId,
+            datasets: [...datasets.values()].map((group) => ({
+              dataset_id: group[0]!.datasetId,
+              title: group[0]!.title,
+              description: group[0]!.description,
+              default_release: group[0]!.releaseId,
+              releases: group.map((release) => ({
+                release_id: release.releaseId,
                 manifest: {
-                  path: `./${datasetId}/${releaseId}/manifest.json`,
+                  path: `./${release.datasetId}/${release.releaseId}/manifest.json`,
                   media_type: 'application/json',
-                  bytes: manifestBytes,
-                  sha256: manifestSha256,
-                  codec: { name: 'none', decoded_bytes: manifestBytes },
+                  bytes: release.manifestBytes,
+                  sha256: release.manifestSha256,
+                  codec: { name: 'none', decoded_bytes: release.manifestBytes },
                 },
-              }],
-            }],
+              })),
+            })),
           });
           response.setHeader('Content-Length', Buffer.byteLength(body));
           response.end(body);
           return;
         }
-        const releasePrefix = `${REAL_PREFIX}${datasetId}/${releaseId}/`;
-        if (!pathname.startsWith(releasePrefix)) return next();
+        const release = releases.find((candidate) => pathname.startsWith(
+          `${REAL_PREFIX}${candidate.datasetId}/${candidate.releaseId}/`,
+        ));
+        if (!release) return next();
+        const releasePrefix = `${REAL_PREFIX}${release.datasetId}/${release.releaseId}/`;
         const relative = decodeURIComponent(pathname.slice(releasePrefix.length));
-        const target = path.resolve(releaseRoot, relative);
-        if (target !== releaseRoot && !target.startsWith(`${releaseRoot}${path.sep}`)) {
+        const target = path.resolve(release.releaseRoot, relative);
+        if (target !== release.releaseRoot && !target.startsWith(`${release.releaseRoot}${path.sep}`)) {
           response.statusCode = 403;
           response.end('Forbidden');
           return;

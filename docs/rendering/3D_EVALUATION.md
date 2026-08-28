@@ -98,6 +98,17 @@ geometry request, and changed Beryl/Cosmos presentation without another
 geometry request or upload. Evidence and screenshots remain ignored under
 `artifacts/mesh-d042-browser-evidence/`.
 
+The full local-only deployment now serves this pack below the immutable,
+content-addressed URL prefix
+`/__local-assets/mesh/ibl-bwm-d042-b0c1c1a43aa874a6/` with one-year immutable
+cache headers. `just dev-local-full` combines it with the local channels,
+approved clusters, preserved BWM, and candidate-labelled W26 volume releases;
+`just validate-local-full` verifies all four catalog identities, dataset
+switching, Top, Swanson, 3-D, explode state, and retained geometry uploads in
+Chromium. This is local deployment evidence only: no remote publication has
+occurred, and the experimental label remains pending the documented manual
+Safari/Firefox owner matrix.
+
 ### Coordinates and hemispheres
 
 The mesh source uses CCF `(AP, DV, ML)` micrometres. Convert it once during the
