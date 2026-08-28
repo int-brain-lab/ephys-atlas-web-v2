@@ -251,7 +251,9 @@ viewport and the application's one regional-presentation/state lifecycle.
 `ProjectionRegistry` remains 2-D-specific. The optional application integration
 is complete through Commit 6. D042 fixes its GLB-derived geometry/LOD direction;
 production asset deployment and removal of the experimental label remain
-non-blocking operational work.
+non-blocking operational work. The repository owner manually confirmed the
+integrated local 3-D view in Safari and Firefox on 2026-08-28, completing the
+documented cross-browser owner matrix.
 
 The regional UI keeps DOM concerns in its controller while region search/value/statistics derivation is pure/testable. Large dynamic tree interaction uses delegated events.
 Header context menus remain operable while a catalog or release manifest is
@@ -679,8 +681,9 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
    direct URL display and broader package/local-management UX are non-blocking;
 6. stage immutable assets on S3/CloudFront and finalize catalog/origin/default
    alias/publishing choices in Q8-Q9;
-7. run final production-origin, performance, responsive, automated Chromium,
-   and documented manual Firefox/Safari QA under resolved Q11.
+7. run final production-origin, performance, and responsive QA under resolved
+   Q11; the repository owner completed the documented manual Firefox/Safari 3-D
+   check on 2026-08-28, while automated Chromium remains green.
 
 Production promotion of the independent 3-D lab, AGEA, MERFISH, large point
 clouds, inferential statistics, full OAuth, and broad legacy custom-bucket

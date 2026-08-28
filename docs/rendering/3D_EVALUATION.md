@@ -106,8 +106,10 @@ approved clusters, preserved BWM, and candidate-labelled W26 volume releases;
 `just validate-local-full` verifies all four catalog identities, dataset
 switching, Top, Swanson, 3-D, explode state, and retained geometry uploads in
 Chromium. This is local deployment evidence only: no remote publication has
-occurred, and the experimental label remains pending the documented manual
-Safari/Firefox owner matrix.
+occurred. On 2026-08-28 the repository owner manually confirmed the integrated
+3-D view in Safari and Firefox; the documented cross-browser owner matrix is
+therefore complete. Removing the remaining experimental UI copy is separate
+cleanup.
 
 ### Coordinates and hemispheres
 
