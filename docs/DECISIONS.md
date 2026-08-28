@@ -908,3 +908,47 @@ preferred scale/domain is selected by this decision. Read-only audits must
 cover channel, cluster, `brainwide_map`, and volume source populations, with
 owner-reviewed representation-specific selection artifacts resolving Q14
 before scientific release rebuilds.
+
+## D051 — Author custom data with `ibl-ephys-atlas` and import ZIP only
+
+Retain the historical IBL Ephys Atlas product name for a public authoring
+distribution even though its supported scalar inputs are modality-neutral.
+Use PyPI distribution `ibl-ephys-atlas`, Python namespace
+`ibl_ephys_atlas`, CLI prefix `ibl-ephys-atlas`, and local interchange suffix
+`.ibl-ephys-atlas.zip`. Retain the existing historical `ephys-atlas-*` schema
+format identifiers rather than performing a product-wide terminology reset.
+
+Implement the public authoring API in this repository beside the canonical
+schema-v1 serializers, validators, browser consumer, and publishing validation;
+do not add v2 authoring to the legacy `iblbrainviewer` package. Keep public
+generic mechanics distinct from official dataset-specific recipes, but make
+both consume the same release contract rather than maintaining two serializers.
+
+Use `iblatlas` as the anatomical authority. Regional identity validation,
+acronyms, metadata, and Allen/Beryl/Cosmos mappings come from `BrainRegions`;
+supported Allen volume grids and coordinate conversions come from explicit
+`AllenAtlas`/`BrainCoordinates` adapters. Do not copy those authorities or infer
+an affine from a volume's shape/resolution. Record the installed atlas/tool and
+relevant source identities in provenance.
+
+The browser local-import product accepts one ZIP, not a directory tree. The ZIP
+contains the existing schema-v1 release graph directly at its root and is only
+an ingestion container. Validate its bounded safe inventory, complete
+transitive graph, served-byte sizes, and SHA-256 values before one atomic
+IndexedDB admission; store individual resources and discard the outer archive
+so runtime access stays transport-neutral and efficient.
+
+Make local identity persistent and explicit. Local data is never uploaded
+implicitly, local URLs do not transfer the release, duplicate immutable
+releases require explicit deletion, and local deletion remains separate from
+published-resource cache clearing. The current folded regional presentation
+cannot represent independent left/right feature values, so the first API is
+non-lateralized by default and requires explicit hemisphere folding. Volumes
+retain spatial laterality through an exact supported reference-space identity,
+grid, affine, and validity policy.
+
+The first vertical slice is regional scalar authoring plus ZIP import; explicit
+`iblatlas`-backed volume authoring follows. Remote publishing remains a
+separately authorized operation over already-built releases and never becomes
+part of scientific transformation. The binding detailed plan is
+`docs/data/CUSTOM_DATA_AUTHORING.md`.

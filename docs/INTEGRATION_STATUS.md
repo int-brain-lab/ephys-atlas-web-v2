@@ -668,6 +668,17 @@ and every declared SHA-256 before an atomic IndexedDB write. Storage is
 namespaced by source dataset and immutable release, and the viewer distinguishes
 local from published content without a shadow scientific schema.
 
+D051 now approves the missing user-facing path: a public `ibl-ephys-atlas`
+Python authoring distribution in this repository writes one
+`.ibl-ephys-atlas.zip`, and the browser imports only that archive form. The ZIP
+is a container around the same schema-v1 graph; after bounded path/inventory and
+complete integrity validation, the browser will store individual resources in
+the existing IndexedDB transport and discard the archive. `iblatlas` remains
+the ontology, mapping, and supported-grid authority. This ZIP importer, public
+authoring namespace, preview/Local badge, management UI, and volume adapter are
+approved planned work, not current implementation. The ordered plan is
+`docs/data/CUSTOM_DATA_AUTHORING.md`.
+
 Share copies complete URL state; Info exposes immutable release, feature
 semantics, and source/builder provenance; current regional statistics and
 selected-region comparisons export as context-rich CSV. Schema-v1 release and
@@ -721,8 +732,9 @@ The ordered source of truth is `docs/IMPLEMENTATION_PLAN.md`. In summary:
    authorized;
 5. finish and validate the local D050 immutable rebuilds; separately resolve
    Q14 before adding any new Signed-log or Focused feature selections;
-6. retain the completed artifact-backed and contextual current-feature exports;
-   direct URL display and broader package/local-management UX are non-blocking;
+6. retain the completed artifact-backed and contextual current-feature exports,
+   then implement D051's ZIP-only import and `ibl-ephys-atlas` regional
+   authoring vertical slice; direct immutable URL display remains non-blocking;
 7. stage immutable assets on S3/CloudFront and finalize catalog/origin/default
    alias/publishing choices in Q8-Q9;
 8. run final production-origin, performance, and responsive QA under resolved

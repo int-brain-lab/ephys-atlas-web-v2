@@ -424,9 +424,10 @@ per-feature Signed-log threshold, focus interval, availability, or preferred
 default; none was inferred during the contract migration. Existing immutable
 releases remain unchanged alongside the validated local D050 candidates.
 
-## M5 — Downloads and local import completion
+## M5 — Downloads, custom authoring, and local import completion
 
-Status: **launch download path implemented; direct-URL and broader package UX remain non-blocking follow-ups**.
+Status: **launch download path and local storage foundation implemented;
+ZIP-only custom-data authoring/import approved but not started**.
 
 Completed:
 
@@ -454,14 +455,30 @@ Completed:
 Goals:
 
 - optional direct immutable artifact URL display/navigation for published data;
-- deterministic whole-release package path as a non-blocking follow-up where practical;
-- broader local-dataset management UX where practical.
+- implement the D051 ZIP-only local interchange path using one
+  `.ibl-ephys-atlas.zip` whose root is the existing schema-v1 release graph;
+- add a public `ibl-ephys-atlas` Python distribution and `ibl_ephys_atlas`
+  namespace in this repository, using `iblatlas` as the anatomical authority;
+- complete the browser import preview, persistent `Local` identity, local
+  inventory, explicit deletion, quota/recovery handling, and local-URL
+  disclosure;
+- deliver regional scalar authoring first, then explicit-grid volume authoring;
+- keep authenticated remote publication separate from scientific authoring.
 
 Requirements:
 
 - do not invent a second local schema;
 - browser-imported content must fail explicitly if resources are missing/inconsistent;
+- the ZIP reader must reject unsafe/duplicate paths, unsupported/encrypted
+  entries, undeclared files, and bounded-size or integrity violations before
+  IndexedDB mutation;
+- local authoring must not copy `iblatlas` ontology/mapping authority, infer a
+  volume affine/validity policy, or claim independent hemispheric regional
+  values that the current viewer cannot represent;
 - exports must identify immutable release/feature/parcellation/statistic context.
+
+Detailed scope, API proposal, archive contract, non-goals, ordered slices, and
+acceptance are in `docs/data/CUSTOM_DATA_AUTHORING.md`.
 
 Acceptance reference: sections 8 and 9 of the launch spec.
 
