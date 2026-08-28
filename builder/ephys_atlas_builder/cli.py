@@ -10,6 +10,8 @@ from .brainwide_map import (
 from .channels import DATASET_ID as CHANNELS_DATASET_ID
 from .channels import ChannelBuildConfig, build_channels_from_snapshot
 from .cluster_audit import audit_cluster_snapshot
+from .distribution_inventory import audit_release_inventory
+from .distribution_audit import audit_npz_arrays
 from .clusters import DATASET_ID as CLUSTERS_DATASET_ID
 from .clusters import ClusterBuildConfig, build_clusters_from_snapshot
 from .fixture import generate_golden
@@ -180,6 +182,27 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--output", type=Path, required=True)
 
     p = sub.add_parser(
+        "audit-source-arrays",
+        help="read-only exact distribution audit over a pinned NPZ of named source arrays",
+    )
+    p.add_argument("npz", type=Path, help="NPZ containing one numeric array per feature")
+    p.add_argument("--dataset-id", required=True)
+    p.add_argument("--release-id", required=True)
+    p.add_argument("--representation", choices=("regional", "volume"), required=True)
+    p.add_argument("--population", default="explicit pinned source-array population")
+    p.add_argument("--observation-unit", default="source observations")
+    p.add_argument("--outside-value", type=float)
+    p.add_argument("--histogram-bins", type=int, default=50)
+    p.add_argument("--output", type=Path, required=True)
+
+    p = sub.add_parser(
+        "inventory-distributions",
+        help="read-only inventory of exact histogram availability in a schema-v1 release",
+    )
+    p.add_argument("release_dir", type=Path)
+    p.add_argument("--output", type=Path, required=True)
+
+    p = sub.add_parser(
         "build-channels",
         help="build a regional ephys_atlas_channels release from an already-pulled ea_active snapshot",
     )
@@ -278,6 +301,15 @@ def main(argv: list[str] | None = None) -> int:
                 histogram_bins=args.histogram_bins,
             )
             print(output)
+        elif args.cmd == "inventory-distributions":
+            print(audit_release_inventory(args.release_dir, args.output))
+        elif args.cmd == "audit-source-arrays":
+            print(audit_npz_arrays(
+                args.npz, args.output, dataset_id=args.dataset_id,
+                release_id=args.release_id, representation=args.representation,
+                population=args.population, observation_unit=args.observation_unit,
+                outside_value=args.outside_value, bins=args.histogram_bins,
+            ))
         elif args.cmd == "build-channels":
             resolved = resolve_source_release(
                 args.source_root, CHANNELS_DATASET_ID, args.release
