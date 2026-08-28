@@ -126,6 +126,16 @@ validate-local-full` then visited every dataset plus Summary, Top, Swanson, and
 3-D with no browser errors; the D042 mesh reached `ready`. The local site is
 served by `just dev-local-full`. Nothing was published remotely.
 
+On 2026-08-29, D052 added the first owner-reviewed Q14 enhancement as a new
+immutable local channel release,
+`2026_W32-d050-peak-val-raw-v2`. Regional `peak_val.raw` now offers Linear and
+Signed log with threshold `1.23`, plus Full and Focused with exact bounds
+`[-9.467077467918395, 2.5583932574651715]`, defaulting to Linear/Focused. Its
+Focused binnings contain 373,266 observations with exact underflow and overflow
+counts of 3,809 each. All other channel features remain Linear/Full. Release
+validation and the four-test real-channel Chromium suite pass; the earlier
+channel release remains immutable and no remote publication occurred.
+
 ## Source and provenance rules
 
 - Pulled inputs receive a `source.json` inventory with paths, byte sizes,

@@ -90,3 +90,32 @@ test('loads real float64 alpha values and all launch parcellations', async ({ pa
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(50);
   await expect.poll(() => page.locator('.region-row[data-missing="false"]').count()).toBeGreaterThan(0);
 });
+
+test('uses the approved peak_val.raw focused distribution and preserves explicit alternatives', async ({ page }) => {
+  await page.goto('/?v=4&feature=peak_val.raw');
+
+  const scale = page.locator('select[aria-label="Value scale"]');
+  const domain = page.locator('select[aria-label="Distribution domain"]');
+  const chart = page.locator('.distribution-chart');
+  await expect(scale).toHaveValue('auto');
+  await expect(scale.locator('option:checked')).toHaveText('Auto (Linear)');
+  await expect(scale.locator('option[value="symlog"]')).toBeEnabled();
+  await expect(domain).toHaveValue('auto');
+  await expect(domain.locator('option:checked')).toHaveText('Auto (Focused)');
+  await expect(chart).toHaveAttribute('data-axis-scale', 'linear');
+  await expect(chart).toHaveAttribute('data-distribution-domain', 'focused');
+  await expect(chart.locator('.distribution-chart__tails')).toHaveAttribute('data-visible', 'true');
+  await expect(chart.locator('.distribution-chart__tails')).toContainText('3,809');
+  await expect(chart.locator('.distribution-chart__bin')).toHaveCount(50);
+  expect(new URL(page.url()).searchParams.get('scale')).toBeNull();
+  expect(new URL(page.url()).searchParams.get('dist')).toBeNull();
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await scale.selectOption('symlog');
+  await domain.selectOption('full');
+  await expect(chart).toHaveAttribute('data-axis-scale', 'symlog');
+  await expect(chart).toHaveAttribute('data-distribution-domain', 'full');
+  await expect(chart.locator('.distribution-chart__tails')).toHaveAttribute('data-visible', 'false');
+  await expect.poll(() => new URL(page.url()).searchParams.get('scale')).toBe('symlog');
+  await expect.poll(() => new URL(page.url()).searchParams.get('dist')).toBe('full');
+});

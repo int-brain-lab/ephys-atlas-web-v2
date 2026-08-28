@@ -287,16 +287,19 @@ independent analytical-domain choice. Focused affects global and selected-region
 distributions only, with exact whole-population tails; the compact range
 histogram remains Full under the same scale. Python and TypeScript validators,
 all four real builders, fixtures, URL state, controls, rendering, and exports
-share this contract. The committed migration selections preserve Linear/Full
+share this contract. The baseline migration selections preserve Linear/Full
 for channels, `brainwide_map`, and volumes and preserve only D048's reviewed
-cluster Log choices. Q14 remains open for any new Signed-log threshold, Focused
-bounds, availability, or default; none was chosen implicitly.
+cluster Log choices. D052 now partially resolves Q14 for regional channel
+`peak_val.raw`: Linear and Signed log with threshold `1.23`, Full and Focused
+with bounds `[-9.467077467918395, 2.5583932574651715]`, and a
+Linear/Focused default. Q14 remains open for every other new selection; none
+was chosen implicitly.
 The four ignored local candidates now validate under this contract:
-`2026_W32-d050-linear-full-v1`,
+`2026_W32-d050-peak-val-raw-v2`,
 `sha256-9b5e55215b306f26-d050-d048-v1`,
 `legacy-v1-1d908bea-d050-linear-full-v1`, and
 `2026_W26-candidate-depth4-d050-linear-full-v1`. Dataset-specific Chromium
-acceptance passes 3/3, 3/3, 3/3, and 6/6 respectively. Integrated local
+acceptance passes 4/4, 3/3, 3/3, and 6/6 respectively. Integrated local
 validation visits all four datasets and Summary, Top, Swanson, and 3-D without
 browser errors; the D042 mesh reaches `ready`. No remote publication occurred.
 Regional SVGs, volume canvases, and the interactive color legend share one
