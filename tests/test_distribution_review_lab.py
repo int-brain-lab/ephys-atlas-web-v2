@@ -205,7 +205,23 @@ def test_offline_template_has_stable_controls_valid_javascript_and_safe_payload(
     template = Path("tools/distribution_review_lab/template.html").read_text()
     parser = _Parser()
     parser.feed(template)
-    assert {"tabs", "search", "features", "detail", "download", "report-data"} <= parser.ids
+    assert {
+        "review",
+        "feature-title",
+        "choose-recommendation",
+        "choose-current",
+        "toggle-why",
+        "editor",
+        "complete",
+        "download",
+        "report-data",
+    } <= parser.ids
+    assert "<kbd>R</kbd> recommendation" in template
+    assert "<kbd>C</kbd> current" in template
+    assert "<kbd>E</kbd> edit" in template
+    assert "ArrowLeft" in template and "ArrowRight" in template
+    assert "queue=all.filter" in template
+    assert "unchanged-baseline" in template
     script = template.rsplit("<script>", 1)[1].split("</script>", 1)[0]
     subprocess.run(["node", "--check"], input=script, text=True, check=True)
     rendered = render_report({"unsafe": "</script>"}, template)

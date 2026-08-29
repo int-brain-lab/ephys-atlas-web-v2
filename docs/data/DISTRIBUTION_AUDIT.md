@@ -162,6 +162,11 @@ dataset/release identity, or complete feature catalog differs from the accepted
 selection. The page embeds the exact audited histograms and tails, compares the
 accepted baseline with `q14-agent-candidate-policy-v1`, and permits accepting
 the proposal, retaining the baseline, or editing each feature with notes.
+The guided default queue contains only the 34 features whose proposal differs
+from the baseline; the other 121 are exported explicitly as unchanged. Each
+step has two primary choices and advances automatically. The always-visible
+keyboard controls are `R` for the recommendation, `C` for the current setting,
+`E` to edit, `W` for evidence, and the arrow keys for navigation.
 
 The downloaded `ibl-scalar-distribution-human-review-v1` record is deliberately
 non-authoritative: it states `production_effect: "none"` and omits
