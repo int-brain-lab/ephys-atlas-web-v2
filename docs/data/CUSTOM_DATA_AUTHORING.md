@@ -1,7 +1,7 @@
 # Custom data authoring and ZIP import
 
-Status: active focused implementation plan; Allen regional authoring and ZIP
-browser import implemented on 2026-08-29.
+Status: active focused implementation plan; Allen regional/volume authoring,
+executable examples, and ZIP browser import implemented on 2026-08-29.
 
 This document defines the planned workflow for scientists to prepare their own
 regional or volumetric scalar data and import it into IBL Ephys Atlas Web v2.
@@ -11,10 +11,10 @@ the binding product decisions.
 ## Product outcome
 
 A scientist can now use the public Python API to turn scalar data associated
-with Allen brain regions into one validated immutable archive, then select that
-archive in the web application. The browser validates and stores the release
-locally without sending its contents to a local server or a remote service.
-Allen-CCF voxel authoring remains the next representation extension.
+with Allen brain regions, an explicit Allen CCF grid, or both into one
+validated immutable archive, then select that archive in the web application.
+The browser validates and stores the release locally without sending its
+contents to a local server or a remote service.
 
 ```text
 NumPy arrays plus explicit scientific metadata
@@ -486,31 +486,35 @@ measurement remains pending.
 - the exact-regenerable synthetic authored volume imports, renders three linked
   planes, navigates, and reloads through the ordinary IndexedDB path without
   scientific network reads;
-- run ordinary Chromium plus owner/manual Safari and Firefox acceptance before
-  declaring volume authoring ready.
+- run representative real archives through owner/manual Safari and Firefox
+  capacity acceptance before advertising supported archive limits.
 
 ### Slice 5 — Distribution and release hardening
 
 Status: partially implemented. Neutral Linear/Full regional output,
-deterministic rebuilds, bundled-schema parity, and clean wheel construction are
-green. Volume round trips are green. Final public documentation/naming review
-and PyPI publication remain unfinished.
+deterministic rebuilds, bundled-schema parity, clean wheel construction, volume
+round trips, executable examples, generated API reference, and the strict local
+documentation-site build are green. PyPI publication remains unauthorized and
+unfinished.
 
 - support only release-declared scale/domain combinations and retain the Q14
   boundary for scientific choices;
 - build and validate the distributable wheel from a clean environment;
 - prove deterministic rebuilds and complete Python/TypeScript contract parity;
 - publish the Python distribution only after regional and volume round trips,
-  documentation, and final naming checks are green.
+  documentation, and final naming checks are green;
+- keep the reader-facing site buildable locally and in CI without configuring
+  a public deployment until its hosting is separately authorized.
 
 Remote publishing and any explicit legacy converter are independent follow-ups.
 
 ## First vertical-slice acceptance
 
-The Allen regional authoring and browser-import machinery now satisfy the first
-synthetic end-to-end milestone: a clean wheel contains the public API and exact
-schema; the public API exactly regenerates the committed authored regional ZIP;
-and a dedicated Chromium test imports that archive through the ordinary viewer
-path, fully validates and persists it, and reads its resources without network
+The Allen regional/volume authoring and browser-import machinery now satisfy
+the synthetic end-to-end milestone: a clean wheel contains the public API and
+exact schema; the API exactly regenerates the committed regional and volume
+ZIPs; standalone examples exercise all supported input paths; and dedicated
+Chromium tests import the archives through the ordinary viewer path, fully
+validate and persist them, and read resources without scientific network
 access. Before advertising production capacity, representative real authored
 archives still need cross-browser memory/quota measurement.

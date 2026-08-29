@@ -76,6 +76,24 @@ print(result["path"], result["sha256"])
 graph, writes a deterministic root-level ZIP, reopens and validates it, and
 only then replaces the requested destination.
 
+## Executable examples
+
+The repository also contains five standalone, CI-executed examples under
+[`examples/python/`](https://github.com/int-brain-lab/ephys-atlas-web-v2/tree/main/examples/python):
+already-aggregated regional values, repeated observations with reduced
+mappings, mask-validity volume, sentinel-validity volume, and one mixed
+regional/volume feature. Run any script with `--help`, or start with:
+
+```bash
+uv run --project builder --locked python examples/python/regional_values.py \
+  regional-values.ibl-ephys-atlas.zip
+```
+
+Those examples use tiny deterministic in-memory inputs, are explicitly
+non-scientific, and perform no atlas download. Use `just docs-serve` for the
+local documentation website and generated Python API reference. No public site
+deployment is configured.
+
 ## Choose the correct regional method
 
 - Use `add_region_values()` when every input identity already has one scalar.

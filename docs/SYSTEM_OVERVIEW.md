@@ -100,6 +100,11 @@ Focused documents use these status concepts: `active`, `accepted`, `blocked`,
 `runbook`, `frozen evidence`, `superseded`, and `retired`. Artifact maturity is
 recorded separately and must never be inferred from a document's status.
 
+The MkDocs site rooted at [`index.md`](index.md) is a reader navigation layer
+over these repository documents plus generated public Python API reference. It
+does not supersede their scoped authority, and its current configuration is
+local/CI-buildable only rather than a published site.
+
 ## Current execution boundary
 
 The active unresolved scientific and deployment choices are Q2 (paper channel

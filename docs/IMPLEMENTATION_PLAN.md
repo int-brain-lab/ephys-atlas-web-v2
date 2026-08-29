@@ -53,7 +53,10 @@ vertical slices are implemented. One `ibl-ephys-atlas` distribution contains
 the public `ibl_ephys_atlas` API and internal builder namespace, exact bundled schema v1,
 deterministic independently validated ZIP output, and clean-wheel coverage.
 The bounded two-phase browser import, persistent Local identity, and automated
-Chromium evidence are also complete.
+Chromium evidence are also complete. Five deterministic executable examples,
+generated public API reference, and a locally served strict documentation site
+are covered by `just check`; no site deployment or PyPI publication is
+configured.
 
 Blocker: none for the remaining independent extensions. PyPI publication is
 not authorized or complete.
@@ -64,9 +67,8 @@ Next testable actions:
    ceilings with representative regional and volume bundles in Chromium,
    Firefox, and Safari; record peak memory, preview latency, failure behavior,
    and IndexedDB quota results before freezing supported limits;
-2. exercise representative real public-authored archives at supported capacity,
-   complete final naming/documentation review, and publish the Python
-   distribution only after explicit authorization.
+2. exercise representative real public-authored archives at supported capacity
+   and publish the Python distribution only after explicit authorization.
 
 The pinned zip.js reader rejects unsafe or duplicate paths, non-regular,
 encrypted, split/Zip64, nested, or unsupported-compression entries, undeclared

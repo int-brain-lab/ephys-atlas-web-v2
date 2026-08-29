@@ -33,7 +33,7 @@ Stable boundaries and end-to-end flow are in
 | `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048 presentation, D050 distributions, HTTP acceptance. | Validated-real-local `sha256-9b5e55215b306f26-d050-d048-v1`; owner-reviewed, not published. | Q8/Q9 publication/default authorization. |
 | `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | Validated-real-local `legacy-v1-1d908bea-d050-linear-full-v1`; not published. | Q8/Q9 publication/default authorization. |
 | `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | Validated-real-local depth-4 candidate `2026_W26-candidate-depth4-d050-linear-full-v1`; explicitly non-production. | Q5 confirmation at the Q8 CloudFront origin, then immutable production build. |
-| `local` | Same schema-v1 graph and materializers; public regional and explicit-grid volume `ibl_ephys_atlas` authoring; deterministic validated ZIP packaging; strict bounded two-phase browser import, atomic IndexedDB admission/deletion, inventory, and integrity recovery. | Regional/reduced-mapping and float16/float32 mask/sentinel volume tests, generated-schema parity, clean-wheel coverage, exact regeneration of both committed public-authored archives, and Chromium import/render/management tests are green. | Measure provisional limits across browsers/real archives; publish the Python distribution only after authorization. |
+| `local` | Same schema-v1 graph and materializers; public regional and explicit-grid volume `ibl_ephys_atlas` authoring; deterministic validated ZIP packaging; strict bounded two-phase browser import, atomic IndexedDB admission/deletion, inventory, and integrity recovery. | Regional/reduced-mapping and float16/float32 mask/sentinel volume tests, five executable examples, generated API reference, generated-schema parity, clean-wheel coverage, exact regeneration of both committed public-authored archives, and Chromium import/render/management tests are green. | Measure provisional limits across browsers/real archives; publish the Python distribution only after authorization. |
 
 Dataset source, recipe, selection, release, and audit ownership is indexed by
 [`data/README.md`](data/README.md). The final paper-facing source vintage and
@@ -136,10 +136,13 @@ state authorizes remote publication.
 ## Quality gates
 
 CI and local `just check` use Python 3.12 through committed uv locks, Node 22,
-Python builder/publishing tests, strict TypeScript, web unit/rendering tests,
-production build, and Chromium Playwright. The deterministic golden fixture is
-synthetic and test-only. Manual Firefox/Safari remains part of final release QA
-under D040; the optional 3-D local matrix was completed on 2026-08-28.
+repository-document integrity checks, a strict MkDocs Material/API-reference
+build, executable synthetic authoring examples, Python builder/publishing
+tests, strict TypeScript, web unit/rendering tests, production build, and
+Chromium Playwright. The generated documentation site is local/CI-only; no
+Pages deployment is configured. The deterministic golden fixture is synthetic
+and test-only. Manual Firefox/Safari remains part of final release QA under
+D040; the optional 3-D local matrix was completed on 2026-08-28.
 
 ## Remaining launch sequence
 
