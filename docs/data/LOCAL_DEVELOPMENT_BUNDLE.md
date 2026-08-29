@@ -1,6 +1,8 @@
 # Local development bundle
 
-Status: active implementation plan.
+Status: active implementation and recovery plan. The descriptor/verifier
+foundation is implemented; the complete corpus remains blocked on two missing
+pinned input sets recorded below.
 
 This plan defines how a fresh checkout will obtain the complete browser-ready
 development corpus without creating a second scientific data format or a
@@ -47,22 +49,25 @@ part of the development bundle.
 
 ## Initial bundle
 
-The first descriptor should pin the current integrated validated-real-local
-corpus:
+The first committed bootstrap descriptor pins every currently recoverable
+validated artifact without relabelling or substituting missing evidence:
 
 | Role | Immutable identity | Current maturity |
 | --- | --- | --- |
-| Channels | `2026_W32-d050-peak-val-raw-v2` | validated-real-local development release; not the Q2 paper selection |
-| Clusters | `sha256-9b5e55215b306f26-d050-d048-v1` | validated-real-local reviewed release; not published |
-| Brain-Wide Map | `legacy-v1-1d908bea-d050-linear-full-v1` | validated-real-local preserved legacy release; not published |
-| Volume | `2026_W26-candidate-depth4-d050-linear-full-v1` | validated-real-local candidate; not the Q5 production transport |
+| Channels | `2026_W32-d050-peak-val-raw-v3` | deterministic technical revision of the validated-real-local development release; not the Q2 paper selection |
+| Clusters | `sha256-9b5e55215b306f26-d050-d048-v2` | deterministic technical revision of the validated-real-local reviewed release; not published |
+| Brain-Wide Map | unavailable pending recovery of the six exact pinned Parquets | required for the complete bundle; audit derivatives and older releases are not substitutes |
+| Volume | `2026_W26-candidate-depth4-d050-linear-full-v2` | deterministic technical revision of the validated-real-local candidate; not the Q5 production transport |
 | Projection pack | active schema-v1 `atlas-projection-pack-v1` | committed production-intent browser artifact; origin verification remains |
-| 3-D mesh pack | D042 `mesh-d042-schema-v1` | validated-real-local optional artifact; not published |
+| 3-D mesh pack | unavailable pending recovery of the exact D042 donor | optional; a different or regenerated mesh is forbidden |
 
 This is a development bundle identity, not a mutable `latest` alias and not a
 claim about the eventual paper-facing production release set. Future bundles
 receive new immutable bundle IDs; an existing descriptor is never silently
-retargeted.
+retargeted. The current `data/development-bundle-v1.json` is explicitly a
+bootstrap descriptor, not the complete bundle: it validates 8,007 files and
+526,673,799 bytes across the three scientific releases and projection pack
+while recording both omissions.
 
 ## Bundle descriptor
 
@@ -97,6 +102,13 @@ scientific identities, and unsupported descriptor versions.
    scientifically mismatched entries.
 
 This phase is independent of Q8 and can use the current ignored local artifacts.
+
+Items 1-3 and 5 are implemented for the bootstrap descriptor. The verifier
+also verifies copied publication-input and selection-file hashes and rejects
+undeclared release files. Item 4 becomes the `just data` entry point in the
+next local integration phase. Completing the descriptor requires recovery of
+the exact Brain-Wide Map and D042 inputs; their absence is machine-readable in
+the descriptor and never triggers fallback.
 
 ### 2. Authorized immutable origin
 

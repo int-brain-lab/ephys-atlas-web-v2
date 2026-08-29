@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0",
+  "bundle_id": "local-development-bootstrap-2026-08-29-v1",
+  "provenance": {
+    "generator": "ibl-ephys-atlas-development-bundle",
+    "version": "1",
+    "commit": "68f3a1e"
+  },
+  "default_view": {
+    "dataset_id": "ephys_atlas_channels",
+    "release_id": "2026_W32-d050-peak-val-raw-v3",
+    "feature_id": "rms_ap.denoised",
+    "parcellation_id": "allen"
+  },
+  "artifacts": [
+    {
+      "role": "channels",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "ephys_atlas_channels",
+        "release_id": "2026_W32-d050-peak-val-raw-v3"
+      },
+      "maturity": "validated-real-local",
+      "destination": "data/releases/ephys_atlas_channels/2026_W32-d050-peak-val-raw-v3",
+      "root_manifest": {
+        "path": "manifest.json",
+        "media_type": "application/json",
+        "bytes": 41083,
+        "sha256": "76bd9cc1cd07c5cfaec159f442d7161fa2342651b8c8f9dfc65a9b61f34daaae"
+      },
+      "source": {
+        "state": "unresolved"
+      },
+      "launch_critical": true
+    },
+    {
+      "role": "clusters",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "ephys_atlas_clusters",
+        "release_id": "sha256-9b5e55215b306f26-d050-d048-v2"
+      },
+      "maturity": "validated-real-local",
+      "destination": "data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-d050-d048-v2",
+      "root_manifest": {
+        "path": "manifest.json",
+        "media_type": "application/json",
+        "bytes": 13588,
+        "sha256": "76e051e741d58ffcc3a13cf97f5e29e344933ff37ba327b3e0c5942a855d35a4"
+      },
+      "source": {
+        "state": "unresolved"
+      },
+      "launch_critical": true
+    },
+    {
+      "role": "volume",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "ephys_atlas_volumes",
+        "release_id": "2026_W26-candidate-depth4-d050-linear-full-v2"
+      },
+      "maturity": "validated-real-local",
+      "destination": "data/releases/ephys_atlas_volumes/2026_W26-candidate-depth4-d050-linear-full-v2",
+      "root_manifest": {
+        "path": "manifest.json",
+        "media_type": "application/json",
+        "bytes": 24075,
+        "sha256": "945c797a304ebd8188e62eefcdb3d4b1ba7d706f095da51c2943667ee26abe5c"
+      },
+      "source": {
+        "state": "unresolved"
+      },
+      "launch_critical": true
+    },
+    {
+      "role": "projections",
+      "kind": "projection_pack",
+      "identity": {
+        "pack_id": "ibl-atlas-projections-2363b6958fbf"
+      },
+      "maturity": "production-intent",
+      "destination": "web/public/atlas/projections/ibl-static-registered-v1",
+      "root_manifest": {
+        "path": "manifest.json",
+        "media_type": "application/json",
+        "bytes": 7336,
+        "sha256": "d402496d63044ac26edf1a4128a4ccd291f32a53c1bd7ef97ee1558c949c05a5"
+      },
+      "source": {
+        "state": "unresolved"
+      },
+      "launch_critical": true
+    }
+  ],
+  "unavailable": [
+    {
+      "role": "brainwide_map",
+      "identity": "legacy-v1-1d908bea-d050-linear-full-v2",
+      "reason": "The six hash-pinned legacy Parquet inputs are absent; audit derivatives and older releases are not scientific substitutes.",
+      "required_for_complete_bundle": true
+    },
+    {
+      "role": "mesh",
+      "identity": "mesh-d042-schema-v1",
+      "reason": "The pinned D042 donor bytes are absent; a different or regenerated mesh is forbidden.",
+      "required_for_complete_bundle": false
+    }
+  ]
+}

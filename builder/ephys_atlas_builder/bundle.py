@@ -29,7 +29,7 @@ def _safe_path(name: str) -> PurePosixPath:
     return path
 
 
-def _resource_paths(release_dir: Path) -> set[str]:
+def declared_release_resource_paths(release_dir: Path) -> set[str]:
     """Resolve the complete declared resource graph from manifest.json."""
     expected = {"manifest.json"}
     manifest = json.loads((release_dir / "manifest.json").read_text())
@@ -78,8 +78,9 @@ def _resource_paths(release_dir: Path) -> set[str]:
     return expected
 
 
-def _validate_inventory(release_dir: Path) -> list[str]:
-    declared = _resource_paths(release_dir)
+def validate_release_inventory(release_dir: Path) -> list[str]:
+    """Require the on-disk release to equal its complete declared file graph."""
+    declared = declared_release_resource_paths(release_dir)
     actual = {
         path.relative_to(release_dir).as_posix()
         for path in release_dir.rglob("*")
@@ -125,7 +126,7 @@ def validate_bundle(bundle: Path, schema_dir: Path | None = None) -> dict[str, A
         if "manifest.json" not in seen:
             raise ValidationError("local dataset ZIP must contain manifest.json at its root")
         validate_release(extracted, schema_dir)
-        files = _validate_inventory(extracted)
+        files = validate_release_inventory(extracted)
     return {
         "path": bundle,
         "bytes": bundle.stat().st_size,
@@ -151,7 +152,7 @@ def write_bundle(
     else:
         raise ValueError("bundle output must be outside the release directory")
     validate_release(release_dir, schema_dir)
-    files = _validate_inventory(release_dir)
+    files = validate_release_inventory(release_dir)
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary: Path | None = None
     try:
