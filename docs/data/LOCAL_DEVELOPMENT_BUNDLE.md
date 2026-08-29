@@ -1,8 +1,8 @@
 # Local development bundle
 
-Status: active implementation and distribution plan. The exact missing inputs
-were recovered, and the complete local descriptor/verifier/server path is
-implemented. Only origin-bound remote distribution remains blocked.
+Status: active distribution plan. The exact missing inputs were recovered, and
+the complete local descriptor, verifier, atomic downloader, and server path is
+implemented. Supplying authorized immutable origins remains blocked on Q8.
 
 This plan defines how a fresh checkout will obtain the complete browser-ready
 development corpus without creating a second scientific data format or a
@@ -20,10 +20,17 @@ just dev
 ```
 
 - `just bootstrap` installs locked Python, Node, and browser dependencies;
-- `just data` currently verifies the complete pinned local artifact graph;
-  after Q8 it also obtains missing remote bytes from the resolved origins;
+- `just data` synchronizes the pinned artifacts, reusing valid local entries
+  without network access and obtaining missing entries only from exact resolved
+  HTTPS sources, then validates the complete local artifact graph;
 - `just dev` serves every verified descriptor entry through the local Vite
-  origin and never falls back for an unavailable dataset or pack.
+  origin. Startup remains read-only and never downloads or falls back for an
+  unavailable dataset or pack.
+
+The active v3 descriptor still has unresolved sources. Its complete corpus can
+therefore be reused on the integration machine, but a fresh checkout receives
+an actionable missing-origin report from `just data` until Q8 supplies a new
+immutable descriptor with authorized HTTPS origins.
 
 `just dev` is the only public viewer recipe. The historical channel-only,
 channel-plus-mesh, `dev-real`, `dev-3d`, and `dev-local-full` public recipes
@@ -130,21 +137,42 @@ plan and its implementation do not themselves grant it.
 
 ### 3. Atomic downloader
 
-Extend `just data` to:
+`just data` now runs the descriptor synchronizer and then the full bundle
+validator. The synchronizer:
 
-1. preflight disk space and the exact destination roots;
-2. reuse entries that pass complete validation;
-3. download missing artifacts into a bounded temporary directory;
-4. verify declared served-byte size and SHA-256 before decoding or admission;
-5. validate the complete release/pack graph;
-6. atomically move a complete artifact into its ignored destination;
-7. clean temporary state after a failure and leave existing valid artifacts
+1. preflights the exact destination roots and each complete resource layer as
+   soon as nested JSON discovery makes that layer known;
+2. reuses entries that pass complete validation;
+3. downloads missing artifacts into a bounded temporary directory;
+4. verifies declared served-byte size and SHA-256 before decoding or admission;
+5. validates the complete release/pack graph;
+6. atomically moves a complete artifact into its ignored destination;
+7. cleans temporary state after a failure and leaves existing valid artifacts
    untouched;
-8. fail with actionable authentication, origin, integrity, and disk-space
+8. fails with actionable authentication, origin, integrity, and disk-space
    errors, with no synthetic or older-release fallback.
 
-The downloader must not resolve mutable aliases or select a different source
-when a declared object is unavailable.
+These items are implemented. Temporary staging is bounded and remains on the
+destination filesystem. Encoded bytes must match their declared served size
+and SHA-256 before decoding; an artifact then passes the existing release,
+projection-pack, or mesh-pack graph validator before one atomic install. A
+valid local artifact causes no network request. A corrupt existing destination
+is not overwritten automatically, and failures remove temporary state without
+changing accepted local artifacts. A repository-local advisory lock serializes
+cooperating sync attempts and is automatically released on process exit;
+stable parent-directory identity and directory-relative cleanup and admission
+reject a destination or ancestor changed during transfer. A final destination
+check refuses a target already created by another writer.
+
+`launch_critical` is operational: a missing optional artifact is reported and
+omitted from the derived server environment without blocking the 2-D corpus.
+If an optional destination exists but fails validation, it still fails closed
+rather than being silently ignored or replaced.
+
+The downloader never resolves mutable aliases or selects a different source
+when a declared object is unavailable. Missing launch-critical entries with
+unresolved sources remain explicit Q8 blockers; the implemented downloader does not make the
+current v3 descriptor remotely obtainable or authorize upload/publication.
 
 ### 4. Bundle-driven local server
 
@@ -179,9 +207,11 @@ Rewrite the repository README as a short product and contributor landing page:
 Move completed cutover history, detailed anatomy mechanics, and changing
 milestone state out of the README rather than duplicating their authorities.
 
-Acceptance requires a clean checkout on a supported developer machine to run
-`just bootstrap`, `just data`, `just dev`, and `just validate-local-full` with
-no manual path edits. `just check` must remain green.
+Final acceptance requires a clean checkout on a supported developer machine to
+run `just bootstrap`, `just data`, `just dev`, and `just validate-local-full`
+with no manual path edits. The machinery is implemented and `just check`
+remains green, but clean-checkout data acquisition remains blocked until Q8
+provides authorized resolved sources in a new immutable descriptor.
 
 ## Stop conditions
 
@@ -200,7 +230,7 @@ no manual path edits. `just check` must remain green.
 
 Completion of the remote distribution work will record:
 
-- descriptor validation and downloader tests;
+- descriptor validation and downloader tests (implemented locally);
 - exact local and remote manifest identities and hashes;
 - clean-checkout command transcript and disk/transfer totals;
 - `just validate-local-full` evidence across all datasets and context views;

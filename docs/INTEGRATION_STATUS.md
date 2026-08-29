@@ -135,15 +135,29 @@ state authorizes remote publication.
 
 The committed complete development-bundle descriptor pins root manifests for
 the current channel, cluster, Brain-Wide Map, volume, projection, and D042 mesh
-artifacts. Its locked
-Python verifier checks bounded destinations, exact identities, root bytes and
-hashes, full schema/pack graphs, copied provenance inputs, and undeclared
-files. `just data`, `just dev`, and `just validate-local-full` all consume that
-one descriptor; no interactive compatibility recipes remain. Local Chromium
+artifacts. Its locked Python verifier checks bounded destinations, exact
+identities, root bytes and hashes, full schema/pack graphs, copied provenance
+inputs, and undeclared files. `just data` runs an atomic synchronizer followed
+by that full validator: valid local artifacts cause no network request, while a
+missing artifact with a resolved HTTPS source is downloaded into bounded
+staging and installed only after encoded-byte integrity and its existing graph
+validator pass. Failed staging is cleaned and accepted artifacts are left
+unchanged. Each newly discovered graph layer is preflighted as a whole before
+its resource requests. A repository-local advisory lock serializes cooperating
+sync processes without requiring stale-lock-file recovery, while stable parent-directory
+identity and directory-relative admission prevent parent swaps from redirecting
+installation. A final destination check refuses a target already created by
+another writer.
+
+`just dev` and `just validate-local-full` consume the same descriptor but stay
+read-only; no interactive compatibility recipes remain. Local Chromium
 acceptance covers all four real datasets plus Summary, Top, Swanson, and the
 optional 3-D context. The descriptor validates 8,164 files and 534,262,861
-bytes in the current workspace. Every origin remains explicitly unresolved;
-remote download and deployment remain blocked on Q8.
+bytes in the current workspace. Every v3 origin remains explicitly unresolved,
+so a fresh checkout receives actionable missing-origin errors and remote
+distribution remains blocked on Q8 despite the completed downloader machinery.
+An absent optional mesh is reported but does not block launch-critical 2-D;
+an invalid mesh already present fails closed.
 
 ## Quality gates
 

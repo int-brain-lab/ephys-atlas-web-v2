@@ -19,9 +19,9 @@ bootstrap-scientific:
 bootstrap-anatomy:
     uv sync --project builder --python 3.12 --extra anatomy --extra scientific --extra test --locked
 
-# Verify the pinned browser-ready development artifacts already present locally.
+# Obtain any remotely resolved artifacts atomically, reuse valid local bytes, and validate.
 data:
-    {{uv-test}} python -m tools.development_bundle validate data/development-bundle-v3.json
+    {{uv-test}} python -m tools.development_bundle sync data/development-bundle-v3.json
 
 # Run the descriptor-configured local catalog after complete available-graph validation.
 dev:

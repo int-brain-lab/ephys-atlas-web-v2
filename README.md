@@ -25,27 +25,35 @@ just dev
 ```
 
 When the ignored local artifacts are staged, open <http://localhost:5173/>
-after Vite starts. `just data` verifies every descriptor artifact against the pinned
-[`development-bundle-v3.json`](data/development-bundle-v3.json), including its
-root hash, immutable identity, and complete file graph. The complete local
-corpus validated in the current integration workspace is 534,262,861 bytes
-across channels, clusters, Brain-Wide Map, the W26 volume candidate, the
-five-view projection pack, and the optional D042 mesh pack.
+after Vite starts. `just data` synchronizes every descriptor artifact against
+the pinned [`development-bundle-v3.json`](data/development-bundle-v3.json),
+then runs full validation of root hashes, immutable identities, and complete
+file graphs. Already-valid artifacts are reused without a network request. A
+missing artifact with a resolved descriptor source downloads into bounded
+staging and is installed atomically only after encoded-byte integrity and the
+complete existing graph validator pass.
 
-Remote download is intentionally unavailable until Q8 supplies an authorized
-immutable origin. In a fresh checkout, `just data` therefore reports all
-missing artifacts and `just dev` stops before startup; neither command uses a
-synthetic, older-release, or mutable-alias fallback. The exact BWM and D042
-inputs have been recovered locally; remote download still requires Q8 to bind
-their immutable browser-ready outputs to an authorized origin.
+The complete local corpus validated in the current integration workspace is
+534,262,861 bytes across channels, clusters, Brain-Wide Map, the W26 volume
+candidate, the five-view projection pack, and the optional D042 mesh pack. Its
+v3 descriptor still records unresolved sources because Q8 has not supplied an
+authorized immutable origin. In a fresh checkout, `just data` therefore gives
+an actionable error for each missing unresolved launch-critical artifact, and `just dev` stops
+before startup. Development startup is read-only: it validates local bytes but
+does not download, publish, or fall back to synthetic data, an older release,
+or a mutable alias. An absent optional artifact is reported without blocking
+the launch-critical 2-D corpus; a corrupt artifact that is present still fails
+closed. The exact BWM and D042 inputs have been recovered locally;
+Q8 is only the remaining blocker to distributing their immutable browser-ready
+outputs through this path.
 
 ## Main commands
 
 | Command | Purpose |
 | --- | --- |
 | `just bootstrap` | Install locked Python, Node, and Chromium dependencies. |
-| `just data` | Verify the pinned local development artifact graph without network access. |
-| `just dev` | Verify the graph, derive the local catalog from its descriptor, and start Vite. |
+| `just data` | Reuse or atomically obtain descriptor-pinned artifacts, then validate the complete local graph. |
+| `just dev` | Read-only validation, local catalog derivation, and Vite startup. |
 | `just check` | Run the complete local CI-equivalent gate. |
 | `just docs-serve` | Preview the strict local documentation site. |
 

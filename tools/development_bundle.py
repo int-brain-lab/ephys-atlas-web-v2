@@ -1,4 +1,4 @@
-"""Validate the pinned local development bundle without network access."""
+"""Synchronize or read-only validate the pinned local development bundle."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ import sys
 
 from ephys_atlas_builder.development_bundle import (
     ValidatedDevelopmentBundle,
+    sync_development_bundle,
     validate_development_bundle,
 )
 
@@ -84,12 +85,21 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     validate = commands.add_parser("validate", help="verify the complete available local graph")
     validate.add_argument("descriptor", type=Path)
+    sync = commands.add_parser(
+        "sync",
+        help="reuse valid artifacts, atomically download absent resolved artifacts, and validate",
+    )
+    sync.add_argument("descriptor", type=Path)
     run = commands.add_parser("run", help="verify the bundle and run a descriptor-configured command")
     run.add_argument("descriptor", type=Path)
     run.add_argument("--cwd", type=Path, default=Path.cwd())
     run.add_argument("child", nargs=argparse.REMAINDER)
     arguments = parser.parse_args()
-    bundle = validate_development_bundle(arguments.descriptor)
+    bundle = (
+        sync_development_bundle(arguments.descriptor)
+        if arguments.command == "sync"
+        else validate_development_bundle(arguments.descriptor)
+    )
     _report(bundle)
     if arguments.command == "run":
         child = arguments.child[1:] if arguments.child[:1] == ["--"] else arguments.child

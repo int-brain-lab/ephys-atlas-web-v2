@@ -167,8 +167,9 @@ Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 5 and 7; cluster record:
 
 Status: the exact BWM and D042 inputs were recovered and verified; their new
 immutable technical outputs, complete local descriptor, verifier, `just data`,
-descriptor-driven `just dev`, focused launcher compatibility, and onboarding
-command cleanup are implemented. Concrete deployment remains blocked.
+atomic downloader, descriptor-driven read-only `just dev`, focused launcher
+compatibility, and onboarding command cleanup are implemented. Concrete
+deployment remains blocked.
 
 Blockers: residual Q8 and Q9. Remote mutation requires explicit authorization
 and credentials.
@@ -180,8 +181,9 @@ Next testable actions:
 2. deploy the immutable projection pack with opaque `.isvg.gz` bytes and verify
    served size, SHA-256, MIME, CORS, and cache behavior;
 3. deploy the completed pinned development bundle without transforming its
-   immutable browser-ready bytes, then add atomic verified download support to
-   `just data`;
+   immutable browser-ready bytes, create a new descriptor with exact resolved
+   HTTPS sources, and exercise the implemented atomic `just data` path from a
+   clean checkout;
 4. finalize the frozen scientific release set, catalog, and aliases;
 5. deploy or explicitly waive the publishing service; if deployed, configure
    validation, secrets, storage, backups, TLS, and reverse proxy;
@@ -190,6 +192,10 @@ Next testable actions:
 Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 10, 11, and 13.
 Binding local-bundle plan:
 [`data/LOCAL_DEVELOPMENT_BUNDLE.md`](data/LOCAL_DEVELOPMENT_BUNDLE.md).
+Valid local entries are reused without network access; resolved missing entries
+stage and pass full integrity/graph validation before atomic installation.
+Current v3 sources remain unresolved, so `just data` reports actionable Q8
+blockers in a fresh checkout and `just dev` performs validation only.
 
 ## M7 — Final release QA
 
