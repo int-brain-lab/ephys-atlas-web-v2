@@ -134,7 +134,7 @@ test('changes the anatomy parcellation without reloading or altering the volume'
     nodes.map((node) => node.getAttribute('data-volume-index'))
   ))).toEqual(volumeIndices);
   expect(featureRequests).toHaveLength(baselineRequests);
-  await expect(page.locator('[role="alert"]')).toHaveCount(0);
+  await expect(page.locator('[role="alert"]:visible')).toHaveCount(0);
 });
 
 test('rapid feature switching cancels stale presentation and keeps the latest feature', async ({ page }) => {

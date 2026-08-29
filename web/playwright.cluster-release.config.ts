@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 const release = process.env.EPHYS_ATLAS_CLUSTER_RELEASE
-  ?? '../data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-d050-d048-v1';
+  ?? '../data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-d050-d048-q14-v1';
 
 export default defineConfig({
   testDir: './test/cluster-release',

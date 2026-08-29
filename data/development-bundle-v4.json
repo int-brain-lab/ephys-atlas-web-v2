@@ -1,0 +1,136 @@
+{
+  "schema_version": "1.0",
+  "bundle_id": "local-development-core-2026-08-29-v4",
+  "provenance": {
+    "generator": "manually-reviewed-development-bundle",
+    "version": "1",
+    "launcher_baseline_commit": "fa70916"
+  },
+  "default_view": {
+    "dataset_id": "ephys_atlas_channels",
+    "release_id": "2026_W32-d050-q14-v1",
+    "feature_id": "rms_ap.denoised",
+    "parcellation_id": "allen"
+  },
+  "artifacts": [
+    {
+      "role": "channels",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "ephys_atlas_channels",
+        "release_id": "2026_W32-d050-q14-v1"
+      },
+      "maturity": "validated-real-local",
+      "destination": "data/releases/ephys_atlas_channels/2026_W32-d050-q14-v1",
+      "root_manifest": {
+        "path": "manifest.json",
+        "media_type": "application/json",
+        "bytes": 41413,
+        "sha256": "93a736191f896dc6b6c0d06f0800e0101c42b7ddf489de4d5d89a7c69f9a9aa2"
+      },
+      "source": {
+        "state": "unresolved"
+      },
+      "launch_critical": true
+    },
+    {
+      "role": "clusters",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "ephys_atlas_clusters",
+        "release_id": "sha256-9b5e55215b306f26-d050-d048-q14-v1"
+      },
+      "maturity": "validated-real-local",
+      "destination": "data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-d050-d048-q14-v1",
+      "root_manifest": {
+        "path": "manifest.json",
+        "media_type": "application/json",
+        "bytes": 13963,
+        "sha256": "2fbc2973def76635702c282636bad5952cd70bd398632442332ea80765cc5c4b"
+      },
+      "source": {
+        "state": "unresolved"
+      },
+      "launch_critical": true
+    },
+    {
+      "role": "brainwide_map",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "brainwide_map",
+        "release_id": "legacy-v1-1d908bea-d050-q14-linear-full-v1"
+      },
+      "maturity": "validated-real-local",
+      "destination": "data/releases/brainwide_map/legacy-v1-1d908bea-d050-q14-linear-full-v1",
+      "root_manifest": {
+        "path": "manifest.json",
+        "media_type": "application/json",
+        "bytes": 20839,
+        "sha256": "2a6cf2c6146fa2d5670aa7b696450b930c20e9f86535e99a8f945aa022261e30"
+      },
+      "source": {
+        "state": "unresolved"
+      },
+      "launch_critical": true
+    },
+    {
+      "role": "volume",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "ephys_atlas_volumes",
+        "release_id": "2026_W26-candidate-depth4-d050-q14-linear-full-v1"
+      },
+      "maturity": "validated-real-local",
+      "destination": "data/releases/ephys_atlas_volumes/2026_W26-candidate-depth4-d050-q14-linear-full-v1",
+      "root_manifest": {
+        "path": "manifest.json",
+        "media_type": "application/json",
+        "bytes": 24149,
+        "sha256": "2a88025bfa57ce13b9ceb7a4498bae9bfef05f784496bab1ed53fb9ac77fd89b"
+      },
+      "source": {
+        "state": "unresolved"
+      },
+      "launch_critical": true
+    },
+    {
+      "role": "projections",
+      "kind": "projection_pack",
+      "identity": {
+        "pack_id": "ibl-atlas-projections-2363b6958fbf"
+      },
+      "maturity": "production-intent",
+      "destination": "web/public/atlas/projections/ibl-static-registered-v1",
+      "root_manifest": {
+        "path": "manifest.json",
+        "media_type": "application/json",
+        "bytes": 7336,
+        "sha256": "d402496d63044ac26edf1a4128a4ccd291f32a53c1bd7ef97ee1558c949c05a5"
+      },
+      "source": {
+        "state": "unresolved"
+      },
+      "launch_critical": true
+    },
+    {
+      "role": "mesh",
+      "kind": "mesh_pack",
+      "identity": {
+        "pack_id": "ibl-bwm-d042-c7bb3a88157c42cc"
+      },
+      "maturity": "production-intent",
+      "destination": "artifacts/mesh-d042-schema-v1",
+      "root_manifest": {
+        "path": "manifest.json",
+        "media_type": "application/json",
+        "bytes": 495323,
+        "sha256": "49d58f1893ce9978f41c13fd445f5ff2bd34b18b737aa5b763291b6774b34b2c"
+      },
+      "source": {
+        "state": "unresolved"
+      },
+      "launch_critical": false
+    }
+  ],
+  "unavailable": []
+}

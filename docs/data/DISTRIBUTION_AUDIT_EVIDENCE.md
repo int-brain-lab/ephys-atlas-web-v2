@@ -86,15 +86,12 @@ review page itself performed no mutation; the subsequent explicit owner
 direction authorizes promotion through the committed selection and immutable
 build workflow.
 
-## Stop condition
+## Promoted selections and immutable releases
 
-The four named D050 release directories are now present in the recovered local
-development bundle. Their embedded distribution selections are byte-identical
-to the accepted baseline selections, so the lab can compare current behavior
-without rebuilding a release.
-
-Owner review is complete. P4D next promotes the exact reviewed displays through
-committed complete selections before building new immutable local releases.
+The completed review was promoted through four complete selections committed
+at builder provenance commit
+`b37e2f28fc111b625c7b9ad25d8521d433e70a99`. Prior D050 releases remain
+unchanged.
 
 The promoted selection identities and SHA-256 values are:
 
@@ -105,5 +102,20 @@ The promoted selection identities and SHA-256 values are:
 | Brain-Wide Map | `brainwide-map-legacy-v1-1d908bea-d050-q14-linear-full-v1` | `9dccacce7c85d52ded41f563a7517cce1657d157046a16409cb28b4ac68915e5` |
 | Encoding volumes | `volumes-2026-w26-d050-q14-linear-full-v1` | `c74ebe23edd8020d047482615791d5802a26380622efabb4cc73e8f9d140f2da` |
 
-Immutable rebuild and integrated browser evidence remain pending until the
-selection commit is clean and can be recorded as builder provenance.
+The resulting immutable local releases are:
+
+| Dataset | Release ID | Manifest SHA-256 | Files |
+| --- | --- | --- | ---: |
+| Channels | `2026_W32-d050-q14-v1` | `93a736191f896dc6b6c0d06f0800e0101c42b7ddf489de4d5d89a7c69f9a9aa2` | 1,138 |
+| Clusters | `sha256-9b5e55215b306f26-d050-d048-q14-v1` | `2fbc2973def76635702c282636bad5952cd70bd398632442332ea80765cc5c4b` | 264 |
+| Brain-Wide Map | `legacy-v1-1d908bea-d050-q14-linear-full-v1` | `2a6cf2c6146fa2d5670aa7b696450b930c20e9f86535e99a8f945aa022261e30` | 154 |
+| Encoding volumes | `2026_W26-candidate-depth4-d050-q14-linear-full-v1` | `2a88025bfa57ce13b9ceb7a4498bae9bfef05f784496bab1ed53fb9ac77fd89b` | 6,810 |
+
+Every release passed schema-v1 graph validation and a clean byte-for-byte
+rebuild: 1,138/1,138 channel files, 264/264 cluster files, 154/154 Brain-Wide
+Map files, and 6,810/6,810 volume files matched. All four focused Chromium
+suites passed. Immutable bundle `local-development-core-2026-08-29-v4`
+validates 8,428 files and 551,523,979 bytes; integrated browser acceptance
+visited every scientific dataset plus Summary, Top, Swanson, and 3-D, reached
+the ready mesh state, and recorded no browser errors. Q5 still governs the
+volume production transport, and no remote publication was performed.

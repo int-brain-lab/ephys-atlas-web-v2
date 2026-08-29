@@ -129,6 +129,20 @@ doubling linked-plane transfer and decoded center-pack memory. Q5 deliberately
 remains open until the selected origin reproduces the header/cache behavior and
 real network measurements.
 
+## Reviewed depth-four successor
+
+The completed Q14 review retained Linear/Full presentation for all 41 volume
+features. The immutable local successor
+`2026_W26-candidate-depth4-d050-q14-linear-full-v1` was built from that complete
+selection at builder provenance commit
+`b37e2f28fc111b625c7b9ad25d8521d433e70a99`. Its 24,149-byte manifest has
+SHA-256
+`2a88025bfa57ce13b9ceb7a4498bae9bfef05f784496bab1ed53fb9ac77fd89b`;
+the release contains 6,810 files. A clean rebuild matched all 6,810 files, and
+the volume Chromium suite plus integrated v4 bundle validation passed. This is
+still explicitly a local candidate: the reviewed decision settles presentation only and does
+not resolve Q5 or authorize publication.
+
 ## Production-style local browser acceptance
 
 The ignored depth-4 candidate is served through the opt-in real-release path

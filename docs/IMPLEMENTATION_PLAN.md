@@ -12,39 +12,10 @@ testable action.
 The schema-v1 producer/consumer cutover, five-view retained 2-D workspace,
 optional sibling 3-D context, regional and volume exploration foundations,
 publishing service, contextual/artifact downloads, D050 distribution contract,
-and validated local channel/cluster/Brain-Wide Map/volume candidates are
+and D054-reviewed local channel/cluster/Brain-Wide Map/volume releases are
 implemented and green. [`INTEGRATION_STATUS.md`](INTEGRATION_STATUS.md) records
 their current maturity; focused evidence lives under `docs/data/` and
 `docs/rendering/`.
-
-## P4D — Complete audited distribution selections
-
-Status: active; D054 owner approval and all four complete selections are
-recorded. Immutable local rebuild and validation remain.
-
-Blocker: none. The exact evidence, completed 155-feature review, and selection
-identities are recorded in
-[`data/DISTRIBUTION_AUDIT_EVIDENCE.md`](data/DISTRIBUTION_AUDIT_EVIDENCE.md).
-
-Next testable actions:
-
-1. commit the reviewed selection artifacts before building so provenance binds
-   a clean source commit;
-2. build new immutable channel, cluster, Brain-Wide Map, and volume release
-   IDs, validate exact tails and scale/domain cross-products, and run all four
-   dataset browser suites;
-3. create a new immutable development-bundle descriptor, update local defaults,
-   run `just validate-local-full`, and finish with `just check`.
-
-The named D050 release directories are present in the recovered development
-bundle, and their embedded distribution selections are byte-identical to the
-accepted baselines used by the review lab.
-
-D054 promotes the complete reviewed record. D052 `peak_val.raw` and D048's six
-cluster Log choices are retained exactly within the new complete selections.
-
-Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 2 and 3; binding runbook:
-[`data/DISTRIBUTION_AUDIT.md`](data/DISTRIBUTION_AUDIT.md).
 
 ## M5 — Custom authoring and ZIP import
 
@@ -194,7 +165,7 @@ Binding local-bundle plan:
 [`data/LOCAL_DEVELOPMENT_BUNDLE.md`](data/LOCAL_DEVELOPMENT_BUNDLE.md).
 Valid local entries are reused without network access; resolved missing entries
 stage and pass full integrity/graph validation before atomic installation.
-Current v3 sources remain unresolved, so `just data` reports actionable Q8
+Current v4 sources remain unresolved, so `just data` reports actionable Q8
 blockers in a fresh checkout and `just dev` performs validation only.
 
 ## M7 — Final release QA

@@ -27,7 +27,7 @@ just dev
   origin. Startup remains read-only and never downloads or falls back for an
   unavailable dataset or pack.
 
-The active v3 descriptor still has unresolved sources. Its complete corpus can
+The active v4 descriptor still has unresolved sources. Its complete corpus can
 therefore be reused on the integration machine, but a fresh checkout receives
 an actionable missing-origin report from `just data` until Q8 supplies a new
 immutable descriptor with authorized HTTPS origins.
@@ -58,16 +58,16 @@ part of the development bundle.
 
 ## Complete local bundle
 
-The immutable v3 descriptor extends, rather than retargets, the historical v2
-bootstrap descriptor. It pins every recovered validated artifact without
+The immutable v4 descriptor extends, rather than retargets, the historical v2
+and v3 descriptors. It pins every reviewed validated artifact without
 relabelling scientific maturity:
 
 | Role | Immutable identity | Current maturity |
 | --- | --- | --- |
-| Channels | `2026_W32-d050-peak-val-raw-v7` | deterministic technical revision of the validated-real-local development release; not the Q2 paper selection |
-| Clusters | `sha256-9b5e55215b306f26-d050-d048-v6` | deterministic technical revision of the validated-real-local reviewed release; not published |
-| Brain-Wide Map | `legacy-v1-1d908bea-d050-linear-full-v2` | deterministic validated-real-local technical revision rebuilt from all six exact pinned Parquets; not published |
-| Volume | `2026_W26-candidate-depth4-d050-linear-full-v3` | deterministic technical revision of the validated-real-local candidate; not the Q5 production transport |
+| Channels | `2026_W32-d050-q14-v1` | D054-reviewed deterministic technical revision; not the Q2 paper selection |
+| Clusters | `sha256-9b5e55215b306f26-d050-d048-q14-v1` | D054-reviewed deterministic technical revision; not published |
+| Brain-Wide Map | `legacy-v1-1d908bea-d050-q14-linear-full-v1` | D054-reviewed deterministic technical revision rebuilt from all six exact pinned Parquets; not published |
+| Volume | `2026_W26-candidate-depth4-d050-q14-linear-full-v1` | D054-reviewed deterministic candidate; not the Q5 production transport |
 | Projection pack | active schema-v1 `atlas-projection-pack-v1` | committed production-intent browser artifact; origin verification remains |
 | 3-D mesh pack | `ibl-bwm-d042-c7bb3a88157c42cc` | optional production-intent pack losslessly repackaged from the exact D042 donor; not published |
 
@@ -75,8 +75,9 @@ This is a development bundle identity, not a mutable `latest` alias and not a
 claim about the eventual paper-facing production release set. Future bundles
 receive new immutable bundle IDs; an existing descriptor is never silently
 retargeted. Historical `data/development-bundle-v2.json` remains the incomplete
-bootstrap record. Active `data/development-bundle-v3.json` validates 8,164
-files and 534,262,861 bytes across four scientific releases and both packs.
+bootstrap record and v3 remains the pre-D054 complete bundle. Active
+`data/development-bundle-v4.json` validates 8,428 files and 551,523,979 bytes
+across four scientific releases and both packs.
 
 ## Bundle descriptor
 
@@ -113,7 +114,7 @@ scientific identities, and unsupported descriptor versions.
 
 This phase is independent of Q8 and can use the current ignored local artifacts.
 
-Items 1-5 are implemented for the complete v3 descriptor. The verifier also
+Items 1-5 are implemented for the complete v4 descriptor. The verifier also
 verifies copied publication-input and selection-file hashes and rejects
 undeclared release files. The recovered Brain-Wide Map and D042 artifacts pass
 their focused validators and deterministic rebuild checks; absence or damage
@@ -172,7 +173,7 @@ rather than being silently ignored or replaced.
 The downloader never resolves mutable aliases or selects a different source
 when a declared object is unavailable. Missing launch-critical entries with
 unresolved sources remain explicit Q8 blockers; the implemented downloader does not make the
-current v3 descriptor remotely obtainable or authorize upload/publication.
+current v4 descriptor remotely obtainable or authorize upload/publication.
 
 ### 4. Bundle-driven local server
 

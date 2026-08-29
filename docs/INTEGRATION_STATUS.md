@@ -2,8 +2,8 @@
 
 Status: active pre-launch capability matrix.
 
-Last reviewed: 2026-08-29 on `main` after the D050-D053 distribution work,
-documentation authority repair, and Allen regional authoring/ZIP-import slice.
+Last reviewed: 2026-08-29 on `main` after the D054 reviewed-distribution
+rebuilds and integrated local acceptance.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -29,10 +29,10 @@ Stable boundaries and end-to-end flow are in
 
 | Dataset | Builder and browser machinery | Current real artifact maturity | Blocker/next action |
 | --- | --- | --- | --- |
-| `ephys_atlas_channels` | Dynamic raw/denoised discovery, explicit `inside` recipe, Allen/Beryl/Cosmos summaries, D050 distributions, provenance, HTTP acceptance. | Validated-real-local deterministic technical revision `2026_W32-d050-peak-val-raw-v7`; not paper-facing or published. | Q2 paper vintage; Q8 staging origin. Keep release/suite reproducible. |
-| `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048 presentation, D050 distributions, HTTP acceptance. | Validated-real-local deterministic technical revision `sha256-9b5e55215b306f26-d050-d048-v6`; owner-reviewed, not published. | Q8/Q9 publication/default authorization. |
-| `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | Validated-real-local deterministic technical revision `legacy-v1-1d908bea-d050-linear-full-v2`, rebuilt byte-deterministically from all six exact hash-pinned Parquets; not published. | Q8/Q9 publication/default authorization. |
-| `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | Validated-real-local depth-4 deterministic technical revision `2026_W26-candidate-depth4-d050-linear-full-v3`; explicitly non-production. | Q5 confirmation at the Q8 CloudFront origin, then immutable production build. |
+| `ephys_atlas_channels` | Dynamic raw/denoised discovery, explicit `inside` recipe, Allen/Beryl/Cosmos summaries, D050 distributions, provenance, HTTP acceptance. | D054-reviewed, deterministic validated-real-local technical revision `2026_W32-d050-q14-v1`; not paper-facing or published. | Q2 paper vintage; Q8 staging origin. Keep release/suite reproducible. |
+| `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048/D054 presentation, D050 distributions, HTTP acceptance. | D054-reviewed, deterministic validated-real-local technical revision `sha256-9b5e55215b306f26-d050-d048-q14-v1`; not published. | Q8/Q9 publication/default authorization. |
+| `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | D054-reviewed, deterministic validated-real-local technical revision `legacy-v1-1d908bea-d050-q14-linear-full-v1`, rebuilt from all six exact hash-pinned Parquets; not published. | Q8/Q9 publication/default authorization. |
+| `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | D054-reviewed, validated-real-local depth-4 deterministic technical revision `2026_W26-candidate-depth4-d050-q14-linear-full-v1`; explicitly non-production. | Q5 confirmation at the Q8 CloudFront origin, then immutable production build. |
 | `local` | Same schema-v1 graph and materializers; public regional and explicit-grid volume `ibl_ephys_atlas` authoring; deterministic validated ZIP packaging; strict bounded two-phase browser import, atomic IndexedDB admission/deletion, inventory, and integrity recovery. | Regional/reduced-mapping and float16/float32 mask/sentinel volume tests, five executable examples, generated API reference, generated-schema parity, clean-wheel coverage, exact regeneration of both committed public-authored archives, and Chromium import/render/management tests are green. | Measure provisional limits across browsers/real archives; publish the Python distribution only after authorization. |
 
 Dataset source, recipe, selection, release, and audit ownership is indexed by
@@ -51,10 +51,10 @@ log are synchronized value scales; Full and Focused are independent domains
 used by global, selected, and compact histograms with exact whole-population
 tails. D053 preserves off-scale color bounds without clamping. D054 closes Q14
 with complete owner-reviewed selections for all 155 feature/representation
-entries, retaining D052 and D048 exactly. The four currently integrated D050
-local candidates remain green on their prior selections while new immutable
-D054-bound local releases are rebuilt and validated; no remote publication
-occurred. See
+entries, retaining D052 and D048 exactly. Four new immutable D054-bound
+releases pass complete graph validation, byte-identical rebuilds,
+dataset-specific Chromium acceptance, and integrated v4 bundle validation; no
+remote publication occurred. See
 [`data/DISTRIBUTION_AUDIT_EVIDENCE.md`](data/DISTRIBUTION_AUDIT_EVIDENCE.md).
 
 ## Volume exploration

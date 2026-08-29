@@ -180,10 +180,9 @@ input, not an approved selection or permission to publish. After explicit
 owner approval, translate the reviewed choices into all four complete
 selection artifacts and follow the immutable rebuild sequence below.
 
-## Implementation handoff: immutable D054-bound rebuilds
+## Completed implementation: immutable D054-bound rebuilds
 
-Status: **ACTIVE DISTRIBUTION TASK; audit, owner review, D054, and all four
-complete selections are recorded; no remote publication authorized**.
+Status: **COMPLETE LOCALLY; no remote publication authorized**.
 
 The exact 155-feature review is committed as
 [`Q14_DISTRIBUTION_REVIEW_2026-08-29.json`](Q14_DISTRIBUTION_REVIEW_2026-08-29.json).
@@ -191,7 +190,7 @@ All 34 proposals were accepted and all 121 other choices were retained. D052
 and D048 survive exactly within D054; regional and volume choices remain
 independent.
 
-Execute this sequence:
+The completed sequence was:
 
 1. Commit the four complete reviewed selection files while the worktree is
    clean so builder provenance records their exact source commit.
@@ -207,8 +206,8 @@ Execute this sequence:
 Keep every prior immutable release available. Do not publish, push, create a
 PR, or modify remote aliases/origins without separate authorization.
 
-Acceptance evidence for this future task consists of the four source-array
-audit reports plus their review table, explicit owner approvals, committed
-selection bytes, new immutable local release IDs, schema/integrity validation,
-dataset-specific browser results, integrated Summary/Top/Swanson/3-D local
-validation, a green `just check`, and a clean `main` worktree.
+The exact release identities, manifest hashes, deterministic rebuild counts,
+dataset-specific browser results, and integrated Summary/Top/Swanson/3-D local
+validation are recorded in
+[`DISTRIBUTION_AUDIT_EVIDENCE.md`](DISTRIBUTION_AUDIT_EVIDENCE.md). Remote
+publication and alias changes remain outside this authorization.

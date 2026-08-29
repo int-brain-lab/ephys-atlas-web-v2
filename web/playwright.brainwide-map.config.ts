@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 const release = process.env.EPHYS_ATLAS_BRAINWIDE_MAP_RELEASE
-  ?? '../data/releases/brainwide_map/legacy-v1-1d908bea-d050-linear-full-v1';
+  ?? '../data/releases/brainwide_map/legacy-v1-1d908bea-d050-q14-linear-full-v1';
 
 export default defineConfig({
   testDir: './test/brainwide-map-release',

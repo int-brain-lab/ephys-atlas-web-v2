@@ -4,7 +4,7 @@ import path from 'node:path';
 
 const releaseRoot = path.resolve(
   process.env.EPHYS_ATLAS_BRAINWIDE_MAP_RELEASE
-    ?? '../data/releases/brainwide_map/legacy-v1-1d908bea-d050-linear-full-v1',
+    ?? '../data/releases/brainwide_map/legacy-v1-1d908bea-d050-q14-linear-full-v1',
 );
 const releaseId = path.basename(releaseRoot);
 
@@ -26,6 +26,13 @@ test('local catalog exposes the complete preserved Beryl release', async ({ page
   await expect(page.locator('[data-context-field="representation"] .context-field__value')).toHaveText(
     'Regional · Beryl',
   );
+  await expect(page.locator('.distribution-chart')).toHaveAttribute('data-axis-scale', 'linear');
+  await expect(page.locator('.distribution-chart')).toHaveAttribute('data-distribution-domain', 'full');
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.locator('select[aria-label="Value scale"] option:checked')).toHaveText('Auto (Linear)');
+  await expect(page.locator('select[aria-label="Distribution domain"] option:checked')).toHaveText('Auto (Full)');
+  await expect(page.locator('select[aria-label="Value scale"] option[value="log"]')).toHaveAttribute('disabled', '');
+  await page.getByRole('button', { name: 'Close Visualization settings' }).click();
 
   const dataset = page.locator('[data-context-field="dataset"]');
   await dataset.locator('.context-menu__trigger').click();

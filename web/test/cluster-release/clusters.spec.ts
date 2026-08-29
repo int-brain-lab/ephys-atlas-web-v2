@@ -4,7 +4,7 @@ import path from 'node:path';
 
 const releaseRoot = path.resolve(
   process.env.EPHYS_ATLAS_CLUSTER_RELEASE
-    ?? '../data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-d050-d048-v1',
+    ?? '../data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-d050-d048-q14-v1',
 );
 const releaseId = path.basename(releaseRoot);
 
@@ -100,13 +100,19 @@ test('exposes approved units, explanations, and conservative scale defaults', as
   await expect(page.locator('.color-legend__unit')).toHaveText('Hz');
 
   await page.goto('/?v=4&feature=noise_cutoff');
-  await expect(page.locator('.distribution-chart')).toHaveAttribute('data-axis-scale', 'linear');
+  await expect(page.locator('.distribution-chart')).toHaveAttribute('data-axis-scale', 'symlog');
+  await expect(page.locator('.distribution-chart')).toHaveAttribute('data-distribution-domain', 'focused');
+  await expect(compactDistribution).toHaveAttribute('data-axis-scale', 'symlog');
+  await expect(compactDistribution).toHaveAttribute('data-distribution-domain', 'focused');
+  await expect(page.getByRole('button', { name: 'Signed log', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('button', { name: 'Log', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.locator('select[aria-label="Value scale"] option:checked')).toHaveText(
-    'Auto (Linear)',
+    'Auto (Signed log)',
   );
+  await expect(page.locator('select[aria-label="Distribution domain"] option:checked')).toHaveText('Auto (Focused)');
   await expect(page.locator('select[aria-label="Value scale"] option[value="log"]')).toHaveAttribute('disabled', '');
+  await expect(page.locator('.distribution-chart__tails')).toHaveAttribute('data-visible', 'true');
   await expect(page.locator('.color-legend__unit')).toHaveText('a.u.');
   await expect(page.locator('.feature-summary__description')).toContainText(
     'Signed standardized amplitude-histogram cutoff score',

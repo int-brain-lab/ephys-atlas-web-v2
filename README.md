@@ -26,7 +26,7 @@ just dev
 
 When the ignored local artifacts are staged, open <http://localhost:5173/>
 after Vite starts. `just data` synchronizes every descriptor artifact against
-the pinned [`development-bundle-v3.json`](data/development-bundle-v3.json),
+the pinned [`development-bundle-v4.json`](data/development-bundle-v4.json),
 then runs full validation of root hashes, immutable identities, and complete
 file graphs. Already-valid artifacts are reused without a network request. A
 missing artifact with a resolved descriptor source downloads into bounded

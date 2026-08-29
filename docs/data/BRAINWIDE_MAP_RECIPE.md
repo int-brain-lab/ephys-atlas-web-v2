@@ -54,8 +54,9 @@ The current validated-real-local release identity and next publication step are
 recorded in [`../INTEGRATION_STATUS.md`](../INTEGRATION_STATUS.md).
 
 On 2026-08-29 the six exact inputs were recovered locally, verified against the
-table above, and used to build
-`legacy-v1-1d908bea-d050-linear-full-v2`. A second clean output was
-byte-identical. The immutable manifest is 20,765 bytes with SHA-256
-`e8d7c048b3dab81d7729cf55999bfcdfe92e5fac55eada62cc7aaf339ec480c8`;
-the complete release contains 154 files and 2,134,759 stored bytes.
+table above, and used for the D054-reviewed release
+`legacy-v1-1d908bea-d050-q14-linear-full-v1`. A second clean output was
+byte-identical. The immutable manifest is 20,839 bytes with SHA-256
+`2a6cf2c6146fa2d5670aa7b696450b930c20e9f86535e99a8f945aa022261e30`;
+the complete release contains 154 files and 2,135,040 stored bytes. The prior
+D050 release remains immutable.
