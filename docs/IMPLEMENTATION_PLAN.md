@@ -172,16 +172,23 @@ and credentials.
 
 Next testable actions:
 
-1. provision an IBL-owned staging S3 REST origin and CloudFront distribution
+1. implement the pinned local bundle descriptor, local verifier, and
+   bundle-driven `just data`/`just dev` path that is independent of Q8;
+2. provision an IBL-owned staging S3 REST origin and CloudFront distribution
    without accessing `iblviz`;
-2. deploy the immutable projection pack with opaque `.isvg.gz` bytes and verify
+3. deploy the immutable projection pack with opaque `.isvg.gz` bytes and verify
    served size, SHA-256, MIME, CORS, and cache behavior;
-3. finalize the frozen scientific release set, catalog, and aliases;
-4. deploy or explicitly waive the publishing service; if deployed, configure
+4. deploy the current pinned development bundle without transforming its
+   immutable browser-ready bytes, then add atomic verified download support to
+   `just data`;
+5. finalize the frozen scientific release set, catalog, and aliases;
+6. deploy or explicitly waive the publishing service; if deployed, configure
    validation, secrets, storage, backups, TLS, and reverse proxy;
-5. verify all anatomy and scientific release URLs from the production origin.
+7. verify all anatomy and scientific release URLs from the production origin.
 
 Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 10, 11, and 13.
+Binding local-bundle plan:
+[`data/LOCAL_DEVELOPMENT_BUNDLE.md`](data/LOCAL_DEVELOPMENT_BUNDLE.md).
 
 ## M7 — Final release QA
 

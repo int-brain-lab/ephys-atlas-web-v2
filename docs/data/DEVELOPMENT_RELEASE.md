@@ -87,11 +87,14 @@ from that directory through the production `HttpDatasetSource` path. It does
 not bypass contract parsing or binary decoding, copy the release into Git, or
 claim to test production-origin CORS/cache headers.
 
-For interactive local review, run `just dev`. The parameterized equivalent is:
+For interactive review of this channel release alone, run:
 
 ```bash
 just dev-real release=2026_W32 feature=rms_ap.denoised
 ```
+
+The ordinary `just dev` entry point serves the integrated local catalog,
+including channels, clusters, Brain-Wide Map, volume, projections, and 3-D.
 
 Vite validates the immutable manifest and requested feature before startup,
 then exposes a development-only catalog and release bytes under one local

@@ -49,6 +49,17 @@ just check
 just dev
 ```
 
+`just dev` serves the complete validated-real-local catalog: channels,
+clusters, the preserved Brain-Wide Map release, the candidate-labelled W26
+volume transport, all projection views, and the D042 3-D mesh pack. Open
+<http://localhost:5173/> after Vite starts. These ignored local releases and
+the mesh artifact must be present; startup fails explicitly when one is absent.
+
+For narrower development sessions, use `just dev-real` for channels only or
+`just dev-3d` for channels plus an explicit 3-D mesh. `just dev-local-full`
+remains a compatibility alias for `just dev`. All recipes accept the
+parameter overrides shown by `just --list`.
+
 Run `just docs-serve` to preview the documentation website locally. The site
 is also built strictly by `just check`; no documentation deployment is
 configured. Executable custom-authoring examples live under
@@ -59,7 +70,7 @@ this machine, the complete local-only catalog can be served without contacting
 or publishing to a remote service:
 
 ```bash
-just dev-local-full
+just dev
 just validate-local-full
 ```
 
