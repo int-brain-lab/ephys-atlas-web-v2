@@ -1,14 +1,14 @@
 {
   "schema_version": "1.0",
-  "bundle_id": "local-development-bootstrap-2026-08-29-v1",
+  "bundle_id": "local-development-bootstrap-2026-08-29-v2",
   "provenance": {
-    "generator": "ibl-ephys-atlas-development-bundle",
+    "generator": "manually-reviewed-development-bundle",
     "version": "1",
-    "commit": "68f3a1e"
+    "launcher_baseline_commit": "fa70916"
   },
   "default_view": {
     "dataset_id": "ephys_atlas_channels",
-    "release_id": "2026_W32-d050-peak-val-raw-v3",
+    "release_id": "2026_W32-d050-peak-val-raw-v7",
     "feature_id": "rms_ap.denoised",
     "parcellation_id": "allen"
   },
@@ -18,15 +18,15 @@
       "kind": "release",
       "identity": {
         "dataset_id": "ephys_atlas_channels",
-        "release_id": "2026_W32-d050-peak-val-raw-v3"
+        "release_id": "2026_W32-d050-peak-val-raw-v7"
       },
       "maturity": "validated-real-local",
-      "destination": "data/releases/ephys_atlas_channels/2026_W32-d050-peak-val-raw-v3",
+      "destination": "data/releases/ephys_atlas_channels/2026_W32-d050-peak-val-raw-v7",
       "root_manifest": {
         "path": "manifest.json",
         "media_type": "application/json",
-        "bytes": 41083,
-        "sha256": "76bd9cc1cd07c5cfaec159f442d7161fa2342651b8c8f9dfc65a9b61f34daaae"
+        "bytes": 41365,
+        "sha256": "d2a9117222797612609de94af7d85184d940314d9c07fdc42c3f4a4f5ed204cc"
       },
       "source": {
         "state": "unresolved"
@@ -38,15 +38,15 @@
       "kind": "release",
       "identity": {
         "dataset_id": "ephys_atlas_clusters",
-        "release_id": "sha256-9b5e55215b306f26-d050-d048-v2"
+        "release_id": "sha256-9b5e55215b306f26-d050-d048-v6"
       },
       "maturity": "validated-real-local",
-      "destination": "data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-d050-d048-v2",
+      "destination": "data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-d050-d048-v6",
       "root_manifest": {
         "path": "manifest.json",
         "media_type": "application/json",
-        "bytes": 13588,
-        "sha256": "76e051e741d58ffcc3a13cf97f5e29e344933ff37ba327b3e0c5942a855d35a4"
+        "bytes": 13889,
+        "sha256": "5fbe04d467cc85cfb77fd6ec7e6a7fe877a654eed97a14a75ae870d4e4f49481"
       },
       "source": {
         "state": "unresolved"
@@ -58,15 +58,15 @@
       "kind": "release",
       "identity": {
         "dataset_id": "ephys_atlas_volumes",
-        "release_id": "2026_W26-candidate-depth4-d050-linear-full-v2"
+        "release_id": "2026_W26-candidate-depth4-d050-linear-full-v3"
       },
       "maturity": "validated-real-local",
-      "destination": "data/releases/ephys_atlas_volumes/2026_W26-candidate-depth4-d050-linear-full-v2",
+      "destination": "data/releases/ephys_atlas_volumes/2026_W26-candidate-depth4-d050-linear-full-v3",
       "root_manifest": {
         "path": "manifest.json",
         "media_type": "application/json",
         "bytes": 24075,
-        "sha256": "945c797a304ebd8188e62eefcdb3d4b1ba7d706f095da51c2943667ee26abe5c"
+        "sha256": "31a33ac32a9f338c029f6b97b3c46a4f08505ec967e4c93a55e5aab6e3746190"
       },
       "source": {
         "state": "unresolved"

@@ -8,6 +8,7 @@ import json
 from pathlib import Path, PurePosixPath
 import re
 from typing import Any
+from urllib.parse import urlsplit
 
 from .bundle import declared_release_resource_paths
 from .validate import validate_release
@@ -17,7 +18,7 @@ from tools.projection_pack.build import validate_projection_pack
 
 SCHEMA_VERSION = "1.0"
 KINDS = {"release", "projection_pack", "mesh_pack"}
-MATURITIES = {"validated-real-local", "production-intent", "published-production"}
+MATURITIES = {"validated-real-local", "production-intent", "staging", "published-production"}
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
@@ -92,6 +93,29 @@ def _parse_identity(value: Any, kind: str, context: str) -> dict[str, str]:
     return {key: _string(identity[key], f"{context}.{key}", SAFE_ID) for key in sorted(keys)}
 
 
+def _validate_source(value: Any, context: str) -> None:
+    source = _object(value, context)
+    state = source.get("state")
+    if state == "unresolved":
+        _exact_keys(source, {"state"}, context)
+        return
+    if state == "resolved":
+        _exact_keys(source, {"state", "base_url"}, context)
+        base_url = _string(source["base_url"], f"{context}.base_url")
+        parsed = urlsplit(base_url)
+        if (
+            parsed.scheme != "https"
+            or not parsed.netloc
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise DevelopmentBundleError(f"{context}.base_url must be one pinned HTTPS base URL")
+        return
+    raise DevelopmentBundleError(f"{context}.state is unsupported: {state!r}")
+
+
 def load_development_bundle(path: Path) -> dict[str, Any]:
     """Parse and structurally validate a committed bundle descriptor."""
     path = path.resolve()
@@ -110,10 +134,18 @@ def load_development_bundle(path: Path) -> dict[str, Any]:
         )
     _string(document["bundle_id"], "descriptor.bundle_id", SAFE_ID)
     provenance = _object(document["provenance"], "descriptor.provenance")
-    _exact_keys(provenance, {"generator", "version", "commit"}, "descriptor.provenance")
+    _exact_keys(
+        provenance,
+        {"generator", "version", "launcher_baseline_commit"},
+        "descriptor.provenance",
+    )
     _string(provenance["generator"], "descriptor.provenance.generator")
     _string(provenance["version"], "descriptor.provenance.version")
-    _string(provenance["commit"], "descriptor.provenance.commit", re.compile(r"^[0-9a-f]{7,40}$"))
+    _string(
+        provenance["launcher_baseline_commit"],
+        "descriptor.provenance.launcher_baseline_commit",
+        re.compile(r"^[0-9a-f]{7,40}$"),
+    )
     default_view = _object(document["default_view"], "descriptor.default_view")
     _exact_keys(
         default_view,
@@ -175,9 +207,7 @@ def load_development_bundle(path: Path) -> dict[str, Any]:
         if isinstance(root["bytes"], bool) or not isinstance(root["bytes"], int) or root["bytes"] <= 0:
             raise DevelopmentBundleError(f"{context}.root_manifest.bytes must be a positive integer")
         _string(root["sha256"], f"{context}.root_manifest.sha256", SHA256)
-        source = _object(artifact["source"], f"{context}.source")
-        if source != {"state": "unresolved"}:
-            raise DevelopmentBundleError(f"{context}.source must declare the unresolved Q8 state")
+        _validate_source(artifact["source"], f"{context}.source")
         if not isinstance(artifact["launch_critical"], bool):
             raise DevelopmentBundleError(f"{context}.launch_critical must be boolean")
 
@@ -206,6 +236,29 @@ def _validate_manifest_identity(document: dict[str, Any], kind: str, identity: d
         raise ValueError(
             f"pack identity differs: expected {identity['pack_id']}, found {document.get('pack_id')}"
         )
+
+
+def _validate_default_view(release: Path, manifest: dict[str, Any], default_view: dict[str, str]) -> None:
+    parcellation_id = default_view["parcellation_id"]
+    release_parcellations = {item.get("id") for item in manifest.get("parcellations", [])}
+    if parcellation_id not in release_parcellations:
+        raise ValueError(f"default parcellation is absent: {parcellation_id}")
+    feature_entry = next(
+        (item for item in manifest.get("features", []) if item.get("id") == default_view["feature_id"]),
+        None,
+    )
+    if feature_entry is None:
+        raise ValueError(f"default feature is absent: {default_view['feature_id']}")
+    descriptor = feature_entry.get("descriptor", {})
+    resource = descriptor.get("resource", {})
+    feature_path = release / _safe_relative_path(resource.get("path"), "default feature path")
+    feature = json.loads(feature_path.read_bytes())
+    regional = feature.get("representations", {}).get("regional")
+    if regional is None:
+        return
+    parcellations = {item.get("parcellation_id") for item in regional.get("parcellations", [])}
+    if parcellation_id not in parcellations:
+        raise ValueError(f"default parcellation is absent from feature: {parcellation_id}")
 
 
 def _validate_release_directory(release: Path, manifest: dict[str, Any]) -> list[str]:
@@ -270,6 +323,11 @@ def validate_development_bundle(path: Path, repository_root: Path | None = None)
             if raw["kind"] == "release":
                 validate_release(artifact_root)
                 files = _validate_release_directory(artifact_root, manifest)
+                if raw["identity"] == {
+                    "dataset_id": document["default_view"]["dataset_id"],
+                    "release_id": document["default_view"]["release_id"],
+                }:
+                    _validate_default_view(artifact_root, manifest, document["default_view"])
             elif raw["kind"] == "projection_pack":
                 validate_projection_pack(artifact_root)
                 files = sorted(

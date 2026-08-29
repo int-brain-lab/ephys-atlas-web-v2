@@ -165,20 +165,26 @@ Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 5 and 7; cluster record:
 
 ## M6 — Production assets, catalog, and deployment
 
-Status: S3/CloudFront direction accepted; concrete deployment remains blocked.
+Status: the local descriptor, verifier, `just data`, descriptor-driven
+`just dev`, focused launcher compatibility, and onboarding command cleanup are
+implemented for the recoverable bootstrap corpus. Concrete deployment remains
+blocked.
 
-Blockers: residual Q8 and Q9. Remote mutation requires explicit authorization
-and credentials.
+Blockers: residual Q8 and Q9. The exact legacy Brain-Wide Map Parquets and D042
+donor are also absent from this workspace; their audit derivatives, old
+releases, and alternate meshes are not substitutes. Remote mutation requires
+explicit authorization and credentials.
 
 Next testable actions:
 
-1. implement the pinned local bundle descriptor, local verifier, and
-   bundle-driven `just data`/`just dev` path that is independent of Q8;
+1. recover and hash-verify the exact missing Brain-Wide Map inputs and optional
+   D042 donor, rebuild new immutable technical revisions, and create a new
+   complete descriptor without retargeting the bootstrap descriptor;
 2. provision an IBL-owned staging S3 REST origin and CloudFront distribution
    without accessing `iblviz`;
 3. deploy the immutable projection pack with opaque `.isvg.gz` bytes and verify
    served size, SHA-256, MIME, CORS, and cache behavior;
-4. deploy the current pinned development bundle without transforming its
+4. deploy the completed pinned development bundle without transforming its
    immutable browser-ready bytes, then add atomic verified download support to
    `just data`;
 5. finalize the frozen scientific release set, catalog, and aliases;

@@ -26,8 +26,8 @@ just dev
   origin and never falls back for an unavailable dataset or pack.
 
 `just dev` is the only public viewer recipe. The historical channel-only,
-channel-plus-mesh, and `dev-local-full` recipes should be removed once the
-bundle-driven command is implemented. Focused release acceptance remains in
+channel-plus-mesh, `dev-real`, `dev-3d`, and `dev-local-full` public recipes
+were removed when the bundle-driven command was implemented. Focused release acceptance remains in
 the dedicated test and validation recipes rather than separate interactive
 server commands.
 
@@ -56,25 +56,24 @@ validated artifact without relabelling or substituting missing evidence:
 
 | Role | Immutable identity | Current maturity |
 | --- | --- | --- |
-| Channels | `2026_W32-d050-peak-val-raw-v3` | deterministic technical revision of the validated-real-local development release; not the Q2 paper selection |
-| Clusters | `sha256-9b5e55215b306f26-d050-d048-v2` | deterministic technical revision of the validated-real-local reviewed release; not published |
+| Channels | `2026_W32-d050-peak-val-raw-v7` | deterministic technical revision of the validated-real-local development release; not the Q2 paper selection |
+| Clusters | `sha256-9b5e55215b306f26-d050-d048-v6` | deterministic technical revision of the validated-real-local reviewed release; not published |
 | Brain-Wide Map | unavailable pending recovery of the six exact pinned Parquets | required for the complete bundle; audit derivatives and older releases are not substitutes |
-| Volume | `2026_W26-candidate-depth4-d050-linear-full-v2` | deterministic technical revision of the validated-real-local candidate; not the Q5 production transport |
+| Volume | `2026_W26-candidate-depth4-d050-linear-full-v3` | deterministic technical revision of the validated-real-local candidate; not the Q5 production transport |
 | Projection pack | active schema-v1 `atlas-projection-pack-v1` | committed production-intent browser artifact; origin verification remains |
 | 3-D mesh pack | unavailable pending recovery of the exact D042 donor | optional; a different or regenerated mesh is forbidden |
 
 This is a development bundle identity, not a mutable `latest` alias and not a
 claim about the eventual paper-facing production release set. Future bundles
 receive new immutable bundle IDs; an existing descriptor is never silently
-retargeted. The current `data/development-bundle-v1.json` is explicitly a
+retargeted. The current `data/development-bundle-v2.json` is explicitly a
 bootstrap descriptor, not the complete bundle: it validates 8,007 files and
-526,673,799 bytes across the three scientific releases and projection pack
+526,673,720 bytes across the three scientific releases and projection pack
 while recording both omissions.
 
 ## Bundle descriptor
 
-Add a small committed machine-readable descriptor under `data/` or `schema/`
-after choosing its exact contract. It must contain enough information to
+The committed machine-readable descriptor under `data/` contains enough information to
 locate and verify every bundle root without duplicating the release manifests'
 complete transitive file graphs. At minimum it records:
 
@@ -84,7 +83,9 @@ complete transitive file graphs. At minimum it records:
 - root manifest media type, served-byte size, and SHA-256;
 - source base URL or an explicit unresolved-origin state;
 - whether an entry is launch-critical or optional for the bundle;
-- descriptor generation/version provenance.
+- descriptor generation/version provenance and the baseline commit that first
+  introduced the bundle-driven launcher (not a claim that this descriptor or
+  its current validation schema existed at that commit).
 
 Repository-relative destinations must be explicit and bounded. The consumer
 must reject absolute paths, traversal, duplicate destinations, duplicate
@@ -98,7 +99,7 @@ scientific identities, and unsupported descriptor versions.
 2. Implement a Python verifier through the locked builder environment.
 3. Validate each root descriptor and its complete existing schema-v1 or pack
    graph using the current validators rather than introducing shadow rules.
-4. Have `just data` report an already-complete local bundle without network
+4. Have `just data` report the already-present available corpus without network
    access.
 5. Add deterministic tests for missing, corrupt, duplicate, unsafe, and
    scientifically mismatched entries.
@@ -196,7 +197,7 @@ no manual path edits. `just check` must remain green.
 
 ## Completion evidence
 
-The completed implementation records:
+Completion of the remote distribution work will record:
 
 - descriptor validation and downloader tests;
 - exact local and remote manifest identities and hashes;

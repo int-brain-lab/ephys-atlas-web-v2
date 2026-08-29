@@ -15,7 +15,7 @@ from ephys_atlas_builder.development_bundle import (
 
 def _report(bundle: ValidatedDevelopmentBundle) -> None:
     print(
-        f"validated {bundle.bundle_id}: {len(bundle.artifacts)} artifacts, "
+        f"validated available corpus {bundle.bundle_id}: {len(bundle.artifacts)} artifacts, "
         f"{sum(item.file_count for item in bundle.artifacts)} files, "
         f"{bundle.stored_bytes} bytes"
     )
@@ -38,8 +38,21 @@ def _environment(bundle: ValidatedDevelopmentBundle) -> dict[str, str]:
         }
     )
     additional = [artifact for artifact in releases if artifact is not primary]
-    environment = {
-        **os.environ,
+    environment = dict(os.environ)
+    for key in list(environment):
+        if key.startswith("EPHYS_ATLAS_") or key in {
+            "VITE_BRAIN_MESH_MANIFEST_URL",
+            "VITE_BRAIN_MESH_MANIFEST_BYTES",
+            "VITE_BRAIN_MESH_MANIFEST_SHA256",
+            "VITE_DATASET_CATALOG_URL",
+            "VITE_PROJECTION_PACK_URL",
+            "VITE_DEFAULT_DATASET_ID",
+            "VITE_DEFAULT_RELEASE_ID",
+            "VITE_DEFAULT_FEATURE_ID",
+            "VITE_DEFAULT_PARCELLATION_ID",
+        }:
+            environment.pop(key)
+    environment.update({
         "EPHYS_ATLAS_REAL_RELEASE": str(primary.root),
         "EPHYS_ATLAS_ADDITIONAL_RELEASES": ",".join(str(item.root) for item in additional),
         "EPHYS_ATLAS_REAL_FEATURE": default["feature_id"],
@@ -47,7 +60,7 @@ def _environment(bundle: ValidatedDevelopmentBundle) -> dict[str, str]:
         "EPHYS_ATLAS_EXPECTED_RELEASES": ",".join(
             f"{item.identity['dataset_id']}={item.identity['release_id']}" for item in releases
         ),
-    }
+    })
     projection = next(
         (artifact for artifact in bundle.artifacts if artifact.kind == "projection_pack"),
         None,

@@ -98,18 +98,19 @@ geometry request, and changed Beryl/Cosmos presentation without another
 geometry request or upload. Evidence and screenshots remain ignored under
 `artifacts/mesh-d042-browser-evidence/`.
 
-The full local-only deployment now serves this pack below the immutable,
+The reviewed full local-only deployment served this pack below the immutable,
 content-addressed URL prefix
 `/__local-assets/mesh/ibl-bwm-d042-b0c1c1a43aa874a6/` with one-year immutable
-cache headers. `just dev-local-full` combines it with the local channels,
-approved clusters, preserved BWM, and candidate-labelled W26 volume releases;
-`just validate-local-full` verifies all four catalog identities, dataset
-switching, Top, Swanson, 3-D, explode state, and retained geometry uploads in
-Chromium. This is local deployment evidence only: no remote publication has
-occurred. On 2026-08-28 the repository owner manually confirmed the integrated
-3-D view in Safari and Firefox; the documented cross-browser owner matrix is
-therefore complete. Removing the remaining experimental UI copy is separate
-cleanup.
+cache headers. At that time the now-removed `just dev-local-full` recipe combined
+it with local channels, approved clusters, preserved BWM, and a candidate-labelled
+W26 volume release. The current public `just dev` command is descriptor-driven;
+the bootstrap descriptor records both BWM and the D042 mesh as unavailable
+because their exact pinned source bytes are absent. `just validate-local-full`
+still checks every artifact present in that descriptor and skips optional 3-D
+checks when no mesh is declared. This is local deployment evidence only: no
+remote publication has occurred. On 2026-08-28 the repository owner manually
+confirmed the integrated 3-D view in Safari and Firefox; the documented
+cross-browser owner matrix is therefore complete.
 
 ### Coordinates and hemispheres
 
@@ -330,9 +331,10 @@ lab. It is a development convenience, not a second integration branch.
 - Add Three.js and meshopt dependencies in one early, coordinated lockfile
   commit. Rebase the worktree frequently and land small green vertical slices
   on `main`; do not accumulate a long-lived merge.
-- Keep `just check` green. Add a focused `just dev-3d`, deterministic builder
-  tests, rendering unit tests, and a small Playwright lab suite as the slices
-  land.
+- Keep `just check` green. The historical focused `just dev-3d` entry point was
+  superseded by the descriptor-driven `just dev`; deterministic builder tests,
+  rendering unit tests, and focused Playwright coverage remain the acceptance
+  paths.
 
 This path permits camera, lighting, LOD, explode, and picking iteration while
 the main refactor changes application composition. Final integration should be

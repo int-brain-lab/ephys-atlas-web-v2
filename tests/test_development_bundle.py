@@ -25,7 +25,11 @@ def descriptor(release: Path, *, destination: str = "data/releases/golden/golden
     return {
         "schema_version": "1.0",
         "bundle_id": "test-bundle-v1",
-        "provenance": {"generator": "test", "version": "1", "commit": "68f3a1e"},
+        "provenance": {
+            "generator": "test",
+            "version": "1",
+            "launcher_baseline_commit": "68f3a1e",
+        },
         "default_view": {
             "dataset_id": "golden_fixture",
             "release_id": "golden-v1",
@@ -54,13 +58,13 @@ def descriptor(release: Path, *, destination: str = "data/releases/golden/golden
 
 
 def write_descriptor(root: Path, document: dict) -> Path:
-    path = root / "data" / "development-bundle-v1.json"
+    path = root / "data" / "development-bundle-v2.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(document))
     return path
 
 
-def test_validates_exact_release_root_and_complete_graph(tmp_path: Path) -> None:
+def test_validates_exact_release_root_and_complete_graph(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     release = generate_golden(tmp_path / "source")
     destination = tmp_path / "repo/data/releases/golden/golden-v1"
     shutil.copytree(release, destination)
@@ -73,11 +77,19 @@ def test_validates_exact_release_root_and_complete_graph(tmp_path: Path) -> None
     assert len(result.artifacts) == 1
     assert result.artifacts[0].file_count > 1
     assert result.stored_bytes > result.artifacts[0].root.joinpath("manifest.json").stat().st_size
+    monkeypatch.setenv("EPHYS_ATLAS_REAL_MESH_PACK", "/unverified/mesh")
+    monkeypatch.setenv("EPHYS_ATLAS_PROJECTION_PACK", "/unverified/projection")
+    monkeypatch.setenv("VITE_BRAIN_MESH_MANIFEST_URL", "/unverified/manifest.json")
+    monkeypatch.setenv("VITE_DATASET_CATALOG_URL", "https://unverified.example/catalog.json")
     environment = _environment(result)
     assert environment["EPHYS_ATLAS_REAL_RELEASE"] == str(destination)
     assert environment["EPHYS_ATLAS_ADDITIONAL_RELEASES"] == ""
     assert environment["EPHYS_ATLAS_EXPECTED_RELEASES"] == "golden_fixture=golden-v1"
     assert environment["EPHYS_ATLAS_REAL_FEATURE"] == "rms_ap"
+    assert "EPHYS_ATLAS_REAL_MESH_PACK" not in environment
+    assert "EPHYS_ATLAS_PROJECTION_PACK" not in environment
+    assert "VITE_BRAIN_MESH_MANIFEST_URL" not in environment
+    assert "VITE_DATASET_CATALOG_URL" not in environment
 
 
 @pytest.mark.parametrize(
@@ -106,6 +118,22 @@ def test_rejects_unsupported_version_and_duplicate_identity(tmp_path: Path) -> N
     document["artifacts"].append(duplicate)
     path = write_descriptor(tmp_path / "repo", document)
     with pytest.raises(DevelopmentBundleError, match="duplicate development bundle identity"):
+        load_development_bundle(path)
+
+
+def test_source_may_pin_one_resolved_https_origin(tmp_path: Path) -> None:
+    release = generate_golden(tmp_path / "source")
+    document = descriptor(release)
+    document["artifacts"][0]["source"] = {
+        "state": "resolved",
+        "base_url": "https://static.example.test/releases/golden-v1/",
+    }
+    path = write_descriptor(tmp_path / "repo", document)
+    assert load_development_bundle(path)["artifacts"][0]["source"]["state"] == "resolved"
+
+    document["artifacts"][0]["source"]["base_url"] = "http://mutable.example.test/latest?x=1"
+    path = write_descriptor(tmp_path / "repo", document)
+    with pytest.raises(DevelopmentBundleError, match="pinned HTTPS"):
         load_development_bundle(path)
 
 
@@ -154,11 +182,50 @@ def test_rejects_root_integrity_identity_and_undeclared_files(tmp_path: Path) ->
         validate_development_bundle(path, repository)
 
 
-def test_committed_descriptor_is_structurally_valid_and_truthful() -> None:
-    document = load_development_bundle(ROOT / "data/development-bundle-v1.json")
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("feature_id", "missing_feature", "default feature is absent"),
+        ("parcellation_id", "cosmos", "default parcellation is absent"),
+    ],
+)
+def test_rejects_default_view_absent_from_selected_release(
+    tmp_path: Path, field: str, value: str, message: str
+) -> None:
+    release = generate_golden(tmp_path / "source")
+    repository = tmp_path / "repo"
+    destination = repository / "data/releases/golden/golden-v1"
+    shutil.copytree(release, destination)
+    document = descriptor(destination)
+    document["default_view"][field] = value
+    path = write_descriptor(repository, document)
 
+    with pytest.raises(DevelopmentBundleError, match=message):
+        validate_development_bundle(path, repository)
+
+
+def test_committed_descriptor_is_structurally_valid_and_truthful() -> None:
+    document = load_development_bundle(ROOT / "data/development-bundle-v2.json")
+
+    assert document["bundle_id"] == "local-development-bootstrap-2026-08-29-v2"
+    assert document["provenance"] == {
+        "generator": "manually-reviewed-development-bundle",
+        "version": "1",
+        "launcher_baseline_commit": "fa70916",
+    }
     assert [item["role"] for item in document["artifacts"]] == [
         "channels", "clusters", "volume", "projections"
+    ]
+    assert [item["identity"] for item in document["artifacts"][:3]] == [
+        {"dataset_id": "ephys_atlas_channels", "release_id": "2026_W32-d050-peak-val-raw-v7"},
+        {
+            "dataset_id": "ephys_atlas_clusters",
+            "release_id": "sha256-9b5e55215b306f26-d050-d048-v6",
+        },
+        {
+            "dataset_id": "ephys_atlas_volumes",
+            "release_id": "2026_W26-candidate-depth4-d050-linear-full-v3",
+        },
     ]
     assert {item["role"] for item in document["unavailable"]} == {"brainwide_map", "mesh"}
     assert next(item for item in document["unavailable"] if item["role"] == "brainwide_map")[

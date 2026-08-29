@@ -87,14 +87,18 @@ from that directory through the production `HttpDatasetSource` path. It does
 not bypass contract parsing or binary decoding, copy the release into Git, or
 claim to test production-origin CORS/cache headers.
 
-For interactive review of this channel release alone, run:
+For interactive review, verify the pinned local corpus and start the one
+supported viewer entry point:
 
 ```bash
-just dev-real release=2026_W32 feature=rms_ap.denoised
+just data
+just dev
 ```
 
-The ordinary `just dev` entry point serves the integrated local catalog,
-including channels, clusters, Brain-Wide Map, volume, projections, and 3-D.
+The current bootstrap descriptor serves the deterministic W32 channel
+technical revision, cluster technical revision, W26 volume candidate, and
+projections. It reports rather than substitutes the currently unavailable
+Brain-Wide Map and optional D042 mesh entries.
 
 Vite validates the immutable manifest and requested feature before startup,
 then exposes a development-only catalog and release bytes under one local
@@ -102,8 +106,8 @@ origin. The root URL opens that release with `rms_ap.denoised` selected, while
 explicit share-URL parameters still take precedence. This exercises the normal
 `HttpDatasetSource`; it does not copy the ignored real release into
 `web/public`, transform it, or label it as the paper snapshot. There is no
-synthetic runtime fallback: startup fails with the missing manifest path when
-the real release has not been pulled and built.
+synthetic runtime fallback: descriptor verification reports every missing or
+corrupt artifact before Vite starts.
 
 ## Why the checkout did not initially contain the data
 

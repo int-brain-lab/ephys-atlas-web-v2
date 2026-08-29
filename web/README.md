@@ -45,10 +45,10 @@ validated bilateral 10 µm v2 parent. Scientific cursor, URL, affine, and guide
 state stays on the parent grid. Top/Swanson are exposed as affine-free secondary
 views through the shared regional presentation path. The checked-in static
 paths and `fixtures/golden-v1` are visibly labeled synthetic and must never be
-presented as scientific data. Ordinary `just dev` requires the ignored local
-channel, cluster, Brain-Wide Map, and candidate volume releases plus the D042
-mesh pack, and fails at startup when any configured artifact is absent. Use
-`just dev-real` when only the local channel release is needed.
+presented as scientific data. Ordinary `just data` verifies the committed
+development descriptor before `just dev` derives its catalog and asset paths.
+Missing required and optional corpus entries are disclosed explicitly; no
+synthetic or older-release fallback is configured.
 
 Current implementation status and next work are recorded in
 `docs/INTEGRATION_STATUS.md` and `docs/IMPLEMENTATION_PLAN.md`.
