@@ -138,6 +138,14 @@ anatomy-smoothing-lab-real source_lut annotation template_volume template_sha256
 anatomy-smoothing-lab-rerender input output=input:
     {{uv-anatomy}} python -m tools.anatomy_smoothing_lab.rerender --input {{input}} --output {{output}}
 
+# Build the ignored, self-contained Q14 distribution owner-review lab from exact local audits.
+distribution-review-lab output="artifacts/distribution-review-lab/index.html":
+    {{uv-test}} python -m tools.distribution_review_lab.build --output {{output}}
+
+# Serve an already-built Q14 review lab without exposing repository files.
+distribution-review-lab-serve port="8765":
+    {{uv-test}} python -m http.server {{port}} --bind 127.0.0.1 --directory artifacts/distribution-review-lab
+
 # Build the ignored, local-only legacy/reconstructed Top comparison lab.
 top-reconstruction-lab annotation legacy_top regions="web/public/atlas/allen-ccf-2017/regions.json" output="artifacts/top-reconstruction-lab/index.html" tolerances="12.5,25,37.5":
     {{uv-anatomy}} python -m tools.top_reconstruction_lab.build --annotation {{annotation}} --legacy-top {{legacy_top}} --regions {{regions}} --created-at 2026-08-27T00:00:00Z --tolerances-um {{tolerances}} --output {{output}}

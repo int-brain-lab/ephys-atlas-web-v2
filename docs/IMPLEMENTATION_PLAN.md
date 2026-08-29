@@ -19,8 +19,9 @@ their current maturity; focused evidence lives under `docs/data/` and
 
 ## P4D — Complete audited distribution selections
 
-Status: blocked on owner review; the four read-only source audits and review
-tables were completed on 2026-08-29.
+Status: blocked on owner review; the four read-only source audits, review
+tables, and a local 155-feature interactive proposal were completed on
+2026-08-29.
 
 Blocker: owner review is required before changing any Q14 selection. The exact
 local evidence identities and descriptive results are recorded in
@@ -28,20 +29,24 @@ local evidence identities and descriptive results are recorded in
 
 Next testable actions:
 
-1. review the four local tables and approve exact per-feature
-   scales/domains/thresholds/defaults, or retain the existing baseline;
+1. run `just distribution-review-lab`, then
+   `just distribution-review-lab-serve`, review the exact audited candidates at
+   `http://127.0.0.1:8765/`, and return the downloaded review record approving
+   exact per-feature scales/domains/thresholds/defaults, retaining baselines,
+   or recording explicit edits;
 2. after explicit approval, update complete selection artifacts, commit them
    before building, create new immutable release IDs, validate exact tails and
    scale/domain cross-products, run dataset browser suites,
    `just validate-local-full`, and `just check`.
 
-The named D050 release directories were absent from this local workspace, so
-their inventory step remains unavailable; older pre-D050 regional releases are
-not scientific substitutes.
+The named D050 release directories are present in the recovered development
+bundle, and their embedded distribution selections are byte-identical to the
+accepted baselines used by the review lab.
 
-Do not promote audit heuristics into release defaults. D052 applies only to
-regional channel `peak_val.raw`; D048 remains authoritative for the current
-cluster firing-rate candidate.
+The lab's `q14-agent-candidate-policy-v1` choices are presentation
+recommendations, not release defaults. D052 applies only to regional channel
+`peak_val.raw`; D048 remains authoritative for the current reviewed cluster
+Log choices until the exported review is explicitly approved.
 
 Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 2 and 3; binding runbook:
 [`data/DISTRIBUTION_AUDIT.md`](data/DISTRIBUTION_AUDIT.md).

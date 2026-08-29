@@ -100,7 +100,11 @@ Read-only audits and review tables are unblocked; follow
 [`data/DISTRIBUTION_AUDIT.md`](data/DISTRIBUTION_AUDIT.md). The four source
 audits are complete and recorded in
 [`data/DISTRIBUTION_AUDIT_EVIDENCE.md`](data/DISTRIBUTION_AUDIT_EVIDENCE.md);
-selection remains blocked on owner review.
+an exact, non-authoritative 155-feature proposal can be reviewed locally with
+`just distribution-review-lab && just distribution-review-lab-serve` at
+`http://127.0.0.1:8765/`. Its exported human-review record has no production
+effect or owner-confirmation field. Selection remains blocked until that
+proposal, retained baselines, or explicit edits are owner-reviewed.
 
 Blocks: only additional per-feature Signed-log/Focused availability or defaults.
 

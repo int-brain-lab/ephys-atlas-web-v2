@@ -147,6 +147,29 @@ the exact population/sign counts, range/quantiles, Focused tails, Log
 eligibility, and candidate Signed-log thresholds. It remains explicitly
 non-authoritative and makes no presentation selection.
 
+## Local interactive owner review
+
+Build and serve the self-contained review lab from the four exact audit reports
+and accepted baseline selections:
+
+```bash
+just distribution-review-lab
+just distribution-review-lab-serve
+```
+
+Open `http://127.0.0.1:8765/`. The builder fails closed if a frozen report hash,
+dataset/release identity, or complete feature catalog differs from the accepted
+selection. The page embeds the exact audited histograms and tails, compares the
+accepted baseline with `q14-agent-candidate-policy-v1`, and permits accepting
+the proposal, retaining the baseline, or editing each feature with notes.
+
+The downloaded `ibl-scalar-distribution-human-review-v1` record is deliberately
+non-authoritative: it states `production_effect: "none"` and omits
+`scientific_owner_confirmation`. Returning that record constitutes review
+input, not an approved selection or permission to publish. After explicit
+owner approval, translate the reviewed choices into all four complete
+selection artifacts and follow the immutable rebuild sequence below.
+
 ## Future-agent handoff: complete Q14 audit and reviewed rollout
 
 Status: **NEXT DISTRIBUTION TASK; read-only audit first; no remote publication
@@ -188,10 +211,10 @@ The next agent should execute this sequence:
    positive finite population, while Signed log is a candidate for mixed-sign
    heavy tails. Do not infer a palette, meaningful center, threshold, bounds,
    or default.
-5. Present the channel, cluster, Brain-Wide Map, and volume review tables to the
-   repository/scientific owner. Stop before editing a selection unless the
-   owner explicitly approves exact feature/representation choices. Regional
-   and volume choices for the same feature remain independent.
+5. Present the channel, cluster, Brain-Wide Map, and volume proposal in the
+   local interactive lab. Stop before editing a selection unless the owner
+   explicitly approves exact feature/representation choices. Regional and
+   volume choices for the same feature remain independent.
 6. After approval, update the four machine-readable selection files in this
    directory, preserving an explicit entry for the complete feature catalog.
    Add/update deterministic selection tests and record the decisions in

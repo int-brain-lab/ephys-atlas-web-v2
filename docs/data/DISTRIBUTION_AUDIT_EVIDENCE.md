@@ -49,13 +49,33 @@ and Focused-tail identities. The channel audit also reproduced D052's exact
 Eligibility and concentration are descriptive. They do not select Log,
 Signed log, Focused, a threshold, bounds, palette, or default.
 
+## Advisory review proposal
+
+`q14-agent-candidate-policy-v1` converts the frozen evidence into a
+non-authoritative, editable local proposal covering all 155 features. It
+preserves D052 and the D048 cluster Log choices, proposes changes for 24 of 70
+channel features and 10 of 14 cluster features, and retains all 30 Brain-Wide
+Map and 41 volume baselines. The proposed inventories are:
+
+- channels: 25 Focused domains (18 preferred), 7 Log scales, and 17 Signed-log
+  scales;
+- clusters: 10 Focused domains (8 preferred), the 6 retained Log scales, and
+  one proposed Signed-log scale for `noise_cutoff`;
+- Brain-Wide Map and volumes: Linear/Full throughout.
+
+The policy adds candidates only after measured Full-view collapse, excludes
+known bounded/discrete/sparse cases, and uses only exact audited bounds and
+threshold candidates. These are presentation recommendations for owner review,
+not scientific selections. Run `just distribution-review-lab` and
+`just distribution-review-lab-serve` to inspect and edit them locally.
+
 ## Stop condition
 
-The four D050 release IDs named in [`DISTRIBUTION_AUDIT.md`](DISTRIBUTION_AUDIT.md)
-were not present in this checkout's ignored local release workspace. The older
-checked-in regional candidates predate the D050 `distribution` object and are
-not substitutes; the W26 pre-D050 volume inventory was recorded only as local
-historical availability evidence.
+The four named D050 release directories are now present in the recovered local
+development bundle. Their embedded distribution selections are byte-identical
+to the accepted baseline selections, so the lab can compare current behavior
+without rebuilding a release.
 
-P4D now stops at owner review under Q14. Exact per-feature choices must be
-approved before changing any machine-readable selection or immutable release.
+P4D still stops at owner review under Q14. The lab export has no production
+effect; exact per-feature choices must be explicitly approved before changing
+any machine-readable selection or immutable release.
