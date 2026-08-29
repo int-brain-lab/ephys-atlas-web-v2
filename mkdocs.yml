@@ -1,0 +1,61 @@
+site_name: IBL Ephys Atlas
+site_description: Author and explore immutable IBL Ephys Atlas schema-v1 datasets
+repo_url: https://github.com/int-brain-lab/ephys-atlas-web-v2
+repo_name: int-brain-lab/ephys-atlas-web-v2
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.indexes
+    - navigation.sections
+    - navigation.top
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - builder
+          options:
+            docstring_style: google
+            show_root_heading: true
+            show_source: false
+            signature_crossrefs: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - tables
+  - toc:
+      permalink: true
+
+# Repository documentation intentionally links to schema and contributor files
+# outside docs_dir. tools.docs_check validates those paths and all Markdown
+# anchors; MkDocs is responsible for rendering and generated-reference errors.
+validation:
+  links:
+    not_found: ignore
+
+nav:
+  - Home: index.md
+  - Guides:
+      - Start here: guides/index.md
+      - Custom data tutorial: data/CUSTOM_DATA_TUTORIAL.md
+      - Executable examples: guides/examples.md
+  - Reference:
+      - Authority map: reference/authority.md
+      - Python API: reference/python-api.md
+      - Authoring and ZIP contract: data/CUSTOM_DATA_AUTHORING.md
+      - Data source records: data/README.md
+  - Product:
+      - System overview: SYSTEM_OVERVIEW.md
+      - Launch specification: LAUNCH_SPEC.md
+      - Effective decisions: DECISIONS.md
+      - Integration status: INTEGRATION_STATUS.md
+      - Open questions: OPEN_QUESTIONS.md

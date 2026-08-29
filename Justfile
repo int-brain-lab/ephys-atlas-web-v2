@@ -1,11 +1,12 @@
 uv-test := "uv run --project builder --extra test --locked"
+uv-docs := "uv run --project builder --extra docs --locked"
 uv-publishing := "uv run --project publishing --extra test --locked"
 uv-scientific := "uv run --project builder --extra scientific --locked"
 uv-anatomy := "uv run --project builder --extra anatomy --extra scientific --extra test --locked"
 
 # Install all locked local development dependencies in a fresh checkout.
 bootstrap:
-    uv sync --project builder --python 3.12 --extra anatomy --extra scientific --extra test --locked
+    uv sync --project builder --python 3.12 --extra anatomy --extra docs --extra scientific --extra test --locked
     uv sync --project publishing --python 3.12 --extra test --locked
     cd web && npm ci
     cd web && npx playwright install chromium
@@ -49,6 +50,19 @@ test-python: test-builder test-publishing
 # Validate documentation links, authorities, identifiers, and status registries.
 docs-check:
     {{uv-test}} python -m tools.docs_check
+
+# Render the reader-facing site and generated Python API reference locally.
+# This target builds files under ignored site/; it does not deploy them.
+docs-site:
+    {{uv-docs}} mkdocs build --strict
+
+# Preview the documentation website locally with live reload.
+docs-serve:
+    {{uv-docs}} mkdocs serve
+
+# Execute every standalone public authoring example against synthetic inputs.
+test-examples:
+    {{uv-test}} python -m pytest -q tests/test_python_examples.py
 
 # TypeScript, unit tests, and production build.
 test-web:
@@ -154,7 +168,7 @@ atlas-regions:
     {{uv-scientific}} python tools/allen_regions/build.py --force
 
 # Full local completion gate. Keep this aligned with .github/workflows/ci.yml.
-check: docs-check test-python test-web test-browser
+check: docs-check docs-site test-python test-web test-browser
 
 # Backward-compatible alias: repository tests mean the full gate.
 test: check

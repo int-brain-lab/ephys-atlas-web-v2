@@ -49,6 +49,11 @@ just check
 just dev
 ```
 
+Run `just docs-serve` to preview the documentation website locally. The site
+is also built strictly by `just check`; no documentation deployment is
+configured. Executable custom-authoring examples live under
+[`examples/python/`](examples/python/).
+
 When the ignored validated real releases and D042 mesh artifact are present on
 this machine, the complete local-only catalog can be served without contacting
 or publishing to a remote service:
@@ -65,7 +70,10 @@ served by the same Vite process. Dataset/release resources and mesh bytes receiv
 immutable HTTP cache headers; the catalog remains revalidated. No publishing API
 or remote destination participates in this workflow.
 
-`just check` is the local completion gate and mirrors CI: builder/schema tests, publishing tests, TypeScript typecheck, frontend unit tests, production build, and Playwright browser tests.
+`just check` is the local completion gate and mirrors CI: documentation link
+and site builds, executable Python examples, builder/schema tests, publishing
+tests, TypeScript typecheck, frontend unit tests, production build, and
+Playwright browser tests.
 
 All Python commands in the `Justfile` run through the committed builder and
 publishing `uv.lock` files. `just bootstrap` is safe on PEP 668 externally
