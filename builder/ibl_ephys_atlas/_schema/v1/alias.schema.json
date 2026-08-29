@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.internationalbrainlab.org/schema/v1/alias.schema.json",
+  "title": "Mutable release alias v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "dataset_id", "alias", "release_id"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "dataset_id": {"$ref": "common.schema.json#/$defs/datasetId"},
+    "alias": {"$ref": "common.schema.json#/$defs/identifier"},
+    "release_id": {"type": "string", "minLength": 1}
+  }
+}

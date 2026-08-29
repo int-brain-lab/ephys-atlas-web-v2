@@ -1,6 +1,7 @@
 # Custom data authoring and ZIP import
 
-Status: active focused implementation plan; D051 direction accepted.
+Status: active focused implementation plan; Allen regional authoring and ZIP
+browser import implemented on 2026-08-29.
 
 This document defines the planned workflow for scientists to prepare their own
 regional or volumetric scalar data and import it into IBL Ephys Atlas Web v2.
@@ -9,11 +10,11 @@ the binding product decisions.
 
 ## Product outcome
 
-A scientist can use a public Python package to turn scalar data associated with
-Allen brain regions or Allen-CCF voxels into one validated immutable archive,
-then select that archive in the web application. The browser validates and
-stores the release locally without sending its contents to a local server or a
-remote service.
+A scientist can now use the public Python API to turn scalar data associated
+with Allen brain regions into one validated immutable archive, then select that
+archive in the web application. The browser validates and stores the release
+locally without sending its contents to a local server or a remote service.
+Allen-CCF voxel authoring remains the next representation extension.
 
 ```text
 NumPy arrays plus explicit scientific metadata
@@ -34,7 +35,9 @@ the reference space and anatomical mappings the web application can render.
 
 - PyPI distribution: `ibl-ephys-atlas`.
 - Python namespace: `ibl_ephys_atlas`.
-- CLI prefix: `ibl-ephys-atlas`.
+- Reserved public CLI prefix: `ibl-ephys-atlas`; no public authoring CLI is
+  exposed yet. The installed internal `ephys-atlas-data` command remains for
+  repository builder operations.
 - Local interchange artifact: `*.ibl-ephys-atlas.zip`.
 - Schema v1 remains the sole scientific release contract. ZIP is a transport
   container around the existing release graph, not a second schema.
@@ -83,31 +86,27 @@ package's wider modality scope does not justify a contract-wide product rename.
 
 ## Public object model
 
-The proposed public model is:
+The implemented regional public model is:
 
 ```text
 Dataset
   identity, immutable release metadata, provenance sources
   Feature
-    value semantics and display declaration
-    RegionalRepresentation (optional)
-    VolumeRepresentation (optional)
+    value semantics
+    Allen regional values or observations
 ```
 
 A feature owns the scientific quantity, unit, transform, source population,
-QC/filter description, and missing-value semantics. A regional and a volume
-representation may attach to the same feature only when they genuinely
-represent those same semantics.
-
-Candidate public types are `Dataset`, `Feature`, `ValueSemantics`, `Source`,
-`Display`, `AllenCCFGrid`, `VoxelValidity`, `ValidationIssue`,
-`ValidationReport`, and `BundleValidationError`. Convenience methods may wrap
-the explicit model, but must not invent omitted scientific choices.
+QC/filter description, and missing-value semantics. The public surface is
+intentionally limited to `Dataset`, `Feature`, `ValueSemantics`, `Source`,
+`ValidationIssue`, `ValidationReport`, and `BundleValidationError`. Display
+authoring, `AllenCCFGrid`, `VoxelValidity`, and volume representations remain
+future work.
 
 ### Regional authoring
 
 The first public vertical slice supports scalar rows associated with Allen
-region IDs or acronyms. A representative API is:
+region IDs or acronyms. The implemented API is:
 
 ```python
 from iblatlas.regions import BrainRegions
@@ -117,6 +116,7 @@ dataset = Dataset(
     dataset_id="smith_lab_decision_signal",
     release_id="2026-08-29",
     title="Regional decision-signal estimates",
+    created_at="2026-08-29T00:00:00Z",
     sources=[Source.user_input(description="Smith lab model coefficients")],
 )
 
@@ -133,7 +133,7 @@ feature = dataset.add_feature(
     ),
 )
 
-feature.add_regions(
+feature.add_region_observations(
     region_ids=allen_ids,
     values=coefficients,
     ontology=BrainRegions(),
@@ -146,10 +146,10 @@ dataset.validate().raise_for_errors()
 dataset.write_zip("smith-decision-signal.ibl-ephys-atlas.zip")
 ```
 
-The final API may expose separate `add_region_values()` and
-`add_region_observations()` conveniences so duplicate region identities are an
-error for already-aggregated values and an explicit population for repeated
-observations.
+Use `add_region_values()` for one already-aggregated scalar per folded logical
+Allen region; duplicate identities are rejected. Use
+`add_region_observations(..., aggregation="mean")` for repeated observation
+rows. Mean is the only implemented observation aggregation.
 
 Regional rules:
 
@@ -161,13 +161,13 @@ Regional rules:
 - preserve non-finite values as declared missing observations;
 - require an explicit aggregation whenever multiple rows or source regions
   contribute to one output region;
-- remap observations before aggregation so Beryl/Cosmos output cannot become
-  an accidental mean of pre-aggregated means;
+- emit Allen output only. Observation-level Beryl/Cosmos remapping must be
+  implemented before those output mappings become available;
 - do not propagate parent values to descendants;
 - compute exact descriptive statistics and every declared distribution from
   source observations;
-- use only the neutral Linear/Full presentation unless the user explicitly
-  supplies and validates additional scale/domain choices.
+- emit only the neutral Linear/Full presentation. Public display customization
+  is not implemented.
 
 The implemented regional viewer uses one folded logical regional value against
 bilateral anatomy. The first authoring API therefore accepts positive,
@@ -228,13 +228,15 @@ Volume rules:
 
 ## Structured validation
 
-Public validation should return structured issues with severity, stable code,
-feature/representation/path location, message, and corrective hint. Missing
-scientific semantics, ambiguous hemisphere handling, lossy dtype conversion,
-invalid geometry, incompatible validity masks, or an incomplete resource graph
-are errors. Large size or mostly missing data may be warnings.
+Public model validation returns structured issues with severity, stable code,
+location, message, and optional corrective hint. `raise_for_errors()` raises a
+`BundleValidationError` retaining that report. Input identity and aggregation
+mistakes fail immediately as `TypeError` or `ValueError`; incomplete model and
+scientific-semantics fields are structured errors. The warning channel exists,
+but no size or missingness warning policy has been selected yet. Volume
+geometry and validity validation remain future work.
 
-`write_zip()` must:
+The implemented `write_zip()`:
 
 1. validate the in-memory scientific model;
 2. build into a temporary release directory;
@@ -243,7 +245,7 @@ are errors. Large size or mostly missing data may be warnings.
 5. reopen and validate its inventory and contents;
 6. atomically replace the requested destination only after success.
 
-Failure must leave no partial output archive.
+Failure leaves an existing destination unchanged and no partial output archive.
 
 ## ZIP container contract
 
@@ -281,7 +283,7 @@ volume access retains efficient per-resource reads.
 
 ### Browser ZIP reader and provisional admission limits
 
-The in-progress browser reader pins `@zip.js/zip.js` `2.8.60`. It was selected
+The implemented browser reader pins `@zip.js/zip.js` `2.8.60`. It was selected
 because its Blob reader exposes the central-directory metadata needed for a
 bounded inventory before extraction, supports per-entry Blob extraction and
 cancellation, and provides strict parsing with CRC-32 and overlapping-entry
@@ -391,17 +393,18 @@ synthetic fixture; browser-reader measurement remains part of Slice 1.
 
 - retain D051 and this plan as the binding direction;
 - capture a green baseline and deterministic schema-v1 ZIP fixture;
-- choose a bounded browser ZIP reader from measured regional and representative
-  volume archives and record the dependency rationale;
-- define archive limits and cross-browser capability/error behavior.
+- choose and pin a bounded browser ZIP reader, with the dependency rationale
+  recorded in the implementation;
+- define provisional archive limits and deterministic capability/error behavior.
 
 The implemented `ephys-atlas-data bundle` command validates the source graph,
 requires the controlled bundle tree to contain only transitively declared
 resources, writes sorted root-level members with deterministic metadata,
 reopens and independently validates the archive, and atomically replaces its
 destination only after success. `fixtures/golden-v1.ibl-ephys-atlas.zip` is the
-exact regenerable synthetic contract fixture. This command is shared bundle
-machinery, not yet the public `ibl_ephys_atlas.Dataset.write_zip()` API.
+exact regenerable synthetic contract fixture. The public
+`ibl_ephys_atlas.Dataset.write_zip()` implementation now uses this same shared
+bundle machinery rather than a second serializer or validator.
 
 ### Slice 1 — ZIP-only browser import
 
@@ -421,28 +424,35 @@ remains required before the provisional limits become supported capacity.
   corrupt hash, missing/undeclared resource, unsafe ZIP path, and no-network
   behavior in unit and Chromium tests.
 
-Before closing this slice, measure the provisional limits and reader behavior
-with representative real regional and volume archives across the launch
-browsers. Record any revised ceilings and the evidence for them here rather
-than treating the initial constants as final support claims.
+The user-facing slice is closed, but its capacity-evidence follow-up remains:
+measure the provisional limits and reader behavior with representative real
+regional and volume archives across the launch browsers. Record any revised
+ceilings and the evidence for them here rather than treating the initial
+constants as final support claims.
 
 ### Slice 2 — Public regional authoring
 
-Status: not implemented. The completed shared bundle writer and in-progress
-browser reader do not constitute the public `ibl-ephys-atlas` distribution or
-the `ibl_ephys_atlas` authoring API.
+Status: implemented for Allen regional values and observations on 2026-08-29.
+The single `ibl-ephys-atlas` distribution contains both the public
+`ibl_ephys_atlas` and internal `ephys_atlas_builder` namespaces. The bundled
+schema is generated from and byte-identical to the repository schema, and the
+wheel test verifies both namespaces, schema bytes, dependencies, metadata, and
+the retained internal CLI entry point.
 
-- introduce the `ibl_ephys_atlas` public namespace in the existing builder
-  project and factor generic mechanics without changing schema v1;
-- implement dataset/feature semantics, provenance, structured validation,
-  `BrainRegions` identity handling, deterministic regional serialization, and
-  `write_zip()`;
-- generate one deterministic synthetic authoring fixture and import it through
-  the actual browser ZIP path;
-- add a notebook/tutorial that begins with NumPy arrays and ends with the
-  website import action.
+Implemented behavior includes dataset/feature semantics, provenance,
+structured validation, explicit `BrainRegions`, mutually exclusive Allen ID or
+acronym input, already-aggregated values, repeated observations with explicit
+mean aggregation, explicit hemisphere folding, neutral Linear/Full display,
+deterministic regional serialization, independent complete-graph validation,
+and atomic `write_zip()`. The concise tutorial is
+[`CUSTOM_DATA_TUTORIAL.md`](CUSTOM_DATA_TUTORIAL.md).
+`fixtures/authored-regional-v1.ibl-ephys-atlas.zip` is generated byte-for-byte
+through this public API, checked for exact regeneration, and imported by a
+dedicated Chromium test through the ordinary browser path.
 
 ### Slice 3 — Reduced mappings and management
+
+Status: not implemented.
 
 - add explicit observation-level Allen-to-Beryl/Cosmos remapping and
   aggregation tests against `iblatlas`;
@@ -451,6 +461,8 @@ the `ibl_ephys_atlas` authoring API.
 - state local-URL limitations in Share and local dataset information.
 
 ### Slice 4 — Volume authoring
+
+Status: not implemented.
 
 - implement and independently test `AllenCCFGrid.from_iblatlas()` axis/affine
   conversion and explicit-grid validation;
@@ -463,6 +475,11 @@ the `ibl_ephys_atlas` authoring API.
 
 ### Slice 5 — Distribution and release hardening
 
+Status: partially implemented. Neutral Linear/Full regional output,
+deterministic rebuilds, bundled-schema parity, and clean wheel construction are
+green. Volume round trips, final public documentation/naming review, and PyPI
+publication remain unfinished.
+
 - support only release-declared scale/domain combinations and retain the Q14
   boundary for scientific choices;
 - build and validate the distributable wheel from a clean environment;
@@ -474,9 +491,11 @@ Remote publishing and any explicit legacy converter are independent follow-ups.
 
 ## First vertical-slice acceptance
 
-The first end-to-end milestone is complete when a clean Python environment can
-create a deterministic regional `.ibl-ephys-atlas.zip`, the ordinary viewer can
-select and fully validate it, the regional values and provenance render through
-the normal local source, the release remains usable after reload, corrupt or
-unsafe archives leave no partial visible release, and no payload bytes are sent
-over the network.
+The Allen regional authoring and browser-import machinery now satisfy the first
+synthetic end-to-end milestone: a clean wheel contains the public API and exact
+schema; the public API exactly regenerates the committed authored regional ZIP;
+and a dedicated Chromium test imports that archive through the ordinary viewer
+path, fully validates and persists it, and reads its resources without network
+access. Before advertising production capacity, representative real authored
+archives still need cross-browser memory/quota measurement, along with the
+management/recovery work in Slice 3.

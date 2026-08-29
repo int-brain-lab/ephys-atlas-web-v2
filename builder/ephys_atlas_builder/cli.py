@@ -22,6 +22,7 @@ from .clusters import ClusterBuildConfig, build_clusters_from_snapshot
 from .fixture import generate_golden
 from .npz import inspect_volume_npz
 from .package import package_release
+from .schema_v1 import SCHEMA_DIR
 from .sources import pull, resolve_source_release
 from .validate import ValidationError, validate_release
 from .volumes import DATASET_ID as VOLUMES_DATASET_ID
@@ -34,7 +35,7 @@ from .volumes import (
 
 
 def _schema_dir() -> Path:
-    return Path(__file__).resolve().parents[2] / "schema" / "v1"
+    return SCHEMA_DIR
 
 
 def main(argv: list[str] | None = None) -> int:

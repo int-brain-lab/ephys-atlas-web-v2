@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.internationalbrainlab.org/schema/v1/dataset.schema.json",
+  "title": "IBL Ephys Atlas dataset manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "dataset_id", "title", "description", "release", "provenance", "parcellations", "features", "artifacts"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "dataset_id": {"$ref": "common.schema.json#/$defs/datasetId"},
+    "title": {"type": "string", "minLength": 1},
+    "description": {"type": "string"},
+    "release": {"$ref": "provenance.schema.json#/$defs/release"},
+    "provenance": {"$ref": "provenance.schema.json"},
+    "parcellations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "region_index", "metadata"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "region_index": {"$ref": "common.schema.json#/$defs/binaryArray"},
+          "metadata": {"$ref": "common.schema.json#/$defs/jsonResource"}
+        }
+      }
+    },
+    "features": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "descriptor"],
+        "properties": {
+          "id": {"$ref": "common.schema.json#/$defs/identifier"},
+          "descriptor": {"$ref": "common.schema.json#/$defs/jsonResource"}
+        }
+      }
+    },
+    "artifacts": {"type": "array", "items": {"$ref": "artifact.schema.json"}}
+  }
+}

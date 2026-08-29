@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.internationalbrainlab.org/schema/v1/projection-pack.schema.json",
+  "title": "Atlas five-projection pack v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "format", "pack_id", "immutable", "reference_space_id", "mappings", "projections", "provenance"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "format": {"const": "atlas-projection-pack-v1"},
+    "pack_id": {"$ref": "common.schema.json#/$defs/identifier"},
+    "immutable": {"const": true},
+    "reference_space_id": {"$ref": "common.schema.json#/$defs/identifier"},
+    "mappings": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {"enum": ["allen", "beryl", "cosmos"]}
+    },
+    "projections": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "oneOf": [
+          {"$ref": "registered-projection.schema.json"},
+          {"$ref": "static-projection.schema.json"}
+        ]
+      }
+    },
+    "provenance": {"$ref": "provenance.schema.json"}
+  }
+}

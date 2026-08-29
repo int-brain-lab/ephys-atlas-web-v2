@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.internationalbrainlab.org/schema/v1/statistics.schema.json",
+  "title": "Regional descriptive statistics and histograms v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "format", "population", "global", "regional_summary"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "format": {"const": "ephys-atlas-regional-statistics-v1"},
+    "population": {"type": "string", "minLength": 1},
+    "global": {"$ref": "#/$defs/summary"},
+    "regional_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fields", "values"],
+      "properties": {
+        "fields": {"$ref": "common.schema.json#/$defs/summaryFields"},
+        "values": {"$ref": "common.schema.json#/$defs/binaryArray"}
+      }
+    },
+    "distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binnings"],
+      "properties": {
+        "binnings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "allOf": [
+              {"$ref": "common.schema.json#/$defs/distributionBinning"},
+              {"required": ["regional_counts", "regional_count_layout"]}
+            ]
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "missing_count", "min", "max", "mean", "std", "median"],
+      "properties": {
+        "count": {"type": "integer", "minimum": 0},
+        "missing_count": {"type": "integer", "minimum": 0},
+        "min": {"type": ["number", "null"]},
+        "max": {"type": ["number", "null"]},
+        "mean": {"type": ["number", "null"]},
+        "std": {"type": ["number", "null"]},
+        "median": {"type": ["number", "null"]},
+        "q05": {"type": ["number", "null"]},
+        "q25": {"type": ["number", "null"]},
+        "q75": {"type": ["number", "null"]},
+        "q95": {"type": ["number", "null"]}
+      }
+    }
+  }
+}

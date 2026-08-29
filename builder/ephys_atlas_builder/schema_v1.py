@@ -6,6 +6,7 @@ It is the sole release schema, not a compatibility adapter.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 from copy import deepcopy
@@ -17,7 +18,7 @@ from referencing import Registry, Resource
 
 from .validate import FORMAT_CHECKER, ValidationError
 
-SCHEMA_DIR = Path(__file__).resolve().parents[2] / "schema" / "v1"
+SCHEMA_DIR = Path(__file__).resolve().parents[1] / "ibl_ephys_atlas" / "_schema" / "v1"
 _DTYPE_BYTES = {
     "uint8": 1,
     "int16": 2,
@@ -32,7 +33,32 @@ _PROJECTION_AXES = {"coronal": "ap", "sagittal": "ml", "horizontal": "dv"}
 _STATIC_PATH_COUNTS = {"top": 114, "swanson": 808}
 
 
-def load_schema_v1(schema_dir: Path = SCHEMA_DIR) -> tuple[Registry, dict[str, dict[str, Any]]]:
+def _schema_inventory(schema_dir: Path) -> dict[str, str]:
+    if not schema_dir.is_dir():
+        return {}
+    return {
+        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in sorted(schema_dir.iterdir())
+        if path.is_file()
+    }
+
+
+def resolve_schema_v1_directory(schema_dir: Path | None = None) -> Path:
+    """Resolve only the bundled schema-v1 contract or an exact byte copy."""
+    resolved = (schema_dir or SCHEMA_DIR).resolve()
+    bundled = SCHEMA_DIR.resolve()
+    expected = _schema_inventory(bundled)
+    if not expected or (resolved != bundled and _schema_inventory(resolved) != expected):
+        raise ValidationError(
+            f"schema v1 is the only supported release contract: {resolved}"
+        )
+    return resolved
+
+
+def load_schema_v1(
+    schema_dir: Path | None = None,
+) -> tuple[Registry, dict[str, dict[str, Any]]]:
+    schema_dir = resolve_schema_v1_directory(schema_dir)
     registry = Registry()
     schemas: dict[str, dict[str, Any]] = {}
     for path in sorted(schema_dir.glob("*.schema.json")):
@@ -573,7 +599,7 @@ def _document_semantics(document: dict[str, Any], schema_name: str) -> None:
 def validate_schema_v1_document(
     document: dict[str, Any],
     schema_name: str,
-    schema_dir: Path = SCHEMA_DIR,
+    schema_dir: Path | None = None,
 ) -> None:
     registry, schemas = load_schema_v1(schema_dir)
     if schema_name not in schemas:

@@ -94,7 +94,7 @@ def _validate_inventory(release_dir: Path) -> list[str]:
     return sorted(actual)
 
 
-def validate_bundle(bundle: Path, schema_dir: Path) -> dict[str, Any]:
+def validate_bundle(bundle: Path, schema_dir: Path | None = None) -> dict[str, Any]:
     """Validate ZIP structure, complete inventory, and the extracted schema graph."""
     bundle = bundle.resolve()
     seen: set[str] = set()
@@ -134,7 +134,11 @@ def validate_bundle(bundle: Path, schema_dir: Path) -> dict[str, Any]:
     }
 
 
-def write_bundle(release_dir: Path, output: Path, schema_dir: Path) -> dict[str, Any]:
+def write_bundle(
+    release_dir: Path,
+    output: Path,
+    schema_dir: Path | None = None,
+) -> dict[str, Any]:
     """Validate, write, reopen, and atomically install a deterministic bundle."""
     release_dir = release_dir.resolve()
     output = output.resolve()

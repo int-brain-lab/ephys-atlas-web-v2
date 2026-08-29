@@ -2,8 +2,8 @@
 
 Status: active pre-launch capability matrix.
 
-Last reviewed: 2026-08-29 on `main` after the D050-D053 distribution work and
-documentation authority repair.
+Last reviewed: 2026-08-29 on `main` after the D050-D053 distribution work,
+documentation authority repair, and Allen regional authoring/ZIP-import slice.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -33,7 +33,7 @@ Stable boundaries and end-to-end flow are in
 | `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048 presentation, D050 distributions, HTTP acceptance. | Validated-real-local `sha256-9b5e55215b306f26-d050-d048-v1`; owner-reviewed, not published. | Q8/Q9 publication/default authorization. |
 | `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | Validated-real-local `legacy-v1-1d908bea-d050-linear-full-v1`; not published. | Q8/Q9 publication/default authorization. |
 | `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | Validated-real-local depth-4 candidate `2026_W26-candidate-depth4-d050-linear-full-v1`; explicitly non-production. | Q5 confirmation at the Q8 CloudFront origin, then immutable production build. |
-| `local` | Same schema-v1 graph, shared materializers, explicit local/published distinction, and deterministic validated ZIP writer/fixture. A pinned zip.js reader performs strict bounded preparation and complete-graph validation before explicit atomic IndexedDB admission. | Exact regenerable `.ibl-ephys-atlas.zip` fixture; preview/confirmation, Local identity, persistence, no-network resource reads, and immutable duplicate rejection pass automated Chromium coverage. | Measure provisional limits across browsers/real archives, then implement public regional authoring and local management. |
+| `local` | Same schema-v1 graph and materializers; public Allen regional `ibl_ephys_atlas` authoring with explicit `BrainRegions`, semantics, aggregation, provenance, and hemisphere folding; deterministic validated ZIP packaging; strict bounded two-phase browser import and atomic IndexedDB admission. | Exact synthetic bundle/authoring tests, generated-schema parity, clean-wheel coverage, exact regeneration of the committed public-authored archive, and its Chromium import with preview/confirmation, Local identity, persistence, and no-network reads are green. | Measure provisional limits across browsers/real archives; add Beryl/Cosmos authoring, local management/recovery, and volume authoring; publish the Python distribution only after authorization. |
 
 Dataset source, recipe, selection, release, and audit ownership is indexed by
 [`data/README.md`](data/README.md). The final paper-facing source vintage and
@@ -79,16 +79,28 @@ use the same interface after complete import validation.
 
 D051 approves one `.ibl-ephys-atlas.zip` containing the schema-v1 graph, a
 public `ibl-ephys-atlas` Python authoring package, `iblatlas` authority, and
-persistent Local management. Deterministic bundle creation is complete. The
-browser now has a pinned zip.js strict reader and separates read-only preview
+persistent Local management. The single implemented `ibl-ephys-atlas`
+distribution contains the public `ibl_ephys_atlas` and internal
+`ephys_atlas_builder` namespaces plus an exact generated copy of schema v1.
+The Allen regional API accepts explicit IDs or acronyms through a caller-owned
+`BrainRegions`, distinguishes already-aggregated values from repeated
+observations, requires explicit mean aggregation and hemisphere folding, emits
+neutral Linear/Full releases, and writes deterministic independently validated
+ZIPs. Wheel tests verify both namespaces, schema parity, dependencies,
+metadata, and the retained internal CLI. The public API exactly regenerates the
+committed `fixtures/authored-regional-v1.ibl-ephys-atlas.zip`, which a dedicated
+Chromium test imports through the ordinary browser path.
+
+The browser has a pinned zip.js strict reader and separates read-only preview
 preparation from explicit local-only atomic IndexedDB admission. Its
 preview/confirmation UI, Local identity, reload persistence, no-network local
-resource reads, and duplicate rejection have automated Chromium evidence. Current
-archive ceilings are provisional until representative regional and volume
-bundles are measured in Chromium, Firefox, and Safari. The public Python
-authoring distribution and `ibl_ephys_atlas` API are not implemented. The
-binding plan is
-[`data/CUSTOM_DATA_AUTHORING.md`](data/CUSTOM_DATA_AUTHORING.md).
+resource reads, and duplicate rejection have automated Chromium evidence.
+Current archive ceilings are provisional until representative regional and
+volume bundles are measured in Chromium, Firefox, and Safari. Beryl/Cosmos
+authoring, management/deletion and quota recovery, explicit local-URL
+disclosure, volume authoring, and PyPI publication remain incomplete. See the
+binding [`data/CUSTOM_DATA_AUTHORING.md`](data/CUSTOM_DATA_AUTHORING.md) and
+implemented-path [`data/CUSTOM_DATA_TUTORIAL.md`](data/CUSTOM_DATA_TUTORIAL.md).
 
 ## Publishing and deployment
 
@@ -113,8 +125,8 @@ under D040; the optional 3-D local matrix was completed on 2026-08-28.
 ## Remaining launch sequence
 
 1. Obtain owner review of the completed Q14 audit tables for any new choices.
-2. Measure D051 ZIP import, then implement regional authoring and
-   local management.
+2. Measure D051 ZIP import across real archives/browsers, then implement
+   Beryl/Cosmos authoring, local management/recovery, and volume authoring.
 3. Resolve Q8 staging details and deploy immutable projection/data assets.
 4. Confirm depth-four volume transport at that origin and resolve Q5.
 5. Resolve Q2 and build the exact paper channel release.

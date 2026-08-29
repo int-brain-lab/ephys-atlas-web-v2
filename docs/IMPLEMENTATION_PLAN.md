@@ -48,14 +48,15 @@ Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 2 and 3; binding runbook
 
 ## M5 — Custom authoring and ZIP import
 
-Status: active; the deterministic validated ZIP boundary and canonical
-synthetic bundle fixture are complete. Browser ZIP import is in progress: the
-pinned reader, strict bounded preparation, complete-graph validation, and
-two-phase preview/confirmation/admission UI, persistent Local identity, and
-automated Chromium evidence exist in the current implementation. Real-archive
-cross-browser and quota evidence remains unfinished.
+Status: active; the Allen regional authoring and browser ZIP-import vertical
+slice is implemented. One `ibl-ephys-atlas` distribution contains the public
+`ibl_ephys_atlas` API and internal builder namespace, exact bundled schema v1,
+deterministic independently validated ZIP output, and clean-wheel coverage.
+The bounded two-phase browser import, persistent Local identity, and automated
+Chromium evidence are also complete.
 
-Blocker: none for the regional scalar vertical slice.
+Blocker: none for the remaining independent extensions. PyPI publication is
+not authorized or complete.
 
 Next testable actions:
 
@@ -63,15 +64,15 @@ Next testable actions:
    ceilings with representative regional and volume bundles in Chromium,
    Firefox, and Safari; record peak memory, preview latency, failure behavior,
    and IndexedDB quota results before freezing supported limits;
-2. add the public `ibl-ephys-atlas` distribution and `ibl_ephys_atlas`
-   namespace beside the shared schema-v1 serializer/validator;
-3. implement regional scalar authoring with explicit identity, aggregation,
-   provenance, and hemisphere-folding rules backed by `iblatlas`;
-4. write one deterministic `.ibl-ephys-atlas.zip` containing the schema-v1
-   graph at its root;
-5. add local inventory/deletion, quota/recovery behavior,
+2. add explicit observation-level Allen-to-Beryl/Cosmos remapping and
+   aggregation tests backed by `BrainRegions`;
+3. add local inventory/deletion, quota/recovery behavior,
    and local-URL disclosure;
-6. add explicit-grid volume authoring only after the regional slice is green.
+4. add explicit-grid volume authoring with authoritative `iblatlas` geometry
+   and validity inputs;
+5. exercise representative real public-authored archives at supported capacity,
+   complete final naming/documentation review, and publish the Python
+   distribution only after explicit authorization.
 
 The pinned zip.js reader rejects unsafe or duplicate paths, non-regular,
 encrypted, split/Zip64, nested, or unsupported-compression entries, undeclared
@@ -82,9 +83,12 @@ it only after explicit confirmation. The current ceilings remain provisional
 pending real-archive, cross-browser, and quota measurement. This work must not
 introduce a second scientific schema.
 
-The public Python authoring distribution, structured scientific model,
-`BrainRegions` handling, and `Dataset.write_zip()` are not implemented by the
-shared bundle command or browser reader.
+The implemented Allen API requires explicit `BrainRegions`, identity kind,
+scientific semantics, aggregation, provenance, and hemisphere policy. It emits
+only neutral Linear/Full Allen regional releases. Beryl/Cosmos output, local
+management/recovery, volume authoring, cross-browser real-archive capacity
+evidence, and distribution publication remain unfinished. The user path is
+documented in [`data/CUSTOM_DATA_TUTORIAL.md`](data/CUSTOM_DATA_TUTORIAL.md).
 
 Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 8 and 9; binding plan:
 [`data/CUSTOM_DATA_AUTHORING.md`](data/CUSTOM_DATA_AUTHORING.md).

@@ -303,15 +303,11 @@ def _check_volume(
         _check_binary(feature_root, validity["mask"])
 
 
-def validate_release(release_dir: Path, schema_dir: Path) -> None:
-    from .schema_v1 import validate_schema_v1_document
+def validate_release(release_dir: Path, schema_dir: Path | None = None) -> None:
+    from .schema_v1 import resolve_schema_v1_directory, validate_schema_v1_document
 
     release_dir = release_dir.resolve()
-    expected_schema_dir = Path(__file__).resolve().parents[2] / "schema" / "v1"
-    if schema_dir.resolve() != expected_schema_dir.resolve():
-        raise ValidationError(
-            f"schema v1 is the only supported release contract: {schema_dir}"
-        )
+    schema_dir = resolve_schema_v1_directory(schema_dir)
 
     manifest = _load_json(release_dir / "manifest.json", "release manifest")
     validate_schema_v1_document(manifest, "dataset.schema.json", schema_dir)
