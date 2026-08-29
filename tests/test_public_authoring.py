@@ -208,3 +208,97 @@ def test_observations_require_explicit_mean() -> None:
             ontology=BrainRegions(),
             aggregation="median",
         )
+
+
+def test_observations_remap_before_weighted_reduced_aggregation(tmp_path: Path) -> None:
+    regions = BrainRegions()
+    authored = dataset()
+    layered = authored.add_feature(id="layered", label="Layered", semantics=semantics())
+    layered.add_region_observations(
+        region_ids=[593, -593, 821],
+        values=[1.0, 3.0, 9.0],
+        ontology=regions,
+        aggregation="mean",
+        hemisphere_policy="fold",
+        output_mappings=("Cosmos", "Allen", "Beryl"),
+    )
+    cosmos_only = authored.add_feature(id="hippocampus", label="Hippocampus", semantics=semantics())
+    cosmos_only.add_region_observations(
+        region_ids=[502],
+        values=[7.0],
+        ontology=regions,
+        aggregation="mean",
+        output_mappings=("Allen", "Cosmos"),
+    )
+
+    output = tmp_path / "reduced.ibl-ephys-atlas.zip"
+    authored.write_zip(output)
+    with zipfile.ZipFile(output) as archive:
+        manifest = json.loads(archive.read("manifest.json"))
+        assert [item["id"] for item in manifest["parcellations"]] == ["allen", "beryl", "cosmos"]
+        assert read_array(archive, "parcellations/beryl/region_ids.i32", "<i4").tolist() == [-385]
+        assert read_array(archive, "parcellations/cosmos/region_ids.i32", "<i4").tolist() == [-1089, -315]
+        beryl_metadata = json.loads(archive.read("parcellations/beryl/regions.json"))
+        cosmos_metadata = json.loads(archive.read("parcellations/cosmos/regions.json"))
+        assert (beryl_metadata[0]["atlas_id"], beryl_metadata[0]["acronym"]) == (-385, "VISp")
+        assert [(item["atlas_id"], item["acronym"]) for item in cosmos_metadata] == [
+            (-1089, "HPF"),
+            (-315, "Isocortex"),
+        ]
+        beryl_values = read_array(archive, "features/layered/beryl.values.f32", "<f4")
+        assert beryl_values[0] == pytest.approx(13.0 / 3.0)
+        cosmos_values = read_array(archive, "features/layered/cosmos.values.f32", "<f4")
+        assert np.isnan(cosmos_values[0])
+        assert cosmos_values[1] == pytest.approx(13.0 / 3.0)
+        layered_doc = json.loads(archive.read("features/layered/feature.json"))
+        assert [item["parcellation_id"] for item in layered_doc["representations"]["regional"]["parcellations"]] == [
+            "allen",
+            "beryl",
+            "cosmos",
+        ]
+        hippocampus_doc = json.loads(archive.read("features/hippocampus/feature.json"))
+        assert [item["parcellation_id"] for item in hippocampus_doc["representations"]["regional"]["parcellations"]] == [
+            "allen",
+            "cosmos",
+        ]
+        recipe = manifest["provenance"]["recipe"]
+        assert recipe["output_mappings"] == ["Allen", "Beryl", "Cosmos"]
+        assert recipe["mapping_aggregation"] == "observation-level remap before arithmetic mean"
+
+
+def test_reduced_mapping_requests_fail_closed() -> None:
+    regions = BrainRegions()
+    for mappings, match in [
+        (("Beryl",), "must include Allen"),
+        (("Allen", "Beryl", "Beryl"), "duplicate"),
+        (("allen",), "unsupported output mapping"),
+        (("Allen", "Swanson"), "unsupported output mapping"),
+    ]:
+        feature = dataset().add_feature(id="candidate", label="Candidate", semantics=semantics())
+        with pytest.raises(ValueError, match=match):
+            feature.add_region_observations(
+                region_ids=[593],
+                values=[1.0],
+                ontology=regions,
+                aggregation="mean",
+                output_mappings=mappings,
+            )
+
+    aggregated = dataset().add_feature(id="aggregated", label="Aggregated", semantics=semantics())
+    with pytest.raises(ValueError, match="already-aggregated.*Allen-only"):
+        aggregated.add_region_values(
+            region_ids=[593],
+            values=[1.0],
+            ontology=regions,
+            output_mappings=("Allen", "Beryl"),
+        )
+
+    root_fallback = dataset().add_feature(id="root", label="Root fallback", semantics=semantics())
+    with pytest.raises(ValueError, match="Beryl.*root.*669"):
+        root_fallback.add_region_observations(
+            region_ids=[669],
+            values=[1.0],
+            ontology=regions,
+            aggregation="mean",
+            output_mappings=("Allen", "Beryl"),
+        )

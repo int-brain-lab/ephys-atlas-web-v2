@@ -331,41 +331,62 @@ class Dataset:
         regional = [feature._regional for feature in self.features]
         assert all(item is not None for item in regional)
         observations = [item for item in regional if item is not None]
-        union = sorted(
-            {int(region_id) for item in observations for region_id in item.logical_region_ids}
+        mapping_order = tuple(
+            mapping
+            for mapping in ("Allen", "Beryl", "Cosmos")
+            if any(mapping in item.output_mappings for item in observations)
         )
-        metadata = {}
-        for item in observations:
-            for region_id, info in item.metadata.items():
-                previous = metadata.get(region_id)
-                if previous is not None and previous != info:
-                    raise ValueError(f"inconsistent iblatlas metadata for Allen ID {region_id}")
-                metadata[region_id] = info
+        parcellations = []
+        ordered_ids_by_mapping: dict[str, list[int]] = {}
+        for mapping in mapping_order:
+            union = sorted(
+                {
+                    int(region_id)
+                    for item in observations
+                    if mapping in item.output_mappings
+                    for region_id in item.region_ids_by_mapping[mapping]
+                }
+            )
+            metadata = {}
+            for item in observations:
+                if mapping not in item.output_mappings:
+                    continue
+                for region_id, info in item.metadata_by_mapping[mapping].items():
+                    previous = metadata.get(region_id)
+                    if previous is not None and previous != info:
+                        raise ValueError(
+                            f"inconsistent iblatlas metadata for {mapping} ID {region_id}"
+                        )
+                    metadata[region_id] = info
+            parcellation, _ = write_parcellation(
+                release_dir,
+                mapping.lower(),
+                np.asarray(union, dtype=np.int32),
+                metadata,
+            )
+            parcellations.append(parcellation)
+            # write_parcellation folds positive IDs and sorts their negatives,
+            # so feature rows follow descending positive logical IDs.
+            ordered_ids_by_mapping[mapping] = sorted(union, reverse=True)
 
-        parcellation, _ = write_parcellation(
-            release_dir,
-            "allen",
-            np.asarray(union, dtype=np.int32),
-            metadata,
-        )
-        # write_parcellation folds positive IDs and sorts their negatives, so
-        # feature rows must follow descending positive logical IDs.
-        ordered_logical_ids = sorted(union, reverse=True)
         feature_refs = []
         for feature in sorted(self.features, key=lambda item: item.id):
             item = feature._regional
             assert item is not None
             display = linear_full_display()
             feature_root = release_dir / "features" / feature.id
-            representation = write_feature_parcellation(
-                feature_root,
-                "allen",
-                item.values,
-                item.groups_for(ordered_logical_ids),
-                self.histogram_bins,
-                feature.semantics.source_population,
-                distribution_display=display,
-            )
+            representations = [
+                write_feature_parcellation(
+                    feature_root,
+                    mapping.lower(),
+                    item.values,
+                    item.groups_for(ordered_ids_by_mapping[mapping], mapping),
+                    self.histogram_bins,
+                    feature.semantics.source_population,
+                    distribution_display=display,
+                )
+                for mapping in item.output_mappings
+            ]
             document = {
                 "schema_version": "1.0",
                 "id": feature.id,
@@ -377,7 +398,7 @@ class Dataset:
                 "representations": {
                     "regional": {
                         "format": "ephys-atlas-regional-v1",
-                        "parcellations": [representation],
+                        "parcellations": representations,
                     }
                 },
                 "artifacts": [],
@@ -424,7 +445,7 @@ class Dataset:
                 "recipe": {
                     "id": "ibl-ephys-atlas-regional-authoring-v1",
                     "source_mapping": "Allen",
-                    "output_mappings": ["Allen"],
+                    "output_mappings": list(mapping_order),
                     "regional_summary": "mean",
                     "histogram_bins": self.histogram_bins,
                     "presentation": "neutral Linear/Full",
@@ -434,17 +455,34 @@ class Dataset:
                             "input_kind": feature._regional.input_kind,
                             "aggregation": feature._regional.aggregation,
                             "hemisphere_policy": feature._regional.hemisphere_policy,
+                            **(
+                                {"output_mappings": list(feature._regional.output_mappings)}
+                                if feature._regional.output_mappings != ("Allen",)
+                                else {}
+                            ),
                         }
                         for feature in sorted(self.features, key=lambda item: item.id)
                         if feature._regional is not None
                     ],
+                    **(
+                        {
+                            "mapping_aggregation": "observation-level remap before arithmetic mean",
+                            "mapping": {
+                                "authority": "iblatlas.regions.BrainRegions.remap",
+                                "operation": "fold signed Allen identities, remap each source observation row, then aggregate by arithmetic mean",
+                                "unmapped_policy": "error on void or root target",
+                            }
+                        }
+                        if mapping_order != ("Allen",)
+                        else {}
+                    ),
                 },
                 "notes": [
                     "Regional values are represented on folded logical Allen identities; independent left/right regional scalars are unsupported.",
                     "No display scale, focus domain, palette, or scientific transform was inferred by the authoring package.",
                 ],
             },
-            "parcellations": [parcellation],
+            "parcellations": parcellations,
             "features": feature_refs,
             "artifacts": [],
         }

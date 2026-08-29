@@ -138,7 +138,7 @@ feature.add_region_observations(
     values=coefficients,
     ontology=BrainRegions(),
     source_mapping="Allen",
-    output_mappings=("Allen",),
+    output_mappings=("Allen", "Beryl", "Cosmos"),
     aggregation="mean",
 )
 
@@ -161,8 +161,10 @@ Regional rules:
 - preserve non-finite values as declared missing observations;
 - require an explicit aggregation whenever multiple rows or source regions
   contribute to one output region;
-- emit Allen output only. Observation-level Beryl/Cosmos remapping must be
-  implemented before those output mappings become available;
+- already-aggregated `add_region_values()` output remains Allen-only;
+- repeated observations may request Allen/Beryl/Cosmos. Fold signed identities,
+  remap each original row through `BrainRegions.remap`, verify cardinality and
+  target identity, then aggregate; root or void targets fail closed;
 - do not propagate parent values to descendants;
 - compute exact descriptive statistics and every declared distribution from
   source observations;
@@ -452,10 +454,13 @@ dedicated Chromium test through the ordinary browser path.
 
 ### Slice 3 — Reduced mappings and management
 
-Status: not implemented.
+Status: reduced regional mappings implemented on 2026-08-29; local management
+and recovery remain incomplete.
 
-- add explicit observation-level Allen-to-Beryl/Cosmos remapping and
-  aggregation tests against `iblatlas`;
+- observation-level Allen-to-Beryl/Cosmos remapping and aggregation are tested
+  against pinned `iblatlas`, including unequal replicate weighting, target
+  metadata, per-feature mapping subsets, aligned empty groups, signed folding,
+  and fail-closed root targets;
 - add local inventory, inspection, quota/persistence reporting, damaged-entry
   recovery, and atomic per-release deletion;
 - state local-URL limitations in Share and local dataset information.

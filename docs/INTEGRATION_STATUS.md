@@ -33,7 +33,7 @@ Stable boundaries and end-to-end flow are in
 | `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048 presentation, D050 distributions, HTTP acceptance. | Validated-real-local `sha256-9b5e55215b306f26-d050-d048-v1`; owner-reviewed, not published. | Q8/Q9 publication/default authorization. |
 | `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | Validated-real-local `legacy-v1-1d908bea-d050-linear-full-v1`; not published. | Q8/Q9 publication/default authorization. |
 | `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | Validated-real-local depth-4 candidate `2026_W26-candidate-depth4-d050-linear-full-v1`; explicitly non-production. | Q5 confirmation at the Q8 CloudFront origin, then immutable production build. |
-| `local` | Same schema-v1 graph and materializers; public Allen regional `ibl_ephys_atlas` authoring with explicit `BrainRegions`, semantics, aggregation, provenance, and hemisphere folding; deterministic validated ZIP packaging; strict bounded two-phase browser import and atomic IndexedDB admission. | Exact synthetic bundle/authoring tests, generated-schema parity, clean-wheel coverage, exact regeneration of the committed public-authored archive, and its Chromium import with preview/confirmation, Local identity, persistence, and no-network reads are green. | Measure provisional limits across browsers/real archives; add Beryl/Cosmos authoring, local management/recovery, and volume authoring; publish the Python distribution only after authorization. |
+| `local` | Same schema-v1 graph and materializers; public regional `ibl_ephys_atlas` authoring with explicit `BrainRegions`, semantics, aggregation, provenance, hemisphere folding, and observation-level Allen-to-Beryl/Cosmos remapping; deterministic validated ZIP packaging; strict bounded two-phase browser import and atomic IndexedDB admission. | Exact synthetic bundle/authoring tests, reduced-mapping weighting/identity tests, generated-schema parity, clean-wheel coverage, exact regeneration of the committed public-authored archive, and its Chromium import with preview/confirmation, Local identity, persistence, and no-network reads are green. | Measure provisional limits across browsers/real archives; add local management/recovery and volume authoring; publish the Python distribution only after authorization. |
 
 Dataset source, recipe, selection, release, and audit ownership is indexed by
 [`data/README.md`](data/README.md). The final paper-facing source vintage and
@@ -95,9 +95,12 @@ The browser has a pinned zip.js strict reader and separates read-only preview
 preparation from explicit local-only atomic IndexedDB admission. Its
 preview/confirmation UI, Local identity, reload persistence, no-network local
 resource reads, and duplicate rejection have automated Chromium evidence.
-Current archive ceilings are provisional until representative regional and
-volume bundles are measured in Chromium, Firefox, and Safari. Beryl/Cosmos
-authoring, management/deletion and quota recovery, explicit local-URL
+Repeated observations can also request Beryl/Cosmos outputs: the package folds
+signed Allen identities, remaps every original row through `BrainRegions`, and
+only then computes target means. Root/void mapping results fail closed, and
+already-aggregated values remain Allen-only to avoid means of means. Current
+archive ceilings are provisional until representative regional and volume
+bundles are measured in Chromium, Firefox, and Safari. Management/deletion and quota recovery, explicit local-URL
 disclosure, volume authoring, and PyPI publication remain incomplete. See the
 binding [`data/CUSTOM_DATA_AUTHORING.md`](data/CUSTOM_DATA_AUTHORING.md) and
 implemented-path [`data/CUSTOM_DATA_TUTORIAL.md`](data/CUSTOM_DATA_TUTORIAL.md).
@@ -125,8 +128,8 @@ under D040; the optional 3-D local matrix was completed on 2026-08-28.
 ## Remaining launch sequence
 
 1. Obtain owner review of the completed Q14 audit tables for any new choices.
-2. Measure D051 ZIP import across real archives/browsers, then implement
-   Beryl/Cosmos authoring, local management/recovery, and volume authoring.
+2. Measure D051 ZIP import across real archives/browsers, then implement local
+   management/recovery and volume authoring.
 3. Resolve Q8 staging details and deploy immutable projection/data assets.
 4. Confirm depth-four volume transport at that origin and resolve Q5.
 5. Resolve Q2 and build the exact paper channel release.

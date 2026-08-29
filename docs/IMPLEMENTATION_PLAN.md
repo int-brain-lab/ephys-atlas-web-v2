@@ -64,13 +64,11 @@ Next testable actions:
    ceilings with representative regional and volume bundles in Chromium,
    Firefox, and Safari; record peak memory, preview latency, failure behavior,
    and IndexedDB quota results before freezing supported limits;
-2. add explicit observation-level Allen-to-Beryl/Cosmos remapping and
-   aggregation tests backed by `BrainRegions`;
-3. add local inventory/deletion, quota/recovery behavior,
+2. add local inventory/deletion, quota/recovery behavior,
    and local-URL disclosure;
-4. add explicit-grid volume authoring with authoritative `iblatlas` geometry
+3. add explicit-grid volume authoring with authoritative `iblatlas` geometry
    and validity inputs;
-5. exercise representative real public-authored archives at supported capacity,
+4. exercise representative real public-authored archives at supported capacity,
    complete final naming/documentation review, and publish the Python
    distribution only after explicit authorization.
 
@@ -83,10 +81,11 @@ it only after explicit confirmation. The current ceilings remain provisional
 pending real-archive, cross-browser, and quota measurement. This work must not
 introduce a second scientific schema.
 
-The implemented Allen API requires explicit `BrainRegions`, identity kind,
-scientific semantics, aggregation, provenance, and hemisphere policy. It emits
-only neutral Linear/Full Allen regional releases. Beryl/Cosmos output, local
-management/recovery, volume authoring, cross-browser real-archive capacity
+The implemented regional API requires explicit `BrainRegions`, identity kind,
+scientific semantics, aggregation, provenance, and hemisphere policy. Repeated
+Allen observations may be remapped observation-by-observation to Beryl/Cosmos
+before mean aggregation; already-aggregated values remain Allen-only. It emits
+only neutral Linear/Full releases. Local management/recovery, volume authoring, cross-browser real-archive capacity
 evidence, and distribution publication remain unfinished. The user path is
 documented in [`data/CUSTOM_DATA_TUTORIAL.md`](data/CUSTOM_DATA_TUTORIAL.md).
 

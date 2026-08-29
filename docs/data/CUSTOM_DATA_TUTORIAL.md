@@ -61,7 +61,7 @@ feature.add_region_observations(
     values=np.asarray([0.8, 1.2, -0.4], dtype=np.float64),
     ontology=BrainRegions(),
     source_mapping="Allen",
-    output_mappings=("Allen",),
+    output_mappings=("Allen", "Beryl", "Cosmos"),
     aggregation="mean",
 )
 
@@ -91,9 +91,13 @@ only then replaces the requested destination.
   one logical regional value. Independent left/right regional values are not
   supported.
 
-The current authoring slice accepts Allen input and emits Allen output only.
-Beryl/Cosmos remapping, custom display scales/domains, and volume authoring are
-not yet available. Output uses the neutral Linear/Full presentation.
+Repeated Allen observations may request `("Allen", "Beryl", "Cosmos")` or a
+subset that includes Allen. Each original observation is remapped before mean
+aggregation, so reduced values are not means of pre-aggregated Allen means.
+If a requested reduced mapping produces root or void, authoring fails rather
+than discarding or pooling the row. `add_region_values()` remains Allen-only.
+Custom display scales/domains and volume authoring are not yet available;
+output uses the neutral Linear/Full presentation.
 
 ## Import in the website
 

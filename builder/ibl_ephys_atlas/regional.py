@@ -22,10 +22,18 @@ class RegionalObservations:
     aggregation: str
     hemisphere_policy: str
     iblatlas_version: str
+    output_mappings: tuple[str, ...]
+    region_ids_by_mapping: dict[str, np.ndarray]
+    metadata_by_mapping: dict[str, dict[int, RegionInfo]]
 
-    def groups_for(self, ordered_logical_ids: Sequence[int]) -> list[np.ndarray]:
+    def groups_for(
+        self,
+        ordered_logical_ids: Sequence[int],
+        mapping: str = "Allen",
+    ) -> list[np.ndarray]:
+        region_ids = self.region_ids_by_mapping[mapping]
         return [
-            np.flatnonzero(self.logical_region_ids == region_id)
+            np.flatnonzero(region_ids == region_id)
             for region_id in ordered_logical_ids
         ]
 
@@ -110,8 +118,28 @@ def normalize_regional_input(
         raise ValueError("provide exactly one of region_ids or acronyms")
     if source_mapping != "Allen":
         raise ValueError("the first regional authoring slice supports source_mapping='Allen' only")
-    if tuple(output_mappings) != ("Allen",):
-        raise ValueError("the first regional authoring slice supports output_mappings=('Allen',) only")
+    requested_mappings = tuple(output_mappings)
+    supported_mappings = ("Allen", "Beryl", "Cosmos")
+    if not requested_mappings:
+        raise ValueError("output_mappings must contain Allen")
+    if len(set(requested_mappings)) != len(requested_mappings):
+        raise ValueError("output_mappings must not contain duplicates")
+    unknown_mappings = [
+        mapping for mapping in requested_mappings if mapping not in supported_mappings
+    ]
+    if unknown_mappings:
+        raise ValueError(
+            "unsupported output mapping: " + ", ".join(map(str, unknown_mappings))
+        )
+    if "Allen" not in requested_mappings:
+        raise ValueError("output_mappings must include Allen")
+    canonical_mappings = tuple(
+        mapping for mapping in supported_mappings if mapping in requested_mappings
+    )
+    if require_unique and canonical_mappings != ("Allen",):
+        raise ValueError(
+            "already-aggregated region values are Allen-only; reduced mappings require source observations"
+        )
     if hemisphere_policy not in {"non_lateralized", "fold"}:
         raise ValueError("hemisphere_policy must be 'non_lateralized' or 'fold'")
     if aggregation != "mean":
@@ -142,20 +170,59 @@ def normalize_regional_input(
     if require_unique and np.unique(logical_ids).size != logical_ids.size:
         raise ValueError("add_region_values requires one value per folded logical Allen region")
 
-    metadata: dict[int, RegionInfo] = {}
-    for region_id in sorted({int(item) for item in logical_ids}):
-        record = ontology.get(np.asarray([region_id], dtype=np.int64))
-        returned_id = int(np.asarray(record.id).reshape(-1)[0])
-        if returned_id != region_id:
-            raise ValueError(f"iblatlas returned inconsistent metadata for Allen ID {region_id}")
-        metadata[region_id] = RegionInfo(
-            atlas_id=region_id,
-            acronym=str(np.asarray(record.acronym).reshape(-1)[0]),
-            name=str(np.asarray(record.name).reshape(-1)[0]),
-        )
+    def mapping_metadata(mapping: str, mapped_ids: np.ndarray) -> dict[int, RegionInfo]:
+        result: dict[int, RegionInfo] = {}
+        for region_id in sorted({int(item) for item in mapped_ids}):
+            record = ontology.get(np.asarray([region_id], dtype=np.int64))
+            returned_id = int(np.asarray(record.id).reshape(-1)[0])
+            if returned_id != region_id:
+                raise ValueError(
+                    f"iblatlas returned inconsistent {mapping} metadata for ID {region_id}"
+                )
+            result[region_id] = RegionInfo(
+                atlas_id=region_id,
+                acronym=str(np.asarray(record.acronym).reshape(-1)[0]),
+                name=str(np.asarray(record.name).reshape(-1)[0]),
+            )
+        return result
 
     frozen_ids = np.array(logical_ids, dtype=np.int64, copy=True)
     frozen_ids.setflags(write=False)
+    ids_by_mapping = {"Allen": frozen_ids}
+    metadata_by_mapping = {"Allen": mapping_metadata("Allen", frozen_ids)}
+    for mapping in canonical_mappings[1:]:
+        raw_mapped = np.asarray(
+            ontology.remap(frozen_ids, source_map="Allen", target_map=mapping)
+        )
+        if raw_mapped.shape != frozen_ids.shape:
+            raise ValueError(
+                f"iblatlas {mapping} remap did not preserve source-observation cardinality"
+            )
+        if raw_mapped.dtype.kind in {"b", "c", "O", "S", "U", "V"}:
+            raise ValueError(f"iblatlas {mapping} remap returned non-integral identities")
+        numeric_mapped = raw_mapped.astype(np.float64, copy=False)
+        if not np.isfinite(numeric_mapped).all() or np.any(
+            numeric_mapped != np.trunc(numeric_mapped)
+        ):
+            raise ValueError(f"iblatlas {mapping} remap returned non-integral identities")
+        if np.any(np.abs(numeric_mapped) > np.iinfo(np.int32).max):
+            raise ValueError(f"iblatlas {mapping} remap returned IDs outside signed int32")
+        mapped = numeric_mapped.astype(np.int64)
+        invalid_target = np.isin(mapped, (0, 997))
+        if np.any(invalid_target):
+            source_ids = sorted({int(item) for item in frozen_ids[invalid_target]})
+            raise ValueError(
+                f"{mapping} reduced mapping produced void/root for Allen IDs "
+                f"{', '.join(map(str, source_ids[:8]))}; reduced outputs require a complete non-root mapping"
+            )
+        if np.any(mapped <= 0) or any(int(item) not in known for item in mapped):
+            raise ValueError(f"iblatlas {mapping} remap returned unknown target IDs")
+        frozen_mapped = np.array(mapped, dtype=np.int64, copy=True)
+        frozen_mapped.setflags(write=False)
+        ids_by_mapping[mapping] = frozen_mapped
+        metadata_by_mapping[mapping] = mapping_metadata(mapping, frozen_mapped)
+
+    metadata = metadata_by_mapping["Allen"]
     return RegionalObservations(
         logical_region_ids=frozen_ids,
         values=numeric_values,
@@ -164,4 +231,7 @@ def normalize_regional_input(
         aggregation=aggregation,
         hemisphere_policy=hemisphere_policy,
         iblatlas_version=_iblatlas_version(),
+        output_mappings=canonical_mappings,
+        region_ids_by_mapping=ids_by_mapping,
+        metadata_by_mapping=metadata_by_mapping,
     )
