@@ -69,6 +69,7 @@ export interface AppShellCallbacks {
   prepareLocal(file: File): Promise<LocalArchivePreview>;
   admitLocal(): Promise<void>;
   cancelLocal(): void;
+  deleteLocal(selector: string): Promise<void>;
   reportError(error: unknown): void;
 }
 
@@ -123,6 +124,7 @@ interface StaticFrameNodes extends ProjectionTooltipNodes {
 
 const SLICE_LOADING_NOTICE_DELAY_MS = 400;
 const LOCAL_IMPORT_OPTION_ID = '__import_local_dataset__';
+const LOCAL_DELETE_OPTION_ID = '__delete_local_dataset__';
 
 const ACTION_ICONS: Record<HeaderAction, string> = {
   share: '↗',
@@ -192,7 +194,16 @@ export class AppShell {
   private readonly localImportSummary: HTMLElement;
   private readonly localImportConfirm: HTMLButtonElement;
   private readonly localImportCancel: HTMLButtonElement;
+  private readonly localDeleteDialog: HTMLDialogElement;
+  private readonly localDeleteIdentity: HTMLElement;
+  private readonly localDeleteError: HTMLElement;
+  private readonly localDeleteConfirm: HTMLButtonElement;
+  private readonly localShareDialog: HTMLDialogElement;
+  private readonly localShareError: HTMLElement;
+  private readonly localShareConfirm: HTMLButtonElement;
   private readonly localDatasetBadge: HTMLElement;
+  private pendingLocalDeleteSelector: string | null = null;
+  private localDeleteCommitting = false;
   private localImportSequence = 0;
   private localImportActive = false;
   private localImportCommitting = false;
@@ -258,6 +269,10 @@ export class AppShell {
           this.localImportInput.click();
           return;
         }
+        if (option.id === LOCAL_DELETE_OPTION_ID) {
+          this.openLocalDeleteDialog();
+          return;
+        }
         const [datasetId, releaseId] = JSON.parse(option.id) as [DatasetId, string];
         this.callbacks.setDataset({ datasetId, releaseId });
       },
@@ -312,6 +327,15 @@ export class AppShell {
     this.localImportSummary = localImport.summary;
     this.localImportConfirm = localImport.confirm;
     this.localImportCancel = localImport.cancel;
+    const localDelete = this.createLocalDeleteDialog();
+    this.localDeleteDialog = localDelete.dialog;
+    this.localDeleteIdentity = localDelete.identity;
+    this.localDeleteError = localDelete.error;
+    this.localDeleteConfirm = localDelete.confirm;
+    const localShare = this.createLocalShareDialog();
+    this.localShareDialog = localShare.dialog;
+    this.localShareError = localShare.error;
+    this.localShareConfirm = localShare.confirm;
     this.localImportInput = element('input', 'local-import__input');
     this.localImportInput.type = 'file';
     this.localImportInput.accept = '.ibl-ephys-atlas.zip,application/zip';
@@ -340,6 +364,8 @@ export class AppShell {
       this.downloadDialog,
       this.helpDialog,
       this.localImportDialog,
+      this.localDeleteDialog,
+      this.localShareDialog,
       this.localImportInput,
       this.shortcutStatus,
     );
@@ -561,14 +587,27 @@ export class AppShell {
       if (this.overflowActions) this.overflowActions.open = false;
       return;
     }
+    if (this.currentModel?.state.view.dataset.datasetId === 'local') {
+      this.localShareError.hidden = true;
+      this.localShareError.textContent = '';
+      this.localShareConfirm.disabled = false;
+      if (!this.localShareDialog.open) this.localShareDialog.showModal();
+      this.localShareConfirm.focus();
+      if (this.overflowActions) this.overflowActions.open = false;
+      return;
+    }
     try {
-      await this.callbacks.shareCurrentView();
-      this.showActionFeedback('share', 'Copied', 'Link copied to clipboard');
+      await this.copyCurrentView();
     } catch (error) {
       button.title = 'Could not copy link';
       this.callbacks.reportError(error);
     }
     if (this.overflowActions) this.overflowActions.open = false;
+  }
+
+  private async copyCurrentView(): Promise<void> {
+    await this.callbacks.shareCurrentView();
+    this.showActionFeedback('share', 'Copied', 'Link copied to clipboard');
   }
 
   private showActionFeedback(action: HeaderAction, label: string, title: string): void {
@@ -720,6 +759,161 @@ export class AppShell {
       if (event.target === dialog) this.cancelLocalImport();
     });
     return { dialog, status, error, summary, confirm, cancel };
+  }
+
+  private createLocalDeleteDialog(): {
+    dialog: HTMLDialogElement;
+    identity: HTMLElement;
+    error: HTMLElement;
+    confirm: HTMLButtonElement;
+  } {
+    const dialog = element('dialog', 'info-dialog local-delete');
+    dialog.dataset.localDeleteDialog = '';
+    dialog.setAttribute('aria-labelledby', 'local-delete-title');
+    dialog.setAttribute('aria-describedby', 'local-delete-note');
+    const header = element('header', 'info-dialog__header');
+    const title = heading('Delete local dataset', 2);
+    title.id = 'local-delete-title';
+    const close = element('button', 'info-dialog__close');
+    close.type = 'button';
+    close.textContent = 'Close';
+    close.addEventListener('click', () => this.closeLocalDeleteDialog());
+    header.append(title, close);
+
+    const content = element('div', 'info-dialog__content local-delete__content');
+    const section = element('section', 'info-dialog__section');
+    const note = element('p', 'local-delete__note');
+    note.id = 'local-delete-note';
+    note.textContent = 'This removes the release and all of its resources from this browser on this device. It does not affect the source archive or published data.';
+    const identity = element('p', 'local-delete__identity');
+    identity.dataset.localDeleteIdentity = '';
+    const error = element('p', 'download-dialog__error local-delete__error');
+    error.setAttribute('role', 'alert');
+    error.hidden = true;
+    section.append(note, identity, error);
+
+    const actions = element('footer', 'local-import__actions');
+    const cancel = element('button', 'local-import__cancel');
+    cancel.type = 'button';
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', () => this.closeLocalDeleteDialog());
+    const confirm = element('button', 'local-delete__confirm');
+    confirm.type = 'button';
+    confirm.textContent = 'Delete local dataset';
+    confirm.addEventListener('click', () => void this.commitLocalDelete());
+    actions.append(cancel, confirm);
+    content.append(section, actions);
+    dialog.append(header, content);
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      this.closeLocalDeleteDialog();
+    });
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) this.closeLocalDeleteDialog();
+    });
+    return { dialog, identity, error, confirm };
+  }
+
+  private openLocalDeleteDialog(): void {
+    const view = this.currentModel?.state.view;
+    if (view?.dataset.datasetId !== 'local' || !view.dataset.releaseId) return;
+    this.pendingLocalDeleteSelector = view.dataset.releaseId;
+    const manifest = this.currentModel?.manifest;
+    this.localDeleteIdentity.textContent = manifest
+      ? `${manifest.dataset.title} · ${view.dataset.releaseId}`
+      : view.dataset.releaseId;
+    this.localDeleteError.hidden = true;
+    this.localDeleteError.textContent = '';
+    this.localDeleteConfirm.disabled = false;
+    if (!this.localDeleteDialog.open) this.localDeleteDialog.showModal();
+    this.localDeleteConfirm.focus();
+  }
+
+  private closeLocalDeleteDialog(): void {
+    if (this.localDeleteCommitting) return;
+    this.pendingLocalDeleteSelector = null;
+    if (this.localDeleteDialog.open) this.localDeleteDialog.close();
+  }
+
+  private async commitLocalDelete(): Promise<void> {
+    const selector = this.pendingLocalDeleteSelector;
+    if (!selector || this.localDeleteCommitting) return;
+    this.localDeleteCommitting = true;
+    this.localDeleteConfirm.disabled = true;
+    this.localDeleteError.hidden = true;
+    try {
+      await this.callbacks.deleteLocal(selector);
+      this.pendingLocalDeleteSelector = null;
+      this.localDeleteDialog.close();
+    } catch (error) {
+      this.localDeleteError.textContent = error instanceof Error ? error.message : String(error);
+      this.localDeleteError.hidden = false;
+      this.localDeleteConfirm.disabled = false;
+    } finally {
+      this.localDeleteCommitting = false;
+    }
+  }
+
+  private createLocalShareDialog(): {
+    dialog: HTMLDialogElement;
+    error: HTMLElement;
+    confirm: HTMLButtonElement;
+  } {
+    const dialog = element('dialog', 'info-dialog local-share');
+    dialog.dataset.localShareDialog = '';
+    dialog.setAttribute('aria-labelledby', 'local-share-title');
+    dialog.setAttribute('aria-describedby', 'local-share-note');
+    const header = element('header', 'info-dialog__header');
+    const title = heading('Share local view', 2);
+    title.id = 'local-share-title';
+    const close = element('button', 'info-dialog__close');
+    close.type = 'button';
+    close.textContent = 'Close';
+    close.addEventListener('click', () => dialog.close());
+    header.append(title, close);
+    const content = element('div', 'info-dialog__content local-share__content');
+    const section = element('section', 'info-dialog__section');
+    const note = element('p', 'local-share__note');
+    note.id = 'local-share-note';
+    note.textContent = 'This link does not contain or transfer the dataset. It works only in a browser where the exact local release is already imported.';
+    const error = element('p', 'download-dialog__error local-share__error');
+    error.setAttribute('role', 'alert');
+    error.hidden = true;
+    section.append(note, error);
+    const actions = element('footer', 'local-import__actions');
+    const cancel = element('button', 'local-import__cancel');
+    cancel.type = 'button';
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', () => dialog.close());
+    const confirm = element('button', 'local-import__confirm');
+    confirm.type = 'button';
+    confirm.textContent = 'Copy local link';
+    confirm.addEventListener('click', () => void this.confirmLocalShare());
+    actions.append(cancel, confirm);
+    content.append(section, actions);
+    dialog.append(header, content);
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      dialog.close();
+    });
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    return { dialog, error, confirm };
+  }
+
+  private async confirmLocalShare(): Promise<void> {
+    this.localShareConfirm.disabled = true;
+    this.localShareError.hidden = true;
+    try {
+      await this.copyCurrentView();
+      this.localShareDialog.close();
+    } catch (error) {
+      this.localShareError.textContent = error instanceof Error ? error.message : String(error);
+      this.localShareError.hidden = false;
+    } finally {
+      this.localShareConfirm.disabled = false;
+    }
   }
 
   private async prepareLocalImport(file: File): Promise<void> {
@@ -1385,6 +1579,13 @@ export class AppShell {
         group: 'Local',
         keywords: 'import custom zip local dataset',
       },
+      ...(state.view.dataset.datasetId === 'local' && state.view.dataset.releaseId ? [{
+        id: LOCAL_DELETE_OPTION_ID,
+        label: 'Delete this local dataset…',
+        description: 'Remove the selected immutable release from this browser.',
+        group: 'Local',
+        keywords: 'delete remove local dataset',
+      }] : []),
     ];
     const datasetId = state.view.dataset.releaseId
       ? JSON.stringify([state.view.dataset.datasetId, state.view.dataset.releaseId])

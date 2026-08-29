@@ -102,6 +102,7 @@ export class AtlasApp {
       prepareLocal: (file) => this.prepareLocal(file),
       admitLocal: () => this.admitLocal(),
       cancelLocal: () => this.cancelLocal(),
+      deleteLocal: (selector) => this.deleteLocal(selector),
       reportError: (error) => this.reportRuntimeError(error),
     }, this.viewportFactory, options.scene3dFactory);
     this.regionalPanel = new RegionalPanelController(root, {
@@ -433,6 +434,31 @@ export class AtlasApp {
     this.localImportAbort?.abort(new DOMException('Local dataset import cancelled', 'AbortError'));
     this.localImportAbort = null;
     this.pendingLocalArchive = null;
+  }
+
+  private async deleteLocal(selector: string): Promise<void> {
+    const current = this.store.getState().view.dataset;
+    const deletingActive = current.datasetId === 'local' && current.releaseId === selector;
+    const catalog = this.session.snapshot().catalog;
+    const published = deletingActive
+      ? catalog?.datasets.find((dataset) => (
+        dataset.id !== 'local'
+        && dataset.releases.some((release) => release.id === dataset.defaultRelease)
+      ))
+      : undefined;
+    if (deletingActive && !published) {
+      throw new Error('Select another available dataset before deleting this local release');
+    }
+
+    await this.localSource.deleteRelease(selector);
+    await this.session.loadCatalog();
+    if (deletingActive && published) {
+      this.store.dispatch({
+        type: 'dataset/set',
+        dataset: { datasetId: published.id, releaseId: published.defaultRelease },
+        history: 'replace',
+      });
+    }
   }
 
   private async copyCurrentUrl(): Promise<void> {

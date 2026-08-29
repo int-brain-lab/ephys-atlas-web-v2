@@ -346,11 +346,14 @@ archive and declared expanded sizes, storage estimate, and validation errors or
 warnings. After success, refresh the catalog, select the imported release, and
 display a persistent `Local` badge.
 
-The local dataset manager follows after the import slice. It lists source
-identity, import time, stored bytes, integrity state, and supports atomic
-per-release deletion. Clearing published-resource cache and deleting local data
-remain separate operations. Duplicate immutable releases are rejected until
-the existing local release is explicitly deleted.
+The first management action supports confirmed atomic deletion of the active
+local release and all of its stored resources. It preserves other local
+releases, switches to a deterministic published fallback, and permits exact
+reimport. The remaining manager must list source identity, import time, stored
+bytes, persistence/quota information, and integrity state, with damaged-entry
+recovery. Clearing published-resource cache and deleting local data remain
+separate operations. Duplicate immutable releases are rejected until the
+existing local release is explicitly deleted.
 
 A URL referencing local data does not contain or transfer that data and works
 only where the exact local release is already present. The UI must state this
@@ -454,16 +457,21 @@ dedicated Chromium test through the ordinary browser path.
 
 ### Slice 3 — Reduced mappings and management
 
-Status: reduced regional mappings implemented on 2026-08-29; local management
-and recovery remain incomplete.
+Status: reduced regional mappings, atomic active-release deletion, quota-
+exhaustion guidance, and local Share disclosure implemented on 2026-08-29;
+full local inventory and recovery remain incomplete.
 
 - observation-level Allen-to-Beryl/Cosmos remapping and aggregation are tested
   against pinned `iblatlas`, including unequal replicate weighting, target
   metadata, per-feature mapping subsets, aligned empty groups, signed folding,
   and fail-closed root targets;
-- add local inventory, inspection, quota/persistence reporting, damaged-entry
-  recovery, and atomic per-release deletion;
-- state local-URL limitations in Share and local dataset information.
+- atomic per-release deletion is tested for confirmation/cancellation,
+  resource cleanup, survivor isolation, published fallback, history behavior,
+  and exact reimport;
+- Share states the local-URL limitation before clipboard access, and quota
+  exhaustion reports that admission retained no partial import;
+- add local inventory, inspection, quota/persistence reporting, and damaged-
+  entry recovery.
 
 ### Slice 4 — Volume authoring
 
@@ -503,4 +511,4 @@ and a dedicated Chromium test imports that archive through the ordinary viewer
 path, fully validates and persists it, and reads its resources without network
 access. Before advertising production capacity, representative real authored
 archives still need cross-browser memory/quota measurement, along with the
-management/recovery work in Slice 3.
+remaining inventory/recovery work in Slice 3.

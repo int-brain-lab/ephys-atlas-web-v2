@@ -74,6 +74,12 @@ function resourceKey(namespace: string, path: string): string {
   return `${namespace}\u0000${path}`;
 }
 
+function errorName(error: unknown): string | undefined {
+  return typeof error === 'object' && error !== null && 'name' in error
+    ? String((error as { name?: unknown }).name)
+    : undefined;
+}
+
 function resolvePath(baseFile: string, relative: string): string {
   const base = new URL(baseFile, 'https://local.invalid/');
   return new URL(relative, base).pathname.replace(/^\//, '');
@@ -149,6 +155,12 @@ export class LocalDatasetSource implements DatasetSource {
       if (duplicateRelease || (error instanceof DOMException && error.name === 'ConstraintError')) {
         throw new Error(`Local dataset ${document.datasetId}/${document.release.releaseId} is already imported`);
       }
+      if (errorName(error) === 'QuotaExceededError') {
+        throw new Error(
+          'This browser does not have enough storage for the local dataset. '
+          + 'No partial import was kept; delete an existing local dataset or clear site data, then try again.',
+        );
+      }
       throw error;
     } finally {
       db.close();
@@ -158,6 +170,35 @@ export class LocalDatasetSource implements DatasetSource {
 
   async importArchive(archive: Blob, signal?: AbortSignal): Promise<DatasetManifest> {
     return this.admitPrepared(await this.prepareArchive(archive, signal));
+  }
+
+  async deleteRelease(selector: string): Promise<void> {
+    if (!selector) throw new Error('A local release id is required');
+    const db = await openDatabase();
+    const transaction = db.transaction([MANIFESTS, RESOURCES], 'readwrite');
+    const manifests = transaction.objectStore(MANIFESTS);
+    const resources = transaction.objectStore(RESOURCES);
+    let found = true;
+    const completion = transactionDone(transaction);
+    const request = manifests.get(selector) as IDBRequest<StoredManifest | undefined>;
+    request.onsuccess = () => {
+      if (!request.result) {
+        found = false;
+        transaction.abort();
+        return;
+      }
+      const prefix = `${selector}\u0000`;
+      resources.delete(IDBKeyRange.bound(prefix, `${selector}\u0001`, false, true));
+      manifests.delete(selector);
+    };
+    try {
+      await completion;
+    } catch (error) {
+      if (!found) throw new Error(`Local release not found: ${selector}`);
+      throw error;
+    } finally {
+      db.close();
+    }
   }
 
   async loadCatalog(): Promise<DatasetCatalog> {

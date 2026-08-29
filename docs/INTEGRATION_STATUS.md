@@ -98,11 +98,17 @@ resource reads, and duplicate rejection have automated Chromium evidence.
 Repeated observations can also request Beryl/Cosmos outputs: the package folds
 signed Allen identities, remaps every original row through `BrainRegions`, and
 only then computes target means. Root/void mapping results fail closed, and
-already-aggregated values remain Allen-only to avoid means of means. Current
+already-aggregated values remain Allen-only to avoid means of means.
+The active local release can be deleted atomically after confirmation; the app
+then selects a deterministic published fallback without retaining the deleted
+history checkpoint. Deletion preserves other local releases and permits exact
+reimport. Quota exhaustion gives atomic recovery guidance, and Share discloses
+that a local URL transfers no data before accessing the clipboard. Current
 archive ceilings are provisional until representative regional and volume
-bundles are measured in Chromium, Firefox, and Safari. Management/deletion and quota recovery, explicit local-URL
-disclosure, volume authoring, and PyPI publication remain incomplete. See the
-binding [`data/CUSTOM_DATA_AUTHORING.md`](data/CUSTOM_DATA_AUTHORING.md) and
+bundles are measured in Chromium, Firefox, and Safari. Full local inventory,
+integrity/persistence reporting, damaged-entry recovery, volume authoring, and
+PyPI publication remain incomplete. See the binding
+[`data/CUSTOM_DATA_AUTHORING.md`](data/CUSTOM_DATA_AUTHORING.md) and
 implemented-path [`data/CUSTOM_DATA_TUTORIAL.md`](data/CUSTOM_DATA_TUTORIAL.md).
 
 ## Publishing and deployment
