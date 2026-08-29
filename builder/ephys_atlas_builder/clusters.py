@@ -45,9 +45,9 @@ def _builder_command(config: "ClusterBuildConfig") -> str:
         "--created-at",
         config.created_at,
         "--catalog-selection",
-        "catalog-selection.json",
+        str(config.catalog_selection or Path("catalog-selection.json")),
         "--distribution-selection",
-        "distribution-selection.json",
+        str(config.distribution_selection or Path("distribution-selection.json")),
         "--histogram-bins",
         str(config.histogram_bins),
     ]

@@ -50,7 +50,7 @@ def _builder_command(config: "ChannelBuildConfig") -> str:
         "--created-at",
         config.created_at,
         "--distribution-selection",
-        "distribution-selection.json",
+        str(config.distribution_selection or Path("distribution-selection.json")),
         "--histogram-bins",
         str(config.histogram_bins),
     ]

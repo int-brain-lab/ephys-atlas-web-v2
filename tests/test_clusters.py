@@ -127,6 +127,8 @@ def test_cluster_manifest_records_complete_builder_command(tmp_path):
         ibleatools_commit="1111111",
         iblatlas_commit="2222222",
         builder_commit="3333333",
+        catalog_selection=Path("docs/data/CLUSTERS_CATALOG_SELECTION.json"),
+        distribution_selection=Path("docs/data/CLUSTERS_DISTRIBUTION_SELECTION.json"),
     )
     release = build_clusters_release_from_arrays(
         tmp_path / "release",
@@ -144,8 +146,8 @@ def test_cluster_manifest_records_complete_builder_command(tmp_path):
         "--release-id", "sha256-command-v1",
         "--project", "explicit-test-project", "--population", "all",
         "--created-at", "2026-08-20T00:00:00Z",
-        "--catalog-selection", "catalog-selection.json",
-        "--distribution-selection", "distribution-selection.json",
+        "--catalog-selection", "docs/data/CLUSTERS_CATALOG_SELECTION.json",
+        "--distribution-selection", "docs/data/CLUSTERS_DISTRIBUTION_SELECTION.json",
         "--histogram-bins", "19",
         "--parcellation", "allen", "--parcellation", "cosmos",
         "--paper-snapshot",

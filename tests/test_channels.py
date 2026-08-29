@@ -113,6 +113,7 @@ def test_channel_manifest_records_complete_builder_command(tmp_path):
         ibleatools_commit="1111111",
         iblatlas_commit="2222222",
         builder_commit="3333333",
+        distribution_selection=Path("docs/data/CHANNELS_DISTRIBUTION_SELECTION.json"),
     )
     release = build_channels_release_from_arrays(
         tmp_path / "release",
@@ -130,7 +131,7 @@ def test_channel_manifest_records_complete_builder_command(tmp_path):
         "--release-id", "2026_W12-command-v1",
         "--feature-mode", "both", "--population", "inside",
         "--created-at", "2026-08-20T00:00:00Z",
-        "--distribution-selection", "distribution-selection.json",
+        "--distribution-selection", "docs/data/CHANNELS_DISTRIBUTION_SELECTION.json",
         "--histogram-bins", "17",
         "--parcellation", "allen", "--parcellation", "beryl",
         "--paper-snapshot",
