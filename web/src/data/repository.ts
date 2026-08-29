@@ -15,7 +15,16 @@ export class DatasetRepository {
   ) {}
 
   async loadCatalog(): Promise<DatasetCatalog> {
-    const [published, local] = await Promise.all([this.published.loadCatalog(), this.local.loadCatalog()]);
+    const published = await this.published.loadCatalog();
+    let local: DatasetCatalog;
+    try {
+      local = await this.local.loadCatalog();
+    } catch {
+      // Local browser storage may be restricted or unavailable. Published
+      // exploration remains usable; direct local-release loads still fail
+      // explicitly through the local source rather than falling through.
+      return published;
+    }
     if (published.schemaVersion !== local.schemaVersion) {
       throw new Error(`Catalog schema mismatch: ${published.schemaVersion} vs ${local.schemaVersion}`);
     }

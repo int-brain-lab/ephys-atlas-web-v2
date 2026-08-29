@@ -39,6 +39,21 @@ test('repository merges published and local catalogs and routes local refs', asy
   assert.equal(manifest.dataset.id, 'local');
 });
 
+test('unavailable local storage does not take down the published catalog', async () => {
+  const published = source('published', 'ephys_atlas_channels');
+  const local = source('local', 'local');
+  local.loadCatalog = async () => { throw new Error('IndexedDB unavailable'); };
+  local.loadManifest = async () => { throw new Error('IndexedDB unavailable'); };
+  const repository = new DatasetRepository(published, local);
+
+  const catalog = await repository.loadCatalog();
+  assert.deepEqual(catalog.datasets.map((item) => item.id), ['ephys_atlas_channels']);
+  await assert.rejects(
+    repository.loadManifest({ datasetId: 'local', releaseId: 'r1' }),
+    /IndexedDB unavailable|local/,
+  );
+});
+
 test('repository routes release and feature artifacts to the selected source', async () => {
   const published = source('published', 'ephys_atlas_channels');
   const local = source('local', 'local');

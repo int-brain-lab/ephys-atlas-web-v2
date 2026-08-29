@@ -652,3 +652,95 @@
   cursor: progress;
   opacity: .55;
 }
+
+.local-manager {
+  width: min(44rem, calc(100vw - 2rem));
+}
+
+.local-manager__body,
+.local-manager__content {
+  min-width: 0;
+}
+
+.local-manager__note,
+.local-manager__status,
+.local-manager__storage-note,
+.local-manager__empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: .7rem;
+  line-height: 1.5;
+}
+
+.local-manager__error[hidden] {
+  display: none;
+}
+
+.local-manager__content,
+.local-manager__releases {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.local-manager__storage,
+.local-manager__release {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+}
+
+.local-manager__storage h3,
+.local-manager__releases > h3,
+.local-manager__release h3 {
+  margin: 0 0 var(--space-2);
+  font-size: .75rem;
+}
+
+.local-manager__storage-note {
+  margin-top: var(--space-2);
+}
+
+.local-manager__release-list dd {
+  overflow-wrap: anywhere;
+}
+
+.local-manager__integrity-error {
+  margin: var(--space-2) 0 0;
+  color: #f0aaaa;
+  font-size: .68rem;
+  line-height: 1.45;
+}
+
+.local-manager__release-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.local-manager__release-actions button {
+  min-height: 2rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: .7rem;
+}
+
+.local-manager__select {
+  border-color: rgb(var(--color-accent-rgb) / 48%) !important;
+  background: var(--color-accent-soft);
+  color: var(--color-text) !important;
+}
+
+.local-manager__remove {
+  border-color: rgb(210 80 80 / 60%) !important;
+  color: #f0aaaa !important;
+}
+
+.local-manager__release-actions button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}

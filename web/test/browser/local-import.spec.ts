@@ -19,6 +19,15 @@ async function importArchive(page: import('@playwright/test').Page, path: string
   await expect(dialog).toBeHidden();
 }
 
+async function openManager(page: import('@playwright/test').Page): Promise<import('@playwright/test').Locator> {
+  const dataset = page.locator('[data-context-field="dataset"]');
+  await dataset.locator('.context-menu__trigger').click();
+  await dataset.getByRole('option', { name: 'Manage local datasets…' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Local datasets' });
+  await expect(dialog.getByRole('status')).not.toContainText('Inspecting');
+  return dialog;
+}
+
 test('validated ZIP preview is read-only until confirmation and persists locally', async ({ page }) => {
   await page.goto('/');
 
@@ -188,4 +197,126 @@ test('quota exhaustion aborts admission with actionable recovery guidance', asyn
   await expect(dialog.getByRole('alert')).toContainText('does not have enough storage');
   await expect(dialog.getByRole('alert')).toContainText('No partial import was kept');
   await expect(page.locator('[data-context-field="dataset"] .context-field__local-badge')).toBeHidden();
+});
+
+test('local manager reports exact releases, origin-wide storage, and damaged-entry recovery', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'storage', {
+      configurable: true,
+      value: {
+        estimate: async () => ({ usage: 12_345, quota: 98_765 }),
+        persisted: async () => false,
+      },
+    });
+  });
+  await page.goto('/');
+  await importArchive(page, archive);
+  await importArchive(page, authoredArchive);
+
+  let manager = await openManager(page);
+  await expect(manager).toContainText('2 local releases');
+  await expect(manager).toContainText('Site data in use12 KiB');
+  await expect(manager).toContainText('Estimated site quota96 KiB');
+  await expect(manager).toContainText('all data stored by this site, not just imported releases');
+  await expect(manager).toContainText('PersistenceNot granted');
+  const authored = manager.locator('[data-local-release="authored_regional_fixture@authored-regional-v1"]');
+  await expect(authored).toContainText('Source datasetauthored_regional_fixture');
+  await expect(authored).toContainText('Source releaseauthored-regional-v1');
+  await expect(authored).toContainText('Imported');
+  await expect(authored).not.toContainText('ImportedNot recorded');
+  await expect(authored).toContainText('Stored data');
+  await expect(authored).toContainText('IntegrityVerified');
+
+  await manager.locator('[data-local-release="golden_fixture@golden-v1"]')
+    .getByRole('button', { name: 'Select' }).click();
+  await expect(manager).toBeHidden();
+  await expect.poll(() => new URL(page.url()).searchParams.get('release')).toBe('golden_fixture@golden-v1');
+  await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('ibl-ephys-atlas-schema-v1-local', 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const transaction = db.transaction('resources', 'readwrite');
+    const store = transaction.objectStore('resources');
+    const keys = await new Promise<IDBValidKey[]>((resolve, reject) => {
+      const request = store.getAllKeys(IDBKeyRange.bound(
+        'authored_regional_fixture@authored-regional-v1\0',
+        'authored_regional_fixture@authored-regional-v1\u0001',
+        false,
+        true,
+      ));
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    store.delete(keys[0]!);
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    db.close();
+  });
+
+  manager = await openManager(page);
+  const damagedBeforeCheck = manager.locator('[data-local-release="authored_regional_fixture@authored-regional-v1"]');
+  await damagedBeforeCheck.getByRole('button', { name: 'Verify integrity' }).click();
+  await expect(manager.getByRole('status')).toContainText('2 local releases');
+  const damaged = manager.locator('[data-local-release="authored_regional_fixture@authored-regional-v1"]');
+  await expect(damaged).toContainText('IntegrityDamaged');
+  await expect(damaged.getByRole('alert')).toContainText('is missing');
+  await expect(damaged.getByRole('alert')).toContainText('import the source archive again');
+  await damaged.getByRole('button', { name: 'Remove damaged release…' }).click();
+
+  const deletion = page.getByRole('dialog', { name: 'Delete local dataset' });
+  await expect(deletion).toContainText('authored_regional_fixture@authored-regional-v1');
+  await deletion.getByRole('button', { name: 'Delete local dataset' }).click();
+  await expect(deletion).toBeHidden();
+  await importArchive(page, authoredArchive);
+  await expect(page.locator('[data-context-field="feature"] .context-field__value')).toContainText('Decision signal');
+});
+
+test('legacy local rows and unavailable Storage API remain truthfully unknown', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'storage', {
+      configurable: true,
+      value: {
+        estimate: async () => { throw new Error('estimate rejected'); },
+        persisted: async () => { throw new Error('persistence rejected'); },
+      },
+    });
+  });
+  await page.goto('/');
+  await importArchive(page, archive);
+  await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('ibl-ephys-atlas-schema-v1-local', 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const transaction = db.transaction('manifests', 'readwrite');
+    const store = transaction.objectStore('manifests');
+    const stored = await new Promise<Record<string, unknown>>((resolve, reject) => {
+      const request = store.get('golden_fixture@golden-v1');
+      request.onsuccess = () => resolve(request.result as Record<string, unknown>);
+      request.onerror = () => reject(request.error);
+    });
+    delete stored.rootManifest;
+    delete stored.importedAt;
+    delete stored.integrity;
+    store.put(stored);
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    db.close();
+  });
+
+  const manager = await openManager(page);
+  const legacy = manager.locator('[data-local-release="golden_fixture@golden-v1"]');
+  await expect(legacy).toContainText('ImportedNot recorded');
+  await expect(legacy).toContainText('IntegrityNot verifiable');
+  await expect(legacy.getByRole('button', { name: 'Verify integrity' })).toBeDisabled();
+  await expect(manager).toContainText('PersistenceNot reported by this browser');
+  await expect(manager).not.toContainText('Site data in use');
+  await expect(manager).not.toContainText('Estimated site quota');
 });

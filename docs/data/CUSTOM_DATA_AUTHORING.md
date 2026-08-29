@@ -346,14 +346,16 @@ archive and declared expanded sizes, storage estimate, and validation errors or
 warnings. After success, refresh the catalog, select the imported release, and
 display a persistent `Local` badge.
 
-The first management action supports confirmed atomic deletion of the active
-local release and all of its stored resources. It preserves other local
-releases, switches to a deterministic published fallback, and permits exact
-reimport. The remaining manager must list source identity, import time, stored
-bytes, persistence/quota information, and integrity state, with damaged-entry
-recovery. Clearing published-resource cache and deleting local data remain
-separate operations. Duplicate immutable releases are rejected until the
-existing local release is explicitly deleted.
+The manager lists exact source identity, import time, stored Blob bytes,
+resource count, and integrity state for every local release. It reports origin-
+wide browser usage/quota and persistence separately from per-release bytes.
+New imports retain the validated root manifest so explicit verification can
+replay the complete graph, hashes, and decoding checks outside the IndexedDB
+transaction. Older rows without that record are truthfully unverifiable.
+Damaged releases recover through confirmed atomic deletion and reimport; other
+local releases remain isolated. Clearing published-resource cache and deleting
+local data remain separate operations. Duplicate immutable releases are
+rejected until the existing local release is explicitly deleted.
 
 A URL referencing local data does not contain or transfer that data and works
 only where the exact local release is already present. The UI must state this
@@ -457,9 +459,7 @@ dedicated Chromium test through the ordinary browser path.
 
 ### Slice 3 — Reduced mappings and management
 
-Status: reduced regional mappings, atomic active-release deletion, quota-
-exhaustion guidance, and local Share disclosure implemented on 2026-08-29;
-full local inventory and recovery remain incomplete.
+Status: implemented on 2026-08-29.
 
 - observation-level Allen-to-Beryl/Cosmos remapping and aggregation are tested
   against pinned `iblatlas`, including unequal replicate weighting, target
@@ -470,8 +470,10 @@ full local inventory and recovery remain incomplete.
   and exact reimport;
 - Share states the local-URL limitation before clipboard access, and quota
   exhaustion reports that admission retained no partial import;
-- add local inventory, inspection, quota/persistence reporting, and damaged-
-  entry recovery.
+- inventory, exact per-release byte/resource inspection, separately labeled
+  origin-wide quota/persistence reporting, explicit integrity verification,
+  legacy-state disclosure, and damaged-entry delete/reimport recovery are
+  covered by unit and Chromium browser tests.
 
 ### Slice 4 — Volume authoring
 
@@ -510,5 +512,4 @@ schema; the public API exactly regenerates the committed authored regional ZIP;
 and a dedicated Chromium test imports that archive through the ordinary viewer
 path, fully validates and persists it, and reads its resources without network
 access. Before advertising production capacity, representative real authored
-archives still need cross-browser memory/quota measurement, along with the
-remaining inventory/recovery work in Slice 3.
+archives still need cross-browser memory/quota measurement.

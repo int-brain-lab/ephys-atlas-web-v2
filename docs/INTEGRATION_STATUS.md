@@ -33,7 +33,7 @@ Stable boundaries and end-to-end flow are in
 | `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048 presentation, D050 distributions, HTTP acceptance. | Validated-real-local `sha256-9b5e55215b306f26-d050-d048-v1`; owner-reviewed, not published. | Q8/Q9 publication/default authorization. |
 | `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | Validated-real-local `legacy-v1-1d908bea-d050-linear-full-v1`; not published. | Q8/Q9 publication/default authorization. |
 | `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | Validated-real-local depth-4 candidate `2026_W26-candidate-depth4-d050-linear-full-v1`; explicitly non-production. | Q5 confirmation at the Q8 CloudFront origin, then immutable production build. |
-| `local` | Same schema-v1 graph and materializers; public regional `ibl_ephys_atlas` authoring with explicit `BrainRegions`, semantics, aggregation, provenance, hemisphere folding, and observation-level Allen-to-Beryl/Cosmos remapping; deterministic validated ZIP packaging; strict bounded two-phase browser import and atomic IndexedDB admission. | Exact synthetic bundle/authoring tests, reduced-mapping weighting/identity tests, generated-schema parity, clean-wheel coverage, exact regeneration of the committed public-authored archive, and its Chromium import with preview/confirmation, Local identity, persistence, and no-network reads are green. | Measure provisional limits across browsers/real archives; add local management/recovery and volume authoring; publish the Python distribution only after authorization. |
+| `local` | Same schema-v1 graph and materializers; public regional `ibl_ephys_atlas` authoring with explicit `BrainRegions`, semantics, aggregation, provenance, hemisphere folding, and observation-level Allen-to-Beryl/Cosmos remapping; deterministic validated ZIP packaging; strict bounded two-phase browser import, atomic IndexedDB admission/deletion, inventory, and integrity recovery. | Exact synthetic bundle/authoring tests, reduced-mapping weighting/identity tests, generated-schema parity, clean-wheel coverage, exact regeneration of the committed public-authored archive, and Chromium import/management tests are green. | Measure provisional limits across browsers/real archives; add volume authoring; publish the Python distribution only after authorization. |
 
 Dataset source, recipe, selection, release, and audit ownership is indexed by
 [`data/README.md`](data/README.md). The final paper-facing source vintage and
@@ -104,10 +104,15 @@ then selects a deterministic published fallback without retaining the deleted
 history checkpoint. Deletion preserves other local releases and permits exact
 reimport. Quota exhaustion gives atomic recovery guidance, and Share discloses
 that a local URL transfers no data before accessing the clipboard. Current
-archive ceilings are provisional until representative regional and volume
-bundles are measured in Chromium, Firefox, and Safari. Full local inventory,
-integrity/persistence reporting, damaged-entry recovery, volume authoring, and
-PyPI publication remain incomplete. See the binding
+The manager inventories every release with exact source identity, import time,
+stored Blob bytes, resource count, and integrity state. Origin-wide browser
+usage/quota and persistence are reported separately. Explicit verification
+replays the complete schema graph and integrity checks from a retained root
+manifest; legacy rows remain truthfully unverifiable, and damaged releases use
+atomic delete/reimport recovery. Published browsing remains available when
+local storage is unavailable. Archive ceilings are provisional until
+representative regional and volume bundles are measured in Chromium, Firefox,
+and Safari. Volume authoring and PyPI publication remain incomplete. See the binding
 [`data/CUSTOM_DATA_AUTHORING.md`](data/CUSTOM_DATA_AUTHORING.md) and
 implemented-path [`data/CUSTOM_DATA_TUTORIAL.md`](data/CUSTOM_DATA_TUTORIAL.md).
 

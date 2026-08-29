@@ -1,5 +1,6 @@
 import type { DatasetCatalog, DatasetManifest, FeaturePayload, RepresentationDisplay } from '../data/contracts.js';
 import type { LocalArchivePreview } from '../data/local-archive.js';
+import type { LocalReleaseInspection, LocalStorageInspection } from '../data/local-source.js';
 import type {
   AppState,
   ColorMode,
@@ -70,6 +71,8 @@ export interface AppShellCallbacks {
   admitLocal(): Promise<void>;
   cancelLocal(): void;
   deleteLocal(selector: string): Promise<void>;
+  inspectLocalStorage(): Promise<LocalStorageInspection>;
+  verifyLocal(selector: string): Promise<LocalReleaseInspection>;
   reportError(error: unknown): void;
 }
 
@@ -124,6 +127,7 @@ interface StaticFrameNodes extends ProjectionTooltipNodes {
 
 const SLICE_LOADING_NOTICE_DELAY_MS = 400;
 const LOCAL_IMPORT_OPTION_ID = '__import_local_dataset__';
+const LOCAL_MANAGE_OPTION_ID = '__manage_local_datasets__';
 const LOCAL_DELETE_OPTION_ID = '__delete_local_dataset__';
 
 const ACTION_ICONS: Record<HeaderAction, string> = {
@@ -198,12 +202,17 @@ export class AppShell {
   private readonly localDeleteIdentity: HTMLElement;
   private readonly localDeleteError: HTMLElement;
   private readonly localDeleteConfirm: HTMLButtonElement;
+  private readonly localManagerDialog: HTMLDialogElement;
+  private readonly localManagerStatus: HTMLElement;
+  private readonly localManagerError: HTMLElement;
+  private readonly localManagerContent: HTMLElement;
   private readonly localShareDialog: HTMLDialogElement;
   private readonly localShareError: HTMLElement;
   private readonly localShareConfirm: HTMLButtonElement;
   private readonly localDatasetBadge: HTMLElement;
   private pendingLocalDeleteSelector: string | null = null;
   private localDeleteCommitting = false;
+  private localManagerSequence = 0;
   private localImportSequence = 0;
   private localImportActive = false;
   private localImportCommitting = false;
@@ -269,6 +278,10 @@ export class AppShell {
           this.localImportInput.click();
           return;
         }
+        if (option.id === LOCAL_MANAGE_OPTION_ID) {
+          void this.openLocalManager();
+          return;
+        }
         if (option.id === LOCAL_DELETE_OPTION_ID) {
           this.openLocalDeleteDialog();
           return;
@@ -332,6 +345,11 @@ export class AppShell {
     this.localDeleteIdentity = localDelete.identity;
     this.localDeleteError = localDelete.error;
     this.localDeleteConfirm = localDelete.confirm;
+    const localManager = this.createLocalManagerDialog();
+    this.localManagerDialog = localManager.dialog;
+    this.localManagerStatus = localManager.status;
+    this.localManagerError = localManager.error;
+    this.localManagerContent = localManager.content;
     const localShare = this.createLocalShareDialog();
     this.localShareDialog = localShare.dialog;
     this.localShareError = localShare.error;
@@ -364,6 +382,7 @@ export class AppShell {
       this.downloadDialog,
       this.helpDialog,
       this.localImportDialog,
+      this.localManagerDialog,
       this.localDeleteDialog,
       this.localShareDialog,
       this.localImportInput,
@@ -814,14 +833,193 @@ export class AppShell {
     return { dialog, identity, error, confirm };
   }
 
-  private openLocalDeleteDialog(): void {
+  private createLocalManagerDialog(): {
+    dialog: HTMLDialogElement;
+    status: HTMLElement;
+    error: HTMLElement;
+    content: HTMLElement;
+  } {
+    const dialog = element('dialog', 'info-dialog local-manager');
+    dialog.dataset.localManagerDialog = '';
+    dialog.setAttribute('aria-labelledby', 'local-manager-title');
+    const header = element('header', 'info-dialog__header');
+    const title = heading('Local datasets', 2);
+    title.id = 'local-manager-title';
+    const close = element('button', 'info-dialog__close');
+    close.type = 'button';
+    close.textContent = 'Close';
+    close.addEventListener('click', () => dialog.close());
+    header.append(title, close);
+
+    const body = element('div', 'info-dialog__content local-manager__body');
+    const introduction = element('section', 'info-dialog__section');
+    const note = element('p', 'local-manager__note');
+    note.textContent = 'These immutable releases are stored separately from published-data caches and remain only in this browser profile.';
+    const status = element('p', 'local-manager__status');
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    const error = element('p', 'download-dialog__error local-manager__error');
+    error.setAttribute('role', 'alert');
+    error.hidden = true;
+    introduction.append(note, status, error);
+    const content = element('section', 'local-manager__content');
+    body.append(introduction, content);
+    dialog.append(header, body);
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    return { dialog, status, error, content };
+  }
+
+  private async openLocalManager(): Promise<void> {
+    const sequence = ++this.localManagerSequence;
+    this.localManagerStatus.textContent = 'Inspecting browser storage…';
+    this.localManagerError.hidden = true;
+    this.localManagerError.textContent = '';
+    this.localManagerContent.replaceChildren();
+    if (!this.localManagerDialog.open) this.localManagerDialog.showModal();
+    try {
+      const inspection = await this.callbacks.inspectLocalStorage();
+      if (sequence !== this.localManagerSequence) return;
+      this.renderLocalManager(inspection);
+      this.localManagerStatus.textContent = inspection.releases.length
+        ? `${inspection.releases.length.toLocaleString('en-US')} local release${inspection.releases.length === 1 ? '' : 's'}`
+        : 'No local releases are stored.';
+    } catch (error) {
+      if (sequence !== this.localManagerSequence) return;
+      this.localManagerStatus.textContent = 'Local browser storage could not be inspected.';
+      this.localManagerError.textContent = error instanceof Error ? error.message : String(error);
+      this.localManagerError.hidden = false;
+    }
+  }
+
+  private renderLocalManager(inspection: LocalStorageInspection): void {
+    const storage = element('section', 'local-manager__storage');
+    storage.append(heading('Browser storage', 3));
+    const storageDetails = element('dl', 'info-dialog__list local-manager__storage-list');
+    const storageRows: (readonly [string, string])[] = [];
+    if (inspection.usageBytes !== undefined) storageRows.push(['Site data in use', formatBytes(inspection.usageBytes)]);
+    if (inspection.quotaBytes !== undefined) storageRows.push(['Estimated site quota', formatBytes(inspection.quotaBytes)]);
+    storageRows.push(['Persistence', inspection.persisted === undefined
+      ? 'Not reported by this browser'
+      : inspection.persisted ? 'Granted' : 'Not granted; the browser may evict site data']);
+    for (const [term, description] of storageRows) {
+      const dt = element('dt');
+      dt.textContent = term;
+      const dd = element('dd');
+      dd.textContent = description;
+      storageDetails.append(dt, dd);
+    }
+    const caveat = element('p', 'local-manager__storage-note');
+    caveat.textContent = 'Usage and quota are browser estimates for all data stored by this site, not just imported releases.';
+    storage.append(storageDetails, caveat);
+
+    const releases = element('section', 'local-manager__releases');
+    releases.append(heading('Imported releases', 3));
+    if (!inspection.releases.length) {
+      const empty = element('p', 'local-manager__empty');
+      empty.textContent = 'Use “Import local dataset…” to add a validated .ibl-ephys-atlas.zip archive.';
+      releases.append(empty);
+    } else {
+      for (const release of inspection.releases) releases.append(this.localReleaseCard(release));
+    }
+    this.localManagerContent.replaceChildren(storage, releases);
+  }
+
+  private localReleaseCard(release: LocalReleaseInspection): HTMLElement {
+    const card = element('article', 'local-manager__release');
+    card.dataset.localRelease = release.selector;
+    const title = heading(release.title, 3);
+    const details = element('dl', 'info-dialog__list local-manager__release-list');
+    const checked = release.integrityCheckedAt
+      ? ` · checked ${this.formatLocalDate(release.integrityCheckedAt)}`
+      : '';
+    const integrity = release.integrityState === 'verified'
+      ? `Verified${checked}`
+      : release.integrityState === 'damaged'
+        ? `Damaged${checked}`
+        : 'Not verifiable; imported before integrity records were available';
+    const rows: readonly (readonly [string, string])[] = [
+      ['Source dataset', release.sourceDatasetId],
+      ['Source release', release.sourceReleaseId],
+      ['Local identity', release.selector],
+      ['Imported', release.importedAt ? this.formatLocalDate(release.importedAt) : 'Not recorded'],
+      ['Stored data', `${formatBytes(release.storedBytes)} · ${release.resourceCount.toLocaleString('en-US')} resource${release.resourceCount === 1 ? '' : 's'}`],
+      ['Integrity', integrity],
+    ];
+    for (const [term, description] of rows) {
+      const dt = element('dt');
+      dt.textContent = term;
+      const dd = element('dd');
+      dd.textContent = description;
+      details.append(dt, dd);
+    }
+    if (release.integrityMessage) {
+      const problem = element('p', 'local-manager__integrity-error');
+      problem.setAttribute('role', 'alert');
+      problem.textContent = `${release.integrityMessage} Remove this damaged release, then import the source archive again.`;
+      card.append(title, details, problem);
+    } else {
+      card.append(title, details);
+    }
+
+    const actions = element('div', 'local-manager__release-actions');
+    const select = element('button', 'local-manager__select');
+    select.type = 'button';
+    select.textContent = 'Select';
+    select.addEventListener('click', () => {
+      this.callbacks.setDataset({ datasetId: 'local', releaseId: release.selector });
+      this.localManagerDialog.close();
+    });
+    const verify = element('button', 'local-manager__verify');
+    verify.type = 'button';
+    verify.textContent = 'Verify integrity';
+    verify.disabled = release.integrityState === 'unverified';
+    if (release.integrityState === 'unverified') verify.title = 'Reimport the source archive to enable complete integrity checks';
+    verify.addEventListener('click', () => void this.verifyManagedRelease(release.selector, verify));
+    const remove = element('button', 'local-manager__remove');
+    remove.type = 'button';
+    remove.textContent = release.integrityState === 'damaged' ? 'Remove damaged release…' : 'Delete…';
+    remove.addEventListener('click', () => {
+      this.localManagerDialog.close();
+      this.openLocalDeleteDialog(release.selector, `${release.title} · ${release.selector}`);
+    });
+    actions.append(select, verify, remove);
+    card.append(actions);
+    return card;
+  }
+
+  private async verifyManagedRelease(selector: string, button: HTMLButtonElement): Promise<void> {
+    button.disabled = true;
+    this.localManagerStatus.textContent = `Verifying ${selector}…`;
+    this.localManagerError.hidden = true;
+    try {
+      await this.callbacks.verifyLocal(selector);
+      await this.openLocalManager();
+    } catch (error) {
+      this.localManagerStatus.textContent = `Could not verify ${selector}.`;
+      this.localManagerError.textContent = error instanceof Error ? error.message : String(error);
+      this.localManagerError.hidden = false;
+      button.disabled = false;
+    }
+  }
+
+  private formatLocalDate(value: string): string {
+    const date = new Date(value);
+    if (!Number.isFinite(date.valueOf())) return value;
+    return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+  }
+
+  private openLocalDeleteDialog(selector?: string, label?: string): void {
     const view = this.currentModel?.state.view;
-    if (view?.dataset.datasetId !== 'local' || !view.dataset.releaseId) return;
-    this.pendingLocalDeleteSelector = view.dataset.releaseId;
+    const activeSelector = view?.dataset.datasetId === 'local' ? view.dataset.releaseId : null;
+    const resolvedSelector = selector ?? activeSelector;
+    if (!resolvedSelector) return;
+    this.pendingLocalDeleteSelector = resolvedSelector;
     const manifest = this.currentModel?.manifest;
-    this.localDeleteIdentity.textContent = manifest
-      ? `${manifest.dataset.title} · ${view.dataset.releaseId}`
-      : view.dataset.releaseId;
+    this.localDeleteIdentity.textContent = label ?? (manifest && activeSelector === resolvedSelector
+      ? `${manifest.dataset.title} · ${resolvedSelector}`
+      : resolvedSelector);
     this.localDeleteError.hidden = true;
     this.localDeleteError.textContent = '';
     this.localDeleteConfirm.disabled = false;
@@ -1578,6 +1776,13 @@ export class AppShell {
         description: 'Choose one .ibl-ephys-atlas.zip archive from this device.',
         group: 'Local',
         keywords: 'import custom zip local dataset',
+      },
+      {
+        id: LOCAL_MANAGE_OPTION_ID,
+        label: 'Manage local datasets…',
+        description: 'Inspect storage, integrity, and every imported release.',
+        group: 'Local',
+        keywords: 'manage inspect verify storage quota local dataset',
       },
       ...(state.view.dataset.datasetId === 'local' && state.view.dataset.releaseId ? [{
         id: LOCAL_DELETE_OPTION_ID,

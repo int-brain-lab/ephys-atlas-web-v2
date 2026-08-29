@@ -103,6 +103,8 @@ export class AtlasApp {
       admitLocal: () => this.admitLocal(),
       cancelLocal: () => this.cancelLocal(),
       deleteLocal: (selector) => this.deleteLocal(selector),
+      inspectLocalStorage: () => this.localSource.inspectStorage(),
+      verifyLocal: (selector) => this.localSource.verifyRelease(selector),
       reportError: (error) => this.reportRuntimeError(error),
     }, this.viewportFactory, options.scene3dFactory);
     this.regionalPanel = new RegionalPanelController(root, {

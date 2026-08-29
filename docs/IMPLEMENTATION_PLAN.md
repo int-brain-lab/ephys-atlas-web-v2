@@ -64,11 +64,9 @@ Next testable actions:
    ceilings with representative regional and volume bundles in Chromium,
    Firefox, and Safari; record peak memory, preview latency, failure behavior,
    and IndexedDB quota results before freezing supported limits;
-2. add local inventory, quota/persistence reporting, and damaged-entry
-   recovery;
-3. add explicit-grid volume authoring with authoritative `iblatlas` geometry
+2. add explicit-grid volume authoring with authoritative `iblatlas` geometry
    and validity inputs;
-4. exercise representative real public-authored archives at supported capacity,
+3. exercise representative real public-authored archives at supported capacity,
    complete final naming/documentation review, and publish the Python
    distribution only after explicit authorization.
 
@@ -87,9 +85,11 @@ Allen observations may be remapped observation-by-observation to Beryl/Cosmos
 before mean aggregation; already-aggregated values remain Allen-only. It emits
 only neutral Linear/Full releases. Atomic per-release deletion, deterministic
 published fallback, actionable quota-exhaustion errors, and local-URL Share
-disclosure are implemented. Full inventory/integrity management, volume
-authoring, cross-browser real-archive capacity evidence, and distribution
-publication remain unfinished. The user path is documented in
+disclosure are implemented. The manager inventories exact source identities,
+import times, Blob bytes, resource counts, and integrity state; reports origin-
+wide quota/persistence separately; and supports explicit deep verification and
+delete/reimport recovery. Volume authoring, cross-browser real-archive capacity
+evidence, and distribution publication remain unfinished. The user path is documented in
 [`data/CUSTOM_DATA_TUTORIAL.md`](data/CUSTOM_DATA_TUTORIAL.md).
 
 Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 8 and 9; binding plan:
