@@ -222,6 +222,7 @@ def test_offline_template_has_stable_controls_valid_javascript_and_safe_payload(
     assert "ArrowLeft" in template and "ArrowRight" in template
     assert "queue=all.filter" in template
     assert "unchanged-baseline" in template
+    assert "editing=false;whyOpen=false;card.classList" not in template
     script = template.rsplit("<script>", 1)[1].split("</script>", 1)[0]
     subprocess.run(["node", "--check"], input=script, text=True, check=True)
     rendered = render_report({"unsafe": "</script>"}, template)
