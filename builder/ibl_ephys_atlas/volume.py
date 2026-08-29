@@ -1,4 +1,10 @@
-"""Explicit Allen CCF geometry and validity for public volume authoring."""
+"""Verified Allen CCF geometry and validity for public volume authoring.
+
+This module deliberately accepts only already-created ``iblatlas`` Allen atlas
+objects.  It derives schema-v1 geometry from their ``BrainCoordinates`` and
+never downloads atlas data, infers an affine from array shape, or modifies
+submitted scientific values.
+"""
 
 from __future__ import annotations
 
@@ -65,7 +71,17 @@ def _extent(matrix: np.ndarray, shape: tuple[int, int, int]) -> tuple[float, ...
 
 @dataclass(frozen=True, init=False)
 class AllenCCFGrid:
-    """One verified Allen CCF sampling grid expressed in schema-v1 axes."""
+    """One immutable Allen CCF sampling grid expressed in schema-v1 axes.
+
+    Construct grids only with :meth:`from_iblatlas`.  Public attributes expose
+    the verified array shape and axis order, the row-major index-to-world and
+    world-to-index matrices, voxel-edge extent, reference/grid identities, and
+    the ``iblatlas`` implementation identity recorded in release provenance.
+
+    Integer array indices denote voxel centers; half-integers denote voxel
+    edges.  Matrix rows map to world axes ``(ml, ap, dv)`` in micrometres, while
+    matrix columns follow :attr:`array_axes`.
+    """
 
     reference_space_id: str
     grid_id: str
@@ -95,7 +111,41 @@ class AllenCCFGrid:
         *,
         array_axes: Sequence[str],
     ) -> "AllenCCFGrid":
-        """Translate an already-created AllenAtlas without loading atlas data."""
+        """Verify and translate an already-created ``AllenAtlas`` grid.
+
+        Args:
+            atlas: Existing :class:`iblatlas.atlas.AllenAtlas`.  Constructing
+                the atlas, including any cache access or download, remains the
+                caller's responsibility; this method only inspects it.
+            array_axes: Exact permutation of ``("ml", "ap", "dv")`` describing
+                the three submitted value-array dimensions.  For the native
+                ``AllenAtlas.image``/``label`` order, use
+                ``("ap", "ml", "dv")``.
+
+        Returns:
+            A frozen grid with an exact ``allen-ccf-2017`` reference-space ID,
+            geometry-derived grid ID, affine inverse, and voxel-edge extent.
+
+        Raises:
+            RuntimeError: If ``iblatlas`` is unavailable.
+            TypeError: If ``atlas`` is not an already-created ``AllenAtlas``.
+            ValueError: If axes, resolution, spacing, shapes, dimension maps,
+                or ``BrainCoordinates`` are unsupported or inconsistent.
+
+        Only the standard 10, 25, and 50 micrometre Allen grids are accepted.
+        Scaled atlases are rejected.  Matching reference-space IDs permit
+        compositing, but matching shapes or grid IDs alone never establish
+        coordinate compatibility.
+
+        Example:
+            >>> from iblatlas.atlas import AllenAtlas
+            >>> atlas = AllenAtlas(res_um=50)  # may use/download caller cache
+            >>> grid = AllenCCFGrid.from_iblatlas(
+            ...     atlas, array_axes=("ap", "ml", "dv")
+            ... )
+            >>> grid.shape == atlas.image.shape
+            True
+        """
         try:
             from iblatlas.atlas import AllenAtlas
         except ImportError as error:  # pragma: no cover - installation failure
@@ -194,6 +244,13 @@ class AllenCCFGrid:
         )
 
     def descriptor(self) -> dict[str, Any]:
+        """Return the schema-v1 volume-grid descriptor.
+
+        This method is primarily useful for inspection and integration.  The
+        returned dictionary is newly allocated; mutating it does not change
+        the immutable grid.
+        """
+
         return {
             "reference_space_id": self.reference_space_id,
             "grid_id": self.grid_id,
@@ -208,7 +265,12 @@ class AllenCCFGrid:
 
 @dataclass(frozen=True, init=False)
 class VoxelValidity:
-    """An explicit, immutable volume validity classification policy."""
+    """An explicit, immutable volume validity classification policy.
+
+    Create policies with :meth:`mask` or :meth:`sentinel`.  Classification is
+    always evaluated in the order outside, missing, valid.  Zero has no special
+    meaning unless supplied explicitly as a sentinel or marked by a mask.
+    """
 
     kind: Literal["mask", "sentinel"]
     outside: np.ndarray | None = None
@@ -229,6 +291,28 @@ class VoxelValidity:
 
     @classmethod
     def mask(cls, *, outside: Any, missing: Any) -> "VoxelValidity":
+        """Classify outside and missing voxels with disjoint boolean masks.
+
+        Args:
+            outside: Three-dimensional boolean array identifying voxels
+                outside the scientific domain.
+            missing: Three-dimensional boolean array identifying missing
+                voxels inside that domain.
+
+        Returns:
+            A policy containing private, read-only copies of both masks.  The
+            complement is valid and is checked against the submitted values by
+            :meth:`Feature.add_volume <ibl_ephys_atlas.Feature.add_volume>`.
+
+        Raises:
+            TypeError: If either mask does not have boolean dtype.
+            ValueError: If masks are not 3-D, differ in shape, or overlap.
+
+        The emitted uint8 resource uses stable codes 0=valid, 1=outside, and
+        2=missing.  Finite values may be explicitly missing; no non-finite
+        value may remain valid.
+        """
+
         outside_array = np.asarray(outside)
         missing_array = np.asarray(missing)
         if outside_array.dtype != np.dtype(bool) or missing_array.dtype != np.dtype(bool):
@@ -249,6 +333,24 @@ class VoxelValidity:
 
     @classmethod
     def sentinel(cls, *, outside_value: float) -> "VoxelValidity":
+        """Classify one explicit finite scalar as outside.
+
+        Args:
+            outside_value: Finite real value reserved for outside voxels.
+                During attachment it is represented in the submitted volume
+                dtype and that exact value is recorded in the release.
+
+        Returns:
+            An immutable sentinel policy.  Voxels equal to the representable
+            sentinel are outside; remaining non-finite voxels are missing; all
+            remaining voxels are valid.
+
+        Raises:
+            TypeError: If ``outside_value`` is boolean or not a real scalar.
+            ValueError: If it is non-finite, or cannot remain finite in the
+                submitted float16/float32 dtype.
+        """
+
         if isinstance(outside_value, bool) or not isinstance(
             outside_value, (int, float, np.integer, np.floating)
         ):

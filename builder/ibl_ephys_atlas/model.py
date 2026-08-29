@@ -1,4 +1,10 @@
-"""Public, explicit schema-v1 regional authoring model."""
+"""Public model for deterministic schema-v1 regional and volume bundles.
+
+The objects in this module describe already-computed scientific values.  They
+do not load source datasets, choose QC populations, register volumes, or infer
+scientific transforms.  A :class:`Dataset` validates the explicit model and
+writes one immutable ``.ibl-ephys-atlas.zip`` archive for local browser import.
+"""
 
 from __future__ import annotations
 
@@ -53,6 +59,16 @@ def _authoring_version() -> str:
 
 @dataclass(frozen=True)
 class ValidationIssue:
+    """One stable, machine-readable model-validation finding.
+
+    Attributes:
+        severity: Either ``"error"`` or ``"warning"``.
+        code: Stable identifier suitable for programmatic handling.
+        location: Dotted path to the invalid model field.
+        message: Human-readable explanation of the finding.
+        hint: Optional corrective guidance.
+    """
+
     severity: Literal["error", "warning"]
     code: str
     location: str
@@ -62,26 +78,47 @@ class ValidationIssue:
 
 @dataclass(frozen=True)
 class ValidationReport:
+    """Immutable collection returned by :meth:`Dataset.validate`.
+
+    Validation collects independent model errors instead of stopping at the
+    first one.  Immediate input-shape, identity, dtype, and validity mistakes
+    raised while attaching data are not deferred into this report.
+    """
+
     issues: tuple[ValidationIssue, ...] = ()
 
     @property
     def errors(self) -> tuple[ValidationIssue, ...]:
+        """Return all error-severity issues in their validation order."""
+
         return tuple(issue for issue in self.issues if issue.severity == "error")
 
     @property
     def warnings(self) -> tuple[ValidationIssue, ...]:
+        """Return all warning-severity issues in their validation order."""
+
         return tuple(issue for issue in self.issues if issue.severity == "warning")
 
     @property
     def valid(self) -> bool:
+        """Whether the report contains no error-severity issues."""
+
         return not self.errors
 
     def raise_for_errors(self) -> None:
+        """Raise :class:`BundleValidationError` when errors are present."""
+
         if self.errors:
             raise BundleValidationError(self)
 
 
 class BundleValidationError(ValueError):
+    """Raised when a dataset cannot be serialized as a valid bundle.
+
+    The complete structured :class:`ValidationReport` is retained in
+    :attr:`report`; the exception message is only a concise summary.
+    """
+
     def __init__(self, report: ValidationReport):
         self.report = report
         summary = "; ".join(
@@ -92,6 +129,20 @@ class BundleValidationError(ValueError):
 
 @dataclass(frozen=True)
 class Source:
+    """One explicit provenance source for an authored release.
+
+    ``role`` must be a schema-v1 source role such as ``"user-input"``,
+    ``"canonical-data"``, ``"scientific-code"``, or ``"atlas-geometry"``.
+    Supply every identity available for the source.  In particular, callers
+    making scientific claims should pin immutable releases and SHA-256 hashes
+    rather than relying on a mutable filename or URL alone.
+
+    The package records the ``iblatlas`` geometry it verifies, but an
+    ``AllenAtlas`` instance does not expose the identities of all backing
+    files.  If an annotation or template informed values or validity masks,
+    record that resource separately here.
+    """
+
     role: str
     description: str
     repository: str | None = None
@@ -104,9 +155,23 @@ class Source:
 
     @classmethod
     def user_input(cls, *, description: str, **identity: str) -> "Source":
+        """Create a source whose role is ``"user-input"``.
+
+        Args:
+            description: Human-readable description of the submitted data.
+            **identity: Optional :class:`Source` identity fields such as
+                ``path``, ``uri``, ``sha256``, ``release``, or ``license``.
+
+        Returns:
+            A frozen source descriptor.  Field-format validation occurs when
+            the containing dataset is validated.
+        """
+
         return cls(role="user-input", description=description, **identity)
 
     def to_document(self) -> dict[str, str]:
+        """Return the non-null schema-v1 provenance fields."""
+
         return {
             field.name: value
             for field in fields(self)
@@ -116,6 +181,23 @@ class Source:
 
 @dataclass(frozen=True)
 class ValueSemantics:
+    """Scientific meaning shared by a feature's representations.
+
+    Args:
+        quantity: Name of the measured or computed scientific quantity.
+        transform: Transform already applied to the supplied numbers; use an
+            explicit value such as ``"identity"`` when none was applied.
+        source_population: Population over which the values were produced.
+        missing_values: Scientific interpretation of missing observations or
+            voxels.  This text complements, but does not replace, explicit
+            volume validity classification.
+        source_column: Optional source-field identity.
+        qc_filter: Optional explicit population/QC recipe.
+
+    This metadata is descriptive.  The authoring package never applies the
+    stated transform or QC filter itself.
+    """
+
     quantity: str
     transform: str
     source_population: str
@@ -124,6 +206,8 @@ class ValueSemantics:
     qc_filter: str | None = None
 
     def to_document(self) -> dict[str, str]:
+        """Return the non-null schema-v1 value-semantics fields."""
+
         return {
             field.name: value
             for field in fields(self)
@@ -132,6 +216,13 @@ class ValueSemantics:
 
 
 class Feature:
+    """A scalar feature with regional, volume, or both representations.
+
+    Create features with :meth:`Dataset.add_feature`.  Values are copied and
+    frozen when a representation is attached, so subsequent mutation of the
+    caller's arrays cannot change the emitted release.
+    """
+
     def __init__(
         self,
         *,
@@ -188,7 +279,36 @@ class Feature:
         output_mappings: Sequence[str] = ("Allen",),
         hemisphere_policy: str = "non_lateralized",
     ) -> "Feature":
-        """Attach one already-aggregated scalar per folded logical region."""
+        """Attach one already-aggregated scalar per logical Allen region.
+
+        Args:
+            values: One real scalar per identity.  Non-finite values are
+                retained as explicitly missing observations.
+            ontology: An already-created
+                :class:`iblatlas.regions.BrainRegions` authority.
+            region_ids: One-dimensional integral Allen IDs.  Provide exactly
+                one of ``region_ids`` and ``acronyms``.
+            acronyms: One-dimensional Allen acronyms.  Provide exactly one of
+                ``acronyms`` and ``region_ids``.
+            source_mapping: Must currently be the exact string ``"Allen"``.
+            output_mappings: Must currently be ``("Allen",)``.  Reduced
+                mappings require source observations, because remapping
+                already-aggregated means would create means of means.
+            hemisphere_policy: ``"non_lateralized"`` accepts positive IDs.
+                ``"fold"`` accepts signed IDs and folds both hemispheres onto
+                one logical region.
+
+        Returns:
+            This feature, for fluent construction.
+
+        Raises:
+            TypeError: If the ontology or scalar/identity dtypes are invalid.
+            ValueError: If identities, lengths, mappings, hemisphere policy,
+                or feature representation cardinality are invalid.
+
+        Independent left/right regional values are not representable by this
+        API.  Use a volume to retain physical laterality.
+        """
         return self._add_regions(
             values=values,
             ontology=ontology,
@@ -213,7 +333,34 @@ class Feature:
         output_mappings: Sequence[str] = ("Allen",),
         hemisphere_policy: str = "non_lateralized",
     ) -> "Feature":
-        """Attach observation rows with an explicit arithmetic-mean aggregation."""
+        """Attach repeated Allen observations for arithmetic-mean summaries.
+
+        Args:
+            values: One real scalar per source observation.  Non-finite values
+                remain missing observations and do not contribute to means.
+            ontology: An already-created
+                :class:`iblatlas.regions.BrainRegions` authority.
+            aggregation: Must be the exact string ``"mean"``.
+            region_ids: One-dimensional integral Allen IDs.  Provide exactly
+                one of ``region_ids`` and ``acronyms``.
+            acronyms: One-dimensional Allen acronyms.  Provide exactly one of
+                ``acronyms`` and ``region_ids``.
+            source_mapping: Must currently be ``"Allen"``.
+            output_mappings: A unique subset of ``"Allen"``, ``"Beryl"``, and
+                ``"Cosmos"`` that includes ``"Allen"``.  Each observation is
+                remapped before aggregation, preserving replicate weighting.
+            hemisphere_policy: ``"non_lateralized"`` accepts positive IDs;
+                ``"fold"`` explicitly combines signed hemispheres.
+
+        Returns:
+            This feature, for fluent construction.
+
+        Raises:
+            TypeError: If the ontology or scalar/identity dtypes are invalid.
+            ValueError: If input cardinality, identities, mappings,
+                aggregation, or hemisphere handling are invalid.  Reduced
+                mappings that resolve to root or void fail closed.
+        """
         return self._add_regions(
             values=values,
             ontology=ontology,
@@ -234,7 +381,33 @@ class Feature:
         validity: VoxelValidity,
         chunk_shape: Sequence[int] = (64, 64, 64),
     ) -> "Feature":
-        """Attach one precomputed scalar volume on an explicit Allen CCF grid."""
+        """Attach one precomputed scalar volume on an explicit Allen CCF grid.
+
+        Args:
+            values: Three-dimensional NumPy-compatible float16 or float32
+                values whose axis order and shape exactly match ``grid``.
+            grid: Geometry created by
+                :meth:`AllenCCFGrid.from_iblatlas` from an existing atlas.
+            validity: Explicit mask or sentinel classification created with
+                :class:`VoxelValidity`.
+            chunk_shape: Positive three-integer physical chunk shape.  It
+                changes only deterministic ``chunks3d`` transport, not grid
+                geometry or values.
+
+        Returns:
+            This feature, for fluent construction.
+
+        Raises:
+            TypeError: If values are not float16/float32 or the grid/validity
+                objects are not the public verified types.
+            ValueError: If shape, chunking, masks, sentinel representation, or
+                the valid/non-finite classification is inconsistent.
+
+        The method copies values without registration, resampling,
+        interpolation, normalization, clipping, denoising, or precision
+        conversion.  Volume distributions are neutral Linear/Full and use
+        valid voxels only.
+        """
         if self._volume is not None:
             raise ValueError(f"feature {self.id} already has a volume representation")
         self._volume = normalize_volume_input(
@@ -247,6 +420,25 @@ class Feature:
 
 
 class Dataset:
+    """An immutable-release model that writes one validated local ZIP bundle.
+
+    Args:
+        dataset_id: Lowercase schema-v1 dataset identifier.  This is the
+            durable dataset identity, not the output filename.
+        release_id: Caller-chosen immutable release identifier.
+        title: Human-readable dataset title.
+        created_at: Explicit RFC 3339 creation timestamp.  The writer never
+            substitutes the current clock.
+        sources: Nonempty explicit provenance sources.
+        description: Optional dataset description.
+        histogram_bins: Number of bins for each emitted neutral Linear/Full
+            distribution; must be at least two.
+
+    The object performs serialization only.  It does not publish archives,
+    upload data, choose scientific defaults, or turn a local bundle into a
+    production scientific release.
+    """
+
     def __init__(
         self,
         *,
@@ -269,6 +461,8 @@ class Dataset:
 
     @property
     def features(self) -> tuple[Feature, ...]:
+        """Return features in insertion order as an immutable tuple."""
+
         return tuple(self._features.values())
 
     def add_feature(
@@ -280,6 +474,24 @@ class Dataset:
         description: str = "",
         unit: str | None = None,
     ) -> Feature:
+        """Add and return an empty scalar feature.
+
+        Args:
+            id: Unique schema-v1 feature identifier.
+            label: Human-readable feature label.
+            semantics: Explicit scientific meaning for all representations.
+            description: Optional longer description.
+            unit: Unit symbol or description, or ``None`` when unitless or
+                genuinely unavailable.
+
+        Returns:
+            A feature to which regional and/or volume values can be attached.
+
+        Raises:
+            ValueError: If ``id`` is already present.  Other incomplete or
+                malformed metadata is reported by :meth:`validate`.
+        """
+
         if id in self._features:
             raise ValueError(f"duplicate feature id: {id}")
         feature = Feature(
@@ -293,6 +505,16 @@ class Dataset:
         return feature
 
     def validate(self) -> ValidationReport:
+        """Validate model metadata without writing files.
+
+        Returns:
+            A structured report containing all detected metadata errors.
+
+        Array shape, dtype, identity, aggregation, affine, and validity errors
+        are rejected earlier by the representation attachment methods.  A
+        valid report does not publish or write the dataset.
+        """
+
         issues: list[ValidationIssue] = []
 
         def error(code: str, location: str, message: str, hint: str | None = None) -> None:
@@ -620,7 +842,28 @@ class Dataset:
         return release_dir
 
     def write_zip(self, output: str | Path) -> dict[str, Any]:
-        """Build, independently validate, and atomically write one local bundle."""
+        """Build, independently validate, and atomically write a local bundle.
+
+        Args:
+            output: Destination ``.ibl-ephys-atlas.zip`` path.  The suffix is
+                conventional; scientific identity comes from the manifest.
+
+        Returns:
+            Bundle inventory metadata returned by the independent bundle
+            validator.
+
+        Raises:
+            BundleValidationError: If the in-memory dataset is incomplete or
+                invalid.
+            ValueError: If a representation cannot be serialized or the
+                complete schema-v1 graph fails independent validation.
+            OSError: If temporary or destination files cannot be written.
+
+        Serialization uses canonical JSON, sorted archive paths, fixed ZIP
+        metadata, and deterministic compression.  The destination is replaced
+        only after the temporary release and reopened archive pass complete
+        validation; an existing destination survives failure unchanged.
+        """
         self.validate().raise_for_errors()
         with tempfile.TemporaryDirectory(prefix="ibl-ephys-atlas-authoring-") as temporary:
             release_dir = self._build_release(Path(temporary) / "release")
