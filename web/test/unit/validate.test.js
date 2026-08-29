@@ -258,6 +258,12 @@ test('local import rejects same-size content with a wrong declared SHA-256', asy
   await assert.rejects(validateLocalDatasetFiles(files), /SHA-256 mismatch for features\/rms_ap\/allen\.values\.f32/);
 });
 
+test('local import rejects undeclared files after resolving the complete graph', async () => {
+  const files = goldenDatasetFiles();
+  files.set('undeclared.txt', new Blob(['not declared']));
+  await assert.rejects(validateLocalDatasetFiles(files), /undeclared files: undeclared\.txt/i);
+});
+
 test('binary descriptors reject unsafe paths and malformed integrity metadata', () => {
   const descriptor = {
     format: 'raw-binary-array-v1', dtype: 'float32', shape: [1], order: 'C', endianness: 'little',

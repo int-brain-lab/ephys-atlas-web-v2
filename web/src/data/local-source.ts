@@ -1,4 +1,5 @@
 import type { DatasetRef, ParcellationId, RepresentationKind } from '../domain/types.js';
+import { prepareLocalArchive, type PreparedLocalArchive } from './local-archive.js';
 import { loadRegionalFeatureFromResources, loadRegionsFromResources } from './regional-loader.js';
 import type { ResourceReader } from './resource-reader.js';
 import { parseVolumeResourceIndex, parseVolumeSummary } from './validation/volume-v1.js';
@@ -8,7 +9,6 @@ import {
   decodeResourceBytes,
   localDatasetReleaseId,
   resolveDatasetManifest,
-  validateLocalDatasetFiles,
 } from './validate.js';
 import { SCHEMA_VERSION } from './contracts.js';
 import type {
@@ -74,12 +74,6 @@ function resourceKey(namespace: string, path: string): string {
   return `${namespace}\u0000${path}`;
 }
 
-function relativePath(file: File): string {
-  const path = file.webkitRelativePath || file.name;
-  const parts = path.split('/');
-  return parts.length > 1 ? parts.slice(1).join('/') : path;
-}
-
 function resolvePath(baseFile: string, relative: string): string {
   const base = new URL(baseFile, 'https://local.invalid/');
   return new URL(relative, base).pathname.replace(/^\//, '');
@@ -118,17 +112,12 @@ class LocalResourceReader implements ResourceReader {
 export class LocalDatasetSource implements DatasetSource {
   readonly kind = 'local' as const;
 
-  async importFiles(files: Iterable<File>): Promise<DatasetManifest> {
-    const allFiles = [...files];
-    const byPath = new Map<string, File>();
-    for (const file of allFiles) {
-      const path = relativePath(file);
-      if (byPath.has(path)) throw new Error(`Local dataset contains duplicate path: ${path}`);
-      byPath.set(path, file);
-    }
-    if (!byPath.has('manifest.json')) throw new Error('Local dataset must contain manifest.json');
+  prepareArchive(archive: Blob, signal?: AbortSignal): Promise<PreparedLocalArchive> {
+    return prepareLocalArchive(archive, signal);
+  }
 
-    const { document, features } = await validateLocalDatasetFiles(byPath);
+  async admitPrepared(prepared: PreparedLocalArchive): Promise<DatasetManifest> {
+    const { document, features } = prepared.validated;
     const selector = localDatasetReleaseId(document.datasetId, document.release.releaseId);
     const manifest = resolveDatasetManifest(document, features, 'local');
     const storedManifest = {
@@ -138,22 +127,26 @@ export class LocalDatasetSource implements DatasetSource {
 
     const db = await openDatabase();
     const transaction = db.transaction([MANIFESTS, RESOURCES], 'readwrite');
+    let duplicateRelease = false;
     try {
-      transaction.objectStore(MANIFESTS).add({
+      const manifestRequest = transaction.objectStore(MANIFESTS).add({
         key: selector,
         selector,
         sourceDatasetId: document.datasetId,
         sourceReleaseId: document.release.releaseId,
         manifest: storedManifest,
       } satisfies StoredManifest);
-      for (const [path, file] of byPath) {
+      manifestRequest.onerror = () => {
+        duplicateRelease = manifestRequest.error?.name === 'ConstraintError';
+      };
+      for (const [path, file] of prepared.files) {
         if (path === 'manifest.json') continue;
         transaction.objectStore(RESOURCES).put({ key: resourceKey(selector, path), blob: file } satisfies StoredResource);
       }
       await transactionDone(transaction);
     } catch (error) {
       try { transaction.abort(); } catch { /* transaction already completed or aborted */ }
-      if (error instanceof DOMException && error.name === 'ConstraintError') {
+      if (duplicateRelease || (error instanceof DOMException && error.name === 'ConstraintError')) {
         throw new Error(`Local dataset ${document.datasetId}/${document.release.releaseId} is already imported`);
       }
       throw error;
@@ -161,6 +154,10 @@ export class LocalDatasetSource implements DatasetSource {
       db.close();
     }
     return storedManifest;
+  }
+
+  async importArchive(archive: Blob, signal?: AbortSignal): Promise<DatasetManifest> {
+    return this.admitPrepared(await this.prepareArchive(archive, signal));
   }
 
   async loadCatalog(): Promise<DatasetCatalog> {

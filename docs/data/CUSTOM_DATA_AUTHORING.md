@@ -279,6 +279,60 @@ stores the manifest and individual resource blobs in one atomic IndexedDB
 admission. The outer ZIP is discarded after success so ordinary feature and
 volume access retains efficient per-resource reads.
 
+### Browser ZIP reader and provisional admission limits
+
+The in-progress browser reader pins `@zip.js/zip.js` `2.8.60`. It was selected
+because its Blob reader exposes the central-directory metadata needed for a
+bounded inventory before extraction, supports per-entry Blob extraction and
+cancellation, and provides strict parsing with CRC-32 and overlapping-entry
+checks. The browser imports the native entry point dynamically and disables
+library workers for the first implementation so cancellation, memory behavior,
+and failures remain under one application-owned lifecycle. This is the current
+engineering rationale, not yet cross-browser performance evidence.
+
+Before extracting any entry, the reader requires normalized portable root
+paths and rejects control characters, backslashes, percent-ambiguous names,
+absolute/drive/colon paths, empty or dot segments, nested ZIP names, duplicate
+paths, directory entries, symlinks and other non-regular Unix file types,
+encryption, split or Zip64 entries, and compression methods other than Store
+and Deflate. Strict extraction rechecks CRC-32, overlap, cancellation, and the
+declared expanded size. The existing complete local schema-v1 graph validator
+then rejects missing, undeclared, corrupt, or semantically invalid resources
+before IndexedDB is opened for mutation.
+
+The first implementation uses these deliberately provisional limits:
+
+| Limit | Current value |
+| --- | ---: |
+| Archive bytes | 1 GiB |
+| Entry count | 20,000 |
+| Compressed bytes per entry | 256 MiB |
+| Expanded bytes per entry | 256 MiB |
+| Aggregate expanded bytes | 1.5 GiB |
+| Expansion ratio per entry | 1,000:1 |
+| UTF-8 path bytes | 512 |
+| UTF-8 path-segment bytes | 128 |
+| Expanded `manifest.json` bytes | 8 MiB |
+
+These values are safety ceilings, not accepted product capacity or performance
+targets. Measure representative regional and volume authoring archives in
+Chromium, Firefox, and Safari, including peak memory, preview latency,
+cancellation, extraction failures, and IndexedDB quota behavior, before
+freezing or advertising supported limits.
+
+Preparation and admission are separate. `prepareArchive()` retains validated
+Blobs in memory and returns identity, feature/representation/parcellation, and
+stored/decoded-size preview data without changing IndexedDB. Only an explicit
+`admitPrepared()` call writes the manifest and individual resources in one
+local IndexedDB transaction. The path performs no upload or other network
+request. The application/UI wiring for that confirmation boundary is
+implemented: the dataset picker exposes one ZIP input, the modal shows validated
+identity and inventory before confirmation, successful admission selects a
+persistent `Local` release, and duplicate immutable identities fail without
+replacement. Automated Chromium coverage verifies preview-before-mutation,
+reload persistence, and local resource reads without the published release
+origin. Cross-browser real-archive capacity evidence is still outstanding.
+
 ## Browser experience
 
 Expose `Import local dataset...` from the dataset picker and accept one
@@ -351,6 +405,13 @@ machinery, not yet the public `ibl_ephys_atlas.Dataset.write_zip()` API.
 
 ### Slice 1 — ZIP-only browser import
 
+Status: implemented for the user-facing synthetic vertical slice on 2026-08-29.
+The pinned reader, strict bounded inventory/extraction, complete-graph
+validation, two-phase preview/admission UI, persistent Local identity,
+duplicate rejection, and automated Chromium persistence/no-network evidence
+are green. Representative real-archive cross-browser and quota measurement
+remains required before the provisional limits become supported capacity.
+
 - replace the dormant directory/FileList import seam with one archive input;
 - implement safe ZIP inventory/extraction above the existing complete local
   graph validator;
@@ -360,7 +421,16 @@ machinery, not yet the public `ibl_ephys_atlas.Dataset.write_zip()` API.
   corrupt hash, missing/undeclared resource, unsafe ZIP path, and no-network
   behavior in unit and Chromium tests.
 
+Before closing this slice, measure the provisional limits and reader behavior
+with representative real regional and volume archives across the launch
+browsers. Record any revised ceilings and the evidence for them here rather
+than treating the initial constants as final support claims.
+
 ### Slice 2 — Public regional authoring
+
+Status: not implemented. The completed shared bundle writer and in-progress
+browser reader do not constitute the public `ibl-ephys-atlas` distribution or
+the `ibl_ephys_atlas` authoring API.
 
 - introduce the `ibl_ephys_atlas` public namespace in the existing builder
   project and factor generic mechanics without changing schema v1;

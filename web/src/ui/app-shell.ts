@@ -1,4 +1,5 @@
 import type { DatasetCatalog, DatasetManifest, FeaturePayload, RepresentationDisplay } from '../data/contracts.js';
+import type { LocalArchivePreview } from '../data/local-archive.js';
 import type {
   AppState,
   ColorMode,
@@ -65,7 +66,9 @@ export interface AppShellCallbacks {
   shareCurrentView(): Promise<void>;
   downloadCurrentFeature(): void;
   downloadArtifact(artifactId: string, featureId?: string): Promise<void>;
-  importLocal(files: FileList): Promise<void>;
+  prepareLocal(file: File): Promise<LocalArchivePreview>;
+  admitLocal(): Promise<void>;
+  cancelLocal(): void;
   reportError(error: unknown): void;
 }
 
@@ -119,6 +122,7 @@ interface StaticFrameNodes extends ProjectionTooltipNodes {
 }
 
 const SLICE_LOADING_NOTICE_DELAY_MS = 400;
+const LOCAL_IMPORT_OPTION_ID = '__import_local_dataset__';
 
 const ACTION_ICONS: Record<HeaderAction, string> = {
   share: '↗',
@@ -181,6 +185,17 @@ export class AppShell {
   private readonly downloadDialog: HTMLDialogElement;
   private readonly downloadContent: HTMLElement;
   private readonly helpDialog: HTMLDialogElement;
+  private readonly localImportInput: HTMLInputElement;
+  private readonly localImportDialog: HTMLDialogElement;
+  private readonly localImportStatus: HTMLElement;
+  private readonly localImportError: HTMLElement;
+  private readonly localImportSummary: HTMLElement;
+  private readonly localImportConfirm: HTMLButtonElement;
+  private readonly localImportCancel: HTMLButtonElement;
+  private readonly localDatasetBadge: HTMLElement;
+  private localImportSequence = 0;
+  private localImportActive = false;
+  private localImportCommitting = false;
   private analysisDialog!: HTMLDialogElement;
   private readonly shortcutStatus: HTMLElement;
   private readonly viewButtons = new Map<WorkspaceViewId, HTMLButtonElement>();
@@ -239,10 +254,19 @@ export class AppShell {
         this.closeContextMenus(menu);
       },
       onSelect: (option) => {
+        if (option.id === LOCAL_IMPORT_OPTION_ID) {
+          this.localImportInput.click();
+          return;
+        }
         const [datasetId, releaseId] = JSON.parse(option.id) as [DatasetId, string];
         this.callbacks.setDataset({ datasetId, releaseId });
       },
     });
+    this.localDatasetBadge = element('span', 'context-field__local-badge');
+    this.localDatasetBadge.textContent = 'Local';
+    this.localDatasetBadge.title = 'Stored only in this browser on this device';
+    this.localDatasetBadge.hidden = true;
+    this.datasetContext.field.querySelector('.context-field__label')?.append(this.localDatasetBadge);
     this.featureContext = new ContextMenu({
       fieldName: 'feature',
       label: 'Feature',
@@ -281,6 +305,24 @@ export class AppShell {
     this.downloadDialog = download.dialog;
     this.downloadContent = download.content;
     this.helpDialog = this.createHelpDialog();
+    const localImport = this.createLocalImportDialog();
+    this.localImportDialog = localImport.dialog;
+    this.localImportStatus = localImport.status;
+    this.localImportError = localImport.error;
+    this.localImportSummary = localImport.summary;
+    this.localImportConfirm = localImport.confirm;
+    this.localImportCancel = localImport.cancel;
+    this.localImportInput = element('input', 'local-import__input');
+    this.localImportInput.type = 'file';
+    this.localImportInput.accept = '.ibl-ephys-atlas.zip,application/zip';
+    this.localImportInput.dataset.localImportInput = '';
+    this.localImportInput.setAttribute('aria-label', 'Local dataset ZIP archive');
+    this.localImportInput.hidden = true;
+    this.localImportInput.addEventListener('change', () => {
+      const file = this.localImportInput.files?.item(0);
+      this.localImportInput.value = '';
+      if (file) void this.prepareLocalImport(file);
+    });
     this.shortcutStatus = element('div', 'visually-hidden');
     this.shortcutStatus.setAttribute('role', 'status');
     this.shortcutStatus.setAttribute('aria-live', 'polite');
@@ -297,6 +339,8 @@ export class AppShell {
       this.infoDialog,
       this.downloadDialog,
       this.helpDialog,
+      this.localImportDialog,
+      this.localImportInput,
       this.shortcutStatus,
     );
     root.append(this.app);
@@ -320,6 +364,8 @@ export class AppShell {
     const representationLabel = view.representation === 'regional' ? 'Regional' : 'Volume';
 
     this.datasetContext.setDisplay(datasetLabel, releaseLabel);
+    this.localDatasetBadge.hidden = view.dataset.datasetId !== 'local';
+    this.app.toggleAttribute('data-local-dataset', view.dataset.datasetId === 'local');
     this.featureContext.setDisplay(featureLabel, featureEntry?.unit ?? '');
     const parcellationLabel = titleCaseToken(view.parcellation);
     this.representationContext.setDisplay(
@@ -420,6 +466,7 @@ export class AppShell {
   }
 
   destroy(): void {
+    if (this.localImportActive) this.cancelLocalImport();
     this.colorRangeControl.destroy();
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('resize', this.onResize);
@@ -609,6 +656,163 @@ export class AppShell {
       if (event.target === dialog) dialog.close();
     });
     return { dialog, content };
+  }
+
+  private createLocalImportDialog(): {
+    dialog: HTMLDialogElement;
+    status: HTMLElement;
+    error: HTMLElement;
+    summary: HTMLElement;
+    confirm: HTMLButtonElement;
+    cancel: HTMLButtonElement;
+  } {
+    const dialog = element('dialog', 'info-dialog local-import');
+    dialog.dataset.localImportDialog = '';
+    dialog.setAttribute('aria-labelledby', 'local-import-title');
+    dialog.setAttribute('aria-describedby', 'local-import-note');
+
+    const header = element('header', 'info-dialog__header');
+    const title = heading('Import local dataset', 2);
+    title.id = 'local-import-title';
+    const close = element('button', 'info-dialog__close');
+    close.type = 'button';
+    close.textContent = 'Close';
+    close.addEventListener('click', () => this.cancelLocalImport());
+    header.append(title, close);
+
+    const content = element('div', 'info-dialog__content local-import__content');
+    const introduction = element('section', 'info-dialog__section');
+    const note = element('p', 'local-import__note');
+    note.id = 'local-import-note';
+    note.textContent = 'The archive is validated and stored only in this browser on this device. Its contents are not uploaded.';
+    const status = element('p', 'local-import__status');
+    status.dataset.localImportStatus = '';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    const error = element('p', 'download-dialog__error local-import__error');
+    error.setAttribute('role', 'alert');
+    error.hidden = true;
+    introduction.append(note, status, error);
+
+    const summary = element('section', 'info-dialog__section local-import__summary');
+    summary.dataset.localImportPreview = '';
+    summary.hidden = true;
+
+    const actions = element('footer', 'local-import__actions');
+    const cancel = element('button', 'local-import__cancel');
+    cancel.type = 'button';
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', () => this.cancelLocalImport());
+    const confirm = element('button', 'local-import__confirm');
+    confirm.type = 'button';
+    confirm.textContent = 'Import';
+    confirm.disabled = true;
+    confirm.addEventListener('click', () => void this.admitLocalImport());
+    actions.append(cancel, confirm);
+
+    content.append(introduction, summary, actions);
+    dialog.append(header, content);
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      this.cancelLocalImport();
+    });
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) this.cancelLocalImport();
+    });
+    return { dialog, status, error, summary, confirm, cancel };
+  }
+
+  private async prepareLocalImport(file: File): Promise<void> {
+    const sequence = ++this.localImportSequence;
+    this.localImportActive = true;
+    this.localImportCommitting = false;
+    this.localImportConfirm.disabled = true;
+    this.localImportCancel.disabled = false;
+    this.localImportSummary.hidden = true;
+    this.localImportSummary.replaceChildren();
+    this.localImportError.hidden = true;
+    this.localImportError.textContent = '';
+    this.localImportStatus.textContent = `Validating ${file.name}…`;
+    if (!this.localImportDialog.open) this.localImportDialog.showModal();
+
+    try {
+      if (!file.name.toLocaleLowerCase('en-US').endsWith('.ibl-ephys-atlas.zip')) {
+        throw new Error('Choose one .ibl-ephys-atlas.zip archive');
+      }
+      const preview = await this.callbacks.prepareLocal(file);
+      if (sequence !== this.localImportSequence || !this.localImportActive) return;
+      this.renderLocalImportPreview(file, preview);
+      this.localImportStatus.textContent = 'Validation complete. Review the release before importing it.';
+      this.localImportConfirm.disabled = false;
+      this.localImportConfirm.focus();
+    } catch (error) {
+      if (sequence !== this.localImportSequence) return;
+      this.callbacks.cancelLocal();
+      this.localImportActive = false;
+      this.localImportStatus.textContent = `Could not validate ${file.name}.`;
+      this.localImportError.textContent = error instanceof Error ? error.message : String(error);
+      this.localImportError.hidden = false;
+    }
+  }
+
+  private renderLocalImportPreview(file: File, preview: LocalArchivePreview): void {
+    const headingNode = heading(preview.title, 3);
+    const details = element('dl', 'info-dialog__list local-import__list');
+    const rows: readonly (readonly [string, string])[] = [
+      ['Archive', file.name],
+      ['Dataset', preview.datasetId],
+      ['Release', preview.releaseId],
+      ['Provenance', preview.provenanceSummary],
+      ['Features', `${preview.featureCount.toLocaleString('en-US')} · ${preview.featureIds.join(', ')}`],
+      ['Representations', preview.representations.map(titleCaseToken).join(', ') || 'None'],
+      ['Parcellations', preview.parcellations.map(titleCaseToken).join(', ') || 'None'],
+      ['Files', preview.fileCount.toLocaleString('en-US')],
+      ['Archive size', formatBytes(preview.archiveBytes)],
+      ['Stored size', formatBytes(preview.storedBytes)],
+      ['Declared decoded size', formatBytes(preview.declaredDecodedBytes)],
+    ];
+    for (const [term, description] of rows) {
+      const dt = element('dt');
+      dt.textContent = term;
+      const dd = element('dd');
+      dd.textContent = description;
+      details.append(dt, dd);
+    }
+    const identity = element('p', 'local-import__identity');
+    identity.textContent = `Local identity: ${preview.selector}`;
+    this.localImportSummary.replaceChildren(headingNode, details, identity);
+    this.localImportSummary.hidden = false;
+  }
+
+  private async admitLocalImport(): Promise<void> {
+    if (!this.localImportActive || this.localImportCommitting) return;
+    this.localImportCommitting = true;
+    this.localImportConfirm.disabled = true;
+    this.localImportCancel.disabled = true;
+    this.localImportStatus.textContent = 'Storing the validated release on this device…';
+    this.localImportError.hidden = true;
+    try {
+      await this.callbacks.admitLocal();
+      this.localImportActive = false;
+      this.localImportStatus.textContent = 'Import complete.';
+      this.localImportDialog.close();
+    } catch (error) {
+      this.localImportStatus.textContent = 'The validated release could not be stored.';
+      this.localImportError.textContent = error instanceof Error ? error.message : String(error);
+      this.localImportError.hidden = false;
+      this.localImportConfirm.disabled = false;
+      this.localImportCancel.disabled = false;
+    } finally {
+      this.localImportCommitting = false;
+    }
+  }
+
+  private cancelLocalImport(): void {
+    if (this.localImportCommitting) return;
+    this.localImportSequence += 1;
+    if (this.localImportActive) this.callbacks.cancelLocal();
+    this.localImportActive = false;
+    if (this.localImportDialog.open) this.localImportDialog.close();
   }
 
   private createHelpDialog(): HTMLDialogElement {
@@ -1165,13 +1369,23 @@ export class AppShell {
   private renderContextMenus(model: ShellModel): void {
     const { catalog, manifest, state } = model;
     this.featureId = state.view.featureId;
-    const datasetOptions: ContextMenuOption[] = catalog?.datasets.flatMap((dataset) => dataset.releases.map((release) => ({
+    const releaseOptions: ContextMenuOption[] = catalog?.datasets.flatMap((dataset) => dataset.releases.map((release) => ({
       id: JSON.stringify([dataset.id, release.id]),
       label: release.label,
       ...(dataset.description ? { description: dataset.description } : {}),
       group: dataset.title,
       keywords: `${dataset.id} ${release.id}`,
     }))) ?? [];
+    const datasetOptions: ContextMenuOption[] = [
+      ...releaseOptions,
+      {
+        id: LOCAL_IMPORT_OPTION_ID,
+        label: 'Import local dataset…',
+        description: 'Choose one .ibl-ephys-atlas.zip archive from this device.',
+        group: 'Local',
+        keywords: 'import custom zip local dataset',
+      },
+    ];
     const datasetId = state.view.dataset.releaseId
       ? JSON.stringify([state.view.dataset.datasetId, state.view.dataset.releaseId])
       : '';

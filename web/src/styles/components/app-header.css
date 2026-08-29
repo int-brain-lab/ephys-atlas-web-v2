@@ -285,6 +285,20 @@
   text-transform: uppercase;
 }
 
+.context-field__local-badge {
+  margin-left: .35rem;
+  padding: .08rem .3rem;
+  border: 1px solid rgb(var(--color-accent-rgb) / 28%);
+  border-radius: 999px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: .5rem;
+  font-weight: 650;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
 .context-menu__group[hidden],
 .context-menu__option[hidden] {
   display: none;

@@ -10,6 +10,7 @@ import { maxRegionalSliceIndex } from './core/slice-calibration.js';
 import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
 import { HttpDatasetSource } from './data/http-source.js';
 import { LocalDatasetSource } from './data/local-source.js';
+import type { PreparedLocalArchive, LocalArchivePreview } from './data/local-archive.js';
 import { DatasetRepository } from './data/repository.js';
 import { DEFAULT_APP_STATE, DEFAULT_VIEW_STATE } from './domain/defaults.js';
 import { deriveRegionalSliceIndices } from './domain/navigation.js';
@@ -57,6 +58,8 @@ export class AtlasApp {
   private hoveredRegionId: string | null = null;
   private viewportPresentation: ProjectionPresentation | null = null;
   private presentationReconciliationPending = false;
+  private pendingLocalArchive: PreparedLocalArchive | null = null;
+  private localImportAbort: AbortController | null = null;
 
   constructor(root: HTMLElement, private readonly options: AppOptions = {}) {
     const defaultView = options.defaultView ?? DEFAULT_VIEW_STATE;
@@ -96,7 +99,9 @@ export class AtlasApp {
       shareCurrentView: () => this.copyCurrentUrl(),
       downloadCurrentFeature: () => this.downloadCurrentFeature(),
       downloadArtifact: (artifactId, featureId) => this.downloadArtifact(artifactId, featureId),
-      importLocal: (files) => this.importLocal(files),
+      prepareLocal: (file) => this.prepareLocal(file),
+      admitLocal: () => this.admitLocal(),
+      cancelLocal: () => this.cancelLocal(),
       reportError: (error) => this.reportRuntimeError(error),
     }, this.viewportFactory, options.scene3dFactory);
     this.regionalPanel = new RegionalPanelController(root, {
@@ -167,6 +172,7 @@ export class AtlasApp {
   }
 
   stop(): void {
+    this.cancelLocal();
     this.session.stop();
     this.urlController.stop();
     this.regionalPanel.destroy();
@@ -394,18 +400,39 @@ export class AtlasApp {
       .catch((error: unknown) => this.reportRuntimeError(error));
   }
 
-  private async importLocal(files: FileList): Promise<void> {
+  private async prepareLocal(file: File): Promise<LocalArchivePreview> {
+    this.cancelLocal();
+    const controller = new AbortController();
+    this.localImportAbort = controller;
     try {
-      const manifest = await this.localSource.importFiles(files);
-      await this.session.loadCatalog();
-      this.store.dispatch({
-        type: 'dataset/set',
-        dataset: { datasetId: 'local', releaseId: manifest.dataset.release },
-        history: 'push',
-      });
+      const prepared = await this.localSource.prepareArchive(file, controller.signal);
+      if (controller.signal.aborted) throw controller.signal.reason;
+      this.pendingLocalArchive = prepared;
+      return prepared.preview;
     } catch (error) {
-      this.reportRuntimeError(error);
+      if (this.localImportAbort === controller) this.localImportAbort = null;
+      throw error;
     }
+  }
+
+  private async admitLocal(): Promise<void> {
+    const prepared = this.pendingLocalArchive;
+    if (!prepared) throw new Error('No validated local dataset is ready to import');
+    const manifest = await this.localSource.admitPrepared(prepared);
+    this.pendingLocalArchive = null;
+    this.localImportAbort = null;
+    await this.session.loadCatalog();
+    this.store.dispatch({
+      type: 'dataset/set',
+      dataset: { datasetId: 'local', releaseId: manifest.dataset.release },
+      history: 'push',
+    });
+  }
+
+  private cancelLocal(): void {
+    this.localImportAbort?.abort(new DOMException('Local dataset import cancelled', 'AbortError'));
+    this.localImportAbort = null;
+    this.pendingLocalArchive = null;
   }
 
   private async copyCurrentUrl(): Promise<void> {

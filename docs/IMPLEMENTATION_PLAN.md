@@ -49,27 +49,42 @@ Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 2 and 3; binding runbook
 ## M5 — Custom authoring and ZIP import
 
 Status: active; the deterministic validated ZIP boundary and canonical
-synthetic bundle fixture are complete, and browser ZIP import is next.
+synthetic bundle fixture are complete. Browser ZIP import is in progress: the
+pinned reader, strict bounded preparation, complete-graph validation, and
+two-phase preview/confirmation/admission UI, persistent Local identity, and
+automated Chromium evidence exist in the current implementation. Real-archive
+cross-browser and quota evidence remains unfinished.
 
 Blocker: none for the regional scalar vertical slice.
 
 Next testable actions:
 
-1. replace the dormant directory import seam with bounded safe ZIP preview,
-   complete integrity validation, and one atomic IndexedDB admission;
+1. measure the provisional archive, entry, expansion, path, and manifest
+   ceilings with representative regional and volume bundles in Chromium,
+   Firefox, and Safari; record peak memory, preview latency, failure behavior,
+   and IndexedDB quota results before freezing supported limits;
 2. add the public `ibl-ephys-atlas` distribution and `ibl_ephys_atlas`
    namespace beside the shared schema-v1 serializer/validator;
 3. implement regional scalar authoring with explicit identity, aggregation,
    provenance, and hemisphere-folding rules backed by `iblatlas`;
 4. write one deterministic `.ibl-ephys-atlas.zip` containing the schema-v1
    graph at its root;
-5. add persistent Local identity, inventory/deletion, quota/recovery behavior,
+5. add local inventory/deletion, quota/recovery behavior,
    and local-URL disclosure;
 6. add explicit-grid volume authoring only after the regional slice is green.
 
-The ZIP reader must reject unsafe or duplicate paths, encrypted/unsupported
-entries, undeclared files, excessive sizes, and any integrity mismatch before
-storage mutation. It must not introduce a second scientific schema.
+The pinned zip.js reader rejects unsafe or duplicate paths, non-regular,
+encrypted, split/Zip64, nested, or unsupported-compression entries, undeclared
+files, provisional size/ratio excesses, and integrity mismatches before storage
+mutation. Preparation is local-only and read-only; the application seam keeps
+one IndexedDB admission of individual resources separate so the UI can invoke
+it only after explicit confirmation. The current ceilings remain provisional
+pending real-archive, cross-browser, and quota measurement. This work must not
+introduce a second scientific schema.
+
+The public Python authoring distribution, structured scientific model,
+`BrainRegions` handling, and `Dataset.write_zip()` are not implemented by the
+shared bundle command or browser reader.
 
 Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 8 and 9; binding plan:
 [`data/CUSTOM_DATA_AUTHORING.md`](data/CUSTOM_DATA_AUTHORING.md).

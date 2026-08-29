@@ -15,6 +15,7 @@
     "src/data/contracts.ts",
     "src/data/schema-v1.ts",
     "src/data/validate.ts",
+    "src/data/local-archive.ts",
     "src/data/validation/schema-v1.ts",
     "src/data/validation/volume-v1.ts",
     "src/data/regional-data.ts",

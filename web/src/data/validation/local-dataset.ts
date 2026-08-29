@@ -38,6 +38,9 @@ interface ResourceExpectation {
 export interface ValidatedLocalDataset {
   document: DatasetManifestDocument;
   features: readonly FeatureDescriptor[];
+  declaredPaths: readonly string[];
+  storedBytes: number;
+  declaredDecodedBytes: number;
 }
 
 function parseArtifacts(value: unknown, baseFile: string, context: string): ArtifactExpectation[] {
@@ -397,6 +400,18 @@ export async function validateLocalDatasetFiles(
     }
   }
 
+  const declaredPaths = ['manifest.json', ...resources.keys()].sort();
+  const declared = new Set(declaredPaths);
+  const undeclared = [...files.keys()].filter((path) => !declared.has(path)).sort();
+  if (undeclared.length) {
+    throw new Error(`Local dataset contains undeclared files: ${undeclared.slice(0, 8).join(', ')}`);
+  }
   await validateResourceFiles(files, resources);
-  return { document, features };
+  const storedBytes = declaredPaths.reduce((total, path) => total + (files.get(path)?.size ?? 0), 0);
+  const declaredDecodedBytes = (files.get('manifest.json')?.size ?? 0)
+    + [...resources.values()].reduce(
+      (total, resource) => total + (resource.decodedBytes ?? resource.bytes ?? files.get(resource.path)?.size ?? 0),
+      0,
+    );
+  return { document, features, declaredPaths, storedBytes, declaredDecodedBytes };
 }
