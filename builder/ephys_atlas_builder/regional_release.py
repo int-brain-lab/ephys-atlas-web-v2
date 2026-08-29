@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import math
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from decimal import Decimal, localcontext
 from pathlib import Path
 
 import numpy as np
@@ -226,42 +226,47 @@ def histogram_edges(
         return np.geomspace(lo, hi, bins + 1, dtype=np.float64)
     if axis_scale == "symlog":
         assert linear_threshold is not None
-        log_threshold = math.log(linear_threshold)
+        with localcontext() as context:
+            # Python's platform libm may differ by one ULP for log/exp results.
+            # Decimal's correctly rounded transcendental operations make these
+            # serialized release edges independent of that implementation.
+            context.prec = 80
+            threshold = Decimal.from_float(linear_threshold)
+            one = Decimal(1)
+            maximum = Decimal.from_float(float(np.finfo(np.float64).max))
 
-        def transform(value: float) -> float:
-            if value == 0:
-                return 0.0
-            log_value = math.log(abs(value))
-            maximum = max(log_value, log_threshold)
-            log_sum = maximum + math.log1p(
-                math.exp(min(log_value, log_threshold) - maximum)
-            )
-            return math.copysign(log_sum - log_threshold, value)
+            def transform(value: float) -> float:
+                if value == 0:
+                    return 0.0
+                magnitude = Decimal.from_float(abs(value))
+                ratio = magnitude / threshold
+                with localcontext(context) as operation_context:
+                    operation_context.prec = max(80, 40 - ratio.adjusted())
+                    result = (one + ratio).ln(context=operation_context)
+                return float(result.copy_sign(Decimal.from_float(value)))
 
-        def inverse(value: float) -> float:
-            magnitude = abs(value)
-            if magnitude == 0:
-                return 0.0
-            if magnitude < 0.5:
-                result = linear_threshold * math.expm1(magnitude)
-            else:
-                log_result = (
-                    log_threshold
-                    + magnitude
-                    + math.log1p(-math.exp(-magnitude))
-                )
-                if log_result > math.log(np.finfo(np.float64).max):
+            def inverse(value: float) -> float:
+                if value == 0:
+                    return 0.0
+                magnitude = Decimal.from_float(abs(value))
+                with localcontext(context) as operation_context:
+                    operation_context.prec = max(80, 40 - magnitude.adjusted())
+                    result = threshold * (
+                        magnitude.exp(context=operation_context) - one
+                    )
+                if result > maximum:
                     raise ValueError("symlog histogram inverse exceeds finite float64")
-                result = math.exp(log_result)
-            return math.copysign(result, value)
+                return float(result.copy_sign(Decimal.from_float(value)))
 
-        transformed_bounds = (transform(lo), transform(hi))
-        if not all(math.isfinite(value) for value in transformed_bounds):
-            raise ValueError("symlog histogram transform is not finite")
-        transformed = np.linspace(
-            transformed_bounds[0], transformed_bounds[1], bins + 1, dtype=np.float64
-        )
-        edges = np.asarray([inverse(float(value)) for value in transformed], dtype=np.float64)
+            transformed_bounds = (transform(lo), transform(hi))
+            if not all(np.isfinite(value) for value in transformed_bounds):
+                raise ValueError("symlog histogram transform is not finite")
+            transformed = np.linspace(
+                transformed_bounds[0], transformed_bounds[1], bins + 1, dtype=np.float64
+            )
+            edges = np.asarray(
+                [inverse(float(value)) for value in transformed], dtype=np.float64
+            )
         edges[0], edges[-1] = lo, hi
         if not np.isfinite(edges).all() or not np.all(np.diff(edges) > 0):
             raise ValueError("symlog histogram edges are not finite and strictly increasing")

@@ -63,6 +63,23 @@ def test_symlog_edges_are_uniform_in_the_declared_transform() -> None:
     np.testing.assert_allclose(np.diff(transformed), np.diff(transformed)[0])
 
 
+def test_symlog_edges_have_platform_independent_float64_values() -> None:
+    edges = histogram_edges(
+        np.array([-0.5, 3.5]), 8, "symlog", linear_threshold=0.5
+    )
+    assert edges.tolist() == [
+        -0.5,
+        -0.20710678118654752,
+        0.0,
+        0.2071067811865475,
+        0.5,
+        0.9142135623730953,
+        1.4999999999999996,
+        2.3284271247461894,
+        3.5,
+    ]
+
+
 def test_symlog_edges_remain_finite_and_increasing_at_float64_extremes() -> None:
     maximum = np.finfo(np.float64).max
     edges = histogram_edges(
@@ -75,6 +92,17 @@ def test_symlog_edges_remain_finite_and_increasing_at_float64_extremes() -> None
     assert np.all(np.diff(edges) > 0)
     assert edges[0] == -maximum
     assert edges[-1] == maximum
+
+
+def test_symlog_edges_preserve_representable_values_far_below_threshold() -> None:
+    edges = histogram_edges(
+        np.array([-1e-100, 1e-100]),
+        4,
+        "symlog",
+        linear_threshold=1.0,
+    )
+    assert np.all(np.diff(edges) > 0)
+    assert edges[2] == 0.0
 
 
 @pytest.mark.parametrize("threshold", [float("nan"), float("inf"), 0.0])

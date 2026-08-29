@@ -14,7 +14,7 @@
           },
           "media_type": "application/json",
           "path": "features/rms_ap/feature.json",
-          "sha256": "78a8cf913cab3539e88d054309efd1692d6b4d8ce2d26ec18a02c8c459708c99"
+          "sha256": "8723f22b291941b768b04168348562b2c608648ebdddcb3354ef016820d7f013"
         }
       },
       "id": "rms_ap"

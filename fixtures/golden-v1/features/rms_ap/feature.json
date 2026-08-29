@@ -93,14 +93,14 @@
           "statistics": {
             "format": "ephys-atlas-regional-statistics-v1",
             "resource": {
-              "bytes": 6626,
+              "bytes": 6592,
               "codec": {
-                "decoded_bytes": 6626,
+                "decoded_bytes": 6592,
                 "name": "none"
               },
               "media_type": "application/json",
               "path": "allen.statistics.json",
-              "sha256": "f4d147ef96bec89868e34cf816d57760c9fb8c4409f38d9de3bdcd8e6773e107"
+              "sha256": "281f9bfd8f7d149aae4c27b261b7d77d29e85241866b9a30d8d3aa16340dcd10"
             }
           },
           "summary": "mean",
@@ -211,14 +211,14 @@
       "summary": {
         "format": "ephys-atlas-volume-summary-v1",
         "resource": {
-          "bytes": 5122,
+          "bytes": 5121,
           "codec": {
-            "decoded_bytes": 5122,
+            "decoded_bytes": 5121,
             "name": "none"
           },
           "media_type": "application/json",
           "path": "volume/summary.json",
-          "sha256": "c0ff0298e9e7e64c8426a9645f8895b97ca79e570ce26814bd5bdad3eb0fc42c"
+          "sha256": "3abd2f7afb889c399c91eb74194b8908de59503fd198d280ad7972afc82dcb9e"
         }
       },
       "validity": {
