@@ -8,10 +8,12 @@ from pathlib import Path
 import pytest
 
 from tools.distribution_review_lab.build import (
+    DRAFT_FORMAT,
     FORMAT,
     POLICY_VERSION,
     InputSpec,
     build_report,
+    load_initial_review,
     propose_display,
     render_report,
     sha256_file,
@@ -181,6 +183,34 @@ def test_report_binds_exact_evidence_and_never_contains_an_approval_field(tmp_pa
     assert "scientific_owner_confirmation" not in json.dumps(report)
 
 
+def test_local_draft_resolves_only_known_explicit_choices(tmp_path: Path):
+    report = build_report([_write_inputs(tmp_path)])
+    draft = tmp_path / "draft.json"
+    draft.write_text(json.dumps({
+        "format": DRAFT_FORMAT,
+        "policy_version": POLICY_VERSION,
+        "choices": [{
+            "dataset_id": "ephys_atlas_channels",
+            "feature_id": "feature",
+            "disposition": "accept-proposal",
+        }],
+    }))
+    initial = load_initial_review(report, draft)
+    assert initial[0]["key"] == "ephys_atlas_channels\0feature"
+    assert initial[0]["display"] == report["datasets"][0]["features"][0]["agent_proposal"]
+    draft.write_text(json.dumps({
+        "format": DRAFT_FORMAT,
+        "policy_version": POLICY_VERSION,
+        "choices": [{
+            "dataset_id": "ephys_atlas_channels",
+            "feature_id": "unknown",
+            "disposition": "accept-proposal",
+        }],
+    }))
+    with pytest.raises(ValueError, match="unknown or duplicate"):
+        load_initial_review(report, draft)
+
+
 def test_report_fails_closed_on_hash_release_and_catalog_mismatch(tmp_path: Path):
     spec = _write_inputs(tmp_path)
     with pytest.raises(ValueError, match="SHA-256"):
@@ -223,6 +253,10 @@ def test_offline_template_has_stable_controls_valid_javascript_and_safe_payload(
     assert "queue=all.filter" in template
     assert "unchanged-baseline" in template
     assert "editing=false;whyOpen=false;card.classList" not in template
+    assert "localStorage.setItem(storageKey" in template
+    assert "localStorage.getItem(storageKey" in template
+    assert "function proposalPreview" in template
+    assert "New option preview" in template and "Current default" in template
     script = template.rsplit("<script>", 1)[1].split("</script>", 1)[0]
     subprocess.run(["node", "--check"], input=script, text=True, check=True)
     rendered = render_report({"unsafe": "</script>"}, template)

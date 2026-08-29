@@ -167,6 +167,11 @@ from the baseline; the other 121 are exported explicitly as unchanged. Each
 step has two primary choices and advances automatically. The always-visible
 keyboard controls are `R` for the recommendation, `C` for the current setting,
 `E` to edit, `W` for evidence, and the arrow keys for navigation.
+Every decision is saved immediately in browser-local storage under an identity
+derived from the policy version and all four audit hashes, and a reload resumes
+at the next undecided feature. The evidence view compares the current default
+histogram with a newly offered scale/domain combination; it stays open across
+navigation until `W` is pressed again.
 
 The downloaded `ibl-scalar-distribution-human-review-v1` record is deliberately
 non-authoritative: it states `production_effect: "none"` and omits

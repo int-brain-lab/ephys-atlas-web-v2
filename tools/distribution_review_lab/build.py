@@ -13,6 +13,7 @@ from typing import Any
 
 FORMAT = "ibl-scalar-distribution-review-lab-v1"
 POLICY_VERSION = "q14-agent-candidate-policy-v1"
+DRAFT_FORMAT = "ibl-scalar-distribution-review-draft-v1"
 MARKER = "__DISTRIBUTION_REVIEW_LAB_DATA__"
 
 
@@ -224,6 +225,40 @@ def build_report(inputs: tuple[InputSpec, ...] | list[InputSpec]) -> dict[str, A
     }
 
 
+def load_initial_review(report: dict[str, Any], path: Path) -> list[dict[str, Any]]:
+    """Resolve an ignored local draft into safe browser bootstrap entries."""
+    draft = json.loads(path.read_text())
+    if draft.get("format") != DRAFT_FORMAT or draft.get("policy_version") != POLICY_VERSION:
+        raise ValueError("local review draft identity mismatch")
+    features = {
+        (dataset["dataset_id"], feature["id"]): feature
+        for dataset in report["datasets"]
+        for feature in dataset["features"]
+    }
+    resolved = []
+    seen: set[tuple[str, str]] = set()
+    for choice in draft.get("choices", []):
+        identity = (choice.get("dataset_id"), choice.get("feature_id"))
+        if identity in seen or identity not in features:
+            raise ValueError("local review draft has an unknown or duplicate feature")
+        seen.add(identity)
+        feature = features[identity]
+        disposition = choice.get("disposition")
+        if disposition == "accept-proposal":
+            display = feature["agent_proposal"]
+        elif disposition == "retain-baseline":
+            display = feature["accepted_baseline"]
+        else:
+            raise ValueError("local review draft has an unsupported disposition")
+        resolved.append({
+            "key": f"{identity[0]}\0{identity[1]}",
+            "disposition": disposition,
+            "display": display,
+            "notes": choice.get("notes", ""),
+        })
+    return resolved
+
+
 def render_report(report: dict[str, Any], template: str) -> bytes:
     if template.count(MARKER) != 1:
         raise ValueError("review template must contain exactly one data marker")
@@ -251,12 +286,21 @@ def parser() -> argparse.ArgumentParser:
     command = argparse.ArgumentParser(description=__doc__)
     command.add_argument("--output", type=Path, default=Path("artifacts/distribution-review-lab/index.html"))
     command.add_argument("--template", type=Path, default=Path(__file__).with_name("template.html"))
+    command.add_argument(
+        "--draft",
+        type=Path,
+        default=Path("artifacts/distribution-review-lab/draft.json"),
+        help="optional ignored local draft used to seed an unfinished review",
+    )
     return command
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
-    output = write_report(build_report(DEFAULT_INPUTS), args.template, args.output)
+    report = build_report(DEFAULT_INPUTS)
+    if args.draft.is_file():
+        report["initial_review"] = load_initial_review(report, args.draft)
+    output = write_report(report, args.template, args.output)
     print(output)
     return 0
 
