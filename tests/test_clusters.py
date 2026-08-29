@@ -321,11 +321,17 @@ def test_cluster_output_identity_is_independent_from_pinned_source_identity():
             source_release_id=selection.source_release_id,
             created_at="2026-08-26T00:00:00Z",
             project=selection.project,
+            catalog_selection=Path(
+                "docs/data/CLUSTERS_CATALOG_SELECTION_FIRING_RATE_DEFAULTS.json"
+            ),
         ),
         selection,
     )
     assert config.release_id == "sha256-9b5e55215b306f26-firing-defaults-v1"
     assert config.source_release_id == selection.source_release_id
+    assert config.catalog_selection == Path(
+        "docs/data/CLUSTERS_CATALOG_SELECTION_FIRING_RATE_DEFAULTS.json"
+    )
 
 
 def test_approved_cluster_table_is_verified_before_decode(tmp_path):

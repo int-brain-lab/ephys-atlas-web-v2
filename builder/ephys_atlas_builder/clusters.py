@@ -263,7 +263,6 @@ def apply_cluster_catalog_selection(
         config,
         source_release_id=selection.source_release_id,
         features=feature_ids,
-        catalog_selection=selection.path,
     )
 
 
