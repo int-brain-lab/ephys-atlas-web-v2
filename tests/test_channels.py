@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import shlex
 from typing import ClassVar
 
 import numpy as np
@@ -83,7 +84,6 @@ def test_channel_recipe_builds_schema_valid_release(tmp_path):
         "beryl",
         "cosmos",
     ]
-
     values = np.fromfile(release / "features/rms_ap/allen.values.f32", dtype="<f4")
     # Region ids are folded left and therefore sorted -30, -20, -10.
     np.testing.assert_allclose(values, [6.0, 3.5, 1.5])
@@ -98,6 +98,46 @@ def test_channel_recipe_builds_schema_valid_release(tmp_path):
     assert recipe["hemisphere"].startswith("bilateral observations folded onto left")
     assert recipe["outlier_policy"].startswith("preserve source values")
 
+
+def test_channel_manifest_records_complete_builder_command(tmp_path):
+    features, ids, metadata = _inputs()
+    config = ChannelBuildConfig(
+        release_id="2026_W12-command-v1",
+        source_release_id="2026_W12",
+        created_at="2026-08-20T00:00:00Z",
+        feature_mode="both",
+        population="inside",
+        parcellations=("allen", "beryl"),
+        histogram_bins=17,
+        paper_snapshot=True,
+        ibleatools_commit="1111111",
+        iblatlas_commit="2222222",
+        builder_commit="3333333",
+    )
+    release = build_channels_release_from_arrays(
+        tmp_path / "release",
+        config,
+        features,
+        ids,
+        metadata,
+        [{"role": "canonical-data", "description": "synthetic command test"}],
+    )
+    manifest = json.loads((release / "manifest.json").read_text())
+    command = shlex.split(manifest["provenance"]["builder"]["command"])
+
+    assert command == [
+        "ephys-atlas-data", "build-channels", "2026_W12",
+        "--release-id", "2026_W12-command-v1",
+        "--feature-mode", "both", "--population", "inside",
+        "--created-at", "2026-08-20T00:00:00Z",
+        "--distribution-selection", "distribution-selection.json",
+        "--histogram-bins", "17",
+        "--parcellation", "allen", "--parcellation", "beryl",
+        "--paper-snapshot",
+        "--ibleatools-commit", "1111111",
+        "--iblatlas-commit", "2222222",
+        "--builder-commit", "3333333",
+    ]
 
 def test_channel_recipe_is_deterministic(tmp_path):
     a = _build(tmp_path / "a")

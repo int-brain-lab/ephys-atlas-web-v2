@@ -4,6 +4,7 @@ from dataclasses import dataclass, replace
 import json
 from pathlib import Path
 import re
+import shlex
 import shutil
 from typing import Mapping, Sequence
 
@@ -28,6 +29,40 @@ from .regional_release import (
 
 DATASET_ID = "ephys_atlas_clusters"
 _COMMIT_RE = re.compile(r"^[0-9a-f]{7,40}$")
+
+
+def _builder_command(config: "ClusterBuildConfig") -> str:
+    command = [
+        "ephys-atlas-data",
+        "build-clusters",
+        config.source_release_id or config.release_id,
+        "--release-id",
+        config.release_id,
+        "--project",
+        config.project,
+        "--population",
+        config.population,
+        "--created-at",
+        config.created_at,
+        "--catalog-selection",
+        "catalog-selection.json",
+        "--distribution-selection",
+        "distribution-selection.json",
+        "--histogram-bins",
+        str(config.histogram_bins),
+    ]
+    for parcellation in config.parcellations:
+        command.extend(("--parcellation", parcellation))
+    if config.paper_snapshot:
+        command.append("--paper-snapshot")
+    for name, value in (
+        ("--ibleatools-commit", config.ibleatools_commit),
+        ("--iblatlas-commit", config.iblatlas_commit),
+        ("--builder-commit", config.builder_commit),
+    ):
+        if value:
+            command.extend((name, value))
+    return shlex.join(command)
 
 
 @dataclass(frozen=True)
@@ -376,13 +411,7 @@ def build_clusters_release_from_arrays(
                 "version": "1.0.0",
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 **({"commit": config.builder_commit} if config.builder_commit else {}),
-                "command": (
-                    f"ephys-atlas-data build-clusters {config.source_release_id or config.release_id} "
-                    f"--release-id {config.release_id} "
-                    f"--project {config.project} --population all "
-                    "--catalog-selection catalog-selection.json "
-                    "--distribution-selection distribution-selection.json"
-                ),
+                "command": _builder_command(config),
             },
             "recipe": {
                 "id": "ephys-atlas-clusters-regional-v1",

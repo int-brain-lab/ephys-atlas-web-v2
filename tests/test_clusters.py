@@ -2,6 +2,7 @@ from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
+import shlex
 
 import numpy as np
 import pytest
@@ -113,6 +114,45 @@ def test_cluster_recipe_builds_schema_valid_equal_weight_release(tmp_path):
     assert feature["value_semantics"]["qc_filter"] == "none (all clusters)"
 
 
+def test_cluster_manifest_records_complete_builder_command(tmp_path):
+    features, ids, metadata = _inputs()
+    config = ClusterBuildConfig(
+        release_id="sha256-command-v1",
+        source_release_id="sha256-source",
+        created_at="2026-08-20T00:00:00Z",
+        project="explicit-test-project",
+        parcellations=("allen", "cosmos"),
+        histogram_bins=19,
+        paper_snapshot=True,
+        ibleatools_commit="1111111",
+        iblatlas_commit="2222222",
+        builder_commit="3333333",
+    )
+    release = build_clusters_release_from_arrays(
+        tmp_path / "release",
+        config,
+        features,
+        ids,
+        metadata,
+        [{"role": "canonical-data", "description": "synthetic command test"}],
+    )
+    manifest = json.loads((release / "manifest.json").read_text())
+    command = shlex.split(manifest["provenance"]["builder"]["command"])
+
+    assert command == [
+        "ephys-atlas-data", "build-clusters", "sha256-source",
+        "--release-id", "sha256-command-v1",
+        "--project", "explicit-test-project", "--population", "all",
+        "--created-at", "2026-08-20T00:00:00Z",
+        "--catalog-selection", "catalog-selection.json",
+        "--distribution-selection", "distribution-selection.json",
+        "--histogram-bins", "19",
+        "--parcellation", "allen", "--parcellation", "cosmos",
+        "--paper-snapshot",
+        "--ibleatools-commit", "1111111",
+        "--iblatlas-commit", "2222222",
+        "--builder-commit", "3333333",
+    ]
 def test_cluster_recipe_is_deterministic(tmp_path):
     a = _build(tmp_path / "a")
     b = _build(tmp_path / "b")

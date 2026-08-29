@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 import shutil
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -33,6 +34,40 @@ from .regional_release import (
 
 DATASET_ID = "ephys_atlas_channels"
 _COMMIT_RE = re.compile(r"^[0-9a-f]{7,40}$")
+
+
+def _builder_command(config: "ChannelBuildConfig") -> str:
+    command = [
+        "ephys-atlas-data",
+        "build-channels",
+        config.source_release_id or config.release_id,
+        "--release-id",
+        config.release_id,
+        "--feature-mode",
+        config.feature_mode,
+        "--population",
+        config.population,
+        "--created-at",
+        config.created_at,
+        "--distribution-selection",
+        "distribution-selection.json",
+        "--histogram-bins",
+        str(config.histogram_bins),
+    ]
+    for parcellation in config.parcellations:
+        command.extend(("--parcellation", parcellation))
+    for feature in config.features or ():
+        command.extend(("--feature", feature))
+    if config.paper_snapshot:
+        command.append("--paper-snapshot")
+    for name, value in (
+        ("--ibleatools-commit", config.ibleatools_commit),
+        ("--iblatlas-commit", config.iblatlas_commit),
+        ("--builder-commit", config.builder_commit),
+    ):
+        if value:
+            command.extend((name, value))
+    return shlex.join(command)
 
 
 @dataclass(frozen=True)
@@ -240,12 +275,7 @@ def build_channels_release_from_arrays(
                 "version": "1.0.0",
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 **({"commit": config.builder_commit} if config.builder_commit else {}),
-                "command": (
-                    f"ephys-atlas-data build-channels {config.source_release_id or config.release_id} "
-                    f"--release-id {config.release_id} "
-                    f"--feature-mode {config.feature_mode} --population {config.population} "
-                    "--distribution-selection distribution-selection.json"
-                ),
+                "command": _builder_command(config),
             },
             "recipe": {
                 "id": "ephys-atlas-channels-regional-v1",
