@@ -13,6 +13,7 @@ from ephys_atlas_builder.development_bundle import (
     validate_development_bundle,
 )
 from ephys_atlas_builder.fixture import generate_golden
+from tools.development_bundle import _environment
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -72,6 +73,11 @@ def test_validates_exact_release_root_and_complete_graph(tmp_path: Path) -> None
     assert len(result.artifacts) == 1
     assert result.artifacts[0].file_count > 1
     assert result.stored_bytes > result.artifacts[0].root.joinpath("manifest.json").stat().st_size
+    environment = _environment(result)
+    assert environment["EPHYS_ATLAS_REAL_RELEASE"] == str(destination)
+    assert environment["EPHYS_ATLAS_ADDITIONAL_RELEASES"] == ""
+    assert environment["EPHYS_ATLAS_EXPECTED_RELEASES"] == "golden_fixture=golden-v1"
+    assert environment["EPHYS_ATLAS_REAL_FEATURE"] == "rms_ap"
 
 
 @pytest.mark.parametrize(

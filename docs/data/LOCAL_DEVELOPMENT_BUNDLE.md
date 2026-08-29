@@ -20,8 +20,10 @@ just dev
 ```
 
 - `just bootstrap` installs locked Python, Node, and browser dependencies;
-- `just data` obtains and verifies one pinned local development bundle;
-- `just dev` serves the complete bundle through the local Vite origin.
+- `just data` currently verifies the pinned local artifacts and reports the
+  unresolved corpus entries; after Q8 it also obtains missing remote bytes;
+- `just dev` serves every verified descriptor entry through the local Vite
+  origin and never falls back for an unavailable dataset or pack.
 
 `just dev` is the only public viewer recipe. The historical channel-only,
 channel-plus-mesh, and `dev-local-full` recipes should be removed once the
@@ -103,12 +105,11 @@ scientific identities, and unsupported descriptor versions.
 
 This phase is independent of Q8 and can use the current ignored local artifacts.
 
-Items 1-3 and 5 are implemented for the bootstrap descriptor. The verifier
+Items 1-5 are implemented for the bootstrap descriptor. The verifier
 also verifies copied publication-input and selection-file hashes and rejects
-undeclared release files. Item 4 becomes the `just data` entry point in the
-next local integration phase. Completing the descriptor requires recovery of
-the exact Brain-Wide Map and D042 inputs; their absence is machine-readable in
-the descriptor and never triggers fallback.
+undeclared release files. Completing the descriptor requires recovery of the
+exact Brain-Wide Map and D042 inputs; their absence is machine-readable in the
+descriptor and never triggers fallback.
 
 ### 2. Authorized immutable origin
 
@@ -155,6 +156,12 @@ when a declared object is unavailable.
    surface.
 5. Keep dataset-specific Playwright and production-style HTTP acceptance
    recipes for focused diagnostics.
+
+All five items are implemented. A validated launcher derives the existing Vite
+configuration from the descriptor, so focused Playwright configurations retain
+their explicit environment mode without a second descriptor parser. Local
+acceptance derives its expected catalog and optional 3-D checks from the same
+launcher environment.
 
 ### 5. Onboarding and clean-checkout acceptance
 

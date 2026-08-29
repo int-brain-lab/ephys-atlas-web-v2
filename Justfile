@@ -19,20 +19,13 @@ bootstrap-scientific:
 bootstrap-anatomy:
     uv sync --project builder --python 3.12 --extra anatomy --extra scientific --extra test --locked
 
-# Run the complete local catalog: channels, clusters, BWM, volume, projections, and 3-D.
-dev mesh="../artifacts/mesh-d042-schema-v1" feature="rms_ap.denoised" channels="2026_W32-d050-peak-val-raw-v2" clusters="sha256-9b5e55215b306f26-d050-d048-v1" bwm="legacy-v1-1d908bea-d050-linear-full-v1" volume="2026_W26-candidate-depth4-d050-linear-full-v1":
-    cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/{{channels}} EPHYS_ATLAS_REAL_FEATURE={{feature}} EPHYS_ATLAS_ADDITIONAL_RELEASES=../data/releases/ephys_atlas_clusters/{{clusters}},../data/releases/brainwide_map/{{bwm}},../data/releases/ephys_atlas_volumes/{{volume}} EPHYS_ATLAS_REAL_MESH_PACK={{mesh}} npm run dev:real
+# Verify the pinned browser-ready development artifacts already present locally.
+data:
+    {{uv-test}} python -m tools.development_bundle validate data/development-bundle-v1.json
 
-# Run the viewer against a pinned local real channel release (development only).
-dev-real release="2026_W32-d050-peak-val-raw-v2" feature="rms_ap.denoised":
-    cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/{{release}} EPHYS_ATLAS_REAL_FEATURE={{feature}} npm run dev:real
-
-# Run the real-data viewer with an explicit local production 3-D mesh pack.
-dev-3d mesh="../artifacts/mesh-d042-schema-v1" release="2026_W32-d050-peak-val-raw-v2" feature="rms_ap.denoised":
-    cd web && EPHYS_ATLAS_REAL_RELEASE=../data/releases/ephys_atlas_channels/{{release}} EPHYS_ATLAS_REAL_FEATURE={{feature}} EPHYS_ATLAS_REAL_MESH_PACK={{mesh}} npm run dev:real
-
-# Backward-compatible name for the complete local catalog.
-alias dev-local-full := dev
+# Run the descriptor-configured local catalog after complete available-graph validation.
+dev:
+    {{uv-test}} python -m tools.development_bundle run --cwd web data/development-bundle-v1.json -- npm run dev:real
 
 # Builder/schema tests.
 test-builder:
@@ -126,8 +119,8 @@ validate-3d-local url="http://127.0.0.1:5173/" output="../artifacts/mesh-d042-br
     cd web && node scripts/validate-local-d042.mjs {{url}} {{output}}
 
 # Validate every dataset and context view exposed by `just dev`.
-validate-local-full url="http://localhost:5173/" output="../artifacts/local-full-browser-evidence" channels="2026_W32-d050-peak-val-raw-v2" clusters="sha256-9b5e55215b306f26-d050-d048-v1" bwm="legacy-v1-1d908bea-d050-linear-full-v1" volume="2026_W26-candidate-depth4-d050-linear-full-v1":
-    cd web && EPHYS_ATLAS_EXPECTED_RELEASES=ephys_atlas_channels={{channels}},ephys_atlas_clusters={{clusters}},brainwide_map={{bwm}},ephys_atlas_volumes={{volume}} node scripts/validate-local-full.mjs {{url}} {{output}}
+validate-local-full url="http://localhost:5173/" output="../artifacts/local-full-browser-evidence":
+    {{uv-test}} python -m tools.development_bundle run --cwd web data/development-bundle-v1.json -- node scripts/validate-local-full.mjs {{url}} {{output}}
 
 # Generate the ignored, fully offline anatomy comparison lab.
 anatomy-compare resolution="25":

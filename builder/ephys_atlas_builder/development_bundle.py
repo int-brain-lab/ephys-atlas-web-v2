@@ -47,6 +47,7 @@ class ValidatedDevelopmentBundle:
     bundle_id: str
     default_view: dict[str, str]
     artifacts: tuple[ValidatedArtifact, ...]
+    unavailable: tuple[dict[str, Any], ...]
 
     @property
     def stored_bytes(self) -> int:
@@ -301,4 +302,5 @@ def validate_development_bundle(path: Path, repository_root: Path | None = None)
         bundle_id=document["bundle_id"],
         default_view=document["default_view"],
         artifacts=tuple(validated),
+        unavailable=tuple(document["unavailable"]),
     )
