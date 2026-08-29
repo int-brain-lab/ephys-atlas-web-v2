@@ -94,6 +94,54 @@ def small_allen_atlas() -> AllenAtlas:
     return atlas
 
 
+def authored_volume_fixture_dataset() -> Dataset:
+    """Build the tiny synthetic volume bundle exercised by the browser."""
+    grid = AllenCCFGrid.from_iblatlas(
+        small_allen_atlas(), array_axes=("ap", "ml", "dv")
+    )
+    values = np.arange(24, dtype=np.float32).reshape(grid.shape)
+    outside = np.zeros(grid.shape, dtype=bool)
+    missing = np.zeros(grid.shape, dtype=bool)
+    outside[0, 0, 0] = True
+    missing[1, 2, 3] = True
+    values[1, 2, 3] = np.nan
+
+    authored = Dataset(
+        dataset_id="authored_volume_fixture",
+        release_id="authored-volume-v1",
+        title="Public authoring volume fixture",
+        description=(
+            "Deterministic tiny non-scientific volume generated through the "
+            "public authoring API."
+        ),
+        created_at="2026-08-29T00:00:00Z",
+        sources=[
+            Source.user_input(
+                description="Deterministic synthetic public volume-authoring inputs"
+            )
+        ],
+    )
+    authored.add_feature(
+        id="synthetic_gradient",
+        label="Synthetic volume gradient",
+        description="Tiny synthetic voxel gradient for browser contract testing.",
+        unit="a.u.",
+        semantics=ValueSemantics(
+            quantity="synthetic voxel test scalar",
+            transform="identity",
+            source_population="one deterministic scalar per synthetic test voxel",
+            missing_values="one explicitly masked non-finite voxel is missing",
+            qc_filter="synthetic fixture voxels only",
+        ),
+    ).add_volume(
+        values=values,
+        grid=grid,
+        validity=VoxelValidity.mask(outside=outside, missing=missing),
+        chunk_shape=(1, 2, 2),
+    )
+    return authored
+
+
 def test_public_surface_is_intentionally_small() -> None:
     assert ibl_ephys_atlas.__all__ == [
         "AllenCCFGrid",
@@ -114,6 +162,14 @@ def test_committed_public_authoring_fixture_is_exactly_regenerable(tmp_path: Pat
     committed = Path("fixtures/authored-regional-v1.ibl-ephys-atlas.zip")
     assert generated.read_bytes() == committed.read_bytes()
     assert validate_bundle(committed)["file_count"] == 8
+
+
+def test_committed_public_volume_fixture_is_exactly_regenerable(tmp_path: Path) -> None:
+    generated = tmp_path / "authored-volume-v1.ibl-ephys-atlas.zip"
+    authored_volume_fixture_dataset().write_zip(generated)
+    committed = Path("fixtures/authored-volume-v1.ibl-ephys-atlas.zip")
+    assert generated.read_bytes() == committed.read_bytes()
+    assert validate_bundle(committed)["file_count"] == 13
 
 
 def test_two_feature_regional_bundle_is_deterministic_aligned_and_valid(tmp_path: Path) -> None:

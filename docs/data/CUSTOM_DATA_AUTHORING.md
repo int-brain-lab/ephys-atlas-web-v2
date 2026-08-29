@@ -99,9 +99,8 @@ Dataset
 A feature owns the scientific quantity, unit, transform, source population,
 QC/filter description, and missing-value semantics. The public surface is
 intentionally limited to `Dataset`, `Feature`, `ValueSemantics`, `Source`,
-`ValidationIssue`, `ValidationReport`, and `BundleValidationError`. Display
-authoring, `AllenCCFGrid`, `VoxelValidity`, and volume representations remain
-future work.
+`AllenCCFGrid`, `VoxelValidity`, `ValidationIssue`, `ValidationReport`, and
+`BundleValidationError`. Display authoring remains future work.
 
 ### Regional authoring
 
@@ -181,8 +180,7 @@ them faithfully. Volume data retains physical laterality.
 
 ### Volume authoring
 
-Volume authoring follows the regional slice and must integrate explicitly with
-`iblatlas`:
+The implemented volume API integrates explicitly with `iblatlas`:
 
 ```python
 import numpy as np
@@ -236,7 +234,7 @@ location, message, and optional corrective hint. `raise_for_errors()` raises a
 mistakes fail immediately as `TypeError` or `ValueError`; incomplete model and
 scientific-semantics fields are structured errors. The warning channel exists,
 but no size or missingness warning policy has been selected yet. Volume
-geometry and validity validation remain future work.
+geometry and validity mistakes fail closed during attachment.
 
 The implemented `write_zip()`:
 
@@ -477,14 +475,17 @@ Status: implemented on 2026-08-29.
 
 ### Slice 4 — Volume authoring
 
-Status: not implemented.
+Status: implemented on 2026-08-29 for deterministic local chunks3d authoring
+and Chromium acceptance; representative real-archive Firefox/Safari capacity
+measurement remains pending.
 
-- implement and independently test `AllenCCFGrid.from_iblatlas()` axis/affine
-  conversion and explicit-grid validation;
-- implement float16/float32 volume resources and mask/sentinel validity without
-  silent conversion or geometric inference;
-- import and navigate a deterministic authored volume through the same ZIP and
-  IndexedDB path;
+- `AllenCCFGrid.from_iblatlas()` verifies axis/affine conversion from an
+  already-created atlas and fingerprints the exact grid contract;
+- float16/float32 chunks3d resources and explicit mask/sentinel validity are
+  implemented without silent conversion or geometric inference;
+- the exact-regenerable synthetic authored volume imports, renders three linked
+  planes, navigates, and reloads through the ordinary IndexedDB path without
+  scientific network reads;
 - run ordinary Chromium plus owner/manual Safari and Firefox acceptance before
   declaring volume authoring ready.
 
@@ -492,8 +493,8 @@ Status: not implemented.
 
 Status: partially implemented. Neutral Linear/Full regional output,
 deterministic rebuilds, bundled-schema parity, and clean wheel construction are
-green. Volume round trips, final public documentation/naming review, and PyPI
-publication remain unfinished.
+green. Volume round trips are green. Final public documentation/naming review
+and PyPI publication remain unfinished.
 
 - support only release-declared scale/domain combinations and retain the Q14
   boundary for scientific choices;

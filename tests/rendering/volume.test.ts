@@ -383,6 +383,8 @@ test('validity-mask source verifies once and extracts matching planes in raw C o
     kind: 'mask',
     mask: {
       resource: {
+        format: 'raw-binary-array-v1', dtype: 'uint8', shape: [2, 2, 2], order: 'C',
+        endianness: 'not-applicable',
         path: 'validity.u8', mediaType: 'application/octet-stream', bytes: mask.byteLength,
         sha256: '0'.repeat(64), codec: { name: 'none', decodedBytes: mask.byteLength },
       },

@@ -214,12 +214,12 @@ export function parseFeatureDescriptor(value: unknown, path: string): FeatureDes
           outsideValue: finiteNumber(rawValidity.outside_value, `${path}.volume.validity.outside_value`),
         }
       : (() => {
-          const mask = object(rawValidity.mask, `${path}.volume.validity.mask`);
+          const mask = parseBinaryArray(rawValidity.mask, `${path}.volume.validity.mask`);
           const codes = object(rawValidity.codes, `${path}.volume.validity.codes`);
           return {
             kind: 'mask' as const,
             mask: {
-              resource: parseEncodedResource(mask.resource, `${path}.volume.validity.mask.resource`),
+              resource: mask,
               shape: numberArray(mask.shape, 3, `${path}.volume.validity.mask.shape`) as [number, number, number],
             },
             codes: {

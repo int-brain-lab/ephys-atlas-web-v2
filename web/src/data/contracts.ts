@@ -243,7 +243,7 @@ export type VolumeValidityDescriptor =
   | {
       kind: 'mask';
       mask: {
-        resource: EncodedResourceDescriptor;
+        resource: BinaryArrayDescriptor;
         shape: readonly [number, number, number];
       };
       codes: Readonly<{ valid: number; outside: number; missing: number }>;

@@ -10,6 +10,10 @@ import {
 } from '../../.test-dist/data/local-archive.js';
 
 const fixture = new Blob([readFileSync('../fixtures/golden-v1.ibl-ephys-atlas.zip')], { type: 'application/zip' });
+const authoredVolumeFixture = new Blob(
+  [readFileSync('../fixtures/authored-volume-v1.ibl-ephys-atlas.zip')],
+  { type: 'application/zip' },
+);
 
 function entry(overrides = {}) {
   return {
@@ -43,6 +47,22 @@ test('canonical synthetic bundle prepares a complete deterministic preview', asy
   assert.deepEqual(prepared.preview.parcellations, ['allen']);
   assert.equal(prepared.files.size, prepared.preview.fileCount);
   assert.ok(prepared.preview.declaredDecodedBytes >= prepared.preview.storedBytes);
+});
+
+test('public-authored mask volume prepares a complete deterministic preview', async () => {
+  const prepared = await prepareLocalArchive(authoredVolumeFixture);
+  assert.equal(prepared.preview.datasetId, 'authored_volume_fixture');
+  assert.equal(prepared.preview.releaseId, 'authored-volume-v1');
+  assert.deepEqual(prepared.preview.featureIds, ['synthetic_gradient']);
+  assert.deepEqual(prepared.preview.representations, ['volume']);
+  assert.deepEqual(prepared.preview.parcellations, []);
+  const validity = prepared.validated.features[0].representations.volume.validity;
+  assert.equal(validity.kind, 'mask');
+  assert.deepEqual(validity.mask.shape, [2, 3, 4]);
+  assert.equal(validity.mask.resource.dtype, 'uint8');
+  assert.equal(validity.mask.resource.order, 'C');
+  assert.equal(validity.mask.resource.endianness, 'not-applicable');
+  assert.equal(validity.mask.resource.path, 'volume/validity.u8');
 });
 
 test('preparation honors cancellation before archive work begins', async () => {

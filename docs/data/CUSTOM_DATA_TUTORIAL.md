@@ -1,10 +1,10 @@
-# Author an Allen regional dataset
+# Author an Allen regional or volume dataset
 
-Status: runbook for the implemented Allen regional authoring slice.
+Status: runbook for the implemented Allen regional and volume authoring slices.
 
-The `ibl_ephys_atlas` Python API turns explicit Allen-region scalars into one
-validated `.ibl-ephys-atlas.zip`. The website can preview and store that
-archive locally without uploading its contents.
+The `ibl_ephys_atlas` Python API turns explicit Allen-region scalars or an
+explicit Allen CCF scalar volume into one validated `.ibl-ephys-atlas.zip`.
+The website can preview and store that archive locally without uploading it.
 
 The `ibl-ephys-atlas` distribution has not been published to PyPI yet. From a
 repository checkout, install the locked environment once with `just bootstrap`
@@ -96,8 +96,38 @@ subset that includes Allen. Each original observation is remapped before mean
 aggregation, so reduced values are not means of pre-aggregated Allen means.
 If a requested reduced mapping produces root or void, authoring fails rather
 than discarding or pooling the row. `add_region_values()` remains Allen-only.
-Custom display scales/domains and volume authoring are not yet available;
-output uses the neutral Linear/Full presentation.
+Custom display scales/domains are not yet available; output uses the neutral
+Linear/Full presentation.
+
+## Add an explicit volume
+
+Volume authoring requires an already-created `AllenAtlas`; the API does not
+instantiate one or hide an atlas download. Supply exact float16 or float32
+values and explicit validity:
+
+```python
+from iblatlas.atlas import AllenAtlas
+from ibl_ephys_atlas import AllenCCFGrid, VoxelValidity
+
+atlas = AllenAtlas(res_um=50)
+values = volume.astype(np.float32, copy=False)
+grid = AllenCCFGrid.from_iblatlas(atlas, array_axes=("ap", "ml", "dv"))
+
+feature.add_volume(
+    values=values,
+    grid=grid,
+    validity=VoxelValidity.mask(
+        outside=atlas.label == 0,
+        missing=(atlas.label != 0) & ~np.isfinite(values),
+    ),
+)
+```
+
+The masks must be boolean, shape-matched, and disjoint; no non-finite voxel may
+be valid. `VoxelValidity.sentinel(outside_value=...)` is also available when an
+explicit finite sentinel owns outside classification. The package does not
+transpose, register, resample, normalize, clip, denoise, or silently downcast
+the submitted values. Statistics and distributions use valid voxels only.
 
 ## Import in the website
 
@@ -106,11 +136,13 @@ output uses the neutral Linear/Full presentation.
 3. Select `smith-decision-signal.ibl-ephys-atlas.zip`.
 4. Review the dataset/release identity, features, representation,
    parcellation, and byte inventory.
-5. Choose **Import**.
+5. Choose **Import**. Volume releases select the Volume representation and
+   render the declared grid from local resources.
 
 The release receives a visible `Local` badge and persists in this browser's
 IndexedDB. The outer ZIP is discarded after admission. A shared URL does not
 contain the local data and works on another browser or device only after the
-same immutable release has been imported there. Inventory/deletion and quota
-management UI are still planned; keep the source arrays and ZIP as the durable
-copy.
+same immutable release has been imported there. **Manage local datasets…**
+shows exact per-release bytes and integrity state plus separately labeled
+origin-wide quota/persistence estimates. It can verify, delete, and recover by
+reimport, but the source arrays and ZIP remain the durable copy.

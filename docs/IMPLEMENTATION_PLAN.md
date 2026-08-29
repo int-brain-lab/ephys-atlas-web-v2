@@ -48,9 +48,9 @@ Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 2 and 3; binding runbook
 
 ## M5 — Custom authoring and ZIP import
 
-Status: active; the Allen regional authoring and browser ZIP-import vertical
-slice is implemented. One `ibl-ephys-atlas` distribution contains the public
-`ibl_ephys_atlas` API and internal builder namespace, exact bundled schema v1,
+Status: active; the Allen regional/volume authoring and browser ZIP-import
+vertical slices are implemented. One `ibl-ephys-atlas` distribution contains
+the public `ibl_ephys_atlas` API and internal builder namespace, exact bundled schema v1,
 deterministic independently validated ZIP output, and clean-wheel coverage.
 The bounded two-phase browser import, persistent Local identity, and automated
 Chromium evidence are also complete.
@@ -64,9 +64,7 @@ Next testable actions:
    ceilings with representative regional and volume bundles in Chromium,
    Firefox, and Safari; record peak memory, preview latency, failure behavior,
    and IndexedDB quota results before freezing supported limits;
-2. add explicit-grid volume authoring with authoritative `iblatlas` geometry
-   and validity inputs;
-3. exercise representative real public-authored archives at supported capacity,
+2. exercise representative real public-authored archives at supported capacity,
    complete final naming/documentation review, and publish the Python
    distribution only after explicit authorization.
 
@@ -88,8 +86,15 @@ published fallback, actionable quota-exhaustion errors, and local-URL Share
 disclosure are implemented. The manager inventories exact source identities,
 import times, Blob bytes, resource counts, and integrity state; reports origin-
 wide quota/persistence separately; and supports explicit deep verification and
-delete/reimport recovery. Volume authoring, cross-browser real-archive capacity
-evidence, and distribution publication remain unfinished. The user path is documented in
+delete/reimport recovery. The volume API accepts only factory-verified
+`AllenCCFGrid` geometry from an already-created `AllenAtlas`, exact
+float16/float32 arrays, and explicit mask or sentinel validity. It writes
+deterministic chunks3d resources and valid-only
+summaries without registration or value transformation. The committed tiny
+synthetic volume is exactly regenerable and imports, renders, navigates, and
+reloads without scientific HTTP reads in Chromium. Cross-browser real-archive
+capacity evidence and distribution publication remain unfinished. The user
+path is documented in
 [`data/CUSTOM_DATA_TUTORIAL.md`](data/CUSTOM_DATA_TUTORIAL.md).
 
 Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 8 and 9; binding plan:

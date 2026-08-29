@@ -68,14 +68,7 @@ export class VolumeValiditySliceSource implements VolumeSliceSource {
     const resource = validity.mask.resource;
     const encoded = await this.feature.loadResource(resource.path, undefined, resource);
     const buffer = await decompress(encoded, resource.codec.name);
-    const values = decodeBinaryArray(buffer, {
-      format: 'raw-binary-array-v1',
-      ...resource,
-      dtype: 'uint8',
-      shape: validity.mask.shape,
-      order: 'C',
-      endianness: 'not-applicable',
-    });
+    const values = decodeBinaryArray(buffer, resource);
     return Uint8Array.from(values);
   }
 }

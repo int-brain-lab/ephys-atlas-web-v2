@@ -65,7 +65,7 @@ export function statistic(value: unknown, context: string): StatisticId {
 }
 
 export function dtype(value: unknown, context: string): BinaryDType {
-  const supported: readonly BinaryDType[] = ['int16', 'int32', 'uint16', 'uint32', 'float16', 'float32', 'float64'];
+  const supported: readonly BinaryDType[] = ['uint8', 'int16', 'int32', 'uint16', 'uint32', 'float16', 'float32', 'float64'];
   if (!supported.includes(value as BinaryDType)) {
     throw new Error(`${context} has unsupported dtype ${String(value)}`);
   }

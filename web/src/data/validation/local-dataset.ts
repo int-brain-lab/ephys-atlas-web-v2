@@ -395,8 +395,12 @@ export async function validateLocalDatasetFiles(
       );
     }
     if (volume.validity.kind === 'mask') {
-      const mask = parseBinaryArray(volume.validity.mask, `${feature.id} volume validity mask`);
-      addBinaryResource(resources, feature.path, mask, `${feature.id} volume validity mask`);
+      addBinaryResource(
+        resources,
+        feature.path,
+        volume.validity.mask.resource,
+        `${feature.id} volume validity mask`,
+      );
     }
   }
 
