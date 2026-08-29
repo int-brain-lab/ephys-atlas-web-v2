@@ -4,6 +4,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 import re
+import shlex
 import shutil
 import subprocess
 
@@ -59,6 +60,7 @@ class BrainwideMapBuildConfig:
     generator_commit: str = LEGACY_GENERATOR_COMMIT
     builder_commit: str | None = None
     distribution_selection: Path | None = None
+    source_dir: Path | None = None
 
     def validate(self) -> None:
         if not self.release_id:
@@ -251,12 +253,7 @@ def build_brainwide_map_release_from_tables(
                     if config.builder_commit
                     else {}
                 ),
-                "command": (
-                    f"ephys-atlas-data build-brainwide-map "
-                    f"{config.source_release_id or config.release_id} "
-                    f"--release-id {config.release_id} "
-                    "--distribution-selection distribution-selection.json"
-                ),
+                "command": _builder_command(config),
             },
             "recipe": {
                 "id": "brainwide-map-legacy-website-regional-v1",
@@ -287,6 +284,29 @@ def build_brainwide_map_release_from_tables(
     }
     write_json(release_dir / "manifest.json", manifest)
     return release_dir
+
+
+def _builder_command(config: BrainwideMapBuildConfig) -> str:
+    command = [
+        "ephys-atlas-data",
+        "build-brainwide-map",
+        config.source_release_id or config.release_id,
+        "--release-id",
+        config.release_id,
+        "--created-at",
+        config.created_at,
+        "--histogram-bins",
+        str(config.histogram_bins),
+        "--distribution-selection",
+        str(config.distribution_selection or Path("distribution-selection.json")),
+    ]
+    if config.builder_commit:
+        command.extend(("--builder-commit", config.builder_commit))
+    if config.source_dir:
+        command.extend(("--source-dir", str(config.source_dir)))
+    if config.paper_snapshot:
+        command.append("--paper-snapshot")
+    return shlex.join(command)
 
 
 def verify_legacy_sources(source_dir: Path) -> dict[str, Path]:

@@ -445,6 +445,7 @@ def main(argv: list[str] | None = None) -> int:
                 paper_snapshot=args.paper_snapshot,
                 builder_commit=args.builder_commit,
                 distribution_selection=args.distribution_selection,
+                source_dir=args.source_dir,
             )
             build_brainwide_map_from_sources(args.source_dir, release_dir, config)
             validate_release(release_dir, args.schema_dir)

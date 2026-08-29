@@ -92,3 +92,4 @@ def test_build_brainwide_map_uses_explicit_local_sources(monkeypatch, tmp_path):
     assert captured["config"].generator_commit == cli.BrainwideMapBuildConfig(
         release_id="x", created_at="2026-08-23T00:00:00Z"
     ).generator_commit
+    assert captured["config"].source_dir == source_dir

@@ -1,6 +1,7 @@
 import hashlib
 import json
 from pathlib import Path
+import shlex
 
 import numpy as np
 import pytest
@@ -118,6 +119,47 @@ def test_brainwide_map_build_is_byte_deterministic(tmp_path):
     assert paths_a == paths_b
     for relative in paths_a:
         assert (a / relative).read_bytes() == (b / relative).read_bytes(), relative
+
+
+def test_brainwide_map_manifest_records_complete_builder_command(tmp_path):
+    selection = ROOT / "docs/data/BRAINWIDE_MAP_DISTRIBUTION_SELECTION.json"
+    config = BrainwideMapBuildConfig(
+        release_id="legacy-command-v1",
+        source_release_id="legacy-source-v1",
+        created_at="2026-08-29T10:30:00Z",
+        histogram_bins=17,
+        paper_snapshot=True,
+        builder_commit="abcdef0",
+        distribution_selection=selection,
+        source_dir=Path("data/source/brainwide_map/legacy-source-v1"),
+    )
+    release = build_brainwide_map_release_from_tables(
+        tmp_path / "release",
+        config,
+        _families(),
+        _metadata(),
+        [{"role": "canonical-data", "description": "synthetic command test"}],
+    )
+    manifest = json.loads((release / "manifest.json").read_text())
+
+    assert shlex.split(manifest["provenance"]["builder"]["command"]) == [
+        "ephys-atlas-data",
+        "build-brainwide-map",
+        "legacy-source-v1",
+        "--release-id",
+        "legacy-command-v1",
+        "--created-at",
+        "2026-08-29T10:30:00Z",
+        "--histogram-bins",
+        "17",
+        "--distribution-selection",
+        str(selection),
+        "--builder-commit",
+        "abcdef0",
+        "--source-dir",
+        "data/source/brainwide_map/legacy-source-v1",
+        "--paper-snapshot",
+    ]
 
 
 def test_brainwide_map_distribution_uses_declared_six_digit_value_semantics(
