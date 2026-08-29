@@ -46,15 +46,15 @@
 
 @media (min-width: 1480px) {
   .atlas-app[data-region-panel-collapsed="true"] .app-body {
-    grid-template-columns: 0 minmax(0, 1fr) var(--settings-pane-width);
+    grid-template-columns: 1.75rem minmax(0, 1fr) var(--settings-pane-width);
   }
 
   .atlas-app[data-settings-panel-collapsed="true"] .app-body {
-    grid-template-columns: var(--region-pane-width) minmax(0, 1fr) 0;
+    grid-template-columns: var(--region-pane-width) minmax(0, 1fr) 1.75rem;
   }
 
   .atlas-app[data-region-panel-collapsed="true"][data-settings-panel-collapsed="true"] .app-body {
-    grid-template-columns: 0 minmax(0, 1fr) 0;
+    grid-template-columns: 1.75rem minmax(0, 1fr) 1.75rem;
   }
 
   .atlas-app[data-region-panel-collapsed="true"] .region-pane,
@@ -67,7 +67,7 @@
 
 @media (min-width: 1100px) and (max-width: 1479px) {
   .atlas-app[data-region-panel-collapsed="true"] .app-body {
-    grid-template-columns: 0 minmax(0, 1fr);
+    grid-template-columns: 1.75rem minmax(0, 1fr);
   }
 
   .atlas-app[data-region-panel-collapsed="true"] .region-pane {

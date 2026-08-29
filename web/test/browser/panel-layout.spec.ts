@@ -56,12 +56,24 @@ test('both desktop panels collapse, restore, and persist outside the share URL',
   await page.getByRole('button', { name: 'Hide Brain regions' }).click();
   await expect(app).toHaveAttribute('data-region-panel-collapsed', 'true');
   await expect(page.locator('.region-pane')).toHaveAttribute('aria-hidden', 'true');
-  await expect(page.getByRole('button', { name: 'Show Brain regions' })).toBeVisible();
+  const showRegions = page.getByRole('button', { name: 'Show Brain regions' });
+  await expect(showRegions).toBeVisible();
   await expect.poll(async () => (await workspace.boundingBox())!.width).toBeGreaterThan(initialWorkspaceWidth + 250);
+  const workspaceAfterLeftCollapse = (await workspace.boundingBox())!;
+  const showRegionsBounds = (await showRegions.boundingBox())!;
+  expect(showRegionsBounds.y).toBe(workspaceAfterLeftCollapse.y);
+  expect(showRegionsBounds.x + showRegionsBounds.width).toBeLessThanOrEqual(workspaceAfterLeftCollapse.x);
 
   await page.keyboard.press(']');
   await expect(app).toHaveAttribute('data-settings-panel-collapsed', 'true');
-  await expect(page.getByRole('button', { name: 'Show Visualization settings' })).toBeVisible();
+  const showSettings = page.getByRole('button', { name: 'Show Visualization settings' });
+  await expect(showSettings).toBeVisible();
+  const workspaceAfterBothCollapse = (await workspace.boundingBox())!;
+  const showSettingsBounds = (await showSettings.boundingBox())!;
+  expect(showSettingsBounds.y).toBe(workspaceAfterBothCollapse.y);
+  expect(showSettingsBounds.x).toBeGreaterThanOrEqual(
+    workspaceAfterBothCollapse.x + workspaceAfterBothCollapse.width,
+  );
   expect(page.url()).toBe(initialUrl);
 
   await page.reload();

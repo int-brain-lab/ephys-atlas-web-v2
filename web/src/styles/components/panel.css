@@ -65,7 +65,8 @@
 .panel-restore {
   position: absolute;
   z-index: 12;
-  top: var(--space-2);
+  top: 0;
+  height: 2.25rem;
   border-color: var(--color-border-strong);
   background: var(--color-surface-2);
   box-shadow: 0 .25rem 1rem rgb(0 0 0 / 24%);
