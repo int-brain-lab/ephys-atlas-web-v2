@@ -69,6 +69,22 @@ threshold candidates. These are presentation recommendations for owner review,
 not scientific selections. Run `just distribution-review-lab` and
 `just distribution-review-lab-serve` to inspect and edit them locally.
 
+## Completed owner review
+
+On 2026-08-29 the repository/scientific owner completed the guided review,
+accepted all 34 proposed changes, retained all 121 unchanged baselines, and
+explicitly directed implementation. The complete normalized browser export is
+committed as
+[`Q14_DISTRIBUTION_REVIEW_2026-08-29.json`](Q14_DISTRIBUTION_REVIEW_2026-08-29.json)
+with SHA-256
+`6224edf1c495e573dc83045e2a85ec3a234e3d98f3d8a35637dc13a0150295de`.
+It contains all 155 unique feature entries and exactly matches the four frozen
+audit, source-release, accepted-selection, proposed-display, and unchanged
+baseline identities. The export's `production_effect: "none"` records that the
+review page itself performed no mutation; the subsequent explicit owner
+direction authorizes promotion through the committed selection and immutable
+build workflow.
+
 ## Stop condition
 
 The four named D050 release directories are now present in the recovered local
@@ -76,6 +92,5 @@ development bundle. Their embedded distribution selections are byte-identical
 to the accepted baseline selections, so the lab can compare current behavior
 without rebuilding a release.
 
-P4D still stops at owner review under Q14. The lab export has no production
-effect; exact per-feature choices must be explicitly approved before changing
-any machine-readable selection or immutable release.
+Owner review is complete. P4D next promotes the exact reviewed displays through
+committed complete selections before building new immutable local releases.
