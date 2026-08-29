@@ -10,6 +10,7 @@ import numpy as np
 
 
 DTYPES = {
+    "uint8": np.dtype("u1"),
     "int16": np.dtype("<i2"),
     "int32": np.dtype("<i4"),
     "uint16": np.dtype("<u2"),

@@ -21,6 +21,13 @@ from ephys_atlas_builder.regional_release import (
 from ephys_atlas_builder.validate import FORMAT_CHECKER
 
 from .regional import RegionalObservations, normalize_regional_input
+from .volume import (
+    AllenCCFGrid,
+    VolumeData,
+    VoxelValidity,
+    normalize_volume_input,
+    write_volume_representation,
+)
 
 
 _DATASET_ID = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
@@ -140,6 +147,7 @@ class Feature:
         self.unit = unit
         self.semantics = semantics
         self._regional: RegionalObservations | None = None
+        self._volume: VolumeData | None = None
 
     def _add_regions(
         self,
@@ -217,6 +225,25 @@ class Feature:
             aggregation=aggregation,
             require_unique=False,
         )
+
+    def add_volume(
+        self,
+        *,
+        values: Any,
+        grid: AllenCCFGrid,
+        validity: VoxelValidity,
+        chunk_shape: Sequence[int] = (64, 64, 64),
+    ) -> "Feature":
+        """Attach one precomputed scalar volume on an explicit Allen CCF grid."""
+        if self._volume is not None:
+            raise ValueError(f"feature {self.id} already has a volume representation")
+        self._volume = normalize_volume_input(
+            values=values,
+            grid=grid,
+            validity=validity,
+            chunk_shape=chunk_shape,
+        )
+        return self
 
 
 class Dataset:
@@ -322,15 +349,26 @@ class Dataset:
                 for name in ("quantity", "transform", "source_population", "missing_values"):
                     if not getattr(feature.semantics, name):
                         error("feature.semantics.required", f"{base}.semantics.{name}", f"{name} is required")
-            if feature._regional is None:
-                error("feature.regional.required", f"{base}.regional", "a regional representation is required")
+            if feature._regional is None and feature._volume is None:
+                error(
+                    "feature.representation.required",
+                    f"{base}.representations",
+                    "at least one regional or volume representation is required",
+                )
         return ValidationReport(tuple(issues))
 
     def _build_release(self, release_dir: Path) -> Path:
         self.validate().raise_for_errors()
-        regional = [feature._regional for feature in self.features]
-        assert all(item is not None for item in regional)
-        observations = [item for item in regional if item is not None]
+        observations = [
+            feature._regional
+            for feature in self.features
+            if feature._regional is not None
+        ]
+        volumes = [
+            feature._volume
+            for feature in self.features
+            if feature._volume is not None
+        ]
         mapping_order = tuple(
             mapping
             for mapping in ("Allen", "Beryl", "Cosmos")
@@ -372,35 +410,43 @@ class Dataset:
         feature_refs = []
         for feature in sorted(self.features, key=lambda item: item.id):
             item = feature._regional
-            assert item is not None
             display = linear_full_display()
             feature_root = release_dir / "features" / feature.id
-            representations = [
-                write_feature_parcellation(
-                    feature_root,
-                    mapping.lower(),
-                    item.values,
-                    item.groups_for(ordered_ids_by_mapping[mapping], mapping),
-                    self.histogram_bins,
-                    feature.semantics.source_population,
-                    distribution_display=display,
+            display_document: dict[str, Any] = {}
+            representation_document: dict[str, Any] = {}
+            if item is not None:
+                representations = [
+                    write_feature_parcellation(
+                        feature_root,
+                        mapping.lower(),
+                        item.values,
+                        item.groups_for(ordered_ids_by_mapping[mapping], mapping),
+                        self.histogram_bins,
+                        feature.semantics.source_population,
+                        distribution_display=display,
+                    )
+                    for mapping in item.output_mappings
+                ]
+                display_document["regional"] = display
+                representation_document["regional"] = {
+                    "format": "ephys-atlas-regional-v1",
+                    "parcellations": representations,
+                }
+            if feature._volume is not None:
+                volume_document, volume_display = write_volume_representation(
+                    feature_root, feature._volume, self.histogram_bins
                 )
-                for mapping in item.output_mappings
-            ]
+                display_document["volume"] = volume_display
+                representation_document["volume"] = volume_document
             document = {
                 "schema_version": "1.0",
                 "id": feature.id,
                 "label": feature.label,
                 "description": feature.description,
                 "unit": feature.unit,
-                "display": {"regional": display},
+                "display": display_document,
                 "value_semantics": feature.semantics.to_document(),
-                "representations": {
-                    "regional": {
-                        "format": "ephys-atlas-regional-v1",
-                        "parcellations": representations,
-                    }
-                },
+                "representations": representation_document,
                 "artifacts": [],
             }
             feature_path = feature_root / "feature.json"
@@ -424,6 +470,127 @@ class Dataset:
             }
             for release in iblatlas_versions
         )
+        if volumes:
+            source_documents.extend(
+                {
+                    "role": "atlas-geometry",
+                    "description": (
+                        "iblatlas AllenAtlas BrainCoordinates geometry authority; "
+                        f"{grid.resolution_um} um with array axes {','.join(grid.array_axes)}"
+                    ),
+                    "release": (
+                        f"iblatlas {grid.iblatlas_version}; Allen CCF 2017; "
+                        f"{grid.grid_id}"
+                    ),
+                }
+                for grid in sorted(
+                    {item.grid for item in volumes},
+                    key=lambda value: (value.grid_id, value.array_axes),
+                )
+            )
+
+        if not volumes:
+            recipe: dict[str, Any] = {
+                "id": "ibl-ephys-atlas-regional-authoring-v1",
+                "source_mapping": "Allen",
+                "output_mappings": list(mapping_order),
+                "regional_summary": "mean",
+                "histogram_bins": self.histogram_bins,
+                "presentation": "neutral Linear/Full",
+                "features": [
+                    {
+                        "id": feature.id,
+                        "input_kind": feature._regional.input_kind,
+                        "aggregation": feature._regional.aggregation,
+                        "hemisphere_policy": feature._regional.hemisphere_policy,
+                        **(
+                            {"output_mappings": list(feature._regional.output_mappings)}
+                            if feature._regional.output_mappings != ("Allen",)
+                            else {}
+                        ),
+                    }
+                    for feature in sorted(self.features, key=lambda item: item.id)
+                    if feature._regional is not None
+                ],
+                **(
+                    {
+                        "mapping_aggregation": "observation-level remap before arithmetic mean",
+                        "mapping": {
+                            "authority": "iblatlas.regions.BrainRegions.remap",
+                            "operation": "fold signed Allen identities, remap each source observation row, then aggregate by arithmetic mean",
+                            "unmapped_policy": "error on void or root target",
+                        },
+                    }
+                    if mapping_order != ("Allen",)
+                    else {}
+                ),
+            }
+            notes = [
+                "Regional values are represented on folded logical Allen identities; independent left/right regional scalars are unsupported.",
+                "No display scale, focus domain, palette, or scientific transform was inferred by the authoring package.",
+            ]
+        else:
+            recipe = {
+                "id": (
+                    "ibl-ephys-atlas-mixed-authoring-v1"
+                    if observations
+                    else "ibl-ephys-atlas-volume-authoring-v1"
+                ),
+                "histogram_bins": self.histogram_bins,
+                "presentation": "neutral Linear/Full",
+                "volume_transport": "deterministic chunks3d gzip",
+                "volume_features": [
+                    {
+                        "id": feature.id,
+                        "reference_space_id": feature._volume.grid.reference_space_id,
+                        "grid_id": feature._volume.grid.grid_id,
+                        "atlas_class": feature._volume.grid.atlas_class,
+                        "iblatlas_version": feature._volume.grid.iblatlas_version,
+                        "resolution_um": feature._volume.grid.resolution_um,
+                        "array_axes": list(feature._volume.grid.array_axes),
+                        "shape": list(feature._volume.grid.shape),
+                        "index_to_world_um": list(feature._volume.grid.index_to_world_um),
+                        "index_convention": "integer-centers-half-integer-edges",
+                        "validity": feature._volume.validity.kind,
+                        **(
+                            {"outside_value": feature._volume.validity.outside_value}
+                            if feature._volume.validity.kind == "sentinel"
+                            else {"validity_codes": {"valid": 0, "outside": 1, "missing": 2}}
+                        ),
+                        "classification_order": ["outside", "missing", "valid"],
+                        "dtype": (
+                            "float16"
+                            if feature._volume.values.dtype.itemsize == 2
+                            else "float32"
+                        ),
+                        "chunk_shape": list(feature._volume.chunk_shape),
+                    }
+                    for feature in sorted(self.features, key=lambda item: item.id)
+                    if feature._volume is not None
+                ],
+                **(
+                    {
+                        "regional": {
+                            "source_mapping": "Allen",
+                            "output_mappings": list(mapping_order),
+                            "summary": "mean",
+                        }
+                    }
+                    if observations
+                    else {}
+                ),
+            }
+            notes = [
+                "Volume values retain their submitted float16 or float32 dtype and physical laterality; no registration, resampling, interpolation, normalization, clipping, or denoising was performed.",
+                "Volume geometry came from an already-created iblatlas AllenAtlas BrainCoordinates object and was verified independently of value shape.",
+                "Volume statistics and distributions include explicitly valid voxels only.",
+                "No display scale, focus domain, palette, or scientific transform was inferred by the authoring package.",
+                *(
+                    ["Regional values are represented on folded logical Allen identities; independent left/right regional scalars are unsupported."]
+                    if observations
+                    else []
+                ),
+            ]
         manifest = {
             "schema_version": "1.0",
             "dataset_id": self.dataset_id,
@@ -442,45 +609,8 @@ class Dataset:
                     "repository": "rossant/ibl-ephys-atlas-web-v2",
                     "command": "ibl_ephys_atlas.Dataset.write_zip",
                 },
-                "recipe": {
-                    "id": "ibl-ephys-atlas-regional-authoring-v1",
-                    "source_mapping": "Allen",
-                    "output_mappings": list(mapping_order),
-                    "regional_summary": "mean",
-                    "histogram_bins": self.histogram_bins,
-                    "presentation": "neutral Linear/Full",
-                    "features": [
-                        {
-                            "id": feature.id,
-                            "input_kind": feature._regional.input_kind,
-                            "aggregation": feature._regional.aggregation,
-                            "hemisphere_policy": feature._regional.hemisphere_policy,
-                            **(
-                                {"output_mappings": list(feature._regional.output_mappings)}
-                                if feature._regional.output_mappings != ("Allen",)
-                                else {}
-                            ),
-                        }
-                        for feature in sorted(self.features, key=lambda item: item.id)
-                        if feature._regional is not None
-                    ],
-                    **(
-                        {
-                            "mapping_aggregation": "observation-level remap before arithmetic mean",
-                            "mapping": {
-                                "authority": "iblatlas.regions.BrainRegions.remap",
-                                "operation": "fold signed Allen identities, remap each source observation row, then aggregate by arithmetic mean",
-                                "unmapped_policy": "error on void or root target",
-                            }
-                        }
-                        if mapping_order != ("Allen",)
-                        else {}
-                    ),
-                },
-                "notes": [
-                    "Regional values are represented on folded logical Allen identities; independent left/right regional scalars are unsupported.",
-                    "No display scale, focus domain, palette, or scientific transform was inferred by the authoring package.",
-                ],
+                "recipe": recipe,
+                "notes": notes,
             },
             "parcellations": parcellations,
             "features": feature_refs,

@@ -10,8 +10,10 @@ from .model import (
     ValueSemantics,
     _authoring_version,
 )
+from .volume import AllenCCFGrid, VoxelValidity
 
 __all__ = [
+    "AllenCCFGrid",
     "BundleValidationError",
     "Dataset",
     "Feature",
@@ -19,6 +21,7 @@ __all__ = [
     "ValidationIssue",
     "ValidationReport",
     "ValueSemantics",
+    "VoxelValidity",
 ]
 
 __version__ = _authoring_version()

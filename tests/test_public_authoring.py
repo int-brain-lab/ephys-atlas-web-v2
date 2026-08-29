@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import json
 from pathlib import Path
 import zipfile
@@ -7,11 +8,18 @@ import zipfile
 import numpy as np
 import pytest
 from iblatlas.regions import BrainRegions
+from iblatlas.atlas import AllenAtlas, BrainCoordinates
 
 import ibl_ephys_atlas
 from ephys_atlas_builder.bundle import validate_bundle
 from ephys_atlas_builder.schema_v1 import SCHEMA_DIR
-from ibl_ephys_atlas import Dataset, Source, ValueSemantics
+from ibl_ephys_atlas import (
+    AllenCCFGrid,
+    Dataset,
+    Source,
+    ValueSemantics,
+    VoxelValidity,
+)
 
 
 def semantics(quantity: str = "test scalar") -> ValueSemantics:
@@ -70,8 +78,25 @@ def read_array(archive: zipfile.ZipFile, path: str, dtype: str) -> np.ndarray:
     return np.frombuffer(archive.read(path), dtype=np.dtype(dtype))
 
 
+def small_allen_atlas() -> AllenAtlas:
+    """Construct an in-memory AllenAtlas test double without atlas I/O."""
+    atlas = object.__new__(AllenAtlas)
+    atlas.res_um = 50
+    atlas.image = np.zeros((2, 3, 4), dtype=np.int16)
+    atlas.label = np.ones((2, 3, 4), dtype=np.uint16)
+    atlas.dims2xyz = np.asarray([1, 0, 2])
+    atlas.xyz2dims = np.asarray([1, 0, 2])
+    atlas.bc = BrainCoordinates(
+        nxyz=(3, 2, 4),
+        xyz0=(-0.005739, 0.0054, 0.000332),
+        dxyz=50 * 1e-6 * np.asarray([1, -1, -1]),
+    )
+    return atlas
+
+
 def test_public_surface_is_intentionally_small() -> None:
     assert ibl_ephys_atlas.__all__ == [
+        "AllenCCFGrid",
         "BundleValidationError",
         "Dataset",
         "Feature",
@@ -79,6 +104,7 @@ def test_public_surface_is_intentionally_small() -> None:
         "ValidationIssue",
         "ValidationReport",
         "ValueSemantics",
+        "VoxelValidity",
     ]
 
 
@@ -302,3 +328,208 @@ def test_reduced_mapping_requests_fail_closed() -> None:
             aggregation="mean",
             output_mappings=("Allen", "Beryl"),
         )
+
+
+def test_allen_ccf_grid_uses_exact_brain_coordinates_and_axis_order() -> None:
+    atlas = small_allen_atlas()
+    grid = AllenCCFGrid.from_iblatlas(atlas, array_axes=("ap", "ml", "dv"))
+    assert grid.reference_space_id == "allen-ccf-2017"
+    assert grid.shape == (2, 3, 4)
+    assert grid.array_axes == ("ap", "ml", "dv")
+    assert grid.index_to_world_um == pytest.approx((
+        0.0, 50.0, 0.0, -5739.0,
+        -50.0, 0.0, 0.0, 5400.0,
+        0.0, 0.0, -50.0, 332.0,
+        0.0, 0.0, 0.0, 1.0,
+    ), abs=1e-9)
+    assert grid.voxel_edge_extent_um == pytest.approx((
+        -5764.0, -5614.0,
+        5325.0, 5425.0,
+        157.0, 357.0,
+    ), abs=1e-9)
+
+    reordered = AllenCCFGrid.from_iblatlas(
+        atlas, array_axes=("ml", "ap", "dv")
+    )
+    assert reordered.shape == (3, 2, 4)
+    assert reordered.grid_id != grid.grid_id
+    shifted = small_allen_atlas()
+    shifted.bc = BrainCoordinates(
+        nxyz=(3, 2, 4),
+        xyz0=(-0.005689, 0.0054, 0.000332),
+        dxyz=50 * 1e-6 * np.asarray([1, -1, -1]),
+    )
+    shifted_grid = AllenCCFGrid.from_iblatlas(
+        shifted, array_axes=("ap", "ml", "dv")
+    )
+    assert shifted_grid.grid_id != grid.grid_id
+
+    scaled = small_allen_atlas()
+    scaled.bc = BrainCoordinates(
+        nxyz=(3, 2, 4),
+        xyz0=(-0.005739, 0.0054, 0.000332),
+        dxyz=50 * 1e-6 * np.asarray([2, -1, -1]),
+    )
+    with pytest.raises(ValueError, match="scaled or non-standard"):
+        AllenCCFGrid.from_iblatlas(scaled, array_axes=("ap", "ml", "dv"))
+    with pytest.raises(ValueError, match="exact permutation"):
+        AllenCCFGrid.from_iblatlas(atlas, array_axes=("ap", "ap", "dv"))
+    with pytest.raises(TypeError, match="already-created"):
+        AllenCCFGrid.from_iblatlas(object(), array_axes=("ap", "ml", "dv"))
+    with pytest.raises(TypeError, match="must be created"):
+        AllenCCFGrid()
+
+
+def test_float32_mask_volume_bundle_is_valid_deterministic_and_valid_only(
+    tmp_path: Path,
+) -> None:
+    grid = AllenCCFGrid.from_iblatlas(
+        small_allen_atlas(), array_axes=("ap", "ml", "dv")
+    )
+    values = np.arange(24, dtype=np.float32).reshape(grid.shape)
+    outside = np.zeros(grid.shape, dtype=bool)
+    missing = np.zeros(grid.shape, dtype=bool)
+    outside[0, 0, 0] = True
+    missing[0, 0, 1] = True
+    values[0, 0, 0] = 5000.0
+    values[0, 0, 1] = np.nan
+    authored = dataset()
+    authored.add_feature(
+        id="mask_volume", label="Mask volume", semantics=semantics("voxels")
+    ).add_volume(
+        values=values,
+        grid=grid,
+        validity=VoxelValidity.mask(outside=outside, missing=missing),
+        chunk_shape=(1, 2, 3),
+    )
+    # Input mutation cannot change the authored bundle.
+    values[1, 1, 1] = 9999.0
+    outside[1, 1, 1] = True
+
+    first = tmp_path / "volume-one.ibl-ephys-atlas.zip"
+    second = tmp_path / "volume-two.ibl-ephys-atlas.zip"
+    authored.write_zip(first)
+    authored.write_zip(second)
+    assert first.read_bytes() == second.read_bytes()
+    validate_bundle(first, SCHEMA_DIR)
+
+    with zipfile.ZipFile(first) as archive:
+        manifest = json.loads(archive.read("manifest.json"))
+        recipe = manifest["provenance"]["recipe"]
+        assert recipe["id"] == "ibl-ephys-atlas-volume-authoring-v1"
+        assert recipe["volume_features"][0]["array_axes"] == ["ap", "ml", "dv"]
+        assert recipe["volume_features"][0]["atlas_class"] == "iblatlas.atlas.AllenAtlas"
+        assert recipe["volume_features"][0]["resolution_um"] == 50
+        assert manifest["provenance"]["sources"][-1]["role"] == "atlas-geometry"
+        feature = json.loads(archive.read("features/mask_volume/feature.json"))
+        volume = feature["representations"]["volume"]
+        assert volume["array"]["dtype"] == "float32"
+        assert volume["validity"]["codes"] == {
+            "valid": 0, "outside": 1, "missing": 2
+        }
+        mask_path = volume["validity"]["mask"]["resource"]["path"]
+        mask = read_array(archive, f"features/mask_volume/{mask_path}", "u1")
+        assert np.bincount(mask, minlength=3).tolist() == [22, 1, 1]
+        summary = json.loads(archive.read("features/mask_volume/volume/summary.json"))
+        assert (
+            summary["valid_voxel_count"],
+            summary["outside_voxel_count"],
+            summary["missing_voxel_count"],
+        ) == (22, 1, 1)
+        assert summary["valid_statistics"]["max"] == 23.0
+        counts = summary["distribution"]["binnings"][0]["global_counts"]
+        assert sum(counts) == 22
+        chunk = gzip.decompress(
+            archive.read("features/mask_volume/volume/chunks/1.0.0.f32.gz")
+        )
+        decoded = np.frombuffer(chunk, dtype="<f4").reshape(1, 2, 3)
+        assert decoded[0, 1, 1] == 17.0
+
+
+def test_float16_sentinel_and_mixed_representations_round_trip(tmp_path: Path) -> None:
+    atlas = small_allen_atlas()
+    grid = AllenCCFGrid.from_iblatlas(atlas, array_axes=("ap", "ml", "dv"))
+    values = np.ones(grid.shape, dtype=np.float16)
+    submitted_sentinel = 0.1
+    encoded_sentinel = np.asarray(submitted_sentinel, dtype=np.float16).item()
+    values[0, 0, 0] = encoded_sentinel
+    values[0, 0, 1] = np.nan
+    authored = dataset()
+    feature = authored.add_feature(id="mixed", label="Mixed", semantics=semantics())
+    feature.add_region_values(region_ids=[385], values=[3.0], ontology=BrainRegions())
+    feature.add_volume(
+        values=values,
+        grid=grid,
+        validity=VoxelValidity.sentinel(outside_value=submitted_sentinel),
+        chunk_shape=(2, 3, 4),
+    )
+    output = tmp_path / "mixed.ibl-ephys-atlas.zip"
+    authored.write_zip(output)
+    validate_bundle(output, SCHEMA_DIR)
+    with zipfile.ZipFile(output) as archive:
+        manifest = json.loads(archive.read("manifest.json"))
+        assert manifest["provenance"]["recipe"]["id"] == "ibl-ephys-atlas-mixed-authoring-v1"
+        feature_document = json.loads(archive.read("features/mixed/feature.json"))
+        assert set(feature_document["representations"]) == {"regional", "volume"}
+        validity = feature_document["representations"]["volume"]["validity"]
+        assert validity["outside_value"] == encoded_sentinel
+        summary = json.loads(archive.read("features/mixed/volume/summary.json"))
+        assert (
+            summary["valid_voxel_count"],
+            summary["outside_voxel_count"],
+            summary["missing_voxel_count"],
+        ) == (22, 1, 1)
+
+
+def test_volume_inputs_fail_closed_without_conversion_or_inferred_validity() -> None:
+    grid = AllenCCFGrid.from_iblatlas(
+        small_allen_atlas(), array_axes=("ap", "ml", "dv")
+    )
+    feature = dataset().add_feature(id="candidate", label="Candidate", semantics=semantics())
+    with pytest.raises(TypeError, match="must be created"):
+        VoxelValidity()
+    with pytest.raises(TypeError, match="float16 or float32"):
+        feature.add_volume(
+            values=np.zeros(grid.shape, dtype=np.float64),
+            grid=grid,
+            validity=VoxelValidity.sentinel(outside_value=0.0),
+        )
+    with pytest.raises(ValueError, match="does not match explicit grid shape"):
+        feature.add_volume(
+            values=np.zeros((1, 2, 3), dtype=np.float32),
+            grid=grid,
+            validity=VoxelValidity.sentinel(outside_value=0.0),
+        )
+    overlap = np.zeros(grid.shape, dtype=bool)
+    overlap[0, 0, 0] = True
+    with pytest.raises(ValueError, match="must be disjoint"):
+        VoxelValidity.mask(outside=overlap, missing=overlap)
+    values = np.ones(grid.shape, dtype=np.float32)
+    values[0, 0, 0] = np.nan
+    with pytest.raises(ValueError, match="non-finite.*classified valid"):
+        feature.add_volume(
+            values=values,
+            grid=grid,
+            validity=VoxelValidity.mask(
+                outside=np.zeros(grid.shape, dtype=bool),
+                missing=np.zeros(grid.shape, dtype=bool),
+            ),
+        )
+    with pytest.raises(ValueError, match="not finite.*dtype"):
+        feature.add_volume(
+            values=np.ones(grid.shape, dtype=np.float16),
+            grid=grid,
+            validity=VoxelValidity.sentinel(outside_value=1e100),
+        )
+
+    big_endian = np.arange(24, dtype=">f4").reshape(grid.shape)
+    endian_feature = dataset().add_feature(
+        id="endian", label="Endian", semantics=semantics()
+    )
+    endian_feature.add_volume(
+        values=big_endian,
+        grid=grid,
+        validity=VoxelValidity.sentinel(outside_value=-1.0),
+    )
+    assert endian_feature._volume is not None
+    assert endian_feature._volume.values.dtype == np.dtype("float32")
