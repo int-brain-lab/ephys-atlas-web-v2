@@ -56,12 +56,13 @@ only part of the body; the index states what remains effective.
 | D045 | Retain exact 2-D geometry | accepted | 2026-08-26 | closes smoothing lane |
 | D046 | Linear/log histograms | partially superseded | — | D047/D050 expand; exact binning remains |
 | D047 | One value scale | partially superseded | 2026-08-26 | synchronization retained; D048/D050 refine |
-| D048 | Firing-rate Log range | accepted | 2026-08-26 | retained pending explicit later selection |
+| D048 | Firing-rate Log range | accepted | 2026-08-26 | exact Log choices retained by D054 |
 | D049 | Legacy Top/static MIT assets | accepted | 2026-08-27 | exact hashes only |
 | D050 | Scale vs distribution domain | partially superseded | — | D053 replaces only compact-Full rule |
 | D051 | Custom authoring/ZIP import | accepted | — | implementation pending |
-| D052 | `peak_val.raw` Linear/Focused | accepted | 2026-08-29 | narrow partial Q14 selection |
+| D052 | `peak_val.raw` Linear/Focused | accepted | 2026-08-29 | exact choice retained by D054 |
 | D053 | Focused compact viewport | accepted | 2026-08-29 | current compact behavior |
+| D054 | Complete audited distribution selections | accepted | 2026-08-29 | closes Q14; local rebuilds authorized |
 
 ## D001 — Separate v2
 
@@ -1060,3 +1061,34 @@ This is a viewer interaction decision and requires no schema or release rebuild.
 It supersedes only D050's requirement that the compact histogram remain Full;
 D047/D050 scale synchronization, exact release-owned binnings, whole-population
 Focused normalization, URL state, and scientific selections remain unchanged.
+
+## D054 — Approve the complete audited Q14 distribution selections
+
+On 2026-08-29, the repository and scientific owner approved the exact
+hash-bound 155-feature Q14 human-review record: all 34
+`q14-agent-candidate-policy-v1` proposals were accepted and the other 121
+feature/representation choices were explicitly retained unchanged. No proposal
+was edited and no feature remained unreviewed. The normalized review record has
+SHA-256
+`6224edf1c495e573dc83045e2a85ec3a234e3d98f3d8a35637dc13a0150295de`.
+
+The authoritative choices are enumerated completely in
+[`data/CHANNELS_DISTRIBUTION_SELECTION.json`](data/CHANNELS_DISTRIBUTION_SELECTION.json),
+[`data/CLUSTERS_DISTRIBUTION_SELECTION.json`](data/CLUSTERS_DISTRIBUTION_SELECTION.json),
+[`data/BRAINWIDE_MAP_DISTRIBUTION_SELECTION.json`](data/BRAINWIDE_MAP_DISTRIBUTION_SELECTION.json),
+and
+[`data/VOLUME_2026_W26_DISTRIBUTION_SELECTION.json`](data/VOLUME_2026_W26_DISTRIBUTION_SELECTION.json).
+The channel inventory has 25 Focused domains (18 preferred), 7 Log scales,
+and 17 Signed-log scales, with Linear preferred throughout. The cluster
+inventory has 10 Focused domains (8 preferred), retains the six reviewed D048
+Log scales, and adds preferred Signed-log for `noise_cutoff` using the lowest
+audited positive threshold candidate. D052 `peak_val.raw` is retained exactly.
+All 30 Brain-Wide Map and 41 volume features remain Linear/Full.
+
+These are representation-specific presentation choices. They do not change
+source observations, geometry, validity, palettes, or color ranges. Rebuild
+the exact source binnings into new immutable local releases and retain every
+prior release. This decision resolves Q14 and authorizes the necessary local
+selection, build, validation, and development-default work only. It does not
+authorize remote publication, remote aliases/origins, a paper vintage, or the
+production volume transport.

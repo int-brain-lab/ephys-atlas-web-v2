@@ -1,524 +1,524 @@
 {
   "schema": "ibl-scalar-distribution-selection-v1",
-  "selection_id": "brainwide-map-legacy-v1-1d908bea-d050-linear-full-v1",
+  "selection_id": "brainwide-map-legacy-v1-1d908bea-d050-q14-linear-full-v1",
   "dataset_id": "brainwide_map",
   "representation": "regional",
   "source_release_id": "legacy-v1-1d908bea",
   "scientific_owner_confirmation": true,
-  "confirmed_at": "2026-08-28",
+  "confirmed_at": "2026-08-29",
   "reviewer_role": "repository owner and scientific owner",
-  "confirmation_source": "D050 local migration authorization recorded during implementation",
-  "decision": "Migrate the complete immutable legacy Brain-Wide Map catalog to the D050 contract without altering its preserved scientific values.",
-  "rationale": "Linear and Full are the mandatory non-inferred baseline. No Brain-Wide Map Symlog threshold, Log eligibility/default, Focused bounds, color range, or palette has been scientifically selected.",
+  "confirmation_source": "D054 explicit owner approval of the complete Q14 review record docs/data/Q14_DISTRIBUTION_REVIEW_2026-08-29.json (SHA-256 6224edf1c495e573dc83045e2a85ec3a234e3d98f3d8a35637dc13a0150295de) on 2026-08-29; local immutable rebuild authorized, remote publication not authorized",
+  "decision": "Retain Linear/Full for the complete 30-feature Brain-Wide Map catalog after Q14 owner review.",
+  "rationale": "The complete pinned-source audit found no continuous presentation collapse warranting another control; high-concentration cases are categorical, significance, sparse, or degenerate. The owner retained every accepted baseline.",
   "features": [
     {
       "id": "choice_decoding_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "choice_decoding_significant",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "choice_euclidean_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "choice_euclidean_latency",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "choice_euclidean_significant",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "choice_glm_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "choice_mannwhitney_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "choice_mannwhitney_significant",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "feedback_decoding_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "feedback_decoding_significant",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "feedback_euclidean_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "feedback_euclidean_latency",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "feedback_euclidean_significant",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "feedback_glm_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "feedback_mannwhitney_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "feedback_mannwhitney_significant",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "stimulus_decoding_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "stimulus_decoding_significant",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "stimulus_euclidean_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "stimulus_euclidean_latency",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "stimulus_euclidean_significant",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "stimulus_glm_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "stimulus_mannwhitney_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "stimulus_mannwhitney_significant",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "wheel_speed_decoding_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "wheel_speed_decoding_significant",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "wheel_speed_glm_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "wheel_velocity_decoding_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "wheel_velocity_decoding_significant",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "wheel_velocity_glm_effect",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     }
   ]

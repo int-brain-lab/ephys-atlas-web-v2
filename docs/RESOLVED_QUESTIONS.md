@@ -17,6 +17,6 @@ linked evidence remain the authority; this file does not rewrite their history.
 | Q11 | Keep automated Chromium and require a documented manual Firefox/Safari release matrix; automated Firefox/WebKit CI is not required. | D040 |
 | Q12 | Use the pinned GLB-derived compiled-full 3-D geometry: 4,958,039 served bytes, 989,811 triangles, no smoothing/decimation/voxel replacement, and no upgrade LOD. | D042; [`rendering/3D_SELECTED_ASSET.md`](rendering/3D_SELECTED_ASSET.md) |
 | Q13 | Retain exact legacy Top and authorize the pinned Top/Swanson byte sequences under the committed MIT notice. | D049; `LICENSES/IBL-EPHYS-ATLAS-V1-STATIC-ASSETS-MIT.txt` |
+| Q14 | Use the complete owner-reviewed 155-feature distribution selections: accept 34 audited policy-v1 proposals and retain 121 existing choices unchanged, with exact representation-specific scales, thresholds, domains, bounds, and preferences frozen in the four selection artifacts. | D054; [`data/Q14_DISTRIBUTION_REVIEW_2026-08-29.json`](data/Q14_DISTRIBUTION_REVIEW_2026-08-29.json); [`data/DISTRIBUTION_AUDIT_EVIDENCE.md`](data/DISTRIBUTION_AUDIT_EVIDENCE.md) |
 
-Q8 and Q14 remain in the open registry because only part of each question is
-resolved. Q2, Q5, and Q9 remain wholly open.
+Q8 remains partially open. Q2, Q5, and Q9 remain wholly open.

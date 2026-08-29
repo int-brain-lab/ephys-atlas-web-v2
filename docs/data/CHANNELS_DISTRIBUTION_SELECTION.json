@@ -1,410 +1,527 @@
 {
   "schema": "ibl-scalar-distribution-selection-v1",
-  "selection_id": "channels-2026-w32-d050-peak-val-raw-v2",
+  "selection_id": "channels-2026-w32-d050-q14-v1",
   "dataset_id": "ephys_atlas_channels",
   "representation": "regional",
   "source_release_id": "2026_W32",
   "scientific_owner_confirmation": true,
   "confirmed_at": "2026-08-29",
   "reviewer_role": "repository owner and scientific owner",
-  "confirmation_source": "D050 local migration authorization plus explicit repository/scientific-owner approval of the peak_val.raw presentation on 2026-08-29",
-  "decision": "Retain the conservative Linear/Full migration baseline for the complete immutable 2026_W32 channel catalog, except that peak_val.raw additionally exposes owner-approved Signed-log and Focused choices and defaults to Linear/Focused.",
-  "rationale": "For peak_val.raw, the 380884-value finite population spans -4221.428899850252 to 1341.0694115214876 while its owner-reviewed 1st-to-99th percentile analytical interval is -9.467077467918395 to 2.5583932574651715. Full Linear places 99.8534987030172% of observations in one bin. The owner approved Signed-log with raw-unit threshold 1.23 as an optional scale, retained Linear as the preferred scale, approved the exact percentile interval as Focused, and made Focused the preferred analytical domain. No choice was inferred for another feature or representation.",
+  "confirmation_source": "D054 explicit owner approval of the complete Q14 review record docs/data/Q14_DISTRIBUTION_REVIEW_2026-08-29.json (SHA-256 6224edf1c495e573dc83045e2a85ec3a234e3d98f3d8a35637dc13a0150295de) on 2026-08-29; local immutable rebuild authorized, remote publication not authorized",
+  "decision": "Approve the complete Q14 channel presentation: 25 Focused domains (18 preferred), 7 Log scales, and 17 Signed-log scales, with Linear preferred for all 70 features.",
+  "rationale": "The complete finite-population audit identified collapsed continuous distributions while excluding discrete, count-like, sparse, or already readable features. D052 peak_val.raw is preserved exactly; every added scale, threshold, Focused bound, and preference was accepted in the 155-feature owner review.",
   "features": [
     {
       "id": "alpha_mean.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              39.900008904312195,
+              196.45708436135442
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "log"
+          }
+        ]
       }
     },
     {
       "id": "alpha_mean.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              34.25107266393629,
+              219.52306468371597
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "log"
+          }
+        ]
       }
     },
     {
       "id": "alpha_std.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              7.2544837124280805,
+              106.51442802266628
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "log"
+          }
+        ]
       }
     },
     {
       "id": "alpha_std.raw",
       "display": {
+        "distribution_domains": [
+          {
+            "kind": "full"
+          },
+          {
+            "bounds": [
+              3.429906028713027,
+              120.76738253090492
+            ],
+            "kind": "focused"
+          }
+        ],
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
         "scales": [
           {
             "kind": "linear"
           }
-        ],
-        "preferred_scale": "linear",
-        "distribution_domains": [
-          {
-            "kind": "full"
-          }
-        ],
-        "preferred_distribution_domain": "full"
+        ]
       }
     },
     {
       "id": "aperiodic_exponent.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "aperiodic_exponent.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "aperiodic_offset.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "aperiodic_offset.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "channel_labels.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "channel_labels.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "cor_ratio.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "cor_ratio.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              0.0917126877089167,
+              0.8477706861681354
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 0.248147329587871
+          }
+        ]
       }
     },
     {
       "id": "decay_fit_error.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "decay_fit_error.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "decay_fit_r_squared.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "decay_fit_r_squared.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "decay_n_peaks.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "decay_n_peaks.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "depolarisation_slope.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -34000.20118391871,
+              -220.03675416534801
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 6846.597769496674
+          }
+        ]
       }
     },
     {
       "id": "depolarisation_slope.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -52993.24829015678,
+              4526.981888242844
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 5614.076756432456
+          }
+        ]
       }
     },
     {
       "id": "peak_time_secs.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -4.776725457437236e-06,
+              1.4876398914331284e-05
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 1.467412178921941e-06
+          }
+        ]
       }
     },
     {
       "id": "peak_time_secs.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -1.1111081605263538e-05,
+              2.222222222222222e-05
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 2.5641025641025644e-06
+          }
+        ]
       }
     },
     {
       "id": "peak_val.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -6.598601653996256,
+              0.6136029991486682
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 1.262983445601142
+          }
+        ]
       }
     },
     {
       "id": "peak_val.raw",
       "display": {
+        "distribution_domains": [
+          {
+            "kind": "full"
+          },
+          {
+            "bounds": [
+              -9.467077467918395,
+              2.5583932574651715
+            ],
+            "kind": "focused"
+          }
+        ],
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
         "scales": [
           {
             "kind": "linear"
@@ -413,803 +530,939 @@
             "kind": "symlog",
             "linear_threshold": 1.23
           }
-        ],
-        "preferred_scale": "linear",
-        "distribution_domains": [
-          {
-            "kind": "full"
-          },
-          {
-            "kind": "focused",
-            "bounds": [
-              -9.467077467918395,
-              2.5583932574651715
-            ]
-          }
-        ],
-        "preferred_distribution_domain": "focused"
+        ]
       }
     },
     {
       "id": "polarity.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "polarity.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_alpha.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_alpha.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_beta.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_beta.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_delta.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_delta.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_gamma.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_gamma.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_lfp.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_lfp.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_residual_alpha.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_residual_alpha.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_residual_beta.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_residual_beta.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_residual_delta.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_residual_delta.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_residual_gamma.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              0.3605377778002586,
+              3.9114094370053554
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 0.9355287568459472
+          }
+        ]
       }
     },
     {
       "id": "psd_residual_gamma.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              0.22983552795309153,
+              4.15109807760244
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 0.8810676274436038
+          }
+        ]
       }
     },
     {
       "id": "psd_residual_lfp.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              0.6283568647184993,
+              3.6991906531970242
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "log"
+          }
+        ]
       }
     },
     {
       "id": "psd_residual_lfp.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              0.4453545125458871,
+              3.9138086965883003
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "log"
+          }
+        ]
       }
     },
     {
       "id": "psd_residual_theta.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_residual_theta.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_theta.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "psd_theta.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "recovery_slope.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -6094.764172872778,
+              675.9663244170505
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 484.93156884939276
+          }
+        ]
       }
     },
     {
       "id": "recovery_slope.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -8658.739509037563,
+              2054.200538204397
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 554.4954540280553
+          }
+        ]
       }
     },
     {
       "id": "recovery_time_secs.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "recovery_time_secs.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "repolarisation_slope.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -3333.9575210314824,
+              32328.222408472557
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 4224.134644974974
+          }
+        ]
       }
     },
     {
       "id": "repolarisation_slope.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -12300.00391153388,
+              47764.84803966741
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 4271.17905191695
+          }
+        ]
       }
     },
     {
       "id": "rms_ap.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "rms_ap.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              6.86339640191155e-06,
+              5.5393964305167614e-05
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "log"
+          }
+        ]
       }
     },
     {
       "id": "rms_lf.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "rms_lf.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              1.2247461617536149e-05,
+              0.00027818054889348914
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "log"
+          }
+        ]
       }
     },
     {
       "id": "spike_count.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "spike_count.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "tip_time_secs.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "tip_time_secs.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "tip_val.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -0.12062085378899257,
+              1.027721522357771
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 0.23085429019379217
+          }
+        ]
       }
     },
     {
       "id": "tip_val.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -0.42023219399731454,
+              1.619096391217299
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 0.22184182750807063
+          }
+        ]
       }
     },
     {
       "id": "trough_time_secs.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "trough_time_secs.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "trough_val.denoised",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -0.1421124528713666,
+              2.4985423989804274
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 0.4161061895887207
+          }
+        ]
       }
     },
     {
       "id": "trough_val.raw",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -0.7790985384532542,
+              3.667639833462953
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 0.40074550846154894
+          }
+        ]
       }
     }
   ]

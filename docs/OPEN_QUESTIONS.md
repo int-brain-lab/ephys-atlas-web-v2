@@ -76,38 +76,6 @@ name), exact dataset release IDs, and the freeze date/process.
 Blocks: final production catalog/defaults and the publication reproducibility
 statement.
 
-## Q14 — Remaining audited scale and focused-domain selections
-
-Status: **DECISION; partially resolved by D052**.
-
-D050 implements Linear/Log/Signed-log scales and independent Full/Focused
-domains. D052 approves only regional channel `peak_val.raw`: Linear and Signed
-log with raw-unit threshold `1.23`, Full and Focused with exact bounds
-`[-9.467077467918395, 2.5583932574651715]`, defaulting to Linear/Focused.
-Existing baseline migrations retain Linear/Full plus D048's reviewed cluster
-Log choices.
-
-Resolution still needed: owner-reviewed complete selections for every channel,
-cluster, Brain-Wide Map, and volume feature/representation. Each selection must
-state available scales, any finite positive Signed-log threshold, Focused
-availability and exact raw bounds, and preferred scale/domain. Log requires a
-strictly positive complete finite population; regional and volume selections
-remain independent.
-
-Until reviewed, do not infer thresholds/bounds in the browser or builder, copy
-audit quantiles automatically, mutate immutable releases, or generalize D052.
-Read-only audits and review tables are unblocked; follow
-[`data/DISTRIBUTION_AUDIT.md`](data/DISTRIBUTION_AUDIT.md). The four source
-audits are complete and recorded in
-[`data/DISTRIBUTION_AUDIT_EVIDENCE.md`](data/DISTRIBUTION_AUDIT_EVIDENCE.md);
-an exact, non-authoritative 155-feature proposal can be reviewed locally with
-`just distribution-review-lab && just distribution-review-lab-serve` at
-`http://127.0.0.1:8765/`. Its exported human-review record has no production
-effect or owner-confirmation field. Selection remains blocked until that
-proposal, retained baselines, or explicit edits are owner-reviewed.
-
-Blocks: only additional per-feature Signed-log/Focused availability or defaults.
-
 ## Resolution procedure
 
 When authoritative evidence arrives:

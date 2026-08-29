@@ -180,65 +180,32 @@ input, not an approved selection or permission to publish. After explicit
 owner approval, translate the reviewed choices into all four complete
 selection artifacts and follow the immutable rebuild sequence below.
 
-## Future-agent handoff: complete Q14 audit and reviewed rollout
+## Implementation handoff: immutable D054-bound rebuilds
 
-Status: **NEXT DISTRIBUTION TASK; read-only audit first; no remote publication
-authorized**.
+Status: **ACTIVE DISTRIBUTION TASK; audit, owner review, D054, and all four
+complete selections are recorded; no remote publication authorized**.
 
-The D050 contract and D053 compact-range interaction are complete. D052 is the
-only new feature-specific Q14 decision: regional channel `peak_val.raw` offers
-Linear and Signed log (`c = 1.23`) plus Full and Focused
-(`[-9.467077467918395, 2.5583932574651715]`) and defaults to
-Linear/Focused. Do not generalize that choice automatically. Every other new
-Signed-log/Focused selection remains open under Q14.
+The exact 155-feature review is committed as
+[`Q14_DISTRIBUTION_REVIEW_2026-08-29.json`](Q14_DISTRIBUTION_REVIEW_2026-08-29.json).
+All 34 proposals were accepted and all 121 other choices were retained. D052
+and D048 survive exactly within D054; regional and volume choices remain
+independent.
 
-The next agent should execute this sequence:
+Execute this sequence:
 
-1. Inventory the current immutable local releases for all four representations:
-   channels `2026_W32-d050-peak-val-raw-v7`, clusters
-   `sha256-9b5e55215b306f26-d050-d048-v6`, Brain-Wide Map
-   `legacy-v1-1d908bea-d050-linear-full-v2`, and volume
-   `2026_W26-candidate-depth4-d050-linear-full-v3`.
-2. Audit the complete pinned source populations, not stored 50-bin release
-   histograms: all finite channel, cluster, and Brain-Wide Map source rows, and
-   valid finite voxels only for each volume feature. Follow the exact source,
-   population, and validity provenance in `docs/DATA_SOURCES.md` and the
-   dataset-specific selection/source documents. SSH Fractal may be used to
-   locate already-pinned source bytes, but the local audit must verify their
-   recorded identities before consuming them.
-3. Write deterministic per-dataset JSON evidence under the ignored
-   `artifacts/distribution-audit/` workspace. Produce a concise review table
-   covering every feature and including finite/missing/sign counts, extrema and
-   robust quantiles, largest-bin fraction or equivalent Full-view collapse
-   evidence, candidate Focused bounds and exact tails, Log eligibility, and
-   candidate raw-unit Signed-log thresholds. Candidate values are evidence,
-   never selections.
-4. Rank features for human review. Recommend Focused as the default only when
-   Full materially collapses the scientifically useful body of the
-   distribution; offer Focused without making it default for borderline cases;
-   retain Full for already readable, bounded, discrete, or sparse
-   distributions. Review scale independently: Log requires a completely
-   positive finite population, while Signed log is a candidate for mixed-sign
-   heavy tails. Do not infer a palette, meaningful center, threshold, bounds,
-   or default.
-5. Present the channel, cluster, Brain-Wide Map, and volume proposal in the
-   local interactive lab. Stop before editing a selection unless the owner
-   explicitly approves exact feature/representation choices. Regional and
-   volume choices for the same feature remain independent.
-6. After approval, update the four machine-readable selection files in this
-   directory, preserving an explicit entry for the complete feature catalog.
-   Add/update deterministic selection tests and record the decisions in
-   `docs/DECISIONS.md` and Q14.
-7. Commit the reviewed selections before building so builder provenance records
-   a clean source commit. Build new immutable local release IDs; never overwrite
-   the four candidates listed above. Validate the complete release graphs,
-   exact scale/domain cross-products and tail identities, then run each
-   dataset-specific real-browser suite, `just validate-local-full`, and
-   `just check`.
-8. Update the local launcher defaults and durable handoff/status documentation
-   only after all new candidates are green. Keep the previous immutable local
-   releases available. Do not publish, push, create a PR, or modify remote
-   aliases/origins without separate authorization.
+1. Commit the four complete reviewed selection files while the worktree is
+   clean so builder provenance records their exact source commit.
+2. Build new immutable local channel, cluster, Brain-Wide Map, and depth-four
+   candidate volume release IDs. Never overwrite the prior D050 releases.
+3. Validate complete graphs, scale/domain cross-products, exact Focused tails,
+   and real-browser behavior for every dataset. Prove deterministic rebuilds
+   byte-for-byte.
+4. Create a new immutable development-bundle descriptor only after all four
+   releases are green; update local launcher defaults and durable status docs,
+   then run `just validate-local-full` and `just check`.
+
+Keep every prior immutable release available. Do not publish, push, create a
+PR, or modify remote aliases/origins without separate authorization.
 
 Acceptance evidence for this future task consists of the four source-array
 audit reports plus their review table, explicit owner approvals, committed

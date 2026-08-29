@@ -1,6 +1,7 @@
 # Distribution audit evidence
 
-Status: frozen evidence from the 2026-08-29 read-only Q14 source audits.
+Status: frozen evidence from the 2026-08-29 Q14 source audits and completed
+owner review.
 
 The four complete pinned source populations were audited without editing a
 distribution selection, building a replacement release, or publishing remote
@@ -94,3 +95,15 @@ without rebuilding a release.
 
 Owner review is complete. P4D next promotes the exact reviewed displays through
 committed complete selections before building new immutable local releases.
+
+The promoted selection identities and SHA-256 values are:
+
+| Dataset | Selection ID | SHA-256 |
+| --- | --- | --- |
+| Channels | `channels-2026-w32-d050-q14-v1` | `f6022554201f56bdb2b15e8d0c460af98d919adc3bfa5638eff2bf760c6c2690` |
+| Clusters | `clusters-sha256-9b5e55215b306f26-d050-d048-q14-v1` | `f52d705035627d547b50ed17e7dd59765a2ba90ea60819960ba8fabe85db2bb4` |
+| Brain-Wide Map | `brainwide-map-legacy-v1-1d908bea-d050-q14-linear-full-v1` | `9dccacce7c85d52ded41f563a7517cce1657d157046a16409cb28b4ac68915e5` |
+| Encoding volumes | `volumes-2026-w26-d050-q14-linear-full-v1` | `c74ebe23edd8020d047482615791d5802a26380622efabb4cc73e8f9d140f2da` |
+
+Immutable rebuild and integrated browser evidence remain pending until the
+selection commit is clean and can be recorded as builder provenance.

@@ -109,9 +109,9 @@ local/CI-buildable only rather than a published site.
 
 The active unresolved scientific and deployment choices are Q2 (paper channel
 vintage), Q5 (production volume transport confirmation), the unresolved part
-of Q8 (deployment names and topology), Q9 (paper aliases/defaults), and the
-unresolved part of Q14 (additional audited scale/domain selections). Agents may
-implement and test independent machinery, but must not choose these answers.
+of Q8 (deployment names and topology), and Q9 (paper aliases/defaults). Agents
+may implement and test independent machinery, but must not choose these
+answers.
 
 Use [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) for the exact next
 testable actions and [`OPEN_QUESTIONS.md`](OPEN_QUESTIONS.md) for their stop

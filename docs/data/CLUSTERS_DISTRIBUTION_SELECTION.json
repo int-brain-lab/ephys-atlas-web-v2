@@ -1,19 +1,33 @@
 {
   "schema": "ibl-scalar-distribution-selection-v1",
-  "selection_id": "clusters-sha256-9b5e55215b306f26-d050-d048-v1",
+  "selection_id": "clusters-sha256-9b5e55215b306f26-d050-d048-q14-v1",
   "dataset_id": "ephys_atlas_clusters",
   "representation": "regional",
   "source_release_id": "sha256-9b5e55215b306f26",
   "scientific_owner_confirmation": true,
-  "confirmed_at": "2026-08-28",
+  "confirmed_at": "2026-08-29",
   "reviewer_role": "repository owner and scientific owner",
-  "confirmation_source": "D050 local migration authorization preserving D048 recorded during implementation",
-  "decision": "Migrate the complete D048-approved cluster catalog to D050 while preserving its six reviewed Log alternatives/defaults and the reviewed firing-rate range.",
-  "rationale": "D048 remains authoritative for amp_max, amp_median, amp_min, firing_rate, presence_ratio_std, and spike_count Log availability/defaults and firing_rate 3.73-17.8 Hz. All other choices use Linear and Full. No Symlog threshold or Focused bounds are selected.",
+  "confirmation_source": "D054 explicit owner approval of the complete Q14 review record docs/data/Q14_DISTRIBUTION_REVIEW_2026-08-29.json (SHA-256 6224edf1c495e573dc83045e2a85ec3a234e3d98f3d8a35637dc13a0150295de) on 2026-08-29; local immutable rebuild authorized, remote publication not authorized",
+  "decision": "Approve the complete Q14 cluster presentation: 10 Focused domains (8 preferred), retain the 6 D048 Log choices, and add preferred Signed-log for noise_cutoff.",
+  "rationale": "The complete 925251-row audit showed severe Full/Linear collapse for the selected continuous features. The owner accepted exact audited Focused bounds and the lowest audited positive noise_cutoff Signed-log threshold while retaining bounded, capped, discrete, and already readable baselines.",
   "features": [
     {
       "id": "amp_max",
       "display": {
+        "distribution_domains": [
+          {
+            "kind": "full"
+          },
+          {
+            "bounds": [
+              3.0728138681814785e-05,
+              0.0010266548269713383
+            ],
+            "kind": "focused"
+          }
+        ],
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "log",
         "scales": [
           {
             "kind": "linear"
@@ -21,19 +35,26 @@
           {
             "kind": "log"
           }
-        ],
-        "preferred_scale": "log",
-        "distribution_domains": [
-          {
-            "kind": "full"
-          }
-        ],
-        "preferred_distribution_domain": "full"
+        ]
       }
     },
     {
       "id": "amp_median",
       "display": {
+        "distribution_domains": [
+          {
+            "kind": "full"
+          },
+          {
+            "bounds": [
+              1.2439787054481242e-05,
+              0.0004658221421027949
+            ],
+            "kind": "focused"
+          }
+        ],
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "log",
         "scales": [
           {
             "kind": "linear"
@@ -41,19 +62,26 @@
           {
             "kind": "log"
           }
-        ],
-        "preferred_scale": "log",
-        "distribution_domains": [
-          {
-            "kind": "full"
-          }
-        ],
-        "preferred_distribution_domain": "full"
+        ]
       }
     },
     {
       "id": "amp_min",
       "display": {
+        "distribution_domains": [
+          {
+            "kind": "full"
+          },
+          {
+            "bounds": [
+              1.017062646265463e-05,
+              0.00028415541735021886
+            ],
+            "kind": "focused"
+          }
+        ],
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "log",
         "scales": [
           {
             "kind": "linear"
@@ -61,87 +89,115 @@
           {
             "kind": "log"
           }
-        ],
-        "preferred_scale": "log",
-        "distribution_domains": [
-          {
-            "kind": "full"
-          }
-        ],
-        "preferred_distribution_domain": "full"
+        ]
       }
     },
     {
       "id": "amp_std_dB",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "contamination",
       "display": {
+        "distribution_domains": [
+          {
+            "kind": "full"
+          },
+          {
+            "bounds": [
+              0,
+              84.34842094999192
+            ],
+            "kind": "focused"
+          }
+        ],
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
         "scales": [
           {
             "kind": "linear"
           }
-        ],
-        "preferred_scale": "linear",
-        "distribution_domains": [
-          {
-            "kind": "full"
-          }
-        ],
-        "preferred_distribution_domain": "full"
+        ]
       }
     },
     {
       "id": "contamination_alt",
       "display": {
+        "distribution_domains": [
+          {
+            "kind": "full"
+          },
+          {
+            "bounds": [
+              0,
+              7.957353152313935
+            ],
+            "kind": "focused"
+          }
+        ],
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
         "scales": [
           {
             "kind": "linear"
           }
-        ],
-        "preferred_scale": "linear",
-        "distribution_domains": [
-          {
-            "kind": "full"
-          }
-        ],
-        "preferred_distribution_domain": "full"
+        ]
       }
     },
     {
       "id": "drift",
       "display": {
+        "distribution_domains": [
+          {
+            "kind": "full"
+          },
+          {
+            "bounds": [
+              547.2335081284559,
+              4387629.194537888
+            ],
+            "kind": "focused"
+          }
+        ],
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "linear",
         "scales": [
           {
             "kind": "linear"
           }
-        ],
-        "preferred_scale": "linear",
-        "distribution_domains": [
-          {
-            "kind": "full"
-          }
-        ],
-        "preferred_distribution_domain": "full"
+        ]
       }
     },
     {
       "id": "firing_rate",
       "display": {
+        "distribution_domains": [
+          {
+            "kind": "full"
+          },
+          {
+            "bounds": [
+              0.0075697526760107004,
+              47.78108549467334
+            ],
+            "kind": "focused"
+          }
+        ],
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "log",
         "range": [
           3.73,
           17.8
@@ -153,70 +209,88 @@
           {
             "kind": "log"
           }
-        ],
-        "preferred_scale": "log",
-        "distribution_domains": [
-          {
-            "kind": "full"
-          }
-        ],
-        "preferred_distribution_domain": "full"
+        ]
       }
     },
     {
       "id": "missed_spikes_est",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "noise_cutoff",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
+          },
+          {
+            "bounds": [
+              -1.0125791108334214,
+              2408.1410236819806
+            ],
+            "kind": "focused"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "symlog",
+        "scales": [
+          {
+            "kind": "linear"
+          },
+          {
+            "kind": "symlog",
+            "linear_threshold": 0.33973759809182
+          }
+        ]
       }
     },
     {
       "id": "presence_ratio",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "presence_ratio_std",
       "display": {
+        "distribution_domains": [
+          {
+            "kind": "full"
+          },
+          {
+            "bounds": [
+              0.30166521339606056,
+              261.4182558628464
+            ],
+            "kind": "focused"
+          }
+        ],
+        "preferred_distribution_domain": "focused",
+        "preferred_scale": "log",
         "scales": [
           {
             "kind": "linear"
@@ -224,36 +298,43 @@
           {
             "kind": "log"
           }
-        ],
-        "preferred_scale": "log",
-        "distribution_domains": [
-          {
-            "kind": "full"
-          }
-        ],
-        "preferred_distribution_domain": "full"
+        ]
       }
     },
     {
       "id": "slidingRP_viol",
       "display": {
-        "scales": [
-          {
-            "kind": "linear"
-          }
-        ],
-        "preferred_scale": "linear",
         "distribution_domains": [
           {
             "kind": "full"
           }
         ],
-        "preferred_distribution_domain": "full"
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "linear",
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ]
       }
     },
     {
       "id": "spike_count",
       "display": {
+        "distribution_domains": [
+          {
+            "kind": "full"
+          },
+          {
+            "bounds": [
+              33,
+              226864.5
+            ],
+            "kind": "focused"
+          }
+        ],
+        "preferred_distribution_domain": "full",
+        "preferred_scale": "log",
         "scales": [
           {
             "kind": "linear"
@@ -261,14 +342,7 @@
           {
             "kind": "log"
           }
-        ],
-        "preferred_scale": "log",
-        "distribution_domains": [
-          {
-            "kind": "full"
-          }
-        ],
-        "preferred_distribution_domain": "full"
+        ]
       }
     }
   ]
