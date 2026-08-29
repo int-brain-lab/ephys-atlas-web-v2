@@ -31,7 +31,7 @@ Stable boundaries and end-to-end flow are in
 | --- | --- | --- | --- |
 | `ephys_atlas_channels` | Dynamic raw/denoised discovery, explicit `inside` recipe, Allen/Beryl/Cosmos summaries, D050 distributions, provenance, HTTP acceptance. | Validated-real-local deterministic technical revision `2026_W32-d050-peak-val-raw-v7`; not paper-facing or published. | Q2 paper vintage; Q8 staging origin. Keep release/suite reproducible. |
 | `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048 presentation, D050 distributions, HTTP acceptance. | Validated-real-local deterministic technical revision `sha256-9b5e55215b306f26-d050-d048-v6`; owner-reviewed, not published. | Q8/Q9 publication/default authorization. |
-| `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | Prior validated-real-local evidence exists, but the current bootstrap corpus cannot reproduce or include it because the six exact pinned Parquets are absent. | Recover and verify the pinned inputs; Q8/Q9 publication/default authorization. |
+| `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | Validated-real-local deterministic technical revision `legacy-v1-1d908bea-d050-linear-full-v2`, rebuilt byte-deterministically from all six exact hash-pinned Parquets; not published. | Q8/Q9 publication/default authorization. |
 | `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | Validated-real-local depth-4 deterministic technical revision `2026_W26-candidate-depth4-d050-linear-full-v3`; explicitly non-production. | Q5 confirmation at the Q8 CloudFront origin, then immutable production build. |
 | `local` | Same schema-v1 graph and materializers; public regional and explicit-grid volume `ibl_ephys_atlas` authoring; deterministic validated ZIP packaging; strict bounded two-phase browser import, atomic IndexedDB admission/deletion, inventory, and integrity recovery. | Regional/reduced-mapping and float16/float32 mask/sentinel volume tests, five executable examples, generated API reference, generated-schema parity, clean-wheel coverage, exact regeneration of both committed public-authored archives, and Chromium import/render/management tests are green. | Measure provisional limits across browsers/real archives; publish the Python distribution only after authorization. |
 
@@ -133,16 +133,17 @@ bucket/distribution/domain and publishing-topology choices; Q9 still requires
 the frozen paper release set and aliases. Nothing in the current repository
 state authorizes remote publication.
 
-The committed bootstrap development-bundle descriptor pins root manifests for
-the current channel, cluster, volume, and projection artifacts. Its locked
+The committed complete development-bundle descriptor pins root manifests for
+the current channel, cluster, Brain-Wide Map, volume, projection, and D042 mesh
+artifacts. Its locked
 Python verifier checks bounded destinations, exact identities, root bytes and
 hashes, full schema/pack graphs, copied provenance inputs, and undeclared
 files. `just data`, `just dev`, and `just validate-local-full` all consume that
 one descriptor; no interactive compatibility recipes remain. Local Chromium
-acceptance visited the three available datasets plus Summary, Top, and Swanson
-without browser errors. The descriptor records Brain-Wide Map as required but
-unavailable and D042 as optional but unavailable because their exact pinned
-inputs are absent. Remote download remains blocked on Q8.
+acceptance covers all four real datasets plus Summary, Top, Swanson, and the
+optional 3-D context. The descriptor validates 8,164 files and 534,262,861
+bytes in the current workspace. Every origin remains explicitly unresolved;
+remote download and deployment remain blocked on Q8.
 
 ## Quality gates
 

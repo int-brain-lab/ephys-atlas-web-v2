@@ -26,17 +26,18 @@ just dev
 
 When the ignored local artifacts are staged, open <http://localhost:5173/>
 after Vite starts. `just data` verifies every descriptor artifact against the pinned
-[`development-bundle-v2.json`](data/development-bundle-v2.json), including its
-root hash, immutable identity, and complete file graph. The bootstrap corpus
-validated in the current integration workspace is 526,673,720 bytes across channels, clusters,
-the W26 volume candidate, and the five-view projection pack.
+[`development-bundle-v3.json`](data/development-bundle-v3.json), including its
+root hash, immutable identity, and complete file graph. The complete local
+corpus validated in the current integration workspace is 534,262,861 bytes
+across channels, clusters, Brain-Wide Map, the W26 volume candidate, the
+five-view projection pack, and the optional D042 mesh pack.
 
 Remote download is intentionally unavailable until Q8 supplies an authorized
 immutable origin. In a fresh checkout, `just data` therefore reports all
 missing artifacts and `just dev` stops before startup; neither command uses a
-synthetic, older-release, or mutable-alias fallback. The exact legacy
-Brain-Wide Map inputs and optional D042 donor are also absent from this
-workspace and are recorded explicitly by the descriptor.
+synthetic, older-release, or mutable-alias fallback. The exact BWM and D042
+inputs have been recovered locally; remote download still requires Q8 to bind
+their immutable browser-ready outputs to an authorized origin.
 
 ## Main commands
 

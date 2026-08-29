@@ -1,8 +1,8 @@
 # Local development bundle
 
-Status: active implementation and recovery plan. The descriptor/verifier
-foundation is implemented; the complete corpus remains blocked on two missing
-pinned input sets recorded below.
+Status: active implementation and distribution plan. The exact missing inputs
+were recovered, and the complete local descriptor/verifier/server path is
+implemented. Only origin-bound remote distribution remains blocked.
 
 This plan defines how a fresh checkout will obtain the complete browser-ready
 development corpus without creating a second scientific data format or a
@@ -20,8 +20,8 @@ just dev
 ```
 
 - `just bootstrap` installs locked Python, Node, and browser dependencies;
-- `just data` currently verifies the pinned local artifacts and reports the
-  unresolved corpus entries; after Q8 it also obtains missing remote bytes;
+- `just data` currently verifies the complete pinned local artifact graph;
+  after Q8 it also obtains missing remote bytes from the resolved origins;
 - `just dev` serves every verified descriptor entry through the local Vite
   origin and never falls back for an unavailable dataset or pack.
 
@@ -49,27 +49,27 @@ Only browser-ready derived artifacts belong in this distribution path. Private
 source Parquet, NPZ, annotation, LUT, and donor build inputs are not uploaded as
 part of the development bundle.
 
-## Initial bundle
+## Complete local bundle
 
-The first committed bootstrap descriptor pins every currently recoverable
-validated artifact without relabelling or substituting missing evidence:
+The immutable v3 descriptor extends, rather than retargets, the historical v2
+bootstrap descriptor. It pins every recovered validated artifact without
+relabelling scientific maturity:
 
 | Role | Immutable identity | Current maturity |
 | --- | --- | --- |
 | Channels | `2026_W32-d050-peak-val-raw-v7` | deterministic technical revision of the validated-real-local development release; not the Q2 paper selection |
 | Clusters | `sha256-9b5e55215b306f26-d050-d048-v6` | deterministic technical revision of the validated-real-local reviewed release; not published |
-| Brain-Wide Map | unavailable pending recovery of the six exact pinned Parquets | required for the complete bundle; audit derivatives and older releases are not substitutes |
+| Brain-Wide Map | `legacy-v1-1d908bea-d050-linear-full-v2` | deterministic validated-real-local technical revision rebuilt from all six exact pinned Parquets; not published |
 | Volume | `2026_W26-candidate-depth4-d050-linear-full-v3` | deterministic technical revision of the validated-real-local candidate; not the Q5 production transport |
 | Projection pack | active schema-v1 `atlas-projection-pack-v1` | committed production-intent browser artifact; origin verification remains |
-| 3-D mesh pack | unavailable pending recovery of the exact D042 donor | optional; a different or regenerated mesh is forbidden |
+| 3-D mesh pack | `ibl-bwm-d042-c7bb3a88157c42cc` | optional production-intent pack losslessly repackaged from the exact D042 donor; not published |
 
 This is a development bundle identity, not a mutable `latest` alias and not a
 claim about the eventual paper-facing production release set. Future bundles
 receive new immutable bundle IDs; an existing descriptor is never silently
-retargeted. The current `data/development-bundle-v2.json` is explicitly a
-bootstrap descriptor, not the complete bundle: it validates 8,007 files and
-526,673,720 bytes across the three scientific releases and projection pack
-while recording both omissions.
+retargeted. Historical `data/development-bundle-v2.json` remains the incomplete
+bootstrap record. Active `data/development-bundle-v3.json` validates 8,164
+files and 534,262,861 bytes across four scientific releases and both packs.
 
 ## Bundle descriptor
 
@@ -106,11 +106,11 @@ scientific identities, and unsupported descriptor versions.
 
 This phase is independent of Q8 and can use the current ignored local artifacts.
 
-Items 1-5 are implemented for the bootstrap descriptor. The verifier
-also verifies copied publication-input and selection-file hashes and rejects
-undeclared release files. Completing the descriptor requires recovery of the
-exact Brain-Wide Map and D042 inputs; their absence is machine-readable in the
-descriptor and never triggers fallback.
+Items 1-5 are implemented for the complete v3 descriptor. The verifier also
+verifies copied publication-input and selection-file hashes and rejects
+undeclared release files. The recovered Brain-Wide Map and D042 artifacts pass
+their focused validators and deterministic rebuild checks; absence or damage
+still never triggers fallback.
 
 ### 2. Authorized immutable origin
 
@@ -190,8 +190,9 @@ no manual path edits. `just check` must remain green.
 - Q2 blocks calling the current channel release paper-facing production.
 - Q5 blocks calling the current volume candidate the production transport.
 - Q9 blocks production aliases and final catalog defaults.
-- Missing private build inputs must not be replaced with synthetic fixtures or
-  a convenient older scientific release.
+- Private build inputs must not be replaced with synthetic fixtures or a
+  convenient older scientific release if the recovered artifacts need a new
+  technical revision.
 - Published immutable bytes must never be modified to repair a local setup;
   corrections produce a new artifact and bundle identity.
 

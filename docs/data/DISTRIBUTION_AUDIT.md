@@ -163,11 +163,9 @@ The next agent should execute this sequence:
 
 1. Inventory the current immutable local releases for all four representations:
    channels `2026_W32-d050-peak-val-raw-v7`, clusters
-   `sha256-9b5e55215b306f26-d050-d048-v6`, and volume
-   `2026_W26-candidate-depth4-d050-linear-full-v3`. The current bootstrap
-   descriptor records Brain-Wide Map as unavailable until its six exact pinned
-   Parquet inputs are recovered; no older local release is an acceptable
-   substitute.
+   `sha256-9b5e55215b306f26-d050-d048-v6`, Brain-Wide Map
+   `legacy-v1-1d908bea-d050-linear-full-v2`, and volume
+   `2026_W26-candidate-depth4-d050-linear-full-v3`.
 2. Audit the complete pinned source populations, not stored 50-bin release
    histograms: all finite channel, cluster, and Brain-Wide Map source rows, and
    valid finite voxels only for each volume feature. Follow the exact source,

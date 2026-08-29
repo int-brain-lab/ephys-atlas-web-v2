@@ -95,10 +95,10 @@ just data
 just dev
 ```
 
-The current bootstrap descriptor serves the deterministic W32 channel
-technical revision, cluster technical revision, W26 volume candidate, and
-projections. It reports rather than substitutes the currently unavailable
-Brain-Wide Map and optional D042 mesh entries.
+The current complete descriptor serves the deterministic W32 channel and
+cluster technical revisions, recovered Brain-Wide Map technical revision, W26
+volume candidate, projections, and optional recovered D042 mesh pack. Every
+entry retains its explicit maturity and unresolved remote-origin state.
 
 Vite validates the immutable manifest and requested feature before startup,
 then exposes a development-only catalog and release bytes under one local

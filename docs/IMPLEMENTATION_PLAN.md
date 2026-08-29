@@ -165,32 +165,27 @@ Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 5 and 7; cluster record:
 
 ## M6 — Production assets, catalog, and deployment
 
-Status: the local descriptor, verifier, `just data`, descriptor-driven
-`just dev`, focused launcher compatibility, and onboarding command cleanup are
-implemented for the recoverable bootstrap corpus. Concrete deployment remains
-blocked.
+Status: the exact BWM and D042 inputs were recovered and verified; their new
+immutable technical outputs, complete local descriptor, verifier, `just data`,
+descriptor-driven `just dev`, focused launcher compatibility, and onboarding
+command cleanup are implemented. Concrete deployment remains blocked.
 
-Blockers: residual Q8 and Q9. The exact legacy Brain-Wide Map Parquets and D042
-donor are also absent from this workspace; their audit derivatives, old
-releases, and alternate meshes are not substitutes. Remote mutation requires
-explicit authorization and credentials.
+Blockers: residual Q8 and Q9. Remote mutation requires explicit authorization
+and credentials.
 
 Next testable actions:
 
-1. recover and hash-verify the exact missing Brain-Wide Map inputs and optional
-   D042 donor, rebuild new immutable technical revisions, and create a new
-   complete descriptor without retargeting the bootstrap descriptor;
-2. provision an IBL-owned staging S3 REST origin and CloudFront distribution
+1. provision an IBL-owned staging S3 REST origin and CloudFront distribution
    without accessing `iblviz`;
-3. deploy the immutable projection pack with opaque `.isvg.gz` bytes and verify
+2. deploy the immutable projection pack with opaque `.isvg.gz` bytes and verify
    served size, SHA-256, MIME, CORS, and cache behavior;
-4. deploy the completed pinned development bundle without transforming its
+3. deploy the completed pinned development bundle without transforming its
    immutable browser-ready bytes, then add atomic verified download support to
    `just data`;
-5. finalize the frozen scientific release set, catalog, and aliases;
-6. deploy or explicitly waive the publishing service; if deployed, configure
+4. finalize the frozen scientific release set, catalog, and aliases;
+5. deploy or explicitly waive the publishing service; if deployed, configure
    validation, secrets, storage, backups, TLS, and reverse proxy;
-7. verify all anatomy and scientific release URLs from the production origin.
+6. verify all anatomy and scientific release URLs from the production origin.
 
 Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 10, 11, and 13.
 Binding local-bundle plan:

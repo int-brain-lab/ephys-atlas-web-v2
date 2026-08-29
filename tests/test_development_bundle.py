@@ -205,29 +205,33 @@ def test_rejects_default_view_absent_from_selected_release(
 
 
 def test_committed_descriptor_is_structurally_valid_and_truthful() -> None:
-    document = load_development_bundle(ROOT / "data/development-bundle-v2.json")
+    document = load_development_bundle(ROOT / "data/development-bundle-v3.json")
 
-    assert document["bundle_id"] == "local-development-bootstrap-2026-08-29-v2"
+    assert document["bundle_id"] == "local-development-core-2026-08-29-v3"
     assert document["provenance"] == {
         "generator": "manually-reviewed-development-bundle",
         "version": "1",
         "launcher_baseline_commit": "fa70916",
     }
     assert [item["role"] for item in document["artifacts"]] == [
-        "channels", "clusters", "volume", "projections"
+        "channels", "clusters", "brainwide_map", "volume", "projections", "mesh"
     ]
-    assert [item["identity"] for item in document["artifacts"][:3]] == [
+    assert [item["identity"] for item in document["artifacts"][:4]] == [
         {"dataset_id": "ephys_atlas_channels", "release_id": "2026_W32-d050-peak-val-raw-v7"},
         {
             "dataset_id": "ephys_atlas_clusters",
             "release_id": "sha256-9b5e55215b306f26-d050-d048-v6",
         },
         {
+            "dataset_id": "brainwide_map",
+            "release_id": "legacy-v1-1d908bea-d050-linear-full-v2",
+        },
+        {
             "dataset_id": "ephys_atlas_volumes",
             "release_id": "2026_W26-candidate-depth4-d050-linear-full-v3",
         },
     ]
-    assert {item["role"] for item in document["unavailable"]} == {"brainwide_map", "mesh"}
-    assert next(item for item in document["unavailable"] if item["role"] == "brainwide_map")[
-        "required_for_complete_bundle"
-    ] is True
+    assert document["artifacts"][5]["identity"] == {
+        "pack_id": "ibl-bwm-d042-c7bb3a88157c42cc"
+    }
+    assert document["unavailable"] == []

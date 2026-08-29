@@ -71,7 +71,7 @@ the pinned GLB.
 
 ### Schema-v1 local validation
 
-The D042 donor was recovered from Fractal and verified against its recorded
+The D042 donor was recovered from the frozen local lab worktree and verified against its recorded
 4,958,039-byte SHA-256. `web/scripts/repack-d042-mesh.mjs` rewrites only the
 experimental EAM3 header and manifest metadata into the sole snake_case schema
 v1 contract. The meshopt payload is copied byte-for-byte: donor and repacked
@@ -80,8 +80,8 @@ payload SHA-256 are both
 
 The ignored local pack records:
 
-- resource: 4,990,699 bytes, SHA-256
-  `b0c1c1a43aa874a661d0b38091f372272b366bccd639b1a79d1edcae4952424a`;
+- resource: 4,957,983 bytes, SHA-256
+  `c7bb3a88157c42cc8290c0f9d91a976b7555f13977d56eb710cec46a43585de9`;
 - 989,811 triangles, 566 represented source objects, and 1,130 signed surfaces;
 - source-authoritative one-sided geometry for Allen 222 and 763; no missing
   right-side geometry is invented;
@@ -100,14 +100,13 @@ geometry request or upload. Evidence and screenshots remain ignored under
 
 The reviewed full local-only deployment served this pack below the immutable,
 content-addressed URL prefix
-`/__local-assets/mesh/ibl-bwm-d042-b0c1c1a43aa874a6/` with one-year immutable
+`/__local-assets/mesh/ibl-bwm-d042-c7bb3a88157c42cc/` with one-year immutable
 cache headers. At that time the now-removed `just dev-local-full` recipe combined
 it with local channels, approved clusters, preserved BWM, and a candidate-labelled
 W26 volume release. The current public `just dev` command is descriptor-driven;
-the bootstrap descriptor records both BWM and the D042 mesh as unavailable
-because their exact pinned source bytes are absent. `just validate-local-full`
-still checks every artifact present in that descriptor and skips optional 3-D
-checks when no mesh is declared. This is local deployment evidence only: no
+the complete descriptor now records both recovered BWM and D042 outputs.
+`just validate-local-full` checks every artifact present in that descriptor,
+including optional 3-D when the mesh is declared. This is local deployment evidence only: no
 remote publication has occurred. On 2026-08-28 the repository owner manually
 confirmed the integrated 3-D view in Safari and Firefox; the documented
 cross-browser owner matrix is therefore complete.
