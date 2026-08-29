@@ -50,7 +50,7 @@ export class HelpGuide {
   private representationContent: HTMLElement;
   private representation: RepresentationKind | null = null;
 
-  constructor() {
+  constructor(onStartTour: () => void) {
     this.dialog = document.createElement('dialog');
     this.dialog.className = 'info-dialog help-dialog';
     this.dialog.setAttribute('aria-labelledby', 'help-dialog-title');
@@ -72,6 +72,21 @@ export class HelpGuide {
     const gettingStarted = document.createElement('section');
     gettingStarted.className = 'help-guide__getting-started';
     gettingStarted.append(renderMarkdown(gettingStartedHtml));
+
+    const tourAction = document.createElement('div');
+    tourAction.className = 'help-guide__tour-action';
+    const tourCopy = document.createElement('div');
+    const tourTitle = document.createElement('strong');
+    tourTitle.textContent = 'New to the atlas?';
+    const tourDescription = document.createElement('span');
+    tourDescription.textContent = 'Follow five short steps on the real interface.';
+    tourCopy.append(tourTitle, tourDescription);
+    const tourButton = document.createElement('button');
+    tourButton.type = 'button';
+    tourButton.textContent = 'Show me the essentials';
+    tourButton.addEventListener('click', onStartTour);
+    tourAction.append(tourCopy, tourButton);
+    gettingStarted.append(tourAction);
 
     this.representationDetails = details('Using regional data', regionalHtml, 'help-guide__current-mode');
     this.representationContent = this.representationDetails.querySelector('.help-guide__markdown')!;

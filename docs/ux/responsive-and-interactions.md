@@ -100,7 +100,15 @@ guidance follows the active representation; concepts, shortcuts, and credits
 use progressive disclosure below the Quick Start.
 
 The browser renders only a constrained trusted Markdown subset and rejects raw
-HTML and images. Help remains usable without an interactive walkthrough, video,
-or external documentation site. Any later contextual walkthrough must point to
-the real responsive interface, preserve scientific state and URL identity, and
-remain optional and restartable.
+HTML and images. Help remains usable without the walkthrough, video, or an
+external documentation site.
+
+An optional five-step “Show me the essentials” walkthrough is launched from
+Help. Its representation-specific copy also lives in repository-owned Markdown;
+typed TypeScript configuration maps those steps to stable interface anchors.
+The walkthrough highlights the real control that is visible in the current
+responsive layout, never simulates the application, and does not open panels or
+change scientific state, workspace state, or URL identity. It exposes progress,
+Back, Next, Skip, and Done controls. Escape dismisses it and returns focus to the
+visible Help entry point. The walkthrough is restartable and is not shown
+automatically on first visit.

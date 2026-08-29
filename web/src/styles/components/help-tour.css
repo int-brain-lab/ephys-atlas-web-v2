@@ -1,0 +1,165 @@
+.help-guide__tour-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid rgb(var(--color-accent-rgb) / 28%);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+}
+
+.help-guide__tour-action > div {
+  display: grid;
+  gap: .15rem;
+}
+
+.help-guide__tour-action strong {
+  color: var(--color-text);
+  font-size: .82rem;
+}
+
+.help-guide__tour-action span {
+  color: var(--color-text-secondary);
+  font-size: .75rem;
+}
+
+.help-guide__tour-action button,
+.help-tour__controls button {
+  min-height: 2.25rem;
+  padding: .45rem .75rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-size: .75rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.help-guide__tour-action button {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.help-tour {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  pointer-events: none;
+}
+
+.help-tour[hidden] {
+  display: none;
+}
+
+.help-tour__spotlight {
+  position: fixed;
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 100vmax rgb(2 8 14 / 70%), 0 0 0 4px rgb(var(--color-accent-rgb) / 18%);
+  transition: inset 140ms ease, width 140ms ease, height 140ms ease;
+}
+
+.help-tour__card {
+  position: fixed;
+  width: min(22rem, calc(100vw - 1.5rem));
+  padding: var(--space-4);
+  border: 1px solid rgb(var(--color-accent-rgb) / 35%);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-1);
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 45%);
+  color: var(--color-text);
+  pointer-events: auto;
+}
+
+.help-tour__top,
+.help-tour__controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.help-tour__progress {
+  color: var(--color-accent);
+  font-size: .65rem;
+  font-weight: 750;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.help-tour__skip {
+  padding: .2rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: .72rem;
+  text-decoration: underline;
+  text-underline-offset: .15em;
+}
+
+.help-tour__card h2 {
+  margin: var(--space-3) 0 var(--space-2);
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.help-tour__body {
+  min-height: 4.5rem;
+  color: var(--color-text-secondary);
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.help-tour__body p {
+  margin: 0;
+}
+
+.help-tour__controls {
+  justify-content: flex-end;
+  margin-top: var(--space-4);
+}
+
+.help-tour__controls button:disabled {
+  opacity: .45;
+}
+
+.help-tour__controls .help-tour__next {
+  min-width: 4.5rem;
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+@media (max-width: 759px) {
+  .help-guide__tour-action {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .help-guide__tour-action button,
+  .help-tour__controls button {
+    min-height: 2.75rem;
+  }
+
+  .help-tour__card {
+    padding: var(--space-3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .help-tour__spotlight {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .help-tour__spotlight {
+    border: 3px solid Highlight;
+    box-shadow: none;
+    outline: 100vmax solid Canvas;
+  }
+}

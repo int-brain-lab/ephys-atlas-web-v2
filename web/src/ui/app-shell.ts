@@ -56,6 +56,7 @@ import {
 } from '../application/layout-preferences.js';
 import { presentDatasetTitle } from './dataset-presentation.js';
 import { HelpGuide } from './help-guide.js';
+import { HelpTour, type HelpTourAnchor } from './help-tour.js';
 
 export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
@@ -209,6 +210,7 @@ export class AppShell {
   private readonly downloadContent: HTMLElement;
   private readonly helpGuide: HelpGuide;
   private readonly helpDialog: HTMLDialogElement;
+  private readonly helpTour: HelpTour;
   private readonly localImportInput: HTMLInputElement;
   private readonly localImportDialog: HTMLDialogElement;
   private readonly localImportStatus: HTMLElement;
@@ -351,7 +353,7 @@ export class AppShell {
     const download = this.createDownloadDialog();
     this.downloadDialog = download.dialog;
     this.downloadContent = download.content;
-    this.helpGuide = new HelpGuide();
+    this.helpGuide = new HelpGuide(() => this.startHelpTour());
     this.helpDialog = this.helpGuide.dialog;
     const localImport = this.createLocalImportDialog();
     this.localImportDialog = localImport.dialog;
@@ -415,6 +417,11 @@ export class AppShell {
       this.shortcutStatus,
     );
     root.append(this.app);
+
+    this.helpTour = new HelpTour({
+      root: this.app,
+      resolveTarget: (anchor) => this.resolveHelpTourTarget(anchor),
+    });
 
     this.applyPanelPreferences();
     this.backdrop.addEventListener('click', () => this.closeDrawers());
@@ -542,6 +549,7 @@ export class AppShell {
 
   destroy(): void {
     if (this.localImportActive) this.cancelLocalImport();
+    this.helpTour.destroy();
     this.colorRangeControl.destroy();
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('resize', this.onResize);
@@ -578,6 +586,7 @@ export class AppShell {
 
     const context = element('dl', 'app-header__context');
     context.setAttribute('aria-label', 'Atlas context');
+    context.dataset.helpAnchor = 'context';
     context.append(this.datasetContext.field, this.featureContext.field, this.representationContext.field);
 
     const actions = element('nav', 'app-header__actions');
@@ -586,6 +595,7 @@ export class AppShell {
     actions.append(this.drawerButton('regions', 'Regions', '☰'), this.drawerButton('settings', 'Settings', '⚙'));
 
     const desktopActions = element('div', 'app-header__desktop-actions');
+    desktopActions.dataset.helpAnchor = 'actions';
     desktopActions.append(
       this.headerActionButton('Share', 'share'),
       this.headerActionButton('Download', 'download'),
@@ -602,6 +612,7 @@ export class AppShell {
     const button = element('button', 'app-header__panel-button');
     button.type = 'button';
     button.dataset.drawerTrigger = drawer;
+    if (drawer === 'regions') button.dataset.helpAnchor = 'regions';
     button.setAttribute('aria-controls', `${drawer}-pane`);
     button.setAttribute('aria-expanded', 'false');
     button.append(this.actionIcon(iconText), this.actionLabel(label));
@@ -694,6 +705,7 @@ export class AppShell {
   private createOverflowActions(): HTMLDetailsElement {
     const details = element('details', 'app-header__overflow');
     const summary = element('summary', 'app-header__overflow-trigger');
+    summary.dataset.helpAnchor = 'actions';
     summary.setAttribute('aria-label', 'More actions');
     summary.append(this.actionIcon('⋯'));
     const menu = element('div', 'app-header__overflow-menu');
@@ -1244,6 +1256,38 @@ export class AppShell {
     if (!this.helpDialog.open) this.helpDialog.showModal();
   }
 
+  private startHelpTour(): void {
+    const representation = this.currentModel?.state.view.representation ?? 'regional';
+    const returnFocus = this.layoutMode === 'narrow' || this.layoutMode === 'phone'
+      ? this.overflowActions?.querySelector<HTMLElement>('.app-header__overflow-trigger') ?? null
+      : (this.headerActionButtons.get('help') ?? []).find((button) => this.isVisibleTourTarget(button)) ?? null;
+    this.helpDialog.close();
+    this.closeContextMenus();
+    this.closeDrawers();
+    if (this.overflowActions) this.overflowActions.open = false;
+    window.requestAnimationFrame(() => this.helpTour.start(representation, returnFocus));
+  }
+
+  private resolveHelpTourTarget(anchor: HelpTourAnchor): HTMLElement | null {
+    const candidates = [...this.app.querySelectorAll<HTMLElement>(`[data-help-anchor="${anchor}"]`)]
+      .filter((candidate) => this.isVisibleTourTarget(candidate));
+    if (anchor === 'navigation') {
+      const activeView = this.app.dataset.activeView;
+      return candidates.find((candidate) => candidate.dataset.view === activeView) ?? candidates[0] ?? null;
+    }
+    return candidates[0] ?? null;
+  }
+
+  private isVisibleTourTarget(target: HTMLElement): boolean {
+    const style = window.getComputedStyle(target);
+    const bounds = target.getBoundingClientRect();
+    return !target.hidden
+      && style.display !== 'none'
+      && style.visibility !== 'hidden'
+      && bounds.width > 0
+      && bounds.height > 0;
+  }
+
   private renderInfo(model: ShellModel): void {
     const { manifest, state } = model;
     if (!manifest) {
@@ -1431,6 +1475,7 @@ export class AppShell {
     pane.setAttribute('aria-label', 'Brain regions');
     pane.dataset.open = 'false';
     pane.dataset.phase = 'prototype';
+    pane.dataset.helpAnchor = 'regions';
 
     const panelHeader = this.panelHeader('Brain regions', 'regions', () => this.closeDrawers());
     const search = element('form', 'region-search');
@@ -1841,6 +1886,7 @@ export class AppShell {
     const label = panel === 'regions' ? 'Brain regions' : 'Visualization settings';
     const button = element('button', `panel-restore panel-restore--${panel}`);
     button.type = 'button';
+    if (panel === 'regions') button.dataset.helpAnchor = 'regions';
     button.textContent = panel === 'regions' ? '›' : '‹';
     button.setAttribute('aria-label', `Show ${label}`);
     button.setAttribute('aria-controls', panel === 'regions' ? 'regions-pane' : 'settings-pane');
@@ -2026,6 +2072,7 @@ export class AppShell {
       button.type = 'button';
       button.textContent = item.label;
       button.dataset.viewTarget = item.id;
+      if (item.id === 'secondary') button.dataset.helpAnchor = 'values';
       button.setAttribute('aria-pressed', 'false');
       button.addEventListener('click', () => this.setActiveView(item.id));
       this.viewButtons.set(item.id, button);
@@ -2071,6 +2118,7 @@ export class AppShell {
     secondary.append(secondaryHeader, secondaryBody);
     this.secondaryFrame = secondary;
     const distribution = element('section', 'distribution-band panel');
+    distribution.dataset.helpAnchor = 'values';
     distribution.append(this.frameHeader('Global distribution'), element('div', 'distribution-band__surface'));
     context.append(secondary, distribution);
     const analysis = element('section', 'analysis-panel panel');
@@ -2124,6 +2172,7 @@ export class AppShell {
     frame.dataset.view = axis;
     frame.dataset.state = 'idle';
     frame.dataset.maximized = 'false';
+    frame.dataset.helpAnchor = 'navigation';
     frame.setAttribute('aria-label', `${axis} view`);
 
     const title = `${axis[0]?.toUpperCase() ?? ''}${axis.slice(1)}`;
@@ -2589,6 +2638,7 @@ export class AppShell {
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (event.defaultPrevented) return;
+    if (this.helpTour.active) return;
     if (this.analysisDialog.open && this.analysisDialog.dataset.presentation === 'modal-sheet') return;
     if (event.key === 'Escape') {
       if (this.infoDialog.open || this.downloadDialog.open || this.helpDialog.open) return;
