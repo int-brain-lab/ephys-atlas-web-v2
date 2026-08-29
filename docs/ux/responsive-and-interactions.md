@@ -57,13 +57,13 @@ Implemented launch shortcuts:
 - `Esc`: close transient UI or leave focus/maximized mode.
 - Arrow keys: move through slices while an anatomical view has keyboard focus.
 - `Enter` / `Space`: standard activation/selection behavior.
-- `?`: show keyboard-shortcut help.
+- `?`: show Help and its keyboard-shortcut reference.
 
 Global shortcuts do not fire while the user is editing text or another form
 control, or while a modal dialog is open. Feature changes retain their normal
 URL persistence, representation fallback, stale-load cancellation, and bounded
-adjacent-feature prefetch behavior. Feature boundaries do not wrap. The help
-dialog is also available from the visible Shortcuts header action.
+adjacent-feature prefetch behavior. Feature boundaries do not wrap. Help is
+also available from the visible Help header action or the phone overflow menu.
 
 All important actions remain available without keyboard shortcuts.
 
@@ -90,3 +90,17 @@ Support only controlled resizing where it materially helps scientific exploratio
 - Tablet and phone retain the existing drawer composition rather than exposing
   resize handles.
 - Arbitrary docking, rearranging, or free-form IDE-style layout management is out of scope.
+
+## UX-033 — Task-first Help
+
+Help uses repository-owned Markdown as its reviewable content source. Its
+primary surface is a four-step Quick Start organized around user tasks rather
+than a miniature reconstruction of the application. Regional and volume
+guidance follows the active representation; concepts, shortcuts, and credits
+use progressive disclosure below the Quick Start.
+
+The browser renders only a constrained trusted Markdown subset and rejects raw
+HTML and images. Help remains usable without an interactive walkthrough, video,
+or external documentation site. Any later contextual walkthrough must point to
+the real responsive interface, preserve scientific state and URL identity, and
+remain optional and restartable.

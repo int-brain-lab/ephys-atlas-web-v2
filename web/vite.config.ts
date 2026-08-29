@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { anatomyPackPlugin } from './dev/anatomy-pack-plugin.js';
+import { helpMarkdownPlugin } from './dev/help-markdown-plugin.js';
 import { loadLocalMeshPack, localMeshPackPlugin } from './dev/mesh-pack-plugin.js';
 import { meshPackFixturePlugin } from './dev/mesh-pack-fixture-plugin.js';
 import { loadLocalProjectionPack, localProjectionPackPlugin } from './dev/projection-pack-plugin.js';
@@ -18,6 +19,7 @@ export default defineConfig(async () => {
     : null;
   const meshPack = meshPackPath ? await loadLocalMeshPack(meshPackPath) : null;
   const plugins = [
+    helpMarkdownPlugin(),
     anatomyPackPlugin(),
     meshPackFixturePlugin(),
     ...(projectionPack ? [localProjectionPackPlugin(projectionPack)] : []),

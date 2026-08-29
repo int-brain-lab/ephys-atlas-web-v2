@@ -55,6 +55,7 @@ import {
   type LayoutPreferences,
 } from '../application/layout-preferences.js';
 import { presentDatasetTitle } from './dataset-presentation.js';
+import { HelpGuide } from './help-guide.js';
 
 export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
@@ -206,6 +207,7 @@ export class AppShell {
   private readonly infoContent: HTMLElement;
   private readonly downloadDialog: HTMLDialogElement;
   private readonly downloadContent: HTMLElement;
+  private readonly helpGuide: HelpGuide;
   private readonly helpDialog: HTMLDialogElement;
   private readonly localImportInput: HTMLInputElement;
   private readonly localImportDialog: HTMLDialogElement;
@@ -349,7 +351,8 @@ export class AppShell {
     const download = this.createDownloadDialog();
     this.downloadDialog = download.dialog;
     this.downloadContent = download.content;
-    this.helpDialog = this.createHelpDialog();
+    this.helpGuide = new HelpGuide();
+    this.helpDialog = this.helpGuide.dialog;
     const localImport = this.createLocalImportDialog();
     this.localImportDialog = localImport.dialog;
     this.localImportStatus = localImport.status;
@@ -448,6 +451,7 @@ export class AppShell {
     this.renderContextMenus(model);
     this.renderColorSettings(model);
     this.renderVolumeLayerSettings(model);
+    this.helpGuide.render(view.representation);
     this.renderInfo(model);
     this.renderDownloads(model);
     this.setHeaderActionDisabled('share', false);
@@ -1231,224 +1235,6 @@ export class AppShell {
     if (this.localImportActive) this.callbacks.cancelLocal();
     this.localImportActive = false;
     if (this.localImportDialog.open) this.localImportDialog.close();
-  }
-
-  private createHelpDialog(): HTMLDialogElement {
-    const dialog = element('dialog', 'info-dialog help-dialog');
-    dialog.setAttribute('aria-labelledby', 'help-dialog-title');
-    const header = element('header', 'info-dialog__header');
-    const title = heading('Using the Ephys Atlas', 2);
-    title.id = 'help-dialog-title';
-    const close = element('button', 'info-dialog__close');
-    close.type = 'button';
-    close.textContent = 'Close';
-    close.addEventListener('click', () => dialog.close());
-    header.append(title, close);
-
-    const schematic = element('div', 'help-guide__schematic');
-    schematic.setAttribute('aria-hidden', 'true');
-    const schematicHeader = element('div', 'help-schematic__header');
-    const schematicBrand = element('span', 'help-schematic__brand');
-    schematicBrand.textContent = 'Ephys Atlas';
-    const schematicContext = element('div', 'help-schematic__context');
-    schematicContext.append(
-      this.helpSchematicChip('Dataset'),
-      this.helpSchematicChip('Feature'),
-      this.helpSchematicChip('Representation'),
-    );
-    const schematicActions = element('div', 'help-schematic__actions');
-    schematicActions.append(
-      this.helpSchematicChip('Share'),
-      this.helpSchematicChip('Download'),
-    );
-    schematicHeader.append(schematicBrand, schematicContext, schematicActions, this.helpCallout('1'));
-
-    const schematicBody = element('div', 'help-schematic__body');
-    const schematicRegions = element('div', 'help-schematic__regions');
-    const regionTitle = element('strong', 'help-schematic__panel-title');
-    regionTitle.textContent = 'Brain regions';
-    const regionSearch = element('span', 'help-schematic__search');
-    regionSearch.textContent = 'Search regions';
-    const regionRows = element('div', 'help-schematic__region-rows');
-    for (let index = 0; index < 5; index += 1) regionRows.append(element('span'));
-    schematicRegions.append(regionTitle, regionSearch, regionRows, this.helpCallout('2'));
-
-    const schematicWorkspace = element('div', 'help-schematic__workspace');
-    const slices = element('div', 'help-schematic__slices');
-    for (const label of ['Coronal', 'Sagittal', 'Horizontal']) {
-      const view = element('div', 'help-schematic__view');
-      const viewLabel = element('span', 'help-schematic__view-label');
-      viewLabel.textContent = label;
-      view.append(viewLabel, element('i'), element('b', 'help-schematic__slice-control'));
-      slices.append(view);
-    }
-    slices.append(this.helpCallout('3'));
-
-    const contextPanels = element('div', 'help-schematic__context-panels');
-    const histogram = element('div', 'help-schematic__histogram');
-    const histogramLabel = element('span');
-    histogramLabel.textContent = 'Feature distribution';
-    const histogramBars = element('i');
-    histogram.append(histogramLabel, histogramBars);
-    const comparison = element('div', 'help-schematic__comparison');
-    const comparisonLabel = element('span');
-    comparisonLabel.textContent = 'Selected regions';
-    comparison.append(comparisonLabel, element('i'), element('i'));
-    contextPanels.append(histogram, comparison, this.helpCallout('5'));
-    schematicWorkspace.append(slices, contextPanels);
-
-    const schematicSettings = element('div', 'help-schematic__settings');
-    const settingsTitle = element('strong', 'help-schematic__panel-title');
-    settingsTitle.textContent = 'Visualization';
-    for (const label of ['Color', 'Statistic', 'Scale']) {
-      const row = element('div', 'help-schematic__setting');
-      const settingLabel = element('span');
-      settingLabel.textContent = label;
-      row.append(settingLabel, element('i'));
-      schematicSettings.append(row);
-    }
-    schematicSettings.prepend(settingsTitle);
-    schematicSettings.append(element('div', 'help-schematic__colorbar'), this.helpCallout('4'));
-    schematicBody.append(schematicRegions, schematicWorkspace, schematicSettings);
-    schematic.append(schematicHeader, schematicBody);
-
-    const sections: readonly {
-      readonly title: string;
-      readonly description: string;
-      readonly definitions?: readonly (readonly [string, string])[];
-    }[] = [
-      {
-        title: 'Data and feature',
-        description: 'Use the top bar to choose the scientific context. Info provides complete feature semantics and provenance; Share preserves the complete view and Download exports the current regional values.',
-        definitions: [
-          ['Dataset / release', 'The scientific product and the immutable snapshot being explored.'],
-          ['Feature', 'The measured or derived quantity displayed by the viewer.'],
-          ['Representation', 'How the feature is organized, such as regional summaries or a voxel volume.'],
-          ['Parcellation', 'The atlas region grouping. For regional data it changes the regions and their summaries; for volumes it changes only the anatomical overlay and region inspection, never the voxel values.'],
-          ['Population', 'The observations included by the release’s scientific recipe. Check Info before interpreting results.'],
-        ],
-      },
-      {
-        title: 'Find and select regions',
-        description: 'Search the active parcellation or browse its anatomical hierarchy. Change the ordering to rank regions by the displayed value, then select regions from the list or brain views to add them to the comparison.',
-      },
-      {
-        title: 'Navigate the brain',
-        description: 'Use the three equal slice controls or scroll over a view. Coronal, sagittal, and horizontal views share one atlas location, and the guide lines show that location in the other projections.',
-      },
-      {
-        title: 'Set the visualization',
-        description: 'Choose feature-value or Allen-anatomy coloring, the regional statistic, colormap, scale, and display range.',
-        definitions: [
-          ['Statistic', 'The regional summary used for coloring, such as the mean or median.'],
-          ['Scale / range', 'How values map to colors. These settings change the presentation, not the underlying or downloaded values.'],
-        ],
-      },
-      {
-        title: 'Read distributions and comparisons',
-        description: 'The global histogram describes the release population. Selected-region curves use their own complete population as denominator. Focused mode keeps exact below/above tail counts visible instead of renormalizing them away. Open the comparison to inspect descriptive statistics or export selected-region data.',
-      },
-    ];
-    const guide = element('div', 'help-guide__sections');
-    sections.forEach(({ title: sectionTitle, description, definitions }, index) => {
-      const section = element('details', 'help-guide__section');
-      const summary = element('summary');
-      const number = element('span', 'help-guide__section-number');
-      number.textContent = String(index + 1);
-      const label = element('span');
-      label.textContent = sectionTitle;
-      summary.append(number, label);
-      const body = element('div', 'help-guide__section-body');
-      body.append(this.infoParagraph(description));
-      if (definitions) {
-        const definitionList = element('dl', 'help-guide__definitions');
-        for (const [term, definition] of definitions) {
-          const definitionTerm = element('dt');
-          definitionTerm.textContent = term;
-          const definitionDescription = element('dd');
-          definitionDescription.textContent = definition;
-          definitionList.append(definitionTerm, definitionDescription);
-        }
-        body.append(definitionList);
-      }
-      section.append(summary, body);
-      guide.append(section);
-    });
-
-    const guideLabel = heading('How to use each area', 3);
-    guideLabel.className = 'help-guide__section-title';
-    const guideWrap = element('section', 'help-guide__guide');
-    guideWrap.append(guideLabel, guide);
-
-    const note = element('p', 'help-guide__note');
-    note.textContent = 'Regional values are descriptive summaries of the population defined by the selected release. Consult Info before interpreting or citing them.';
-
-    const shortcuts: readonly (readonly [string, string])[] = [
-      ['Shift + ↓', 'Next feature'],
-      ['Shift + ↑', 'Previous feature'],
-      ['/', 'Search features'],
-      ['[', 'Toggle brain regions panel'],
-      [']', 'Toggle visualization settings panel'],
-      ['Arrow keys', 'Adjust a focused slice or control'],
-      ['Esc', 'Close transient UI or restore a maximized view'],
-      ['?', 'Show this help guide'],
-    ];
-    const list = element('dl', 'help-guide__shortcut-list');
-    for (const [keys, description] of shortcuts) {
-      const term = element('dt');
-      const key = element('kbd');
-      key.textContent = keys;
-      term.append(key);
-      const detail = element('dd');
-      detail.textContent = description;
-      list.append(term, detail);
-    }
-    const shortcutDetails = element('details', 'help-guide__shortcuts');
-    const shortcutSummary = element('summary');
-    shortcutSummary.textContent = 'Keyboard shortcuts';
-    shortcutDetails.append(shortcutSummary, list);
-
-    const aboutDetails = element('details', 'help-guide__about');
-    const aboutSummary = element('summary');
-    aboutSummary.textContent = 'About & credits';
-    const aboutBody = element('div', 'help-guide__about-body');
-    const aboutIntro = this.infoParagraph('The Ephys Atlas is developed by ');
-    const iblCoreLink = element('a');
-    iblCoreLink.href = 'https://iblcore.org/';
-    iblCoreLink.target = '_blank';
-    iblCoreLink.rel = 'noopener noreferrer';
-    iblCoreLink.textContent = 'IBL Core';
-    iblCoreLink.setAttribute('aria-label', 'IBL Core website (opens in a new tab)');
-    aboutIntro.append(iblCoreLink, document.createTextNode('.'));
-    const credits = this.infoParagraph('Credits: Cyrille Rossant, Mayo Faulkner, Olivier Winter, Gaelle Chapuis, and Dan Birman.');
-    const futureLinks = element('div', 'help-guide__future-links');
-    const paper = element('span');
-    paper.textContent = 'Paper — forthcoming';
-    const dataRelease = element('span');
-    dataRelease.textContent = 'Data release — forthcoming';
-    futureLinks.append(paper, dataRelease);
-    aboutBody.append(aboutIntro, credits, futureLinks);
-    aboutDetails.append(aboutSummary, aboutBody);
-
-    const content = element('div', 'info-dialog__content help-guide__content');
-    content.append(schematic, guideWrap, note, aboutDetails, shortcutDetails);
-    dialog.append(header, content);
-    dialog.addEventListener('click', (event) => {
-      if (event.target === dialog) dialog.close();
-    });
-    return dialog;
-  }
-
-  private helpSchematicChip(text: string): HTMLSpanElement {
-    const chip = element('span', 'help-schematic__chip');
-    chip.textContent = text;
-    return chip;
-  }
-
-  private helpCallout(text: string): HTMLSpanElement {
-    const callout = element('span', 'help-schematic__callout');
-    callout.textContent = text;
-    return callout;
   }
 
   private openHelpDialog(): void {
