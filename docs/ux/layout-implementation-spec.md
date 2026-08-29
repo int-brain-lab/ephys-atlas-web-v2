@@ -141,6 +141,12 @@ Recommended starting dimensions:
 - outer shell inset: `6–8px` rather than large page margins;
 - center workspace: always `minmax(0, 1fr)`.
 
+The implemented desktop refinement keeps those responsive defaults until the
+user acts. Regions may be resized from 250–420 px and settings from 280–440 px;
+each inline pane has one collapse control and a small edge restore control.
+Widths and collapse state are local interface preferences. Compact desktop
+keeps only Regions inline, while tablet and phone continue to use drawers.
+
 The application should feel spatially continuous. Avoid large gutters or isolated white/bright cards.
 
 Suggested shell grid shape:

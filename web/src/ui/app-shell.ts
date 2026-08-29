@@ -45,6 +45,15 @@ import type {
   BrainScene3DViewport,
   BrainScene3DViewportFactory,
 } from '../rendering/3d/brain-scene-viewport.js';
+import {
+  LAYOUT_PREFERENCES_KEY,
+  PANEL_WIDTH_LIMITS,
+  clampPanelWidth,
+  parseLayoutPreferences,
+  serializeLayoutPreferences,
+  type LayoutPanel,
+  type LayoutPreferences,
+} from '../application/layout-preferences.js';
 
 export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
@@ -183,8 +192,14 @@ function formatBytes(bytes: number): string {
 export class AppShell {
   private readonly app: HTMLDivElement;
   private readonly header: HTMLElement;
+  private readonly body: HTMLElement;
   private readonly regionPane: HTMLElement;
   private readonly settingsPane: HTMLElement;
+  private readonly panelCollapseButtons = new Map<LayoutPanel, HTMLButtonElement>();
+  private readonly panelRestoreButtons = new Map<LayoutPanel, HTMLButtonElement>();
+  private readonly panelResizeHandles = new Map<LayoutPanel, HTMLElement>();
+  private layoutPreferences: LayoutPreferences;
+  private layoutMode: LayoutMode = 'wide';
   private readonly backdrop: HTMLButtonElement;
   private readonly infoDialog: HTMLDialogElement;
   private readonly infoContent: HTMLElement;
@@ -265,6 +280,7 @@ export class AppShell {
 
     this.app = element('div', 'atlas-app');
     this.app.dataset.activeView = 'coronal';
+    this.layoutPreferences = this.loadLayoutPreferences();
 
     this.datasetContext = new ContextMenu({
       fieldName: 'dataset',
@@ -370,13 +386,19 @@ export class AppShell {
     this.shortcutStatus.setAttribute('aria-live', 'polite');
 
     this.header = this.createHeader();
-    const body = element('main', 'app-body');
+    this.body = element('main', 'app-body');
     const workspace = this.createWorkspace();
-    body.append(this.regionPane, workspace, this.settingsPane);
+    this.body.append(
+      this.regionPane,
+      workspace,
+      this.settingsPane,
+      this.createPanelRestoreButton('regions'),
+      this.createPanelRestoreButton('settings'),
+    );
 
     this.app.append(
       this.header,
-      body,
+      this.body,
       this.backdrop,
       this.infoDialog,
       this.downloadDialog,
@@ -390,6 +412,7 @@ export class AppShell {
     );
     root.append(this.app);
 
+    this.applyPanelPreferences();
     this.backdrop.addEventListener('click', () => this.closeDrawers());
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('resize', this.onResize);
@@ -1361,6 +1384,8 @@ export class AppShell {
       ['Shift + ↓', 'Next feature'],
       ['Shift + ↑', 'Previous feature'],
       ['/', 'Search features'],
+      ['[', 'Toggle brain regions panel'],
+      [']', 'Toggle visualization settings panel'],
       ['Arrow keys', 'Adjust a focused slice or control'],
       ['Esc', 'Close transient UI or restore a maximized view'],
       ['?', 'Show this help guide'],
@@ -1618,7 +1643,7 @@ export class AppShell {
     pane.dataset.open = 'false';
     pane.dataset.phase = 'prototype';
 
-    const panelHeader = this.panelHeader('Brain regions', () => this.closeDrawers());
+    const panelHeader = this.panelHeader('Brain regions', 'regions', () => this.closeDrawers());
     const search = element('form', 'region-search');
     search.setAttribute('role', 'search');
     search.addEventListener('submit', (event) => event.preventDefault());
@@ -1662,7 +1687,7 @@ export class AppShell {
     selectedHeader.append(clearSelection);
     selected.append(selectedHeader, element('ul', 'selected-regions__list'));
 
-    pane.append(panelHeader, search, browser, selected);
+    pane.append(panelHeader, search, browser, selected, this.createPanelResizeHandle('regions'));
     return pane;
   }
 
@@ -1671,10 +1696,10 @@ export class AppShell {
     pane.id = 'settings-pane';
     pane.setAttribute('aria-label', 'Visualization settings');
     pane.dataset.open = 'false';
-    const panelHeader = this.panelHeader('Visualization settings', () => this.closeDrawers());
+    const panelHeader = this.panelHeader('Visualization settings', 'settings', () => this.closeDrawers());
     const content = element('div', 'settings-pane__content');
     content.append(this.createColorSettings(), this.createVolumeLayerSettings());
-    pane.append(panelHeader, content);
+    pane.append(panelHeader, content, this.createPanelResizeHandle('settings'));
     return pane;
   }
 
@@ -1997,16 +2022,204 @@ export class AppShell {
     return { row, select };
   }
 
-  private panelHeader(titleText: string, onClose: () => void): HTMLElement {
+  private panelHeader(titleText: string, panel: LayoutPanel, onClose: () => void): HTMLElement {
     const header = element('div', 'panel__header');
     header.append(heading(titleText, 2));
+    const actions = element('div', 'panel__actions');
+    const collapse = element('button', 'panel__collapse');
+    collapse.type = 'button';
+    collapse.textContent = panel === 'regions' ? '‹' : '›';
+    collapse.setAttribute('aria-controls', panel === 'regions' ? 'regions-pane' : 'settings-pane');
+    collapse.setAttribute('aria-keyshortcuts', panel === 'regions' ? '[' : ']');
+    collapse.addEventListener('click', () => this.setPanelCollapsed(panel, true, true));
+    this.panelCollapseButtons.set(panel, collapse);
     const close = element('button', 'panel__close');
     close.type = 'button';
     close.textContent = 'Close';
     close.setAttribute('aria-label', `Close ${titleText}`);
     close.addEventListener('click', onClose);
-    header.append(close);
+    actions.append(collapse, close);
+    header.append(actions);
     return header;
+  }
+
+  private createPanelRestoreButton(panel: LayoutPanel): HTMLButtonElement {
+    const label = panel === 'regions' ? 'Brain regions' : 'Visualization settings';
+    const button = element('button', `panel-restore panel-restore--${panel}`);
+    button.type = 'button';
+    button.textContent = panel === 'regions' ? '›' : '‹';
+    button.setAttribute('aria-label', `Show ${label}`);
+    button.setAttribute('aria-controls', panel === 'regions' ? 'regions-pane' : 'settings-pane');
+    button.setAttribute('aria-keyshortcuts', panel === 'regions' ? '[' : ']');
+    button.addEventListener('click', () => this.setPanelCollapsed(panel, false, true));
+    this.panelRestoreButtons.set(panel, button);
+    return button;
+  }
+
+  private createPanelResizeHandle(panel: LayoutPanel): HTMLElement {
+    const limits = PANEL_WIDTH_LIMITS[panel];
+    const handle = element('div', `panel-resize-handle panel-resize-handle--${panel}`);
+    const label = panel === 'regions' ? 'Resize brain regions panel' : 'Resize visualization settings panel';
+    handle.tabIndex = 0;
+    handle.setAttribute('role', 'separator');
+    handle.setAttribute('aria-label', label);
+    handle.setAttribute('aria-controls', panel === 'regions' ? 'regions-pane' : 'settings-pane');
+    handle.setAttribute('aria-orientation', 'vertical');
+    handle.setAttribute('aria-valuemin', String(limits.min));
+    handle.setAttribute('aria-valuemax', String(limits.max));
+    handle.setAttribute('aria-keyshortcuts', 'ArrowLeft ArrowRight Home End');
+    handle.addEventListener('pointerdown', (event) => this.startPanelResize(panel, handle, event));
+    handle.addEventListener('dblclick', () => this.resetPanelWidth(panel));
+    handle.addEventListener('keydown', (event) => this.onPanelResizeKeyDown(panel, event));
+    this.panelResizeHandles.set(panel, handle);
+    return handle;
+  }
+
+  private loadLayoutPreferences(): LayoutPreferences {
+    try {
+      return parseLayoutPreferences(window.localStorage.getItem(LAYOUT_PREFERENCES_KEY));
+    } catch {
+      return parseLayoutPreferences(null);
+    }
+  }
+
+  private persistLayoutPreferences(): void {
+    try {
+      window.localStorage.setItem(LAYOUT_PREFERENCES_KEY, serializeLayoutPreferences(this.layoutPreferences));
+    } catch {
+      // Layout preferences are optional; storage denial must not affect the viewer.
+    }
+  }
+
+  private applyPanelPreferences(): void {
+    this.applyPanelWidth('regions', this.layoutPreferences.regionsWidth);
+    this.applyPanelWidth('settings', this.layoutPreferences.settingsWidth);
+    this.syncPanelControls();
+  }
+
+  private applyPanelWidth(panel: LayoutPanel, width: number | null): void {
+    const property = panel === 'regions' ? '--region-pane-width' : '--settings-pane-width';
+    if (width === null) this.app.style.removeProperty(property);
+    else this.app.style.setProperty(property, `${clampPanelWidth(panel, width)}px`);
+    this.syncPanelResizeValue(panel);
+  }
+
+  private panelWidth(panel: LayoutPanel): number {
+    const pane = panel === 'regions' ? this.regionPane : this.settingsPane;
+    return clampPanelWidth(panel, pane.getBoundingClientRect().width);
+  }
+
+  private isPanelInline(panel: LayoutPanel): boolean {
+    return panel === 'regions'
+      ? this.layoutMode === 'wide' || this.layoutMode === 'compact'
+      : this.layoutMode === 'wide';
+  }
+
+  private isPanelCollapsed(panel: LayoutPanel): boolean {
+    return panel === 'regions'
+      ? this.layoutPreferences.regionsCollapsed
+      : this.layoutPreferences.settingsCollapsed;
+  }
+
+  private setPanelCollapsed(panel: LayoutPanel, collapsed: boolean, moveFocus = false): void {
+    if (!this.isPanelInline(panel)) return;
+    if (panel === 'regions') this.layoutPreferences.regionsCollapsed = collapsed;
+    else this.layoutPreferences.settingsCollapsed = collapsed;
+    this.persistLayoutPreferences();
+    this.syncPanelControls();
+    this.shortcutStatus.textContent = `${panel === 'regions' ? 'Brain regions' : 'Visualization settings'} panel ${collapsed ? 'collapsed' : 'expanded'}`;
+    if (moveFocus) {
+      const target = collapsed ? this.panelRestoreButtons.get(panel) : this.panelCollapseButtons.get(panel);
+      window.requestAnimationFrame(() => target?.focus());
+    }
+  }
+
+  private togglePanel(panel: LayoutPanel): void {
+    if (this.isPanelInline(panel)) {
+      this.setPanelCollapsed(panel, !this.isPanelCollapsed(panel));
+      return;
+    }
+    const open = this.app.dataset.drawerOpen === panel;
+    if (open) this.closeDrawers();
+    else this.openDrawer(panel, false);
+  }
+
+  private syncPanelControls(): void {
+    for (const panel of ['regions', 'settings'] as const) {
+      const inline = this.isPanelInline(panel);
+      const collapsed = inline && this.isPanelCollapsed(panel);
+      const pane = panel === 'regions' ? this.regionPane : this.settingsPane;
+      this.app.dataset[panel === 'regions' ? 'regionPanelCollapsed' : 'settingsPanelCollapsed'] = String(collapsed);
+      pane.inert = collapsed;
+      pane.setAttribute('aria-hidden', String(collapsed));
+      const collapse = this.panelCollapseButtons.get(panel);
+      collapse?.setAttribute('aria-expanded', String(!collapsed));
+      collapse?.setAttribute('aria-label', `Hide ${panel === 'regions' ? 'Brain regions' : 'Visualization settings'}`);
+      const restore = this.panelRestoreButtons.get(panel);
+      if (restore) restore.hidden = !collapsed;
+      this.syncPanelResizeValue(panel);
+    }
+  }
+
+  private syncPanelResizeValue(panel: LayoutPanel): void {
+    const handle = this.panelResizeHandles.get(panel);
+    if (!handle || !this.isPanelInline(panel)) return;
+    const saved = panel === 'regions' ? this.layoutPreferences.regionsWidth : this.layoutPreferences.settingsWidth;
+    const width = saved ?? this.panelWidth(panel);
+    handle.setAttribute('aria-valuenow', String(width));
+    handle.setAttribute('aria-valuetext', `${width} pixels`);
+  }
+
+  private setPanelWidth(panel: LayoutPanel, width: number, persist: boolean): void {
+    const clamped = clampPanelWidth(panel, width);
+    if (panel === 'regions') this.layoutPreferences.regionsWidth = clamped;
+    else this.layoutPreferences.settingsWidth = clamped;
+    this.applyPanelWidth(panel, clamped);
+    if (persist) this.persistLayoutPreferences();
+  }
+
+  private resetPanelWidth(panel: LayoutPanel): void {
+    if (panel === 'regions') this.layoutPreferences.regionsWidth = null;
+    else this.layoutPreferences.settingsWidth = null;
+    this.applyPanelWidth(panel, null);
+    this.persistLayoutPreferences();
+    window.requestAnimationFrame(() => this.syncPanelResizeValue(panel));
+    this.shortcutStatus.textContent = `${panel === 'regions' ? 'Brain regions' : 'Visualization settings'} panel width reset`;
+  }
+
+  private startPanelResize(panel: LayoutPanel, handle: HTMLElement, event: PointerEvent): void {
+    if (event.button !== 0 || !this.isPanelInline(panel) || this.isPanelCollapsed(panel)) return;
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = this.panelWidth(panel);
+    this.app.dataset.panelResizing = panel;
+    const move = (moveEvent: PointerEvent): void => {
+      const delta = moveEvent.clientX - startX;
+      this.setPanelWidth(panel, startWidth + (panel === 'regions' ? delta : -delta), false);
+    };
+    const finish = (): void => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('pointercancel', finish);
+      delete this.app.dataset.panelResizing;
+      this.persistLayoutPreferences();
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', finish);
+    window.addEventListener('pointercancel', finish);
+  }
+
+  private onPanelResizeKeyDown(panel: LayoutPanel, event: KeyboardEvent): void {
+    if (!this.isPanelInline(panel) || this.isPanelCollapsed(panel)) return;
+    const limits = PANEL_WIDTH_LIMITS[panel];
+    let width: number | null = null;
+    if (event.key === 'Home') width = limits.min;
+    if (event.key === 'End') width = limits.max;
+    if (event.key === 'ArrowLeft') width = this.panelWidth(panel) + (panel === 'regions' ? -12 : 12);
+    if (event.key === 'ArrowRight') width = this.panelWidth(panel) + (panel === 'regions' ? 12 : -12);
+    if (width === null) return;
+    event.preventDefault();
+    this.setPanelWidth(panel, width, true);
   }
 
   private createWorkspace(): HTMLElement {
@@ -2526,7 +2739,7 @@ export class AppShell {
       : this.viewFrames.get(projectionId);
   }
 
-  private openDrawer(drawer: DrawerName): void {
+  private openDrawer(drawer: DrawerName, focusContent = true): void {
     const pane = drawer === 'regions' ? this.regionPane : this.settingsPane;
     const other = drawer === 'regions' ? this.settingsPane : this.regionPane;
     if (this.overflowActions) this.overflowActions.open = false;
@@ -2534,7 +2747,8 @@ export class AppShell {
     pane.dataset.open = 'true';
     this.app.dataset.drawerOpen = drawer;
     this.syncDrawerButtons(drawer);
-    if (drawer === 'regions') this.regionSearch.focus();
+    if (!focusContent) pane.querySelector<HTMLElement>('.panel__close')?.focus();
+    else if (drawer === 'regions') this.regionSearch.focus();
     else pane.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')?.focus();
   }
 
@@ -2565,10 +2779,12 @@ export class AppShell {
   private syncLayoutMode(): void {
     const width = window.innerWidth;
     const mode: LayoutMode = width >= 1480 ? 'wide' : width >= 1100 ? 'compact' : width >= 760 ? 'narrow' : 'phone';
+    this.layoutMode = mode;
     this.app.dataset.layout = mode;
     if (mode !== 'phone' && this.overflowActions) this.overflowActions.open = false;
     if (mode === 'wide') this.closeDrawers();
     else if (mode === 'compact' && this.regionPane.dataset.open === 'true') this.closeDrawers();
+    this.syncPanelControls();
   }
 
   private readonly onResize = (): void => {
@@ -2596,6 +2812,16 @@ export class AppShell {
       return;
     }
     if (blocksGlobalShortcut(event) || this.infoDialog.open || this.downloadDialog.open || this.helpDialog.open) return;
+    if (
+      (event.key === '[' || event.key === ']')
+      && !event.altKey
+      && !event.ctrlKey
+      && !event.metaKey
+    ) {
+      event.preventDefault();
+      this.togglePanel(event.key === '[' ? 'regions' : 'settings');
+      return;
+    }
     if (event.key === '/' && !event.altKey && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
       this.featureContext.open();

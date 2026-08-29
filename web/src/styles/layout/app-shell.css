@@ -14,11 +14,18 @@
 }
 
 .app-body {
+  position: relative;
   display: grid;
   grid-template-columns: var(--region-pane-width) minmax(0, 1fr) var(--settings-pane-width);
   gap: var(--space-2);
   min-width: 0;
   min-height: 0;
+  transition: grid-template-columns 140ms ease;
+}
+
+.atlas-app[data-panel-resizing] .app-body {
+  transition: none;
+  user-select: none;
 }
 
 .region-pane,
@@ -32,5 +39,40 @@
 
 .region-pane,
 .settings-pane {
+  position: relative;
   overflow: hidden;
+  transition: opacity 100ms ease;
+}
+
+@media (min-width: 1480px) {
+  .atlas-app[data-region-panel-collapsed="true"] .app-body {
+    grid-template-columns: 0 minmax(0, 1fr) var(--settings-pane-width);
+  }
+
+  .atlas-app[data-settings-panel-collapsed="true"] .app-body {
+    grid-template-columns: var(--region-pane-width) minmax(0, 1fr) 0;
+  }
+
+  .atlas-app[data-region-panel-collapsed="true"][data-settings-panel-collapsed="true"] .app-body {
+    grid-template-columns: 0 minmax(0, 1fr) 0;
+  }
+
+  .atlas-app[data-region-panel-collapsed="true"] .region-pane,
+  .atlas-app[data-settings-panel-collapsed="true"] .settings-pane {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
+}
+
+@media (min-width: 1100px) and (max-width: 1479px) {
+  .atlas-app[data-region-panel-collapsed="true"] .app-body {
+    grid-template-columns: 0 minmax(0, 1fr);
+  }
+
+  .atlas-app[data-region-panel-collapsed="true"] .region-pane {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
 }

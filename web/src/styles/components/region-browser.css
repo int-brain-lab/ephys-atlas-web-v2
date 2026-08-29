@@ -1,4 +1,4 @@
-.region-pane{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto}
+.region-pane{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto}
 
 .region-search{display:grid;gap:.38rem;padding:.55rem var(--space-2) .45rem;border-bottom:1px solid var(--color-border)}
 
@@ -42,7 +42,11 @@
 
 .region-search__count{box-sizing:border-box;flex:none;width:5.25rem;padding-right:.15rem;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 
-.region-pane__browser{min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:var(--space-1) 0}
+.region-pane__browser{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:var(--space-1) 0}
+
+@media (min-width:1100px){
+  .region-pane__browser{width:calc(100% - .65rem);margin-inline-end:.65rem}
+}
 
 .region-list,.selected-regions__list{list-style:none;margin:0;padding:0}
 

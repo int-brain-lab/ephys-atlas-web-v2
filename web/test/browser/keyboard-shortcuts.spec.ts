@@ -30,7 +30,9 @@ test('shortcuts stay out of text entry and expose the concise help guide', async
   const regionSearch = page.getByLabel('Search brain regions');
   await regionSearch.fill('VISp');
   await page.keyboard.press('/');
-  await expect(regionSearch).toHaveValue('VISp/');
+  await page.keyboard.press('[');
+  await page.keyboard.press(']');
+  await expect(regionSearch).toHaveValue('VISp/[]');
   await expect(featureField.locator('.context-menu__panel')).toHaveAttribute('data-open', 'false');
 
   await page.keyboard.press('Shift+ArrowDown');
@@ -93,6 +95,8 @@ test('shortcuts stay out of text entry and expose the concise help guide', async
   await guide.getByText('Keyboard shortcuts').click();
   await expect(guide).toContainText('Next feature');
   await expect(guide).toContainText('Search features');
+  await expect(guide).toContainText('Toggle brain regions panel');
+  await expect(guide).toContainText('Toggle visualization settings panel');
 });
 
 test('help guide stays readable within a phone viewport', async ({ page }) => {

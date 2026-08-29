@@ -1,11 +1,12 @@
 .settings-pane {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
-  transition: transform 140ms ease, visibility 140ms step-end;
+  transition: transform 140ms ease, opacity 100ms ease, visibility 140ms step-end;
 }
 
 .settings-pane[data-open="true"] {
-  transition: transform 140ms ease, visibility 0ms step-start;
+  transition: transform 140ms ease, opacity 100ms ease, visibility 0ms step-start;
 }
 
 .settings-pane__content {

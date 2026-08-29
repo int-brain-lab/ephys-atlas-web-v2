@@ -27,6 +27,121 @@
   text-transform: uppercase;
 }
 
+.panel__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.panel__collapse,
+.panel-restore {
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.panel__collapse:hover,
+.panel-restore:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.panel__collapse:focus-visible,
+.panel-restore:focus-visible,
+.panel-resize-handle:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.panel-restore {
+  position: absolute;
+  z-index: 12;
+  top: var(--space-2);
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-2);
+  box-shadow: 0 .25rem 1rem rgb(0 0 0 / 24%);
+}
+
+.panel-restore--regions {
+  left: 0;
+}
+
+.panel-restore--settings {
+  right: 0;
+}
+
+.panel-resize-handle {
+  position: absolute;
+  z-index: 8;
+  top: 0;
+  bottom: 0;
+  width: .65rem;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.panel-resize-handle::after {
+  position: absolute;
+  top: 42%;
+  bottom: 42%;
+  left: calc(50% - .5px);
+  width: 1px;
+  min-height: 2.5rem;
+  content: '';
+  background: var(--color-border-strong);
+  transition: background 100ms ease, box-shadow 100ms ease;
+}
+
+.panel-resize-handle:hover::after,
+.panel-resize-handle:focus-visible::after,
+.atlas-app[data-panel-resizing] .panel-resize-handle::after {
+  background: var(--color-accent);
+  box-shadow: 0 0 .45rem rgb(var(--color-accent-rgb) / 45%);
+}
+
+.panel-resize-handle--regions {
+  right: 0;
+}
+
+.panel-resize-handle--settings {
+  left: 0;
+}
+
+.panel__collapse,
+.panel-restore,
+.panel-resize-handle {
+  display: none;
+}
+
+.panel-restore[hidden] {
+  display: none !important;
+}
+
+@media (min-width: 1100px) {
+  .region-pane .panel__collapse,
+  .panel-restore--regions,
+  .panel-resize-handle--regions {
+    display: inline-flex;
+  }
+}
+
+@media (min-width: 1480px) {
+  .settings-pane .panel__collapse,
+  .panel-restore--settings,
+  .panel-resize-handle--settings {
+    display: inline-flex;
+  }
+}
+
 .panel__close {
   display: none;
   min-height: 1.75rem;

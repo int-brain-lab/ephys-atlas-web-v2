@@ -52,6 +52,8 @@ Implemented launch shortcuts:
 
 - `Shift + Down` / `Shift + Up`: select the next/previous feature in manifest order without wrapping.
 - `/`: open the feature catalogue and focus its search field.
+- `[` / `]`: toggle the brain-regions / visualization-settings panel. At
+  drawer breakpoints the same keys toggle the existing drawers.
 - `Esc`: close transient UI or leave focus/maximized mode.
 - Arrow keys: move through slices while an anatomical view has keyboard focus.
 - `Enter` / `Space`: standard activation/selection behavior.
@@ -77,7 +79,14 @@ All important actions remain available without keyboard shortcuts.
 
 Support only controlled resizing where it materially helps scientific exploration.
 
-- Region-browser width may be resizable.
+- Inline region-browser and settings-panel widths are resizable within bounded
+  ranges; dragging, focused-separator arrow keys, and double-click reset are
+  supported.
+- Either inline panel may be collapsed from its header and restored from a
+  small edge control. The center workspace receives the released width.
+- Width and collapse preferences persist locally, never in scientific share
+  URLs. Saved widths are clamped before use.
 - Analytical-band height is resizable/expandable.
-- Settings-panel width may be resizable if implementation cost remains small.
+- Tablet and phone retain the existing drawer composition rather than exposing
+  resize handles.
 - Arbitrary docking, rearranging, or free-form IDE-style layout management is out of scope.
