@@ -260,7 +260,7 @@ def build_channels_release_from_arrays(
     manifest = {
         "schema_version": "1.0",
         "dataset_id": DATASET_ID,
-        "title": "IBL Ephys Atlas channel features",
+        "title": "IBL Ephys Atlas — Channel Features",
         "description": "Regional descriptive summaries of channel-level ephys-atlas features.",
         "release": {
             "release_id": config.release_id,

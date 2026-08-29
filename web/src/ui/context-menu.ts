@@ -1,10 +1,13 @@
 export interface ContextMenuOption {
   id: string;
   label: string;
+  badge?: string;
   description?: string;
   detail?: string;
+  metadata?: string;
   group?: string;
   keywords?: string;
+  variant?: 'dataset-release';
   disabled?: boolean;
 }
 
@@ -188,18 +191,26 @@ export class ContextMenu {
         previousGroup = option.group;
       }
       const button = element('button', 'context-menu__option');
+      if (option.variant) button.classList.add(`context-menu__option--${option.variant}`);
       button.type = 'button';
       button.dataset.contextOption = option.id;
-      button.dataset.search = `${option.label} ${option.description ?? ''} ${option.detail ?? ''} ${option.keywords ?? ''}`.toLocaleLowerCase();
+      button.dataset.search = `${option.label} ${option.badge ?? ''} ${option.description ?? ''} ${option.detail ?? ''} ${option.metadata ?? ''} ${option.keywords ?? ''}`.toLocaleLowerCase();
       button.dataset.group = option.group ?? '';
       button.disabled = option.disabled === true;
       button.setAttribute('role', 'option');
       button.setAttribute('aria-selected', String(this.selectedIds.has(option.id)));
       button.tabIndex = -1;
       const copy = element('span', 'context-menu__option-copy');
+      const heading = element('span', 'context-menu__option-heading');
       const label = element('span', 'context-menu__option-label');
       label.textContent = option.label;
-      copy.append(label);
+      heading.append(label);
+      if (option.badge) {
+        const badge = element('span', 'context-menu__option-badge');
+        badge.textContent = option.badge;
+        heading.append(badge);
+      }
+      copy.append(heading);
       if (option.description) {
         const description = element('span', 'context-menu__option-description');
         description.textContent = option.description;
@@ -209,6 +220,11 @@ export class ContextMenu {
         const detail = element('span', 'context-menu__option-detail');
         detail.textContent = option.detail;
         copy.append(detail);
+      }
+      if (option.metadata) {
+        const metadata = element('span', 'context-menu__option-metadata');
+        metadata.textContent = option.metadata;
+        copy.append(metadata);
       }
       const check = element('span', 'context-menu__option-check');
       check.textContent = this.selectedIds.has(option.id) ? '✓' : '';

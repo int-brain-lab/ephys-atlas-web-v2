@@ -33,7 +33,8 @@
     "src/ui/regional/model.ts",
     "src/ui/regional/histogram-curve.ts",
     "src/ui/regional/comparison-export.ts",
-    "src/ui/color-range.ts"
+    "src/ui/color-range.ts",
+    "src/ui/dataset-presentation.ts"
   ],
   "exclude": [
     "test/browser/**/*.ts",

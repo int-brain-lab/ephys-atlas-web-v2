@@ -476,7 +476,11 @@ test('scientific context menus and color controls are driven by the loaded relea
   expect(triggerBounds!.y + triggerBounds!.height).toBeGreaterThanOrEqual(headerBounds!.y + headerBounds!.height - 2);
   await datasetTrigger.click({ position: { x: triggerBounds!.width / 2, y: 2 } });
   await expect(dataset.locator('.context-menu__panel')).toHaveAttribute('data-open', 'true');
-  await expect(dataset.getByRole('option', { selected: true })).toContainText('golden-v1');
+  const selectedDataset = dataset.getByRole('option', { selected: true });
+  await expect(selectedDataset.locator('.context-menu__option-label')).toHaveText('IBL Ephys Atlas v2 golden fixture');
+  await expect(selectedDataset.locator('.context-menu__option-description')).toContainText('deterministic non-scientific dataset');
+  await expect(selectedDataset.locator('.context-menu__option-metadata')).toHaveText('Release ID · golden-v1');
+  await expect(dataset.locator('.context-menu__group').filter({ hasText: 'IBL Ephys Atlas' })).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(datasetTrigger).toBeFocused();
 

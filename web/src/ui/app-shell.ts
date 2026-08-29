@@ -54,6 +54,7 @@ import {
   type LayoutPanel,
   type LayoutPreferences,
 } from '../application/layout-preferences.js';
+import { presentDatasetTitle } from './dataset-presentation.js';
 
 export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
@@ -426,7 +427,9 @@ export class AppShell {
     const datasetEntry = catalog?.datasets.find((entry) => entry.id === view.dataset.datasetId);
     const featureEntry = manifest?.features.find((entry) => entry.id === view.featureId);
 
-    const datasetLabel = datasetEntry?.title ?? manifest?.dataset.title ?? titleCaseToken(view.dataset.datasetId);
+    const datasetLabel = presentDatasetTitle(
+      datasetEntry?.title ?? manifest?.dataset.title ?? titleCaseToken(view.dataset.datasetId),
+    ).title;
     const releaseLabel = view.dataset.releaseId ?? manifest?.dataset.release ?? datasetEntry?.defaultRelease ?? '';
     const featureLabel = featureEntry?.label ?? (view.featureId ? titleCaseToken(view.featureId) : 'No feature selected');
     const representationLabel = view.representation === 'regional' ? 'Regional' : 'Volume';
@@ -1786,13 +1789,18 @@ export class AppShell {
   private renderContextMenus(model: ShellModel): void {
     const { catalog, manifest, state } = model;
     this.featureId = state.view.featureId;
-    const releaseOptions: ContextMenuOption[] = catalog?.datasets.flatMap((dataset) => dataset.releases.map((release) => ({
-      id: JSON.stringify([dataset.id, release.id]),
-      label: release.label,
-      ...(dataset.description ? { description: dataset.description } : {}),
-      group: dataset.title,
-      keywords: `${dataset.id} ${release.id}`,
-    }))) ?? [];
+    const releaseOptions: ContextMenuOption[] = catalog?.datasets.flatMap((dataset) => {
+      const presentation = presentDatasetTitle(dataset.title);
+      return dataset.releases.map((release) => ({
+        id: JSON.stringify([dataset.id, release.id]),
+        label: presentation.title,
+        ...(presentation.badge ? { badge: presentation.badge } : {}),
+        ...(dataset.description ? { description: dataset.description } : {}),
+        metadata: `Release ID · ${release.id}`,
+        keywords: `${dataset.id} ${release.id}`,
+        variant: 'dataset-release',
+      }));
+    }) ?? [];
     const datasetOptions: ContextMenuOption[] = [
       ...releaseOptions,
       {

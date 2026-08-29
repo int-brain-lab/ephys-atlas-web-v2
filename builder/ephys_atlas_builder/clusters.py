@@ -395,7 +395,7 @@ def build_clusters_release_from_arrays(
     manifest = {
         "schema_version": "1.0",
         "dataset_id": DATASET_ID,
-        "title": "IBL Ephys Atlas cluster features",
+        "title": "IBL Ephys Atlas — Cluster Features",
         "description": "Regional descriptive summaries of cluster-level ephys-atlas features.",
         "release": {
             "release_id": config.release_id,

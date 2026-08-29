@@ -501,7 +501,7 @@ def build_volumes_release_from_arrays(
     manifest = {
         "schema_version": "1.0",
         "dataset_id": DATASET_ID,
-        "title": "IBL Ephys Atlas encoding volumes",
+        "title": "IBL Encoding Volumes",
         "description": (
             "Local non-published transport candidate derived from a pinned canonical encoding-volume object."
             if config.candidate

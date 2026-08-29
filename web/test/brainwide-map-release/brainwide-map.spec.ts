@@ -17,7 +17,7 @@ test('local catalog exposes the complete preserved Beryl release', async ({ page
   await page.goto('/');
 
   await expect(page.locator('[data-context-field="dataset"] .context-field__value')).toHaveText(
-    'IBL Brain-Wide Map legacy website snapshot',
+    'IBL Brain-Wide Map',
   );
   await expect(page.locator('[data-context-field="dataset"] .context-field__release')).toHaveText(releaseId);
   await expect(page.locator('[data-context-field="feature"] .context-field__value')).toHaveText(
@@ -36,6 +36,12 @@ test('local catalog exposes the complete preserved Beryl release', async ({ page
 
   const dataset = page.locator('[data-context-field="dataset"]');
   await dataset.locator('.context-menu__trigger').click();
+  await expect(dataset.getByRole('option', { selected: true }).locator('.context-menu__option-label')).toHaveText(
+    'IBL Brain-Wide Map',
+  );
+  await expect(dataset.getByRole('option', { selected: true }).locator('.context-menu__option-badge')).toHaveText(
+    'Legacy snapshot',
+  );
   await expect(dataset.getByRole('option', { selected: true })).toContainText(
     'Preserved Beryl-only regional features from the v1 website',
   );

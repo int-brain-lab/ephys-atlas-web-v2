@@ -342,9 +342,17 @@
   gap: .12rem;
 }
 
+.context-menu__option-heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: .42rem;
+}
+
 .context-menu__option-label,
 .context-menu__option-description,
-.context-menu__option-detail {
+.context-menu__option-detail,
+.context-menu__option-metadata {
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -367,6 +375,57 @@
   color: var(--color-text-secondary);
   font-size: .62rem;
   line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.context-menu__option-metadata {
+  color: var(--color-text-muted);
+  font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: .55rem;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.context-menu__option-badge {
+  flex: none;
+  padding: .1rem .35rem;
+  border: 1px solid rgb(var(--color-accent-rgb) / 22%);
+  border-radius: 999px;
+  background: rgb(var(--color-accent-rgb) / 9%);
+  color: var(--color-text-secondary);
+  font-size: .5rem;
+  font-weight: 650;
+  letter-spacing: .025em;
+  line-height: 1.3;
+}
+
+.context-menu__option--dataset-release {
+  min-height: 4.35rem;
+  padding-block: .58rem;
+}
+
+.context-menu__option--dataset-release .context-menu__option-copy {
+  gap: .2rem;
+}
+
+.context-menu__option--dataset-release .context-menu__option-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text);
+  font-size: .82rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.context-menu__option--dataset-release .context-menu__option-description {
+  display: -webkit-box;
+  color: var(--color-text-secondary);
+  font-size: .63rem;
+  line-height: 1.35;
+  white-space: normal;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
