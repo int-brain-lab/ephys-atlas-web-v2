@@ -11,6 +11,10 @@ bootstrap:
     cd web && npm ci
     cd web && npx playwright install chromium
 
+# Install every browser engine used by the opt-in cross-browser campaign.
+bootstrap-cross-browser:
+    cd web && npx playwright install chromium firefox webkit
+
 # Install the exact scientific channel-builder environment (no sudo required).
 bootstrap-scientific:
     uv sync --project builder --python 3.12 --extra scientific --locked
@@ -66,6 +70,10 @@ test-web:
 test-browser:
     cd web && npm run test:browser
 
+# Run the portable browser matrix; native Safari remains a separate owner-host check.
+test-browser-cross:
+    cd web && npm run test:browser:cross
+
 # Opt-in browser acceptance for the ignored local D038 Brain-Wide Map release.
 test-brainwide-map-release:
     cd web && npm run test:brainwide-map-release
@@ -89,6 +97,21 @@ benchmark-local-import-capacity case output="artifacts/local-import-benchmark/ca
 # Bundle one exact release: ID=regional|volume=PATH.
 benchmark-local-import-real release output="artifacts/local-import-benchmark/real":
     {{uv-test}} python -m benchmarks.local_import.generate real --output-dir "{{output}}" --release "{{release}}"
+
+# Run one generated corpus through the single-worker browser evidence harness.
+benchmark-local-import-browser corpus output="artifacts/local-import-benchmark/evidence" project="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    benchmark_corpus="$(realpath "{{corpus}}")"
+    benchmark_output="$(realpath -m "{{output}}")"
+    benchmark_args=()
+    if [[ -n "{{project}}" ]]; then
+        benchmark_args=(--project "{{project}}")
+    fi
+    cd web
+    EPHYS_ATLAS_LOCAL_IMPORT_CORPUS="$benchmark_corpus" \
+      EPHYS_ATLAS_LOCAL_IMPORT_BENCHMARK_OUTPUT="$benchmark_output" \
+      npx playwright test --config playwright.local-import-benchmark.config.ts "${benchmark_args[@]}"
 
 # Exercise the anatomy contract, generator, artifact validator, and comparison cases.
 test-anatomy:

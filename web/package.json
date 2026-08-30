@@ -14,6 +14,7 @@
     "test:unit": "rm -rf .test-dist && tsc -p tsconfig.test.json && node --test test/unit/*.test.js",
     "test:rendering": "rm -rf .rendering-test-dist && tsc -p tsconfig.rendering-test.json && mkdir -p .rendering-test-dist/fixtures/rendering && cp ../fixtures/rendering/linked-slices.fixture.json .rendering-test-dist/fixtures/rendering/ && node --test .rendering-test-dist/tests/rendering/*.test.js",
     "test:browser": "playwright test",
+    "test:browser:cross": "playwright test --config playwright.cross-browser.config.ts",
     "test:real-release": "playwright test --config playwright.real-release.config.ts",
     "test:brainwide-map-release": "playwright test --config playwright.brainwide-map.config.ts",
     "test:cluster-release": "playwright test --config playwright.cluster-release.config.ts",

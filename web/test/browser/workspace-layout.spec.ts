@@ -46,11 +46,13 @@ test('feature summary balances description space with compact statistics', async
 
   const description = page.locator('.feature-summary__description');
   const statistic = page.locator('.feature-summary__item').first();
-  const descriptionStyles = await description.evaluate((node) => getComputedStyle(node));
+  const descriptionLineClamp = await description.evaluate((node) => (
+    getComputedStyle(node).getPropertyValue('-webkit-line-clamp')
+  ));
   const descriptionBounds = await description.boundingBox();
   const statisticBounds = await statistic.boundingBox();
 
-  expect(descriptionStyles.webkitLineClamp).toBe('4');
+  expect(descriptionLineClamp).toBe('4');
   expect(descriptionBounds).not.toBeNull();
   expect(statisticBounds).not.toBeNull();
   expect(descriptionBounds!.height).toBeGreaterThan(80);

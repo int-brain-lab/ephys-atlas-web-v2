@@ -145,6 +145,7 @@ test('tree-wide controls collapse and expand every ontology branch', async ({ pa
 test('multi-region selection keeps first-selection order and identity colors', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
+  await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
 
   await page.getByRole('button', { name: 'FRP1, Frontal pole layer 1 (left)' }).click();
   const firstSelection = page.locator('.selected-region[data-region-id="-68"]');
