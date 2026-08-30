@@ -33,12 +33,18 @@ Dispositions are:
 No criterion is currently recorded as waived. Evidence references name the
 smallest useful files; they do not replace the assertions inside those files.
 
+The 2026-08-31 local-import campaign does not change any disposition count:
+it strengthens the already-satisfied LS08-05 evidence, while LS01-07 remains
+an independent gap because focused import coverage is not the full release
+browser matrix.
+
 ## Shared evidence
 
 - **Navigation/UI:** `web/test/browser/app.spec.ts`,
   `projection-viewport.spec.ts`, `static-projections.spec.ts`,
   `panel-layout.spec.ts`, `keyboard-shortcuts.spec.ts`, and
-  `url-history.spec.ts`; URL, reducer, and projection-navigation unit tests.
+  `url-history.spec.ts`; URL, reducer, and projection-navigation unit tests;
+  [`FRONTEND_LIFECYCLE_AUDIT.md`](FRONTEND_LIFECYCLE_AUDIT.md).
 - **Regional/distributions:** regional browser and unit suites,
   `web/test/browser/color-scale.spec.ts`,
   [`data/DISTRIBUTION_AUDIT_EVIDENCE.md`](data/DISTRIBUTION_AUDIT_EVIDENCE.md),
@@ -50,8 +56,10 @@ smallest useful files; they do not replace the assertions inside those files.
   release records under [`data/`](data/README.md), their Python tests, and the
   three focused real-release browser suites.
 - **Local/import:** [`data/CUSTOM_DATA_AUTHORING.md`](data/CUSTOM_DATA_AUTHORING.md),
+  [`data/LOCAL_IMPORT_CAPACITY_EVIDENCE.md`](data/LOCAL_IMPORT_CAPACITY_EVIDENCE.md),
   public-authoring/packaging/example tests, local archive/validation/repository
-  unit tests, and `web/test/browser/local-import.spec.ts`.
+  unit tests, the local-import browser/benchmark suites, and the distinct
+  native-Safari runner.
 - **Publishing:** [`docs/publishing/API.md`](publishing/API.md) and all tests under
   `publishing/tests/`.
 - **Anatomy/assets:** contracts and evidence indexed by
@@ -59,7 +67,8 @@ smallest useful files; they do not replace the assertions inside those files.
   and projection/static/worker/cache browser tests.
 - **Current maturity:** [`INTEGRATION_STATUS.md`](INTEGRATION_STATUS.md),
   [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md), and
-  [`OPEN_QUESTIONS.md`](OPEN_QUESTIONS.md).
+  [`OPEN_QUESTIONS.md`](OPEN_QUESTIONS.md), with reproducibility evidence in
+  [`REPRODUCIBILITY_INTEGRITY_EVIDENCE.md`](REPRODUCIBILITY_INTEGRITY_EVIDENCE.md).
 
 ## 1. Application shell and navigation
 
@@ -71,7 +80,7 @@ smallest useful files; they do not replace the assertions inside those files.
 | [LS01-04](LAUNCH_SPEC.md#ls01-04) | Discoverable Top/Swanson slot; shared color/hover/selection/focus; no slice/world/voxel claim. | `static-projections.spec.ts` and projection-pack tests. | satisfied | Retain all subclaim assertions. |
 | [LS01-05](LAUNCH_SPEC.md#ls01-05) | Cursor/derived slices, dataset/release, feature, representation, parcellation, coloring, selection, and relevant workspace state round-trip in a share URL. | URL-state, reducer, app, static-projection, and volume tests. | satisfied | Add a single field-completeness assertion if the URL schema changes. |
 | [LS01-06](LAUNCH_SPEC.md#ls01-06) | Maximize, drawers, and responsive composition are keyboard-reversible and browser-tested. | App, panel-layout, and keyboard browser tests. | satisfied | Repeat cross-browser. |
-| [LS01-07](LAUNCH_SPEC.md#ls01-07) | Current Chrome/Edge, Firefox, and Safari are release targets; Chromium alone is insufficient. | D040; Chromium automation exists. | independent gap | Record Firefox and native Safari release matrices; retain Playwright WebKit as separate evidence. |
+| [LS01-07](LAUNCH_SPEC.md#ls01-07) | Current Chrome/Edge, Firefox, and Safari are release targets; Chromium alone is insufficient. | D040; focused local-import evidence covers Chromium, Firefox, and native Safari, with Playwright WebKit recorded separately. This is not a complete release matrix. | independent gap | Record the full Chrome/Edge, Firefox, and native Safari release matrices on the release commit. |
 
 ## 2. Regional feature exploration
 
@@ -161,7 +170,7 @@ smallest useful files; they do not replace the assertions inside those files.
 | [LS08-02](LAUNCH_SPEC.md#ls08-02) | IndexedDB/local Blob changes transport only; no shadow schema. | Repository/local-source architecture and tests. | satisfied | Retain architecture boundary. |
 | [LS08-03](LAUNCH_SPEC.md#ls08-03) | UI distinguishes imported from published releases. | Local import/manager browser tests. | satisfied | Repeat cross-browser. |
 | [LS08-04](LAUNCH_SPEC.md#ls08-04) | Regional and supported volume resources use the shared payload interfaces. | Repository/materializer and authored archive tests. | satisfied | Retain both representations in capacity corpus. |
-| [LS08-05](LAUNCH_SPEC.md#ls08-05) | Invalid/incomplete import fails explicitly before partial misleading render. | Validation, integrity, quota, and atomic-admission tests. | satisfied | Expand malformed/cancellation/quota regressions and capacity evidence. |
+| [LS08-05](LAUNCH_SPEC.md#ls08-05) | Invalid/incomplete import fails explicitly before partial misleading render. | Validation, integrity, quota, cancellation, rollback, recovery, and 12-case adversarial evidence in the local-import capacity campaign. | satisfied | Retain deterministic regressions; extend native-Safari quota and hard-termination coverage when practical. |
 
 ## 9. Downloads
 
@@ -201,9 +210,11 @@ smallest useful files; they do not replace the assertions inside those files.
 
 ## 12. Performance and reliability
 
-The section precondition requiring representative desktop Chromium and one
-non-Chromium measurement remains part of the independent work in
-[LS01-07](LAUNCH_SPEC.md#ls01-07); it is not an additional acceptance bullet.
+The local-import campaign now supplies representative desktop Chromium and
+non-Chromium measurements for that subsystem. The section precondition still
+belongs to the broader release-matrix work in
+[LS01-07](LAUNCH_SPEC.md#ls01-07); it is not an additional acceptance bullet,
+and focused import evidence does not satisfy the full browser target matrix.
 
 | ID | Criterion and compound subclaims | Evidence | Disposition | Smallest next action |
 | --- | --- | --- | --- | --- |

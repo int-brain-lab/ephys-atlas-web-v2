@@ -2,8 +2,8 @@
 
 Status: active pre-launch capability matrix.
 
-Last reviewed: 2026-08-29 on `main` after the D054 reviewed-distribution
-rebuilds and integrated local acceptance.
+Last reviewed: 2026-08-31 on `main` after the D054 reviewed-distribution
+rebuilds and the local-import capacity/resilience campaign.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -14,7 +14,7 @@ completed implementation diaries.
 | Capability | Implemented state | Evidence/maturity | Remaining production work |
 | --- | --- | --- | --- |
 | Release contract | Schema v1 is the sole builder, browser HTTP/local, publishing, fixture, and download contract; no v0.1 adapters remain. | Cross-language valid/invalid corpus and deterministic golden fixture are green. | None for contract machinery. |
-| Browser boundaries | `core/domain`, `application`, `data`, `rendering`, and `ui` dependencies point inward; catalog IDs and feature catalogs remain open/data-driven. | Architecture tests and full gate are green. | None. |
+| Browser boundaries | `core/domain`, `application`, `data`, `rendering`, and `ui` dependencies point inward; catalog IDs and feature catalogs remain open/data-driven. | Architecture tests are green; the [frontend lifecycle audit](FRONTEND_LIFECYCLE_AUDIT.md) records race fixes and bounded follow-ups. | None for current launch behavior. |
 | 2-D workspace | One retained `ProjectionViewport` per registered frame composites scalar Canvas, regional SVG, guides, interaction, and errors. Top/Swanson use affine-free retained static viewports. Bounded, locally persisted desktop pane resizing/collapse gives space back to the retained workspace without changing share URLs or mobile drawers. | Production projection pack and responsive pane/keyboard Chromium coverage are green. | Deploy and verify immutable bytes at the Q8 origin. |
 | Scientific navigation | One URL-v4 ML/AP/DV cursor drives the native bilateral 10 µm grid; sparse 80 µm SVG sampling changes display only. | Parent/sparse/projection-pack validation and performance evidence are complete. | Production-origin delivery verification. |
 | Optional 3-D context | A sibling retained Three.js viewport shares regional presentation/selection and owns camera, explode, GPU lifecycle, and failure isolation. Volume features remain anatomy-only in 3-D. | D042 real pack is losslessly repackaged and ready locally; Chromium plus owner Safari/Firefox review passed. | Optional immutable public deployment and experimental-label decision; not launch-blocking. |
@@ -33,7 +33,7 @@ Stable boundaries and end-to-end flow are in
 | `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048/D054 presentation, D050 distributions, HTTP acceptance. | D054-reviewed, deterministic validated-real-local technical revision `sha256-9b5e55215b306f26-d050-d048-q14-v1`; not published. | Q8/Q9 publication/default authorization. |
 | `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | D054-reviewed, deterministic validated-real-local technical revision `legacy-v1-1d908bea-d050-q14-linear-full-v1`, rebuilt from all six exact hash-pinned Parquets; not published. | Q8/Q9 publication/default authorization. |
 | `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | D054-reviewed, validated-real-local depth-4 deterministic technical revision `2026_W26-candidate-depth4-d050-q14-linear-full-v1`; explicitly non-production. | Q5 confirmation at the Q8 CloudFront origin, then immutable production build. |
-| `local` | Same schema-v1 graph and materializers; public regional and explicit-grid volume `ibl_ephys_atlas` authoring; deterministic validated ZIP packaging; strict bounded two-phase browser import, atomic IndexedDB admission/deletion, inventory, and integrity recovery. | Regional/reduced-mapping and float16/float32 mask/sentinel volume tests, five executable examples, generated API reference, generated-schema parity, clean-wheel coverage, exact regeneration of both committed public-authored archives, and Chromium import/render/management tests are green. | Measure provisional limits across browsers/real archives; publish the Python distribution only after authorization. |
+| `local` | Same schema-v1 graph and materializers; public regional and explicit-grid volume `ibl_ephys_atlas` authoring; deterministic validated ZIP packaging; strict bounded two-phase browser import, atomic IndexedDB admission/deletion, inventory, and integrity recovery. | Real regional and 467 MiB/6,807-entry volume archives pass Chromium, Firefox, and native Safari import/reload checks; near-1 GiB and 20,000-entry boundaries pass Chromium/Firefox; adversarial, cancellation, quota, rollback, reload, delete, and recovery regressions are recorded. | Supported capacity remains provisional pending native-Safari quota/RSS and representative end-user-device evidence; publish the Python distribution only after authorization. |
 
 Dataset source, recipe, selection, release, and audit ownership is indexed by
 [`data/README.md`](data/README.md). The final paper-facing source vintage and
@@ -111,9 +111,17 @@ usage/quota and persistence are reported separately. Explicit verification
 replays the complete schema graph and integrity checks from a retained root
 manifest; legacy rows remain truthfully unverifiable, and damaged releases use
 atomic delete/reimport recovery. Published browsing remains available when
-local storage is unavailable. Archive ceilings are provisional until
-representative regional and volume bundles are measured in Chromium, Firefox,
-and Safari. Public volume authoring uses factory-verified geometry from an
+local storage is unavailable. The measured campaign retained the 1 GiB ZIP,
+20,000-entry, 1.5 GiB expanded-data, and 1000:1 ratio ceilings while raising
+the aggregate declared decoded-resource budget to 3 GiB. Chromium and Firefox
+passed the measured boundary archives; native Safari passed the real regional
+and volume imports. Playwright WebKit on Linux previewed the archives but its
+WPE IndexedDB implementation rejected Blob/File storage, so it is recorded as
+a platform limitation rather than Safari evidence. Process-tree peak RSS and
+native-Safari quota were not captured, and broadly supported capacity remains
+provisional. See
+[`data/LOCAL_IMPORT_CAPACITY_EVIDENCE.md`](data/LOCAL_IMPORT_CAPACITY_EVIDENCE.md).
+Public volume authoring uses factory-verified geometry from an
 already-created `AllenAtlas`, preserves float16/float32 values, requires
 explicit mask or sentinel validity, and computes valid-only summaries. Its tiny
 synthetic archive is exactly regenerable and has Chromium import, rendering,
@@ -166,20 +174,24 @@ CI and local `just check` use Python 3.12 through committed uv locks, Node 22,
 repository-document integrity checks, a strict MkDocs Material/API-reference
 build, executable synthetic authoring examples, Python builder/publishing
 tests, strict TypeScript, web unit/rendering tests, production build, and
-Chromium Playwright. The generated documentation site is local/CI-only; no
-Pages deployment is configured. The deterministic golden fixture is synthetic
-and test-only. Manual Firefox/Safari remains part of final release QA under
-D040; the optional 3-D local matrix was completed on 2026-08-28.
+Chromium Playwright. An opt-in, single-worker local-import matrix also exercises
+Chromium, Firefox, and Playwright WebKit; native `safaridriver` evidence is kept
+distinct from Playwright WebKit. The generated documentation site is
+local/CI-only; no Pages deployment is configured. The deterministic golden
+fixture is synthetic and test-only. Broad Firefox/Safari release QA remains
+part of the final matrix under D040; the optional 3-D local matrix was completed
+on 2026-08-28 and the focused native-Safari local-import matrix on 2026-08-31.
+The 2026-08-31 fixture, release, bundle, mesh, corrupt-cache, and warm-state
+checks are recorded in
+[`REPRODUCIBILITY_INTEGRITY_EVIDENCE.md`](REPRODUCIBILITY_INTEGRITY_EVIDENCE.md).
 
 ## Remaining launch sequence
 
-1. Complete and integrate the D054-bound immutable local release rebuilds.
-2. Measure D051 ZIP import across representative real archives and browsers.
-3. Resolve Q8 staging details and deploy immutable projection/data assets.
-4. Confirm depth-four volume transport at that origin and resolve Q5.
-5. Resolve Q2 and build the exact paper channel release.
-6. Resolve Q9, publish the frozen release set, and configure defaults.
-7. Run final production-origin, responsive, performance, failure, download,
+1. Resolve Q8 staging details and deploy immutable projection/data assets.
+2. Confirm depth-four volume transport at that origin and resolve Q5.
+3. Resolve Q2 and build the exact paper channel release.
+4. Resolve Q9, publish the frozen release set, and configure defaults.
+5. Run final production-origin, responsive, performance, failure, download,
    local-import, Chromium, Firefox, and Safari QA.
 
 The executable order and stop conditions live in

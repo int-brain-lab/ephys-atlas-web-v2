@@ -14,7 +14,7 @@ evidence. Machine-readable selection JSON remains at its existing stable path.
 | Clusters | [`CLUSTERS_RECIPE.md`](CLUSTERS_RECIPE.md) | [`CLUSTERS_CATALOG_SELECTION.json`](CLUSTERS_CATALOG_SELECTION.json) and [`CLUSTERS_DISTRIBUTION_SELECTION.json`](CLUSTERS_DISTRIBUTION_SELECTION.json) | [`CLUSTERS_RELEASE.md`](CLUSTERS_RELEASE.md), [`CLUSTERS_SOURCE_AUDIT.md`](CLUSTERS_SOURCE_AUDIT.md) | [`DISTRIBUTION_AUDIT.md`](DISTRIBUTION_AUDIT.md) |
 | Encoding volumes | [`VOLUME_IMPLEMENTATION_HANDOFF.md`](VOLUME_IMPLEMENTATION_HANDOFF.md) for the pinned W26 source/continuation contract | [`VOLUME_2026_W26_GEOMETRY_SELECTION.json`](VOLUME_2026_W26_GEOMETRY_SELECTION.json) and [`VOLUME_2026_W26_DISTRIBUTION_SELECTION.json`](VOLUME_2026_W26_DISTRIBUTION_SELECTION.json) | [`VOLUME_2026_W26_EVIDENCE.md`](VOLUME_2026_W26_EVIDENCE.md) | [`DISTRIBUTION_AUDIT.md`](DISTRIBUTION_AUDIT.md); Q5 final-origin validation remains blocked |
 | Brain-Wide Map | [`BRAINWIDE_MAP_RECIPE.md`](BRAINWIDE_MAP_RECIPE.md) | [`BRAINWIDE_MAP_DISTRIBUTION_SELECTION.json`](BRAINWIDE_MAP_DISTRIBUTION_SELECTION.json) | exact-input equivalence tests and current integration status | [`DISTRIBUTION_AUDIT.md`](DISTRIBUTION_AUDIT.md) |
-| Local/custom | D051 and [`CUSTOM_DATA_AUTHORING.md`](CUSTOM_DATA_AUTHORING.md) | user-supplied explicit authoring inputs constrained by schema v1 | public Allen regional authoring and browser ZIP-import tests | [`CUSTOM_DATA_TUTORIAL.md`](CUSTOM_DATA_TUTORIAL.md) for the implemented path; [`CUSTOM_DATA_AUTHORING.md`](CUSTOM_DATA_AUTHORING.md) for remaining work |
+| Local/custom | D051 and [`CUSTOM_DATA_AUTHORING.md`](CUSTOM_DATA_AUTHORING.md) | user-supplied explicit authoring inputs constrained by schema v1 | public authoring/import tests and [`LOCAL_IMPORT_CAPACITY_EVIDENCE.md`](LOCAL_IMPORT_CAPACITY_EVIDENCE.md) | [`CUSTOM_DATA_TUTORIAL.md`](CUSTOM_DATA_TUTORIAL.md) for the implemented path; [`CUSTOM_DATA_AUTHORING.md`](CUSTOM_DATA_AUTHORING.md) for remaining work |
 
 `docs/DATA_SOURCES.md` remains the stable cross-dataset compatibility entry
 point. Dataset recipes and machine-readable selections own current scientific
@@ -29,6 +29,7 @@ choices; evidence reports retain hashes, measurements, and reproduction facts.
 | [`BRAINWIDE_MAP_RECIPE.md`](BRAINWIDE_MAP_RECIPE.md) | scientific recipe | accepted |
 | [`CUSTOM_DATA_AUTHORING.md`](CUSTOM_DATA_AUTHORING.md) | focused implementation plan | active |
 | [`CUSTOM_DATA_TUTORIAL.md`](CUSTOM_DATA_TUTORIAL.md) | implemented Allen regional/volume authoring and import tutorial | runbook |
+| [`LOCAL_IMPORT_CAPACITY_EVIDENCE.md`](LOCAL_IMPORT_CAPACITY_EVIDENCE.md) | completed browser ZIP capacity and resilience campaign | frozen evidence |
 | [`LOCAL_DEVELOPMENT_BUNDLE.md`](LOCAL_DEVELOPMENT_BUNDLE.md) | pinned browser-ready development bundle and `just data` implementation plan | active |
 | [`DISTRIBUTION_AUDIT.md`](DISTRIBUTION_AUDIT.md) | audit and rollout runbook | runbook |
 | [`DISTRIBUTION_AUDIT_EVIDENCE.md`](DISTRIBUTION_AUDIT_EVIDENCE.md) | completed four-dataset source-audit record | frozen evidence |

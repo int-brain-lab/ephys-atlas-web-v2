@@ -34,21 +34,24 @@ not authorized or complete.
 
 Next testable actions:
 
-1. measure the provisional archive, entry, expansion, path, and manifest
-   ceilings with representative regional and volume bundles in Chromium,
-   Firefox, and Safari; record peak memory, preview latency, failure behavior,
-   and IndexedDB quota results before freezing supported limits;
-2. exercise representative real public-authored archives at supported capacity
-   and publish the Python distribution only after explicit authorization.
+1. keep the reproducible capacity corpus and regression harness green, and
+   capture native-Safari quota/process-RSS plus representative end-user-device
+   evidence before advertising a broadly supported maximum capacity;
+2. publish the Python distribution only after explicit authorization.
 
 The pinned zip.js reader rejects unsafe or duplicate paths, non-regular,
 encrypted, split/Zip64, nested, or unsupported-compression entries, undeclared
 files, provisional size/ratio excesses, and integrity mismatches before storage
 mutation. Preparation is local-only and read-only; the application seam keeps
 one IndexedDB admission of individual resources separate so the UI can invoke
-it only after explicit confirmation. The current ceilings remain provisional
-pending real-archive, cross-browser, and quota measurement. This work must not
-introduce a second scientific schema.
+it only after explicit confirmation. The measured campaign retained the 1 GiB
+archive, 20,000-entry, 1.5 GiB expanded-data, and 1000:1 ratio ceilings and
+raised the aggregate declared decoded-resource budget to 3 GiB. Representative
+real archives passed Chromium, Firefox, and native Safari; supported capacity
+wording remains provisional because native-Safari quota/process-RSS and typical
+end-user-device evidence were not captured. This work must not introduce a
+second scientific schema. See
+[`data/LOCAL_IMPORT_CAPACITY_EVIDENCE.md`](data/LOCAL_IMPORT_CAPACITY_EVIDENCE.md).
 
 The implemented regional API requires explicit `BrainRegions`, identity kind,
 scientific semantics, aggregation, provenance, and hemisphere policy. Repeated
@@ -66,7 +69,8 @@ deterministic chunks3d resources and valid-only
 summaries without registration or value transformation. The committed tiny
 synthetic volume is exactly regenerable and imports, renders, navigates, and
 reloads without scientific HTTP reads in Chromium. Cross-browser real-archive
-capacity evidence and distribution publication remain unfinished. The user
+capacity evidence is recorded; distribution publication remains unfinished.
+The user
 path is documented in
 [`data/CUSTOM_DATA_TUTORIAL.md`](data/CUSTOM_DATA_TUTORIAL.md).
 

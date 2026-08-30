@@ -1,7 +1,7 @@
 # Custom data authoring and ZIP import
 
 Status: active focused implementation plan; Allen regional/volume authoring,
-executable examples, and ZIP browser import implemented on 2026-08-29.
+ZIP browser import, and the first capacity campaign are implemented.
 
 This document defines the planned workflow for scientists to prepare their own
 regional or volumetric scalar data and import it into IBL Ephys Atlas Web v2.
@@ -289,8 +289,9 @@ bounded inventory before extraction, supports per-entry Blob extraction and
 cancellation, and provides strict parsing with CRC-32 and overlapping-entry
 checks. The browser imports the native entry point dynamically and disables
 library workers for the first implementation so cancellation, memory behavior,
-and failures remain under one application-owned lifecycle. This is the current
-engineering rationale, not yet cross-browser performance evidence.
+and failures remain under one application-owned lifecycle. Cross-browser
+measurements and their limitations are recorded in
+[`LOCAL_IMPORT_CAPACITY_EVIDENCE.md`](LOCAL_IMPORT_CAPACITY_EVIDENCE.md).
 
 Before extracting any entry, the reader requires normalized portable root
 paths and rejects control characters, backslashes, percent-ambiguous names,
@@ -302,7 +303,8 @@ declared expanded size. The existing complete local schema-v1 graph validator
 then rejects missing, undeclared, corrupt, or semantically invalid resources
 before IndexedDB is opened for mutation.
 
-The first implementation uses these deliberately provisional limits:
+The first implementation uses these safety ceilings, retained after the first
+capacity campaign:
 
 | Limit | Current value |
 | --- | ---: |
@@ -312,17 +314,17 @@ The first implementation uses these deliberately provisional limits:
 | Expanded bytes per entry | 256 MiB |
 | Aggregate expanded bytes | 1.5 GiB |
 | Codec-decoded bytes per resource | 256 MiB |
-| Aggregate codec-decoded bytes | 1.5 GiB |
+| Aggregate codec-decoded bytes | 3 GiB |
 | Expansion ratio per entry | 1,000:1 |
 | UTF-8 path bytes | 512 |
 | UTF-8 path-segment bytes | 128 |
 | Expanded `manifest.json` bytes | 8 MiB |
 
-These values are safety ceilings, not accepted product capacity or performance
-targets. Measure representative regional and volume authoring archives in
-Chromium, Firefox, and Safari, including peak memory, preview latency,
-cancellation, extraction failures, and IndexedDB quota behavior, before
-freezing or advertising supported limits.
+These values are safety ceilings, not universal product-capacity or performance
+targets. Representative regional and volume archives now pass Chromium,
+Firefox, and native Safari, while the exact archive/count boundaries pass
+Chromium and Firefox. Native Safari quota and process RSS remain unmeasured, so
+supported-capacity wording stays provisional. See the focused evidence record.
 
 The ZIP-expanded and schema codec-decoded budgets are enforced independently.
 The complete declared graph is preflighted with safe integer arithmetic before
@@ -344,7 +346,9 @@ identity and inventory before confirmation, successful admission selects a
 persistent `Local` release, and duplicate immutable identities fail without
 replacement. Automated Chromium coverage verifies preview-before-mutation,
 reload persistence, and local resource reads without the published release
-origin. Cross-browser real-archive capacity evidence is still outstanding.
+origin. The first cross-browser capacity campaign is complete; its exact
+results, WPE IndexedDB limitation, and remaining Safari quota/RSS caveats are
+recorded in [`LOCAL_IMPORT_CAPACITY_EVIDENCE.md`](LOCAL_IMPORT_CAPACITY_EVIDENCE.md).
 
 ## Browser experience
 
@@ -404,8 +408,8 @@ public abstraction without its consumer or deterministic evidence.
 
 ### Slice 0 — Contract and baseline
 
-Status: implemented on 2026-08-29 for the Python bundle boundary and canonical
-synthetic fixture; browser-reader measurement remains part of Slice 1.
+Status: implemented for the Python bundle boundary, canonical synthetic
+fixture, and browser-reader measurement.
 
 - retain D051 and this plan as the binding direction;
 - capture a green baseline and deterministic schema-v1 ZIP fixture;
@@ -424,12 +428,12 @@ bundle machinery rather than a second serializer or validator.
 
 ### Slice 1 — ZIP-only browser import
 
-Status: implemented for the user-facing synthetic vertical slice on 2026-08-29.
-The pinned reader, strict bounded inventory/extraction, complete-graph
-validation, two-phase preview/admission UI, persistent Local identity,
-duplicate rejection, and automated Chromium persistence/no-network evidence
-are green. Representative real-archive cross-browser and quota measurement
-remains required before the provisional limits become supported capacity.
+Status: implemented. The pinned reader, strict bounded inventory/extraction,
+complete-graph validation, two-phase preview/admission UI, persistent Local
+identity, duplicate rejection, deterministic adversarial corpus, and
+representative Chromium/Firefox/native Safari evidence are complete. Supported
+capacity remains provisional because native Safari quota/RSS and typical-device
+memory were not measured.
 
 - replace the dormant directory/FileList import seam with one archive input;
 - implement safe ZIP inventory/extraction above the existing complete local
@@ -440,11 +444,11 @@ remains required before the provisional limits become supported capacity.
   corrupt hash, missing/undeclared resource, unsafe ZIP path, and no-network
   behavior in unit and Chromium tests.
 
-The user-facing slice is closed, but its capacity-evidence follow-up remains:
-measure the provisional limits and reader behavior with representative real
-regional and volume archives across the launch browsers. Record any revised
-ceilings and the evidence for them here rather than treating the initial
-constants as final support claims.
+The user-facing and first capacity-evidence slices are closed. The campaign
+retained the outer ZIP ceilings and raised only the aggregate declared
+codec-decoded budget from 1.5 GiB to 3 GiB so the 2,264-MiB decoded real volume
+graph remains admissible. The evidence record defines the narrower supported-
+capacity wording and remaining measurement caveats.
 
 ### Slice 2 — Public regional authoring
 
@@ -486,9 +490,9 @@ Status: implemented on 2026-08-29.
 
 ### Slice 4 — Volume authoring
 
-Status: implemented on 2026-08-29 for deterministic local chunks3d authoring
-and Chromium acceptance; representative real-archive Firefox/Safari capacity
-measurement remains pending.
+Status: implemented for deterministic local chunks3d authoring and browser
+acceptance. The representative 467-MiB, 6,807-entry volume passes Chromium,
+Firefox, and native Safari import/reload.
 
 - `AllenCCFGrid.from_iblatlas()` verifies axis/affine conversion from an
   already-created atlas and fingerprints the exact grid contract;
@@ -497,8 +501,8 @@ measurement remains pending.
 - the exact-regenerable synthetic authored volume imports, renders three linked
   planes, navigates, and reloads through the ordinary IndexedDB path without
   scientific network reads;
-- run representative real archives through owner/manual Safari and Firefox
-  capacity acceptance before advertising supported archive limits.
+- retain the real-volume Firefox/native Safari evidence while keeping universal
+  maximum-capacity claims provisional pending Safari quota/RSS measurement.
 
 ### Slice 5 — Distribution and release hardening
 
@@ -527,5 +531,6 @@ exact schema; the API exactly regenerates the committed regional and volume
 ZIPs; standalone examples exercise all supported input paths; and dedicated
 Chromium tests import the archives through the ordinary viewer path, fully
 validate and persist them, and read resources without scientific network
-access. Before advertising production capacity, representative real authored
-archives still need cross-browser memory/quota measurement.
+access. The first cross-browser real-archive campaign is complete. It supports
+the representative real regional and volume archives, not a universal promise
+at every ceiling; process RSS and native Safari quota remain open evidence.
