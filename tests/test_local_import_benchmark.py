@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import struct
@@ -81,6 +82,8 @@ def test_capacity_corpus_is_valid_exact_count_labeled_and_deterministic(tmp_path
 
 def test_real_corpus_uses_canonical_exact_bundle_and_checks_representation(tmp_path: Path) -> None:
     release = generate_golden(tmp_path / "release")
+    extra = release / "source-selection.json"
+    extra.write_text('{"local_evidence": true}\n')
     output = tmp_path / "real"
     index = generate_real_corpus(
         output,
@@ -96,6 +99,11 @@ def test_real_corpus_uses_canonical_exact_bundle_and_checks_representation(tmp_p
         "release_id": "golden-v1",
         "path": release.as_posix(),
     }
+    assert record["excluded_undeclared_files"] == [{
+        "path": "source-selection.json",
+        "bytes": extra.stat().st_size,
+        "sha256": hashlib.sha256(extra.read_bytes()).hexdigest(),
+    }]
     assert record["synthetic"] is False
 
 

@@ -100,6 +100,14 @@ def _representation_inventory(release_dir: Path) -> set[str]:
     return result
 
 
+def _file_record(path: Path, root: Path) -> dict[str, object]:
+    return {
+        "path": path.relative_to(root).as_posix(),
+        "bytes": path.stat().st_size,
+        "sha256": sha256_file(path),
+    }
+
+
 def generate_real_corpus(
     output_dir: Path,
     releases: list[ReleaseCase],
@@ -123,8 +131,24 @@ def generate_real_corpus(
         if case.representation not in _representation_inventory(release_dir):
             raise ValueError(f"{release_dir} has no {case.representation} representation")
         manifest = json.loads((release_dir / "manifest.json").read_text())
+        declared = declared_release_resource_paths(release_dir)
+        actual = {
+            path.relative_to(release_dir).as_posix(): path
+            for path in release_dir.rglob("*")
+            if path.is_file()
+        }
+        missing = sorted(declared - actual.keys())
+        if missing:
+            raise ValueError(f"{release_dir} is missing declared files: {', '.join(missing[:8])}")
+        excluded = [actual[name] for name in sorted(set(actual) - declared)]
         archive = output_dir / f"{case_id}{BUNDLE_SUFFIX}"
-        info = write_bundle(release_dir, archive, schema_dir)
+        with tempfile.TemporaryDirectory(prefix=f".{case_id}-", dir=output_dir) as temporary:
+            staged = Path(temporary) / "release"
+            for name in sorted(declared):
+                destination = staged / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(actual[name], destination)
+            info = write_bundle(staged, archive, schema_dir)
         records.append(_archive_record(
             archive,
             case_id=case_id,
@@ -136,6 +160,7 @@ def generate_real_corpus(
                 "release_id": manifest["release"]["release_id"],
                 "path": case.release_dir.as_posix(),
             },
+            excluded_undeclared_files=[_file_record(path, release_dir) for path in excluded],
             canonical_bundle_sha256=info["sha256"],
         ))
     return _write_index(output_dir, records)
