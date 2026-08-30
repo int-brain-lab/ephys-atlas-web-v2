@@ -29,41 +29,41 @@ Supported parcellations for applicable regional data are Allen, Beryl, and Cosmo
 
 Acceptance criteria:
 
-- Desktop is the primary layout; tablet remains usable; phone may use a reduced composition.
-- Coronal, sagittal, and horizontal views remain linked through one scientific navigation state.
-- All three projections use one ML/AP/DV cursor and the generated pack's native bilateral 10 µm affine grid.
-- Top and Swanson are static regional projections in one discoverable secondary
+- <a id="ls01-01"></a> **`LS01-01`** — Desktop is the primary layout; tablet remains usable; phone may use a reduced composition.
+- <a id="ls01-02"></a> **`LS01-02`** — Coronal, sagittal, and horizontal views remain linked through one scientific navigation state.
+- <a id="ls01-03"></a> **`LS01-03`** — All three projections use one ML/AP/DV cursor and the generated pack's native bilateral 10 µm affine grid.
+- <a id="ls01-04"></a> **`LS01-04`** — Top and Swanson are static regional projections in one discoverable secondary
   slot. They share coloring, hover, selection, and focus behavior without
   claiming slice, world-coordinate, or voxel navigation.
-- The world cursor and its derived slice positions, dataset/release, feature,
+- <a id="ls01-05"></a> **`LS01-05`** — The world cursor and its derived slice positions, dataset/release, feature,
   representation, parcellation, coloring, region selection, and relevant
   workspace view state are serializable into a shareable URL.
-- Maximized views, drawers, and responsive composition remain keyboard-reversible and covered by browser tests.
-- Current Chrome/Edge, Firefox, and Safari are the launch browser targets. Chromium CI is necessary but not sufficient for final release QA.
+- <a id="ls01-06"></a> **`LS01-06`** — Maximized views, drawers, and responsive composition remain keyboard-reversible and covered by browser tests.
+- <a id="ls01-07"></a> **`LS01-07`** — Current Chrome/Edge, Firefox, and Safari are the launch browser targets. Chromium CI is necessary but not sufficient for final release QA.
 
 ## 2. Regional feature exploration
 
 For a schema-v1 regional feature, the viewer must:
 
-- discover features dynamically from the selected immutable release;
-- load parcellation region metadata and the region index from the release;
-- search regions by loaded metadata rather than a hardcoded list;
-- display the selected statistic for each region;
-- color registered anatomical regions from the selected statistic/colormap/range;
-- use one shared selection state for region-list and SVG interactions;
-- persist selection in URL state;
-- show global descriptive statistics and a distribution/histogram;
-- expose available Linear, Log, and Signed-log value scales through one
+- <a id="ls02-01"></a> **`LS02-01`** — discover features dynamically from the selected immutable release;
+- <a id="ls02-02"></a> **`LS02-02`** — load parcellation region metadata and the region index from the release;
+- <a id="ls02-03"></a> **`LS02-03`** — search regions by loaded metadata rather than a hardcoded list;
+- <a id="ls02-04"></a> **`LS02-04`** — display the selected statistic for each region;
+- <a id="ls02-05"></a> **`LS02-05`** — color registered anatomical regions from the selected statistic/colormap/range;
+- <a id="ls02-06"></a> **`LS02-06`** — use one shared selection state for region-list and SVG interactions;
+- <a id="ls02-07"></a> **`LS02-07`** — persist selection in URL state;
+- <a id="ls02-08"></a> **`LS02-08`** — show global descriptive statistics and a distribution/histogram;
+- <a id="ls02-09"></a> **`LS02-09`** — expose available Linear, Log, and Signed-log value scales through one
   synchronized control for coloring, distributions, and range geometry;
-- expose Full and Focused distribution domains independently across the global,
+- <a id="ls02-10"></a> **`LS02-10`** — expose Full and Focused distribution domains independently across the global,
   comparison, and compact color-range histogram viewports, with exact
   underflow/overflow disclosure and whole-population normalization in Focused,
   without changing the selected color bounds;
-- preserve explicit scale/domain choices in the URL without changing source
+- <a id="ls02-11"></a> **`LS02-11`** — preserve explicit scale/domain choices in the URL without changing source
   observations, and obtain thresholds, focus bounds, availability, and defaults
   only from immutable representation-specific release metadata;
-- compare selected-region statistics/distributions with the global population;
-- clearly identify synthetic fixtures as non-scientific.
+- <a id="ls02-12"></a> **`LS02-12`** — compare selected-region statistics/distributions with the global population;
+- <a id="ls02-13"></a> **`LS02-13`** — clearly identify synthetic fixtures as non-scientific.
 
 Launch statistics are descriptive only: mean, median, min, max, count, standard deviation/quantiles where present, histograms, and visual comparisons. Inferential tests are out of scope.
 
@@ -71,35 +71,35 @@ Launch statistics are descriptive only: mean, median, min, max, count, standard 
 
 For a schema-v1 volume feature, the viewer must:
 
-- preserve scientific grid shape, dtype, axis semantics, validity rules, and
+- <a id="ls03-01"></a> **`LS03-01`** — preserve scientific grid shape, dtype, axis semantics, validity rules, and
   index-to-world transform from authoritative metadata, deriving or strictly
   validating any redundant voxel-size/origin presentation;
-- expose a whole-feature summary whose mutually exclusive valid, outside, and
+- <a id="ls03-02"></a> **`LS03-02`** — expose a whole-feature summary whose mutually exclusive valid, outside, and
   missing counts sum to the grid voxel count and whose statistics/histogram use
   valid voxels only;
-- offer the same release-declared value-scale and distribution-domain controls
+- <a id="ls03-03"></a> **`LS03-03`** — offer the same release-declared value-scale and distribution-domain controls
   as regional data where available, while keeping volume distributions global
   and valid-voxel-only rather than inventing regional comparison curves;
-- map linked anatomical coordinates to the volume using the declared scientific transform, never the curated SVG display calibration;
-- require the volume and anatomy to declare the same `reference_space_id`
+- <a id="ls03-04"></a> **`LS03-04`** — map linked anatomical coordinates to the volume using the declared scientific transform, never the curated SVG display calibration;
+- <a id="ls03-05"></a> **`LS03-05`** — require the volume and anatomy to declare the same `reference_space_id`
   before compositing, while permitting distinct grid identities, resolutions,
   shapes, and affines;
-- render coronal, sagittal, and horizontal scalar planes as retained Canvas
+- <a id="ls03-06"></a> **`LS03-06`** — render coronal, sagittal, and horizontal scalar planes as retained Canvas
   layers in the shared projection viewport, with registered anatomy outlines,
   selection, hover, and guides layered independently;
-- apply colormap/range controls consistently with regional scalar rendering where semantics overlap;
-- use nearest-neighbor Canvas sampling and the same nearest-voxel rule for
+- <a id="ls03-07"></a> **`LS03-07`** — apply colormap/range controls consistently with regional scalar rendering where semantics overlap;
+- <a id="ls03-08"></a> **`LS03-08`** — use nearest-neighbor Canvas sampling and the same nearest-voxel rule for
   pointer inspection, including pixels with no overlying SVG region path;
-- URL-persist user-adjusted volume opacity and anatomy-outline visibility
+- <a id="ls03-09"></a> **`LS03-09`** — URL-persist user-adjusted volume opacity and anatomy-outline visibility
   without changing decoded values, inspection, statistics, or exports;
-- bound decoded-data memory with an explicit cache policy;
-- avoid downloading the entire production volume for ordinary single-slice navigation;
-- verify immutable encoded volume resources by declared served-byte size and
+- <a id="ls03-10"></a> **`LS03-10`** — bound decoded-data memory with an explicit cache policy;
+- <a id="ls03-11"></a> **`LS03-11`** — avoid downloading the entire production volume for ordinary single-slice navigation;
+- <a id="ls03-12"></a> **`LS03-12`** — verify immutable encoded volume resources by declared served-byte size and
   SHA-256 before persistent caching or decoding, evicting and cleanly retrying
   an invalid cached entry;
-- report out-of-volume coordinates explicitly rather than clamping them to an
+- <a id="ls03-13"></a> **`LS03-13`** — report out-of-volume coordinates explicitly rather than clamping them to an
   edge voxel;
-- support the physical layout selected by measured real-data browser benchmarks.
+- <a id="ls03-14"></a> **`LS03-14`** — support the physical layout selected by measured real-data browser benchmarks.
 
 `chunks3d` is the deterministic reference/golden layout. It is not automatically the production transport. `orthogonal_slice_packs` remains an allowed browser-oriented layout until the real-data benchmark is resolved.
 
@@ -109,15 +109,15 @@ The production channel release must be generated from a pinned `ea_active` sourc
 
 Acceptance criteria:
 
-- source project and exact vintage are recorded;
-- raw versus denoised loading mode is explicit and recorded;
-- population/QC recipe is explicit and recorded;
-- feature catalog is discovered from the source/authoritative feature definition rather than copied into frontend code;
-- Allen/Beryl/Cosmos regional outputs use one deterministic recipe;
-- feature units, transforms, source columns, missing-value semantics, and population are represented in feature metadata;
-- regional statistics and histograms validate against schema v1;
-- source file hashes and builder version/command are recorded in provenance;
-- a paper-facing release pins an immutable source vintage rather than resolving `latest` at consumption time.
+- <a id="ls04-01"></a> **`LS04-01`** — source project and exact vintage are recorded;
+- <a id="ls04-02"></a> **`LS04-02`** — raw versus denoised loading mode is explicit and recorded;
+- <a id="ls04-03"></a> **`LS04-03`** — population/QC recipe is explicit and recorded;
+- <a id="ls04-04"></a> **`LS04-04`** — feature catalog is discovered from the source/authoritative feature definition rather than copied into frontend code;
+- <a id="ls04-05"></a> **`LS04-05`** — Allen/Beryl/Cosmos regional outputs use one deterministic recipe;
+- <a id="ls04-06"></a> **`LS04-06`** — feature units, transforms, source columns, missing-value semantics, and population are represented in feature metadata;
+- <a id="ls04-07"></a> **`LS04-07`** — regional statistics and histograms validate against schema v1;
+- <a id="ls04-08"></a> **`LS04-08`** — source file hashes and builder version/command are recorded in provenance;
+- <a id="ls04-09"></a> **`LS04-09`** — a paper-facing release pins an immutable source vintage rather than resolving `latest` at consumption time.
 
 A synthetic/deterministic test dataset may exercise this machinery before the scientific choices in `docs/OPEN_QUESTIONS.md` are resolved. It must not be labeled as a scientific production release.
 
@@ -125,10 +125,10 @@ A synthetic/deterministic test dataset may exercise this machinery before the sc
 
 Acceptance criteria:
 
-- the launch cluster population and feature set are explicitly defined by an authoritative scientific recipe;
-- provenance/QC requirements are equivalent in rigor to the channel release;
-- the output uses the same schema-v1 regional contract where applicable;
-- the viewer requires no cluster-specific hardcoded feature list.
+- <a id="ls05-01"></a> **`LS05-01`** — the launch cluster population and feature set are explicitly defined by an authoritative scientific recipe;
+- <a id="ls05-02"></a> **`LS05-02`** — provenance/QC requirements are equivalent in rigor to the channel release;
+- <a id="ls05-03"></a> **`LS05-03`** — the output uses the same schema-v1 regional contract where applicable;
+- <a id="ls05-04"></a> **`LS05-04`** — the viewer requires no cluster-specific hardcoded feature list.
 
 D038 selects all rows from a content-addressed
 `ibl_neuropixel_brainwide_01/clusters.table.pqt` snapshot. D044 resolves Q6 by
@@ -140,34 +140,34 @@ and local production-HTTP browser evidence are recorded under `docs/data/`.
 
 Acceptance criteria:
 
-- canonical encoding-volume source object(s) are pinned by vintage and object identity/hash when practical;
-- source feature names and per-feature metadata are mapped deterministically into the release catalog;
-- the scientific index-to-world transform and outside-brain semantics come from an authoritative producer/atlas source;
-- the selected browser transport has recorded real-data request count, transferred bytes, decode latency, interaction latency, and memory measurements;
-- the viewer can switch among volume features without an application reload;
-- transport conversion, if used, records provenance back to the canonical source object.
+- <a id="ls06-01"></a> **`LS06-01`** — canonical encoding-volume source object(s) are pinned by vintage and object identity/hash when practical;
+- <a id="ls06-02"></a> **`LS06-02`** — source feature names and per-feature metadata are mapped deterministically into the release catalog;
+- <a id="ls06-03"></a> **`LS06-03`** — the scientific index-to-world transform and outside-brain semantics come from an authoritative producer/atlas source;
+- <a id="ls06-04"></a> **`LS06-04`** — the selected browser transport has recorded real-data request count, transferred bytes, decode latency, interaction latency, and memory measurements;
+- <a id="ls06-05"></a> **`LS06-05`** — the viewer can switch among volume features without an application reload;
+- <a id="ls06-06"></a> **`LS06-06`** — transport conversion, if used, records provenance back to the canonical source object.
 
 ## 7. `brainwide_map`
 
 Acceptance criteria:
 
-- the launch product faithfully preserves the five checksummed Beryl-only v1
+- <a id="ls07-01"></a> **`LS07-01`** — the launch product faithfully preserves the five checksummed Beryl-only v1
   website Parquet families selected by D038;
-- it is explicitly identified as a preserved legacy website snapshot and is
+- <a id="ls07-02"></a> **`LS07-02`** — it is explicitly identified as a preserved legacy website snapshot and is
   not presented as a current paper-selection or regenerated paper release;
-- feature values and aggregation/significance semantics validate against the
+- <a id="ls07-03"></a> **`LS07-03`** — feature values and aggregation/significance semantics validate against the
   pinned v1 generator through deterministic equivalence evidence;
-- the dataset validates against the shared release contract and is discoverable through the public catalog.
+- <a id="ls07-04"></a> **`LS07-04`** — the dataset validates against the shared release contract and is discoverable through the public catalog.
 
 ## 8. Local datasets
 
 Acceptance criteria:
 
-- local browser imports consume the same schema-v1 manifest/feature/representation contract as published data;
-- transport changes to IndexedDB/local blobs without introducing a shadow scientific schema;
-- imported releases remain distinguishable from published releases in the UI;
-- regional and supported volume resources resolve from local storage using the same viewer payload interfaces;
-- invalid/incomplete imports fail explicitly rather than partially rendering misleading data.
+- <a id="ls08-01"></a> **`LS08-01`** — local browser imports consume the same schema-v1 manifest/feature/representation contract as published data;
+- <a id="ls08-02"></a> **`LS08-02`** — transport changes to IndexedDB/local blobs without introducing a shadow scientific schema;
+- <a id="ls08-03"></a> **`LS08-03`** — imported releases remain distinguishable from published releases in the UI;
+- <a id="ls08-04"></a> **`LS08-04`** — regional and supported volume resources resolve from local storage using the same viewer payload interfaces;
+- <a id="ls08-05"></a> **`LS08-05`** — invalid/incomplete imports fail explicitly rather than partially rendering misleading data.
 
 ## 9. Downloads
 
@@ -175,25 +175,25 @@ The launch viewer must provide practical access to underlying data.
 
 Acceptance criteria:
 
-- current-feature download is available or directly navigable from immutable release artifacts;
-- selected-region/visible comparison data can be exported in a documented machine-readable form;
-- immutable artifact URLs and current-feature/context-rich exports satisfy the
+- <a id="ls09-01"></a> **`LS09-01`** — current-feature download is available or directly navigable from immutable release artifacts;
+- <a id="ls09-02"></a> **`LS09-02`** — selected-region/visible comparison data can be exported in a documented machine-readable form;
+- <a id="ls09-03"></a> **`LS09-03`** — immutable artifact URLs and current-feature/context-rich exports satisfy the
   initial launch; polished deterministic whole-release packaging is a
   non-blocking follow-up;
-- downloads preserve enough metadata/provenance to identify dataset ID, release ID, feature, representation, statistic/parcellation, and source vintage.
+- <a id="ls09-04"></a> **`LS09-04`** — downloads preserve enough metadata/provenance to identify dataset ID, release ID, feature, representation, statistic/parcellation, and source vintage.
 
 ## 10. Publishing and public reads
 
 Acceptance criteria:
 
-- public reads are static, unauthenticated files suitable for object storage/CDN delivery;
-- public `catalog.json` follows the browser catalog contract;
-- immutable releases are never mutated after publication;
-- mutable aliases resolve to immutable release IDs outside release directories;
-- publishing uses revocable capability credentials rather than a launch-blocking user/OAuth system;
-- uploads are resumable and private until complete;
-- byte size, SHA-256, and schema validation complete before atomic publication;
-- publishing does not perform scientific transforms.
+- <a id="ls10-01"></a> **`LS10-01`** — public reads are static, unauthenticated files suitable for object storage/CDN delivery;
+- <a id="ls10-02"></a> **`LS10-02`** — public `catalog.json` follows the browser catalog contract;
+- <a id="ls10-03"></a> **`LS10-03`** — immutable releases are never mutated after publication;
+- <a id="ls10-04"></a> **`LS10-04`** — mutable aliases resolve to immutable release IDs outside release directories;
+- <a id="ls10-05"></a> **`LS10-05`** — publishing uses revocable capability credentials rather than a launch-blocking user/OAuth system;
+- <a id="ls10-06"></a> **`LS10-06`** — uploads are resumable and private until complete;
+- <a id="ls10-07"></a> **`LS10-07`** — byte size, SHA-256, and schema validation complete before atomic publication;
+- <a id="ls10-08"></a> **`LS10-08`** — publishing does not perform scientific transforms.
 
 Remote publishing is desirable but may not block viewer launch if static release deployment is operationally sufficient.
 
@@ -201,27 +201,27 @@ Remote publishing is desirable but may not block viewer launch if static release
 
 Acceptance criteria:
 
-- the production bilateral 10 µm registered geometry remains derived from
+- <a id="ls11-01"></a> **`LS11-01`** — the production bilateral 10 µm registered geometry remains derived from
   pinned Allen annotation and LUT bytes by a clean pinned generator, retaining
   the validated parent evidence;
-- one active `atlas-projection-pack-v1` manifest exposes registered coronal,
+- <a id="ls11-02"></a> **`LS11-02`** — one active `atlas-projection-pack-v1` manifest exposes registered coronal,
   sagittal, and horizontal slice stacks plus static Top and Swanson maps;
-- the sparse registered display corpus is deterministically derived from the
+- <a id="ls11-03"></a> **`LS11-03`** — the sparse registered display corpus is deterministically derived from the
   validated bilateral parent and records its identity;
-- Top and Swanson record their exact distinct source identities, hashes, view
+- <a id="ls11-04"></a> **`LS11-04`** — Top and Swanson record their exact distinct source identities, hashes, view
   boxes (`60 20 340 300` for both), path counts, and static-map status without
   an invented affine, slice index, or world coordinate;
-- every compressed resource is immutable, byte-sized, SHA-256 verified, and
+- <a id="ls11-05"></a> **`LS11-05`** — every compressed resource is immutable, byte-sized, SHA-256 verified, and
   explicitly decompressed by the browser;
-- topology, source-voxel coverage, signed ID, boundary-error, IoU, and
+- <a id="ls11-06"></a> **`LS11-06`** — topology, source-voxel coverage, signed ID, boundary-error, IoU, and
   synchronization gates pass for all 3,260 native parent slices; the registered
   sparse runtime corpus preserves the accepted 407 selected SVG fragments;
-- the parent projection affines define native bilateral 10 µm navigation and
+- <a id="ls11-07"></a> **`LS11-07`** — the parent projection affines define native bilateral 10 µm navigation and
   guide placement without hand-tuned display formulas, while the 80 µm runtime
   inventory affects display-plane selection only;
-- production delivery preserves opaque compressed bytes without HTTP
+- <a id="ls11-08"></a> **`LS11-08`** — production delivery preserves opaque compressed bytes without HTTP
   `Content-Encoding` where compressed-byte verification requires it;
-- the browser has one normalized regional SVG identity contract and no legacy
+- <a id="ls11-09"></a> **`LS11-09`** — the browser has one normalized regional SVG identity contract and no legacy
   host, legacy crosswalk, old-pack parser, or runtime compatibility dependency.
 
 ## 12. Performance and reliability
@@ -230,12 +230,12 @@ Before production launch, record representative measurements for at least deskto
 
 Acceptance criteria:
 
-- initial app shell becomes interactive without fetching full scientific datasets;
-- feature switching and ordinary slice movement fetch only the resources required by the active representation plus bounded prefetch;
-- production volume navigation meets a documented request/bytes/decode/memory budget selected from real-data benchmarks;
-- asset/data failures produce explicit error states rather than stale or silently wrong visualizations;
-- immutable resources use cache-friendly URLs and policies;
-- no launch-critical interaction requires a mutation/backend API.
+- <a id="ls12-01"></a> **`LS12-01`** — initial app shell becomes interactive without fetching full scientific datasets;
+- <a id="ls12-02"></a> **`LS12-02`** — feature switching and ordinary slice movement fetch only the resources required by the active representation plus bounded prefetch;
+- <a id="ls12-03"></a> **`LS12-03`** — production volume navigation meets a documented request/bytes/decode/memory budget selected from real-data benchmarks;
+- <a id="ls12-04"></a> **`LS12-04`** — asset/data failures produce explicit error states rather than stale or silently wrong visualizations;
+- <a id="ls12-05"></a> **`LS12-05`** — immutable resources use cache-friendly URLs and policies;
+- <a id="ls12-06"></a> **`LS12-06`** — no launch-critical interaction requires a mutation/backend API.
 
 Exact performance thresholds should be recorded with the real-data volume benchmark rather than invented from the golden fixture.
 
@@ -243,12 +243,12 @@ Exact performance thresholds should be recorded with the real-data volume benchm
 
 Acceptance criteria:
 
-- production public domain/URL and storage/CDN arrangement are selected and documented;
-- CORS and, where relevant, HTTP Range behavior are verified from the production origin;
-- the paper-facing default resolves to a pinned immutable release set;
-- deployment secrets and publisher credentials are not stored in the repository;
-- backup/recovery expectations for publishing control state are documented if the publishing service is deployed;
-- v1 remains available as fallback through the initial v2 launch window.
+- <a id="ls13-01"></a> **`LS13-01`** — production public domain/URL and storage/CDN arrangement are selected and documented;
+- <a id="ls13-02"></a> **`LS13-02`** — CORS and, where relevant, HTTP Range behavior are verified from the production origin;
+- <a id="ls13-03"></a> **`LS13-03`** — the paper-facing default resolves to a pinned immutable release set;
+- <a id="ls13-04"></a> **`LS13-04`** — deployment secrets and publisher credentials are not stored in the repository;
+- <a id="ls13-05"></a> **`LS13-05`** — backup/recovery expectations for publishing control state are documented if the publishing service is deployed;
+- <a id="ls13-06"></a> **`LS13-06`** — v1 remains available as fallback through the initial v2 launch window.
 
 ## Explicitly deferred
 
@@ -271,9 +271,9 @@ the launch-critical linked 2-D volume workspace.
 
 The release is launch-ready when:
 
-1. every un-deferred acceptance criterion above is either satisfied or explicitly waived in `docs/DECISIONS.md`;
-2. every launch dataset has an immutable, provenance-valid release or an explicit documented waiver;
-3. `just check` is green on the release commit;
-4. browser QA and production-origin data/CORS checks are recorded;
-5. `docs/OPEN_QUESTIONS.md` contains no unresolved item marked as a launch blocker;
-6. `docs/INTEGRATION_STATUS.md` describes the actual shipped state rather than planned work.
+1. <a id="dlr-01"></a> **`DLR-01`** — every un-deferred acceptance criterion above is either satisfied or explicitly waived in `docs/DECISIONS.md`;
+2. <a id="dlr-02"></a> **`DLR-02`** — every launch dataset has an immutable, provenance-valid release or an explicit documented waiver;
+3. <a id="dlr-03"></a> **`DLR-03`** — `just check` is green on the release commit;
+4. <a id="dlr-04"></a> **`DLR-04`** — browser QA and production-origin data/CORS checks are recorded;
+5. <a id="dlr-05"></a> **`DLR-05`** — `docs/OPEN_QUESTIONS.md` contains no unresolved item marked as a launch blocker;
+6. <a id="dlr-06"></a> **`DLR-06`** — `docs/INTEGRATION_STATUS.md` describes the actual shipped state rather than planned work.

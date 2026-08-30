@@ -144,3 +144,40 @@ def test_reports_missing_or_conflicting_indexed_status(tmp_path: Path) -> None:
     assert any("indexed document has no Status header" in item for item in messages)
     assert any("status 'active' does not match index status 'accepted'" in item for item in messages)
     assert any("active document is also labelled retired or superseded" in item for item in messages)
+
+
+def test_launch_traceability_requires_every_canonical_row(tmp_path: Path) -> None:
+    root = _repository(tmp_path)
+    counts = (7, 13, 14, 9, 4, 6, 4, 5, 4, 8, 9, 6, 6)
+    identifiers = [
+        f"LS{section:02d}-{criterion:02d}"
+        for section, count in enumerate(counts, 1)
+        for criterion in range(1, count + 1)
+    ] + [f"DLR-{criterion:02d}" for criterion in range(1, 7)]
+    _write(
+        root,
+        "docs/LAUNCH_SPEC.md",
+        "# Launch\n\n" + "\n".join(
+            f'- <a id="{identifier.lower()}"></a> **`{identifier}`** — Criterion.'
+            for identifier in identifiers
+        ),
+    )
+    rows = [
+        f"| [{identifier}](LAUNCH_SPEC.md#{identifier.lower()}) | Criterion | Evidence | satisfied | Retain coverage. |"
+        for identifier in identifiers
+    ]
+    _write(
+        root,
+        "docs/LAUNCH_READINESS_AUDIT.md",
+        "# Audit\n\n" + "\n".join(rows),
+    )
+    assert _messages(root) == []
+
+    (root / "docs/LAUNCH_READINESS_AUDIT.md").write_text(
+        "# Audit\n\n" + "\n".join(rows[:-1]),
+        encoding="utf-8",
+    )
+    assert any(
+        "launch audit must contain exactly one ordered row for every launch criterion ID" in item
+        for item in _messages(root)
+    )

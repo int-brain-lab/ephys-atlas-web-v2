@@ -27,6 +27,7 @@ the archive.
 | Need | Authority |
 | --- | --- |
 | Product launch requirements | [Launch specification](LAUNCH_SPEC.md) |
+| Criterion-level launch evidence and gaps | [Launch-readiness audit](LAUNCH_READINESS_AUDIT.md) |
 | System boundaries and data flow | [System overview](SYSTEM_OVERVIEW.md) and [architecture](ARCHITECTURE.md) |
 | Accepted policy and product choices | [Effective decision index](DECISIONS.md) |
 | Current implementation maturity | Code and tests, summarized by [integration status](INTEGRATION_STATUS.md) |

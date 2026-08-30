@@ -56,6 +56,7 @@ nav:
   - Product:
       - System overview: SYSTEM_OVERVIEW.md
       - Launch specification: LAUNCH_SPEC.md
+      - Launch-readiness audit: LAUNCH_READINESS_AUDIT.md
       - Effective decisions: DECISIONS.md
       - Integration status: INTEGRATION_STATUS.md
       - Open questions: OPEN_QUESTIONS.md

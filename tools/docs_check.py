@@ -45,6 +45,20 @@ HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
 ID_HEADING_RE = re.compile(r"^#{1,6}\s+([QD]\d+)\b")
 ID_REFERENCE_RE = re.compile(r"\b([QD]\d+)\b")
 STATUS_RE = re.compile(r"^Status:\s*(.+?)\s*$", re.IGNORECASE)
+LAUNCH_SECTION_COUNTS = (7, 13, 14, 9, 4, 6, 4, 5, 4, 8, 9, 6, 6)
+EXPECTED_LAUNCH_IDS = tuple(
+    f"LS{section:02d}-{criterion:02d}"
+    for section, count in enumerate(LAUNCH_SECTION_COUNTS, 1)
+    for criterion in range(1, count + 1)
+) + tuple(f"DLR-{criterion:02d}" for criterion in range(1, 7))
+LAUNCH_SPEC_ID_RE = re.compile(
+    r'<a id="(?P<anchor>(?:ls\d{2}-\d{2}|dlr-\d{2}))"></a> '
+    r'\*\*`(?P<identifier>(?:LS\d{2}-\d{2}|DLR-\d{2}))`\*\*'
+)
+LAUNCH_AUDIT_ROW_RE = re.compile(
+    r"^\| \[(?P<identifier>(?:LS\d{2}-\d{2}|DLR-\d{2}))\]"
+    r"\(LAUNCH_SPEC\.md#(?P<anchor>(?:ls\d{2}-\d{2}|dlr-\d{2}))\) \|"
+)
 
 
 @dataclass(frozen=True, order=True)
@@ -410,6 +424,53 @@ def _check_registry_statuses(root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
+def _check_launch_traceability(root: Path) -> list[Diagnostic]:
+    """Keep the active launch specification and evidence ledger in lockstep."""
+    diagnostics: list[Diagnostic] = []
+    spec_path = root / "docs/LAUNCH_SPEC.md"
+    audit_path = root / "docs/LAUNCH_READINESS_AUDIT.md"
+    if not spec_path.exists() and not audit_path.exists():
+        return diagnostics
+    if not spec_path.exists():
+        return [Diagnostic("docs/LAUNCH_SPEC.md", 1, "launch specification is missing")]
+    if not audit_path.exists():
+        return [Diagnostic("docs/LAUNCH_READINESS_AUDIT.md", 1, "launch traceability audit is missing")]
+
+    spec_ids: list[str] = []
+    for number, line in enumerate(spec_path.read_text(encoding="utf-8").splitlines(), 1):
+        match = LAUNCH_SPEC_ID_RE.search(line)
+        if not match:
+            continue
+        identifier = match.group("identifier")
+        if match.group("anchor") != identifier.lower():
+            diagnostics.append(Diagnostic("docs/LAUNCH_SPEC.md", number, f"launch criterion anchor does not match ID: {identifier}"))
+        spec_ids.append(identifier)
+
+    audit_ids: list[str] = []
+    allowed_dispositions = re.compile(
+        r"^(?:satisfied|independent gap|blocked Q\d+(?:/Q\d+)*|waived D\d+)$"
+    )
+    for number, line in enumerate(audit_path.read_text(encoding="utf-8").splitlines(), 1):
+        match = LAUNCH_AUDIT_ROW_RE.match(line)
+        if not match:
+            continue
+        identifier = match.group("identifier")
+        if match.group("anchor") != identifier.lower():
+            diagnostics.append(Diagnostic("docs/LAUNCH_READINESS_AUDIT.md", number, f"launch audit anchor does not match ID: {identifier}"))
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) != 5 or not cells[1] or not cells[2] or not cells[4]:
+            diagnostics.append(Diagnostic("docs/LAUNCH_READINESS_AUDIT.md", number, f"launch audit row must contain criterion, evidence, disposition, and next action: {identifier}"))
+        elif not allowed_dispositions.fullmatch(cells[3]):
+            diagnostics.append(Diagnostic("docs/LAUNCH_READINESS_AUDIT.md", number, f"invalid launch audit disposition for {identifier}: {cells[3]}"))
+        audit_ids.append(identifier)
+
+    if tuple(spec_ids) != EXPECTED_LAUNCH_IDS:
+        diagnostics.append(Diagnostic("docs/LAUNCH_SPEC.md", 1, "launch criterion IDs must be the canonical 95 acceptance and 6 readiness IDs in order"))
+    if tuple(audit_ids) != EXPECTED_LAUNCH_IDS:
+        diagnostics.append(Diagnostic("docs/LAUNCH_READINESS_AUDIT.md", 1, "launch audit must contain exactly one ordered row for every launch criterion ID"))
+    return diagnostics
+
+
 def check_repository(root: Path) -> list[Diagnostic]:
     root = root.resolve()
     inventory = _inventory(root)
@@ -419,6 +480,7 @@ def check_repository(root: Path) -> list[Diagnostic]:
     diagnostics.extend(_check_indexed_statuses(root))
     diagnostics.extend(_check_identifiers(root, markdown))
     diagnostics.extend(_check_registry_statuses(root))
+    diagnostics.extend(_check_launch_traceability(root))
     return sorted(set(diagnostics))
 
 

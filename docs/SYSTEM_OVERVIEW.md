@@ -86,6 +86,7 @@ precedence order.
 | Question | Authority |
 | --- | --- |
 | What must launch? | [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) |
+| How does each launch criterion map to current evidence or a gap? | [`LAUNCH_READINESS_AUDIT.md`](LAUNCH_READINESS_AUDIT.md) |
 | What is the system and how does data flow? | This overview and [`ARCHITECTURE.md`](ARCHITECTURE.md) |
 | What policy or product choice is accepted? | Effective index and historical bodies in [`DECISIONS.md`](DECISIONS.md) |
 | What is implemented now? | Code/tests, summarized by [`INTEGRATION_STATUS.md`](INTEGRATION_STATUS.md) |
