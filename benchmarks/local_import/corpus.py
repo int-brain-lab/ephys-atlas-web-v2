@@ -194,6 +194,10 @@ def _capacity_release(
     shutil.copytree(golden_release, destination)
     manifest_path = destination / "manifest.json"
     manifest = json.loads(manifest_path.read_text())
+    feature_descriptor = manifest["features"][0]["descriptor"]
+    feature_path = destination / feature_descriptor["resource"]["path"]
+    feature = json.loads(feature_path.read_text())
+    feature_root = feature_path.parent
     baseline_entries = len(declared_release_resource_paths(destination))
     if case.entries < baseline_entries:
         raise ValueError(
@@ -208,7 +212,7 @@ def _capacity_release(
     for index in range(additional):
         size = quotient + (1 if index < remainder else 0)
         relative = Path("benchmark-payload") / f"{index:05d}.bin"
-        path = destination / relative
+        path = feature_root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         sha256 = _deterministic_payload(
             path,
@@ -253,7 +257,14 @@ def _capacity_release(
         "recipe": {"id": "local-import-capacity-synthetic-v1"},
         "notes": [SYNTHETIC_NOTICE],
     }
-    manifest["artifacts"] = artifacts
+    feature["artifacts"] = [*feature["artifacts"], *artifacts]
+    feature_path.write_text(json.dumps(feature, indent=2, sort_keys=True) + "\n")
+    feature_bytes = feature_path.stat().st_size
+    feature_descriptor["resource"].update({
+        "bytes": feature_bytes,
+        "sha256": sha256_file(feature_path),
+        "codec": {"name": "none", "decoded_bytes": feature_bytes},
+    })
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return baseline_entries, additional
 
@@ -335,6 +346,35 @@ def _patch_single_entry(
     return bytes(result)
 
 
+def _patch_entry_sizes(
+    payload: bytes,
+    *,
+    compressed_sizes: list[int],
+    uncompressed_sizes: list[int],
+) -> bytes:
+    if len(compressed_sizes) != len(uncompressed_sizes):
+        raise ValueError("compressed and uncompressed size counts differ")
+    result = bytearray(payload)
+    local_offsets: list[int] = []
+    central_offsets: list[int] = []
+    offset = 0
+    while (found := result.find(_LOCAL_HEADER, offset)) >= 0:
+        local_offsets.append(found)
+        offset = found + 4
+    offset = 0
+    while (found := result.find(_CENTRAL_HEADER, offset)) >= 0:
+        central_offsets.append(found)
+        offset = found + 4
+    if len(local_offsets) != len(compressed_sizes) or len(central_offsets) != len(compressed_sizes):
+        raise ValueError("ZIP entry count differs from requested patched sizes")
+    for index, (compressed, uncompressed) in enumerate(zip(compressed_sizes, uncompressed_sizes)):
+        struct.pack_into("<I", result, local_offsets[index] + 18, compressed)
+        struct.pack_into("<I", result, local_offsets[index] + 22, uncompressed)
+        struct.pack_into("<I", result, central_offsets[index] + 20, compressed)
+        struct.pack_into("<I", result, central_offsets[index] + 24, uncompressed)
+    return bytes(result)
+
+
 def _corrupt_first_payload(payload: bytes) -> bytes:
     result = bytearray(payload)
     local = result.find(_LOCAL_HEADER)
@@ -350,6 +390,7 @@ def generate_adversarial_corpus(output_dir: Path) -> Path:
     """Write compact, deterministic ZIP inventory and integrity edge cases."""
     output_dir.mkdir(parents=True, exist_ok=True)
     over_entry_bytes = 256 * 1024 * 1024 + 1
+    maximum_entry_bytes = 256 * 1024 * 1024
     over_entry_count = [("manifest.json", b"{}")] + [
         (f"payload/{index:05d}.bin", b"") for index in range(20_000)
     ]
@@ -390,6 +431,26 @@ def generate_adversarial_corpus(output_dir: Path) -> Path:
             _patch_single_entry(
                 _zip_bytes([("manifest.json", b"{}")]),
                 uncompressed_size=over_entry_bytes,
+            ),
+        ),
+        (
+            "compression-ratio-over-limit",
+            "central metadata declares an exact 1,001:1 expansion ratio",
+            _patch_single_entry(
+                _zip_bytes([("manifest.json", b"x")]),
+                uncompressed_size=1001,
+            ),
+        ),
+        (
+            "aggregate-expanded-size-over-limit",
+            "aggregate expansion exceeds 1.5 GiB while every entry remains within 256 MiB",
+            _patch_entry_sizes(
+                _zip_bytes([
+                    ("manifest.json", b"{}"),
+                    *[(f"payload/{index}.bin", b"x") for index in range(6)],
+                ]),
+                compressed_sizes=[2, *[(maximum_entry_bytes + 999) // 1000] * 6],
+                uncompressed_sizes=[2, *[maximum_entry_bytes] * 6],
             ),
         ),
         (

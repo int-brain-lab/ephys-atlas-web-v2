@@ -24,7 +24,7 @@ export const LOCAL_ARCHIVE_LIMITS: LocalArchiveLimits = Object.freeze({
   maximumEntryExpandedBytes: 256 * 1024 * 1024,
   maximumExpandedBytes: 1536 * 1024 * 1024,
   maximumResourceDecodedBytes: 256 * 1024 * 1024,
-  maximumDecodedBytes: 1536 * 1024 * 1024,
+  maximumDecodedBytes: 3 * 1024 * 1024 * 1024,
   maximumCompressionRatio: 1000,
   maximumPathBytes: 512,
   maximumSegmentBytes: 128,

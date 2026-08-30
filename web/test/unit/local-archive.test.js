@@ -117,3 +117,59 @@ test('inventory applies archive, count, entry, aggregate, manifest and path limi
   assert.throws(() => validateLocalArchiveInventory(100, [entry({ compressedSize: 10, uncompressedSize: 81 })], tiny), /manifest exceeds/i);
   assert.throws(() => validateLocalArchivePath('a-very-long-path.json', tiny), /path exceeds/i);
 });
+
+test('inventory accepts exact production ceilings and rejects the next unit', () => {
+  const mib = 1024 * 1024;
+  const gib = 1024 * mib;
+  assert.equal(LOCAL_ARCHIVE_LIMITS.maximumArchiveBytes, gib);
+  assert.equal(LOCAL_ARCHIVE_LIMITS.maximumEntries, 20_000);
+  assert.equal(LOCAL_ARCHIVE_LIMITS.maximumExpandedBytes, 1536 * mib);
+  assert.equal(LOCAL_ARCHIVE_LIMITS.maximumDecodedBytes, 3 * gib);
+  assert.equal(LOCAL_ARCHIVE_LIMITS.maximumCompressionRatio, 1000);
+
+  assert.doesNotThrow(() => validateLocalArchiveInventory(gib, [entry({ compressedSize: 1, uncompressedSize: 1 })]));
+  assert.throws(
+    () => validateLocalArchiveInventory(gib + 1, [entry({ compressedSize: 1, uncompressedSize: 1 })]),
+    /ZIP exceeds.*bytes/i,
+  );
+
+  const maximumCount = Array.from({ length: 20_000 }, (_, index) => entry({
+    filename: index === 0 ? 'manifest.json' : `payload/${index}.bin`,
+    compressedSize: 0,
+    uncompressedSize: 0,
+    compressionMethod: 0,
+  }));
+  assert.equal(validateLocalArchiveInventory(1, maximumCount).entries.length, 20_000);
+  assert.throws(
+    () => validateLocalArchiveInventory(1, [
+      ...maximumCount,
+      entry({ filename: 'payload/overflow.bin', compressedSize: 0, uncompressedSize: 0, compressionMethod: 0 }),
+    ]),
+    /20000 entries/i,
+  );
+
+  const maximumEntryExpandedBytes = 256 * mib;
+  const compressedForRatio = Math.ceil(maximumEntryExpandedBytes / 1000);
+  const maximumExpanded = [
+    entry({ compressedSize: 0, uncompressedSize: 0, compressionMethod: 0 }),
+    ...Array.from({ length: 6 }, (_, index) => entry({
+      filename: `payload/expanded-${index}.bin`,
+      compressedSize: compressedForRatio,
+      uncompressedSize: maximumEntryExpandedBytes,
+    })),
+  ];
+  assert.equal(validateLocalArchiveInventory(1, maximumExpanded).expandedBytes, 1536 * mib);
+  assert.throws(
+    () => validateLocalArchiveInventory(1, [
+      ...maximumExpanded,
+      entry({ filename: 'payload/expanded-overflow.bin', compressedSize: 1, uncompressedSize: 1 }),
+    ]),
+    /expanded-size limit/i,
+  );
+
+  assert.doesNotThrow(() => validateLocalArchiveInventory(1, [entry({ compressedSize: 1, uncompressedSize: 1000 })]));
+  assert.throws(
+    () => validateLocalArchiveInventory(1, [entry({ compressedSize: 1, uncompressedSize: 1001 })]),
+    /compression-ratio limit/i,
+  );
+});

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import struct
 import zipfile
 
@@ -48,6 +48,17 @@ def test_adversarial_corpus_is_deterministic_compact_and_metadata_driven(tmp_pat
     assert struct.unpack_from("<I", oversized, central + 24)[0] == 256 * 1024 * 1024 + 1
     with zipfile.ZipFile(first / "entry-count-over-limit.ibl-ephys-atlas.zip") as archive:
         assert len(archive.infolist()) == 20_001
+    with zipfile.ZipFile(first / "compression-ratio-over-limit.ibl-ephys-atlas.zip") as archive:
+        ratio = archive.infolist()[0].file_size / archive.infolist()[0].compress_size
+        assert ratio == 1001
+    with zipfile.ZipFile(first / "aggregate-expanded-size-over-limit.ibl-ephys-atlas.zip") as archive:
+        entries = archive.infolist()
+        assert max(item.file_size for item in entries) == 256 * 1024 * 1024
+        assert sum(item.file_size for item in entries) == 1536 * 1024 * 1024 + 2
+        assert all(
+            item.file_size == 0 or item.file_size / item.compress_size <= 1000
+            for item in entries
+        )
 
 
 def test_capacity_corpus_is_valid_exact_count_labeled_and_deterministic(tmp_path: Path) -> None:
@@ -65,9 +76,15 @@ def test_capacity_corpus_is_valid_exact_count_labeled_and_deterministic(tmp_path
     assert validate_bundle(archive, SCHEMA)["file_count"] == case.entries
     with zipfile.ZipFile(archive) as source:
         manifest = json.loads(source.read("manifest.json"))
-        payloads = [item for item in manifest["artifacts"] if item["id"].startswith("benchmark-payload-")]
+        feature_path = manifest["features"][0]["descriptor"]["resource"]["path"]
+        feature = json.loads(source.read(feature_path))
+        payloads = [item for item in feature["artifacts"] if item["id"].startswith("benchmark-payload-")]
         assert sum(item["resource"]["bytes"] for item in payloads) == case.payload_bytes
-        payload_paths = {item["resource"]["path"] for item in payloads}
+        feature_root = PurePosixPath(feature_path).parent
+        payload_paths = {
+            (feature_root / item["resource"]["path"]).as_posix()
+            for item in payloads
+        }
         compressed_payload_bytes = sum(
             item.compress_size for item in source.infolist() if item.filename in payload_paths
         )
@@ -78,6 +95,23 @@ def test_capacity_corpus_is_valid_exact_count_labeled_and_deterministic(tmp_path
     assert record["entries"] == case.entries
     assert record["requested_payload_bytes"] == case.payload_bytes
     assert record["synthetic"] is True
+
+
+def test_capacity_corpus_keeps_20000_entry_root_manifest_bounded(tmp_path: Path) -> None:
+    golden = generate_golden(tmp_path / "golden-entries")
+    output = tmp_path / "capacity-entries"
+    case = CapacityCase("entries-20000", payload_bytes=1024 * 1024, entries=20_000)
+
+    index = generate_capacity_corpus(output, [case], golden_release=golden, schema_dir=SCHEMA)
+    record = _document(index)["cases"][0]
+    archive = output / record["archive"]
+    with zipfile.ZipFile(archive) as source:
+        assert len(source.infolist()) == 20_000
+        assert source.getinfo("manifest.json").file_size < 8 * 1024 * 1024
+        manifest = json.loads(source.read("manifest.json"))
+        feature_path = manifest["features"][0]["descriptor"]["resource"]["path"]
+        feature = json.loads(source.read(feature_path))
+        assert len(feature["artifacts"]) == 1 + (20_000 - record["baseline_entries"])
 
 
 def test_real_corpus_uses_canonical_exact_bundle_and_checks_representation(tmp_path: Path) -> None:

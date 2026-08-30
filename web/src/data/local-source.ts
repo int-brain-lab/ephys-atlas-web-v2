@@ -199,6 +199,7 @@ export class LocalDatasetSource implements DatasetSource {
     const db = await openDatabase();
     const transaction = db.transaction([MANIFESTS, RESOURCES], 'readwrite');
     let duplicateRelease = false;
+    let requestError: DOMException | null = null;
     try {
       const manifestRequest = transaction.objectStore(MANIFESTS).add({
         key: selector,
@@ -212,24 +213,30 @@ export class LocalDatasetSource implements DatasetSource {
       } satisfies StoredManifest);
       manifestRequest.onerror = () => {
         duplicateRelease = manifestRequest.error?.name === 'ConstraintError';
+        requestError ??= manifestRequest.error;
       };
       for (const [path, file] of prepared.files) {
         if (path === 'manifest.json') continue;
-        transaction.objectStore(RESOURCES).put({ key: resourceKey(selector, path), blob: file } satisfies StoredResource);
+        const resourceRequest = transaction.objectStore(RESOURCES).put({
+          key: resourceKey(selector, path),
+          blob: file,
+        } satisfies StoredResource);
+        resourceRequest.onerror = () => { requestError ??= resourceRequest.error; };
       }
       await transactionDone(transaction);
     } catch (error) {
       try { transaction.abort(); } catch { /* transaction already completed or aborted */ }
-      if (duplicateRelease || (error instanceof DOMException && error.name === 'ConstraintError')) {
+      const cause = requestError ?? error;
+      if (duplicateRelease || errorName(cause) === 'ConstraintError') {
         throw new Error(`Local dataset ${document.datasetId}/${document.release.releaseId} is already imported`);
       }
-      if (errorName(error) === 'QuotaExceededError') {
+      if (errorName(cause) === 'QuotaExceededError') {
         throw new Error(
           'This browser does not have enough storage for the local dataset. '
           + 'No partial import was kept; delete an existing local dataset or clear site data, then try again.',
         );
       }
-      throw error;
+      throw cause;
     } finally {
       db.close();
     }

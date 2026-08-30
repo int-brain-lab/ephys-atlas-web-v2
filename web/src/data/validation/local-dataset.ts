@@ -52,7 +52,7 @@ export interface LocalDatasetValidationLimits {
 
 export const DEFAULT_LOCAL_DATASET_VALIDATION_LIMITS: LocalDatasetValidationLimits = Object.freeze({
   maximumResourceDecodedBytes: 256 * 1024 * 1024,
-  maximumDecodedBytes: 1536 * 1024 * 1024,
+  maximumDecodedBytes: 3 * 1024 * 1024 * 1024,
 });
 
 export interface LocalDatasetValidationOptions {

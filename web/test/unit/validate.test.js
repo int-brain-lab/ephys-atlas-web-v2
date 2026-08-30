@@ -13,6 +13,7 @@ import {
   resolveDatasetManifest,
   validateLocalDatasetFiles,
 } from '../../.test-dist/data/validate.js';
+import { LOCAL_ARCHIVE_LIMITS } from '../../.test-dist/data/local-archive.js';
 
 const goldenRoot = new URL('../../../fixtures/golden-v1/', import.meta.url);
 
@@ -285,6 +286,7 @@ test('local import rejects a distribution whose full domain does not enclose the
 });
 
 test('local import enforces exact per-resource and aggregate decoded limits', async () => {
+  assert.equal(LOCAL_ARCHIVE_LIMITS.maximumDecodedBytes, 3 * 1024 * 1024 * 1024);
   const baseline = await validateLocalDatasetFiles(goldenDatasetFiles());
   const maximumResourceDecodedBytes = Math.max(
     ...[...goldenDatasetFiles().values()].map((blob) => blob.size),
