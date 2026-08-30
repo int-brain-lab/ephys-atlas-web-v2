@@ -9,6 +9,8 @@ export interface LocalArchiveLimits {
   readonly maximumEntryCompressedBytes: number;
   readonly maximumEntryExpandedBytes: number;
   readonly maximumExpandedBytes: number;
+  readonly maximumResourceDecodedBytes: number;
+  readonly maximumDecodedBytes: number;
   readonly maximumCompressionRatio: number;
   readonly maximumPathBytes: number;
   readonly maximumSegmentBytes: number;
@@ -21,6 +23,8 @@ export const LOCAL_ARCHIVE_LIMITS: LocalArchiveLimits = Object.freeze({
   maximumEntryCompressedBytes: 256 * 1024 * 1024,
   maximumEntryExpandedBytes: 256 * 1024 * 1024,
   maximumExpandedBytes: 1536 * 1024 * 1024,
+  maximumResourceDecodedBytes: 256 * 1024 * 1024,
+  maximumDecodedBytes: 1536 * 1024 * 1024,
   maximumCompressionRatio: 1000,
   maximumPathBytes: 512,
   maximumSegmentBytes: 128,
@@ -205,7 +209,13 @@ export async function prepareLocalArchive(
       if (blob.size !== entry.uncompressedSize) throw new Error(`ZIP entry size changed during extraction: ${entry.filename}`);
       files.set(entry.filename, blob);
     }
-    const validated = await validateLocalDatasetFiles(files);
+    const validated = await validateLocalDatasetFiles(files, {
+      ...(signal ? { signal } : {}),
+      limits: {
+        maximumResourceDecodedBytes: limits.maximumResourceDecodedBytes,
+        maximumDecodedBytes: limits.maximumDecodedBytes,
+      },
+    });
     const representations = new Set<RepresentationKind>();
     for (const feature of validated.features) {
       if (feature.representations.regional) representations.add('regional');

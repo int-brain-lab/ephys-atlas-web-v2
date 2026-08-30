@@ -1,22 +1,33 @@
 import type { BinaryArrayDescriptor, BinaryDType, EncodedResourceDescriptor } from '../contracts.js';
 import { array, dtype, object, relativePath, SHA256, string } from './primitives.js';
 
+function safeNonnegativeInteger(value: unknown, context: string): number {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+    throw new Error(`${context} must be a non-negative safe integer`);
+  }
+  return value;
+}
+
+function safeProduct(values: readonly number[], context: string): number {
+  return values.reduce((product, value) => {
+    const next = product * value;
+    if (!Number.isSafeInteger(next)) throw new Error(`${context} exceeds the safe integer range`);
+    return next;
+  }, 1);
+}
+
 export function parseEncodedResource(value: unknown, context: string): EncodedResourceDescriptor {
   const item = object(value, context);
   const codecRaw = object(item.codec, `${context}.codec`);
   if (codecRaw.name !== 'none' && codecRaw.name !== 'gzip') {
     throw new Error(`${context}.codec.name must be none or gzip`);
   }
-  if (typeof codecRaw.decoded_bytes !== 'number' || !Number.isInteger(codecRaw.decoded_bytes) || codecRaw.decoded_bytes < 0) {
-    throw new Error(`${context}.codec.decoded_bytes must be a non-negative integer`);
-  }
-  if (typeof item.bytes !== 'number' || !Number.isInteger(item.bytes) || item.bytes < 0) {
-    throw new Error(`${context}.bytes must be a non-negative integer`);
-  }
+  const decodedBytes = safeNonnegativeInteger(codecRaw.decoded_bytes, `${context}.codec.decoded_bytes`);
+  const encodedBytes = safeNonnegativeInteger(item.bytes, `${context}.bytes`);
   if (typeof item.sha256 !== 'string' || !SHA256.test(item.sha256)) {
     throw new Error(`${context}.sha256 must be 64 lowercase hexadecimal characters`);
   }
-  if (codecRaw.name === 'none' && codecRaw.decoded_bytes !== item.bytes) {
+  if (codecRaw.name === 'none' && decodedBytes !== encodedBytes) {
     throw new Error(`${context} uncompressed encoded and decoded byte lengths must match`);
   }
   const level = codecRaw.level;
@@ -26,11 +37,11 @@ export function parseEncodedResource(value: unknown, context: string): EncodedRe
   return {
     path: relativePath(item.path, `${context}.path`),
     mediaType: string(item.media_type, `${context}.media_type`),
-    bytes: item.bytes,
+    bytes: encodedBytes,
     sha256: item.sha256,
     codec: {
       name: codecRaw.name,
-      decodedBytes: codecRaw.decoded_bytes,
+      decodedBytes,
       ...(level !== undefined ? { level } : {}),
     },
   };
@@ -41,10 +52,7 @@ export function parseBinaryArray(value: unknown, context: string): BinaryArrayDe
     ? value as Record<string, unknown>
     : (() => { throw new Error(`${context} must be an object`); })();
   const shape = array(item.shape, `${context}.shape`).map((dimension, index) => {
-    if (typeof dimension !== 'number' || !Number.isInteger(dimension) || dimension < 0) {
-      throw new Error(`${context}.shape[${index}] must be a non-negative integer`);
-    }
-    return dimension;
+    return safeNonnegativeInteger(dimension, `${context}.shape[${index}]`);
   });
   if (shape.length === 0) throw new Error(`${context}.shape must not be empty`);
   if (item.order !== 'C') throw new Error(`${context}.order must be C`);
@@ -54,7 +62,7 @@ export function parseBinaryArray(value: unknown, context: string): BinaryArrayDe
   if (item.format !== 'raw-binary-array-v1') throw new Error(`${context}.format is unsupported`);
   const resource = parseEncodedResource(item.resource, `${context}.resource`);
   const parsedDtype = dtype(item.dtype, `${context}.dtype`);
-  const expectedBytes = shape.reduce((product, dimension) => product * dimension, 1) * bytesPerElement(parsedDtype);
+  const expectedBytes = safeProduct([...shape, bytesPerElement(parsedDtype)], `${context}.shape byte product`);
   if (resource.codec.decodedBytes !== expectedBytes) {
     throw new Error(`${context} decoded bytes do not match dtype and shape`);
   }
@@ -74,7 +82,10 @@ export function bytesPerElement(value: BinaryDType): number {
 }
 
 export function binaryBytes(descriptor: BinaryArrayDescriptor): number {
-  return descriptor.shape.reduce((product, dimension) => product * dimension, 1) * bytesPerElement(descriptor.dtype);
+  return safeProduct(
+    [...descriptor.shape, bytesPerElement(descriptor.dtype)],
+    `${descriptor.path} shape byte product`,
+  );
 }
 
 export async function decodeResourceBytes(

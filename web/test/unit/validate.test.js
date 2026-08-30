@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import test from 'node:test';
+import { gzipSync } from 'node:zlib';
 import {
   decodeBinaryArray,
   localDatasetReleaseId,
@@ -34,6 +36,32 @@ function goldenManifest() {
 
 function goldenFeature() {
   return JSON.parse(readFileSync(new URL('features/rms_ap/feature.json', goldenRoot), 'utf8'));
+}
+
+function sha256(bytes) {
+  return createHash('sha256').update(bytes).digest('hex');
+}
+
+function setResourceIntegrity(resource, encoded, decodedBytes = encoded.byteLength, codec = 'none') {
+  resource.bytes = encoded.byteLength;
+  resource.sha256 = sha256(encoded);
+  resource.codec = { name: codec, decoded_bytes: decodedBytes };
+}
+
+function replaceFeatureAndManifest(files, feature) {
+  const featureBytes = Buffer.from(JSON.stringify(feature));
+  files.set('features/rms_ap/feature.json', new Blob([featureBytes]));
+  const manifest = goldenManifest();
+  setResourceIntegrity(manifest.features[0].descriptor.resource, featureBytes);
+  files.set('manifest.json', new Blob([JSON.stringify(manifest)]));
+}
+
+function replaceStatisticsFeatureAndManifest(files, statistics) {
+  const statisticsBytes = Buffer.from(JSON.stringify(statistics));
+  files.set('features/rms_ap/allen.statistics.json', new Blob([statisticsBytes]));
+  const feature = goldenFeature();
+  setResourceIntegrity(feature.representations.regional.parcellations[0].statistics.resource, statisticsBytes);
+  replaceFeatureAndManifest(files, feature);
 }
 
 test('regional payload validation rejects statistic arrays with wrong length', () => {
@@ -238,6 +266,10 @@ test('local import rejects regional distribution rows that do not conserve finit
   const counts = new Uint32Array(bytes.slice(0));
   counts[0] += 1;
   files.set(path, new Blob([counts.buffer]));
+  const statistics = JSON.parse(await files.get('features/rms_ap/allen.statistics.json').text());
+  const binning = statistics.distribution.binnings.find((item) => item.id === 'linear-focused');
+  setResourceIntegrity(binning.regional_counts.resource, new Uint8Array(counts.buffer));
+  replaceStatisticsFeatureAndManifest(files, statistics);
   await assert.rejects(validateLocalDatasetFiles(files), /does not conserve its population/);
 });
 
@@ -248,8 +280,71 @@ test('local import rejects a distribution whose full domain does not enclose the
   for (const full of statistics.distribution.binnings.filter((binning) => binning.domain.kind === 'full')) {
     full.edges[0] = statistics.global.min + 0.01;
   }
-  files.set(path, new Blob([JSON.stringify(statistics)]));
+  replaceStatisticsFeatureAndManifest(files, statistics);
   await assert.rejects(validateLocalDatasetFiles(files), /population minimum|declared minimum/);
+});
+
+test('local import enforces exact per-resource and aggregate decoded limits', async () => {
+  const baseline = await validateLocalDatasetFiles(goldenDatasetFiles());
+  const maximumResourceDecodedBytes = Math.max(
+    ...[...goldenDatasetFiles().values()].map((blob) => blob.size),
+  );
+  await validateLocalDatasetFiles(goldenDatasetFiles(), {
+    limits: { maximumResourceDecodedBytes, maximumDecodedBytes: baseline.declaredDecodedBytes },
+  });
+  await assert.rejects(
+    validateLocalDatasetFiles(goldenDatasetFiles(), {
+      limits: { maximumResourceDecodedBytes, maximumDecodedBytes: baseline.declaredDecodedBytes - 1 },
+    }),
+    /aggregate decoded-size limit/i,
+  );
+  await assert.rejects(
+    validateLocalDatasetFiles(goldenDatasetFiles(), {
+      limits: { maximumResourceDecodedBytes: maximumResourceDecodedBytes - 1, maximumDecodedBytes: Number.MAX_SAFE_INTEGER },
+    }),
+    /per-resource decoded-size limit|manifest\.json exceeds/i,
+  );
+});
+
+test('local import supports bounded gzip JSON resources and accounts for decoded artifacts', async () => {
+  const files = goldenDatasetFiles();
+  const feature = goldenFeature();
+  const artifactPath = 'features/rms_ap/rms_ap.csv';
+  const artifactDecoded = Buffer.from(await files.get(artifactPath).arrayBuffer());
+  const artifactEncoded = gzipSync(artifactDecoded);
+  files.set(artifactPath, new Blob([artifactEncoded]));
+  setResourceIntegrity(feature.artifacts[0].resource, artifactEncoded, artifactDecoded.byteLength, 'gzip');
+
+  const featureDecoded = Buffer.from(JSON.stringify(feature));
+  const featureEncoded = gzipSync(featureDecoded);
+  files.set('features/rms_ap/feature.json', new Blob([featureEncoded]));
+  const manifest = goldenManifest();
+  setResourceIntegrity(manifest.features[0].descriptor.resource, featureEncoded, featureDecoded.byteLength, 'gzip');
+  files.set('manifest.json', new Blob([JSON.stringify(manifest)]));
+
+  const validated = await validateLocalDatasetFiles(files);
+  assert.equal(validated.features[0].id, 'rms_ap');
+  assert.ok(validated.declaredDecodedBytes > validated.storedBytes);
+});
+
+test('local import stops inner gzip expansion at the declared decoded length', async () => {
+  const files = goldenDatasetFiles();
+  const decoded = Buffer.from(JSON.stringify({ padding: 'x'.repeat(1024 * 1024) }));
+  const encoded = gzipSync(decoded);
+  files.set('features/rms_ap/feature.json', new Blob([encoded]));
+  const manifest = goldenManifest();
+  setResourceIntegrity(manifest.features[0].descriptor.resource, encoded, 1, 'gzip');
+  files.set('manifest.json', new Blob([JSON.stringify(manifest)]));
+  await assert.rejects(validateLocalDatasetFiles(files), /decodes to more than 1 bytes/i);
+});
+
+test('local import preserves cancellation during graph validation', async () => {
+  const controller = new AbortController();
+  controller.abort(new DOMException('cancelled during validation', 'AbortError'));
+  await assert.rejects(
+    validateLocalDatasetFiles(goldenDatasetFiles(), { signal: controller.signal }),
+    { name: 'AbortError' },
+  );
 });
 
 test('local import rejects same-size content with a wrong declared SHA-256', async () => {
@@ -274,4 +369,30 @@ test('binary descriptors reject unsafe paths and malformed integrity metadata', 
   };
   assert.throws(() => parseBinaryArray(descriptor, 'array'), /safe relative path/);
   assert.throws(() => parseBinaryArray({ ...descriptor, resource: { ...descriptor.resource, path: 'values.f32', sha256: 'nope' } }, 'array'), /64 lowercase/);
+});
+
+test('binary descriptors reject unsafe integers and overflowing shape products', () => {
+  const resource = {
+    path: 'values.f32', media_type: 'application/octet-stream', bytes: 4, sha256: '0'.repeat(64),
+    codec: { name: 'none', decoded_bytes: 4 },
+  };
+  const descriptor = {
+    format: 'raw-binary-array-v1', dtype: 'float32', shape: [1], order: 'C', endianness: 'little',
+    resource,
+  };
+  assert.throws(
+    () => parseBinaryArray({
+      ...descriptor,
+      resource: { ...resource, bytes: Number.MAX_SAFE_INTEGER + 1, codec: { name: 'none', decoded_bytes: Number.MAX_SAFE_INTEGER + 1 } },
+    }, 'array'),
+    /safe integer/,
+  );
+  assert.throws(
+    () => parseBinaryArray({
+      ...descriptor,
+      shape: [Number.MAX_SAFE_INTEGER, 2],
+      resource: { ...resource, bytes: 0, codec: { name: 'none', decoded_bytes: 0 } },
+    }, 'array'),
+    /safe integer range/,
+  );
 });

@@ -311,6 +311,8 @@ The first implementation uses these deliberately provisional limits:
 | Compressed bytes per entry | 256 MiB |
 | Expanded bytes per entry | 256 MiB |
 | Aggregate expanded bytes | 1.5 GiB |
+| Codec-decoded bytes per resource | 256 MiB |
+| Aggregate codec-decoded bytes | 1.5 GiB |
 | Expansion ratio per entry | 1,000:1 |
 | UTF-8 path bytes | 512 |
 | UTF-8 path-segment bytes | 128 |
@@ -321,6 +323,15 @@ targets. Measure representative regional and volume authoring archives in
 Chromium, Firefox, and Safari, including peak memory, preview latency,
 cancellation, extraction failures, and IndexedDB quota behavior, before
 freezing or advertising supported limits.
+
+The ZIP-expanded and schema codec-decoded budgets are enforced independently.
+The complete declared graph is preflighted with safe integer arithmetic before
+large resource decoding. Each encoded resource passes byte-size and SHA-256
+verification before semantic decoding, and gzip validation stops as soon as it
+would exceed the declared or admitted decoded length. Preparation cancellation
+propagates through graph traversal, encoded-byte reading, and decompression;
+the final bounded WebCrypto digest operation itself is not cancellable by the
+browser API, so the signal is checked immediately before and after it.
 
 Preparation and admission are separate. `prepareArchive()` retains validated
 Blobs in memory and returns identity, feature/representation/parcellation, and
