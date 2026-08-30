@@ -74,6 +74,45 @@ test('stale dataset completions cannot replace the active dataset', async () => 
   assert.equal(session.snapshot().manifest.dataset.id, 'fast');
 });
 
+test('feature switches clear stale data before loading and ignore obsolete completions', async () => {
+  const store = createAppStore({ ...DEFAULT_APP_STATE, view: {
+    ...DEFAULT_APP_STATE.view,
+    dataset: { datasetId: 'custom_dataset', releaseId: 'r1' },
+    featureId: 'feature_a',
+  } });
+  const testManifest = manifest();
+  testManifest.features.push({ ...testManifest.features[0], id: 'feature_b' });
+  const slowFeature = deferred();
+  const payload = (featureId) => ({
+    schemaVersion: '1.0', featureId, representation: 'regional',
+    parcellation: 'beryl', regionIds: [], statistics: {},
+  });
+  const repository = {
+    async loadCatalog() { return { schemaVersion: '1.0', datasets: [] }; },
+    async loadManifest() { return testManifest; },
+    async loadRegions() { return []; },
+    loadFeature(_ref, featureId) {
+      return featureId === 'feature_b' ? slowFeature.promise : Promise.resolve(payload(featureId));
+    },
+    async prefetchFeature() {},
+  };
+  const session = new DatasetSession(repository, store, () => {});
+  await session.loadDataset(store.getState().view.dataset);
+  assert.equal(session.snapshot().feature.featureId, 'feature_a');
+
+  store.dispatch({ type: 'feature/set', featureId: 'feature_b' });
+  const obsoleteLoad = session.loadCurrentFeature();
+  assert.equal(session.snapshot().feature, null);
+
+  store.dispatch({ type: 'feature/set', featureId: 'feature_a' });
+  await session.loadCurrentFeature();
+  slowFeature.resolve(payload('feature_b'));
+  await obsoleteLoad;
+
+  assert.equal(session.snapshot().feature.featureId, 'feature_a');
+  session.stop();
+});
+
 test('starting a feature load aborts active prefetch from the previous feature', async () => {
   const store = createAppStore({ ...DEFAULT_APP_STATE, view: {
     ...DEFAULT_APP_STATE.view,

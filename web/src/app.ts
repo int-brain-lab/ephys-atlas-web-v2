@@ -453,7 +453,6 @@ export class AtlasApp {
     }
 
     await this.localSource.deleteRelease(selector);
-    await this.session.loadCatalog();
     if (deletingActive && published) {
       this.store.dispatch({
         type: 'dataset/set',
@@ -461,6 +460,7 @@ export class AtlasApp {
         history: 'replace',
       });
     }
+    await this.session.loadCatalog();
   }
 
   private async copyCurrentUrl(): Promise<void> {

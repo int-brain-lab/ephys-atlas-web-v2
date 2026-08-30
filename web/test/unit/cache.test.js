@@ -29,6 +29,38 @@ async function sha256(value) {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+test('in-flight identity includes declared bytes so inconsistent integrity cannot bypass validation', async () => {
+  const previousCaches = globalThis.caches;
+  delete globalThis.caches;
+  try {
+    const expected = 'verified';
+    const digest = await sha256(expected);
+    let release;
+    const gate = new Promise((resolve) => { release = resolve; });
+    let calls = 0;
+    const fetcher = new ResourceFetcher(async () => {
+      calls += 1;
+      await gate;
+      return new Response(expected);
+    });
+
+    const valid = fetcher.fetch('https://example.test/resource.bin', {
+      integrity: { bytes: expected.length, sha256: digest },
+    });
+    const inconsistent = fetcher.fetch('https://example.test/resource.bin', {
+      integrity: { bytes: expected.length + 1, sha256: digest },
+    });
+    const inconsistentRejection = assert.rejects(inconsistent, /byte length/);
+    release();
+
+    assert.equal(await (await valid).text(), expected);
+    await inconsistentRejection;
+    assert.equal(calls, 3);
+  } finally {
+    globalThis.caches = previousCaches;
+  }
+});
+
 test('a corrupt persistent hit is evicted and replaced only after a verified retry', async () => {
   const previousCaches = globalThis.caches;
   let cached = new Response('old-wrong-bytes');

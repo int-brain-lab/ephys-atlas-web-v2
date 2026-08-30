@@ -24,7 +24,10 @@ export class ResourceFetcher {
 
   async fetch(url: string, options: FetchOptions = {}): Promise<Response> {
     const location = new URL(url, globalThis.location?.href ?? 'http://localhost/').toString();
-    const key = `${location}\u0000${options.integrity?.sha256 ?? 'unverified'}`;
+    const integrityKey = options.integrity
+      ? `${options.integrity.sha256}\u0000${options.integrity.bytes}`
+      : 'unverified';
+    const key = `${location}\u0000${integrityKey}`;
     if (options.signal) return (await this.load(location, options)).clone();
 
     const existing = this.inFlight.get(key);

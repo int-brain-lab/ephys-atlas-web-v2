@@ -134,13 +134,15 @@ export class DatasetSession {
   async loadCurrentFeature(reconcileParcellation = false): Promise<void> {
     const requestGeneration = ++this.featureGeneration;
     this.prefetch.cancel();
+    const hadFeature = this.feature !== null;
+    this.feature = null;
+    if (hadFeature) this.changed();
     const previousParcellation = this.store.getState().view.parcellation;
     if (this.manifest) this.reconcileContext(this.manifest, reconcileParcellation);
     const state = this.store.getState();
     const { featureId, representation, parcellation, dataset } = state.view;
     if (!featureId || !this.manifest) {
-      this.feature = null;
-      this.changed();
+      if (!hadFeature) this.changed();
       return;
     }
 

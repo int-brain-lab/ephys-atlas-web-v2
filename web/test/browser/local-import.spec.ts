@@ -233,6 +233,56 @@ test('deleting the active local release is confirmed, atomic, isolated, and perm
   await expect(page.locator('[data-context-field="feature"] .context-field__value')).toContainText('Decision signal');
 });
 
+test('active local deletion falls back before a failing catalog refresh', async ({ page }) => {
+  await page.goto('/');
+  await importArchive(page, archive);
+  await expect.poll(() => new URL(page.url()).searchParams.get('dataset')).toBe('local');
+  await expect(page.locator('.feature-summary')).toContainText('Observations11');
+  await page.evaluate(() => {
+    const originalTransaction = IDBDatabase.prototype.transaction;
+    IDBDatabase.prototype.transaction = function transaction(storeNames, mode, options) {
+      if (storeNames === 'manifests' && mode === 'readonly') {
+        (window as Window & { __datasetAtCatalogFailure?: string | null }).__datasetAtCatalogFailure =
+          new URL(location.href).searchParams.get('dataset');
+        IDBDatabase.prototype.transaction = originalTransaction;
+        throw new Error('synthetic local catalog refresh failure');
+      }
+      return originalTransaction.call(this, storeNames, mode, options);
+    };
+  });
+
+  const dataset = page.locator('[data-context-field="dataset"]');
+  await dataset.locator('.context-menu__trigger').click();
+  await dataset.getByRole('option', { name: 'Delete this local dataset…' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Delete local dataset' });
+  await dialog.getByRole('button', { name: 'Delete local dataset' }).click();
+  await expect(dialog).toBeHidden();
+  await expect.poll(() => new URL(page.url()).searchParams.get('dataset')).not.toBe('local');
+  await expect(dataset.locator('.context-field__local-badge')).toBeHidden();
+  expect(await page.evaluate(() => {
+    const state = window as Window & { __datasetAtCatalogFailure?: string | null };
+    return {
+      recorded: Object.prototype.hasOwnProperty.call(state, '__datasetAtCatalogFailure'),
+      dataset: state.__datasetAtCatalogFailure,
+    };
+  })).toEqual({ recorded: true, dataset: null });
+  expect(await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('ibl-ephys-atlas-schema-v1-local', 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const transaction = db.transaction('manifests', 'readonly');
+    const keys = await new Promise<IDBValidKey[]>((resolve, reject) => {
+      const request = transaction.objectStore('manifests').getAllKeys();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    db.close();
+    return keys.map(String);
+  })).toEqual([]);
+});
+
 test('sharing a local view discloses that the dataset is not transferred before copying', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'clipboard', {
@@ -268,9 +318,11 @@ test('quota exhaustion aborts admission with actionable recovery guidance', asyn
     };
   });
   await page.goto('/');
+  await expect.poll(() => new URL(page.url()).searchParams.get('v')).toBe('4');
   await openImport(page);
   await page.locator('.local-import__input').setInputFiles(archive);
   const dialog = page.getByRole('dialog', { name: 'Import local dataset' });
+  await expect(dialog.getByRole('status')).toContainText('Validation complete');
   await dialog.getByRole('button', { name: 'Import', exact: true }).click();
   await expect(dialog.getByRole('alert')).toContainText('does not have enough storage');
   await expect(dialog.getByRole('alert')).toContainText('No partial import was kept');
