@@ -78,6 +78,18 @@ test-cluster-release:
 benchmark-anatomy:
     cd web && npm run benchmark:anatomy
 
+# Generate compact malformed ZIP cases for the opt-in local-import campaign.
+benchmark-local-import-adversarial output="artifacts/local-import-benchmark/adversarial":
+    {{uv-test}} python -m benchmarks.local_import.generate adversarial --output-dir "{{output}}"
+
+# Generate one valid synthetic capacity case: ID=PAYLOAD_BYTES=ENTRIES.
+benchmark-local-import-capacity case output="artifacts/local-import-benchmark/capacity":
+    {{uv-test}} python -m benchmarks.local_import.generate capacity --output-dir "{{output}}" --case "{{case}}"
+
+# Bundle one exact release: ID=regional|volume=PATH.
+benchmark-local-import-real release output="artifacts/local-import-benchmark/real":
+    {{uv-test}} python -m benchmarks.local_import.generate real --output-dir "{{output}}" --release "{{release}}"
+
 # Exercise the anatomy contract, generator, artifact validator, and comparison cases.
 test-anatomy:
     {{uv-anatomy}} python -m pytest -q tests/test_anatomy_pack.py tests/test_anatomy_pack_schema.py tests/test_anatomy_compare.py tests/test_anatomy_smoothing_lab.py tests/test_top_reconstruction_lab.py tests/test_anatomy_pack_v2.py tests/test_anatomy_pack_v2_schema.py tests/test_svg_pack.py tests/test_sampled_svg_pack.py tests/test_projection_pack.py
