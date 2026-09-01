@@ -46,6 +46,8 @@ nav:
   - Home: index.md
   - Guides:
       - Start here: guides/index.md
+      - Use the viewer: guides/using-the-viewer.md
+      - Understand parcellations: guides/parcellations.md
       - Custom data tutorial: data/CUSTOM_DATA_TUTORIAL.md
       - Executable examples: guides/examples.md
   - Reference:

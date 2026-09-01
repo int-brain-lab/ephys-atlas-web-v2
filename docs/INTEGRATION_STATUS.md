@@ -177,10 +177,13 @@ tests, strict TypeScript, web unit/rendering tests, production build, and
 Chromium Playwright. An opt-in, single-worker local-import matrix also exercises
 Chromium, Firefox, and Playwright WebKit; native `safaridriver` evidence is kept
 distinct from Playwright WebKit. The generated documentation site is
-local/CI-only; no Pages deployment is configured. The deterministic golden
-fixture is synthetic and test-only. Broad Firefox/Safari release QA remains
-part of the final matrix under D040; the optional 3-D local matrix was completed
-on 2026-08-28 and the focused native-Safari local-import matrix on 2026-08-31.
+local/CI-only; no Pages deployment is configured. Its reader path now includes
+v2-native viewer and parcellation guides, while in-app Help links to those
+guides without depending on a deployed documentation origin. The deterministic
+golden fixture is synthetic and test-only. Broad Firefox/Safari release QA
+remains part of the final matrix under D040; the optional 3-D local matrix was
+completed on 2026-08-28 and the focused native-Safari local-import matrix on
+2026-08-31.
 The 2026-08-31 fixture, release, bundle, mesh, corrupt-cache, and warm-state
 checks are recorded in
 [`REPRODUCIBILITY_INTEGRITY_EVIDENCE.md`](REPRODUCIBILITY_INTEGRITY_EVIDENCE.md).

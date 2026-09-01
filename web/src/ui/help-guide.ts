@@ -1,6 +1,7 @@
 import aboutHtml from '../../content/help/about.md';
 import conceptsHtml from '../../content/help/concepts.md';
 import gettingStartedHtml from '../../content/help/getting-started.md';
+import moreGuidanceHtml from '../../content/help/more-guidance.md';
 import regionalHtml from '../../content/help/regional.md';
 import shortcutsHtml from '../../content/help/shortcuts.md';
 import volumeHtml from '../../content/help/volume.md';
@@ -97,6 +98,7 @@ export class HelpGuide {
       this.representationDetails,
       details('Concepts and terminology', conceptsHtml),
       details('Keyboard shortcuts', shortcutsHtml),
+      details('More guidance', moreGuidanceHtml),
       details('About and credits', aboutHtml),
     );
     content.append(gettingStarted, reference);

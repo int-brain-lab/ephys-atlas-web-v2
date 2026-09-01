@@ -1,0 +1,5 @@
+- [Use the viewer](https://github.com/int-brain-lab/ephys-atlas-web-v2/blob/main/docs/guides/using-the-viewer.md)
+- [Understand parcellations](https://github.com/int-brain-lab/ephys-atlas-web-v2/blob/main/docs/guides/parcellations.md)
+- [Author and import your data](https://github.com/int-brain-lab/ephys-atlas-web-v2/blob/main/docs/data/CUSTOM_DATA_TUTORIAL.md)
+- [Browse executable examples](https://github.com/int-brain-lab/ephys-atlas-web-v2/blob/main/docs/guides/examples.md)
+- [Python API reference](https://github.com/int-brain-lab/ephys-atlas-web-v2/blob/main/docs/reference/python-api.md)

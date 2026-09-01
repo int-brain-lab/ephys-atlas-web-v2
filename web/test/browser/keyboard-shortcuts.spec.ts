@@ -86,6 +86,18 @@ test('shortcuts stay out of text entry and expose the task-first help guide', as
   await expect(guide).toContainText('next or previous feature');
   await expect(guide).toContainText('search features');
   await expect(guide).toContainText('toggle the Regions or Settings panel');
+
+  const moreGuidance = guide.locator('.help-guide__disclosure').filter({ hasText: 'More guidance' });
+  await moreGuidance.getByText('More guidance').click();
+  await expect(moreGuidance).toContainText('Use the viewer');
+  await expect(moreGuidance).toContainText('Understand parcellations');
+  await expect(moreGuidance).toContainText('Author and import your data');
+  await expect(moreGuidance.getByRole('link', { name: 'Use the viewer (opens in a new tab)' }))
+    .toHaveAttribute('href', /docs\/guides\/using-the-viewer\.md$/);
+  await expect(moreGuidance.getByRole('link', { name: 'Understand parcellations (opens in a new tab)' }))
+    .toHaveAttribute('href', /docs\/guides\/parcellations\.md$/);
+  await expect(moreGuidance.getByRole('link', { name: 'Python API reference (opens in a new tab)' }))
+    .toHaveAttribute('href', /docs\/reference\/python-api\.md$/);
 });
 
 test('help guide stays readable within a phone viewport', async ({ page }) => {

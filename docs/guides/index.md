@@ -1,7 +1,21 @@
-# Author and import data
+# Guides
 
-Status: reader guide; the linked authoring contract and schema remain
-authoritative.
+Status: reader navigation; the linked release metadata, authoring contract,
+and schema remain authoritative.
+
+## Explore data
+
+Use [the viewer guide](using-the-viewer.md) for dataset and feature selection,
+linked anatomical navigation, regional and voxel inspection, display controls,
+sharing, and downloads. Read [the parcellation guide](parcellations.md) to
+understand how Allen, Beryl, and Cosmos affect regional summaries and volume
+anatomy overlays.
+
+The application's **Help** action provides a compact Quick Start,
+representation-specific guidance, keyboard shortcuts, and an optional guided
+walkthrough of the visible interface.
+
+## Author and import data
 
 The supported workflow is:
 
