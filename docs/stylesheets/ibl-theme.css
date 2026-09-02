@@ -1,0 +1,48 @@
+/* Keep the default documentation chrome aligned with web/src/styles/tokens.css. */
+[data-md-color-scheme='slate'] {
+  color-scheme: dark;
+
+  --md-default-fg-color: #e6edf4;
+  --md-default-fg-color--light: #9cafbf;
+  --md-default-fg-color--lighter: #6f8495;
+  --md-default-fg-color--lightest: rgb(163 194 216 / 12%);
+  --md-default-bg-color: #071019;
+  --md-default-bg-color--light: #0a1621;
+  --md-default-bg-color--lighter: #0d1b27;
+  --md-default-bg-color--lightest: #112331;
+
+  --md-primary-fg-color: #004d89;
+  --md-primary-fg-color--light: #009fd7;
+  --md-primary-fg-color--dark: #003d6e;
+  --md-primary-bg-color: #e6edf4;
+  --md-primary-bg-color--light: #9cafbf;
+  --md-accent-fg-color: #009fd7;
+  --md-accent-fg-color--transparent: rgb(0 159 215 / 14%);
+  --md-accent-bg-color: #071019;
+  --md-accent-bg-color--light: #0a1621;
+
+  --md-typeset-color: #e6edf4;
+  --md-typeset-a-color: #35b8e5;
+  --md-code-fg-color: #e6edf4;
+  --md-code-bg-color: #0d1b27;
+  --md-footer-fg-color: #e6edf4;
+  --md-footer-fg-color--light: #9cafbf;
+  --md-footer-fg-color--lighter: #6f8495;
+  --md-footer-bg-color: #0a1621;
+  --md-footer-bg-color--dark: #071019;
+}
+
+[data-md-color-scheme='slate'] .md-header,
+[data-md-color-scheme='slate'] .md-tabs {
+  background-color: #004d89;
+}
+
+[data-md-color-scheme='slate'] .md-sidebar,
+[data-md-color-scheme='slate'] .md-nav--primary .md-nav__title {
+  background-color: #071019;
+}
+
+[data-md-color-scheme='slate'] .md-search__form,
+[data-md-color-scheme='slate'] .md-search__output {
+  background-color: #0d1b27;
+}

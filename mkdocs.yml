@@ -8,11 +8,25 @@ site_dir: site
 
 theme:
   name: material
+  palette:
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
   features:
     - content.code.copy
     - navigation.indexes
     - navigation.sections
     - navigation.top
+
+extra_css:
+  - stylesheets/ibl-theme.css
 
 plugins:
   - search
