@@ -1,8 +1,8 @@
 # Flexible multi-feature comparison
 
-Status: accepted product direction and planned handoff; implementation starts
-after the three immediate priorities in `docs/IMPLEMENTATION_PLAN.md` unless
-the repository owner changes that order.
+Status: accepted product direction and planned handoff; implementation is the
+fourth immediate priority in `docs/IMPLEMENTATION_PLAN.md` unless the repository
+owner changes that order.
 
 ## Outcome
 

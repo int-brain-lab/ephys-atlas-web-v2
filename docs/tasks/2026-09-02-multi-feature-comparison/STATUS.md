@@ -1,7 +1,6 @@
 # Status
 
-Status: planned after the three immediate product priorities; no implementation
-has started.
+Status: fourth immediate product priority; no implementation has started.
 
 D058 accepts arbitrary feature scopes, release-owned z-score comparison, and
 iterative Focus/Gallery/Profile UX over shared modular foundations. Q17 retains

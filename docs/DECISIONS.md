@@ -1211,9 +1211,9 @@ releases. The bounded implementation tasks and UI follow-ups are recorded in
 
 ## D058 — Build flexible multi-feature comparison around release-owned z-scores
 
-Add a multi-feature comparison workspace after the three immediate product
-priorities recorded in `IMPLEMENTATION_PLAN.md`. Model comparison as an
-arbitrary ordered feature scope rather than a fixed number of slots. Provide
+Add a multi-feature comparison workspace as the fourth immediate product
+priority recorded in `IMPLEMENTATION_PLAN.md`. Model comparison as an arbitrary
+ordered feature scope rather than a fixed number of slots. Provide
 three coordinated ways to inspect that scope: Focus for a few large spatial
 maps, a virtualized Gallery for tens or hundreds of spatial maps, and Profile
 for all compatible features at one or more selected locations. These are

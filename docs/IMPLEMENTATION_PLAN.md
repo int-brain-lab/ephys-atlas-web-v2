@@ -33,9 +33,12 @@ below when selecting independent work:
    palette or diverging-center selections;
 3. implement the deterministic synthetic documentation captures in
    [`DOCUMENTATION_SCREENSHOT_PLAN.md`](DOCUMENTATION_SCREENSHOT_PLAN.md) and
-   add their non-mutating drift check to `just check`.
+   add their non-mutating drift check to `just check`;
+4. implement the flexible multi-feature comparison foundation and scientist-
+   iteration sequence in
+   [`tasks/2026-09-02-multi-feature-comparison/`](tasks/2026-09-02-multi-feature-comparison/README.md).
 
-All other active, deferred, and discussion work follows these three priorities
+All other active, deferred, and discussion work follows these four priorities
 unless it is required to unblock or validate them, or a later repository-owner
 decision changes the order. Deployment, remote publication, and production-
 origin work remain separately gated by their existing authorization and open
@@ -243,8 +246,8 @@ They are not launch blockers. Q16 retains all real feature-by-feature palette
 and center selections for a future immutable release, and D050/LS03-03 volume
 regional distributions remain explicitly deferred.
 
-After the three immediate product priorities, the accepted flexible multi-
-feature comparison foundation and scientist-iteration sequence are recorded in
+The fourth immediate product priority, the accepted flexible multi-feature
+comparison foundation and scientist-iteration sequence, is recorded in
 [`tasks/2026-09-02-multi-feature-comparison/`](tasks/2026-09-02-multi-feature-comparison/README.md).
 It supports arbitrary release-ordered feature scopes through Focus, virtualized
 Gallery, and Profile views rather than imposing a three-feature domain limit.

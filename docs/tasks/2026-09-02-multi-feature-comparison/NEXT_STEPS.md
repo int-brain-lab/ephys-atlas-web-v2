@@ -1,7 +1,8 @@
 # Next steps
 
-After the catalog/edition machinery, scalar-presentation follow-ups, and
-documentation screenshots are complete unless reprioritized:
+As the fourth immediate priority, after the catalog/edition machinery,
+scalar-presentation follow-ups, and documentation screenshots are complete
+unless reprioritized:
 
 1. inspect the completed D056 URL/catalog state and existing dataset-session,
    repository-port, viewport-factory, and UI-lab seams;
