@@ -145,6 +145,16 @@ separately for metadata and binary chunks. Add a database, queue, framework, or
 OAuth platform only when an accepted requirement makes the current model
 insufficient.
 
+D055 defines a separate optional sharing lifecycle for already-validated local
+releases. Shared copies are opaque, unlisted, expiring CloudFront/S3 resources;
+they never enter the public catalog or acquire published-release status. The
+first design has no trusted application backend: CloudFront OAC signs narrowly
+scoped create-only S3 requests, S3 checks conditional writes and supplied
+checksums, and recipients replay the complete schema-v1 validation before use.
+Operational abuse controls and fixed expiry bound this convenience path but do
+not turn it into authenticated or private storage. Sharing must not weaken or
+reuse the official publication lifecycle implicitly.
+
 ## Engineering guardrails
 
 - Preserve scientific provenance and deterministic serialization during

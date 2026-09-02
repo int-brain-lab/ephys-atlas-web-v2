@@ -197,6 +197,16 @@ promotes them: richer production 3-D, AGEA, MERFISH, large point clouds,
 inferential statistics, broad legacy custom-bucket compatibility, and full
 OAuth/user identity.
 
+D055 also accepts an optional unlisted-sharing follow-up, but it is not a
+launch blocker and must remain distinct from official publishing. After Q15 is
+resolved, the smallest vertical slice is: provision an isolated CloudFront OAC
+and private S3 test origin with create-only conditional writes and expiry;
+upload one synthetic golden release from IndexedDB using an opaque share ID and
+completion marker; reload it through the ordinary HTTP reader with full
+schema/size/hash validation; exercise corruption, incomplete upload, overwrite,
+expiry disclosure, method denial, and upload-disable behavior; then record
+cost/security evidence before enabling the UI outside a test environment.
+
 ## Agent task-selection rule
 
 1. Confirm `just check` on current `main` or establish the baseline failure.

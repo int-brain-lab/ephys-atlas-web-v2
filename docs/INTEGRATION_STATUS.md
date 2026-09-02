@@ -2,8 +2,7 @@
 
 Status: active pre-launch capability matrix.
 
-Last reviewed: 2026-08-31 on `main` after the D054 reviewed-distribution
-rebuilds and the local-import capacity/resilience campaign.
+Last reviewed: 2026-09-02 on `main` after the D055 unlisted-sharing decision.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -141,6 +140,14 @@ D040 selects IBL-owned S3 plus CloudFront. Q8 still requires concrete
 bucket/distribution/domain and publishing-topology choices; Q9 still requires
 the frozen paper release set and aliases. Nothing in the current repository
 state authorizes remote publication.
+
+D055 accepts a distinct optional path for unlisted, expiring copies of locally
+validated releases. Its first design uses anonymous browser uploads through a
+separate CloudFront OAC boundary into private S3, create-only keys, supplied
+checksums, a last-written completion marker, recipient-side full validation,
+WAF/rate controls, Lifecycle expiry, monitoring, and a kill switch. It is not
+implemented or deployed, is not private storage, and never updates the public
+catalog. Q15 retains its exact operational limits and deployment values.
 
 The committed complete development-bundle descriptor pins root manifests for
 the current channel, cluster, Brain-Wide Map, volume, projection, and D042 mesh

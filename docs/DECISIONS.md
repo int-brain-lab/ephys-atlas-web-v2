@@ -63,6 +63,7 @@ only part of the body; the index states what remains effective.
 | D052 | `peak_val.raw` Linear/Focused | accepted | 2026-08-29 | exact choice retained by D054 |
 | D053 | Focused compact viewport | accepted | 2026-08-29 | current compact behavior |
 | D054 | Complete audited distribution selections | accepted | 2026-08-29 | closes Q14; local rebuilds authorized |
+| D055 | Unlisted expiring dataset shares | accepted | 2026-09-02 | optional sharing transport; separate from publication |
 
 ## D001 — Separate v2
 
@@ -1092,3 +1093,51 @@ prior release. This decision resolves Q14 and authorizes the necessary local
 selection, build, validation, and development-default work only. It does not
 authorize remote publication, remote aliases/origins, a paper vintage, or the
 production volume transport.
+
+## D055 — Share local datasets as unlisted expiring CloudFront/S3 objects
+
+Add an optional browser-only sharing path for already-imported, fully validated
+schema-v1 releases. A share is an informal, unlisted copy for collaboration; it
+is not an official publication, does not enter `catalog.json`, does not acquire
+an alias, and must be labelled **Shared** rather than **Published**. Anyone with
+the link may read or forward it. This is not a confidentiality mechanism.
+
+Use a separate private IBL-owned S3 bucket or rigorously isolated prefix as the
+durable share store and a separate CloudFront data origin as the only browser
+read/write boundary. Configure CloudFront Origin Access Control to sign S3
+origin requests. Do not expose anonymous S3 access, permanent AWS credentials,
+Cognito identities, Lambda, EC2, user accounts, or the capability-based
+publishing API in the first sharing version. Official publishing retains D009,
+D040, schema validation before exposure, immutable release/catalog semantics,
+and its separately authorized lifecycle.
+
+The sender generates at least 256 random bits with the Web Crypto API and
+uploads the already-validated individual IndexedDB resources beneath an opaque
+`shares/<share-id>/` prefix. Each object upload supplies the declared checksum
+and `If-None-Match: *`; S3 policy must enforce create-only conditional writes so
+an existing share cannot be overwritten. Upload the root manifest and a small
+completion marker last. A recipient must require the marker and then replay the
+ordinary complete schema-v1 graph, served-byte, SHA-256, path, and semantic
+validation before rendering. The marker is only a completion convention: with
+no trusted control plane, it is not proof that the uploader supplied a valid
+release.
+
+Anonymous upload capability must be isolated and bounded operationally. The
+CloudFront behavior and S3 policy grant only the minimum object creation and
+read actions under the share namespace, deny deletion/listing/ACL/bucket
+administration and all unwanted HTTP methods, and retain S3 Block Public Access.
+Use AWS WAF method filtering and rate-based rules, fixed S3 Lifecycle expiry,
+client-side release/resource ceilings for honest users, a non-executable data
+origin with restrictive response headers and viewer-origin CORS, storage/request
+monitoring, budget alarms, and a documented emergency switch that disables
+uploads. Initial shares have no user-managed deletion, ownership recovery,
+catalog discovery, or indefinite-retention promise.
+
+This design deliberately accepts a residual abuse risk: without a trusted
+component, aggregate bytes, per-person quotas, ownership, validity before
+storage, and an absolute spending cap cannot be enforced reliably. Q15 retains
+the exact deployment names, expiry, limits, WAF thresholds, alarms, and kill
+switch as choices that an implementation agent must not invent. Evidence of
+abuse or requirements for durable shares, revocation, ownership, quotas, or
+private access triggers a fresh decision on a trusted control plane; it does
+not silently expand this MVP into publishing.

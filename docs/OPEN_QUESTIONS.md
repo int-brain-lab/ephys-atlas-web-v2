@@ -76,6 +76,27 @@ name), exact dataset release IDs, and the freeze date/process.
 Blocks: final production catalog/defaults and the publication reproducibility
 statement.
 
+## Q15 — Unlisted-sharing deployment policy
+
+Status: **DECISION** for deploying the optional D055 sharing path; not a launch
+blocker.
+
+D055 fixes the product and security boundary: unlisted expiring shares use
+anonymous browser uploads through a separate CloudFront OAC boundary into
+private S3, remain outside the public catalog, and are validated again by the
+recipient. The design intentionally has no Lambda, EC2, Cognito, user account,
+or publishing-service dependency in its first version.
+
+Resolution needed: exact share bucket/prefix, CloudFront distribution and data
+domain; retention duration; per-resource and honest-client aggregate ceilings;
+allowed CORS origin and response-header policy; WAF method and rate rules;
+storage/request alarm thresholds and owners; the emergency upload-disable
+procedure; and whether the residual anonymous-storage cost exposure is accepted
+for the initial deployment. Do not reuse the official publication namespace or
+invent any of these production values during implementation.
+
+Blocks: deployment or user-visible enablement of unlisted sharing only.
+
 ## Resolution procedure
 
 When authoritative evidence arrives:
