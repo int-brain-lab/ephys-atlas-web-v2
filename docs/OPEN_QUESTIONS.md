@@ -70,8 +70,11 @@ The architecture supports mutable aliases outside immutable release
 directories. The paper-facing viewer default must resolve to a frozen release
 set.
 
-Resolution needed: alias naming (`paper`, publication label, or another stable
-name), exact dataset release IDs, and the freeze date/process.
+Resolution needed: the exact public project-edition ID and label, its complete
+dataset-to-immutable-release mapping, the default edition, any mutable alias
+names, and the freeze date/process. D056 fixes the Project/Dataset/Release/
+Feature/View hierarchy and requires individual release overrides to leave or
+be disclosed outside the coordinated edition; it does not choose these values.
 
 Blocks: final production catalog/defaults and the publication reproducibility
 statement.

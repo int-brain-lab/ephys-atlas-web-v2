@@ -48,6 +48,15 @@ dataset contains features, and a feature may independently expose `regional`,
 `volume`, or future representations. Catalogs/manifests drive releases,
 features, ordering, representations, and parcellations.
 
+D056 adds a catalog/navigation layer above this runtime identity: projects
+group scientifically distinct datasets, while a project edition coordinates
+exact immutable releases across the datasets selected for one publication or
+other frozen context. Project membership and edition mappings are discovery
+metadata; they do not replace dataset IDs, release provenance, or manifests.
+An individual release override leaves or is disclosed outside its coordinated
+edition. The accepted interaction and catalog requirements are in
+[`frontend/DATASET_NAVIGATION.md`](frontend/DATASET_NAVIGATION.md).
+
 Schema v1 under `schema/v1/` is the sole producer/consumer release contract.
 Published and local data use the same manifest, feature, representation,
 statistics, volume, and resource contracts; IndexedDB changes only transport.

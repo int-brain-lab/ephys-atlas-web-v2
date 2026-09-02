@@ -148,7 +148,7 @@ def test_reports_missing_or_conflicting_indexed_status(tmp_path: Path) -> None:
 
 def test_launch_traceability_requires_every_canonical_row(tmp_path: Path) -> None:
     root = _repository(tmp_path)
-    counts = (7, 13, 14, 9, 4, 6, 4, 5, 4, 8, 9, 6, 6)
+    counts = (8, 13, 14, 9, 4, 6, 4, 5, 4, 8, 9, 6, 6)
     identifiers = [
         f"LS{section:02d}-{criterion:02d}"
         for section, count in enumerate(counts, 1)

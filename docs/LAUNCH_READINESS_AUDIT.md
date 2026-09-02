@@ -16,10 +16,11 @@ Rows marked satisfied can regress and must be rechecked on the release commit.
 
 ## Coverage and dispositions
 
-The current specification contains 95 bullets in its 13 acceptance-criteria
+The current specification contains 96 bullets in its 13 acceptance-criteria
 blocks and six definition-of-ready gates. This count excludes the five
 launch-scope dataset bullets and seven explicitly deferred bullets. Earlier
-working notes counted 88 because they omitted section 1's seven bullets.
+working notes counted 88 because they omitted section 1's original seven
+bullets; D056 subsequently added LS01-08.
 
 Dispositions are:
 
@@ -81,6 +82,7 @@ browser matrix.
 | [LS01-05](LAUNCH_SPEC.md#ls01-05) | Cursor/derived slices, dataset/release, feature, representation, parcellation, coloring, selection, and relevant workspace state round-trip in a share URL. | URL-state, reducer, app, static-projection, and volume tests. | satisfied | Add a single field-completeness assertion if the URL schema changes. |
 | [LS01-06](LAUNCH_SPEC.md#ls01-06) | Maximize, drawers, and responsive composition are keyboard-reversible and browser-tested. | App, panel-layout, and keyboard browser tests. | satisfied | Repeat cross-browser. |
 | [LS01-07](LAUNCH_SPEC.md#ls01-07) | Current Chrome/Edge, Firefox, and Safari are release targets; Chromium alone is insufficient. | D040; focused local-import evidence covers Chromium, Firefox, and native Safari, with Playwright WebKit recorded separately. This is not a complete release matrix. | independent gap | Record the full Chrome/Edge, Firefox, and native Safari release matrices on the release commit. |
+| [LS01-08](LAUNCH_SPEC.md#ls01-08) | Public navigation separates project, dataset, immutable release, feature, and view; project editions preserve coordinated release mappings and disclose overrides. | D056 and `frontend/DATASET_NAVIGATION.md` define the accepted product/catalog contract; the current catalog and top bar remain flat. | blocked Q9 | Implement and test the generic contract with synthetic mappings now; bind the exact paper edition/default only after Q9 is authorized. |
 
 ## 2. Regional feature exploration
 

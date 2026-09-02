@@ -141,6 +141,13 @@ bucket/distribution/domain and publishing-topology choices; Q9 still requires
 the frozen paper release set and aliases. Nothing in the current repository
 state authorizes remote publication.
 
+D056 accepts Project/Dataset/Release/Feature/View navigation and coordinated
+project editions. The current schema-v1 public catalog and top bar still expose
+a flat dataset/release list, so the catalog, publishing, URL, browser-data, UI,
+fixture, and test cutover remains unimplemented and blocked on Q9's exact paper
+edition/default mapping. The binding product contract is
+[`frontend/DATASET_NAVIGATION.md`](frontend/DATASET_NAVIGATION.md).
+
 D055 accepts a distinct optional path for unlisted, expiring copies of locally
 validated releases. Its first design uses anonymous browser uploads through a
 separate CloudFront OAC boundary into private S3, create-only keys, supplied

@@ -45,7 +45,7 @@ HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
 ID_HEADING_RE = re.compile(r"^#{1,6}\s+([QD]\d+)\b")
 ID_REFERENCE_RE = re.compile(r"\b([QD]\d+)\b")
 STATUS_RE = re.compile(r"^Status:\s*(.+?)\s*$", re.IGNORECASE)
-LAUNCH_SECTION_COUNTS = (7, 13, 14, 9, 4, 6, 4, 5, 4, 8, 9, 6, 6)
+LAUNCH_SECTION_COUNTS = (8, 13, 14, 9, 4, 6, 4, 5, 4, 8, 9, 6, 6)
 EXPECTED_LAUNCH_IDS = tuple(
     f"LS{section:02d}-{criterion:02d}"
     for section, count in enumerate(LAUNCH_SECTION_COUNTS, 1)
@@ -465,7 +465,7 @@ def _check_launch_traceability(root: Path) -> list[Diagnostic]:
         audit_ids.append(identifier)
 
     if tuple(spec_ids) != EXPECTED_LAUNCH_IDS:
-        diagnostics.append(Diagnostic("docs/LAUNCH_SPEC.md", 1, "launch criterion IDs must be the canonical 95 acceptance and 6 readiness IDs in order"))
+        diagnostics.append(Diagnostic("docs/LAUNCH_SPEC.md", 1, "launch criterion IDs must be the canonical 96 acceptance and 6 readiness IDs in order"))
     if tuple(audit_ids) != EXPECTED_LAUNCH_IDS:
         diagnostics.append(Diagnostic("docs/LAUNCH_READINESS_AUDIT.md", 1, "launch audit must contain exactly one ordered row for every launch criterion ID"))
     return diagnostics

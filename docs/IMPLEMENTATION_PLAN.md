@@ -162,7 +162,9 @@ Next testable actions:
    immutable browser-ready bytes, create a new descriptor with exact resolved
    HTTPS sources, and exercise the implemented atomic `just data` path from a
    clean checkout;
-4. finalize the frozen scientific release set, catalog, and aliases;
+4. implement D056 as one coherent schema-v1 catalog, publishing, URL-state,
+   browser-data, top-bar, fixture, and test cutover; then finalize the Q9
+   project edition, frozen scientific release set, defaults, and aliases;
 5. deploy or explicitly waive the publishing service; if deployed, configure
    validation, secrets, storage, backups, TLS, and reverse proxy;
 6. verify all anatomy and scientific release URLs from the production origin.

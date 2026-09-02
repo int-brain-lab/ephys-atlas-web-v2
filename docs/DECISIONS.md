@@ -64,6 +64,7 @@ only part of the body; the index states what remains effective.
 | D053 | Focused compact viewport | accepted | 2026-08-29 | current compact behavior |
 | D054 | Complete audited distribution selections | accepted | 2026-08-29 | closes Q14; local rebuilds authorized |
 | D055 | Unlisted expiring dataset shares | accepted | 2026-09-02 | optional sharing transport; separate from publication |
+| D056 | Project/dataset/release navigation | accepted | 2026-09-02 | catalog hierarchy, coordinated editions, and top-bar terminology |
 | D057 | Preferred palettes and explicit diverging centers | accepted | 2026-09-02 | infrastructure policy; Q16 retains real-feature selections |
 
 ## D001 — Separate v2
@@ -1142,6 +1143,39 @@ switch as choices that an implementation agent must not invent. Evidence of
 abuse or requirements for durable shares, revocation, ownership, quotas, or
 private access triggers a fresh decision on a trusted control plane; it does
 not silently expand this MVP into publishing.
+
+## D056 — Organize datasets by project, release, feature, and view
+
+Organize public scientific navigation as **Project -> Dataset -> Release ->
+Feature -> Representation**. Use Project as the durable user-facing grouping,
+not Paper: Ephys Atlas contains channel features, cluster features, and
+encoding volumes, while Brain-Wide Map is a clearly separate project. Present
+browser-local imports under **My data**, which is a UI section rather than an
+official public project or publication claim.
+
+Add a project edition concept for a named coordinated mapping from the datasets
+in one project to exact immutable release IDs. A paper-facing edition is frozen
+and reproducible. Switching datasets inside an edition selects the mapped
+release; explicitly selecting a different dataset release leaves that edition
+and must be disclosed as a custom version or outside the named edition. Mutable
+aliases and defaults resolve before loading and URL commitment; share URLs,
+exports, and downloads retain exact immutable dataset/release identity.
+
+Use the desktop top-bar order **Project, Dataset, Feature, View**. Keep release
+selection attached to Dataset, display a concise friendly release label plus
+status, and expose the exact release ID as secondary technical information.
+Rename the user-facing Representation control to **View**, combining the
+release-declared representation and applicable parcellation, while retaining
+`representation` as the schema/domain term.
+
+Implement project membership, friendly release presentation, and edition
+mappings through the public catalog contract rather than frontend hardcoding.
+Preserve project/edition or disclosed custom-version context in URL history
+when it affects dataset switching, alongside the exact active dataset and
+release. The complete accepted interaction and catalog requirements are in
+[`frontend/DATASET_NAVIGATION.md`](frontend/DATASET_NAVIGATION.md). Q9 retains
+the exact paper-facing edition/alias names, release IDs, default, and freeze
+process; this decision does not invent them.
 
 ## D057 — Use release-preferred palettes with explicit diverging centers
 
