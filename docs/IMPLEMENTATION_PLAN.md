@@ -17,6 +17,30 @@ implemented and green. [`INTEGRATION_STATUS.md`](INTEGRATION_STATUS.md) records
 their current maturity; focused evidence lives under `docs/data/` and
 `docs/rendering/`.
 
+## Immediate product priorities
+
+Repository-owner priority, recorded 2026-09-02, overrides the milestone order
+below when selecting independent work:
+
+1. implement the generic D056 project/dataset/release catalog and project-
+   edition machinery as one schema-v1 producer/consumer cutover, using
+   synthetic fixtures for edition values; Q9 continues to block only the real
+   paper-facing edition identity, release mapping, defaults, aliases, and
+   freeze process;
+2. implement the bounded scalar-presentation follow-ups in
+   [`tasks/2026-09-02-scalar-presentation-followups/`](tasks/2026-09-02-scalar-presentation-followups/README.md),
+   one coherent green task at a time and without inventing Q16's real-feature
+   palette or diverging-center selections;
+3. implement the deterministic synthetic documentation captures in
+   [`DOCUMENTATION_SCREENSHOT_PLAN.md`](DOCUMENTATION_SCREENSHOT_PLAN.md) and
+   add their non-mutating drift check to `just check`.
+
+All other active, deferred, and discussion work follows these three priorities
+unless it is required to unblock or validate them, or a later repository-owner
+decision changes the order. Deployment, remote publication, and production-
+origin work remain separately gated by their existing authorization and open
+questions.
+
 ## M5 — Custom authoring and ZIP import
 
 Status: active; the Allen regional/volume authoring and browser ZIP-import
@@ -163,8 +187,9 @@ Next testable actions:
    HTTPS sources, and exercise the implemented atomic `just data` path from a
    clean checkout;
 4. implement D056 as one coherent schema-v1 catalog, publishing, URL-state,
-   browser-data, top-bar, fixture, and test cutover; then finalize the Q9
-   project edition, frozen scientific release set, defaults, and aliases;
+   browser-data, top-bar, fixture, and test cutover using synthetic edition
+   values; then, after Q9 is resolved, configure the real project edition,
+   frozen scientific release set, defaults, and aliases;
 5. deploy or explicitly waive the publishing service; if deployed, configure
    validation, secrets, storage, backups, TLS, and reverse proxy;
 6. verify all anatomy and scientific release URLs from the production origin.
