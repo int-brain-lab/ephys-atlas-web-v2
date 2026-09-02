@@ -37,7 +37,10 @@ Next testable actions:
 1. keep the reproducible capacity corpus and regression harness green, and
    capture native-Safari quota/process-RSS plus representative end-user-device
    evidence before advertising a broadly supported maximum capacity;
-2. publish the Python distribution only after explicit authorization.
+2. implement the deterministic synthetic documentation captures in
+   [`DOCUMENTATION_SCREENSHOT_PLAN.md`](DOCUMENTATION_SCREENSHOT_PLAN.md), then
+   add their non-mutating drift check to `just check`;
+3. publish the Python distribution only after explicit authorization.
 
 The pinned zip.js reader rejects unsafe or duplicate paths, non-regular,
 encrypted, split/Zip64, nested, or unsupported-compression entries, undeclared
