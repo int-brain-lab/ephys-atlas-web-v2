@@ -197,6 +197,13 @@ promotes them: richer production 3-D, AGEA, MERFISH, large point clouds,
 inferential statistics, broad legacy custom-bucket compatibility, and full
 OAuth/user identity.
 
+The proposed 3-D follow-up that preserves native GLB connected components,
+keeps medial components fixed during explode, and retains D042 as an immutable
+rollback is recorded in
+[`tasks/2026-09-02-native-3d-mesh-components/`](tasks/2026-09-02-native-3d-mesh-components/README.md).
+It remains deferred and must begin by durably preserving the ignored D042 file
+graph; the record does not select a new production default.
+
 D055 also accepts an optional unlisted-sharing follow-up, but it is not a
 launch blocker and must remain distinct from official publishing. After Q15 is
 resolved, the smallest vertical slice is: provision an isolated CloudFront OAC
