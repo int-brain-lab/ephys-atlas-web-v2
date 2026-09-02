@@ -1,4 +1,6 @@
-export type ColormapId = 'viridis' | 'cividis' | 'magma' | 'plasma' | 'inferno' | 'Blues' | 'YlOrRd' | 'coolwarm';
+import type { ColormapId } from '../domain/types.js';
+
+export type { ColormapId } from '../domain/types.js';
 
 export interface ColormapDefinition {
   id: ColormapId;
@@ -16,6 +18,14 @@ export const COLORMAPS: readonly ColormapDefinition[] = [
   { id: 'YlOrRd', label: 'YlOrRd', kind: 'sequential' },
   { id: 'coolwarm', label: 'Coolwarm', kind: 'diverging' },
 ];
+
+export function isColormapId(value: string): value is ColormapId {
+  return COLORMAPS.some(({ id }) => id === value);
+}
+
+export function colormapLabel(id: ColormapId): string {
+  return COLORMAPS.find((item) => item.id === id)?.label ?? 'Viridis';
+}
 
 type Rgb = readonly [number, number, number];
 

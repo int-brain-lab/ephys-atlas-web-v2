@@ -68,6 +68,16 @@ test('distribution domain defaults are automatic while explicit choices round-tr
   assert.equal(parseViewState('?v=4&dist=unknown').distribution.domain, 'auto');
 });
 
+test('colormap defaults to Auto, preserves registered explicit palettes, and canonicalizes unknown values', () => {
+  assert.equal(parseViewState('?v=4').coloring.colormap, 'auto');
+  const explicit = parseViewState('?v=4&cmap=cividis');
+  assert.equal(explicit.coloring.colormap, 'cividis');
+  assert.match(serializeViewState(explicit), /cmap=cividis/);
+  const unknown = parseViewState('?v=4&cmap=not-a-palette');
+  assert.equal(unknown.coloring.colormap, 'auto');
+  assert.equal(serializeViewState(unknown).includes('cmap='), false);
+});
+
 test('obsolete independent histogram scale is ignored and removed canonically', () => {
   const parsed = parseViewState('?v=4&histScale=log&scale=linear');
   assert.equal(parsed.coloring.scale, 'linear');

@@ -9,6 +9,7 @@ import { isViewAction } from '../domain/actions.js';
 import { DEFAULT_VIEW_STATE } from '../domain/defaults.js';
 import { WORKSPACE_VIEW_IDS } from '../domain/projections.js';
 import { normalizeBrainCameraPose } from '../domain/scene3d.js';
+import { isColormapId } from '../application/colormap-palettes.js';
 import type { AppStore } from '../domain/store.js';
 import type {
   ColorRange,
@@ -101,6 +102,10 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
   const statistic = COLOR_STATISTICS.has(params.get('stat') as ColorStatisticId)
     ? params.get('stat') as ColorStatisticId
     : defaults.coloring.statistic;
+  const requestedColormap = params.get('cmap');
+  const colormap = requestedColormap !== null && isColormapId(requestedColormap)
+    ? requestedColormap
+    : 'auto';
   const regionOrder = REGION_ORDERS.has(params.get('order') as RegionOrder)
     ? params.get('order') as RegionOrder
     : defaults.regionOrder;
@@ -145,7 +150,7 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
     coloring: {
       mode: params.get('colors') === 'anatomy' ? 'anatomy' : 'feature',
       statistic,
-      colormap: params.get('cmap') || defaults.coloring.colormap,
+      colormap,
       range: parseRange(params.get('range'), defaults.coloring.range),
       scale: params.get('scale') === 'log' || params.get('scale') === 'linear' || params.get('scale') === 'symlog'
         ? params.get('scale') as 'linear' | 'log' | 'symlog'
@@ -183,7 +188,7 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   if (view.regionOrder !== defaults.regionOrder) params.set('order', view.regionOrder);
   if (view.coloring.statistic !== defaults.coloring.statistic) params.set('stat', view.coloring.statistic);
   if (view.coloring.mode === 'anatomy' && defaults.coloring.mode !== 'anatomy') params.set('colors', 'anatomy');
-  if (view.coloring.colormap !== defaults.coloring.colormap) params.set('cmap', view.coloring.colormap);
+  if (view.coloring.colormap !== 'auto') params.set('cmap', view.coloring.colormap);
   if (view.coloring.range.mode === 'fixed') params.set('range', `${view.coloring.range.min},${view.coloring.range.max}`);
   if (view.coloring.scale !== 'auto') params.set('scale', view.coloring.scale);
   if (view.distribution.domain !== 'auto') params.set('dist', view.distribution.domain);

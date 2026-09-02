@@ -32,7 +32,7 @@ export const DEFAULT_VIEW_STATE: ViewState = {
   coloring: {
     mode: 'feature',
     statistic: 'mean',
-    colormap: 'viridis',
+    colormap: 'auto',
     range: { mode: 'auto' },
     scale: 'auto',
   },

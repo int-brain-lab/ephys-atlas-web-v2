@@ -1,6 +1,7 @@
 import type {
   ColorRange,
   ColorMode,
+  ColormapSelection,
   ColorStatisticId,
   ColorScaleSelection,
   DistributionDomainSelection,
@@ -49,7 +50,7 @@ type ViewActionPayload =
   | { type: 'scene3d/camera'; camera: BrainCameraPose | null }
   | { type: 'color/statistic'; statistic: ColorStatisticId }
   | { type: 'color/mode'; mode: ColorMode }
-  | { type: 'color/colormap'; colormap: string }
+  | { type: 'color/colormap'; colormap: ColormapSelection }
   | { type: 'color/range'; range: ColorRange }
   | { type: 'color/scale'; scale: ColorScaleSelection }
   | { type: 'distribution/domain'; domain: DistributionDomainSelection }

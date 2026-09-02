@@ -15,6 +15,7 @@ import type {
   SliceAxis,
   StaticProjectionId,
   ColorStatisticId,
+  ColormapSelection,
   WorkspaceViewId,
 } from '../domain/types.js';
 import { deriveOrthogonalNavigation } from '../domain/navigation.js';
@@ -35,6 +36,8 @@ import type {
 import { effectiveScalarColorRange } from '../application/scalar-colormap.js';
 import type { ResolvedPresentationScale } from '../application/presentation-scale.js';
 import { COLORMAPS } from '../application/colormap-palettes.js';
+import { colormapLabel } from '../application/colormap-palettes.js';
+import type { ResolvedPresentationColormap } from '../application/presentation-colormap.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
 import { ColorRangeControl } from './color-range-control.js';
 import { ContextMenu, type ContextMenuOption } from './context-menu.js';
@@ -64,7 +67,7 @@ export interface AppShellCallbacks {
   setParcellation(parcellation: ParcellationId): void;
   setStatistic(statistic: ColorStatisticId): void;
   setColorMode(mode: ColorMode): void;
-  setColormap(colormap: string): void;
+  setColormap(colormap: ColormapSelection): void;
   setColorRange(range: ColorRange): void;
   setColorScale(scale: ColorScaleSelection): void;
   setDistributionDomain(domain: DistributionDomainSelection): void;
@@ -96,6 +99,7 @@ export interface ShellModel {
   displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null;
   regionalPresentation: RegionalPresentation;
   presentationScale: ResolvedPresentationScale;
+  presentationColormap: ResolvedPresentationColormap;
   representationDisplay: RepresentationDisplay | undefined;
 }
 
@@ -1556,7 +1560,7 @@ export class AppShell {
     const colormap = this.settingsSelect('Colormap', COLORMAPS.map(({ id, label }) => [id, label]));
     this.colormapSelect = colormap.select;
     this.colormapSelect.setAttribute('aria-label', 'Feature colormap');
-    this.colormapSelect.addEventListener('change', () => this.callbacks.setColormap(this.colormapSelect.value));
+    this.colormapSelect.addEventListener('change', () => this.callbacks.setColormap(this.colormapSelect.value as ColormapSelection));
     const scale = this.settingsSelect('Value scale', [['auto', 'Auto (Linear)'], ['linear', 'Linear'], ['log', 'Log'], ['symlog', 'Signed log']]);
     this.scaleSelect = scale.select;
     this.scaleSelect.setAttribute('aria-label', 'Value scale');
@@ -1574,7 +1578,10 @@ export class AppShell {
     this.rangeModeSelect.setAttribute('aria-label', 'Color range mode');
     this.rangeModeSelect.addEventListener('change', () => this.onRangeModeChanged());
 
-    this.colorRangeControl = new ColorRangeControl((range) => this.callbacks.setColorRange(range));
+    this.colorRangeControl = new ColorRangeControl(
+      (range) => this.callbacks.setColorRange(range),
+      () => this.callbacks.setColormap('auto'),
+    );
 
     group.append(colorMode.row, statistic.row, colormap.row, scale.row, distributionDomain.row, rangeMode.row, this.colorRangeControl.element);
     return group;
@@ -1737,7 +1744,11 @@ export class AppShell {
       value,
       label: value === 'std' ? 'Standard deviation' : titleCaseToken(value),
     })), view.coloring.statistic);
-    this.colormapSelect.value = view.coloring.colormap;
+    const automaticColormap = model.presentationColormap.automaticColormap;
+    this.syncOptions(this.colormapSelect, [
+      { value: 'auto', label: `Auto (${colormapLabel(automaticColormap)})` },
+      ...COLORMAPS.map(({ id, label }) => ({ value: id, label })),
+    ], view.coloring.colormap);
     const automaticScale = model.presentationScale.automaticScale;
     this.syncOptions(this.scaleSelect, [
       { value: 'auto', label: `Auto (${automaticScale === 'log' ? 'Log' : automaticScale === 'symlog' ? 'Signed log' : 'Linear'})` },
@@ -1794,7 +1805,7 @@ export class AppShell {
         statistic: view.coloring.statistic,
         effectiveRange: range,
         mode: view.coloring.range.mode,
-        colormap: view.coloring.colormap,
+        colormap: model.presentationColormap.effectiveColormap,
         unit: descriptor?.unit ?? null,
         context,
         enabled: featureColors,

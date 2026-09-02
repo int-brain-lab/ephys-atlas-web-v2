@@ -535,7 +535,7 @@ test('scientific context menus and color controls are driven by the loaded relea
   await expect.poll(() => new URL(page.url()).searchParams.get('stat')).toBe('std');
   await expect(page.locator('.region-row[data-region-id="-362"] .region-row__value')).toHaveAttribute('aria-label', /^std /);
   await expect.poll(() => coloredRegion.evaluate((element) => getComputedStyle(element).fill)).not.toBe(meanFill);
-  await expect(page.getByLabel('Feature colormap').locator('option')).toHaveText(['Viridis', 'Cividis', 'Magma', 'Plasma', 'Inferno', 'Blues', 'YlOrRd', 'Coolwarm']);
+  await expect(page.getByLabel('Feature colormap').locator('option')).toHaveText(['Auto (Viridis)', 'Viridis', 'Cividis', 'Magma', 'Plasma', 'Inferno', 'Blues', 'YlOrRd', 'Coolwarm']);
   await expect(page.getByLabel('Feature color legend')).toBeVisible();
   await expect(page.locator('.color-legend__unit')).toHaveText('dB rel. V');
   await expect(page.locator('.color-range__histogram-bin')).toHaveCount(8);
@@ -641,6 +641,8 @@ test('scientific context menus and color controls are driven by the loaded relea
 
   await page.getByRole('button', { name: 'Reset' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('range')).toBeNull();
+  await expect.poll(() => new URL(page.url()).searchParams.get('cmap')).toBeNull();
+  await expect(page.getByLabel('Feature colormap')).toHaveValue('auto');
   await expect(page.getByLabel('Color range mode')).toHaveValue('auto');
   await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-mode', 'auto');
   await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '-0.5');
@@ -650,6 +652,46 @@ test('scientific context menus and color controls are driven by the loaded relea
   await page.keyboard.press('ArrowLeft');
   await expect(page.getByLabel('Color range mode')).toHaveValue('fixed');
   await expect.poll(() => new URL(page.url()).searchParams.get('range')).not.toBeNull();
+});
+
+test('Auto colormap follows synthetic representation preferences while explicit palettes persist', async ({ page }) => {
+  await page.goto('/');
+  const settingsButton = page.getByRole('button', { name: 'Settings', exact: true });
+  const closeSettingsButton = page.getByRole('button', { name: 'Close Visualization settings' });
+  await settingsButton.click();
+  const colormap = page.getByLabel('Feature colormap');
+  const legend = page.locator('.color-legend__bar');
+  await expect(colormap).toHaveValue('auto');
+  await expect(colormap.locator('option:checked')).toHaveText('Auto (Viridis)');
+  await expect(legend).toHaveAttribute('data-colormap', 'viridis');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cmap')).toBeNull();
+
+  const representation = page.locator('[data-context-field="representation"]');
+  await closeSettingsButton.click();
+  await representation.locator('.context-menu__trigger').click();
+  await representation.getByRole('option', { name: /Volume/ }).click();
+  await settingsButton.click();
+  await expect(colormap.locator('option:checked')).toHaveText('Auto (Magma)');
+  await expect(legend).toHaveAttribute('data-colormap', 'magma');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cmap')).toBeNull();
+
+  await colormap.selectOption('cividis');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cmap')).toBe('cividis');
+  await expect(legend).toHaveAttribute('data-colormap', 'cividis');
+  await closeSettingsButton.click();
+  await representation.locator('.context-menu__trigger').click();
+  await representation.getByRole('option', { name: /Regional/ }).click();
+  await settingsButton.click();
+  await expect(legend).toHaveAttribute('data-colormap', 'cividis');
+
+  await colormap.selectOption('auto');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cmap')).toBeNull();
+  await expect(legend).toHaveAttribute('data-colormap', 'viridis');
+  await closeSettingsButton.click();
+  await representation.locator('.context-menu__trigger').click();
+  await representation.getByRole('option', { name: /Volume/ }).click();
+  await settingsButton.click();
+  await expect(legend).toHaveAttribute('data-colormap', 'magma');
 });
 
 test('scientific context picker becomes a bounded phone sheet', async ({ page }) => {

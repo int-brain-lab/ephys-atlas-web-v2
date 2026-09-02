@@ -1,5 +1,6 @@
 import { DatasetSession } from './application/dataset-session.js';
 import { resolvePresentationScale } from './application/presentation-scale.js';
+import { resolvePresentationColormap } from './application/presentation-colormap.js';
 import { effectiveScalarColorRange } from './application/scalar-colormap.js';
 import {
   regionalPresentationsEqual,
@@ -196,6 +197,7 @@ export class AtlasApp {
       representationDisplay,
       state.view.distribution.domain,
     );
+    const presentationColormap = resolvePresentationColormap(state.view.coloring.colormap, representationDisplay);
     const unsupportedExplicitScale = state.view.coloring.scale !== 'auto'
       && presentationScale.effectiveScale !== state.view.coloring.scale;
     const unsupportedExplicitDomain = state.view.distribution.domain !== 'auto'
@@ -217,6 +219,7 @@ export class AtlasApp {
       : null;
     const coloring = {
       ...state.view.coloring,
+      colormap: presentationColormap.effectiveColormap,
       range: effectiveRange
         ? { mode: 'fixed' as const, min: effectiveRange[0], max: effectiveRange[1] }
         : state.view.coloring.range,
@@ -254,6 +257,7 @@ export class AtlasApp {
       displaySliceInventories: this.displaySliceInventories,
       regionalPresentation: this.viewportPresentation?.regional ?? presentation.regional,
       presentationScale,
+      presentationColormap,
       representationDisplay,
     };
     this.shell.render(model);

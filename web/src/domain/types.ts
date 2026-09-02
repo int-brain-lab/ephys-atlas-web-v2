@@ -19,6 +19,8 @@ export type ColorScaleSelection = 'auto' | ColorScale;
 export type DistributionDomain = 'full' | 'focused';
 export type DistributionDomainSelection = 'auto' | DistributionDomain;
 export type ColorMode = 'feature' | 'anatomy';
+export type ColormapId = 'viridis' | 'cividis' | 'magma' | 'plasma' | 'inferno' | 'Blues' | 'YlOrRd' | 'coolwarm';
+export type ColormapSelection = 'auto' | ColormapId;
 export type StatisticId = 'mean' | 'median' | 'std' | 'min' | 'max' | 'count';
 export type ColorStatisticId = Exclude<StatisticId, 'count'>;
 export type RegionOrder = 'anatomy' | 'value-asc' | 'value-desc';
@@ -62,7 +64,7 @@ export type ColorRange =
 export interface ColoringState {
   mode: ColorMode;
   statistic: ColorStatisticId;
-  colormap: string;
+  colormap: ColormapSelection;
   range: ColorRange;
   scale: ColorScaleSelection;
 }

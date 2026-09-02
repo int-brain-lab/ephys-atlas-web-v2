@@ -72,7 +72,10 @@ export class ColorRangeControl {
   private axisScale: ScaleSpec = { kind: 'linear' };
   private readonly labelResizeObserver = new ResizeObserver(() => this.positionValueLabels());
 
-  constructor(private readonly setRange: (range: ColorRange) => void) {
+  constructor(
+    private readonly setRange: (range: ColorRange) => void,
+    private readonly resetColormap: () => void,
+  ) {
     this.element.setAttribute('aria-label', 'Feature color legend');
     const header = element('div', 'color-legend__header');
     this.reset.type = 'button';
@@ -172,6 +175,7 @@ export class ColorRangeControl {
   readonly setAutomaticRange = (): void => {
     this.cancelPendingCommit();
     this.setRange({ mode: 'auto' });
+    this.resetColormap();
   };
 
   destroy(): void {
