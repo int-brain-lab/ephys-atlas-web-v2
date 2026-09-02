@@ -170,6 +170,17 @@ test('a public-authored synthetic volume imports, renders, navigates, and reload
     dispatchEvent(new PopStateEvent('popstate'));
   });
   await expect(coronal).toHaveAttribute('data-volume-index', '0');
+  await coronal.evaluate((node) => {
+    const host = node.querySelector<SVGGraphicsElement>('.projection-viewport__scalar-host')!;
+    const regional = node.querySelector<SVGSVGElement>('svg.projection-viewport__regional')!;
+    const bounds = host.getBoundingClientRect();
+    regional.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true,
+      clientX: bounds.left + 1,
+      clientY: bounds.top + 1,
+    }));
+  });
+  await expect(coronal.locator('.region-tooltip')).toBeHidden();
 
   await page.route('**/__real-data/**', (route) => route.abort());
   await page.reload();

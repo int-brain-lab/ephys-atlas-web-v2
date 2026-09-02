@@ -352,6 +352,10 @@ export class AtlasApp {
       this.shell.hideRegionTooltip(inspection.projectionId);
       return;
     }
+    if (inspection.status === 'outside') {
+      this.shell.hideRegionTooltip(inspection.projectionId);
+      return;
+    }
     const regions = this.atlasRegions?.mappings[inspection.parcellation] ?? data.regions;
     const region = inspection.regionId ? regions.find(({ id }) => id === inspection.regionId) : undefined;
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);

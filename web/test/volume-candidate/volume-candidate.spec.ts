@@ -250,7 +250,7 @@ test('outside voxels inspect explicitly and corrupt immutable bytes fail integri
     return true;
   });
   expect(inspections).toBe(true);
-  await expect(frame.locator('.region-tooltip')).toContainText('Outside');
+  await expect(frame.locator('.region-tooltip')).toBeHidden();
 
   await page.context().clearCookies();
   await page.route('**/features/polarity/volume/packs/**', async (route) => {
