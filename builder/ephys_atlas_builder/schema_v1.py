@@ -255,6 +255,11 @@ def _display_semantics(document: dict[str, Any]) -> None:
             _fail(f"preferred {representation} display scale is unavailable")
         if presentation["preferred_distribution_domain"] not in domain_kinds:
             _fail(f"preferred {representation} distribution domain is unavailable")
+        center = presentation.get("diverging_center")
+        if center is not None and not math.isfinite(center):
+            _fail(f"{representation} diverging center must be finite")
+        if presentation.get("colormap") == "coolwarm" and center is None:
+            _fail(f"preferred diverging {representation} palette requires a center")
         for scale in scales:
             if scale["kind"] == "symlog" and not math.isfinite(scale["linear_threshold"]):
                 _fail(f"{representation} Signed-log threshold must be finite")

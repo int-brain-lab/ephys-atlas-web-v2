@@ -158,6 +158,25 @@ def test_display_rejects_log_for_a_nonpositive_complete_population() -> None:
         validate_scalar_display(display, np.array([0.0, 1.0]))
 
 
+@pytest.mark.parametrize("center", [float("nan"), float("inf"), None])
+def test_builder_rejects_nonfinite_or_missing_preferred_diverging_centers(
+    center: float | None,
+) -> None:
+    with pytest.raises(ValueError, match="diverging.*center|diverging palette"):
+        validate_scalar_display(
+            {**_display(), "colormap": "coolwarm", "diverging_center": center},
+            np.array([-1.0, 1.0]),
+        )
+
+
+def test_builder_allows_a_center_with_a_sequential_preference() -> None:
+    display = validate_scalar_display(
+        {**_display(), "colormap": "viridis", "diverging_center": 0},
+        np.array([-1.0, 1.0]),
+    )
+    assert display["diverging_center"] == 0.0
+
+
 def test_builder_rejects_focused_bounds_outside_the_full_population() -> None:
     display = {
         **_display(),

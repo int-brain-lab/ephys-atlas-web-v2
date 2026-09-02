@@ -143,6 +143,7 @@
       "required": ["scales", "preferred_scale", "distribution_domains", "preferred_distribution_domain"],
       "properties": {
         "colormap": {"type": "string", "minLength": 1},
+        "diverging_center": {"type": "number"},
         "range": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}},
         "scales": {
           "type": "array",

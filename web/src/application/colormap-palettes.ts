@@ -23,6 +23,10 @@ export function isColormapId(value: string): value is ColormapId {
   return COLORMAPS.some(({ id }) => id === value);
 }
 
+export function colormapDefinition(id: string): ColormapDefinition | undefined {
+  return COLORMAPS.find((item) => item.id === id);
+}
+
 export function colormapLabel(id: ColormapId): string {
   return COLORMAPS.find((item) => item.id === id)?.label ?? 'Viridis';
 }

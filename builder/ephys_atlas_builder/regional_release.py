@@ -16,11 +16,15 @@ REGIONAL_COUNT_LAYOUT = "underflow-bins-overflow"
 
 
 def linear_full_display(
-    *, colormap: str | None = None, value_range: Sequence[float] | None = None
+    *,
+    colormap: str | None = None,
+    diverging_center: float | None = None,
+    value_range: Sequence[float] | None = None,
 ) -> dict:
     """Return the mandatory non-inferred scalar presentation baseline."""
     return {
         **({"colormap": colormap} if colormap else {}),
+        **({"diverging_center": float(diverging_center)} if diverging_center is not None else {}),
         **(
             {"range": [float(value_range[0]), float(value_range[1])]}
             if value_range is not None
@@ -37,12 +41,17 @@ def linear_log_full_display(
     *,
     preferred_scale: str = "log",
     colormap: str | None = None,
+    diverging_center: float | None = None,
     value_range: Sequence[float] | None = None,
 ) -> dict:
     """Translate an already-reviewed positive-feature Linear/Log selection."""
     if preferred_scale not in {"linear", "log"}:
         raise ValueError("preferred Linear/Log scale must be linear or log")
-    display = linear_full_display(colormap=colormap, value_range=value_range)
+    display = linear_full_display(
+        colormap=colormap,
+        diverging_center=diverging_center,
+        value_range=value_range,
+    )
     display["scales"] = [{"kind": "linear"}, {"kind": "log"}]
     display["preferred_scale"] = preferred_scale
     return display
@@ -52,6 +61,7 @@ def validate_scalar_display(display: Mapping, values: np.ndarray) -> dict:
     """Validate one explicit representation-owned presentation selection."""
     allowed_fields = {
         "colormap",
+        "diverging_center",
         "range",
         "scales",
         "preferred_scale",
@@ -132,6 +142,17 @@ def validate_scalar_display(display: Mapping, values: np.ndarray) -> dict:
         if not isinstance(colormap, str) or not colormap:
             raise ValueError("display colormap must be a nonempty string")
         result["colormap"] = colormap
+    diverging_center = display.get("diverging_center")
+    if "diverging_center" in display:
+        if (
+            isinstance(diverging_center, bool)
+            or not isinstance(diverging_center, (int, float))
+            or not np.isfinite(diverging_center)
+        ):
+            raise ValueError("display diverging center must be finite")
+        result["diverging_center"] = float(diverging_center)
+    if colormap == "coolwarm" and diverging_center is None:
+        raise ValueError("preferred diverging palette requires a center")
     value_range = display.get("range")
     if value_range is not None:
         if (

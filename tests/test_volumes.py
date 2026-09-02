@@ -135,6 +135,8 @@ def test_volume_recipe_builds_both_schema_layouts(tmp_path, layout, options):
 
 def test_volume_recipe_accepts_representation_specific_distribution_selection(tmp_path):
     display = {
+        "colormap": "viridis",
+        "diverging_center": 0.0,
         "scales": [
             {"kind": "linear"},
             {"kind": "log"},
@@ -154,6 +156,8 @@ def test_volume_recipe_accepts_representation_specific_distribution_selection(tm
         [{"role": "canonical-data", "description": "explicit volume display selection"}],
     )
     validate_release(release, ROOT / "schema" / "v1")
+    feature = json.loads((release / "features/rms_ap/feature.json").read_text())
+    assert feature["display"]["volume"]["diverging_center"] == 0.0
     summary = json.loads(
         (release / "features/rms_ap/volume/summary.json").read_text()
     )

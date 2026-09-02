@@ -1747,7 +1747,17 @@ export class AppShell {
     const automaticColormap = model.presentationColormap.automaticColormap;
     this.syncOptions(this.colormapSelect, [
       { value: 'auto', label: `Auto (${colormapLabel(automaticColormap)})` },
-      ...COLORMAPS.map(({ id, label }) => ({ value: id, label })),
+      ...COLORMAPS.map(({ id, label }) => {
+        const unavailable = !model.presentationColormap.availableColormaps.includes(id);
+        return {
+          value: id,
+          label,
+          ...(unavailable ? {
+            disabled: true,
+            title: 'Requires a release-declared diverging center.',
+          } : {}),
+        };
+      }),
     ], view.coloring.colormap);
     const automaticScale = model.presentationScale.automaticScale;
     this.syncOptions(this.scaleSelect, [
@@ -1806,6 +1816,9 @@ export class AppShell {
         effectiveRange: range,
         mode: view.coloring.range.mode,
         colormap: model.presentationColormap.effectiveColormap,
+        ...(model.presentationColormap.divergingCenter !== undefined
+          ? { divergingCenter: model.presentationColormap.divergingCenter }
+          : {}),
         unit: descriptor?.unit ?? null,
         context,
         enabled: featureColors,

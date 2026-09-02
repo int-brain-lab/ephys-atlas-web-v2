@@ -7,14 +7,14 @@
       "descriptor": {
         "format": "ephys-atlas-feature-v1",
         "resource": {
-          "bytes": 5789,
+          "bytes": 5820,
           "codec": {
-            "decoded_bytes": 5789,
+            "decoded_bytes": 5820,
             "name": "none"
           },
           "media_type": "application/json",
           "path": "features/rms_ap/feature.json",
-          "sha256": "8723f22b291941b768b04168348562b2c608648ebdddcb3354ef016820d7f013"
+          "sha256": "aeb5587a4f876b4b8ab545e51918c686e6e5982ebf9534a2be8896ecc8be19fc"
         }
       },
       "id": "rms_ap"

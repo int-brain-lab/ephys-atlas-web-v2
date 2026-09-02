@@ -214,6 +214,19 @@ export class AtlasApp {
         this.store.dispatch({ type: 'presentation/reconcile', scale: 'linear', domain: 'full', history: 'replace' });
       });
     }
+    if (
+      state.view.coloring.colormap !== 'auto'
+      && presentationColormap.effectiveColormap !== state.view.coloring.colormap
+      && data.feature !== null
+      && data.feature.featureId === state.view.featureId
+      && !this.presentationReconciliationPending
+    ) {
+      this.presentationReconciliationPending = true;
+      queueMicrotask(() => {
+        this.presentationReconciliationPending = false;
+        this.store.dispatch({ type: 'color/colormap', colormap: 'auto' });
+      });
+    }
     const effectiveRange = data.feature
       ? effectiveScalarColorRange(data.feature, state.view.coloring, representationDisplay)
       : null;
@@ -224,6 +237,9 @@ export class AtlasApp {
         ? { mode: 'fixed' as const, min: effectiveRange[0], max: effectiveRange[1] }
         : state.view.coloring.range,
       scale: presentationScale.effectiveScaleSpec,
+      ...(presentationColormap.divergingCenter !== undefined
+        ? { divergingCenter: presentationColormap.divergingCenter }
+        : {}),
     };
     const nextRegionalPresentation = resolveRegionalPresentation({
       mapping: state.view.parcellation,
@@ -286,6 +302,7 @@ export class AtlasApp {
       || previous.coloring.mode !== next.coloring.mode
       || previous.coloring.statistic !== next.coloring.statistic
       || previous.coloring.colormap !== next.coloring.colormap
+      || previous.coloring.divergingCenter !== next.coloring.divergingCenter
       || !sameRange
       || JSON.stringify(previous.coloring.scale) !== JSON.stringify(next.coloring.scale)
       || previous.volumeOpacity !== next.volumeOpacity

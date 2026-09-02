@@ -217,6 +217,21 @@ test('feature metadata validates units and retains representation-specific scala
       regional: { ...valid.display.regional, scales: [{ kind: 'linear' }, { kind: 'unknown' }] },
     },
   }, 'feature.json'), /scale kind is invalid|kind is unsupported/);
+  const noCenter = structuredClone(valid);
+  delete noCenter.display.regional.diverging_center;
+  noCenter.display.regional.colormap = 'coolwarm';
+  assert.throws(() => parseFeatureDescriptor(noCenter, 'feature.json'), /preferred diverging.*requires a center/);
+  assert.throws(() => parseFeatureDescriptor({
+    ...valid,
+    display: {
+      ...valid.display,
+      regional: { ...valid.display.regional, diverging_center: Infinity },
+    },
+  }, 'feature.json'), /diverging center must be finite/);
+  assert.equal(
+    parseFeatureDescriptor(valid, 'feature.json').display.regional.divergingCenter,
+    0,
+  );
   const feature = parseFeatureDescriptor({
     ...valid,
     display: {

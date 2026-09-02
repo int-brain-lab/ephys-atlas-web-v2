@@ -1,7 +1,64 @@
 import type { ColoringState, EffectiveColoringState } from '../domain/types.js';
 import type { FeaturePayload, RegionalFeaturePayload, RegionMetadata, RepresentationDisplay } from '../data/contracts.js';
-import { scaleDomainIsValid, scaleNormalize } from '../domain/scale-spec.js';
-import { paletteCssColor } from './colormap-palettes.js';
+import { clampScalePosition, scaleDenormalize, scaleDomainIsValid, scaleNormalize, type ScaleSpec } from '../domain/scale-spec.js';
+import { colormapDefinition, paletteCssColor } from './colormap-palettes.js';
+
+type ScalarRange = readonly [number, number];
+
+/**
+ * Normalize scalar values for the selected palette. Diverging palettes only
+ * receive a release-declared center; their two sides are independently mapped
+ * into the matching palette halves.
+ */
+export function scalarColorNormalize(
+  value: number,
+  range: ScalarRange,
+  scale: ScaleSpec,
+  colormap: string,
+  divergingCenter?: number,
+): number | null {
+  if (!scaleDomainIsValid(range, scale)) return null;
+  if (colormapDefinition(colormap)?.kind !== 'diverging') return scaleNormalize(value, range, scale);
+  if (typeof divergingCenter !== 'number' || !Number.isFinite(divergingCenter)) return null;
+  const center = divergingCenter;
+  if (range[1] <= center) {
+    const normalized = scaleNormalize(value, range, scale);
+    return normalized === null ? null : clampScalePosition(normalized) / 2;
+  }
+  if (range[0] >= center) {
+    const normalized = scaleNormalize(value, range, scale);
+    return normalized === null ? null : .5 + clampScalePosition(normalized) / 2;
+  }
+  if (value <= center) {
+    const normalized = scaleNormalize(value, [range[0], center], scale);
+    return normalized === null ? null : clampScalePosition(normalized) / 2;
+  }
+  const normalized = scaleNormalize(value, [center, range[1]], scale);
+  return normalized === null ? null : .5 + clampScalePosition(normalized) / 2;
+}
+
+/** Build the legend gradient from the exact same normalization as map pixels. */
+export function scalarColorGradient(
+  colormap: string,
+  range: ScalarRange,
+  scale: ScaleSpec,
+  divergingCenter?: number,
+  stops = 9,
+): string {
+  const count = Math.max(2, Math.floor(stops));
+  const positions = Array.from({ length: count }, (_, index) => index / (count - 1));
+  if (colormapDefinition(colormap)?.kind === 'diverging'
+    && typeof divergingCenter === 'number' && Number.isFinite(divergingCenter)) {
+    const centerPosition = scaleNormalize(divergingCenter, range, scale);
+    if (centerPosition !== null && centerPosition > 0 && centerPosition < 1) positions.push(centerPosition);
+  }
+  const colors = [...new Set(positions)].sort((left, right) => left - right).map((position) => {
+    const value = scaleDenormalize(position, range, scale);
+    const normalized = value === null ? null : scalarColorNormalize(value, range, scale, colormap, divergingCenter);
+    return `${paletteCssColor(colormap, normalized ?? 0)} ${position * 100}%`;
+  });
+  return `linear-gradient(90deg, ${colors.join(', ')})`;
+}
 
 function validRange(range: readonly [number | null, number | null] | undefined): readonly [number, number] | null {
   const minimum = range?.[0];
@@ -51,7 +108,9 @@ export function regionalColorMap(feature: RegionalFeaturePayload, coloring: Effe
     const regionId = Number(feature.regionIds[index]);
     const value = values[index];
     if (!Number.isInteger(regionId) || value === undefined || !Number.isFinite(value)) continue;
-    const normalized = scaleNormalize(value, [min, max], coloring.scale);
+    const normalized = scalarColorNormalize(
+      value, [min, max], coloring.scale, coloring.colormap, coloring.divergingCenter,
+    );
     if (normalized === null) continue;
     colors.set(regionId, paletteCssColor(coloring.colormap, normalized));
   }

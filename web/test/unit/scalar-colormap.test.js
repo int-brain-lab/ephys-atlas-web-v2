@@ -6,6 +6,8 @@ import {
   darkThemeAtlasColor,
   effectiveScalarColorRange,
   regionalColorMap,
+  scalarColorGradient,
+  scalarColorNormalize,
 } from '../../.test-dist/application/scalar-colormap.js';
 import { resolveColoringState } from '../../.test-dist/domain/color-scale.js';
 import {
@@ -100,6 +102,34 @@ test('Cividis colors regional values through the shared lookup table', () => {
   assert.equal(colors.get(10), 'rgb(0 34 78)');
   assert.equal(colors.get(30), 'rgb(254 232 56)');
 });
+
+test('diverging normalization maps both sides around the release-owned center', () => {
+  const scale = { kind: 'linear' };
+  assert.equal(scalarColorNormalize(-2, [-2, 6], scale, 'coolwarm', 0), 0);
+  assert.equal(scalarColorNormalize(0, [-2, 6], scale, 'coolwarm', 0), .5);
+  assert.equal(scalarColorNormalize(6, [-2, 6], scale, 'coolwarm', 0), 1);
+  assert.equal(scalarColorNormalize(-4, [-4, -2], scale, 'coolwarm', 0), 0);
+  assert.equal(scalarColorNormalize(-2, [-4, -2], scale, 'coolwarm', 0), .5);
+  assert.equal(scalarColorNormalize(2, [2, 6], scale, 'coolwarm', 0), .5);
+  assert.equal(scalarColorNormalize(6, [2, 6], scale, 'coolwarm', 0), 1);
+  assert.equal(scalarColorNormalize(0, [0, 6], scale, 'coolwarm', 0), .5);
+  assert.equal(scalarColorNormalize(0, [-6, 0], scale, 'coolwarm', 0), .5);
+  assert.equal(scalarColorNormalize(0, [-2, 2], scale, 'coolwarm'), null);
+});
+
+test('regional maps and legends use the same diverging normalization', () => {
+  const range = [-2, 6];
+  const colors = regionalColorMap(feature, {
+    ...coloring,
+    colormap: 'coolwarm',
+    range: { mode: 'fixed', min: range[0], max: range[1] },
+    divergingCenter: 0,
+  });
+  assert.equal(colors.get(10), paletteCssColor('coolwarm', scalarColorNormalize(0, range, { kind: 'linear' }, 'coolwarm', 0)));
+  const gradient = scalarColorGradient('coolwarm', range, { kind: 'linear' }, 0);
+  assert.match(gradient, new RegExp(`${paletteCssColor('coolwarm', .5).replaceAll(/[()]/g, '\\$&')} 25%`));
+});
+
 
 test('automatic color scale resolves from the feature display default', () => {
   assert.deepEqual(resolveColoringState({ ...coloring, scale: 'auto' }, 'log').scale, { kind: 'log' });

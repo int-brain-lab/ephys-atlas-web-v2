@@ -73,7 +73,10 @@ export interface DistributionState {
   domain: DistributionDomainSelection;
 }
 
-export type EffectiveColoringState = Omit<ColoringState, 'scale'> & { scale: ScaleSpec };
+export type EffectiveColoringState = Omit<ColoringState, 'scale'> & {
+  scale: ScaleSpec;
+  divergingCenter?: number;
+};
 
 export interface ViewState {
   urlVersion: 4;

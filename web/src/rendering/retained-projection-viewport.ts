@@ -1,5 +1,5 @@
 import type { EffectiveColoringState, SliceAxis } from '../domain/types.js';
-import { scaleDomainIsValid, scaleNormalize } from '../domain/scale-spec.js';
+import { scaleDomainIsValid } from '../domain/scale-spec.js';
 import type { VolumeFeaturePayload } from '../data/contracts.js';
 import { applyAffine, cursorStateToWorld, worldToPlane, type Matrix4, type ViewBox } from './coordinate-space.js';
 import { regionalPresentationColors, regionalPresentationIds } from '../application/regional-presentation.js';
@@ -16,7 +16,7 @@ import { VolumeValiditySliceSource } from './volume-validity-source.js';
 import { RetainedStaticProjectionViewport } from './static-projection-viewport.js';
 import { VolumeSliceLoader, type VolumeSlice, type VolumeSliceSource } from './volume.js';
 import { paletteRgb } from '../application/colormap-palettes.js';
-import { effectiveScalarColorRange } from '../application/scalar-colormap.js';
+import { effectiveScalarColorRange, scalarColorNormalize } from '../application/scalar-colormap.js';
 import { regionIdFromPath } from './region-id.js';
 import {
   ProjectionPackSource,
@@ -170,7 +170,9 @@ function rgbaForSlice(
     const value = slice.data[index]!;
     const offset = index * 4;
     if (!volumeValueIsVisible(feature, value, slice.validity?.[index])) continue;
-    const normalized = scaleNormalize(value, [min, max], coloring.scale);
+    const normalized = scalarColorNormalize(
+      value, [min, max], coloring.scale, coloring.colormap, coloring.divergingCenter,
+    );
     if (normalized === null) continue;
     const [r, g, b] = paletteRgb(coloring.colormap, normalized);
     rgba[offset] = r;

@@ -694,6 +694,29 @@ test('Auto colormap follows synthetic representation preferences while explicit 
   await expect(legend).toHaveAttribute('data-colormap', 'magma');
 });
 
+test('Coolwarm needs a release-owned center and centers the synthetic regional legend', async ({ page }) => {
+  await page.goto('/');
+  const settingsButton = page.getByRole('button', { name: 'Settings', exact: true });
+  const closeSettingsButton = page.getByRole('button', { name: 'Close Visualization settings' });
+  await settingsButton.click();
+  const colormap = page.getByLabel('Feature colormap');
+  const coolwarm = colormap.locator('option[value="coolwarm"]');
+  await expect(coolwarm).toBeEnabled();
+  await colormap.selectOption('coolwarm');
+  await expect(page.locator('.color-legend__bar')).toHaveAttribute('data-colormap', 'coolwarm');
+  await expect(page.locator('.color-range__selection')).toHaveCSS('background-image', /rgb\(221, 221, 221\)/);
+
+  const representation = page.locator('[data-context-field="representation"]');
+  await closeSettingsButton.click();
+  await representation.locator('.context-menu__trigger').click();
+  await representation.getByRole('option', { name: /Volume/ }).click();
+  await settingsButton.click();
+  await expect(coolwarm).toHaveAttribute('disabled', '');
+  await expect(colormap).toHaveValue('auto');
+  await expect(page.locator('.color-legend__bar')).toHaveAttribute('data-colormap', 'magma');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cmap')).toBeNull();
+});
+
 test('scientific context picker becomes a bounded phone sheet', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');

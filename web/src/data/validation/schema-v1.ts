@@ -352,6 +352,13 @@ function featureDisplaySemantics(document: JsonObject): void {
     if (domainKinds[0] !== 'full' || !domainKinds.includes(String(representation.preferred_distribution_domain))) {
       fail(`feature ${kind} domains or preferred domain are invalid`);
     }
+    if (representation.diverging_center !== undefined
+      && (typeof representation.diverging_center !== 'number' || !Number.isFinite(representation.diverging_center))) {
+      fail(`feature ${kind} diverging center must be finite`);
+    }
+    if (representation.colormap === 'coolwarm' && representation.diverging_center === undefined) {
+      fail(`preferred diverging ${kind} palette requires a center`);
+    }
     for (const domain of domains) {
       if (domain.kind === 'focused') {
         const bounds = numberArray(domain.bounds, 2, `feature ${kind} focus bounds`);

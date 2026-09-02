@@ -57,7 +57,7 @@ function parseRegionalParcellation(value: unknown, context: string) {
 function parseRepresentationDisplay(value: unknown, context: string): RepresentationDisplay {
   const raw = object(value, context);
   const supported = new Set([
-    'colormap', 'range', 'scales', 'preferred_scale',
+    'colormap', 'diverging_center', 'range', 'scales', 'preferred_scale',
     'distribution_domains', 'preferred_distribution_domain',
   ]);
   if (Object.keys(raw).some((key) => !supported.has(key))) throw new Error(`${context} contains unsupported fields`);
@@ -98,6 +98,9 @@ function parseRepresentationDisplay(value: unknown, context: string): Representa
   }
   return {
     ...(raw.colormap !== undefined ? { colormap: string(raw.colormap, `${context}.colormap`) } : {}),
+    ...(raw.diverging_center !== undefined
+      ? { divergingCenter: finiteNumber(raw.diverging_center, `${context}.diverging_center`) }
+      : {}),
     ...(range ? { range } : {}),
     scales,
     preferredScale,

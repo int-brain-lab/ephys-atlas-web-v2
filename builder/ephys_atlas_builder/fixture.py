@@ -64,6 +64,7 @@ def generate_golden(out: Path) -> Path:
     global_stats = describe(all_samples)
     regional_display = {
         "colormap": "viridis",
+        "diverging_center": 0.0,
         "range": [-0.5, 3.5],
         "scales": [
             {"kind": "linear"},

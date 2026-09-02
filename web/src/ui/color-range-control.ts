@@ -1,7 +1,7 @@
 import type { DistributionBinning, FeaturePayload } from '../data/contracts.js';
 import type { ColorRange, StatisticId } from '../domain/types.js';
 import type { ScaleSpec } from '../domain/scale-spec.js';
-import { paletteCssGradient } from '../application/colormap-palettes.js';
+import { scalarColorGradient } from '../application/scalar-colormap.js';
 import {
   clampRangeHandle,
   colorRangeDomain,
@@ -19,6 +19,7 @@ export interface ColorRangeControlModel {
   effectiveRange: NumericRange;
   mode: ColorRange['mode'];
   colormap: string;
+  divergingCenter?: number;
   unit: string | null;
   context: string;
   enabled: boolean;
@@ -157,7 +158,10 @@ export class ColorRangeControl {
       ? ''
       : `${below.toLocaleString()} below · ${above.toLocaleString()} above`;
     this.bar.dataset.colormap = model.colormap;
-    this.bar.style.setProperty('--color-range-gradient', paletteCssGradient(model.colormap));
+    this.bar.style.setProperty(
+      '--color-range-gradient',
+      scalarColorGradient(model.colormap, model.effectiveRange, model.axisScale, model.divergingCenter),
+    );
     this.unit.textContent = model.unit ?? '';
   }
 

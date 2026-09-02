@@ -32,6 +32,7 @@
           "kind": "focused"
         }
       ],
+      "diverging_center": 0.0,
       "preferred_distribution_domain": "focused",
       "preferred_scale": "symlog",
       "range": [

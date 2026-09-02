@@ -190,6 +190,7 @@ export type DistributionDomainSpec = DistributionFullDomainSpec | DistributionFo
 
 export interface RepresentationDisplay {
   colormap?: string;
+  divergingCenter?: number;
   range?: readonly [number, number];
   scales: readonly ScaleSpec[];
   preferredScale: ScaleSpec['kind'];
