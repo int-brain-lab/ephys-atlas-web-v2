@@ -97,6 +97,28 @@ invent any of these production values during implementation.
 
 Blocks: deployment or user-visible enablement of unlisted sharing only.
 
+## Q16 — Real-feature palette and diverging-center selections
+
+Status: **DECISION** for a future immutable presentation release; not a launch
+blocker.
+
+D057 fixes the infrastructure policy: feature representations may own a
+preferred palette, Auto resolves that preference, and diverging palettes
+require an explicit release-owned center. Synthetic fixtures may implement and
+exercise this machinery.
+
+Resolution needed: audit and owner-review the exact preferred palette and,
+where diverging presentation is scientifically meaningful, the exact center
+for every affected channel, cluster, Brain-Wide Map, and volume feature
+representation. Record the complete hash-bound choices in versioned selection
+artifacts and build new immutable releases. Do not infer choices from feature
+names, sign distributions, v1 defaults, or an arithmetic range midpoint, and
+do not edit the D054 selection artifacts in place.
+
+Blocks: real release-owned palette defaults and diverging-center metadata only.
+It does not block the neutral Auto/fallback machinery, the expanded palette
+registry, or launch with existing Viridis behavior.
+
 ## Resolution procedure
 
 When authoritative evidence arrives:

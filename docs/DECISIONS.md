@@ -64,6 +64,7 @@ only part of the body; the index states what remains effective.
 | D053 | Focused compact viewport | accepted | 2026-08-29 | current compact behavior |
 | D054 | Complete audited distribution selections | accepted | 2026-08-29 | closes Q14; local rebuilds authorized |
 | D055 | Unlisted expiring dataset shares | accepted | 2026-09-02 | optional sharing transport; separate from publication |
+| D057 | Preferred palettes and explicit diverging centers | accepted | 2026-09-02 | infrastructure policy; Q16 retains real-feature selections |
 
 ## D001 — Separate v2
 
@@ -1141,3 +1142,34 @@ switch as choices that an implementation agent must not invent. Evidence of
 abuse or requirements for durable shares, revocation, ownership, quotas, or
 private access triggers a fresh decision on a trusted control plane; it does
 not silently expand this MVP into publishing.
+
+## D057 — Use release-preferred palettes with explicit diverging centers
+
+Treat the existing representation-level scalar-display `colormap` as a
+release-owned preferred palette. The viewer's default selection is Auto: it
+resolves the active feature representation's preference and otherwise falls
+back to Viridis. An explicit user palette overrides Auto across feature
+changes and is persisted in URL v4; omitted `cmap` means Auto, and Reset returns
+to Auto. Regional and volume representations may prefer different palettes.
+
+Use one classified registry for SVG, Canvas, gradients, legends, and controls:
+the sequential Viridis, Cividis, Magma, Plasma, Inferno, Blues, and YlOrRd
+palettes plus the diverging Coolwarm palette. A diverging palette is available
+only when the representation declares an explicit finite release-owned
+`diverging_center`; never infer that center from the arithmetic midpoint, a
+Signed-log threshold, or zero. A preferred diverging palette requires such a
+center, while a representation with a sequential preference may still declare
+one to permit an explicit diverging user choice.
+
+When the active range straddles the center, normalize the lower and upper sides
+independently onto the lower and upper halves of the palette. When a manual
+range lies wholly on one side, use only that side's half-palette; a range bound
+equal to the center maps to the neutral midpoint. Apply this identically across
+all scalar presentation surfaces.
+
+This decision approves the viewer and schema machinery only. Q16 retains every
+real channel, cluster, Brain-Wide Map, and volume feature/representation
+preferred-palette and diverging-center choice. Implement and test the machinery
+with synthetic fixtures without editing D054 selections or rebuilding real
+releases. The bounded implementation tasks and UI follow-ups are recorded in
+[`tasks/2026-09-02-scalar-presentation-followups/`](tasks/2026-09-02-scalar-presentation-followups/README.md).

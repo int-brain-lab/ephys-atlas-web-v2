@@ -207,6 +207,15 @@ rollback is recorded in
 It remains deferred and must begin by durably preserving the ignored D042 file
 graph; the record does not select a new production default.
 
+The bounded scalar-presentation follow-ups for outside-brain tooltip
+suppression, selectable regional `std`, the expanded palette registry,
+release-preferred Auto palettes, synthetic explicit-center machinery, and
+regional-relative dot tracks are recorded in
+[`tasks/2026-09-02-scalar-presentation-followups/`](tasks/2026-09-02-scalar-presentation-followups/README.md).
+They are not launch blockers. Q16 retains all real feature-by-feature palette
+and center selections for a future immutable release, and D050/LS03-03 volume
+regional distributions remain explicitly deferred.
+
 D055 also accepts an optional unlisted-sharing follow-up, but it is not a
 launch blocker and must remain distinct from official publishing. After Q15 is
 resolved, the smallest vertical slice is: provision an isolated CloudFront OAC
