@@ -56,6 +56,16 @@ dataset-specific Chromium acceptance, and integrated v4 bundle validation; no
 remote publication occurred. See
 [`data/DISTRIBUTION_AUDIT_EVIDENCE.md`](data/DISTRIBUTION_AUDIT_EVIDENCE.md).
 
+The bounded D057 presentation follow-ups are implemented. Regional standard
+deviation is selectable when present; one classified Matplotlib-derived
+palette registry drives SVG, Canvas, and legends; Auto resolves a
+representation preference with a Viridis fallback; and Coolwarm is available
+only with an explicit finite release-owned diverging center. Shared piecewise
+normalization covers regional, volume, and legend rendering without inventing
+a midpoint. Region rows use shared-domain dot tracks rather than unlabelled
+fill proportions. Q16 continues to retain every real-feature palette and
+center selection; the implementation changes only synthetic fixtures.
+
 ## Volume exploration
 
 The retained volume path supports `chunks3d` and `orthogonal_slice_packs`,
@@ -63,6 +73,9 @@ float16/float32, optional gzip, explicit storage axes, affine mapping,
 sentinel/mask validity, transparent invalid voxels, nearest-neighbor paint and
 inspection, atomic anatomy/scalar navigation, URL layer controls, consumer-safe
 cancellation, and one 96 MiB active-feature decoded budget.
+Pointer inspection suppresses tooltips for voxels classified exactly as
+outside while preserving valid, missing, unsupported-validity, and out-of-grid
+diagnostics.
 
 D043 fixes the exact W26 reference space, grid, affine, voxel-center convention,
 and `0.0` outside semantics. Full depth-4/depth-8 candidates and local/network-

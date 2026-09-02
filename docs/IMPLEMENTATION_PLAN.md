@@ -27,16 +27,15 @@ below when selecting independent work:
    synthetic fixtures for edition values; Q9 continues to block only the real
    paper-facing edition identity, release mapping, defaults, aliases, and
    freeze process;
-2. implement the bounded scalar-presentation follow-ups in
-   [`tasks/2026-09-02-scalar-presentation-followups/`](tasks/2026-09-02-scalar-presentation-followups/README.md),
-   one coherent green task at a time and without inventing Q16's real-feature
-   palette or diverging-center selections;
-3. implement the deterministic synthetic documentation captures in
+2. implement the deterministic synthetic documentation captures in
    [`DOCUMENTATION_SCREENSHOT_PLAN.md`](DOCUMENTATION_SCREENSHOT_PLAN.md) and
    add their non-mutating drift check to `just check`;
-4. implement the flexible multi-feature comparison foundation and scientist-
+3. implement the flexible multi-feature comparison foundation and scientist-
    iteration sequence in
    [`tasks/2026-09-02-multi-feature-comparison/`](tasks/2026-09-02-multi-feature-comparison/README.md).
+
+The previously second-ranked bounded scalar-presentation follow-ups are
+complete. Q16 still retains real-feature palette and diverging-center choices.
 
 All other active, deferred, and discussion work follows these four priorities
 unless it is required to unblock or validate them, or a later repository-owner

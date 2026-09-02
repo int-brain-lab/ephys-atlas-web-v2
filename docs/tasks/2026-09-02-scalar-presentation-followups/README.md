@@ -1,6 +1,6 @@
 # Scalar-presentation follow-ups
 
-Status: planned handoff; no implementation has started.
+Status: complete for tasks 1–6; task 7 remains explicitly deferred.
 
 ## Context
 
@@ -12,10 +12,8 @@ scientific or product choices.
 The pinned v1 checkout at `int-brain-lab/ephys-atlas-web@1d908bea` exposed
 `mean`, `median`, `std`, `min`, and `max` as peer regional statistics and
 offered Magma, YlGn, YlOrRd, Reds, Purples, Blues, Cividis, Viridis, and
-Coolwarm. V2 currently exposes Mean, Median, Minimum, and Maximum for coloring,
-has only Viridis, Cividis, and Magma in its palette registry, and stores a
-release-owned optional `display.colormap` without resolving it as an automatic
-viewer preference.
+Coolwarm. This record captured the bounded v2 follow-ups that are now
+implemented below.
 
 Volume regional distributions are intentionally excluded from this work.
 D050 and LS03-03 define the current volume distribution as global and
@@ -63,6 +61,12 @@ scientific and release-contract decision.
   unit, title, and accessible-label disclosure per row.
 
 ## Implementation plan
+
+Tasks 1–6 were implemented as separate green slices. The canonical and bundled
+schema, Python and TypeScript validators, builders, synthetic fixture, regional
+SVG, volume Canvas, legends, controls, URL state, and focused browser coverage
+now share the accepted behavior. No D054 selection artifact or real immutable
+release was changed. Task 7 remains deferred.
 
 Land each numbered task as a coherent green commit. Tasks 1, 2, and 3 are
 independent. Task 4 depends on task 3. Task 5 depends on tasks 3 and 4. Task 6
@@ -231,3 +235,10 @@ commit only the intended coherent files.
 
 - Planning handoff — the commit containing this file; locate with
   `git log -1 -- docs/tasks/2026-09-02-scalar-presentation-followups/README.md`.
+- `e9dd41f` and `1033cd9` — hide outside-brain volume tooltips and retain strict
+  inspection narrowing.
+- `f5bae79` — add selectable regional standard deviation.
+- `e6bd5a9` — expand and classify the palette registry.
+- `f802b4e` — resolve release-preferred palettes through Auto.
+- `f47c503` — add explicit diverging-center schema and presentation machinery.
+- `d8e6ef8` — replace regional fill bars with shared-domain dot tracks.
