@@ -12,5 +12,10 @@
   topology.
 - Unrelated worktree changes: existing frontend edits were preserved and are
   outside this task.
-- Validation: `just docs-check docs-site` passes.
-- Commits: pending full repository gate and commit.
+- Validation: `just docs-check docs-site` passes. `just check` reached the
+  Python suite, where 397 tests passed and 1 was skipped before an unrelated
+  unstaged frontend architecture violation failed
+  `tests/test_web_architecture.py`; `domain/types.ts` currently imports
+  `application/colormap-palettes.js` in the pre-existing worktree edits.
+- Commits: documentation commit; find it with
+  `git log -1 -- docs/publishing/S3_DEPLOYMENT.md`.
