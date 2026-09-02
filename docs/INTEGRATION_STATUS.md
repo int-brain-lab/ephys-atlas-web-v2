@@ -136,10 +136,14 @@ byte-size/SHA/schema validation, immutable publication, aliases, catalog
 generation, bounded requests, process-safe filesystem mutations, and external
 validation. Public reads remain static and unauthenticated.
 
-D040 selects IBL-owned S3 plus CloudFront. Q8 still requires concrete
-bucket/distribution/domain and publishing-topology choices; Q9 still requires
-the frozen paper release set and aliases. Nothing in the current repository
-state authorizes remote publication.
+D040 selects IBL-owned S3 plus CloudFront. Authenticated terminal reads and a
+non-mutating conditional-write authorization probe now pass against the
+private candidate `us-east-1` location recorded in
+[`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md). Q8 still requires
+approval of that bucket's deployment role, a distinct root outside existing
+source aggregates, distribution/domain/cache/CORS choices, and publishing
+topology; Q9 still requires the frozen paper release set and aliases. No remote
+publication has occurred.
 
 D056 accepts Project/Dataset/Release/Feature/View navigation and coordinated
 project editions. The current schema-v1 public catalog and top bar still expose

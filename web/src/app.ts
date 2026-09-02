@@ -368,13 +368,11 @@ export class AtlasApp {
     const voxel = inspection.voxelIndex ? `voxel ${inspection.voxelIndex.join(',')}` : 'outside grid';
     const statusLabel = inspection.status === 'valid'
       ? 'Valid voxel'
-      : inspection.status === 'outside'
-        ? 'Outside brain'
-        : inspection.status === 'missing'
-          ? 'Missing value'
-          : inspection.status === 'unsupported-validity'
-            ? 'Validity mask unsupported'
-            : 'Outside volume grid';
+      : inspection.status === 'missing'
+        ? 'Missing value'
+        : inspection.status === 'unsupported-validity'
+          ? 'Validity mask unsupported'
+          : 'Outside volume grid';
     const valueText = inspection.status === 'valid' && inspection.value !== undefined
       ? `${Number(inspection.value.toPrecision(6)).toLocaleString('en-US')}${descriptor?.unit ? ` ${descriptor.unit}` : ''}`
       : statusLabel;

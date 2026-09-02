@@ -27,6 +27,11 @@ Public reads are static files under `STORAGE/public/` and should be served by
 nginx or object storage/CDN without authentication. The publishing API handles
 mutations only. See `docs/publishing/API.md` and `publishing/README.md`.
 
+The candidate private S3 access evidence, temporary CLI authentication, safe
+preflight commands, and deployment stop conditions are recorded in
+[`S3_DEPLOYMENT.md`](S3_DEPLOYMENT.md). That runbook does not resolve Q8 or
+authorize a specific release upload.
+
 ## Deployment contract
 
 - Terminate TLS at nginx or equivalent; never send bearer credentials over
@@ -57,10 +62,12 @@ That is a deployment adapter change, not a scientific contract change.
 
 ## Remaining decisions
 
-Q8 still requires the public domain, storage/CDN arrangement, cache/CORS policy,
-and publishing destination. Q9 still requires the frozen paper aliases and
-release set. Remote publishing may be explicitly waived for launch if static
-release deployment is operationally sufficient, as allowed by the launch spec.
+Q8 has an authenticated, writable candidate private bucket/prefix, but still
+requires approval of its role, a distinct deployment root, the public domain,
+storage/CDN arrangement, cache/CORS policy, and publishing destination. Q9
+still requires the frozen paper aliases and release set. Remote publishing may
+be explicitly waived for launch if static release deployment is operationally
+sufficient, as allowed by the launch spec.
 
 Possible follow-ups that are not current launch requirements include delegated
 multi-credential ownership for one dataset, a database/object-store control

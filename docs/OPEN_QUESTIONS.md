@@ -55,9 +55,19 @@ Resolved direction: use IBL-owned S3 for immutable objects with CloudFront as
 the preferred HTTPS/browser origin. Do not use or modify `iblviz` without
 explicit repository-owner permission.
 
-Resolution still needed: final bucket, distribution, and domain names; exact
-cache/CORS policy; and whether publishing writes directly to S3 or through an
-intermediate filesystem/object-sync layer.
+Current operational evidence: authenticated terminal listing, object metadata
+reads, and a non-mutating conditional `PutObject` authorization probe succeeded
+on 2026-09-02 for the private `us-east-1` bucket
+`ibl-brain-wide-map-private` below `aggregates/atlas/`. Anonymous listing is
+denied. The existing prefix contains scientific aggregate/source products and
+has not been approved as a browser-release root. No remote object was mutated.
+See
+[`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md).
+
+Resolution still needed: whether the candidate bucket is staging, production,
+or neither; the exact distinct deployment root; final distribution and domain
+names; exact cache/CORS/MIME/Range policy; and whether publishing writes
+directly to S3 or through an intermediate filesystem/object-sync layer.
 
 Blocks: production-origin QA, immutable asset/release deployment, Q5
 confirmation, and final deployment documentation.
