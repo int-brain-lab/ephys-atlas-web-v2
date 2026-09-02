@@ -51,9 +51,34 @@ docs-check:
 docs-site:
     {{uv-docs}} mkdocs build --strict
 
-# Preview the documentation website locally with live reload.
+# Preview the documentation website with live reload on the first free port at or above 8000.
 docs-serve:
-    {{uv-docs}} mkdocs serve
+    #!/usr/bin/env bash
+    set -euo pipefail
+    port="$(
+        {{uv-docs}} python - <<'PY'
+    import socket
+
+    for candidate in range(8000, 9000):
+        with socket.socket() as probe:
+            try:
+                probe.bind(("0.0.0.0", candidate))
+            except OSError:
+                continue
+        print(candidate)
+        break
+    else:
+        raise SystemExit("no free documentation port found between 8000 and 8999")
+    PY
+    )"
+    printf 'Documentation: http://127.0.0.1:%s/\n' "$port"
+    if command -v tailscale >/dev/null 2>&1; then
+        tailscale_name="$(tailscale status --self --json 2>/dev/null | {{uv-docs}} python -c 'import json, sys; print(json.load(sys.stdin).get("Self", {}).get("DNSName", "").rstrip("."))' 2>/dev/null || true)"
+        if [[ -n "$tailscale_name" ]]; then
+            printf 'Tailscale:     http://%s:%s/\n' "$tailscale_name" "$port"
+        fi
+    fi
+    exec {{uv-docs}} mkdocs serve -a "0.0.0.0:$port"
 
 # Execute every standalone public authoring example against synthetic inputs.
 test-examples:
