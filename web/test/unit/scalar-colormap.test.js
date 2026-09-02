@@ -67,12 +67,28 @@ test('regional colors are keyed by numeric atlas ids', () => {
   assert.notEqual(colors.get(10), colors.get(30));
 });
 
-test('shared colormap registry exposes official sequential lookup tables', () => {
-  assert.deepEqual(COLORMAPS.map(({ id }) => id), ['viridis', 'cividis', 'magma']);
+test('shared colormap registry exposes the classified official lookup tables', () => {
+  assert.deepEqual(COLORMAPS.map(({ id }) => id), ['viridis', 'cividis', 'magma', 'plasma', 'inferno', 'Blues', 'YlOrRd', 'coolwarm']);
+  assert.deepEqual(COLORMAPS.map(({ kind }) => kind), ['sequential', 'sequential', 'sequential', 'sequential', 'sequential', 'sequential', 'sequential', 'diverging']);
   assert.deepEqual(paletteRgb('cividis', 0), [0, 34, 78]);
   assert.deepEqual(paletteRgb('cividis', 1), [254, 232, 56]);
   assert.equal(paletteCssColor('unknown', 0), 'rgb(68 1 84)');
   assert.match(paletteCssGradient('cividis'), /^linear-gradient\(90deg, rgb\(0 34 78\).+rgb\(254 232 56\)\)$/);
+});
+
+test('expanded palettes retain deterministic Matplotlib endpoints and midpoints', () => {
+  const expected = {
+    plasma: [[13, 8, 135], [204, 71, 121], [240, 249, 33]],
+    inferno: [[0, 0, 4], [187, 55, 85], [252, 255, 164]],
+    Blues: [[247, 251, 255], [107, 174, 214], [8, 48, 107]],
+    YlOrRd: [[255, 255, 204], [253, 141, 60], [128, 0, 38]],
+    coolwarm: [[59, 76, 192], [221, 221, 221], [180, 4, 38]],
+  };
+  for (const [id, [start, midpoint, end]] of Object.entries(expected)) {
+    assert.deepEqual(paletteRgb(id, 0), start, `${id} start`);
+    assert.deepEqual(paletteRgb(id, 0.5), midpoint, `${id} midpoint`);
+    assert.deepEqual(paletteRgb(id, 1), end, `${id} end`);
+  }
 });
 
 test('Cividis colors regional values through the shared lookup table', () => {
