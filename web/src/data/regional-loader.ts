@@ -11,7 +11,7 @@ import { materializeDistributionBinning, parseRegionMetadata, parseRegionalStati
 import type { ResourceReader } from './resource-reader.js';
 import { validateDistributionMatchesDisplay } from './validation/distribution.js';
 
-const DISPLAY_STATISTICS = new Set<StatisticId>(['mean', 'median', 'min', 'max', 'count']);
+const DISPLAY_STATISTICS = new Set<StatisticId>(['mean', 'median', 'std', 'min', 'max', 'count']);
 const REGIONAL_STATISTICS = new Set<RegionalStatisticId>([
   ...DISPLAY_STATISTICS,
   'missing_count',

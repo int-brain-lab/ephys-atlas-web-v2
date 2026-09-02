@@ -101,7 +101,7 @@ test('resource-independent regional loading validates and materializes regions',
   ]);
 });
 
-test('resource-independent regional loading materializes display statistics once', async () => {
+test('resource-independent regional loading materializes every supported display statistic once', async () => {
   const payload = await loadRegionalFeatureFromResources({
     reader: fixtureReader(),
     manifestLocation: 'manifest.json',

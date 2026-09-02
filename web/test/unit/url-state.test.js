@@ -102,6 +102,13 @@ test('unsupported count coloring falls back to feature magnitude', () => {
   assert.equal(serializeViewState(parsed).includes('stat=count'), false);
 });
 
+test('standard-deviation coloring round-trips through URL v4', () => {
+  const parsed = parseViewState('?v=4&stat=std');
+  assert.equal(parsed.coloring.statistic, 'std');
+  assert.match(serializeViewState(parsed), /stat=std/);
+  assert.deepEqual(parseViewState(`?${serializeViewState(parsed)}`), parsed);
+});
+
 test('a hand-edited dataset without release defers to that dataset default release', () => {
   const parsed = parseViewState('?v=4&dataset=brainwide_map');
   assert.equal(parsed.dataset.datasetId, 'brainwide_map');

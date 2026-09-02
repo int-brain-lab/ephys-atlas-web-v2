@@ -172,6 +172,17 @@ test('manifest metadata validation rejects invalid release dates and provenance'
 
 test('feature metadata validates units and retains representation-specific scalar presentation', () => {
   const valid = goldenFeature();
+  const stdSummary = {
+    ...valid,
+    representations: {
+      ...valid.representations,
+      regional: {
+        ...valid.representations.regional,
+        parcellations: valid.representations.regional.parcellations.map((parcellation) => ({ ...parcellation, summary: 'std' })),
+      },
+    },
+  };
+  assert.deepEqual(parseFeatureDescriptor(stdSummary, 'feature.json').statistics, ['std']);
   assert.throws(() => parseFeatureDescriptor({ ...valid, unit: 10 }, 'feature.json'), /feature.json.unit must be a string/);
   assert.throws(() => parseFeatureDescriptor({
     ...valid,

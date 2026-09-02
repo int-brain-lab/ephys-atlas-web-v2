@@ -27,7 +27,7 @@ const URL_VERSION = 4;
 const NAVIGATION_URL_DEBOUNCE_MS = 120;
 const PARCELLATIONS = new Set<ParcellationId>(['allen', 'beryl', 'cosmos']);
 const REPRESENTATIONS = new Set<RepresentationKind>(['regional', 'volume']);
-const COLOR_STATISTICS = new Set<ColorStatisticId>(['mean', 'median', 'min', 'max']);
+const COLOR_STATISTICS = new Set<ColorStatisticId>(['mean', 'median', 'std', 'min', 'max']);
 const REGION_ORDERS = new Set<RegionOrder>(['anatomy', 'value-asc', 'value-desc']);
 const SECONDARY_TABS = new Set<SecondaryTabId>(['summary', 'top', 'swanson', 'brain-3d']);
 

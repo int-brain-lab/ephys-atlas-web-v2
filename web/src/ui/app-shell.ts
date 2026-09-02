@@ -1548,7 +1548,7 @@ export class AppShell {
     this.colorModeSelect.setAttribute('aria-label', 'Region color mode');
     this.colorModeSelect.addEventListener('change', () => this.callbacks.setColorMode(this.colorModeSelect.value as ColorMode));
     const statistic = this.settingsSelect('Statistic', [
-      ['mean', 'Mean'], ['median', 'Median'], ['min', 'Minimum'], ['max', 'Maximum'], ['count', 'Count'],
+      ['mean', 'Mean'], ['median', 'Median'], ['std', 'Standard deviation'], ['min', 'Minimum'], ['max', 'Maximum'], ['count', 'Count'],
     ]);
     this.statisticSelect = statistic.select;
     this.statisticSelect.setAttribute('aria-label', 'Regional statistic');
@@ -1731,9 +1731,12 @@ export class AppShell {
     const descriptor = manifest?.features.find((item) => item.id === view.featureId);
     this.colorModeSelect.value = view.coloring.mode ?? 'feature';
     const statistics = feature?.representation === 'regional'
-      ? (['mean', 'median', 'min', 'max'] as const).filter((statistic) => feature.statistics[statistic] !== undefined)
+      ? (['mean', 'median', 'std', 'min', 'max'] as const).filter((statistic) => feature.statistics[statistic] !== undefined)
       : (descriptor?.statistics ?? []).filter((statistic): statistic is ColorStatisticId => statistic !== 'count');
-    this.syncOptions(this.statisticSelect, statistics.map((value) => ({ value, label: titleCaseToken(value) })), view.coloring.statistic);
+    this.syncOptions(this.statisticSelect, statistics.map((value) => ({
+      value,
+      label: value === 'std' ? 'Standard deviation' : titleCaseToken(value),
+    })), view.coloring.statistic);
     this.colormapSelect.value = view.coloring.colormap;
     const automaticScale = model.presentationScale.automaticScale;
     this.syncOptions(this.scaleSelect, [

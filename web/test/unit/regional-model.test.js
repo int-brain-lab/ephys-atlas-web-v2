@@ -15,7 +15,7 @@ const feature = {
   parcellation: 'allen',
   regionIds: ['1', '2'],
   values: [10, 20],
-  statistics: { mean: [10, 20], median: [11, 21] },
+  statistics: { mean: [10, 20], median: [11, 21], std: [1, 2] },
   distribution: { binnings: [{
     id: 'linear-full', scale: { kind: 'linear' }, domain: { kind: 'full' }, edges: [0, 1, 2],
     global: { binCounts: [3, 7], underflowCount: 0, overflowCount: 0 },
@@ -29,6 +29,7 @@ const feature = {
 
 test('regional model chooses statistic and indexes values by region', () => {
   assert.deepEqual([...buildRegionalValueMap(feature, 'median')], [['1', 11], ['2', 21]]);
+  assert.deepEqual([...buildRegionalValueMap(feature, 'std')], [['1', 1], ['2', 2]]);
 });
 
 test('regional search is case insensitive across acronym and name', () => {

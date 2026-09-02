@@ -58,7 +58,7 @@ export function parcellation(value: unknown, context: string): ParcellationId {
 }
 
 export function statistic(value: unknown, context: string): StatisticId {
-  if (!['mean', 'median', 'min', 'max', 'count'].includes(String(value))) {
+  if (!['mean', 'median', 'std', 'min', 'max', 'count'].includes(String(value))) {
     throw new Error(`${context} is not a supported display statistic`);
   }
   return value as StatisticId;
