@@ -139,11 +139,12 @@ validation. Public reads remain static and unauthenticated.
 D040 selects IBL-owned S3 plus CloudFront. Authenticated terminal reads and a
 non-mutating conditional-write authorization probe now pass against the
 private candidate `us-east-1` location recorded in
-[`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md). Q8 still requires
-approval of that bucket's deployment role, a distinct root outside existing
-source aggregates, distribution/domain/cache/CORS choices, and publishing
-topology; Q9 still requires the frozen paper release set and aliases. No remote
-publication has occurred.
+[`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md). D059 selects
+isolated staging and production roots there plus
+`ephys-atlas.iblcore.org` as the planned initial viewer domain. Q8 still
+requires DNS/TLS/hosting, the private-data HTTPS boundary, cache/CORS choices,
+and direct-CLI versus publishing-adapter procedure; Q9 still requires the
+frozen paper release set and aliases. No remote publication has occurred.
 
 D056 accepts Project/Dataset/Release/Feature/View navigation and coordinated
 project editions. The current schema-v1 public catalog and top bar still expose

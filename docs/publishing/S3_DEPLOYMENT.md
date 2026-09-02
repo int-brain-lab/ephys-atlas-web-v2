@@ -1,15 +1,18 @@
 # S3 deployment access and preflight
 
-Status: runbook for the authorized candidate S3 location. This document records
-access evidence and safe operator commands; it does not select a staging or
-production origin and does not authorize publication of a particular release.
-Those choices remain governed by Q8 and Q9.
+Status: runbook for the authorized S3 bucket and D059-selected environment
+roots. This document records access evidence and safe operator commands; it
+does not authorize publication of a particular release. Remaining delivery and
+publication choices are governed by Q8 and Q9.
 
 ## Confirmed candidate location
 
 - AWS Region: `us-east-1`
 - private bucket: `ibl-brain-wide-map-private`
 - existing scientific prefix: `aggregates/atlas/`
+- staging root: `aggregates/atlas/ephys-atlas-web-v2/staging/`
+- production root: `aggregates/atlas/ephys-atlas-web-v2/production/`
+- planned initial viewer domain: `ephys-atlas.iblcore.org`
 
 On 2026-09-02, an authorized IAM user authenticated from the repository host
 with temporary console-derived credentials. The following checks succeeded:
@@ -27,9 +30,9 @@ bucket administration, multipart recovery permissions, CORS, cache policy,
 CloudFront behavior, and public reads were not verified.
 
 `aggregates/atlas/` already contains canonical/source aggregate products. It is
-not itself an approved web-release root. Do not upload browser releases or
-packs alongside those inputs until Q8 names a distinct deployment root and its
-staging/production semantics.
+not itself a web-release root. Upload browser artifacts only below the exact
+D059 staging or production child root; never place them alongside existing
+source keys.
 
 ## Terminal authentication
 
@@ -79,18 +82,35 @@ aws s3api list-objects-v2 \
 Use `head-object` on an exact reviewed key to inspect size, ETag, content type,
 cache metadata, and server-side encryption without transferring its body.
 
+## Direct CLI versus the publishing service
+
+Direct AWS CLI deployment is a viable operational choice; the launch spec does
+not require the publishing service. The existing publishing service adds
+resumable private staging, declared byte-size/SHA-256 checks, schema validation,
+immutable publication, serialized mutations, and coordinated catalog/alias
+updates behind revocable capability tokens. Its implemented storage backend is
+filesystem-based, so using it with these S3 roots would require an
+object-storage adapter.
+
+A direct CLI workflow avoids that adapter but must replace those safeguards
+with a reviewed deployment command or script: validate before upload, use
+conditional create-only writes for immutable keys, recover multipart failures,
+verify remote bytes and headers, and update mutable indexes only after every
+referenced immutable object is available. Ad hoc `aws s3 sync` alone is not an
+equivalent publication transaction.
+
 ## Deployment stop conditions
 
 Before the first upload, Q8 must record:
 
-1. whether this bucket is approved for staging, production, or neither;
-2. the exact new deployment root below the bucket, kept separate from existing
-   scientific source aggregates;
-3. whether direct S3 upload or a publishing adapter owns validation and
+1. whether direct S3 upload or a publishing adapter owns validation and
    publication;
-4. the CloudFront distribution/domain and S3 REST-origin access boundary;
-5. MIME, CORS, Range, cache, and opaque `.isvg.gz` metadata rules;
-6. immutable-release and mutable catalog/alias update procedures.
+2. how `ephys-atlas.iblcore.org` is hosted and how its browser reaches private
+   S3 data, including the HTTPS data origin/path and DNS/TLS arrangement;
+3. whether CloudFront supplies that boundary or D040 is explicitly revised;
+4. MIME, CORS, Range, cache, and opaque `.isvg.gz` metadata rules;
+5. the immutable-release promotion and mutable catalog/alias update procedure;
+6. the first exact artifact set authorized for staging.
 
 Do not use `aws s3 sync --delete`. Do not overwrite an immutable release key.
 Validate the complete local schema-v1 or pack graph, byte sizes, and SHA-256
@@ -111,7 +131,7 @@ The schema-v1 public layout remains:
       _publication.json
 ```
 
-`<deployment-root>` is intentionally unresolved. Projection and mesh pack
-locations must follow their validated manifest identities and the same
-immutable-object rules; this runbook does not invent parallel paths for them.
-
+`<deployment-root>` is one of the two D059 environment roots. Projection and
+mesh pack locations must follow their validated manifest identities and the
+same immutable-object rules; this runbook does not invent parallel paths for
+them.

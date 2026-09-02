@@ -67,6 +67,7 @@ only part of the body; the index states what remains effective.
 | D056 | Project/dataset/release navigation | accepted | 2026-09-02 | catalog hierarchy, coordinated editions, and top-bar terminology |
 | D057 | Preferred palettes and explicit diverging centers | accepted | 2026-09-02 | infrastructure policy; Q16 retains real-feature selections |
 | D058 | Flexible multi-feature comparison | accepted | 2026-09-02 | arbitrary feature scopes, z-score comparison, and iterative Focus/Gallery/Profile UX |
+| D059 | Shared S3 staging/production roots | accepted | 2026-09-02 | exact private bucket roots, immutable-key policy, and initial site domain |
 
 ## D001 — Separate v2
 
@@ -1251,3 +1252,29 @@ as one contract change. Coordinate durable comparison URL state with D056.
 
 The phased implementation and scientist-review gates are recorded in
 [`tasks/2026-09-02-multi-feature-comparison/`](tasks/2026-09-02-multi-feature-comparison/README.md).
+
+## D059 — Use isolated staging and production roots in the private Atlas bucket
+
+Use the IBL-owned private `us-east-1` bucket
+`ibl-brain-wide-map-private` for both staging and production browser artifacts.
+Keep the environments isolated under these exact roots:
+
+```text
+aggregates/atlas/ephys-atlas-web-v2/staging/
+aggregates/atlas/ephys-atlas-web-v2/production/
+```
+
+These child namespaces must not collide with the canonical/source aggregate
+objects already stored below `aggregates/atlas/`. Within each root, immutable
+release and pack keys are create-once and must be protected against overwrite;
+catalogs and aliases remain explicitly separate mutable objects. Production
+promotion copies already-validated bytes without changing their scientific
+content or immutable identity.
+
+Use `ephys-atlas.iblcore.org` as the planned initial public viewer domain. This
+selection does not claim that DNS, TLS, hosting, or public data delivery is
+already provisioned, and it does not require scientific data to share the
+viewer's hostname. Q8 retains the exact HTTPS data origin/routing, direct-S3
+versus publishing-service workflow, cache/CORS/MIME/Range rules, and deployment
+verification. Q2, Q5, and Q9 continue to govern production scientific content,
+volume transport, and paper-facing defaults.

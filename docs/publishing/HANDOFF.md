@@ -62,11 +62,12 @@ That is a deployment adapter change, not a scientific contract change.
 
 ## Remaining decisions
 
-Q8 has an authenticated, writable candidate private bucket/prefix, but still
-requires approval of its role, a distinct deployment root, the public domain,
-storage/CDN arrangement, cache/CORS policy, and publishing destination. Q9
-still requires the frozen paper aliases and release set. Remote publishing may
-be explicitly waived for launch if static release deployment is operationally
+D059 selects exact staging and production roots in the authenticated private
+bucket and plans `ephys-atlas.iblcore.org` as the initial viewer domain. Q8
+still requires the public/private data-delivery boundary, DNS/TLS/hosting,
+cache/CORS policy, and direct-CLI versus publishing-adapter procedure. Q9 still
+requires the frozen paper aliases and release set. Remote publishing may be
+explicitly waived for launch if static release deployment is operationally
 sufficient, as allowed by the launch spec.
 
 Possible follow-ups that are not current launch requirements include delegated

@@ -49,25 +49,34 @@ Blocks: final browser transport and the immutable production volume release.
 
 ## Q8 — Production public origin and storage
 
-Status: **DECISION; partially resolved by D040**.
+Status: **DECISION; partially resolved by D040 and D059**.
 
 Resolved direction: use IBL-owned S3 for immutable objects with CloudFront as
 the preferred HTTPS/browser origin. Do not use or modify `iblviz` without
 explicit repository-owner permission.
 
+D059 selects `ibl-brain-wide-map-private` in `us-east-1` for both environments,
+with exact roots
+`aggregates/atlas/ephys-atlas-web-v2/staging/` and
+`aggregates/atlas/ephys-atlas-web-v2/production/`. It also selects
+`ephys-atlas.iblcore.org` as the planned initial public viewer domain and
+requires immutable release/pack keys to be protected against overwrite while
+catalogs and aliases remain separately mutable.
+
 Current operational evidence: authenticated terminal listing, object metadata
 reads, and a non-mutating conditional `PutObject` authorization probe succeeded
 on 2026-09-02 for the private `us-east-1` bucket
 `ibl-brain-wide-map-private` below `aggregates/atlas/`. Anonymous listing is
-denied. The existing prefix contains scientific aggregate/source products and
-has not been approved as a browser-release root. No remote object was mutated.
+denied. No remote object was mutated. DNS for the planned viewer domain did not
+yet resolve from the repository host when checked on 2026-09-02.
 See
 [`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md).
 
-Resolution still needed: whether the candidate bucket is staging, production,
-or neither; the exact distinct deployment root; final distribution and domain
-names; exact cache/CORS/MIME/Range policy; and whether publishing writes
-directly to S3 or through an intermediate filesystem/object-sync layer.
+Resolution still needed: how the public viewer reaches private S3 data, whether
+CloudFront is used or D040 is explicitly revised with another HTTPS delivery
+boundary, the data hostname/path and DNS/TLS/hosting arrangement, exact
+cache/CORS/MIME/Range policy, and whether publication uses direct validated AWS
+CLI operations or a publishing-service/object-storage adapter.
 
 Blocks: production-origin QA, immutable asset/release deployment, Q5
 confirmation, and final deployment documentation.

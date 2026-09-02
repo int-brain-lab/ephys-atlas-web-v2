@@ -174,18 +174,19 @@ Status: the exact BWM and D042 inputs were recovered and verified; their new
 immutable technical outputs, complete local descriptor, verifier, `just data`,
 atomic downloader, descriptor-driven read-only `just dev`, focused launcher
 compatibility, and onboarding command cleanup are implemented. Concrete
-deployment remains blocked. Authenticated read and conditional-write access to
-an IBL-owned candidate private S3 prefix is confirmed without remote mutation;
-its deployment role and exact web-release root are not selected.
+deployment remains blocked. D059 selects exact staging and production roots in
+an authenticated IBL-owned private S3 bucket and the planned initial viewer
+domain; no remote mutation or public delivery configuration has occurred.
 
 Blockers: residual Q8 and Q9. Remote mutation requires explicit authorization
 and credentials.
 
 Next testable actions:
 
-1. decide whether the confirmed candidate private bucket is the staging
-   destination, select a distinct deployment root outside its existing source
-   aggregates, and provision the S3 REST origin and CloudFront distribution
+1. select direct validated CLI publication or implement the S3 publishing
+   adapter, then provision DNS/TLS/hosting and a controlled HTTPS path from
+   `ephys-atlas.iblcore.org` to the private S3 data; use CloudFront as preferred
+   by D040 or explicitly revise that decision with the selected alternative,
    without accessing `iblviz`;
 2. deploy the immutable projection pack with opaque `.isvg.gz` bytes and verify
    served size, SHA-256, MIME, CORS, and cache behavior;
