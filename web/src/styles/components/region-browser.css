@@ -44,6 +44,8 @@
 
 .region-pane__browser{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:var(--space-1) 0}
 
+.region-statistic-domain{margin:.2rem var(--space-2) .15rem;padding:.22rem .35rem;color:var(--color-text-muted);font-size:.61rem;font-variant-numeric:tabular-nums;border-bottom:1px solid rgb(156 175 191 / 12%)}
+
 @media (min-width:1100px){
   .region-pane__browser{width:calc(100% - .65rem);margin-inline-end:.65rem}
 }
@@ -86,9 +88,9 @@
 
 .region-row[data-missing=true] .region-row__value{display:none}
 
-.region-row__bar{width:3.3rem;height:.28rem;overflow:hidden;border-radius:999px;background:rgb(156 175 191 / 9%)}
+.region-row__track{position:relative;width:3.3rem;height:.28rem;border-radius:999px;background:rgb(156 175 191 / 16%)}
 
-.region-row__bar-fill{display:block;width:var(--region-value,0%);height:100%;border-radius:inherit;background:rgb(var(--color-accent-rgb) / 48%)}
+.region-row__dot{position:absolute;top:50%;left:var(--region-value,50%);width:.42rem;height:.42rem;transform:translate(-50%,-50%);border:1px solid rgb(255 255 255 / 42%);border-radius:50%;background:rgb(var(--color-accent-rgb) / 68%)}
 
 .region-row[data-active=true] .region-row__button{background:rgb(156 175 191 / 6%);box-shadow:inset 2px 0 0 var(--color-text-muted)}
 
@@ -96,7 +98,7 @@
 
 .region-row[data-selected=true] .region-row__acronym{color:#dceeff}
 
-.region-row[data-selected=true] .region-row__bar-fill{background:rgb(var(--color-accent-rgb) / 76%)}
+.region-row[data-selected=true] .region-row__dot{background:rgb(var(--color-accent-rgb) / 92%)}
 
 .region-row[data-hovered=true]:not([data-selected=true]) .region-row__button{background:rgb(255 255 255 / 7%)}
 

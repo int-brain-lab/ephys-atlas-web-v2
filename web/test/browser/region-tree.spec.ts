@@ -44,6 +44,21 @@ test('region sidebar renders parent-closed Allen hierarchies at their real depth
   await expect(motorLayer).toHaveCSS('--region-indent', '2.52rem');
 });
 
+test('regional values use a shared labeled domain track and accessible exact values', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/?v=4&colors=anatomy');
+
+  await expect(page.locator('.region-statistic-domain')).toContainText('Mean:');
+  await expect(page.locator('.region-statistic-domain')).toContainText('dB rel. V');
+  const row = page.locator('.region-row[data-region-id="-362"]');
+  await expect(row.locator('.region-row__track')).toHaveCount(1);
+  await expect(row.locator('.region-row__bar')).toHaveCount(0);
+  const value = row.locator('.region-row__value');
+  await expect(value).toHaveAttribute('aria-label', /mean/i);
+  await row.locator('.region-row__button').click();
+  await expect(row.locator('.region-row__button')).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('reduced mappings expose real Allen ancestors as non-selectable containers', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/?v=4&colors=anatomy&parcel=beryl');

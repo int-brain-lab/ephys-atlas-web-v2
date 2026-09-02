@@ -1,7 +1,7 @@
 import type { RegionMetadata } from '../../data/contracts.js';
 import type { StatisticId } from '../../domain/types.js';
 import { html } from './dom.js';
-import { formatRegionalValue } from './model.js';
+import { formatRegionalValue, regionalStatisticPosition } from './model.js';
 
 export function createRegionRow(
   region: RegionMetadata,
@@ -10,7 +10,7 @@ export function createRegionRow(
   value: number | undefined,
   statistic: StatisticId,
   unit: string | null,
-  range: readonly [number, number] | null,
+  extent: readonly [number, number] | null,
   selected: ReadonlySet<string>,
   collapsedRegionIds: ReadonlySet<string>,
 ): HTMLLIElement {
@@ -69,12 +69,12 @@ export function createRegionRow(
     const formatted = formatRegionalValue(value, statistic, unit);
     valueNode.title = `${statistic}: ${formatted}`;
     valueNode.setAttribute('aria-label', `${statistic} ${formatted}`);
-    const bar = html('span', 'region-row__bar');
-    const fill = html('span', 'region-row__bar-fill');
-    const fraction = range && range[1] > range[0] ? (value - range[0]) / (range[1] - range[0]) : 0.5;
-    fill.style.setProperty('--region-value', `${Math.max(0, Math.min(1, fraction)) * 100}%`);
-    bar.append(fill);
-    valueNode.append(bar);
+    const track = html('span', 'region-row__track');
+    const dot = html('span', 'region-row__dot');
+    dot.style.setProperty('--region-value', `${(regionalStatisticPosition(value, extent) ?? 0.5) * 100}%`);
+    dot.setAttribute('aria-hidden', 'true');
+    track.append(dot);
+    valueNode.append(track);
   }
   button.append(disclosure, identity, valueNode);
   item.append(toggle, button);

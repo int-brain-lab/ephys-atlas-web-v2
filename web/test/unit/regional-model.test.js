@@ -7,6 +7,8 @@ import {
   regionMatchesQuery,
   selectedHistogramCounts,
   selectedRegionHistogramDistributions,
+  regionalStatisticExtent,
+  regionalStatisticPosition,
 } from '../../.test-dist/ui/regional/model.js';
 
 const feature = {
@@ -30,6 +32,24 @@ const feature = {
 test('regional model chooses statistic and indexes values by region', () => {
   assert.deepEqual([...buildRegionalValueMap(feature, 'median')], [['1', 11], ['2', 21]]);
   assert.deepEqual([...buildRegionalValueMap(feature, 'std')], [['1', 1], ['2', 2]]);
+});
+
+test('regional statistic extent and dot position use finite active-parcellation values', () => {
+  const extent = regionalStatisticExtent(new Map([
+    ['negative', -4], ['positive', 6], ['missing', Number.NaN], ['infinite', Infinity],
+  ]));
+  assert.deepEqual(extent, [-4, 6]);
+  assert.equal(regionalStatisticPosition(-4, extent), 0);
+  assert.equal(regionalStatisticPosition(1, extent), 0.5);
+  assert.equal(regionalStatisticPosition(6, extent), 1);
+  assert.equal(regionalStatisticPosition(Number.NaN, extent), null);
+  assert.equal(regionalStatisticPosition(12, extent), 1);
+});
+
+test('regional statistic dots center for degenerate and empty domains', () => {
+  assert.equal(regionalStatisticPosition(3, [3, 3]), 0.5);
+  assert.equal(regionalStatisticExtent(new Map([['missing', Number.NaN]])), null);
+  assert.equal(regionalStatisticPosition(3, null), null);
 });
 
 test('regional search is case insensitive across acronym and name', () => {

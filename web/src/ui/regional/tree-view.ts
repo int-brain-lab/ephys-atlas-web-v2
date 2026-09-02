@@ -2,7 +2,7 @@ import type { RegionMetadata } from '../../data/contracts.js';
 import { buildGreyMatterHierarchy } from '../../data/region-hierarchy.js';
 import type { RegionOrder, StatisticId } from '../../domain/types.js';
 import { html, required } from './dom.js';
-import { rankRegionsByValue, regionMatchesQuery } from './model.js';
+import { formatRegionalValue, rankRegionsByValue, regionMatchesQuery, regionalStatisticExtent } from './model.js';
 import { createRegionRow } from './row-view.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -46,6 +46,7 @@ export class RegionalTreeView {
   private readonly treeControls: HTMLElement;
   private readonly orderButton: HTMLButtonElement;
   private readonly list: HTMLUListElement;
+  private readonly statisticDomain: HTMLElement;
   private readonly regionById = new Map<string, RegionMetadata>();
   private readonly rowById = new Map<string, HTMLLIElement>();
   private readonly collapsedRegionIds = new Set<string>();
@@ -60,6 +61,9 @@ export class RegionalTreeView {
     this.source = required(root, '.region-search__source');
     this.resultCount = required(root, '.region-search__count');
     this.list = required(root, '.region-list');
+    this.statisticDomain = html('div', 'region-statistic-domain');
+    this.statisticDomain.setAttribute('role', 'note');
+    this.list.before(this.statisticDomain);
     this.orderButton = html('button', 'region-order');
     this.orderButton.type = 'button';
     this.treeControls = html('span', 'region-tree-controls');
@@ -109,7 +113,6 @@ export class RegionalTreeView {
     values: ReadonlyMap<string, number>,
     statistic: StatisticId,
     unit: string | null,
-    range: readonly [number, number] | null,
     selected: ReadonlySet<string>,
     order: RegionOrder,
   ): void {
@@ -117,6 +120,11 @@ export class RegionalTreeView {
     this.currentOrder = order;
     this.syncOrderButton();
     this.list.dataset.order = order;
+    const extent = regionalStatisticExtent(values);
+    const statisticLabel = statistic === 'count' ? 'Count' : `${statistic[0]?.toUpperCase() ?? ''}${statistic.slice(1)}`;
+    this.statisticDomain.textContent = extent
+      ? `${statisticLabel}: ${formatRegionalValue(extent[0], statistic, null)}–${formatRegionalValue(extent[1], statistic, null)}${unit && statistic !== 'count' ? ` ${unit}` : ''}`
+      : `${statisticLabel}: no finite regional values`;
     const previousRovingId = this.rovingButton?.dataset.regionButton;
     const restoreFocus = document.activeElement === this.rovingButton;
     const rowModels = order === 'anatomy'
@@ -127,7 +135,7 @@ export class RegionalTreeView {
         hasChildren: false,
       }));
     const rows = rowModels.map(({ region, depth, hasChildren }) =>
-      createRegionRow(region, depth, hasChildren, values.get(region.id), statistic, unit, range, selected, this.collapsedRegionIds));
+      createRegionRow(region, depth, hasChildren, values.get(region.id), statistic, unit, extent, selected, this.collapsedRegionIds));
     this.list.replaceChildren(...rows);
     this.rowById.clear();
     rows.forEach((row) => {
@@ -156,6 +164,7 @@ export class RegionalTreeView {
     const item = html('li', 'selected-regions__empty');
     item.textContent = text;
     this.list.replaceChildren(item);
+    this.statisticDomain.textContent = '';
     this.source.textContent = 'No regional values';
     this.resultCount.textContent = '0 regions';
   }

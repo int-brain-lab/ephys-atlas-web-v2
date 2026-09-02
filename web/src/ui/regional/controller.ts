@@ -172,7 +172,7 @@ export class RegionalPanelController {
         : regionalFeature
           ? `${model.state.view.parcellation.toUpperCase()} regional values`
           : `${model.state.view.parcellation.toUpperCase()} anatomy overlay`;
-    this.tree.render(model.regions, values, statistic, unit, range, selected, regionOrder);
+    this.tree.render(model.regions, values, statistic, unit, selected, regionOrder);
     renderSelectedRegions(this.detailsTargets(), model.regions, selected, values, statistic, unit);
     if (feature) {
       renderFeatureSummary(this.summary, feature, unit, descriptor?.description ?? '');

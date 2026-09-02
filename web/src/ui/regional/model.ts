@@ -38,6 +38,19 @@ export function buildRegionalValueMap(
   return result;
 }
 
+/** Finite extent of the currently loaded regional statistic (not a color range). */
+export function regionalStatisticExtent(values: ReadonlyMap<string, number>): readonly [number, number] | null {
+  const finite = [...values.values()].filter((value) => Number.isFinite(value));
+  if (finite.length === 0) return null;
+  return [Math.min(...finite), Math.max(...finite)];
+}
+
+export function regionalStatisticPosition(value: number, extent: readonly [number, number] | null): number | null {
+  if (!Number.isFinite(value) || !extent || !Number.isFinite(extent[0]) || !Number.isFinite(extent[1])) return null;
+  if (extent[1] <= extent[0]) return 0.5;
+  return Math.max(0, Math.min(1, (value - extent[0]) / (extent[1] - extent[0])));
+}
+
 export function formatRegionalValue(
   value: number,
   statistic: StatisticId,
