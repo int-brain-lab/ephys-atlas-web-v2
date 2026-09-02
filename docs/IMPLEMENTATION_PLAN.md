@@ -243,6 +243,16 @@ They are not launch blockers. Q16 retains all real feature-by-feature palette
 and center selections for a future immutable release, and D050/LS03-03 volume
 regional distributions remain explicitly deferred.
 
+After the three immediate product priorities, the accepted flexible multi-
+feature comparison foundation and scientist-iteration sequence are recorded in
+[`tasks/2026-09-02-multi-feature-comparison/`](tasks/2026-09-02-multi-feature-comparison/README.md).
+It supports arbitrary release-ordered feature scopes through Focus, virtualized
+Gallery, and Profile views rather than imposing a three-feature domain limit.
+D058 fixes z-score comparison and modular boundaries; Q17 retains the real-
+data normalization populations and parameters. Begin with synthetic fixtures
+and a development-only UX lab, and do not add a bulk transport contract until
+measured access patterns justify it.
+
 D055 also accepts an optional unlisted-sharing follow-up, but it is not a
 launch blocker and must remain distinct from official publishing. After Q15 is
 resolved, the smallest vertical slice is: provision an isolated CloudFront OAC

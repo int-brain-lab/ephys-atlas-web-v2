@@ -122,6 +122,29 @@ Blocks: real release-owned palette defaults and diverging-center metadata only.
 It does not block the neutral Auto/fallback machinery, the expanded palette
 registry, or launch with existing Viridis behavior.
 
+## Q17 — Multi-feature z-score normalization populations
+
+Status: **DECISION** for real-data multi-feature comparison; not a launch
+blocker.
+
+D058 fixes z-score as the shared comparison encoding, canonical release-owned
+feature ordering, and the separation between comparable regional and volume
+sampling. It does not define which real scientific population owns each mean
+and standard deviation.
+
+Resolution needed: for every dataset and supported comparison representation,
+select the population, validity/QC inclusion, any transform applied before
+standardization, parcellation dependence, weighting, zero-variance behavior,
+and immutable source of the normalization parameters. In particular, decide
+whether regional feature z-scores use source observations or the regional
+summary population. Record reviewed parameters in versioned selection
+artifacts and immutable release provenance. Do not calculate an undocumented
+baseline from whatever values the browser happens to have loaded.
+
+Blocks: real-data z-score comparison defaults and releases only. It does not
+block pure domain/application machinery, synthetic fixtures, the UX lab, or
+scientist testing with clearly labelled synthetic normalization.
+
 ## Resolution procedure
 
 When authoritative evidence arrives:

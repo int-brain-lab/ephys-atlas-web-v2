@@ -66,6 +66,7 @@ only part of the body; the index states what remains effective.
 | D055 | Unlisted expiring dataset shares | accepted | 2026-09-02 | optional sharing transport; separate from publication |
 | D056 | Project/dataset/release navigation | accepted | 2026-09-02 | catalog hierarchy, coordinated editions, and top-bar terminology |
 | D057 | Preferred palettes and explicit diverging centers | accepted | 2026-09-02 | infrastructure policy; Q16 retains real-feature selections |
+| D058 | Flexible multi-feature comparison | accepted | 2026-09-02 | arbitrary feature scopes, z-score comparison, and iterative Focus/Gallery/Profile UX |
 
 ## D001 — Separate v2
 
@@ -1207,3 +1208,46 @@ preferred-palette and diverging-center choice. Implement and test the machinery
 with synthetic fixtures without editing D054 selections or rebuilding real
 releases. The bounded implementation tasks and UI follow-ups are recorded in
 [`tasks/2026-09-02-scalar-presentation-followups/`](tasks/2026-09-02-scalar-presentation-followups/README.md).
+
+## D058 — Build flexible multi-feature comparison around release-owned z-scores
+
+Add a multi-feature comparison workspace after the three immediate product
+priorities recorded in `IMPLEMENTATION_PLAN.md`. Model comparison as an
+arbitrary ordered feature scope rather than a fixed number of slots. Provide
+three coordinated ways to inspect that scope: Focus for a few large spatial
+maps, a virtualized Gallery for tens or hundreds of spatial maps, and Profile
+for all compatible features at one or more selected locations. These are
+replaceable UX compositions over one domain, application-session, data-port,
+and retained-rendering foundation; scientist review may change their layouts
+without changing the scientific or transport contracts.
+
+Comparison visual encoding uses z-scores with one shared, symmetric scale.
+Native values and units remain available in tooltips, details, and the ordinary
+single-feature workspace, but are not presented as directly comparable colors.
+The immutable release owns the canonical feature order and the exact
+normalization definition and parameters. Filtering preserves relative
+canonical order; any discovery-oriented reordering must be explicit and URL-
+persisted. Q17 retains the real per-dataset normalization populations and
+transform order, so infrastructure work uses synthetic reviewed parameters and
+must not infer them from feature names or runtime values.
+
+Compatibility means that every feature in one spatial comparison answers the
+same kind of anatomical query. Initially, regional comparisons require a
+shared parcellation and volume comparisons require an exact shared
+`reference_space_id`; compatible volumes may retain different grids and map
+the shared ML/AP/DV cursor through their own affines. Do not mix regional and
+voxel samples in one spatial view merely because both can be standardized.
+Mixed-representation profiles require an explicit future sampling rule.
+
+Keep comparison intent independent from visible work. Application state may
+name `all`, a release-owned group, or an explicit ordered selection, while the
+Gallery loads and renders only visible tiles under bounded request, decoded-
+memory, and viewport budgets. Preserve `ProjectionViewportFactory` as the
+renderer boundary, keep the ordinary single-feature session intact, and hide
+physical storage behind comparison data ports. Measure existing per-feature
+resources before adding location-oriented matrices or chunks; if added, update
+schema v1, producers, validators, HTTP/local readers, fixtures, and consumers
+as one contract change. Coordinate durable comparison URL state with D056.
+
+The phased implementation and scientist-review gates are recorded in
+[`tasks/2026-09-02-multi-feature-comparison/`](tasks/2026-09-02-multi-feature-comparison/README.md).
