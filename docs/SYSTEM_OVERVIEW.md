@@ -5,7 +5,7 @@ Status: active system and documentation map.
 IBL Ephys Atlas Web v2 turns pinned scientific inputs into validated,
 immutable browser releases. Public exploration is designed to use static
 object-storage reads; scientific transformation happens before publication,
-never in the publishing service or browser.
+never in the publisher or browser.
 
 ## End-to-end flow
 
@@ -43,7 +43,7 @@ These boundaries are deliberate:
 | Scientific sources and recipes | Pin source identity and make population, QC, transform, aggregation, and validity choices explicit | [`docs/data/README.md`](data/README.md) |
 | Builders | Load dataset-specific sources and emit deterministic release graphs | `builder/` and dataset recipes |
 | Release contract | Define manifests, feature representations, resources, statistics, volume geometry, and integrity | [`schema/v1/README.md`](../schema/v1/README.md) |
-| Publishing | Stage, validate, publish, and manage aliases/catalogs with capability authorization | [`docs/publishing/API.md`](publishing/API.md) |
+| Publishing | Locally stage, validate, publish, and manage aliases/catalogs with temporary scoped AWS authorization; retain the hosted capability API as an optional future path | [`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md) and [`docs/publishing/API.md`](publishing/API.md) |
 | Browser data layer | Validate and materialize the same contract through HTTP or local resource readers | `web/src/data/` |
 | Application/domain | Own dataset lifecycle, state, URL history, cancellation, and presentation resolution | `web/src/application/`, `web/src/domain/`, and `web/src/core/` |
 | Rendering | Maintain retained registered/static 2-D viewports and the optional sibling 3-D context | [`docs/rendering/README.md`](rendering/README.md) |

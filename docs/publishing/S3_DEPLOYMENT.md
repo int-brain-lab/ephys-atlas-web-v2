@@ -1,9 +1,10 @@
 # S3 deployment access and preflight
 
-Status: runbook for the authorized S3 bucket and D059-selected environment
-roots. This document records access evidence and safe operator commands; it
-does not authorize publication of a particular release. Remaining delivery and
-publication choices are governed by Q8 and Q9.
+Status: runbook for the authorized S3 bucket, D059-selected environment roots,
+and D060-selected local-publisher/CloudFront topology. This document records
+access evidence and safe operator commands; it does not authorize publication
+of a particular release. Remaining deployment details and scientific release
+choices are governed by Q8 and Q9.
 
 ## Confirmed candidate location
 
@@ -13,6 +14,10 @@ publication choices are governed by Q8 and Q9.
 - staging root: `aggregates/atlas/ephys-atlas-web-v2/staging/`
 - production root: `aggregates/atlas/ephys-atlas-web-v2/production/`
 - planned initial viewer domain: `ephys-atlas.iblcore.org`
+- production delivery: one CloudFront distribution serving the compiled Vite
+  viewer and same-origin public data from the private production namespace
+- publication: operator-invoked local repository command; no always-on
+  publishing server and no Cloudflare Pages deployment initially
 
 On 2026-09-02, an authorized IAM user authenticated from the repository host
 with temporary console-derived credentials. The following checks succeeded:
@@ -82,33 +87,46 @@ aws s3api list-objects-v2 \
 Use `head-object` on an exact reviewed key to inspect size, ETag, content type,
 cache metadata, and server-side encryption without transferring its body.
 
-## Direct CLI versus the publishing service
+## Selected local publication model
 
-Direct AWS CLI deployment is a viable operational choice; the launch spec does
-not require the publishing service. The existing publishing service adds
-resumable private staging, declared byte-size/SHA-256 checks, schema validation,
-immutable publication, serialized mutations, and coordinated catalog/alias
-updates behind revocable capability tokens. Its implemented storage backend is
-filesystem-based, so using it with these S3 roots would require an
-object-storage adapter.
+D060 selects an operator-invoked local repository publisher rather than a
+hosted publishing service or ad hoc AWS CLI deployment. The command uses
+temporary scoped AWS credentials and must reuse the implemented publishing
+rules: resumable private staging, declared byte-size/SHA-256 checks, schema
+validation, immutable publication, and coordinated catalog/alias updates. It
+must operate only below an exact D059 environment root.
 
-A direct CLI workflow avoids that adapter but must replace those safeguards
-with a reviewed deployment command or script: validate before upload, use
-conditional create-only writes for immutable keys, recover multipart failures,
-verify remote bytes and headers, and update mutable indexes only after every
-referenced immutable object is available. Ad hoc `aws s3 sync` alone is not an
-equivalent publication transaction.
+The current capability-token HTTP service remains filesystem-based and is not
+deployed initially. Its validation and state-transition logic should be reused
+or factored where practical, but the local S3 path does not need its WSGI API,
+bearer tokens, reverse proxy, or server credential store. Ad hoc `aws s3 sync`
+alone is not an equivalent publication transaction.
+
+## Selected static hosting model
+
+CloudFront serves both the Vite application and public artifacts from private
+S3 at `ephys-atlas.iblcore.org`. Place the application below `site/` within the
+selected environment root. Its entry document is mutable and short-lived or
+revalidated; its content-addressed build assets are immutable and long-lived.
+Schema-v1 catalogs/aliases remain separately mutable, while releases and packs
+remain create-once.
+
+Use S3 REST origins with Origin Access Control and scope the bucket policy to
+the exact selected deployment root. The production distribution must not
+expose the staging root or sibling canonical/source aggregates. A staging
+distribution or equivalently isolated non-production boundary must be
+provisioned before production. DNS may remain with its current provider; the
+CloudFront custom-domain certificate belongs in ACM `us-east-1`.
 
 ## Deployment stop conditions
 
 Before the first upload, Q8 must record:
 
-1. whether direct S3 upload or a publishing adapter owns validation and
-   publication;
-2. how `ephys-atlas.iblcore.org` is hosted and how its browser reaches private
-   S3 data, including the HTTPS data origin/path and DNS/TLS arrangement;
-3. whether CloudFront supplies that boundary or D040 is explicitly revised;
-4. MIME, CORS, Range, cache, and opaque `.isvg.gz` metadata rules;
+1. exact staging and production CloudFront distributions, origin paths, OAC,
+   and root-scoped bucket policy;
+2. staging hostname plus production DNS and ACM/TLS arrangement;
+3. MIME, CORS, Range, cache, and opaque `.isvg.gz` metadata rules;
+4. minimum local-publisher IAM policy and credential/profile handling;
 5. the immutable-release promotion and mutable catalog/alias update procedure;
 6. the first exact artifact set authorized for staging.
 

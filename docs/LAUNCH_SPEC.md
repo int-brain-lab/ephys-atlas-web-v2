@@ -195,12 +195,16 @@ Acceptance criteria:
 - <a id="ls10-02"></a> **`LS10-02`** — public `catalog.json` follows the browser catalog contract;
 - <a id="ls10-03"></a> **`LS10-03`** — immutable releases are never mutated after publication;
 - <a id="ls10-04"></a> **`LS10-04`** — mutable aliases resolve to immutable release IDs outside release directories;
-- <a id="ls10-05"></a> **`LS10-05`** — publishing uses revocable capability credentials rather than a launch-blocking user/OAuth system;
+- <a id="ls10-05"></a> **`LS10-05`** — initial publication uses temporary, revocable, least-privilege AWS credentials through the approved local publisher; any future hosted multi-publisher service uses independently revocable capability credentials rather than a launch-blocking user/OAuth system;
 - <a id="ls10-06"></a> **`LS10-06`** — uploads are resumable and private until complete;
 - <a id="ls10-07"></a> **`LS10-07`** — byte size, SHA-256, and schema validation complete before atomic publication;
 - <a id="ls10-08"></a> **`LS10-08`** — publishing does not perform scientific transforms.
 
 Remote publishing is desirable but may not block viewer launch if static release deployment is operationally sufficient.
+
+The initial deployment deliberately has no hosted publishing API. The approved
+local publisher must preserve the same validation, private-staging,
+immutability, resumability, and catalog-last guarantees.
 
 ## 11. Registered anatomical and static projection assets
 

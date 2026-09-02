@@ -2,6 +2,12 @@
 
 Minimal capability-based publishing service and Python client. It publishes prepared dataset releases; it does not build or transform scientific data.
 
+D060 keeps this HTTP service as an optional future multi-publisher path. The
+initial production deployment uses no always-on publishing server: an
+operator-invoked local repository command will apply the same validation and
+immutable-publication rules directly to private S3 with temporary scoped AWS
+credentials. That S3 command remains to be implemented.
+
 ## Properties
 
 - public reads are static files under `STORAGE/public/`

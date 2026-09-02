@@ -1,5 +1,10 @@
 # Publishing API v0
 
+Status: implemented optional multi-publisher service; D060 does not deploy it
+for the initial release. The initial S3 publication path is a local repository
+command that preserves these validation and immutability guarantees without an
+HTTP server.
+
 All mutation endpoints use `Authorization: Bearer <publisher-token>`. Public catalog and release reads are intentionally not API endpoints; nginx/object storage/CDN serves them directly.
 
 ## Datasets

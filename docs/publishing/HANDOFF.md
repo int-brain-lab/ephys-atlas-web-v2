@@ -4,7 +4,7 @@ Status: runbook for publishing deployment and operations. Launch priority and
 deployment decisions remain in `docs/IMPLEMENTATION_PLAN.md` and
 `docs/OPEN_QUESTIONS.md`.
 
-## Implemented model
+## Implemented optional service
 
 The stdlib WSGI service and Python client publish already-built releases; they
 do not transform scientific data. The implementation provides:
@@ -23,16 +23,24 @@ do not transform scientific data. The implementation provides:
 - a process-wide filesystem lock shared by WSGI mutations and stale-staging
   maintenance, making mutation safety independent of thread or worker count.
 
-Public reads are static files under `STORAGE/public/` and should be served by
+Public reads are static files under `STORAGE/public/` and can be served by
 nginx or object storage/CDN without authentication. The publishing API handles
 mutations only. See `docs/publishing/API.md` and `publishing/README.md`.
+
+D060 does not deploy this service for the initial release. It selects an
+operator-invoked local repository publisher using temporary, least-privilege
+AWS credentials. The local path must preserve the implemented service's
+private resumable staging, complete validation, immutable-key protection, and
+catalog-last publication semantics while writing the D059 S3 roots directly.
+CloudFront serves both the compiled Vite viewer and same-origin public data;
+there is no always-on publishing backend or Cloudflare Pages dependency.
 
 The candidate private S3 access evidence, temporary CLI authentication, safe
 preflight commands, and deployment stop conditions are recorded in
 [`S3_DEPLOYMENT.md`](S3_DEPLOYMENT.md). That runbook does not resolve Q8 or
 authorize a specific release upload.
 
-## Deployment contract
+## Hosted-service contract if enabled later
 
 - Terminate TLS at nginx or equivalent; never send bearer credentials over
   plaintext networks.
@@ -60,15 +68,16 @@ An object-storage backend can later replace filesystem rename with a unique
 staging prefix plus conditional publication of the small mutable index object.
 That is a deployment adapter change, not a scientific contract change.
 
-## Remaining decisions
+## Remaining deployment work
 
 D059 selects exact staging and production roots in the authenticated private
-bucket and plans `ephys-atlas.iblcore.org` as the initial viewer domain. Q8
-still requires the public/private data-delivery boundary, DNS/TLS/hosting,
-cache/CORS policy, and direct-CLI versus publishing-adapter procedure. Q9 still
-requires the frozen paper aliases and release set. Remote publishing may be
-explicitly waived for launch if static release deployment is operationally
-sufficient, as allowed by the launch spec.
+bucket and plans `ephys-atlas.iblcore.org` as the initial viewer domain. D060
+selects the local publisher plus a CloudFront/OAC boundary for both the
+S3-hosted Vite application and data. Q8 still requires implementation of that
+publisher, exact staging/production distributions and origin restrictions,
+staging hostname, DNS/ACM, cache/CORS/MIME/Range policy, minimum IAM policy,
+and first staging artifact authorization. Q9 still requires the frozen paper
+aliases and release set.
 
 Possible follow-ups that are not current launch requirements include delegated
 multi-credential ownership for one dataset, a database/object-store control

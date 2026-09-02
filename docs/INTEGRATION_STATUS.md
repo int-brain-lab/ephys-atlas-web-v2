@@ -2,7 +2,7 @@
 
 Status: active pre-launch capability matrix.
 
-Last reviewed: 2026-09-02 on `main` after the D055 unlisted-sharing decision.
+Last reviewed: 2026-09-02 on `main` after the D060 deployment decision.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -134,17 +134,25 @@ implemented-path [`data/CUSTOM_DATA_TUTORIAL.md`](data/CUSTOM_DATA_TUTORIAL.md).
 The capability-token publishing service supports resumable private staging,
 byte-size/SHA/schema validation, immutable publication, aliases, catalog
 generation, bounded requests, process-safe filesystem mutations, and external
-validation. Public reads remain static and unauthenticated.
+validation. D060 keeps that implementation as an optional future
+multi-publisher path; no publishing server will run for the initial deployment.
+The selected initial path is a local repository publisher using temporary,
+least-privilege AWS credentials while preserving the same validation,
+immutability, resumability, and catalog-last guarantees. This S3 publisher is
+not implemented yet. Public reads remain static and unauthenticated.
 
 D040 selects IBL-owned S3 plus CloudFront. Authenticated terminal reads and a
 non-mutating conditional-write authorization probe now pass against the
 private candidate `us-east-1` location recorded in
 [`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md). D059 selects
 isolated staging and production roots there plus
-`ephys-atlas.iblcore.org` as the planned initial viewer domain. Q8 still
-requires DNS/TLS/hosting, the private-data HTTPS boundary, cache/CORS choices,
-and direct-CLI versus publishing-adapter procedure; Q9 still requires the
-frozen paper release set and aliases. No remote publication has occurred.
+`ephys-atlas.iblcore.org` as the planned initial viewer domain. D060 selects
+CloudFront for both the S3-hosted compiled Vite viewer and same-origin public
+data, with no Cloudflare Pages deployment. Q8 still requires the exact
+distribution/origin configuration, isolated staging hostname, DNS/ACM,
+cache/CORS choices, publisher IAM policy and implementation, and first staging
+artifact authorization; Q9 still requires the frozen paper release set and
+aliases. No remote publication has occurred.
 
 D056 accepts Project/Dataset/Release/Feature/View navigation and coordinated
 project editions. The current schema-v1 public catalog and top bar still expose

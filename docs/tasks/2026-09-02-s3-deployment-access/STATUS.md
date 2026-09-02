@@ -1,7 +1,9 @@
 # Status
 
 - State: D059 records the bucket, environment roots, immutable-key policy, and
-  planned initial viewer domain; deployment remains blocked on residual Q8.
+  planned initial viewer domain. D060 selects a local repository publisher and
+  one CloudFront boundary for the S3-hosted Vite viewer plus same-origin data;
+  deployment remains blocked on residual Q8 configuration and implementation.
 - Recorded: 2026-09-02 on `main`.
 - Confirmed: temporary CLI authentication, private prefix listing, object
   metadata reads, and non-mutating conditional `PutObject` authorization.
@@ -13,9 +15,11 @@
 - Mutations: none; the probed object's size, ETag, and modification time were
   unchanged after the rejected conditional write.
 - Durable runbook: [`../../publishing/S3_DEPLOYMENT.md`](../../publishing/S3_DEPLOYMENT.md).
-- Plan: preserve the confirmed access facts, keep credentials out of Git, and
-  stop before upload until Q8 selects the public delivery and publication
-  procedure and an exact staging artifact set is authorized.
+- Hosting decision: no Cloudflare Pages and no always-on publishing server for
+  the initial deployment.
+- Plan: implement the local publisher and exact CloudFront/OAC configuration,
+  keep credentials out of Git, and stop before upload until Q8 records the
+  remaining policies and an exact staging artifact set is authorized.
 - Unrelated worktree changes: existing frontend edits were preserved and are
   outside this task.
 - Validation: `just docs-check docs-site` passes. `just check` reached the

@@ -176,18 +176,20 @@ atomic downloader, descriptor-driven read-only `just dev`, focused launcher
 compatibility, and onboarding command cleanup are implemented. Concrete
 deployment remains blocked. D059 selects exact staging and production roots in
 an authenticated IBL-owned private S3 bucket and the planned initial viewer
-domain; no remote mutation or public delivery configuration has occurred.
+domain. D060 selects one CloudFront boundary for the S3-hosted Vite viewer and
+data plus a local, operator-invoked publisher; no Cloudflare Pages or hosted
+publishing server is planned. No remote mutation or public delivery
+configuration has occurred.
 
 Blockers: residual Q8 and Q9. Remote mutation requires explicit authorization
 and credentials.
 
 Next testable actions:
 
-1. select direct validated CLI publication or implement the S3 publishing
-   adapter, then provision DNS/TLS/hosting and a controlled HTTPS path from
-   `ephys-atlas.iblcore.org` to the private S3 data; use CloudFront as preferred
-   by D040 or explicitly revise that decision with the selected alternative,
-   without accessing `iblviz`;
+1. implement the D060 local S3 publisher by reusing the existing validation and
+   immutable-publication rules, then provision isolated staging and production
+   CloudFront distributions with OAC, DNS, ACM/TLS, and a production origin
+   restricted to the D059 namespace, without accessing `iblviz`;
 2. deploy the immutable projection pack with opaque `.isvg.gz` bytes and verify
    served size, SHA-256, MIME, CORS, and cache behavior;
 3. deploy the completed pinned development bundle without transforming its
@@ -198,8 +200,9 @@ Next testable actions:
    browser-data, top-bar, fixture, and test cutover using synthetic edition
    values; then, after Q9 is resolved, configure the real project edition,
    frozen scientific release set, defaults, and aliases;
-5. deploy or explicitly waive the publishing service; if deployed, configure
-   validation, secrets, storage, backups, TLS, and reverse proxy;
+5. deploy the compiled Vite site below the production `site/` namespace and
+   verify that `ephys-atlas.iblcore.org` serves the entry document, immutable
+   hashed assets, and same-origin data with the selected cache policies;
 6. verify all anatomy and scientific release URLs from the production origin.
 
 Acceptance: [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 10, 11, and 13.

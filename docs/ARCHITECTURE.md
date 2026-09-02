@@ -147,12 +147,19 @@ for large dynamic lists.
 
 ## Publishing
 
-Publishing retains revocable capability-style bearer authentication. Public
-reads are lock-free static reads. Filesystem-backed staging/catalog/alias
-mutations are serialized across WSGI processes and request bodies are bounded
-separately for metadata and binary chunks. Add a database, queue, framework, or
-OAuth platform only when an accepted requirement makes the current model
-insufficient.
+The initial production publisher is an operator-invoked local command using
+temporary, least-privilege AWS credentials. It publishes already-built
+releases to private S3, preserves resumable private staging, verifies complete
+size/SHA/schema graphs, prevents immutable-key overwrite, and updates mutable
+catalogs last. Public reads are lock-free static CloudFront reads; there is no
+runtime publication backend.
+
+The implemented filesystem-backed WSGI service retains revocable
+capability-style bearer authentication, serialized staging/catalog/alias
+mutations, and separate metadata/chunk body bounds. It is a future
+multi-publisher option, not part of the initial deployment. Add its server,
+database, queue, framework, or OAuth platform only when an accepted requirement
+makes the local publisher insufficient.
 
 D055 defines a separate optional sharing lifecycle for already-validated local
 releases. Shared copies are opaque, unlisted, expiring CloudFront/S3 resources;

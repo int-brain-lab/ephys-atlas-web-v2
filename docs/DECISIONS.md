@@ -17,7 +17,7 @@ only part of the body; the index states what remains effective.
 | D006 | Legacy compatibility | accepted | — | clean v2 contract and separate v1 fallback |
 | D007 | Curated SVG reuse | superseded | — | D023 replaces runtime; historical evidence retained |
 | D008 | Renderer-agnostic 3-D | partially superseded | — | D032 lab renderer; D037 integration; D042 geometry/LOD |
-| D009 | Publishing authentication | accepted | — | capability model |
+| D009 | Publishing authentication | partially superseded | — | D060 replaces the initial hosted capability service with scoped AWS credentials for a local publisher; capability auth remains available for a future hosted service |
 | D010 | Canonical source vs transport | accepted | — | source and web layout remain separate |
 | D011 | Dynamic feature catalog | accepted | — | manifest-driven catalog |
 | D012 | Latest vs paper vintage | accepted | — | Q2 remains for paper freeze |
@@ -68,6 +68,7 @@ only part of the body; the index states what remains effective.
 | D057 | Preferred palettes and explicit diverging centers | accepted | 2026-09-02 | infrastructure policy; Q16 retains real-feature selections |
 | D058 | Flexible multi-feature comparison | accepted | 2026-09-02 | arbitrary feature scopes, z-score comparison, and iterative Focus/Gallery/Profile UX |
 | D059 | Shared S3 staging/production roots | accepted | 2026-09-02 | exact private bucket roots, immutable-key policy, and initial site domain |
+| D060 | Lean AWS static hosting and local publication | accepted | 2026-09-02 | CloudFront serves the viewer and data from private S3; no Cloudflare Pages or always-on publishing server initially |
 
 ## D001 — Separate v2
 
@@ -1278,3 +1279,41 @@ viewer's hostname. Q8 retains the exact HTTPS data origin/routing, direct-S3
 versus publishing-service workflow, cache/CORS/MIME/Range rules, and deployment
 verification. Q2, Q5, and Q9 continue to govern production scientific content,
 volume transport, and paper-facing defaults.
+
+## D060 — Use one AWS static-delivery boundary and a local publisher
+
+For the initial deployment, host both the compiled Vite viewer and public data
+through CloudFront backed by the D059-selected private S3 namespace. Do not add
+Cloudflare Pages or an always-running EC2, container, Lambda, or other HTTP
+publishing service. CloudFront is the only public runtime delivery boundary;
+the browser continues to require no mutation API.
+
+Use `ephys-atlas.iblcore.org` for the production viewer and serve its static
+application and data from the same CloudFront distribution. Keep the
+application below a distinct `site/` child of the production root, with a
+short-lived or revalidated entry document and content-addressed immutable
+assets. Keep schema-v1 catalogs, datasets, releases, and validated packs in
+their existing distinct paths. Configure the distribution's origin path or
+behaviors so that only the selected deployment namespace is reachable; its S3
+Origin Access Control and bucket policy must not expose sibling canonical
+source objects. Retain explicit public CORS where external scientific clients
+need it even though first-party viewer reads are same-origin.
+
+Publication is an operator-invoked repository command running locally with
+temporary, least-privilege AWS credentials. It reuses the implemented
+publishing validation and immutable-release rules without calling the HTTP
+publishing API: validate the complete already-built graph, upload privately
+and resumably, create immutable production keys without overwrite, verify
+remote metadata/integrity, and update mutable catalogs and aliases last as the
+logical publication commit. Ad hoc `aws s3 sync` is not the publication
+contract. The implemented capability-token WSGI service remains usable for a
+future multi-publisher requirement but is not deployed or launch-critical.
+
+Use a separate staging distribution or otherwise isolated non-production
+delivery boundary before production; do not make the D059 staging prefix
+public through the production distribution. Exact staging hostname, DNS
+provider/configuration, ACM certificate, cache/CORS/MIME/Range settings, and
+the first authorized staging artifacts remain deployment inputs under Q8.
+CloudFront plan selection is operational rather than architectural: begin with
+the smallest suitable plan, measure real transfer and request counts, and
+upgrade when its allowance or observability is insufficient.

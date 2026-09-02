@@ -49,7 +49,7 @@ Blocks: final browser transport and the immutable production volume release.
 
 ## Q8 — Production public origin and storage
 
-Status: **DECISION; partially resolved by D040 and D059**.
+Status: **DECISION; partially resolved by D040, D059, and D060**.
 
 Resolved direction: use IBL-owned S3 for immutable objects with CloudFront as
 the preferred HTTPS/browser origin. Do not use or modify `iblviz` without
@@ -63,6 +63,14 @@ with exact roots
 requires immutable release/pack keys to be protected against overwrite while
 catalogs and aliases remain separately mutable.
 
+D060 selects a lean, AWS-only runtime topology for initial deployment:
+CloudFront serves both the compiled Vite viewer and public data from the
+private S3 namespace at `ephys-atlas.iblcore.org`; Cloudflare Pages and an
+always-on publishing server are not used. Publication is an operator-invoked
+local repository command using temporary least-privilege AWS credentials and
+the existing validation/immutability semantics. The HTTP capability-token
+service remains an optional future path rather than a launch dependency.
+
 Current operational evidence: authenticated terminal listing, object metadata
 reads, and a non-mutating conditional `PutObject` authorization probe succeeded
 on 2026-09-02 for the private `us-east-1` bucket
@@ -72,11 +80,12 @@ yet resolve from the repository host when checked on 2026-09-02.
 See
 [`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md).
 
-Resolution still needed: how the public viewer reaches private S3 data, whether
-CloudFront is used or D040 is explicitly revised with another HTTPS delivery
-boundary, the data hostname/path and DNS/TLS/hosting arrangement, exact
-cache/CORS/MIME/Range policy, and whether publication uses direct validated AWS
-CLI operations or a publishing-service/object-storage adapter.
+Resolution still needed: the exact production and staging CloudFront
+distribution/origin-path configuration, isolated staging hostname, DNS and
+ACM/TLS provisioning, cache/CORS/MIME/Range policy, minimum publisher IAM
+policy, local publisher implementation, and first artifact set authorized for
+staging. A separate data hostname is no longer required for the initial
+same-origin topology, though a later decision may introduce one.
 
 Blocks: production-origin QA, immutable asset/release deployment, Q5
 confirmation, and final deployment documentation.
