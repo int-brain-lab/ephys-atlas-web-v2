@@ -64,11 +64,12 @@ only part of the body; the index states what remains effective.
 | D053 | Focused compact viewport | accepted | 2026-08-29 | current compact behavior |
 | D054 | Complete audited distribution selections | accepted | 2026-08-29 | closes Q14; local rebuilds authorized |
 | D055 | Unlisted expiring dataset shares | accepted | 2026-09-02 | optional sharing transport; separate from publication |
-| D056 | Project/dataset/release navigation | accepted | 2026-09-02 | catalog hierarchy, coordinated editions, and top-bar terminology |
+| D056 | Project/dataset/release navigation | partially superseded | 2026-09-02 | hierarchy and terminology retained; D061 fixes edition identity, authority, context, and delivery |
 | D057 | Preferred palettes and explicit diverging centers | accepted | 2026-09-02 | infrastructure policy; Q16 retains real-feature selections |
 | D058 | Flexible multi-feature comparison | accepted | 2026-09-02 | arbitrary feature scopes, z-score comparison, and iterative Focus/Gallery/Profile UX |
 | D059 | Shared S3 staging/production roots | accepted | 2026-09-02 | exact private bucket roots, immutable-key policy, and initial site domain |
 | D060 | Lean AWS static hosting and local publication | accepted | 2026-09-02 | CloudFront serves the viewer and data from private S3; no Cloudflare Pages or always-on publishing server initially |
+| D061 | Curated immutable project editions | accepted | 2026-09-03 | catalog authority, scoped edition identity, resolved navigation, and responsive interaction |
 
 ## D001 — Separate v2
 
@@ -1249,7 +1250,7 @@ renderer boundary, keep the ordinary single-feature session intact, and hide
 physical storage behind comparison data ports. Measure existing per-feature
 resources before adding location-oriented matrices or chunks; if added, update
 schema v1, producers, validators, HTTP/local readers, fixtures, and consumers
-as one contract change. Coordinate durable comparison URL state with D056.
+as one contract change. Coordinate durable comparison URL state with D056/D061.
 
 The phased implementation and scientist-review gates are recorded in
 [`tasks/2026-09-02-multi-feature-comparison/`](tasks/2026-09-02-multi-feature-comparison/README.md).
@@ -1317,3 +1318,69 @@ the first authorized staging artifacts remain deployment inputs under Q8.
 CloudFront plan selection is operational rather than architectural: begin with
 the smallest suitable plan, measure real transfer and request counts, and
 upgrade when its allowance or observability is insufficient.
+
+## D061 — Curate immutable project editions and resolve navigation before loading
+
+Refine D056 without changing its Project, Dataset, Release, Feature, and View
+hierarchy. Govern project membership, edition mappings, release presentation,
+and catalog defaults through a repository-versioned curator configuration and
+an explicit catalog compile/promote operation. Ordinary dataset publishers may
+make validated immutable releases available, but cannot publish or mutate a
+cross-dataset edition. Validate the complete prospective catalog graph before
+an atomic catalog-last promotion, retaining the last-known-good public catalog
+on any failure.
+
+Treat each `(project_id, edition_id)` mapping as an immutable identity. Once an
+edition ID has been exposed, a later catalog may retain or omit it but must not
+map it to different dataset releases. An edition records an explicit frozen
+scope: every dataset in that scope appears exactly once with one exact
+immutable release, but the scope need not equal the project's future dataset
+membership. Adding a dataset to a project therefore does not invalidate an old
+edition. Q9 separately retains the approved scope and exact mappings for the
+real paper edition.
+
+Use explicit browser navigation context rather than inferring scientific
+claims from matching IDs:
+
+- coordinated context records exact project and edition IDs;
+- custom context records the project and may retain the edition it was based
+  on;
+- local context identifies browser-local data and is not a public project.
+
+An individual release override enters custom context and may disclose
+`Custom versions · based on <edition>`. Dataset switches in that context use
+the retained edition as a baseline where it has a mapped dataset; they do not
+silently re-enter the edition. Only an explicit edition selection restores the
+coordinated claim. Public catalog data and local inventory remain distinct
+types and are composed into a browser-only navigation model with an explicit
+source discriminant; reserve the public `local` identity against publication.
+
+Separate unresolved navigation intent from resolved application state. Load
+and validate the catalog before resolving blank defaults, aliases, URL input,
+or `popstate`; then commit exact project/context/dataset/release identity and
+only then load the release. A published dataset session never receives a null
+release. Blank-page defaults are catalog-owned through an exact default
+project, per-project default dataset, and optional default edition. Existing
+exact URL-v4 dataset/release links remain custom context. Invalid explicit
+identities fail with recovery choices rather than silently adopting a default.
+Aliases are entry affordances only and canonicalize immediately to exact IDs.
+
+Keep the wide context bar as **Project, Dataset, Feature, View**. Project owns
+edition selection plus a **Browse custom versions** choice and discloses the
+active edition or custom baseline on its secondary line. Dataset owns release
+selection and displays a friendly label while exposing the immutable ID.
+Release status is the optional structured catalog enum `legacy | development`;
+absence means no durable status. Recommended is derived from active catalog
+context and Local from source. On narrow screens, replace cramped Project and Dataset
+fields with one staged Data chooser that preserves project, edition/custom,
+dataset, and release disclosure. Menus use labelled accessible groups,
+predictable keyboard traversal, Escape/focus restoration, and live loading or
+error announcements.
+
+Implement the contract through one schema-v1 producer/consumer cutover using
+synthetic project and edition values. The binding details and green delivery
+sequence are in [`frontend/DATASET_NAVIGATION.md`](frontend/DATASET_NAVIGATION.md).
+Dataset aliases remain administrative inputs, and curator-owned edition aliases
+resolve to exact IDs before catalog emission; browsers and share URLs never
+retain either symbolic form. Q9 still owns all real public IDs, labels,
+mappings, default values, alias names, and the paper freeze procedure.

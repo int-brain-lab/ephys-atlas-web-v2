@@ -4,7 +4,7 @@ As the fourth immediate priority, after the catalog/edition machinery,
 scalar-presentation follow-ups, and documentation screenshots are complete
 unless reprioritized:
 
-1. inspect the completed D056 URL/catalog state and existing dataset-session,
+1. inspect the completed D056/D061 URL/catalog state and existing dataset-session,
    repository-port, viewport-factory, and UI-lab seams;
 2. add deterministic synthetic comparison scenarios for 3, 20, 100, and 4,345
    features with explicit synthetic z-score parameters;

@@ -22,11 +22,11 @@ their current maturity; focused evidence lives under `docs/data/` and
 Repository-owner priority, recorded 2026-09-02, overrides the milestone order
 below when selecting independent work:
 
-1. implement the generic D056 project/dataset/release catalog and project-
-   edition machinery as one schema-v1 producer/consumer cutover, using
+1. implement the generic D056/D061 project/dataset/release catalog and
+   project-edition machinery through the four green slices below, using
    synthetic fixtures for edition values; Q9 continues to block only the real
-   paper-facing edition identity, release mapping, defaults, aliases, and
-   freeze process;
+   paper-facing edition identity, scoped release mapping, defaults, aliases,
+   and freeze process;
 2. implement the deterministic synthetic documentation captures in
    [`DOCUMENTATION_SCREENSHOT_PLAN.md`](DOCUMENTATION_SCREENSHOT_PLAN.md) and
    add their non-mutating drift check to `just check`;
@@ -37,11 +37,34 @@ below when selecting independent work:
 The previously second-ranked bounded scalar-presentation follow-ups are
 complete. Q16 still retains real-feature palette and diverging-center choices.
 
-All other active, deferred, and discussion work follows these four priorities
-unless it is required to unblock or validate them, or a later repository-owner
-decision changes the order. Deployment, remote publication, and production-
-origin work remain separately gated by their existing authorization and open
-questions.
+All other active, deferred, and discussion work follows this recorded priority
+sequence unless it is required to unblock or validate it, or a later
+repository-owner decision changes the order. Deployment, remote publication,
+and production-origin work remain separately gated by their existing
+authorization and open questions.
+
+### Catalog and navigation slices
+
+1. atomically cut over the schema-v1 catalog, bundled schema, Python and
+   TypeScript validators, shared corpus, curator-owned compiler/promotion path,
+   publishing adapters, synthetic Vite producer, and distinct public/local
+   browser composition; reject edition-ID remapping and preserve the
+   last-known-good catalog on failure;
+2. add unresolved request versus exact resolved navigation, explicit
+   edition/custom-with-optional-baseline/local context, intent-specific
+   transitions, catalog-first startup and `popstate`, URL-v4 canonicalization,
+   local lifecycle transitions, and separate failure domains;
+3. implement the desktop/tablet Project/Dataset/Feature/View bar, edition or
+   custom disclosure, exact release override/re-entry, View terminology, and
+   loading/recovery behavior;
+4. implement the narrow staged Data chooser, accessible grouped-menu keyboard
+   behavior, responsive/local/error matrices, production-style synthetic
+   catalog coverage, and durable completion documentation.
+
+Run targeted contract, publishing, resolver, URL, repository, and browser tests
+within each slice, then `just check` before its commit. The binding field,
+transition, UI, failure, and test rules are in
+[`frontend/DATASET_NAVIGATION.md`](frontend/DATASET_NAVIGATION.md).
 
 ## M5 — Custom authoring and ZIP import
 
@@ -195,10 +218,10 @@ Next testable actions:
    immutable browser-ready bytes, create a new descriptor with exact resolved
    HTTPS sources, and exercise the implemented atomic `just data` path from a
    clean checkout;
-4. implement D056 as one coherent schema-v1 catalog, publishing, URL-state,
-   browser-data, top-bar, fixture, and test cutover using synthetic edition
-   values; then, after Q9 is resolved, configure the real project edition,
-   frozen scientific release set, defaults, and aliases;
+4. implement the four D056/D061 schema/catalog, resolved-navigation,
+   desktop/tablet, and narrow/accessibility slices above using synthetic
+   edition values; then, after Q9 is resolved, configure the real project
+   edition, frozen scientific release set, defaults, and aliases;
 5. deploy the compiled Vite site below the production `site/` namespace and
    verify that `ephys-atlas.iblcore.org` serves the entry document, immutable
    hashed assets, and same-origin data with the selected cache policies;

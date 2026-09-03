@@ -81,7 +81,7 @@ Gallery, Profile, feature-scope controls, common legend, tile detail, and the
 pinned-feature tray separable. Tile count, column count, drawer state, and
 scroll position are presentation preferences rather than scientific state.
 
-Coordinate durable comparison URL fields with D056. Persist exact dataset and
+Coordinate durable comparison URL fields with D056/D061. Persist exact dataset and
 release, edition/custom context, symbolic or explicit feature scope, mode,
 orientation, cursor, normalization identity, and bounded pinned selections.
 Do not put thousands of expanded feature IDs into a share URL.

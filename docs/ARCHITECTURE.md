@@ -48,13 +48,16 @@ dataset contains features, and a feature may independently expose `regional`,
 `volume`, or future representations. Catalogs/manifests drive releases,
 features, ordering, representations, and parcellations.
 
-D056 adds a catalog/navigation layer above this runtime identity: projects
+D056/D061 add a catalog/navigation layer above this runtime identity: projects
 group scientifically distinct datasets, while a project edition coordinates
-exact immutable releases across the datasets selected for one publication or
-other frozen context. Project membership and edition mappings are discovery
-metadata; they do not replace dataset IDs, release provenance, or manifests.
-An individual release override leaves or is disclosed outside its coordinated
-edition. The accepted interaction and catalog requirements are in
+an explicit frozen scope of exact immutable releases selected for one
+publication or other context. Each exposed project/edition mapping is
+immutable even though its discovery catalog is mutable. Project membership and
+edition mappings are curator-owned discovery metadata; they do not replace
+dataset IDs, release provenance, or manifests. Browser navigation explicitly
+distinguishes coordinated, custom-with-optional-baseline, and local context
+rather than inferring an edition from matching releases. The accepted
+interaction and catalog requirements are in
 [`frontend/DATASET_NAVIGATION.md`](frontend/DATASET_NAVIGATION.md).
 
 Schema v1 under `schema/v1/` is the sole producer/consumer release contract.
@@ -153,6 +156,14 @@ releases to private S3, preserves resumable private staging, verifies complete
 size/SHA/schema graphs, prevents immutable-key overwrite, and updates mutable
 catalogs last. Public reads are lock-free static CloudFront reads; there is no
 runtime publication backend.
+
+Cross-dataset project, edition, release-presentation, and default metadata is
+owned by a repository-versioned curator configuration rather than any one
+dataset publisher. One shared compiler validates that configuration against
+the immutable published inventory, rejects remapping an exposed edition ID,
+and conditionally promotes the complete catalog last while retaining the
+last-known-good catalog on failure. The local S3 publisher and optional hosted
+service use the same compiler and promotion rules.
 
 The implemented filesystem-backed WSGI service retains revocable
 capability-style bearer authentication, serialized staging/catalog/alias

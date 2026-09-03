@@ -35,6 +35,13 @@ catalog-last publication semantics while writing the D059 S3 roots directly.
 CloudFront serves both the compiled Vite viewer and same-origin public data;
 there is no always-on publishing backend or Cloudflare Pages dependency.
 
+D061 additionally requires one repository-versioned curator configuration and
+shared catalog compiler. Dataset publication does not grant public discovery;
+the curator operation validates the complete cross-dataset graph, preserves
+immutable exposed edition identities, and conditionally promotes the catalog
+last while retaining the last-known-good object on failure. Per-dataset
+credentials cannot mutate project editions or defaults.
+
 The candidate private S3 access evidence, temporary CLI authentication, safe
 preflight commands, and deployment stop conditions are recorded in
 [`S3_DEPLOYMENT.md`](S3_DEPLOYMENT.md). That runbook does not resolve Q8 or

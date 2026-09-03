@@ -167,13 +167,16 @@ cache/CORS choices, publisher IAM policy and implementation, and first staging
 artifact authorization; Q9 still requires the frozen paper release set and
 aliases. No remote publication has occurred.
 
-D056 accepts Project/Dataset/Release/Feature/View navigation and coordinated
-project editions. The current schema-v1 public catalog and top bar still expose
-a flat dataset/release list, so the catalog, publishing, URL, browser-data, UI,
-fixture, and test cutover remains unimplemented. The generic machinery is an
-immediate implementation priority and may use synthetic edition values; Q9
-blocks only the real paper edition identity, release mapping, defaults,
-aliases, and freeze process. The binding product contract is
+D056/D061 accept Project/Dataset/Release/Feature/View navigation, immutable
+scoped project editions, curator-owned catalog promotion, explicit
+edition/custom/local browser context, catalog-first exact URL resolution, and
+a staged narrow Data chooser. The current schema-v1 public catalog and top bar
+still expose a flat dataset/release list, and local inventory is still composed
+through that wire type, so the four contract/compiler, resolved-navigation,
+desktop/tablet, and narrow/accessibility slices remain unimplemented. Generic
+machinery may use synthetic edition values; Q9 blocks only the real paper
+edition identity, scoped release mapping, defaults, aliases, and freeze
+process. The binding product contract is
 [`frontend/DATASET_NAVIGATION.md`](frontend/DATASET_NAVIGATION.md).
 
 D055 accepts a distinct optional path for unlisted, expiring copies of locally

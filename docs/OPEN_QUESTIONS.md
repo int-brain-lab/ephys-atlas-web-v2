@@ -95,14 +95,18 @@ confirmation, and final deployment documentation.
 Status: **DECISION**.
 
 The architecture supports mutable aliases outside immutable release
-directories. The paper-facing viewer default must resolve to a frozen release
-set.
+directories. D061 fixes immutable `(project_id, edition_id)` mappings, explicit
+scoped edition membership, curator-owned catalog promotion, catalog-owned
+defaults, exact URL canonicalization, and custom-edition baselines. The
+paper-facing viewer default must resolve to a frozen release set.
 
-Resolution needed: the exact public project-edition ID and label, its complete
-dataset-to-immutable-release mapping, the default edition, any mutable alias
-names, and the freeze date/process. D056 fixes the Project/Dataset/Release/
-Feature/View hierarchy and requires individual release overrides to leave or
-be disclosed outside the coordinated edition; it does not choose these values.
+Resolution needed: the exact public project-edition ID and label, its explicit
+approved dataset scope and dataset-to-immutable-release mapping, the real
+`default_project`, per-project `default_dataset`, and `default_edition` values,
+any mutable alias names, and the freeze date/process. D056/D061 fix the
+Project/Dataset/Release/Feature/View hierarchy and require individual release
+overrides to remain explicitly custom, optionally retaining their originating
+edition baseline; they do not choose the real values.
 
 Blocks: final production catalog/defaults and the publication reproducibility
 statement.

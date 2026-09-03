@@ -96,6 +96,16 @@ rules: resumable private staging, declared byte-size/SHA-256 checks, schema
 validation, immutable publication, and coordinated catalog/alias updates. It
 must operate only below an exact D059 environment root.
 
+D061 separates immutable dataset publication from cross-dataset public
+discovery. Project membership, edition mappings, release presentation, and
+defaults come from a repository-versioned curator configuration. An explicit
+curator operation compiles that configuration against the published inventory,
+rejects remapping any exposed `(project_id, edition_id)`, validates the whole
+prospective graph, and promotes `catalog.json` last with a conditional write.
+Failure retains the last-known-good catalog. Ordinary dataset publishing cannot
+mutate edition or default metadata, and both the local S3 publisher and any
+future hosted service must reuse the same compiler.
+
 The current capability-token HTTP service remains filesystem-based and is not
 deployed initially. Its validation and state-transition logic should be reused
 or factored where practical, but the local S3 path does not need its WSGI API,
@@ -127,7 +137,8 @@ Before the first upload, Q8 must record:
 2. staging hostname plus production DNS and ACM/TLS arrangement;
 3. MIME, CORS, Range, cache, and opaque `.isvg.gz` metadata rules;
 4. minimum local-publisher IAM policy and credential/profile handling;
-5. the immutable-release promotion and mutable catalog/alias update procedure;
+5. the immutable-release promotion and curator-owned conditional
+   catalog/alias update procedure, including immutable edition-history state;
 6. the first exact artifact set authorized for staging.
 
 Do not use `aws s3 sync --delete`. Do not overwrite an immutable release key.
