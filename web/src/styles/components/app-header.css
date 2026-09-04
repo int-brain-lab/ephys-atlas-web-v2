@@ -557,7 +557,7 @@
 
 @media (max-width: 1479px) {
   .app-header__context {
-    grid-template-columns: minmax(7.5rem, .8fr) minmax(8rem, .9fr) minmax(8rem, .9fr) minmax(8rem, .75fr);
+    grid-template-columns: minmax(7.25rem, .75fr) minmax(7.75rem, .85fr) minmax(8rem, .9fr) minmax(9rem, .9fr);
   }
 
   .context-field[data-context-field="representation"] .context-field__release {
