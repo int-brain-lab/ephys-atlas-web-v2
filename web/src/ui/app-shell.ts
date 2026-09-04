@@ -500,7 +500,7 @@ export class AppShell {
       model.navigationRecovery ? 'Navigation unavailable · open to recover'
         : view.navigation.kind === 'edition' ? edition?.label ?? 'Edition'
         : view.navigation.kind === 'custom'
-          ? `Custom versions${baseEdition ? ` · based on ${baseEdition.label}` : ''}`
+          ? `Individual releases${baseEdition ? ` · based on ${baseEdition.label}` : ''}`
           : 'Local browser data',
     );
     const release = datasetEntry?.releases.find((item) => item.id === view.dataset.releaseId);
@@ -1706,8 +1706,10 @@ export class AppShell {
     this.featureId = state.view.featureId;
     const activeProjectId = state.view.navigation.kind === 'local'
       ? undefined : state.view.navigation.projectId;
+    const activeProject = catalog?.projects.find(({ id }) => id === activeProjectId);
     const projectOptions: ContextMenuOption[] = catalog?.projects.map((project) => ({
       id: `project:${project.id}`, label: project.title,
+      ...(project.id === activeProjectId ? { badge: 'Active' } : {}),
       ...(project.description ? { description: project.description } : {}),
       group: 'Projects', keywords: `${project.id} ${project.title}`,
     })) ?? [];
@@ -1715,15 +1717,14 @@ export class AppShell {
       id: 'recovery:catalog', label: 'Retry catalog',
       description: 'Load and validate the public catalog again.', group: 'Catalog recovery',
     });
-    const activeProject = catalog?.projects.find(({ id }) => id === activeProjectId);
     if (activeProject) projectOptions.push(...activeProject.editions.map((edition) => ({
         id: `edition:${activeProject.id}:${edition.id}`, label: edition.label,
         ...(edition.description ? { description: edition.description } : { description: `Coordinated ${activeProject.title} release set` }),
-        group: `${activeProject.title} editions`,
+        group: 'Version set',
         keywords: `${activeProject.id} ${edition.id} ${edition.label}`,
       })));
     if (activeProjectId) projectOptions.push({
-      id: 'action:custom', label: 'Browse custom versions', description: 'Choose releases independently.', group: `${activeProject?.title ?? 'Project'} editions`,
+      id: 'action:custom', label: 'Choose individual releases', description: 'Select an exact release for each dataset.', group: 'Version set',
     });
     if (model.navigationRecovery) {
       projectOptions.push({
@@ -1758,7 +1759,7 @@ export class AppShell {
           : {}),
         ...(dataset.source === 'local' ? { detail: 'Stored only in this browser' } : {}),
         metadata: `Immutable release ID · ${release.id}`,
-        group: dataset.source === 'local' ? 'My data' : dataset.title,
+        group: dataset.source === 'local' ? 'My data' : presentDatasetTitle(dataset.title).title,
         keywords: `${dataset.id} ${dataset.title} ${release.id} ${release.label}`,
         variant: 'dataset-release',
       }));

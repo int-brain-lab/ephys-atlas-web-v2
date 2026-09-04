@@ -5,8 +5,10 @@ blocked on Q8.
 
 The local viewer consumes the same immutable schema-v1 releases and validated
 packs intended for HTTP delivery. It does not copy them into a developer-only
-format or fall back to synthetic data. Local catalog labels say `Local`, not
-`Synthetic`, and do not imply staging or publication maturity.
+format or fall back to synthetic data. Its generated preview catalog retains
+the product's Ephys Atlas and Brain-Wide Map project grouping, defaults to a
+coordinated **Current local previews** edition, and keeps exact preview IDs as
+secondary metadata. Local labels do not imply staging or publication maturity.
 
 ## Normal workflow
 

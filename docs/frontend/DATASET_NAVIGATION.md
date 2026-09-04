@@ -82,7 +82,7 @@ local
   by that edition.
 - Explicitly choosing another release enters custom context. If the user came
   from an edition, retain it as an optional baseline and disclose
-  `Custom versions · based on <edition>`.
+  `Individual releases · based on <edition>`.
 - Switching datasets in custom context uses the baseline mapping where that
   dataset is in scope; selecting a dataset outside the scope uses its exact
   catalog default and remains custom.
@@ -198,16 +198,21 @@ The wide order is:
 
 | Control | Primary line | Secondary line |
 | --- | --- | --- |
-| Project | Ephys Atlas | Edition label or `Custom versions` |
+| Project | Ephys Atlas | Version-set label or `Individual releases` |
 | Dataset | Channel features | Friendly release label and durable status |
 | Feature | Spike amplitude | Release-declared supporting detail |
 | View | Regional · Allen | Applicable representation/parcellation detail |
 
-The Project menu presents project choices, edition choices for the active
-project, and a clearly labelled **Browse custom versions** action. Avoid nested
-popovers. The Dataset menu groups exact releases beneath their dataset and
-shows friendly label, durable status where applicable, immutable release ID,
-and enough description or provenance to distinguish choices.
+The Project menu presents real scientific project choices, version-set choices
+for the active project, and a clearly labelled **Choose individual releases**
+action. `edition` and `custom` remain precise catalog/domain terms, but the UI
+does not require users to understand them.
+Local preview catalogs preserve the same Ephys Atlas and Brain-Wide Map project
+grouping and open on their coordinated current-preview edition rather than a
+synthetic `Local development` project or an unexplained custom context. Avoid
+nested popovers. The Dataset menu makes each concise dataset-family name the
+dominant heading (for example, **Ephys Atlas channels**) and keeps the friendly
+release label, status, immutable ID, and provenance in smaller secondary text.
 
 Release IDs remain exact in URLs, provenance, downloads, and exports. `Latest`
 is an alias affordance, never an immutable label. An override keeps custom

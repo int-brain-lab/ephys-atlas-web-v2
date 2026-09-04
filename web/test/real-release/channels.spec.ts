@@ -36,12 +36,13 @@ test('uses the immutable release and approved denoised feature as development de
   await page.goto('/');
 
   const release = page.locator('[data-context-field="dataset"] .context-field__release');
-  await expect(release).toContainText(`Local ${releaseId}`);
+  await expect(release).toContainText('Local preview');
   await expect(release).toContainText(`ID · ${releaseId}`);
   await expect(release).not.toContainText('Synthetic');
   await expect(page.locator('[data-context-field="feature"] .context-field__value')).toHaveText('rms ap (denoised)');
   const dataset = page.locator('[data-context-field="dataset"]');
   await dataset.locator('.context-menu__trigger').click();
+  await expect(dataset.locator('.context-menu__group').first()).toHaveText('Ephys Atlas channels');
   await expect(dataset.getByRole('option', { selected: true })).toContainText(releaseId);
   await page.keyboard.press('Escape');
   const feature = page.locator('[data-context-field="feature"]');
@@ -57,8 +58,9 @@ test('uses the immutable release and approved denoised feature as development de
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(50);
   await expect.poll(() => page.locator('.region-row[data-missing="false"]').count()).toBeGreaterThan(0);
   expect(new URL(page.url()).searchParams.get('release')).toBe(releaseId);
-  expect(new URL(page.url()).searchParams.get('project')).toBe('local-development');
-  expect(new URL(page.url()).searchParams.get('context')).toBe('custom');
+  expect(new URL(page.url()).searchParams.get('project')).toBe('ephys-atlas');
+  expect(new URL(page.url()).searchParams.get('edition')).toBe('local-preview');
+  expect(new URL(page.url()).searchParams.get('context')).toBeNull();
   expect(new URL(page.url()).searchParams.get('feature')).toBeNull();
 });
 

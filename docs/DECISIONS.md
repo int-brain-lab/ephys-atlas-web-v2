@@ -1349,7 +1349,7 @@ claims from matching IDs:
 - local context identifies browser-local data and is not a public project.
 
 An individual release override enters custom context and may disclose
-`Custom versions · based on <edition>`. Dataset switches in that context use
+`Individual releases · based on <edition>`. Dataset switches in that context use
 the retained edition as a baseline where it has a mapped dataset; they do not
 silently re-enter the edition. Only an explicit edition selection restores the
 coordinated claim. Public catalog data and local inventory remain distinct
@@ -1367,7 +1367,7 @@ identities fail with recovery choices rather than silently adopting a default.
 Aliases are entry affordances only and canonicalize immediately to exact IDs.
 
 Keep the wide context bar as **Project, Dataset, Feature, View**. Project owns
-edition selection plus a **Browse custom versions** choice and discloses the
+edition selection plus a **Choose individual releases** choice and discloses the
 active edition or custom baseline on its secondary line. Dataset owns release
 selection and displays a friendly label while exposing the immutable ID.
 Release status is the optional structured catalog enum `legacy | development`;

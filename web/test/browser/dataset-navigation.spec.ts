@@ -9,7 +9,7 @@ test('desktop project and dataset controls disclose edition and exact release co
   const dataset = page.locator('[data-context-field="dataset"]');
   const view = page.locator('[data-context-field="representation"]');
   await expect(project.locator('.context-field__value')).toHaveText('Synthetic development data');
-  await expect(project.locator('.context-field__release')).toHaveText('Custom versions');
+  await expect(project.locator('.context-field__release')).toHaveText('Individual releases');
   await expect(view.locator('.context-field__label')).toHaveText('View');
 
   await dataset.locator('.context-menu__trigger').click();
@@ -26,11 +26,11 @@ test('desktop project and dataset controls disclose edition and exact release co
   await expect(project.locator('.context-field__release')).toHaveText('Synthetic current edition');
 
   await project.locator('.context-menu__trigger').click();
-  await project.getByRole('option', { name: /Browse custom versions/ }).click();
+  await project.getByRole('option', { name: /Choose individual releases/ }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('context')).toBe('custom');
   await expect.poll(() => new URL(page.url()).searchParams.get('base_edition')).toBe('synthetic-current');
   await expect(project.locator('.context-field__release'))
-    .toHaveText('Custom versions · based on Synthetic current edition');
+    .toHaveText('Individual releases · based on Synthetic current edition');
   await expect.poll(() => page.evaluate(() => history.length)).toBe(initialHistoryLength + 2);
 
   await page.goBack();
@@ -48,7 +48,7 @@ test('phone Data chooser stages an edition selection and commits one exact histo
   const trigger = page.getByRole('button', { name: /^Data:/ });
   await expect(trigger).toBeVisible();
   await expect(trigger).toContainText('Synthetic development data / IBL Ephys Atlas v2 golden fixture');
-  await expect(trigger).toContainText('Custom versions / Synthetic golden-v1');
+  await expect(trigger).toContainText('Individual releases / Synthetic golden-v1');
 
   const initialUrl = page.url();
   const initialHistoryLength = await page.evaluate(() => history.length);
@@ -60,7 +60,7 @@ test('phone Data chooser stages an edition selection and commits one exact histo
   await expect(project).toBeFocused();
   await expect(project).toHaveAttribute('aria-current', 'true');
   await project.press('Enter');
-  await expect(dialog.getByRole('heading')).toHaveText('Choose edition or custom versions');
+  await expect(dialog.getByRole('heading')).toHaveText('Choose version set');
   await expect(page).toHaveURL(initialUrl);
 
   const back = dialog.getByRole('button', { name: /Projects/ });

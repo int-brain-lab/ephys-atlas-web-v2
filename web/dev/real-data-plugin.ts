@@ -20,6 +20,41 @@ export interface RealDevelopmentRelease {
   status: 'legacy' | 'development';
 }
 
+interface DevelopmentProject {
+  id: string;
+  title: string;
+  description: string;
+}
+
+const EPHYS_ATLAS_DATASETS = new Set([
+  'ephys_atlas_channels',
+  'ephys_atlas_clusters',
+  'ephys_atlas_volumes',
+]);
+
+function developmentProject(datasetId: string): DevelopmentProject {
+  if (EPHYS_ATLAS_DATASETS.has(datasetId)) return {
+    id: 'ephys-atlas',
+    title: 'Ephys Atlas',
+    description: 'Channel features, cluster features, and encoding volumes.',
+  };
+  if (datasetId === 'brainwide_map') return {
+    id: 'brain-wide-map',
+    title: 'Brain-Wide Map',
+    description: 'Brain-wide activity maps and preserved legacy results.',
+  };
+  return {
+    id: 'local-development',
+    title: 'Other local previews',
+    description: 'Validated local scientific releases outside the launch dataset groups.',
+  };
+}
+
+function localReleaseLabel(releaseId: string): string {
+  const sourceIdentity = releaseId.split('-local-preview', 1)[0] ?? releaseId;
+  return `Local preview · ${sourceIdentity}`;
+}
+
 function mediaType(filePath: string): string {
   if (filePath.endsWith('.json')) return 'application/json; charset=utf-8';
   if (filePath.endsWith('.csv')) return 'text/csv; charset=utf-8';
@@ -98,8 +133,6 @@ export function realReleasePlugin(configured: RealDevelopmentRelease | readonly 
   if (!synthetic && releases.some((release) => release.synthetic)) {
     throw new Error('Development catalogs cannot mix synthetic fixtures with real scientific releases');
   }
-  const projectId = synthetic ? 'synthetic-development' : 'local-development';
-  const editionId = synthetic ? 'synthetic-current' : 'local-current';
   return {
     name: 'ephys-atlas-real-development-release',
     configureServer(server) {
@@ -114,26 +147,50 @@ export function realReleasePlugin(configured: RealDevelopmentRelease | readonly 
             group.push(release);
             datasets.set(release.datasetId, group);
           }
+          const projectGroups = new Map<string, DevelopmentProject & { datasetIds: string[] }>();
+          if (!synthetic) {
+            for (const datasetId of datasets.keys()) {
+              const project = developmentProject(datasetId);
+              const group = projectGroups.get(project.id) ?? { ...project, datasetIds: [] };
+              group.datasetIds.push(datasetId);
+              projectGroups.set(project.id, group);
+            }
+          }
+          const projects = synthetic ? [{
+            project_id: 'synthetic-development',
+            title: 'Synthetic development data',
+            dataset_ids: [...datasets.keys()],
+            default_dataset: releases[0]!.datasetId,
+            editions: [{
+              edition_id: 'synthetic-current',
+              label: 'Synthetic current edition',
+              description: 'Test-only coordinated mapping for browser navigation coverage.',
+              dataset_releases: [...datasets.entries()].map(([datasetId, group]) => ({
+                dataset_id: datasetId,
+                release_id: group[0]!.releaseId,
+              })),
+            }],
+          }] : [...projectGroups.values()].map((project) => ({
+            project_id: project.id,
+            title: project.title,
+            description: project.description,
+            dataset_ids: project.datasetIds,
+            default_dataset: project.datasetIds[0],
+            default_edition: 'local-preview',
+            editions: [{
+              edition_id: 'local-preview',
+              label: 'Current local previews',
+              description: 'Validated local scientific releases for development; not a production publication.',
+              dataset_releases: project.datasetIds.map((datasetId) => ({
+                dataset_id: datasetId,
+                release_id: datasets.get(datasetId)![0]!.releaseId,
+              })),
+            }],
+          }));
           const body = JSON.stringify({
             schema_version: '1.0',
-            default_project: projectId,
-            projects: [{
-              project_id: projectId,
-              title: synthetic ? 'Synthetic development data' : 'Local development',
-              dataset_ids: [...datasets.keys()],
-              default_dataset: releases[0]!.datasetId,
-              editions: [{
-                edition_id: editionId,
-                label: synthetic ? 'Synthetic current edition' : 'Local current set',
-                description: synthetic
-                  ? 'Test-only coordinated mapping for browser navigation coverage.'
-                  : 'Validated local scientific releases for development; not a production publication.',
-                dataset_releases: [...datasets.entries()].map(([datasetId, group]) => ({
-                  dataset_id: datasetId,
-                  release_id: group[0]!.releaseId,
-                })),
-              }],
-            }],
+            default_project: synthetic ? 'synthetic-development' : projects[0]!.project_id,
+            projects,
             datasets: [...datasets.values()].map((group) => ({
               dataset_id: group[0]!.datasetId,
               title: group[0]!.title,
@@ -141,7 +198,7 @@ export function realReleasePlugin(configured: RealDevelopmentRelease | readonly 
               default_release: group[0]!.releaseId,
               releases: group.map((release) => ({
                 release_id: release.releaseId,
-                label: `${synthetic ? 'Synthetic' : 'Local'} ${release.releaseId}`,
+                label: synthetic ? `Synthetic ${release.releaseId}` : localReleaseLabel(release.releaseId),
                 status: release.status,
                 manifest: {
                   path: `./${release.datasetId}/${release.releaseId}/manifest.json`,

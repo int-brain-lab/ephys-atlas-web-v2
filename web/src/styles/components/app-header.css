@@ -296,6 +296,20 @@
   gap: 2px;
 }
 
+.context-menu__option-group--dataset-release + .context-menu__option-group--dataset-release {
+  margin-top: .35rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.context-menu__option-group--dataset-release .context-menu__group {
+  padding: .7rem .6rem .3rem;
+  color: var(--color-text);
+  font-size: .78rem;
+  font-weight: 680;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .context-field__local-badge {
   margin-left: .35rem;
   padding: .08rem .3rem;
@@ -425,9 +439,9 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--color-text);
-  font-size: .82rem;
-  font-weight: 650;
+  color: var(--color-text-secondary);
+  font-size: .68rem;
+  font-weight: 570;
   white-space: nowrap;
 }
 

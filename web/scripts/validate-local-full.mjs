@@ -32,6 +32,9 @@ try {
   if (JSON.stringify(identities) !== JSON.stringify(expected)) {
     throw new Error(`Local full catalog differs: ${JSON.stringify(identities)}`);
   }
+  const projectByDataset = new Map(catalog.projects.flatMap((project) => (
+    project.dataset_ids.map((datasetId) => [datasetId, project.project_id])
+  )));
 
   const scene = page.locator('[data-scene3d-host="connected"]');
   let uploads = null;
@@ -46,9 +49,17 @@ try {
   }
 
   const datasetField = page.locator('[data-context-field="dataset"]');
+  const projectField = page.locator('[data-context-field="project"]');
   const visited = [];
   for (const [index, [datasetId, releaseId]] of expected.entries()) {
     if (index > 0) {
+      const projectId = projectByDataset.get(datasetId);
+      if (!projectId) throw new Error(`Catalog has no project for ${datasetId}`);
+      const activeProjectId = new URL(page.url()).searchParams.get('project');
+      if (activeProjectId !== projectId) {
+        await projectField.locator('.context-menu__trigger').click();
+        await projectField.locator(`[data-context-option="project:${projectId}"]`).click();
+      }
       await datasetField.locator('.context-menu__trigger').click();
       await datasetField.getByRole('option').filter({ hasText: releaseId }).click();
     }

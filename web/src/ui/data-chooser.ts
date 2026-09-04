@@ -95,7 +95,7 @@ export class DataChooser {
     const editionId = navigation.kind === 'edition' ? navigation.editionId : undefined;
     const contextLabel = navigation.kind === 'edition'
       ? project?.editions.find(({ id }) => id === editionId)?.label ?? editionId
-      : navigation.kind === 'custom' ? 'Custom versions' : 'Local browser data';
+      : navigation.kind === 'custom' ? 'Individual releases' : 'Local browser data';
     this.primary.textContent = navigation.kind === 'local'
       ? `My data / ${dataset?.title ?? model.dataset.datasetId}`
       : `${project?.title ?? projectId} / ${dataset?.title ?? model.dataset.datasetId}`;
@@ -162,7 +162,7 @@ export class DataChooser {
     const model = this.model;
     const catalog = model?.catalog;
     this.heading.textContent = this.stage === 'project' ? 'Choose project'
-      : this.stage === 'context' ? 'Choose edition or custom versions'
+      : this.stage === 'context' ? 'Choose version set'
       : 'Choose dataset and exact version';
     if (!catalog) {
       this.status.textContent = model?.catalogStatus === 'error'
@@ -230,7 +230,7 @@ export class DataChooser {
         this.render();
       }, this.context === 'edition' && edition.id === this.editionId);
     }
-    this.addChoice('Browse custom versions', 'Choose an exact release independently', () => {
+    this.addChoice('Choose individual releases', 'Select an exact release for each dataset', () => {
       this.context = 'custom';
       this.stage = 'dataset';
       this.render();

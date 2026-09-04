@@ -4,11 +4,14 @@ export interface DatasetPresentation {
 }
 
 const HISTORICAL_TITLES: Readonly<Record<string, DatasetPresentation>> = {
-  'IBL Ephys Atlas channel features': { title: 'IBL Ephys Atlas — Channel Features' },
-  'IBL Ephys Atlas cluster features': { title: 'IBL Ephys Atlas — Cluster Features' },
-  'IBL Ephys Atlas encoding volumes': { title: 'IBL Encoding Volumes' },
+  'IBL Ephys Atlas channel features': { title: 'Ephys Atlas channels' },
+  'IBL Ephys Atlas — Channel Features': { title: 'Ephys Atlas channels' },
+  'IBL Ephys Atlas cluster features': { title: 'Ephys Atlas clusters' },
+  'IBL Ephys Atlas — Cluster Features': { title: 'Ephys Atlas clusters' },
+  'IBL Ephys Atlas encoding volumes': { title: 'Ephys Atlas encoding volumes' },
+  'IBL Encoding Volumes': { title: 'Ephys Atlas encoding volumes' },
   'IBL Brain-Wide Map legacy website snapshot': {
-    title: 'IBL Brain-Wide Map',
+    title: 'Brain-Wide Map',
     badge: 'Legacy snapshot',
   },
 };

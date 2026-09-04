@@ -189,6 +189,7 @@ export class ContextMenu {
     for (const option of this.options) {
       if (option.group && option.group !== previousGroup) {
         groupContainer = element('div', 'context-menu__option-group');
+        if (option.variant) groupContainer.classList.add(`context-menu__option-group--${option.variant}`);
         groupContainer.setAttribute('role', 'group');
         groupContainer.dataset.contextGroup = option.group;
         const group = element('div', 'context-menu__group');
