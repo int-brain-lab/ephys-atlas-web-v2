@@ -31,6 +31,10 @@ data:
 dev:
     {{uv-test}} python -m tools.development_bundle run --cwd web data/development-bundle-v4.json -- npm run dev:real
 
+# Open the development-only synthetic multi-feature comparison workbench.
+comparison-ux-lab:
+    cd web && npm run dev -- --open '/?lab=multi-feature'
+
 # Builder/schema tests.
 test-builder:
     {{uv-test}} python -m pytest -q tests

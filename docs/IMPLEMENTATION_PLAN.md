@@ -255,8 +255,9 @@ comparison foundation and scientist-iteration sequence, is recorded in
 It supports arbitrary release-ordered feature scopes through Focus, virtualized
 Gallery, and Profile views rather than imposing a three-feature domain limit.
 D058 fixes z-score comparison and modular boundaries; Q17 retains the real-
-data normalization populations and parameters. Begin with synthetic fixtures
-and a development-only UX lab, and do not add a bulk transport contract until
+data normalization populations and parameters. The domain, bounded session,
+synthetic adapters, and development-only UX lab are implemented; run the first
+task-based scientist review next. Do not add a bulk transport contract until
 measured access patterns justify it.
 
 D055 also accepts an optional unlisted-sharing follow-up, but it is not a

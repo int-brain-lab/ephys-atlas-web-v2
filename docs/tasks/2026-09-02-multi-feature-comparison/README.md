@@ -106,6 +106,11 @@ and 4,345 AGEA-like features, plus missing, zero-variance, slow, failed,
 incompatible, and different-compatible-grid cases. Exercise Focus, Gallery,
 Profile, feature filtering/grouping, pinning, and responsive compositions.
 
+Implemented on `main`. Run `just comparison-ux-lab`; Vite opens
+`/?lab=multi-feature` (normally on `http://localhost:5173`). The workbench is
+available only in Vite development mode and is clearly marked as synthetic.
+It does not read or publish scientific releases.
+
 ### 4. First scientist review
 
 Use task-based sessions: find similar patterns, identify unusual features at a
@@ -113,6 +118,13 @@ location, compare known feature sets across slices, find a gene, return to
 single-feature detail, and explain the z-score encoding. Record whether tile
 sizes, canonical groups/order, hover versus click, pinning, alternate sorting,
 and Profile/Gallery composition support real work.
+
+For a review session, ask the participant to move among the 5-, 40-, 100-, and
+4,345-feature scenarios rather than treating the lab as a finished design.
+Have them filter a large scope, scan Gallery, pin candidates into Focus, inspect
+Profile at the shared coordinate, change orientation, and explain what the
+common z-score encoding means. Use the failure scenario last to check whether
+missing, zero-variance, delayed, failed, and incompatible data remain legible.
 
 ### 5. Regional vertical slice
 
