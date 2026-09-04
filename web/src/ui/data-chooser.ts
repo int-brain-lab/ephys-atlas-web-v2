@@ -104,7 +104,17 @@ export class DataChooser {
       : `${contextLabel} / ${release?.label ?? model.dataset.releaseId ?? 'Choose release'}`;
     this.trigger.setAttribute('aria-label', `Data: ${this.primary.textContent}, ${this.secondary.textContent}`);
     this.trigger.setAttribute('aria-busy', String(model.catalogStatus === 'idle' || model.catalogStatus === 'loading'));
-    if (!this.panel.hidden) this.render(false);
+    if (!this.panel.hidden) {
+      const previousButtons = this.choiceButtons();
+      const focusedIndex = document.activeElement instanceof HTMLButtonElement
+        ? previousButtons.indexOf(document.activeElement)
+        : -1;
+      this.render(false);
+      if (focusedIndex >= 0) {
+        const nextButtons = this.choiceButtons();
+        nextButtons[Math.min(focusedIndex, nextButtons.length - 1)]?.focus();
+      }
+    }
   }
 
   destroy(): void {
