@@ -52,7 +52,10 @@ try {
       await datasetField.locator('.context-menu__trigger').click();
       await datasetField.getByRole('option').filter({ hasText: releaseId }).click();
     }
-    await page.waitForFunction((id) => document.querySelector('[data-context-field="dataset"] .context-field__release')?.textContent === id, releaseId);
+    await page.waitForFunction((id) => {
+      const release = document.querySelector('[data-context-field="dataset"] .context-field__release')?.textContent;
+      return release?.includes(`ID · ${id}`);
+    }, releaseId);
     await page.waitForFunction(() => {
       const field = document.querySelector('[data-context-field="feature"]');
       const value = field?.querySelector('.context-field__value')?.textContent?.trim();
