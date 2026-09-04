@@ -63,6 +63,9 @@ import { HelpTour, type HelpTourAnchor } from './help-tour.js';
 
 export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
+  selectProject(projectId: string): void;
+  selectEdition(projectId: string, editionId: string): void;
+  browseCustomVersions(projectId: string): void;
   setFeature(featureId: string | null, representation?: RepresentationKind): void;
   setParcellation(parcellation: ParcellationId): void;
   setStatistic(statistic: ColorStatisticId): void;
@@ -260,6 +263,7 @@ export class AppShell {
   private readonly headerActionButtons = new Map<HeaderAction, HTMLButtonElement[]>();
   private headerActions!: HTMLElement;
   private readonly datasetContext: ContextMenu;
+  private readonly projectContext: ContextMenu;
   private readonly featureContext: ContextMenu;
   private readonly representationContext: ContextMenu;
   private readonly contextMenus: readonly ContextMenu[];
@@ -315,6 +319,22 @@ export class AppShell {
         this.callbacks.setDataset({ datasetId, releaseId });
       },
     });
+    this.projectContext = new ContextMenu({
+      fieldName: 'project',
+      label: 'Project',
+      onOpen: (menu) => { this.closeDrawers(); this.closeContextMenus(menu); },
+      onSelect: (option) => {
+        if (option.id.startsWith('edition:')) {
+          const [, projectId, editionId] = option.id.split(':');
+          if (projectId && editionId) this.callbacks.selectEdition(projectId, editionId);
+        } else if (option.id === 'action:custom') {
+          const navigation = this.currentModel?.state.view.navigation;
+          if (navigation && navigation.kind !== 'local') this.callbacks.browseCustomVersions(navigation.projectId);
+        } else if (option.id.startsWith('project:')) {
+          this.callbacks.selectProject(option.id.slice('project:'.length));
+        }
+      },
+    });
     this.localDatasetBadge = element('span', 'context-field__local-badge');
     this.localDatasetBadge.textContent = 'Local';
     this.localDatasetBadge.title = 'Stored only in this browser on this device';
@@ -334,7 +354,7 @@ export class AppShell {
     });
     this.representationContext = new ContextMenu({
       fieldName: 'representation',
-      label: 'Representation',
+      label: 'View',
       multiselectable: true,
       onOpen: (menu) => {
         this.closeDrawers();
@@ -346,7 +366,7 @@ export class AppShell {
         if (kind === 'parcellation') this.callbacks.setParcellation(id as ParcellationId);
       },
     });
-    this.contextMenus = [this.datasetContext, this.featureContext, this.representationContext];
+    this.contextMenus = [this.projectContext, this.datasetContext, this.featureContext, this.representationContext];
 
     this.regionPane = this.createRegionPane();
     this.settingsPane = this.createSettingsPane();
@@ -448,7 +468,27 @@ export class AppShell {
     const featureLabel = featureEntry?.label ?? (view.featureId ? titleCaseToken(view.featureId) : 'No feature selected');
     const representationLabel = view.representation === 'regional' ? 'Regional' : 'Volume';
 
-    this.datasetContext.setDisplay(datasetLabel, releaseLabel);
+    const navigationProjectId = view.navigation.kind === 'local' ? undefined : view.navigation.projectId;
+    const project = catalog?.projects.find((item) => item.id === navigationProjectId);
+    const navigationEditionId = view.navigation.kind === 'edition' ? view.navigation.editionId : undefined;
+    const edition = project && navigationEditionId
+      ? project.editions.find((item) => item.id === navigationEditionId)
+      : undefined;
+    const baseEditionId = view.navigation.kind === 'custom' ? view.navigation.baseEditionId : undefined;
+    const baseEdition = project && baseEditionId
+      ? project.editions.find((item) => item.id === baseEditionId)
+      : undefined;
+    this.projectContext.setDisplay(
+      view.navigation.kind === 'local' ? 'My data' : project?.title ?? titleCaseToken(navigationProjectId ?? ''),
+      view.navigation.kind === 'edition' ? edition?.label ?? 'Edition'
+        : view.navigation.kind === 'custom'
+          ? `Custom versions${baseEdition ? ` · based on ${baseEdition.label}` : ''}`
+          : 'Local browser data',
+    );
+    const release = datasetEntry?.releases.find((item) => item.id === view.dataset.releaseId);
+    const releaseMeta = [release?.label ?? releaseLabel, release?.status, release?.id ? `ID · ${release.id}` : '']
+      .filter(Boolean).join(' · ');
+    this.datasetContext.setDisplay(datasetLabel, releaseMeta);
     this.localDatasetBadge.hidden = view.dataset.datasetId !== 'local';
     this.app.toggleAttribute('data-local-dataset', view.dataset.datasetId === 'local');
     this.featureContext.setDisplay(featureLabel, featureEntry?.unit ?? '');
@@ -591,7 +631,7 @@ export class AppShell {
     const context = element('dl', 'app-header__context');
     context.setAttribute('aria-label', 'Atlas context');
     context.dataset.helpAnchor = 'context';
-    context.append(this.datasetContext.field, this.featureContext.field, this.representationContext.field);
+    context.append(this.projectContext.field, this.datasetContext.field, this.featureContext.field, this.representationContext.field);
 
     const actions = element('nav', 'app-header__actions');
     actions.setAttribute('aria-label', 'Atlas actions');
@@ -1627,15 +1667,44 @@ export class AppShell {
   private renderContextMenus(model: ShellModel): void {
     const { catalog, manifest, state } = model;
     this.featureId = state.view.featureId;
-    const releaseOptions: ContextMenuOption[] = catalog?.datasets.flatMap((dataset) => {
-      const presentation = presentDatasetTitle(dataset.title);
+    const activeProjectId = state.view.navigation.kind === 'local'
+      ? undefined : state.view.navigation.projectId;
+    const projectOptions: ContextMenuOption[] = catalog?.projects.map((project) => ({
+      id: `project:${project.id}`, label: project.title,
+      ...(project.description ? { description: project.description } : {}),
+      group: 'Projects', keywords: `${project.id} ${project.title}`,
+    })) ?? [];
+    const activeProject = catalog?.projects.find(({ id }) => id === activeProjectId);
+    if (activeProject) projectOptions.push(...activeProject.editions.map((edition) => ({
+        id: `edition:${activeProject.id}:${edition.id}`, label: edition.label,
+        ...(edition.description ? { description: edition.description } : { description: `Coordinated ${activeProject.title} release set` }),
+        group: `${activeProject.title} editions`,
+        keywords: `${activeProject.id} ${edition.id} ${edition.label}`,
+      })));
+    if (activeProjectId) projectOptions.push({
+      id: 'action:custom', label: 'Browse custom versions', description: 'Choose releases independently.', group: `${activeProject?.title ?? 'Project'} editions`,
+    });
+    const activeProjectOption = state.view.navigation.kind === 'edition'
+      ? `edition:${state.view.navigation.projectId}:${state.view.navigation.editionId}`
+      : state.view.navigation.kind === 'custom' ? 'action:custom' : '';
+    this.projectContext.setOptions(projectOptions, [activeProjectOption], {
+      emptyMessage: state.runtime.catalogStatus === 'error' ? 'Projects unavailable.' : 'Loading projects…',
+      busy: state.runtime.catalogStatus === 'loading' || state.runtime.catalogStatus === 'idle',
+    });
+    const releaseOptions: ContextMenuOption[] = catalog?.datasets
+      .filter((dataset) => dataset.source === 'local' || dataset.projectId === activeProjectId)
+      .flatMap((dataset) => {
       return dataset.releases.map((release) => ({
         id: JSON.stringify([dataset.id, release.id]),
-        label: presentation.title,
-        ...(presentation.badge ? { badge: presentation.badge } : {}),
-        ...(dataset.description ? { description: dataset.description } : {}),
-        metadata: `Release ID · ${release.id}`,
-        keywords: `${dataset.id} ${release.id}`,
+        label: release.label,
+        ...(release.status ? { badge: titleCaseToken(release.status) } : {}),
+        ...(release.description || dataset.description
+          ? { description: release.description ?? dataset.description }
+          : {}),
+        ...(dataset.source === 'local' ? { detail: 'Stored only in this browser' } : {}),
+        metadata: `Immutable release ID · ${release.id}`,
+        group: dataset.source === 'local' ? 'My data' : dataset.title,
+        keywords: `${dataset.id} ${dataset.title} ${release.id} ${release.label}`,
         variant: 'dataset-release',
       }));
     }) ?? [];
@@ -1708,7 +1777,7 @@ export class AppShell {
       id: `representation:${value}`,
       label: value === 'regional' ? 'Regional' : 'Volume',
       description: value === 'regional' ? 'Region-level descriptive summaries' : 'Voxel-space scalar volume',
-      group: 'Representation',
+      group: 'View',
       disabled: representations.length < 2,
     }));
     const parcellationOptions: ContextMenuOption[] = availableParcellations.map((value) => ({
@@ -1723,10 +1792,10 @@ export class AppShell {
       [`representation:${state.view.representation}`, `parcellation:${state.view.parcellation}`],
       {
         emptyMessage: state.runtime.datasetStatus === 'error'
-          ? `Representations unavailable: ${state.runtime.error ?? 'The release could not be loaded.'}`
+          ? `Views unavailable: ${state.runtime.error ?? 'The release could not be loaded.'}`
           : state.runtime.datasetStatus === 'loading' || state.runtime.datasetStatus === 'idle'
-            ? 'Loading representations…'
-            : 'Choose a feature to see its representations.',
+            ? 'Loading views…'
+            : 'Choose a feature to see its available views.',
         busy: state.runtime.datasetStatus === 'loading' || state.runtime.datasetStatus === 'idle',
       },
     );

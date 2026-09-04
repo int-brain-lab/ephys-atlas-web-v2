@@ -37,11 +37,20 @@ for (const viewport of reviewViewports) {
       const atlasRegistration = page.locator('[data-context-field="representation"] .context-field__release');
       await expect(atlasRegistration).toBeVisible();
       expect(await atlasRegistration.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
-      const datasetBounds = await page.locator('[data-context-field="dataset"]').boundingBox();
-      const featureBounds = await page.locator('[data-context-field="feature"]').boundingBox();
-      expect(datasetBounds).not.toBeNull();
-      expect(featureBounds).not.toBeNull();
-      expect(datasetBounds!.width).toBeGreaterThan(featureBounds!.width);
+      const contextBounds = await Promise.all(
+        ['project', 'dataset', 'feature', 'representation'].map((field) =>
+          page.locator(`[data-context-field="${field}"]`).boundingBox(),
+        ),
+      );
+      for (const bounds of contextBounds) {
+        expect(bounds).not.toBeNull();
+        expect(bounds!.width).toBeGreaterThan(200);
+      }
+      for (let index = 1; index < contextBounds.length; index += 1) {
+        expect(contextBounds[index]!.x).toBeGreaterThanOrEqual(
+          contextBounds[index - 1]!.x + contextBounds[index - 1]!.width,
+        );
+      }
     }
     await expect(page.locator('[data-view="coronal"] .view-frame__status')).toHaveText('');
     await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
@@ -464,7 +473,7 @@ test('context menus explain release loading and failure instead of becoming iner
   const representation = page.locator('[data-context-field="representation"]');
   const representationTrigger = representation.locator('.context-menu__trigger');
   await representationTrigger.click();
-  await expect(representation.getByRole('status')).toContainText('Representations unavailable:');
+  await expect(representation.getByRole('status')).toContainText('Views unavailable:');
 });
 
 test('scientific context menus and color controls are driven by the loaded release', async ({ page }) => {
@@ -483,10 +492,10 @@ test('scientific context menus and color controls are driven by the loaded relea
   await datasetTrigger.click({ position: { x: triggerBounds!.width / 2, y: 2 } });
   await expect(dataset.locator('.context-menu__panel')).toHaveAttribute('data-open', 'true');
   const selectedDataset = dataset.getByRole('option', { selected: true });
-  await expect(selectedDataset.locator('.context-menu__option-label')).toHaveText('IBL Ephys Atlas v2 golden fixture');
+  await expect(selectedDataset.locator('.context-menu__option-label')).toHaveText('Synthetic golden-v1');
   await expect(selectedDataset.locator('.context-menu__option-description')).toContainText('deterministic non-scientific dataset');
-  await expect(selectedDataset.locator('.context-menu__option-metadata')).toHaveText('Release ID · golden-v1');
-  await expect(dataset.locator('.context-menu__group').filter({ hasText: 'IBL Ephys Atlas' })).toHaveCount(0);
+  await expect(selectedDataset.locator('.context-menu__option-metadata')).toHaveText('Immutable release ID · golden-v1');
+  await expect(dataset.locator('.context-menu__group').filter({ hasText: 'IBL Ephys Atlas' })).toHaveCount(1);
   await page.keyboard.press('Escape');
   await expect(datasetTrigger).toBeFocused();
 
@@ -516,7 +525,7 @@ test('scientific context menus and color controls are driven by the loaded relea
   const representation = page.locator('[data-context-field="representation"]');
   await representation.locator('.context-menu__trigger').click();
   await expect(representation.getByRole('listbox')).toHaveAttribute('aria-multiselectable', 'true');
-  await expect(representation.locator('[data-context-group="Representation"]')).toBeVisible();
+  await expect(representation.locator('[data-context-group="View"]')).toBeVisible();
   await expect(representation.locator('[data-context-group="Parcellation"]')).toBeVisible();
   await expect(representation.getByRole('option', { selected: true })).toHaveCount(2);
   await expect(representation.getByRole('option', { name: /Regional/ })).toHaveAttribute('aria-selected', 'true');

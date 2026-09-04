@@ -1,6 +1,6 @@
 # Dataset navigation and project editions
 
-Status: accepted contract; catalog/compiler and resolved-navigation slices implemented; UI slices pending.
+Status: accepted contract; catalog/compiler, resolved-navigation, and desktop/tablet UI slices implemented; narrow/accessibility slice pending.
 
 D056 establishes the Project, Dataset, Release, Feature, and View hierarchy.
 D061 fixes catalog authority, immutable edition identity, explicit browser
@@ -283,7 +283,7 @@ commit.
 
 ### 3. Desktop/tablet navigation UI
 
-Status: next.
+Status: implemented.
 
 Implement Project/Dataset/Feature/View, edition/custom secondary disclosure,
 friendly version/status/ID details, View terminology, explicit override and
@@ -292,6 +292,8 @@ switching, custom override, explicit re-entry, exact URLs, Back/Forward,
 loading, and failure. Run `just check` and commit.
 
 ### 4. Narrow UX, accessibility, and durable completion
+
+Status: next.
 
 Implement the staged Data chooser, accessible grouped menus, keyboard/focus and
 live-region behavior, responsive overflow cases, local composition, invalid URL

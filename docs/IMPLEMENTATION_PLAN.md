@@ -45,10 +45,7 @@ authorization and open questions.
 
 ### Catalog and navigation slices
 
-1. implement the desktop/tablet Project/Dataset/Feature/View bar, edition or
-   custom disclosure, exact release override/re-entry, View terminology, and
-   loading/recovery behavior;
-2. implement the narrow staged Data chooser, accessible grouped-menu keyboard
+1. implement the narrow staged Data chooser, accessible grouped-menu keyboard
    behavior, responsive/local/error matrices, production-style synthetic
    catalog coverage, and durable completion documentation.
 
@@ -64,6 +61,12 @@ dataset/release identities canonicalize in URL v4, intent-specific transitions
 preserve edition baselines, local inventory changes refresh resolver authority,
 and published loaders reject unresolved releases. Catalog, navigation, and
 release-load errors retain distinct runtime state.
+
+The desktop/tablet navigation slice is complete: the four-field
+Project/Dataset/Feature/View context bar exposes active-project editions,
+custom-version disclosure, friendly immutable release metadata, and exact
+history-preserving edition/custom transitions. Deterministic browser coverage
+exercises the synthetic edition flow and the responsive four-column layout.
 
 Run targeted contract, publishing, resolver, URL, repository, and browser tests
 within each slice, then `just check` before its commit. The binding field,

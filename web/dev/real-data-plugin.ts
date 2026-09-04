@@ -112,7 +112,15 @@ export function realReleasePlugin(configured: RealDevelopmentRelease | readonly 
               title: 'Synthetic development data',
               dataset_ids: [...datasets.keys()],
               default_dataset: releases[0]!.datasetId,
-              editions: [],
+              editions: [{
+                edition_id: 'synthetic-current',
+                label: 'Synthetic current edition',
+                description: 'Test-only coordinated mapping for browser navigation coverage.',
+                dataset_releases: [...datasets.entries()].map(([datasetId, group]) => ({
+                  dataset_id: datasetId,
+                  release_id: group[0]!.releaseId,
+                })),
+              }],
             }],
             datasets: [...datasets.values()].map((group) => ({
               dataset_id: group[0]!.datasetId,

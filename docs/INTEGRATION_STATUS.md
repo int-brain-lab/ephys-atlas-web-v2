@@ -180,8 +180,10 @@ validators, publishing, synthetic Vite production, and distinct public/local
 browser composition. Browser startup, Back/Forward, local inventory refresh,
 and URL-v4 canonicalization now resolve that catalog to exact edition/custom/
 local context before immutable release loading; unresolved published releases
-are rejected. The current top bar remains flat, so the desktop/tablet and
-narrow/accessibility UI slices remain.
+are rejected. The desktop/tablet four-field context bar now exposes project,
+edition/custom context, dataset release metadata, feature, and View controls
+with exact history-preserving transitions. The staged narrow Data chooser and
+grouped-menu accessibility completion remain.
 Generic machinery may use synthetic edition values; Q9 blocks only the real paper
 edition identity, scoped release mapping, defaults, aliases, and freeze
 process. The binding product contract is
