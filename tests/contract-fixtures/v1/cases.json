@@ -62,12 +62,26 @@
     },
     "catalog": {
       "schema_version": "1.0",
+      "default_project": "synthetic-project",
+      "projects": [{
+        "project_id": "synthetic-project",
+        "title": "Synthetic project",
+        "dataset_ids": ["synthetic-atlas"],
+        "default_dataset": "synthetic-atlas",
+        "default_edition": "synthetic-edition",
+        "editions": [{
+          "edition_id": "synthetic-edition",
+          "label": "Synthetic edition",
+          "dataset_releases": [{"dataset_id": "synthetic-atlas", "release_id": "release-v1"}]
+        }]
+      }],
       "datasets": [{
         "dataset_id": "synthetic-atlas",
         "title": "Synthetic atlas",
         "default_release": "release-v1",
         "releases": [{
           "release_id": "release-v1",
+          "label": "Synthetic release",
           "manifest": {
             "path": "releases/release-v1/manifest.json",
             "media_type": "application/json",
@@ -331,6 +345,9 @@
     {"name": "uncompressed encoded and decoded lengths differ", "schema": "artifact.schema.json", "valid": false, "document": "artifact", "set": {"/resource/codec/decoded_bytes": 5}},
     {"name": "catalog valid", "schema": "catalog.schema.json", "valid": true, "document": "catalog"},
     {"name": "catalog default release missing", "schema": "catalog.schema.json", "valid": false, "document": "catalog", "set": {"/datasets/0/default_release": "missing"}},
+    {"name": "catalog default project missing", "schema": "catalog.schema.json", "valid": false, "document": "catalog", "set": {"/default_project": "missing"}},
+    {"name": "catalog edition release missing", "schema": "catalog.schema.json", "valid": false, "document": "catalog", "set": {"/projects/0/editions/0/dataset_releases/0/release_id": "missing"}},
+    {"name": "catalog local dataset reserved", "schema": "catalog.schema.json", "valid": false, "document": "catalog", "set": {"/datasets/0/dataset_id": "local", "/projects/0/dataset_ids/0": "local", "/projects/0/default_dataset": "local", "/projects/0/editions/0/dataset_releases/0/dataset_id": "local"}},
     {"name": "provenance valid", "schema": "provenance.schema.json", "valid": true, "document": "provenance"},
     {"name": "regional and binary array valid", "schema": "regional.schema.json", "valid": true, "document": "regional"},
     {"name": "binary decoded length mismatch", "schema": "regional.schema.json", "valid": false, "document": "regional", "set": {"/parcellations/0/values/resource/codec/decoded_bytes": 8}},

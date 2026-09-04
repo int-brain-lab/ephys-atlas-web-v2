@@ -4,29 +4,64 @@
   "title": "Public dataset catalog v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "datasets"],
+  "required": ["schema_version", "default_project", "projects", "datasets"],
   "properties": {
     "schema_version": {"const": "1.0"},
+    "default_project": {"type": "string", "minLength": 1},
+    "projects": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["project_id", "title", "dataset_ids", "default_dataset", "editions"],
+        "properties": {
+          "project_id": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1},
+          "description": {"type": "string"},
+          "dataset_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "common.schema.json#/$defs/datasetId"}},
+          "default_dataset": {"$ref": "common.schema.json#/$defs/datasetId"},
+          "default_edition": {"type": "string", "minLength": 1},
+          "editions": {
+            "type": "array",
+            "items": {
+              "type": "object", "additionalProperties": false,
+              "required": ["edition_id", "label", "dataset_releases"],
+              "properties": {
+                "edition_id": {"type": "string", "minLength": 1},
+                "label": {"type": "string", "minLength": 1},
+                "description": {"type": "string"},
+                "dataset_releases": {
+                  "type": "array", "minItems": 1,
+                  "items": {"type": "object", "additionalProperties": false, "required": ["dataset_id", "release_id"], "properties": {"dataset_id": {"$ref": "common.schema.json#/$defs/datasetId"}, "release_id": {"type": "string", "minLength": 1}}}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "datasets": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["dataset_id", "title", "releases"],
+        "required": ["dataset_id", "title", "default_release", "releases"],
         "properties": {
           "dataset_id": {"$ref": "common.schema.json#/$defs/datasetId"},
           "title": {"type": "string", "minLength": 1},
           "description": {"type": "string"},
-          "default_release": {"type": "string"},
+          "default_release": {"type": "string", "minLength": 1},
           "releases": {
             "type": "array",
             "minItems": 1,
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["release_id", "manifest"],
+              "required": ["release_id", "label", "manifest"],
               "properties": {
                 "release_id": {"type": "string", "minLength": 1},
+                "label": {"type": "string", "minLength": 1},
+                "status": {"enum": ["legacy", "development"]},
+                "description": {"type": "string"},
                 "manifest": {"$ref": "common.schema.json#/$defs/encodedResource"}
               }
             }

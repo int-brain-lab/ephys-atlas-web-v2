@@ -560,12 +560,53 @@ def _mesh_pack_semantics(document: dict[str, Any]) -> None:
 def _document_semantics(document: dict[str, Any], schema_name: str) -> None:
     _resource_semantics(document)
     if schema_name == "catalog.schema.json":
-        _unique([item["dataset_id"] for item in document["datasets"]], "catalog dataset id")
-        for dataset in document["datasets"]:
+        datasets = document["datasets"]
+        _unique([item["dataset_id"] for item in datasets], "catalog dataset id")
+        dataset_by_id = {item["dataset_id"]: item for item in datasets}
+        if "local" in dataset_by_id:
+            _fail("reserved local dataset id cannot be published")
+        for dataset in datasets:
             release_ids = [item["release_id"] for item in dataset["releases"]]
             _unique(release_ids, "catalog release id")
-            if dataset.get("default_release") not in (None, *release_ids):
+            if dataset["default_release"] not in release_ids:
                 _fail("catalog default release is not present in releases")
+            for release in dataset["releases"]:
+                if release["label"] == release["release_id"]:
+                    _fail("catalog release label must differ from immutable release id")
+
+        projects = document["projects"]
+        _unique([project["project_id"] for project in projects], "catalog project id")
+        project_by_id = {project["project_id"]: project for project in projects}
+        if document["default_project"] not in project_by_id:
+            _fail("catalog default project is not present in projects")
+        memberships: dict[str, list[str]] = {dataset_id: [] for dataset_id in dataset_by_id}
+        for project in projects:
+            project_id = project["project_id"]
+            for dataset_id in project["dataset_ids"]:
+                if dataset_id not in dataset_by_id:
+                    _fail(f"catalog project {project_id} references unknown dataset {dataset_id}")
+                memberships[dataset_id].append(project_id)
+            if project["default_dataset"] not in project["dataset_ids"]:
+                _fail(f"catalog project {project_id} default dataset is outside project")
+            editions = project["editions"]
+            _unique([edition["edition_id"] for edition in editions], "catalog edition id")
+            edition_ids = {edition["edition_id"] for edition in editions}
+            if project.get("default_edition") is not None and project["default_edition"] not in edition_ids:
+                _fail(f"catalog project {project_id} default edition is not present")
+            project_dataset_ids = set(project["dataset_ids"])
+            for edition in editions:
+                mapped_ids = [mapping["dataset_id"] for mapping in edition["dataset_releases"]]
+                _unique(mapped_ids, "catalog edition dataset mapping")
+                for mapping in edition["dataset_releases"]:
+                    dataset_id = mapping["dataset_id"]
+                    if dataset_id not in project_dataset_ids:
+                        _fail(f"catalog edition {edition['edition_id']} references dataset outside project")
+                    release_ids = {release["release_id"] for release in dataset_by_id[dataset_id]["releases"]}
+                    if mapping["release_id"] not in release_ids:
+                        _fail(f"catalog edition {edition['edition_id']} references unknown release")
+        for dataset_id, owners in memberships.items():
+            if len(owners) != 1:
+                _fail(f"catalog dataset {dataset_id} must belong to exactly one project")
     elif schema_name == "dataset.schema.json":
         _unique([item["id"] for item in document["parcellations"]], "parcellation id")
         _unique([item["id"] for item in document["features"]], "feature id")
