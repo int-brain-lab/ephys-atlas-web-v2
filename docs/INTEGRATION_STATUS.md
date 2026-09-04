@@ -2,7 +2,7 @@
 
 Status: active pre-launch capability matrix.
 
-Last reviewed: 2026-09-04 on `main` after the D056/D061 catalog/compiler cutover.
+Last reviewed: 2026-09-04 on `main` after the D056/D061 resolved-navigation cutover.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -177,8 +177,11 @@ edition/custom/local browser context, catalog-first exact URL resolution, and
 a staged narrow Data chooser. The schema-v1 catalog/compiler cutover is
 implemented across canonical and bundled schemas, Python and TypeScript
 validators, publishing, synthetic Vite production, and distinct public/local
-browser composition. The current application state and top bar remain flat, so
-the resolved-navigation, desktop/tablet, and narrow/accessibility slices remain.
+browser composition. Browser startup, Back/Forward, local inventory refresh,
+and URL-v4 canonicalization now resolve that catalog to exact edition/custom/
+local context before immutable release loading; unresolved published releases
+are rejected. The current top bar remains flat, so the desktop/tablet and
+narrow/accessibility UI slices remain.
 Generic machinery may use synthetic edition values; Q9 blocks only the real paper
 edition identity, scoped release mapping, defaults, aliases, and freeze
 process. The binding product contract is

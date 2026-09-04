@@ -2,6 +2,7 @@ import type { AppState, ViewState } from './types.js';
 
 export const DEFAULT_VIEW_STATE: ViewState = {
   urlVersion: 4,
+  navigation: { kind: 'custom', projectId: 'ephys-atlas' },
   dataset: {
     datasetId: 'ephys_atlas_channels',
     releaseId: null,
@@ -45,7 +46,11 @@ export const DEFAULT_APP_STATE: AppState = {
   view: DEFAULT_VIEW_STATE,
   runtime: {
     catalogStatus: 'idle',
+    navigationStatus: 'idle',
     datasetStatus: 'idle',
+    catalogError: null,
+    navigationError: null,
+    datasetError: null,
     error: null,
   },
 };

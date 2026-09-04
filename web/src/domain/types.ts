@@ -57,6 +57,25 @@ export interface DatasetRef {
   releaseId: string | null;
 }
 
+/** A catalog-resolved immutable dataset selection safe to pass to data loaders. */
+export interface ExactDatasetRef extends DatasetRef {
+  releaseId: string;
+}
+
+export type DatasetNavigationContext =
+  | { readonly kind: 'edition'; readonly projectId: string; readonly editionId: string }
+  | { readonly kind: 'custom'; readonly projectId: string; readonly baseEditionId?: string }
+  | { readonly kind: 'local' };
+
+export interface DatasetNavigationRequest {
+  readonly context?: DatasetNavigationContext['kind'];
+  readonly projectId?: string;
+  readonly editionId?: string;
+  readonly baseEditionId?: string;
+  readonly datasetId?: string;
+  readonly releaseId?: string;
+}
+
 export type ColorRange =
   | { mode: 'auto' }
   | { mode: 'fixed'; min: number; max: number };
@@ -80,6 +99,7 @@ export type EffectiveColoringState = Omit<ColoringState, 'scale'> & {
 
 export interface ViewState {
   urlVersion: 4;
+  navigation: DatasetNavigationContext;
   dataset: DatasetRef;
   featureId: string | null;
   representation: RepresentationKind;
@@ -96,7 +116,12 @@ export interface ViewState {
 
 export interface RuntimeState {
   catalogStatus: 'idle' | 'loading' | 'ready' | 'error';
+  navigationStatus: 'idle' | 'ready' | 'error';
   datasetStatus: 'idle' | 'loading' | 'ready' | 'error';
+  catalogError: string | null;
+  navigationError: string | null;
+  datasetError: string | null;
+  /** Compatibility summary for the current shell; domain-specific fields are authoritative. */
   error: string | null;
 }
 

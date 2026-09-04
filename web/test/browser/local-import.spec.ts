@@ -276,7 +276,7 @@ test('active local deletion falls back before a failing catalog refresh', async 
       recorded: Object.prototype.hasOwnProperty.call(state, '__datasetAtCatalogFailure'),
       dataset: state.__datasetAtCatalogFailure,
     };
-  })).toEqual({ recorded: true, dataset: null });
+  })).toEqual({ recorded: true, dataset: 'golden_fixture' });
   expect(await page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open('ibl-ephys-atlas-schema-v1-local', 1);

@@ -16,17 +16,23 @@ import type {
   WorkspaceViewId,
   BrainCameraPose,
 } from './types.js';
+import type { DatasetNavigationContext } from './types.js';
 
 export type AppAction =
   | ViewAction
   | { type: 'runtime/catalog'; status: 'idle' | 'loading' | 'ready' | 'error'; error?: string | null }
+  | { type: 'runtime/navigation'; status: 'idle' | 'ready' | 'error'; error?: string | null }
   | { type: 'runtime/dataset'; status: 'idle' | 'loading' | 'ready' | 'error'; error?: string | null };
 
 export type UrlHistoryMode = 'push' | 'replace' | 'none';
 
 type ViewActionPayload =
   | { type: 'view/hydrate'; view: ViewState }
-  | { type: 'dataset/set'; dataset: DatasetRef }
+  | { type: 'navigation/project'; dataset: DatasetRef; navigation: DatasetNavigationContext }
+  | { type: 'navigation/edition'; dataset: DatasetRef; navigation: DatasetNavigationContext }
+  | { type: 'navigation/dataset'; dataset: DatasetRef; navigation: DatasetNavigationContext }
+  | { type: 'navigation/release'; dataset: DatasetRef; navigation: DatasetNavigationContext }
+  | { type: 'navigation/local'; dataset: DatasetRef; navigation: DatasetNavigationContext }
   | {
     type: 'context/reconcile';
     featureId: string;
@@ -63,4 +69,9 @@ export type ViewAction = ViewActionPayload & {
 
 export function isViewAction(action: AppAction): action is ViewAction {
   return !action.type.startsWith('runtime/');
+}
+
+export function isDatasetNavigationAction(action: AppAction): action is Extract<ViewAction,
+{ type: `navigation/${string}` }> {
+  return action.type.startsWith('navigation/');
 }

@@ -3,6 +3,11 @@ import { resolvePresentationScale } from './application/presentation-scale.js';
 import { resolvePresentationColormap } from './application/presentation-colormap.js';
 import { effectiveScalarColorRange } from './application/scalar-colormap.js';
 import {
+  resolveDatasetNavigation,
+  resolveDatasetNavigationRequest,
+  switchNavigationDataset,
+} from './application/dataset-navigation.js';
+import {
   regionalPresentationsEqual,
   resolveRegionalPresentation,
   retainRegionalPresentationWhileMappingLoads,
@@ -14,9 +19,12 @@ import { LocalDatasetSource } from './data/local-source.js';
 import type { PreparedLocalArchive, LocalArchivePreview } from './data/local-archive.js';
 import { DatasetRepository } from './data/repository.js';
 import { DEFAULT_APP_STATE, DEFAULT_VIEW_STATE } from './domain/defaults.js';
-import { deriveRegionalSliceIndices } from './domain/navigation.js';
+import { isDatasetNavigationAction } from './domain/actions.js';
+import {
+  deriveRegionalSliceIndices,
+} from './domain/navigation.js';
 import { createAppStore, type AppStore } from './domain/store.js';
-import type { SliceAxis, ViewState } from './domain/types.js';
+import type { DatasetRef, ExactDatasetRef, SliceAxis, ViewState } from './domain/types.js';
 import type { DisplaySliceInventory } from './rendering/display-slice-inventory.js';
 import type { BrainScene3DViewportFactory } from './rendering/3d/brain-scene-viewport.js';
 import {
@@ -31,7 +39,7 @@ import { AppShell, type ShellModel } from './ui/app-shell.js';
 import { RegionalPanelController } from './ui/regional-panel.js';
 import { buildSelectedComparisonExport } from './ui/regional/comparison-export.js';
 import { buildRegionTooltipModel } from './ui/regional/model.js';
-import { UrlStateController } from './url/url-state.js';
+import { parseNavigationRequest, UrlStateController } from './url/url-state.js';
 
 export interface AppOptions {
   catalogUrl?: string;
@@ -39,6 +47,11 @@ export interface AppOptions {
   defaultView?: ViewState;
   viewportFactory?: ProjectionViewportFactory;
   scene3dFactory?: BrainScene3DViewportFactory;
+}
+
+function requireExactDataset(ref: DatasetRef): ExactDatasetRef {
+  if (!ref.releaseId) throw new Error(`An exact release is required for dataset ${ref.datasetId}`);
+  return { datasetId: ref.datasetId, releaseId: ref.releaseId };
 }
 
 /**
@@ -71,7 +84,7 @@ export class AtlasApp {
     this.urlController = new UrlStateController(this.store, window, defaultView);
     this.viewportFactory = options.viewportFactory ?? new NullProjectionViewportFactory();
     this.shell = new AppShell(root, {
-      setDataset: (ref) => this.store.dispatch({ type: 'dataset/set', dataset: ref, history: 'push' }),
+      setDataset: (ref) => this.selectDataset(ref),
       setFeature: (featureId, representation) => this.store.dispatch({
         type: 'feature/set',
         featureId,
@@ -149,14 +162,28 @@ export class AtlasApp {
   }
 
   async start(): Promise<void> {
-    this.urlController.start();
+    this.render();
+    this.loadRendererInventory();
+    this.loadAtlasRegions();
+    let catalog;
+    try {
+      catalog = await this.session.loadCatalog({
+        allowLocalOnly: parseNavigationRequest(window.location.search).context === 'local',
+      });
+      this.urlController.start(catalog);
+    } catch {
+      // Catalog and navigation failures are already retained in their distinct
+      // runtime domains. Never continue into immutable release loading.
+      this.render();
+      return;
+    }
     this.store.subscribe((state, action) => {
-      if (action.type === 'dataset/set' || action.type === 'view/hydrate' || action.type === 'parcellation/set') {
+      if (isDatasetNavigationAction(action) || action.type === 'view/hydrate' || action.type === 'parcellation/set') {
         this.hoveredRegionId = null;
       }
       this.render();
-      if (action.type === 'dataset/set' || action.type === 'view/hydrate') {
-        void this.session.loadDataset(state.view.dataset);
+      if (isDatasetNavigationAction(action) || action.type === 'view/hydrate') {
+        void this.session.loadDataset(requireExactDataset(state.view.dataset));
       }
       if (action.type === 'feature/set') void this.session.loadCurrentFeature(true);
       if (action.type === 'parcellation/set') {
@@ -168,11 +195,7 @@ export class AtlasApp {
         }
       }
     });
-    this.render();
-    this.loadRendererInventory();
-    this.loadAtlasRegions();
-    await this.session.loadCatalog();
-    await this.session.loadDataset(this.store.getState().view.dataset);
+    await this.session.loadDataset(requireExactDataset(this.store.getState().view.dataset));
   }
 
   stop(): void {
@@ -314,6 +337,71 @@ export class AtlasApp {
     this.store.dispatch({ type: 'slice/set', axis, index: clamped });
   }
 
+  private selectDataset(ref: DatasetRef): void {
+    const catalog = this.session.snapshot().catalog;
+    if (!catalog || !ref.releaseId) {
+      this.reportRuntimeError(new Error('Dataset selection requires the loaded catalog and an exact release'));
+      return;
+    }
+    try {
+      const currentView = this.store.getState().view;
+      const targetDataset = catalog.datasets.find(({ id }) => id === ref.datasetId);
+      if (!targetDataset) throw new Error(`Unknown dataset ${ref.datasetId}`);
+      let resolved;
+      if (ref.datasetId === 'local') {
+        resolved = resolveDatasetNavigation(catalog, 'local', ref.releaseId, { kind: 'local' });
+      } else if (currentView.navigation.kind === 'edition') {
+        const editionId = currentView.navigation.editionId;
+        const current = resolveDatasetNavigation(
+          catalog,
+          currentView.dataset.datasetId,
+          currentView.dataset.releaseId ?? undefined,
+          currentView.navigation,
+        );
+        const mapped = targetDataset.projectId === currentView.navigation.projectId
+          ? current.project?.editions.find(({ id }) => id === editionId)
+          : undefined;
+        const mappedRelease = mapped?.datasetReleases.get(ref.datasetId);
+        resolved = mappedRelease === ref.releaseId
+          ? switchNavigationDataset(catalog, current, ref.datasetId)
+          : resolveDatasetNavigationRequest(catalog, {
+            context: 'custom', projectId: targetDataset.projectId,
+            ...(targetDataset.projectId === currentView.navigation.projectId
+              ? { baseEditionId: currentView.navigation.editionId }
+              : {}),
+            datasetId: ref.datasetId, releaseId: ref.releaseId,
+          });
+      } else {
+        resolved = resolveDatasetNavigationRequest(catalog, {
+          context: 'custom',
+          projectId: targetDataset.projectId,
+          ...(currentView.navigation.kind === 'custom'
+            && targetDataset.projectId === currentView.navigation.projectId
+            && currentView.navigation.baseEditionId
+            ? { baseEditionId: currentView.navigation.baseEditionId }
+            : {}),
+          datasetId: ref.datasetId,
+          releaseId: ref.releaseId,
+        });
+      }
+      this.store.dispatch({
+        type: resolved.context.kind === 'local'
+          ? 'navigation/local'
+          : resolved.context.kind === 'edition'
+            ? 'navigation/dataset'
+            : 'navigation/release',
+        navigation: resolved.context,
+        dataset: { datasetId: resolved.dataset.id, releaseId: resolved.releaseId },
+        history: 'push',
+      });
+    } catch (error) {
+      this.store.dispatch({
+        type: 'runtime/navigation', status: 'error',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
   private stepSlice(axis: SliceAxis, delta: number): void {
     const view = this.store.getState().view;
     const inventory = view.representation === 'regional' ? this.displaySliceInventories?.[axis] : undefined;
@@ -447,9 +535,10 @@ export class AtlasApp {
     const manifest = await this.localSource.admitPrepared(prepared);
     this.pendingLocalArchive = null;
     this.localImportAbort = null;
-    await this.session.loadCatalog();
+    this.urlController.setCatalog(await this.session.loadCatalog());
     this.store.dispatch({
-      type: 'dataset/set',
+      type: 'navigation/local',
+      navigation: { kind: 'local' },
       dataset: { datasetId: 'local', releaseId: manifest.dataset.release },
       history: 'push',
     });
@@ -478,12 +567,13 @@ export class AtlasApp {
     await this.localSource.deleteRelease(selector);
     if (deletingActive && published) {
       this.store.dispatch({
-        type: 'dataset/set',
+        type: 'navigation/release',
+        navigation: { kind: 'custom', projectId: published.projectId },
         dataset: { datasetId: published.id, releaseId: published.defaultRelease },
         history: 'replace',
       });
     }
-    await this.session.loadCatalog();
+    this.urlController.setCatalog(await this.session.loadCatalog());
   }
 
   private async copyCurrentUrl(): Promise<void> {

@@ -14,8 +14,16 @@ export class DatasetRepository {
     private readonly local: DatasetSource,
   ) {}
 
-  async loadCatalog(): Promise<DatasetCatalog> {
-    const published = await this.published.loadCatalog();
+  async loadCatalog(options: { allowLocalOnly?: boolean } = {}): Promise<DatasetCatalog> {
+    let published: DatasetCatalog;
+    try {
+      published = await this.published.loadCatalog();
+    } catch (error) {
+      if (!options.allowLocalOnly) throw error;
+      const localOnly = await this.local.loadCatalog();
+      if (!localOnly.datasets.length) throw error;
+      return localOnly;
+    }
     let local: DatasetCatalog;
     try {
       local = await this.local.loadCatalog();

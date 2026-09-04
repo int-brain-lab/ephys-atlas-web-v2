@@ -24,6 +24,7 @@
     "src/data/atlas-regions.ts",
     "src/data/region-hierarchy.ts",
     "src/data/repository.ts",
+    "src/data/http-source.ts",
     "src/data/prefetch.ts",
     "src/data/cache.ts",
     "src/rendering/chunked-volume-source.ts",

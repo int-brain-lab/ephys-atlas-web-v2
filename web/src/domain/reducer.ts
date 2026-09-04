@@ -18,11 +18,16 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'view/hydrate':
       return { ...state, view: action.view };
-    case 'dataset/set':
+    case 'navigation/project':
+    case 'navigation/edition':
+    case 'navigation/dataset':
+    case 'navigation/release':
+    case 'navigation/local':
       return {
         ...state,
         view: {
           ...state.view,
+          navigation: action.navigation,
           dataset: action.dataset,
           featureId: null,
           selection: [],
@@ -144,22 +149,43 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         },
       };
     case 'runtime/catalog':
-      return {
-        ...state,
-        runtime: {
-          ...state.runtime,
-          catalogStatus: action.status,
-          error: action.error ?? (action.status === 'error' ? state.runtime.error : null),
-        },
-      };
+      {
+        const error = action.error ?? (action.status === 'error' ? state.runtime.catalogError : null);
+        return {
+          ...state,
+          runtime: {
+            ...state.runtime,
+            catalogStatus: action.status,
+            catalogError: error,
+            error,
+          },
+        };
+      }
+    case 'runtime/navigation':
+      {
+        const error = action.error ?? (action.status === 'error' ? state.runtime.navigationError : null);
+        return {
+          ...state,
+          runtime: {
+            ...state.runtime,
+            navigationStatus: action.status,
+            navigationError: error,
+            error,
+          },
+        };
+      }
     case 'runtime/dataset':
-      return {
-        ...state,
-        runtime: {
-          ...state.runtime,
-          datasetStatus: action.status,
-          error: action.error ?? (action.status === 'error' ? state.runtime.error : null),
-        },
-      };
+      {
+        const error = action.error ?? (action.status === 'error' ? state.runtime.datasetError : null);
+        return {
+          ...state,
+          runtime: {
+            ...state.runtime,
+            datasetStatus: action.status,
+            datasetError: error,
+            error,
+          },
+        };
+      }
   }
 }

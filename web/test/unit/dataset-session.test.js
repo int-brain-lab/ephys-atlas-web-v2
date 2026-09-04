@@ -27,6 +27,23 @@ function deferred() {
   return { promise, resolve };
 }
 
+test('dataset sessions reject unresolved releases before repository loading', async () => {
+  let loads = 0;
+  const repository = {
+    async loadCatalog() { throw new Error('unused'); },
+    async loadManifest() { loads += 1; throw new Error('must not load'); },
+    async loadRegions() { return []; },
+    async loadFeature() { throw new Error('unused'); },
+    async prefetchFeature() {},
+  };
+  const session = new DatasetSession(repository, createAppStore(DEFAULT_APP_STATE), () => {});
+  await assert.rejects(
+    session.loadDataset({ datasetId: 'custom_dataset', releaseId: null }),
+    /exact release is required/,
+  );
+  assert.equal(loads, 0);
+});
+
 test('dataset session owns manifest/feature lifecycle outside the UI', async () => {
   const store = createAppStore({ ...DEFAULT_APP_STATE, view: {
     ...DEFAULT_APP_STATE.view,
@@ -67,7 +84,10 @@ test('stale dataset completions cannot replace the active dataset', async () => 
   };
   const session = new DatasetSession(repository, store, () => {});
   const slow = session.loadDataset({ datasetId: 'slow', releaseId: 'r1' });
-  store.dispatch({ type: 'dataset/set', dataset: { datasetId: 'fast', releaseId: 'r1' } });
+  store.dispatch({
+    type: 'navigation/release', navigation: { kind: 'custom', projectId: 'test' },
+    dataset: { datasetId: 'fast', releaseId: 'r1' },
+  });
   await session.loadDataset({ datasetId: 'fast', releaseId: 'r1' });
   first.resolve(manifest('slow'));
   await slow;

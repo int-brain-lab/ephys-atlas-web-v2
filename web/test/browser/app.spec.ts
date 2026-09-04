@@ -215,7 +215,9 @@ test('unsupported historical URLs reset explicitly to the current canonical stat
   await expect(page.locator('[data-view="sagittal"] .view-frame__coordinate')).toHaveText('ML -0.24 mm');
   await expect(page.locator('[data-view="horizontal"] .view-frame__coordinate')).toHaveText('DV -3.67 mm');
   await expect(page.locator('[data-view="coronal"] [data-slice-asset="projection-pack-v1"]')).toHaveAttribute('data-asset-index', '660');
-  await expect.poll(() => new URL(page.url()).search).toBe('?v=4');
+  await expect.poll(() => new URL(page.url()).search).toBe(
+    '?v=4&dataset=golden_fixture&release=golden-v1&project=synthetic-development&context=custom',
+  );
 });
 
 test('native bilateral anatomy exposes every scientific range endpoint', async ({ page }) => {

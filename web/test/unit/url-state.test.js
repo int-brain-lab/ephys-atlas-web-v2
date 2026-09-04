@@ -1,7 +1,24 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DEFAULT_VIEW_STATE } from '../../.test-dist/domain/defaults.js';
-import { parseViewState, serializeViewState } from '../../.test-dist/url/url-state.js';
+import {
+  parseNavigationRequest,
+  parseViewState,
+  serializeNavigationRequest,
+  serializeViewState,
+} from '../../.test-dist/url/url-state.js';
+import { resolveDatasetNavigation } from '../../.test-dist/application/dataset-navigation.js';
+
+const navigationCatalog = {
+  schemaVersion: '1.0', defaultProject: 'atlas',
+  projects: [{ id: 'atlas', title: 'Atlas', datasetIds: ['d'], defaultDataset: 'd', defaultEdition: 'paper', editions: [
+    { id: 'paper', label: 'Paper', datasetReleases: new Map([['d', 'r1']]) },
+  ] }],
+  datasets: [{ id: 'd', source: 'published', projectId: 'atlas', title: 'D', defaultRelease: 'r2', releases: [
+    { id: 'r1', label: 'R1', manifest: 'r1.json', immutable: true },
+    { id: 'r2', label: 'R2', manifest: 'r2.json', immutable: true },
+  ] }],
+};
 
 test('URL state round-trips common shareable state', () => {
   const view = {
@@ -95,7 +112,10 @@ test('development defaults initialize parsing while explicit shared state overri
     featureId: 'rms_ap.denoised',
   };
   assert.deepEqual(parseViewState('', developmentDefaults), developmentDefaults);
-  assert.equal(serializeViewState(developmentDefaults, developmentDefaults), 'v=4');
+  assert.equal(
+    serializeViewState(developmentDefaults, developmentDefaults),
+    'v=4&dataset=ephys_atlas_channels&release=2026_W32&project=ephys-atlas&context=custom',
+  );
   const explicit = parseViewState('?v=4&release=other&feature=polarity.raw', developmentDefaults);
   assert.equal(explicit.dataset.releaseId, 'other');
   assert.equal(explicit.featureId, 'polarity.raw');
@@ -182,4 +202,31 @@ test('default workspace opens Top and uses the approved 3-D camera pose without 
     up: [0.11, -0.091, 0.99],
   });
   assert.equal(serializeViewState(parsed), 'v=4');
+});
+
+test('navigation requests preserve explicit context and old exact links are custom', () => {
+  assert.deepEqual(parseNavigationRequest('?v=4&dataset=d&release=r2'), {
+    context: 'custom', datasetId: 'd', releaseId: 'r2',
+  });
+  assert.deepEqual(parseNavigationRequest('?v=4&project=atlas&edition=paper&dataset=d'), {
+    context: 'edition', projectId: 'atlas', editionId: 'paper', datasetId: 'd',
+  });
+  assert.deepEqual(parseNavigationRequest('?v=4&context=custom&project=atlas&base_edition=paper&dataset=d&release=r2'), {
+    context: 'custom', projectId: 'atlas', baseEditionId: 'paper', datasetId: 'd', releaseId: 'r2',
+  });
+  assert.deepEqual(parseNavigationRequest('?v=4&context=local&dataset=local&release=imported'), {
+    context: 'local', datasetId: 'local', releaseId: 'imported',
+  });
+  assert.deepEqual(parseNavigationRequest('?v=4&context=local&project=atlas&edition=paper&dataset=local'), {
+    context: 'local', projectId: 'atlas', editionId: 'paper', datasetId: 'local',
+  });
+});
+
+test('resolved navigation serializes exact public edition/custom and local identities', () => {
+  const edition = resolveDatasetNavigation(navigationCatalog, 'd', undefined, { kind: 'edition', projectId: 'atlas', editionId: 'paper' });
+  assert.equal(serializeNavigationRequest(edition), 'v=4&dataset=d&release=r1&project=atlas&edition=paper');
+  const custom = resolveDatasetNavigation(navigationCatalog, 'd', 'r2', { kind: 'custom', projectId: 'atlas', baseEditionId: 'paper' });
+  assert.equal(serializeNavigationRequest(custom), 'v=4&dataset=d&release=r2&project=atlas&context=custom&base_edition=paper');
+  const local = { context: { kind: 'local' }, dataset: { id: 'local' }, releaseId: 'r1' };
+  assert.equal(serializeNavigationRequest(local), 'v=4&dataset=local&release=r1&context=local');
 });

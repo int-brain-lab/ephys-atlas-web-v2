@@ -4,6 +4,20 @@ import { DEFAULT_APP_STATE } from '../../.test-dist/domain/defaults.js';
 import { createAppStore } from '../../.test-dist/domain/store.js';
 import { UrlStateController } from '../../.test-dist/url/url-state.js';
 
+const release = (id) => ({ id, label: id, manifest: `${id}.json`, immutable: true });
+const catalog = {
+  schemaVersion: '1.0', defaultProject: 'ephys-atlas',
+  projects: [{
+    id: 'ephys-atlas', title: 'Atlas',
+    datasetIds: ['ephys_atlas_channels', 'brainwide_map'],
+    defaultDataset: 'ephys_atlas_channels', editions: [],
+  }],
+  datasets: [
+    { id: 'ephys_atlas_channels', source: 'published', projectId: 'ephys-atlas', title: 'Channels', defaultRelease: 'r1', releases: [release('r1')] },
+    { id: 'brainwide_map', source: 'published', projectId: 'ephys-atlas', title: 'BWM', defaultRelease: 'paper-2026-09', releases: [release('paper-2026-09')] },
+  ],
+};
+
 class FakeWindow {
   constructor(href = 'https://atlas.test/') {
     this.origin = new URL(href).origin;
@@ -47,7 +61,7 @@ function setup(href) {
   const store = createAppStore(DEFAULT_APP_STATE);
   const win = new FakeWindow(href);
   const controller = new UrlStateController(store, win);
-  controller.start();
+  controller.start(catalog);
   return { store, win, controller };
 }
 
@@ -74,7 +88,8 @@ test('derived dataset normalization replaces the user-created checkpoint', () =>
   win.writes.length = 0;
 
   store.dispatch({
-    type: 'dataset/set',
+    type: 'navigation/release',
+    navigation: { kind: 'custom', projectId: 'ephys-atlas' },
     dataset: { datasetId: 'brainwide_map', releaseId: 'paper-2026-09' },
     history: 'push',
   });
@@ -110,11 +125,27 @@ test('unsupported URLs reset canonically and current popstate hydration does not
   const { store, win, controller } = setup('https://atlas.test/?v=2&slices=264,220,160');
   assert.equal(win.writes.length, 1);
   assert.equal(win.writes[0].mode, 'replace');
-  assert.equal(win.location.search, '?v=4');
+  assert.equal(win.location.search, '?v=4&dataset=ephys_atlas_channels&release=r1&project=ephys-atlas&context=custom');
 
   win.writes.length = 0;
   win.dispatchPopState('/?v=4&parcel=beryl');
   assert.equal(store.getState().view.parcellation, 'beryl');
+  assert.equal(win.writes.length, 1);
+  assert.equal(win.writes[0].mode, 'replace');
+  controller.stop();
+});
+
+test('invalid exact popstate requests remain visible without replacing resolved state', () => {
+  const { store, win, controller } = setup('https://atlas.test/');
+  const before = store.getState().view.dataset;
+  win.writes.length = 0;
+
+  win.dispatchPopState('/?v=4&project=ephys-atlas&context=custom&dataset=brainwide_map&release=missing');
+
+  assert.deepEqual(store.getState().view.dataset, before);
+  assert.equal(store.getState().runtime.navigationStatus, 'error');
+  assert.match(store.getState().runtime.navigationError, /Unknown release missing/);
+  assert.match(win.location.search, /release=missing/);
   assert.equal(win.writes.length, 0);
   controller.stop();
 });

@@ -11,6 +11,7 @@ import { WORKSPACE_VIEW_IDS } from '../domain/projections.js';
 import { normalizeBrainCameraPose } from '../domain/scene3d.js';
 import { isColormapId } from '../application/colormap-palettes.js';
 import type { AppStore } from '../domain/store.js';
+import type { DatasetCatalog } from '../data/contracts.js';
 import type {
   ColorRange,
   ColorStatisticId,
@@ -23,6 +24,11 @@ import type {
   WorkspaceViewId,
   BrainCameraPose,
 } from '../domain/types.js';
+import type {
+  DatasetNavigationRequest,
+} from '../domain/types.js';
+import type { ResolvedDatasetNavigation } from '../application/dataset-navigation.js';
+import { resolveDatasetNavigationRequest } from '../application/dataset-navigation.js';
 
 const URL_VERSION = 4;
 const NAVIGATION_URL_DEBOUNCE_MS = 120;
@@ -31,6 +37,61 @@ const REPRESENTATIONS = new Set<RepresentationKind>(['regional', 'volume']);
 const COLOR_STATISTICS = new Set<ColorStatisticId>(['mean', 'median', 'std', 'min', 'max']);
 const REGION_ORDERS = new Set<RegionOrder>(['anatomy', 'value-asc', 'value-desc']);
 const SECONDARY_TABS = new Set<SecondaryTabId>(['summary', 'top', 'swanson', 'brain-3d']);
+
+/** Raw URL navigation intent. It is deliberately separate from ViewState: the
+ * catalog is required before these identifiers can be resolved. */
+export function parseNavigationRequest(search: string): DatasetNavigationRequest {
+  const params = new URLSearchParams(search);
+  const version = Number(params.get('v'));
+  if (params.size > 0 && version !== URL_VERSION) return {};
+  const context = params.get('context');
+  const editionId = params.get('edition');
+  const baseEditionId = params.get('base_edition');
+  const projectId = params.get('project') ?? undefined;
+  const datasetId = params.get('dataset') ?? undefined;
+  const releaseId = params.get('release') ?? undefined;
+  if (context === 'local') {
+    return {
+      context: 'local',
+      ...(projectId ? { projectId } : {}),
+      ...(editionId ? { editionId } : {}),
+      ...(baseEditionId ? { baseEditionId } : {}),
+      ...(datasetId ? { datasetId } : {}),
+      ...(releaseId ? { releaseId } : {}),
+    };
+  }
+  if (context === 'edition' || editionId) {
+    return {
+      context: 'edition', ...(editionId ? { editionId } : {}),
+      ...(projectId ? { projectId } : {}), ...(datasetId ? { datasetId } : {}), ...(releaseId ? { releaseId } : {}),
+    };
+  }
+  const explicitCustom = context === 'custom' || Boolean(datasetId || releaseId || baseEditionId);
+  return {
+    ...(explicitCustom ? { context: 'custom' as const } : {}),
+    ...(projectId ? { projectId } : {}), ...(baseEditionId ? { baseEditionId } : {}),
+    ...(datasetId ? { datasetId } : {}), ...(releaseId ? { releaseId } : {}),
+  };
+}
+
+/** Serialize the exact resolved navigation identity, without aliases. */
+export function serializeNavigationRequest(navigation: ResolvedDatasetNavigation): string {
+  const params = new URLSearchParams();
+  params.set('v', String(URL_VERSION));
+  params.set('dataset', navigation.dataset.id);
+  params.set('release', navigation.releaseId);
+  if (navigation.context.kind === 'local') {
+    params.set('context', 'local');
+  } else {
+    params.set('project', navigation.context.projectId);
+    if (navigation.context.kind === 'edition') params.set('edition', navigation.context.editionId);
+    else {
+      params.set('context', 'custom');
+      if (navigation.context.baseEditionId) params.set('base_edition', navigation.context.baseEditionId);
+    }
+  }
+  return params.toString();
+}
 
 function finiteNumber(value: string | null, fallback: number): number {
   if (value === null || value.trim() === '') return fallback;
@@ -130,6 +191,7 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
 
   return {
     urlVersion: URL_VERSION,
+    navigation: defaults.navigation,
     dataset: { datasetId, releaseId },
     featureId,
     representation,
@@ -178,9 +240,19 @@ function sameCamera(left: BrainCameraPose | null, right: BrainCameraPose | null)
 export function serializeViewState(view: ViewState, defaults: ViewState = DEFAULT_VIEW_STATE): string {
   const params = new URLSearchParams();
   params.set('v', String(URL_VERSION));
-  if (view.dataset.datasetId !== defaults.dataset.datasetId) params.set('dataset', view.dataset.datasetId);
-  if (view.dataset.releaseId && (view.dataset.datasetId !== defaults.dataset.datasetId || view.dataset.releaseId !== defaults.dataset.releaseId)) {
+  if (view.dataset.releaseId) {
+    params.set('dataset', view.dataset.datasetId);
     params.set('release', view.dataset.releaseId);
+    if (view.navigation.kind === 'local') {
+      params.set('context', 'local');
+    } else {
+      params.set('project', view.navigation.projectId);
+      if (view.navigation.kind === 'edition') params.set('edition', view.navigation.editionId);
+      else {
+        params.set('context', 'custom');
+        if (view.navigation.baseEditionId) params.set('base_edition', view.navigation.baseEditionId);
+      }
+    }
   }
   if (view.featureId && view.featureId !== defaults.featureId) params.set('feature', view.featureId);
   if (view.representation !== defaults.representation) params.set('repr', view.representation);
@@ -228,6 +300,7 @@ export class UrlStateController {
   private applyingPopState = false;
   private pendingView: ViewState | null = null;
   private urlWriteTimer: ReturnType<typeof setTimeout> | null = null;
+  private catalog: DatasetCatalog | null = null;
 
   constructor(
     private readonly store: AppStore,
@@ -235,9 +308,20 @@ export class UrlStateController {
     private readonly defaults: ViewState = DEFAULT_VIEW_STATE,
   ) {}
 
-  start(): void {
-    const initial = parseViewState(this.win.location.search, this.defaults);
+  start(catalog: DatasetCatalog): void {
+    this.catalog = catalog;
+    let initial: ViewState;
+    try {
+      initial = this.resolveView(this.win.location.search);
+    } catch (error) {
+      this.store.dispatch({
+        type: 'runtime/navigation', status: 'error',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
     this.store.dispatch({ type: 'view/hydrate', view: initial });
+    this.store.dispatch({ type: 'runtime/navigation', status: 'ready' });
     this.writeUrl(initial, 'replace');
 
     this.stopStore = this.store.subscribe((state, action) => {
@@ -265,15 +349,39 @@ export class UrlStateController {
     this.win.removeEventListener('popstate', this.onPopState);
   }
 
+  /** Refresh resolver authority after local inventory composition changes. */
+  setCatalog(catalog: DatasetCatalog): void {
+    this.catalog = catalog;
+  }
+
   private readonly onPopState = (): void => {
     this.cancelScheduledWrite();
     this.applyingPopState = true;
     try {
-      this.store.dispatch({ type: 'view/hydrate', view: parseViewState(this.win.location.search, this.defaults) });
+      const view = this.resolveView(this.win.location.search);
+      this.store.dispatch({ type: 'view/hydrate', view });
+      this.store.dispatch({ type: 'runtime/navigation', status: 'ready' });
+      this.writeUrl(view, 'replace');
+    } catch (error) {
+      this.store.dispatch({
+        type: 'runtime/navigation', status: 'error',
+        error: error instanceof Error ? error.message : String(error),
+      });
     } finally {
       this.applyingPopState = false;
     }
   };
+
+  private resolveView(search: string): ViewState {
+    if (!this.catalog) throw new Error('Dataset catalog is not loaded');
+    const requestedView = parseViewState(search, this.defaults);
+    const resolved = resolveDatasetNavigationRequest(this.catalog, parseNavigationRequest(search));
+    return {
+      ...requestedView,
+      navigation: resolved.context,
+      dataset: { datasetId: resolved.dataset.id, releaseId: resolved.releaseId },
+    };
+  }
 
   private scheduleUrlWrite(view: ViewState): void {
     this.pendingView = view;

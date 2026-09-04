@@ -242,7 +242,8 @@ export class HttpDatasetSource implements DatasetSource {
     const catalog = await this.loadCatalog();
     const entry = catalog.datasets.find((dataset) => dataset.id === ref.datasetId);
     if (!entry) throw new Error(`Dataset not found: ${ref.datasetId}`);
-    const releaseId = ref.releaseId ?? entry.defaultRelease;
+    if (!ref.releaseId) throw new Error(`An exact release is required for published dataset ${ref.datasetId}`);
+    const releaseId = ref.releaseId;
     const release = entry.releases.find((item) => item.id === releaseId);
     if (!release) throw new Error(`Release not found: ${ref.datasetId}@${releaseId}`);
     return { entry, release };

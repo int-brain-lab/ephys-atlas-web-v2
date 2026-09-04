@@ -6,10 +6,10 @@ import type {
 } from '../data/contracts.js';
 import { PrefetchQueue } from '../data/prefetch.js';
 import type { AppStore } from '../domain/store.js';
-import type { DatasetRef, ParcellationId, RepresentationKind } from '../domain/types.js';
+import type { DatasetRef, ExactDatasetRef, ParcellationId, RepresentationKind } from '../domain/types.js';
 
 export interface DatasetRepositoryPort {
-  loadCatalog(): Promise<DatasetCatalog>;
+  loadCatalog(options?: { allowLocalOnly?: boolean }): Promise<DatasetCatalog>;
   loadManifest(ref: DatasetRef): Promise<DatasetManifest>;
   loadRegions(ref: DatasetRef, parcellation: ParcellationId): Promise<readonly RegionMetadata[]>;
   loadFeature(
@@ -59,18 +59,21 @@ export class DatasetSession {
     };
   }
 
-  async loadCatalog(): Promise<void> {
+  async loadCatalog(options: { allowLocalOnly?: boolean } = {}): Promise<DatasetCatalog> {
     this.store.dispatch({ type: 'runtime/catalog', status: 'loading' });
     try {
-      this.catalog = await this.repository.loadCatalog();
+      this.catalog = await this.repository.loadCatalog(options);
       this.store.dispatch({ type: 'runtime/catalog', status: 'ready' });
       this.changed();
+      return this.catalog;
     } catch (error) {
       this.store.dispatch({ type: 'runtime/catalog', status: 'error', error: message(error) });
+      throw error;
     }
   }
 
-  async loadDataset(ref: DatasetRef): Promise<void> {
+  async loadDataset(ref: ExactDatasetRef): Promise<void> {
+    if (!ref.releaseId) throw new Error(`An exact release is required for dataset ${ref.datasetId}`);
     const generation = ++this.datasetGeneration;
     this.regionsGeneration += 1;
     this.featureGeneration += 1;

@@ -10,7 +10,8 @@ test('dataset changes clear feature and region selection', () => {
     view: { ...DEFAULT_APP_STATE.view, featureId: 'x', selection: ['A', 'B'] },
   };
   const next = reduceAppState(populated, {
-    type: 'dataset/set',
+    type: 'navigation/release',
+    navigation: { kind: 'custom', projectId: 'atlas' },
     dataset: { datasetId: 'brainwide_map', releaseId: 'r1' },
   });
   assert.equal(next.view.featureId, null);

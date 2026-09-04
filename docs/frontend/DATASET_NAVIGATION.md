@@ -1,6 +1,6 @@
 # Dataset navigation and project editions
 
-Status: accepted contract; catalog/compiler slice implemented, navigation and UI slices pending.
+Status: accepted contract; catalog/compiler and resolved-navigation slices implemented; UI slices pending.
 
 D056 establishes the Project, Dataset, Release, Feature, and View hierarchy.
 D061 fixes catalog authority, immutable edition identity, explicit browser
@@ -272,7 +272,7 @@ shapes. Run `just check` and commit the coherent producer/consumer cutover.
 
 ### 2. Resolved navigation and URL v4
 
-Status: next.
+Status: implemented.
 
 Add request/resolved types, edition/custom/local context with optional custom
 baseline, pure resolution and transition functions, intent-specific actions,
@@ -282,6 +282,8 @@ matrix and history behavior with deterministic unit tests. Run `just check` and
 commit.
 
 ### 3. Desktop/tablet navigation UI
+
+Status: next.
 
 Implement Project/Dataset/Feature/View, edition/custom secondary disclosure,
 friendly version/status/ID details, View terminology, explicit override and

@@ -45,14 +45,10 @@ authorization and open questions.
 
 ### Catalog and navigation slices
 
-1. add unresolved request versus exact resolved navigation, explicit
-   edition/custom-with-optional-baseline/local context, intent-specific
-   transitions, catalog-first startup and `popstate`, URL-v4 canonicalization,
-   local lifecycle transitions, and separate failure domains;
-2. implement the desktop/tablet Project/Dataset/Feature/View bar, edition or
+1. implement the desktop/tablet Project/Dataset/Feature/View bar, edition or
    custom disclosure, exact release override/re-entry, View terminology, and
    loading/recovery behavior;
-3. implement the narrow staged Data chooser, accessible grouped-menu keyboard
+2. implement the narrow staged Data chooser, accessible grouped-menu keyboard
    behavior, responsive/local/error matrices, production-style synthetic
    catalog coverage, and durable completion documentation.
 
@@ -61,6 +57,13 @@ the shared corpus, curator-owned compile/promote path, immutable edition
 history, the synthetic Vite producer, and distinct public/local browser
 composition now use only the D056/D061 contract. Ordinary release publication
 does not grant catalog discovery or edition membership.
+
+The resolved-navigation slice is also complete: catalog-backed request
+resolution now precedes startup and every `popstate`, exact project/context/
+dataset/release identities canonicalize in URL v4, intent-specific transitions
+preserve edition baselines, local inventory changes refresh resolver authority,
+and published loaders reject unresolved releases. Catalog, navigation, and
+release-load errors retain distinct runtime state.
 
 Run targeted contract, publishing, resolver, URL, repository, and browser tests
 within each slice, then `just check` before its commit. The binding field,

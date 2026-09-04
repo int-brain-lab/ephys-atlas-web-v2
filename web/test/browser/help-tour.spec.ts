@@ -21,6 +21,7 @@ async function expectInsideViewport(page: Page, selector: string): Promise<void>
 
 test('regional essentials tour uses real controls without changing view state', async ({ page }) => {
   await page.goto('/');
+  await expect.poll(() => new URL(page.url()).searchParams.get('release')).toBe('golden-v1');
   const urlBefore = page.url();
   await openTour(page);
 
