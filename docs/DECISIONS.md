@@ -1367,7 +1367,8 @@ identities fail with recovery choices rather than silently adopting a default.
 Aliases are entry affordances only and canonicalize immediately to exact IDs.
 
 Keep the wide context bar as **Project, Dataset, Feature, View**. Project owns
-edition selection plus a **Choose individual releases** choice and discloses the
+edition selection, presented as coordinated releases rather than a version set,
+plus a **Choose releases individually** choice and discloses the
 active edition or custom baseline on its secondary line. Dataset owns release
 selection and displays a friendly label while exposing the immutable ID.
 Release status is the optional structured catalog enum `legacy | development`;

@@ -40,6 +40,9 @@ test('local catalog exposes the complete preserved Beryl release', async ({ page
   const dataset = page.locator('[data-context-field="dataset"]');
   await dataset.locator('.context-menu__trigger').click();
   await expect(dataset.getByRole('option', { selected: true }).locator('.context-menu__option-label')).toHaveText(
+    'IBL Brain-Wide Map',
+  );
+  await expect(dataset.getByRole('option', { selected: true }).locator('.context-menu__option-description')).toHaveText(
     `Local ${releaseId}`,
   );
   await expect(dataset.getByRole('option', { selected: true }).locator('.context-menu__option-badge')).toHaveText(

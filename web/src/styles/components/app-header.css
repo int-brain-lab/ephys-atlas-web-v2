@@ -130,6 +130,39 @@
   cursor: default;
 }
 
+.context-field:is([data-context-field="project"], [data-context-field="dataset"]) .context-menu__trigger {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-rows: max-content max-content;
+  align-content: center;
+  column-gap: var(--space-2);
+  row-gap: .08rem;
+  padding-block: 1.05rem .16rem;
+}
+
+.context-field:is([data-context-field="project"], [data-context-field="dataset"]) .context-field__value {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.context-field:is([data-context-field="project"], [data-context-field="dataset"]) .context-field__release {
+  grid-column: 1;
+  grid-row: 2;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: .58rem;
+  font-weight: 540;
+}
+
+.context-field:is([data-context-field="project"], [data-context-field="dataset"]) .context-menu__chevron {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+}
+
 .context-field__value {
   flex: 1 1 auto;
   min-width: 0;
@@ -302,12 +335,15 @@
 }
 
 .context-menu__option-group--dataset-release .context-menu__group {
-  padding: .7rem .6rem .3rem;
-  color: var(--color-text);
-  font-size: .78rem;
-  font-weight: 680;
-  letter-spacing: 0;
-  text-transform: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .context-field__local-badge {
@@ -427,7 +463,7 @@
 }
 
 .context-menu__option--dataset-release {
-  min-height: 4.35rem;
+  min-height: 5.15rem;
   padding-block: .58rem;
 }
 
@@ -439,21 +475,17 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--color-text-secondary);
-  font-size: .68rem;
-  font-weight: 570;
+  color: var(--color-text);
+  font-size: .78rem;
+  font-weight: 680;
   white-space: nowrap;
 }
 
 .context-menu__option--dataset-release .context-menu__option-description {
-  display: -webkit-box;
   color: var(--color-text-secondary);
-  font-size: .63rem;
-  line-height: 1.35;
-  white-space: normal;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  font-size: .68rem;
+  font-weight: 570;
+  white-space: nowrap;
 }
 
 .context-menu__option-check {

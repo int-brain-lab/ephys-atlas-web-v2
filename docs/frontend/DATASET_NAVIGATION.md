@@ -198,21 +198,25 @@ The wide order is:
 
 | Control | Primary line | Secondary line |
 | --- | --- | --- |
-| Project | Ephys Atlas | Version-set label or `Individual releases` |
+| Project | Ephys Atlas | Coordinated-release label or `Individual releases` |
 | Dataset | Channel features | Friendly release label and durable status |
 | Feature | Spike amplitude | Release-declared supporting detail |
 | View | Regional · Allen | Applicable representation/parcellation detail |
 
-The Project menu presents real scientific project choices, version-set choices
-for the active project, and a clearly labelled **Choose individual releases**
-action. `edition` and `custom` remain precise catalog/domain terms, but the UI
-does not require users to understand them.
+The Project menu presents real scientific project choices, coordinated-release
+choices for the active project, and a clearly labelled **Choose releases
+individually** action. Do not expose the internal term `version set`; `edition`
+and `custom` remain precise catalog/domain terms, but the UI does not require
+users to understand them.
 Local preview catalogs preserve the same Ephys Atlas and Brain-Wide Map project
 grouping and open on their coordinated current-preview edition rather than a
 synthetic `Local development` project or an unexplained custom context. Avoid
 nested popovers. The Dataset menu makes each concise dataset-family name the
-dominant heading (for example, **Ephys Atlas channels**) and keeps the friendly
-release label, status, immutable ID, and provenance in smaller secondary text.
+dominant heading inside the selectable release card (for example, **Ephys Atlas
+channels**) and keeps the friendly release label, status, immutable ID, and
+provenance in smaller secondary text. Project and Dataset header controls place
+their context on a separate secondary line so it never competes horizontally
+with the primary project or dataset name.
 
 Release IDs remain exact in URLs, provenance, downloads, and exports. `Latest`
 is an alias affordance, never an immutable label. An override keeps custom

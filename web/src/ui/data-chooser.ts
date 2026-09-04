@@ -162,7 +162,7 @@ export class DataChooser {
     const model = this.model;
     const catalog = model?.catalog;
     this.heading.textContent = this.stage === 'project' ? 'Choose project'
-      : this.stage === 'context' ? 'Choose version set'
+      : this.stage === 'context' ? 'Choose coordinated releases'
       : 'Choose dataset and exact version';
     if (!catalog) {
       this.status.textContent = model?.catalogStatus === 'error'
@@ -230,7 +230,7 @@ export class DataChooser {
         this.render();
       }, this.context === 'edition' && edition.id === this.editionId);
     }
-    this.addChoice('Choose individual releases', 'Select an exact release for each dataset', () => {
+    this.addChoice('Choose releases individually', 'Select an exact release for each dataset', () => {
       this.context = 'custom';
       this.stage = 'dataset';
       this.render();
@@ -238,8 +238,8 @@ export class DataChooser {
   }
 
   private renderDatasets(catalog: DatasetCatalog): void {
-    this.addBack(this.context === 'local' ? 'Projects' : 'Edition or custom',
-      this.context === 'local' ? 'Back to project choices' : 'Back to edition choices',
+    this.addBack(this.context === 'local' ? 'Projects' : 'Coordinated releases',
+      this.context === 'local' ? 'Back to project choices' : 'Back to coordinated release choices',
       this.context === 'local' ? 'project' : 'context');
     const project = catalog.projects.find(({ id }) => id === this.projectId);
     const datasets = catalog.datasets.filter((dataset) => this.context === 'local'

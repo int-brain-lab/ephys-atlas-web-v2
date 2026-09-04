@@ -492,8 +492,9 @@ test('scientific context menus and color controls are driven by the loaded relea
   await datasetTrigger.click({ position: { x: triggerBounds!.width / 2, y: 2 } });
   await expect(dataset.locator('.context-menu__panel')).toHaveAttribute('data-open', 'true');
   const selectedDataset = dataset.getByRole('option', { selected: true });
-  await expect(selectedDataset.locator('.context-menu__option-label')).toHaveText('Synthetic golden-v1');
-  await expect(selectedDataset.locator('.context-menu__option-description')).toContainText('deterministic non-scientific dataset');
+  await expect(selectedDataset.locator('.context-menu__option-label')).toHaveText('IBL Ephys Atlas v2 golden fixture');
+  await expect(selectedDataset.locator('.context-menu__option-description')).toHaveText('Synthetic golden-v1');
+  await expect(selectedDataset.locator('.context-menu__option-detail')).toContainText('deterministic non-scientific dataset');
   await expect(selectedDataset.locator('.context-menu__option-metadata')).toHaveText('Immutable release ID · golden-v1');
   await expect(dataset.locator('.context-menu__group').filter({ hasText: 'IBL Ephys Atlas' })).toHaveCount(1);
   await page.keyboard.press('Escape');

@@ -1720,11 +1720,11 @@ export class AppShell {
     if (activeProject) projectOptions.push(...activeProject.editions.map((edition) => ({
         id: `edition:${activeProject.id}:${edition.id}`, label: edition.label,
         ...(edition.description ? { description: edition.description } : { description: `Coordinated ${activeProject.title} release set` }),
-        group: 'Version set',
+        group: 'Coordinated releases',
         keywords: `${activeProject.id} ${edition.id} ${edition.label}`,
       })));
     if (activeProjectId) projectOptions.push({
-      id: 'action:custom', label: 'Choose individual releases', description: 'Select an exact release for each dataset.', group: 'Version set',
+      id: 'action:custom', label: 'Choose releases individually', description: 'Select an exact release for each dataset.', group: 'Other releases',
     });
     if (model.navigationRecovery) {
       projectOptions.push({
@@ -1750,19 +1750,24 @@ export class AppShell {
     const releaseOptions: ContextMenuOption[] = catalog?.datasets
       .filter((dataset) => dataset.source === 'local' || dataset.projectId === activeProjectId)
       .flatMap((dataset) => {
-      return dataset.releases.map((release) => ({
-        id: JSON.stringify([dataset.id, release.id]),
-        label: release.label,
-        ...(release.status ? { badge: titleCaseToken(release.status) } : {}),
-        ...(release.description || dataset.description
-          ? { description: release.description ?? dataset.description }
-          : {}),
-        ...(dataset.source === 'local' ? { detail: 'Stored only in this browser' } : {}),
-        metadata: `Immutable release ID · ${release.id}`,
-        group: dataset.source === 'local' ? 'My data' : presentDatasetTitle(dataset.title).title,
-        keywords: `${dataset.id} ${dataset.title} ${release.id} ${release.label}`,
-        variant: 'dataset-release',
-      }));
+      const datasetTitle = presentDatasetTitle(dataset.title).title;
+      return dataset.releases.map((release) => {
+        const scientificDescription = release.description ?? dataset.description;
+        const detail = dataset.source === 'local'
+          ? [scientificDescription, 'Stored only in this browser'].filter(Boolean).join(' · ')
+          : scientificDescription;
+        return {
+          id: JSON.stringify([dataset.id, release.id]),
+          label: datasetTitle,
+          ...(release.status ? { badge: titleCaseToken(release.status) } : {}),
+          description: release.label,
+          ...(detail ? { detail } : {}),
+          metadata: `Immutable release ID · ${release.id}`,
+          group: dataset.source === 'local' ? `My data · ${datasetTitle}` : datasetTitle,
+          keywords: `${dataset.id} ${dataset.title} ${release.id} ${release.label}`,
+          variant: 'dataset-release' as const,
+        };
+      });
     }) ?? [];
     const datasetOptions: ContextMenuOption[] = [
       ...releaseOptions,

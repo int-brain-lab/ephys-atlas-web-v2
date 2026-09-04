@@ -11,11 +11,21 @@ test('desktop project and dataset controls disclose edition and exact release co
   await expect(project.locator('.context-field__value')).toHaveText('Synthetic development data');
   await expect(project.locator('.context-field__release')).toHaveText('Individual releases');
   await expect(view.locator('.context-field__label')).toHaveText('View');
+  for (const field of [project, dataset]) {
+    const primary = field.locator('.context-field__value');
+    const secondary = field.locator('.context-field__release');
+    expect((await primary.boundingBox())!.y).toBeLessThan((await secondary.boundingBox())!.y);
+  }
 
   await dataset.locator('.context-menu__trigger').click();
   const exactRelease = dataset.getByRole('option', { name: /Synthetic golden-v1/ });
+  await expect(exactRelease.locator('.context-menu__option-label')).toHaveText('IBL Ephys Atlas v2 golden fixture');
+  await expect(exactRelease.locator('.context-menu__option-description')).toHaveText('Synthetic golden-v1');
   await expect(exactRelease).toContainText('Development');
   await expect(exactRelease).toContainText('Immutable release ID · golden-v1');
+  const datasetGroupLabel = dataset.locator('.context-menu__option-group--dataset-release .context-menu__group').first();
+  await expect(datasetGroupLabel).toHaveCSS('position', 'absolute');
+  await expect(datasetGroupLabel).toHaveCSS('width', '1px');
   await page.keyboard.press('Escape');
 
   const initialHistoryLength = await page.evaluate(() => history.length);
@@ -26,7 +36,7 @@ test('desktop project and dataset controls disclose edition and exact release co
   await expect(project.locator('.context-field__release')).toHaveText('Synthetic current edition');
 
   await project.locator('.context-menu__trigger').click();
-  await project.getByRole('option', { name: /Choose individual releases/ }).click();
+  await project.getByRole('option', { name: /Choose releases individually/ }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('context')).toBe('custom');
   await expect.poll(() => new URL(page.url()).searchParams.get('base_edition')).toBe('synthetic-current');
   await expect(project.locator('.context-field__release'))
@@ -60,7 +70,7 @@ test('phone Data chooser stages an edition selection and commits one exact histo
   await expect(project).toBeFocused();
   await expect(project).toHaveAttribute('aria-current', 'true');
   await project.press('Enter');
-  await expect(dialog.getByRole('heading')).toHaveText('Choose version set');
+  await expect(dialog.getByRole('heading')).toHaveText('Choose coordinated releases');
   await expect(page).toHaveURL(initialUrl);
 
   const back = dialog.getByRole('button', { name: /Projects/ });
