@@ -6,6 +6,24 @@ access evidence and safe operator commands; it does not authorize publication
 of a particular release. Remaining deployment details and scientific release
 choices are governed by Q8 and Q9.
 
+## Canonical build preflight
+
+D062 makes Linux the only production build and publication host. macOS output
+is local preview evidence and cannot be promoted. Before any staging or
+production upload, check out the intended release commit on clean `main`, build
+the scientific releases there, and run:
+
+```bash
+just production-release-preflight \
+  data/releases/<dataset>/<release-id> [more-release-paths...]
+```
+
+The command validates complete schema-v1 graphs and requires immutable IDs,
+resolved source releases, Linux build provenance, and an exact builder-commit
+match. Passing it does not authorize an upload and does not replace the local
+S3 publisher still required by Q8. That publisher must call the same checks
+before opening a remote transaction.
+
 ## Confirmed candidate location
 
 - AWS Region: `us-east-1`

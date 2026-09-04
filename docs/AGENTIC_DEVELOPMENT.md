@@ -109,6 +109,10 @@ For layout or visual-renderer changes:
 
 Do not use visual similarity as a substitute for scientific coordinate/transform tests.
 
+Linux owns canonical screenshot pixels. On macOS, run semantic browser tests
+and inspect changed layouts, but do not update or weaken Linux baselines for
+host font rasterization.
+
 ## Scientific data workflow
 
 The builder should separate:
@@ -125,6 +129,10 @@ A local agent may implement steps 3-5 against synthetic or already-pinned inputs
 
 For real releases, record the exact source vintage/object, relevant source hashes, builder command/version, population/QC recipe, feature mode, and other scientific choices in provenance.
 
+Build and publish production releases only on Linux from clean `main`; record
+OS/machine/Python/NumPy and run `just production-release-preflight <release...>`.
+macOS builds are local preview artifacts even when inputs match reviewed data.
+
 ## Volume workflow
 
 Keep three questions separate:
@@ -133,7 +141,8 @@ Keep three questions separate:
 - **canonical source object** — the producer's scientific artifact;
 - **browser physical transport** — chunk/slice-pack representation selected by benchmark.
 
-A benchmark may compare transports before the authoritative affine is resolved, but a production volume must not claim scientific coordinate alignment without Q4 in `OPEN_QUESTIONS.md` being resolved.
+D043 fixes W26 geometry and validity. Transport benchmarks must preserve it;
+Q5 selects the production layout from real-origin measurements.
 
 ## Dependencies and architecture
 

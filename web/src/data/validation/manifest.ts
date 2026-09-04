@@ -79,6 +79,9 @@ function parseProvenance(value: unknown): DatasetProvenance {
   });
   if (sources.length === 0) throw new Error('manifest.provenance.sources must not be empty');
   const rawBuilder = object(provenance.builder, 'manifest.provenance.builder');
+  const rawEnvironment = rawBuilder.environment === undefined
+    ? undefined
+    : object(rawBuilder.environment, 'manifest.provenance.builder.environment');
   const rawRecipe = object(provenance.recipe, 'manifest.provenance.recipe');
   const recipe: Record<string, JsonValue> = {};
   for (const [key, item] of Object.entries(rawRecipe)) recipe[key] = jsonValue(item, `manifest.provenance.recipe.${key}`);
@@ -91,6 +94,14 @@ function parseProvenance(value: unknown): DatasetProvenance {
       command: plainString(rawBuilder.command, 'manifest.provenance.builder.command'),
       ...(rawBuilder.repository !== undefined ? { repository: plainString(rawBuilder.repository, 'manifest.provenance.builder.repository') } : {}),
       ...(rawBuilder.commit !== undefined ? { commit: plainString(rawBuilder.commit, 'manifest.provenance.builder.commit') } : {}),
+      ...(rawEnvironment !== undefined ? {
+        environment: {
+          operatingSystem: plainString(rawEnvironment.operating_system, 'manifest.provenance.builder.environment.operating_system'),
+          machine: plainString(rawEnvironment.machine, 'manifest.provenance.builder.environment.machine'),
+          python: plainString(rawEnvironment.python, 'manifest.provenance.builder.environment.python'),
+          numpy: plainString(rawEnvironment.numpy, 'manifest.provenance.builder.environment.numpy'),
+        },
+      } : {}),
     },
     recipe: { ...recipe, id: recipeId },
     notes: provenance.notes === undefined

@@ -234,7 +234,7 @@ and focused import evidence does not satisfy the full browser target matrix.
 | [LS13-01](LAUNCH_SPEC.md#ls13-01) | Production domain/URL and storage/CDN selected and documented. | D040 gives direction, not concrete names/topology. | blocked Q8 | Owner selects names and topology; document them. |
 | [LS13-02](LAUNCH_SPEC.md#ls13-02) | CORS and relevant Range behavior verified from production origin. | Simulated-origin evidence only. | blocked Q8 | Run production-origin HTTP matrix. |
 | [LS13-03](LAUNCH_SPEC.md#ls13-03) | Paper default resolves to pinned immutable release set. | Alias machinery exists; selection absent. | blocked Q2/Q9 | Freeze release set and alias/default. |
-| [LS13-04](LAUNCH_SPEC.md#ls13-04) | No deployment secrets or publisher credentials in repository. | Architecture/policy and current tracked tree. | satisfied | Record a release-time secret scan. |
+| [LS13-04](LAUNCH_SPEC.md#ls13-04) | Secrets stay outside the repository and scientific releases use the canonical Linux preflight. | D062, builder environment provenance, `just production-release-preflight`, and current tracked tree. | independent gap | Run and record preflight plus a secret scan for the final Linux release set. |
 | [LS13-05](LAUNCH_SPEC.md#ls13-05) | If publishing is deployed, document control-state backup/recovery. | Service not deployed; interruption recovery is tested, operational backup is not documented. | satisfied | If deployment is chosen, add and exercise backup/restore runbook before launch. |
 | [LS13-06](LAUNCH_SPEC.md#ls13-06) | v1 remains available through initial launch window. | D001/D006 policy only; no dated availability/ownership record. | independent gap | Record v1 URL availability, owner, and fallback-window check. |
 

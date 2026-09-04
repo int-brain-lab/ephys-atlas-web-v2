@@ -34,9 +34,9 @@ staging and is installed atomically only after encoded-byte integrity and the
 complete existing graph validator pass.
 
 The complete local corpus validated in the current integration workspace is
-534,262,861 bytes across channels, clusters, Brain-Wide Map, the W26 volume
+551,523,979 bytes across channels, clusters, Brain-Wide Map, the W26 volume
 candidate, the five-view projection pack, and the optional D042 mesh pack. Its
-v3 descriptor still records unresolved sources because Q8 has not supplied an
+v4 descriptor still records unresolved sources because Q8 has not supplied an
 authorized immutable origin. In a fresh checkout, `just data` therefore gives
 an actionable error for each missing unresolved launch-critical artifact, and `just dev` stops
 before startup. Development startup is read-only: it validates local bytes but
@@ -54,8 +54,14 @@ outputs through this path.
 | `just bootstrap` | Install locked Python, Node, and Chromium dependencies. |
 | `just data` | Reuse or atomically obtain descriptor-pinned artifacts, then validate the complete local graph. |
 | `just dev` | Read-only validation, local catalog derivation, and Vite startup. |
+| `just data-refresh-local` | Pull channel/cluster `latest`, then require it to match the reviewed immutable sources. |
+| `just dev-latest` | Safe local refresh followed by Vite startup. |
 | `just check` | Run the complete local CI-equivalent gate. |
 | `just docs-serve` | Preview the strict local documentation site. |
+
+macOS is the fast development/preview host. Production releases are rebuilt,
+preflighted, and published only from clean Linux `main`; run
+`just production-release-preflight <release...>` before publication.
 
 Dataset-specific builders, benchmarks, and focused acceptance recipes remain
 available through `just --list`; they are diagnostic and production workflows,

@@ -170,6 +170,16 @@ test('manifest metadata validation rejects invalid release dates and provenance'
   assert.throws(() => parseDatasetManifestDocument({ ...valid, provenance: { ...valid.provenance, sources: [] } }), /sources must not be empty/);
 });
 
+test('manifest metadata retains structured builder environment provenance', () => {
+  const valid = goldenManifest();
+  valid.provenance.builder.environment = {
+    operating_system: 'linux', machine: 'x86_64', python: '3.12.11', numpy: '2.3.2',
+  };
+  assert.deepEqual(parseDatasetManifestDocument(valid).provenance.builder.environment, {
+    operatingSystem: 'linux', machine: 'x86_64', python: '3.12.11', numpy: '2.3.2',
+  });
+});
+
 test('feature metadata validates units and retains representation-specific scalar presentation', () => {
   const valid = goldenFeature();
   const stdSummary = {

@@ -124,6 +124,12 @@ Scientific provenance is part of the product contract, not optional metadata.
 - Publishing is capability-based and publishes already-built releases; it does not transform scientific data.
 - A release must pass byte-size/SHA validation and the schema validator before becoming public.
 - Keep the public browser catalog contract separate from administrative publishing state.
+- Linux is the sole canonical build, preflight, and publication host. macOS is
+  a fast development/preview host; artifacts built there must retain local or
+  candidate identity and must never be promoted.
+- Before publication, run `just production-release-preflight <release...>` on
+  clean `main`. The release provenance must identify that exact Linux build
+  environment and checked-out commit.
 
 ## Required commands
 
@@ -133,12 +139,17 @@ committed `uv.lock` files; do not install project dependencies into system
 Python or invoke system `pip`. Then use:
 
 - `just dev` — run the Vite viewer locally.
+- `just data-refresh-local` — refresh mutable channel/cluster source aliases
+  and verify they still match the reviewed local releases.
+- `just dev-latest` — perform that safe refresh, then run the viewer.
 - `just test-python` — builder and publishing Python tests.
 - `just test-web` — TypeScript typecheck, unit tests, and production build.
 - `just test-browser` — Playwright browser suite.
 - `just check` — the full local gate; this is the default completion criterion.
 
 CI is defined in `.github/workflows/ci.yml`. Local `just check` should stay aligned with it.
+Canonical documentation screenshot pixels are generated and compared on Linux;
+macOS still runs the semantic browser suite but skips host-dependent pixel diffs.
 
 ## Agent work loop
 

@@ -10,6 +10,7 @@ from typing import Mapping, Sequence
 
 import numpy as np
 
+from .build_environment import build_environment
 from .io import json_resource, sha256_file, write_json
 from .distribution_selection import (
     bind_distribution_selection,
@@ -411,6 +412,7 @@ def build_clusters_release_from_arrays(
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 **({"commit": config.builder_commit} if config.builder_commit else {}),
                 "command": _builder_command(config),
+                "environment": build_environment(),
             },
             "recipe": {
                 "id": "ephys-atlas-clusters-regional-v1",

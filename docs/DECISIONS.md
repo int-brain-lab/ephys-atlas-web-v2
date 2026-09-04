@@ -70,6 +70,7 @@ only part of the body; the index states what remains effective.
 | D059 | Shared S3 staging/production roots | accepted | 2026-09-02 | exact private bucket roots, immutable-key policy, and initial site domain |
 | D060 | Lean AWS static hosting and local publication | accepted | 2026-09-02 | CloudFront serves the viewer and data from private S3; no Cloudflare Pages or always-on publishing server initially |
 | D061 | Curated immutable project editions | accepted | 2026-09-03 | catalog authority, scoped edition identity, resolved navigation, and responsive interaction |
+| D062 | Linux canonical release environment | accepted | 2026-09-04 | Linux-only release build/preflight/publication; macOS preview-only |
 
 ## D001 — Separate v2
 
@@ -1384,3 +1385,20 @@ Dataset aliases remain administrative inputs, and curator-owned edition aliases
 resolve to exact IDs before catalog emission; browsers and share URLs never
 retain either symbolic form. Q9 still owns all real public IDs, labels,
 mappings, default values, alias names, and the paper freeze procedure.
+
+## D062 — Use Linux as the canonical release environment
+
+Build, preflight, and publish production scientific releases on Linux from a
+clean `main` checkout. Record the builder commit and the operating system,
+machine, Python, and NumPy versions in release provenance. The production
+preflight must validate the complete schema-v1 graph, require immutable source
+and release identities, reject local/candidate naming, and prove that the
+recorded builder commit equals the checked-out commit.
+
+Use macOS for fast development, source refresh, validation, browser testing,
+and local scientific preview. Small platform-dependent numeric or raster
+differences are acceptable in that lane because macOS-built releases cannot be
+promoted. Canonical screenshot pixels are likewise generated and compared on
+Linux; macOS retains semantic browser coverage without asserting host-specific
+font rasterization pixels. This decision does not select Q2 scientific data,
+Q5 volume transport, Q8 infrastructure details, or Q9 public defaults.

@@ -50,7 +50,18 @@
         "version": {"type": "string", "minLength": 1},
         "repository": {"type": "string"},
         "commit": {"type": "string", "pattern": "^[0-9a-f]{7,40}$"},
-        "command": {"type": "string", "minLength": 1}
+        "command": {"type": "string", "minLength": 1},
+        "environment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operating_system", "machine", "python", "numpy"],
+          "properties": {
+            "operating_system": {"type": "string", "minLength": 1},
+            "machine": {"type": "string", "minLength": 1},
+            "python": {"type": "string", "minLength": 1},
+            "numpy": {"type": "string", "minLength": 1}
+          }
+        }
       }
     },
     "recipe": {

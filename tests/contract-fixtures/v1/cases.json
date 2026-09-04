@@ -44,7 +44,17 @@
     },
     "provenance": {
       "sources": [{"role": "canonical-data", "description": "Synthetic contract input", "sha256": "2222222222222222222222222222222222222222222222222222222222222222"}],
-      "builder": {"name": "contract-fixture", "version": "1.0.0", "command": "build synthetic"},
+      "builder": {
+        "name": "contract-fixture",
+        "version": "1.0.0",
+        "command": "build synthetic",
+        "environment": {
+          "operating_system": "linux",
+          "machine": "x86_64",
+          "python": "3.12.11",
+          "numpy": "2.3.2"
+        }
+      },
       "recipe": {"id": "synthetic-v1", "population": "synthetic"},
       "notes": ["Not scientific data."]
     },

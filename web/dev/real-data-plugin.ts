@@ -16,6 +16,8 @@ export interface RealDevelopmentRelease {
   featureId: string;
   manifestBytes: number;
   manifestSha256: string;
+  synthetic: boolean;
+  status: 'legacy' | 'development';
 }
 
 function mediaType(filePath: string): string {
@@ -79,6 +81,8 @@ export async function loadRealDevelopmentRelease(
     featureId,
     manifestBytes: manifestBytes.byteLength,
     manifestSha256: createHash('sha256').update(manifestBytes).digest('hex'),
+    synthetic: manifest.dataset_id === 'golden_fixture',
+    status: manifest.dataset_id === 'brainwide_map' ? 'legacy' : 'development',
   };
 }
 
@@ -90,6 +94,12 @@ export function realReleasePlugin(configured: RealDevelopmentRelease | readonly 
     if (identities.has(identity)) throw new Error(`Duplicate real development release ${identity}`);
     identities.add(identity);
   }
+  const synthetic = releases.every((release) => release.synthetic);
+  if (!synthetic && releases.some((release) => release.synthetic)) {
+    throw new Error('Development catalogs cannot mix synthetic fixtures with real scientific releases');
+  }
+  const projectId = synthetic ? 'synthetic-development' : 'local-development';
+  const editionId = synthetic ? 'synthetic-current' : 'local-current';
   return {
     name: 'ephys-atlas-real-development-release',
     configureServer(server) {
@@ -106,16 +116,18 @@ export function realReleasePlugin(configured: RealDevelopmentRelease | readonly 
           }
           const body = JSON.stringify({
             schema_version: '1.0',
-            default_project: 'synthetic-development',
+            default_project: projectId,
             projects: [{
-              project_id: 'synthetic-development',
-              title: 'Synthetic development data',
+              project_id: projectId,
+              title: synthetic ? 'Synthetic development data' : 'Local development',
               dataset_ids: [...datasets.keys()],
               default_dataset: releases[0]!.datasetId,
               editions: [{
-                edition_id: 'synthetic-current',
-                label: 'Synthetic current edition',
-                description: 'Test-only coordinated mapping for browser navigation coverage.',
+                edition_id: editionId,
+                label: synthetic ? 'Synthetic current edition' : 'Local current set',
+                description: synthetic
+                  ? 'Test-only coordinated mapping for browser navigation coverage.'
+                  : 'Validated local scientific releases for development; not a production publication.',
                 dataset_releases: [...datasets.entries()].map(([datasetId, group]) => ({
                   dataset_id: datasetId,
                   release_id: group[0]!.releaseId,
@@ -129,8 +141,8 @@ export function realReleasePlugin(configured: RealDevelopmentRelease | readonly 
               default_release: group[0]!.releaseId,
               releases: group.map((release) => ({
                 release_id: release.releaseId,
-                label: `Synthetic ${release.releaseId}`,
-                status: 'development',
+                label: `${synthetic ? 'Synthetic' : 'Local'} ${release.releaseId}`,
+                status: release.status,
                 manifest: {
                   path: `./${release.datasetId}/${release.releaseId}/manifest.json`,
                   media_type: 'application/json',

@@ -13,6 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
+from .build_environment import build_environment
 from .io import json_resource, sha256_file, write_json
 from .distribution_selection import (
     bind_distribution_selection,
@@ -547,6 +548,7 @@ def build_volumes_release_from_arrays(
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 **({"commit": config.builder_commit} if config.builder_commit else {}),
                 "command": shlex.join(command),
+                "environment": build_environment(),
             },
             "recipe": {
                 "id": "ephys-atlas-volumes-web-v1",

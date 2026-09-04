@@ -34,9 +34,10 @@ test('serves the complete approved catalog dynamically', async ({ page }) => {
   expect(features).toHaveLength(14);
   await page.goto('/');
 
-  await expect(page.locator('[data-context-field="dataset"] .context-field__release')).toHaveText(
-    releaseId,
-  );
+  const release = page.locator('[data-context-field="dataset"] .context-field__release');
+  await expect(release).toContainText(`Local ${releaseId}`);
+  await expect(release).toContainText(`ID · ${releaseId}`);
+  await expect(release).not.toContainText('Synthetic');
   const featureMenu = page.locator('[data-context-field="feature"]');
   await featureMenu.locator('.context-menu__trigger').click();
   await expect(featureMenu.getByRole('option')).toHaveCount(features.length);

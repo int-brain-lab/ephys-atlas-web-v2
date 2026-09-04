@@ -71,6 +71,10 @@ local repository command using temporary least-privilege AWS credentials and
 the existing validation/immutability semantics. The HTTP capability-token
 service remains an optional future path rather than a launch dependency.
 
+D062 separately fixes the execution host: canonical release builds,
+production preflight, and publication run on Linux. macOS is development and
+preview only. This is no longer part of Q8.
+
 Current operational evidence: authenticated terminal listing, object metadata
 reads, and a non-mutating conditional `PutObject` authorization probe succeeded
 on 2026-09-02 for the private `us-east-1` bucket
@@ -83,7 +87,8 @@ See
 Resolution still needed: the exact production and staging CloudFront
 distribution/origin-path configuration, isolated staging hostname, DNS and
 ACM/TLS provisioning, cache/CORS/MIME/Range policy, minimum publisher IAM
-policy, local publisher implementation, and first artifact set authorized for
+policy, local S3 publisher implementation beyond the completed release
+preflight, and first artifact set authorized for
 staging. A separate data hostname is no longer required for the initial
 same-origin topology, though a later decision may introduce one.
 

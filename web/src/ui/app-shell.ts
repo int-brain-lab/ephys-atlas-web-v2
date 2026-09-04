@@ -1411,6 +1411,10 @@ export class AppShell {
       ['Builder', `${manifest.provenance.builder.name} ${manifest.provenance.builder.version}`.trim()],
       ['Command', manifest.provenance.builder.command],
       ...(manifest.provenance.builder.commit ? [['Builder commit', manifest.provenance.builder.commit] as const] : []),
+      ...(manifest.provenance.builder.environment ? [[
+        'Build environment',
+        `${manifest.provenance.builder.environment.operatingSystem} ${manifest.provenance.builder.environment.machine} · Python ${manifest.provenance.builder.environment.python} · NumPy ${manifest.provenance.builder.environment.numpy}`,
+      ] as const] : []),
     ]));
     if (manifest.provenance.sources.length) {
       const sources = element('ul', 'info-dialog__sources');

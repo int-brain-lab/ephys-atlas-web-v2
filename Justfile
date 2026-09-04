@@ -31,6 +31,18 @@ data:
 dev:
     {{uv-test}} python -m tools.development_bundle run --cwd web data/development-bundle-v4.json -- npm run dev:real
 
+# Pull mutable upstream aliases, then fail closed unless they match reviewed releases.
+data-refresh-local:
+    {{uv-scientific}} python -m tools.local_preview
+
+# Refresh and launch the latest scientifically reviewed local bundle.
+dev-latest:
+    {{uv-scientific}} python -m tools.local_preview --run
+
+# Enforce schema, integrity, Git, immutable-ID, and Linux-build provenance before publication.
+production-release-preflight +releases:
+    {{uv-test}} python -m tools.release_preflight {{releases}}
+
 # Open the development-only synthetic multi-feature comparison workbench.
 comparison-ux-lab:
     cd web && npm run dev -- --open '/?lab=multi-feature'

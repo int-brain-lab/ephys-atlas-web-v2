@@ -2,7 +2,7 @@
 
 Status: active pre-launch capability matrix.
 
-Last reviewed: 2026-09-04 on `main` after the D056/D061 resolved-navigation cutover.
+Last reviewed: 2026-09-04 on `main` after the D062 release-environment cutover.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -18,6 +18,7 @@ completed implementation diaries.
 | Scientific navigation | One URL-v4 ML/AP/DV cursor drives the native bilateral 10 µm grid; sparse 80 µm SVG sampling changes display only. | Parent/sparse/projection-pack validation and performance evidence are complete. | Production-origin delivery verification. |
 | Optional 3-D context | A sibling retained Three.js viewport shares regional presentation/selection and owns camera, explode, GPU lifecycle, and failure isolation. Volume features remain anatomy-only in 3-D. | D042 real pack is losslessly repackaged and ready locally; Chromium plus owner Safari/Firefox review passed. | Optional immutable public deployment and experimental-label decision; not launch-blocking. |
 | Integrity/cache | Encoded resources are byte-size/SHA verified before persistent admission; corrupt entries are evicted/retried; decoded identity includes hash plus decode contract. | HTTP/local/mesh/projection/volume tests are green. | Verify final CDN headers and cache behavior. |
+| Release environments | Builders record OS, machine, Python, and NumPy. Production preflight requires Linux, clean `main`, exact HEAD provenance, immutable IDs, and a fully valid release graph. macOS real-data catalogs are labelled Local. | Deterministic preflight tests and complete local-bundle validation are green. | Make the future Q8 S3 publisher invoke the same preflight before upload. |
 
 Stable boundaries and end-to-end flow are in
 [`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md) and
@@ -218,12 +219,17 @@ another writer.
 `just dev` and `just validate-local-full` consume the same descriptor but stay
 read-only; no interactive compatibility recipes remain. Local Chromium
 acceptance covers all four real datasets plus Summary, Top, Swanson, and the
-optional 3-D context. The descriptor validates 8,164 files and 534,262,861
-bytes in the current workspace. Every v3 origin remains explicitly unresolved,
+optional 3-D context. The currently available graph contains 6 artifacts and
+551,523,979 bytes. Every v4 origin remains explicitly unresolved,
 so a fresh checkout receives actionable missing-origin errors and remote
 distribution remains blocked on Q8 despite the completed downloader machinery.
 An absent optional mesh is reported but does not block launch-critical 2-D;
 an invalid mesh already present fails closed.
+
+`just data-refresh-local` refreshes channel/cluster upstream aliases and
+proceeds only when their immutable source IDs match the reviewed bundle.
+`just dev-latest` combines that check with startup. New upstream bytes require
+audit and selection review; Brain-Wide Map and W26 volume stay pinned.
 
 ## Quality gates
 
@@ -241,6 +247,8 @@ golden fixture is synthetic and test-only. Broad Firefox/Safari release QA
 remains part of the final matrix under D040; the optional 3-D local matrix was
 completed on 2026-08-28 and the focused native-Safari local-import matrix on
 2026-08-31.
+Canonical documentation screenshot pixels are checked on Linux. macOS skips
+only those host-dependent comparisons while retaining semantic browser tests.
 The 2026-08-31 fixture, release, bundle, mesh, corrupt-cache, and warm-state
 checks are recorded in
 [`REPRODUCIBILITY_INTEGRITY_EVIDENCE.md`](REPRODUCIBILITY_INTEGRITY_EVIDENCE.md).

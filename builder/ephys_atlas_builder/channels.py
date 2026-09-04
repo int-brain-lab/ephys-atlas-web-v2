@@ -10,6 +10,7 @@ from pathlib import Path
 
 import numpy as np
 
+from .build_environment import build_environment
 from .channel_source import (
     _feature_info,
     discover_channel_table_dir,
@@ -276,6 +277,7 @@ def build_channels_release_from_arrays(
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 **({"commit": config.builder_commit} if config.builder_commit else {}),
                 "command": _builder_command(config),
+                "environment": build_environment(),
             },
             "recipe": {
                 "id": "ephys-atlas-channels-regional-v1",

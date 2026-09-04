@@ -255,7 +255,7 @@ Acceptance criteria:
 - <a id="ls13-01"></a> **`LS13-01`** — production public domain/URL and storage/CDN arrangement are selected and documented;
 - <a id="ls13-02"></a> **`LS13-02`** — CORS and, where relevant, HTTP Range behavior are verified from the production origin;
 - <a id="ls13-03"></a> **`LS13-03`** — the paper-facing default resolves to a pinned immutable release set;
-- <a id="ls13-04"></a> **`LS13-04`** — deployment secrets and publisher credentials are not stored in the repository;
+- <a id="ls13-04"></a> **`LS13-04`** — deployment secrets and publisher credentials are not stored in the repository; every published scientific release is built and preflighted on clean Linux `main`, records the exact builder commit plus OS/Python/NumPy environment, and is never promoted from a macOS local/candidate build;
 - <a id="ls13-05"></a> **`LS13-05`** — backup/recovery expectations for publishing control state are documented if the publishing service is deployed;
 - <a id="ls13-06"></a> **`LS13-06`** — v1 remains available as fallback through the initial v2 launch window.
 

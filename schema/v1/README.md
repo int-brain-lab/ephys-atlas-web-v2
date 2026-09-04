@@ -42,6 +42,12 @@ The shared valid/invalid corpus under `tests/contract-fixtures/v1/` is executed
 by both Python and TypeScript validators and covers every top-level schema plus
 the common binary/resource semantics.
 
+Builder provenance may include a structured environment with operating system,
+machine, Python, and NumPy versions. Official scientific builders emit it;
+D062 production preflight requires it to identify the canonical Linux build.
+It remains optional in schema v1 so older releases and third-party authored
+archives stay readable.
+
 `catalog.json` owns ordered public projects, datasets, release presentation,
 defaults, and immutable scoped project editions. Every public dataset belongs
 to exactly one project and the reserved browser-local identity never enters

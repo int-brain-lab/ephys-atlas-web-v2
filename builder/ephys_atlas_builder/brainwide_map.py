@@ -10,6 +10,7 @@ import subprocess
 
 import numpy as np
 
+from .build_environment import build_environment
 from .io import json_resource, sha256_file, write_json
 from .distribution_selection import (
     bind_distribution_selection,
@@ -254,6 +255,7 @@ def build_brainwide_map_release_from_tables(
                     else {}
                 ),
                 "command": _builder_command(config),
+                "environment": build_environment(),
             },
             "recipe": {
                 "id": "brainwide-map-legacy-website-regional-v1",

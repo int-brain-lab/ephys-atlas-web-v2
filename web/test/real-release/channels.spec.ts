@@ -16,6 +16,7 @@ test.beforeEach(async ({ page }) => {
 test('wide header keeps long feature and representation context legible', async ({ page }) => {
   await page.setViewportSize({ width: 1680, height: 900 });
   await page.goto('/?v=4&feature=aperiodic_exponent.denoised');
+  await page.evaluate(async () => document.fonts.ready);
 
   const feature = page.locator('[data-context-field="feature"] .context-field__value');
   const representation = page.locator('[data-context-field="representation"] .context-field__value');
@@ -23,15 +24,21 @@ test('wide header keeps long feature and representation context legible', async 
   await expect(feature).toHaveText('aperiodic exponent (denoised)');
   await expect(representation).toHaveText('Regional · Allen');
   await expect(registration).toHaveText('Allen CCFv3 · 10 µm');
-  for (const field of [feature, representation, registration]) {
-    expect(await field.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+  for (const [name, field] of [['feature', feature], ['representation', representation], ['registration', registration]] as const) {
+    expect(
+      await field.evaluate((node) => node.scrollWidth - node.clientWidth),
+      `${name} context must not overflow`,
+    ).toBeLessThanOrEqual(1);
   }
 });
 
 test('uses the immutable release and approved denoised feature as development defaults', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page.locator('[data-context-field="dataset"] .context-field__release')).toHaveText(releaseId);
+  const release = page.locator('[data-context-field="dataset"] .context-field__release');
+  await expect(release).toContainText(`Local ${releaseId}`);
+  await expect(release).toContainText(`ID · ${releaseId}`);
+  await expect(release).not.toContainText('Synthetic');
   await expect(page.locator('[data-context-field="feature"] .context-field__value')).toHaveText('rms ap (denoised)');
   const dataset = page.locator('[data-context-field="dataset"]');
   await dataset.locator('.context-menu__trigger').click();
@@ -49,7 +56,9 @@ test('uses the immutable release and approved denoised feature as development de
   await page.keyboard.press('Escape');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(50);
   await expect.poll(() => page.locator('.region-row[data-missing="false"]').count()).toBeGreaterThan(0);
-  expect(new URL(page.url()).searchParams.get('release')).toBeNull();
+  expect(new URL(page.url()).searchParams.get('release')).toBe(releaseId);
+  expect(new URL(page.url()).searchParams.get('project')).toBe('local-development');
+  expect(new URL(page.url()).searchParams.get('context')).toBe('custom');
   expect(new URL(page.url()).searchParams.get('feature')).toBeNull();
 });
 
@@ -63,7 +72,9 @@ test('loads real float64 alpha values and all launch parcellations', async ({ pa
   await expect(feature.getByRole('option')).toHaveCount(1);
   await feature.getByRole('option').click();
 
-  await expect(page.locator('[data-context-field="dataset"] .context-field__release')).toHaveText(releaseId);
+  await expect(page.locator('[data-context-field="dataset"] .context-field__release')).toContainText(
+    `ID · ${releaseId}`,
+  );
   await expect(page.locator('[data-context-field="feature"] .context-field__value')).toHaveText('alpha mean (raw)');
   await expect(page.locator('[data-context-field="representation"] .context-field__value')).toHaveText('Regional · Allen');
   await expect.poll(() => new URL(page.url()).searchParams.get('feature')).toBe('alpha_mean.raw');

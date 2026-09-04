@@ -19,7 +19,10 @@ test('local catalog exposes the complete preserved Beryl release', async ({ page
   await expect(page.locator('[data-context-field="dataset"] .context-field__value')).toHaveText(
     'IBL Brain-Wide Map',
   );
-  await expect(page.locator('[data-context-field="dataset"] .context-field__release')).toHaveText(releaseId);
+  const release = page.locator('[data-context-field="dataset"] .context-field__release');
+  await expect(release).toContainText(`Local ${releaseId}`);
+  await expect(release).toContainText(`ID · ${releaseId}`);
+  await expect(release).not.toContainText('Synthetic');
   await expect(page.locator('[data-context-field="feature"] .context-field__value')).toHaveText(
     'choice decoding significant',
   );
@@ -37,10 +40,10 @@ test('local catalog exposes the complete preserved Beryl release', async ({ page
   const dataset = page.locator('[data-context-field="dataset"]');
   await dataset.locator('.context-menu__trigger').click();
   await expect(dataset.getByRole('option', { selected: true }).locator('.context-menu__option-label')).toHaveText(
-    'IBL Brain-Wide Map',
+    `Local ${releaseId}`,
   );
   await expect(dataset.getByRole('option', { selected: true }).locator('.context-menu__option-badge')).toHaveText(
-    'Legacy snapshot',
+    'Legacy',
   );
   await expect(dataset.getByRole('option', { selected: true })).toContainText(
     'Preserved Beryl-only regional features from the v1 website',

@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 const regionalRoute = '/?v=4&dataset=golden_fixture&release=golden-v1&project=synthetic-development&context=custom&selected=-477,-803&scale=symlog&dist=focused';
 const archive = resolve(process.cwd(), '../fixtures/golden-v1.ibl-ephys-atlas.zip');
+const canonicalPixelPlatform = process.platform === 'linux';
 
 async function waitForViewer(page: Page): Promise<void> {
   await expect(page.locator('.atlas-app')).toHaveAttribute('data-layout', 'wide');
@@ -29,15 +30,18 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('desktop overview', async ({ page }) => {
+  test.skip(!canonicalPixelPlatform, 'canonical documentation pixels are generated and checked on Linux');
   await expect(page).toHaveScreenshot('desktop-overview.png', { fullPage: true });
 });
 
 test('linked anatomical views', async ({ page }) => {
+  test.skip(!canonicalPixelPlatform, 'canonical documentation pixels are generated and checked on Linux');
   await expect(page.getByRole('region', { name: 'Orthogonal brain slices' }))
     .toHaveScreenshot('linked-anatomical-views.png');
 });
 
 test('encoding and distribution controls', async ({ page }) => {
+  test.skip(!canonicalPixelPlatform, 'canonical documentation pixels are generated and checked on Linux');
   const settings = page.getByRole('complementary', { name: 'Visualization settings' });
   await expect(settings).toBeVisible();
   await expect(settings.getByLabel('Value scale')).toHaveValue('symlog');
@@ -47,6 +51,7 @@ test('encoding and distribution controls', async ({ page }) => {
 });
 
 test('local import preview', async ({ page }) => {
+  test.skip(!canonicalPixelPlatform, 'canonical documentation pixels are generated and checked on Linux');
   const dataset = page.locator('[data-context-field="dataset"]');
   await dataset.locator('.context-menu__trigger').click();
   await dataset.getByRole('option', { name: 'Import local dataset…' }).click();

@@ -150,6 +150,12 @@ export interface ProvenanceBuilder {
   command: string;
   repository?: string;
   commit?: string;
+  environment?: {
+    operatingSystem: string;
+    machine: string;
+    python: string;
+    numpy: string;
+  };
 }
 
 export type JsonValue =

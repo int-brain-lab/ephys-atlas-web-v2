@@ -15,12 +15,16 @@ Record:
   preserved-product identity;
 - every consumed source object's served byte size and SHA-256;
 - source/tool/builder commits or package versions;
+- builder operating system, machine architecture, Python, and NumPy versions;
 - the exact deterministic builder command and creation timestamp;
 - whether the artifact is synthetic/test-only, validated-real-local, staging,
   or published-production.
 
 Moving labels such as `latest` are acquisition conveniences, not provenance.
 Resolve and record the immutable identity before building.
+
+Production scientific releases are built and preflighted on Linux from clean
+`main`. macOS artifacts remain local preview output and cannot be promoted.
 
 ## Required scientific recipe
 
