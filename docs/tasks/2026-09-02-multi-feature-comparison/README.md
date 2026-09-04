@@ -1,8 +1,7 @@
 # Flexible multi-feature comparison
 
-Status: accepted product direction and planned handoff; implementation is the
-fourth immediate priority in `docs/IMPLEMENTATION_PLAN.md` unless the repository
-owner changes that order.
+Status: active implementation; this is the current immediate priority in
+`docs/IMPLEMENTATION_PLAN.md`.
 
 ## Outcome
 
