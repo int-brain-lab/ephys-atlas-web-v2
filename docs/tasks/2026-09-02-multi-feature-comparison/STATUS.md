@@ -1,7 +1,8 @@
 # Status
 
 Status: current immediate product priority; the contract-free domain foundation
-is implemented and the application/data seam is next.
+and bounded visible-spatial session are implemented. Synthetic lab adapters and
+the development-only UX lab are next.
 
 D058 accepts arbitrary feature scopes, release-owned z-score comparison, and
 iterative Focus/Gallery/Profile UX over shared modular foundations. Q17 retains
@@ -20,6 +21,15 @@ Implemented foundation:
 - incompatible explicit scopes fail closed, while stale active/pinned identities
   are removed deterministically across releases;
 - z-score behavior is exercised only by explicit synthetic definitions.
+
+Implemented application foundation:
+
+- a comparison session separate from the ordinary single-feature session owns
+  only the supplied visible feature window;
+- bounded concurrency, request cancellation, stale-result rejection, partial
+  failure, exact coordinate identity, and disposal are deterministic;
+- a 4,345-feature symbolic scope can drive a small visible window without eager
+  expansion into transport or rendering work.
 
 Commits:
 
