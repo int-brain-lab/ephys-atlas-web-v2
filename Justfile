@@ -95,6 +95,16 @@ test-web:
 test-browser:
     cd web && npm run test:browser
 
+# Regenerate the reviewed synthetic documentation screenshots and stable manifest.
+docs-screenshots:
+    cd web && node scripts/docs-screenshot-manifest.mjs
+    cd web && npx playwright test --config playwright.docs.config.ts --update-snapshots
+
+# Verify documentation screenshots without modifying their committed baselines.
+docs-screenshots-check:
+    cd web && node scripts/docs-screenshot-manifest.mjs --check
+    cd web && npx playwright test --config playwright.docs.config.ts
+
 # Run the portable browser matrix; native Safari remains a separate owner-host check.
 test-browser-cross:
     cd web && npm run test:browser:cross
@@ -227,7 +237,7 @@ atlas-regions:
     {{uv-scientific}} python tools/allen_regions/build.py --force
 
 # Full local completion gate. Keep this aligned with .github/workflows/ci.yml.
-check: docs-check docs-site test-python test-web test-browser
+check: docs-check docs-site test-python test-web test-browser docs-screenshots-check
 
 # Backward-compatible alias: repository tests mean the full gate.
 test: check

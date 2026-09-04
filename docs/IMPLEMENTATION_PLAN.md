@@ -22,15 +22,14 @@ their current maturity; focused evidence lives under `docs/data/` and
 Repository-owner priority, recorded 2026-09-02, overrides the milestone order
 below when selecting independent work:
 
-1. implement the deterministic synthetic documentation captures in
-   [`DOCUMENTATION_SCREENSHOT_PLAN.md`](DOCUMENTATION_SCREENSHOT_PLAN.md) and
-   add their non-mutating drift check to `just check`;
-2. implement the flexible multi-feature comparison foundation and scientist-
+1. implement the flexible multi-feature comparison foundation and scientist-
    iteration sequence in
    [`tasks/2026-09-02-multi-feature-comparison/`](tasks/2026-09-02-multi-feature-comparison/README.md).
 
 The previously second-ranked bounded scalar-presentation follow-ups are
-complete. Q16 still retains real-feature palette and diverging-center choices.
+complete. The deterministic synthetic documentation captures and their
+non-mutating full-gate check are also complete. Q16 still retains real-feature
+palette and diverging-center choices.
 
 All other active, deferred, and discussion work follows this recorded priority
 sequence unless it is required to unblock or validate it, or a later
@@ -65,10 +64,7 @@ Next testable actions:
 1. keep the reproducible capacity corpus and regression harness green, and
    capture native-Safari quota/process-RSS plus representative end-user-device
    evidence before advertising a broadly supported maximum capacity;
-2. implement the deterministic synthetic documentation captures in
-   [`DOCUMENTATION_SCREENSHOT_PLAN.md`](DOCUMENTATION_SCREENSHOT_PLAN.md), then
-   add their non-mutating drift check to `just check`;
-3. publish the Python distribution only after explicit authorization.
+2. publish the Python distribution only after explicit authorization.
 
 The pinned zip.js reader rejects unsafe or duplicate paths, non-regular,
 encrypted, split/Zip64, nested, or unsupported-compression entries, undeclared
@@ -253,7 +249,7 @@ They are not launch blockers. Q16 retains all real feature-by-feature palette
 and center selections for a future immutable release, and D050/LS03-03 volume
 regional distributions remain explicitly deferred.
 
-The fourth immediate product priority, the accepted flexible multi-feature
+The current immediate product priority, the accepted flexible multi-feature
 comparison foundation and scientist-iteration sequence, is recorded in
 [`tasks/2026-09-02-multi-feature-comparison/`](tasks/2026-09-02-multi-feature-comparison/README.md).
 It supports arbitrary release-ordered feature scopes through Focus, virtualized

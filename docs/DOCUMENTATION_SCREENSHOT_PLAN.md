@@ -1,7 +1,7 @@
 # Documentation screenshot plan
 
-Status: active implementation plan; no documentation screenshots are generated
-or enforced yet.
+Status: implemented on `main`; deterministic synthetic screenshots are generated,
+embedded in the reader guides, and enforced by the full local gate.
 
 ## Objective
 
@@ -38,9 +38,9 @@ demonstration data** wherever it appears. The canonical
 `fixtures/golden-v1/` release and deterministic authoring fixtures are test-only
 inputs and must not be described as measured or published IBL data.
 
-## Proposed implementation
+## Implementation
 
-Add a dedicated Playwright configuration and test suite under `web/`, separate
+The dedicated Playwright configuration and test suite live under `web/`, separate
 from the ordinary browser suite:
 
 ```text
@@ -74,15 +74,14 @@ mask meaningful application content merely to make the comparison pass.
 
 ## Commands and completion gate
 
-Add these repository commands:
+The repository provides these commands:
 
 - `just docs-screenshots` regenerates the committed images intentionally by
   running Playwright with snapshot updates enabled.
 - `just docs-screenshots-check` performs the same captures without updating
   files and fails on missing or changed images.
 
-`just docs-screenshots-check` should become part of `just check` after the four
-baseline images have been visually reviewed and accepted. CI then detects
+`just docs-screenshots-check` is part of `just check`. CI therefore detects
 stale screenshots whenever a relevant UI change alters the generated output.
 The update command remains an explicit developer action; normal checks must
 never rewrite repository files.
@@ -118,19 +117,19 @@ Real-data captures may be refreshed deliberately for a release or
 documentation milestone, but they should not be regenerated implicitly by the
 synthetic `just check` lane or require production network access in CI.
 
-## Delivery sequence
+## Completed delivery sequence
 
-1. Implement the dedicated Playwright configuration, capture cases, manifest,
+1. Implemented the dedicated Playwright configuration, capture cases, manifest,
    and the two `just` recipes.
-2. Generate the four synthetic images twice from a clean state and confirm the
+2. Generated the four synthetic images twice and confirmed the
    second run has no diff.
-3. Inspect every image at its rendered documentation size and at full
-   resolution; confirm responsive composition, readable crops, correct dark
+3. Inspected every image at its rendered documentation size and at full
+   resolution; confirmed responsive composition, readable crops, correct dark
    theme, and absence of transient loading/error UI.
-4. Add the images, captions, and alt text to the two reader guides.
-5. Add the non-mutating screenshot check to `just check`, build the strict docs
-   site, and run the complete local gate.
-6. Commit the capture machinery, generated assets, documentation integration,
+4. Added the images, captions, and alt text to the two reader guides.
+5. Added the non-mutating screenshot check to `just check`, built the strict docs
+   site, and ran the complete local gate.
+6. Committed the capture machinery, generated assets, documentation integration,
    and accepted baselines as one coherent vertical slice.
 
 ## Acceptance criteria

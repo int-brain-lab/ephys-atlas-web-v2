@@ -157,6 +157,10 @@ the submitted values. Statistics and distributions use valid voxels only.
 5. Choose **Import**. Volume releases select the Volume representation and
    render the declared grid from local resources.
 
+![Validated local dataset preview before browser storage is confirmed](../assets/generated/local-import-preview.png)
+
+*Synthetic demonstration data. The archive has been validated here, but it is not stored until **Import** is chosen.*
+
 The release receives a visible `Local` badge and persists in this browser's
 IndexedDB. The outer ZIP is discarded after admission. A shared URL does not
 contain the local data and works on another browser or device only after the

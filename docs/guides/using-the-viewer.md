@@ -8,6 +8,10 @@ mouse-brain anatomical workspace. Start with **Help** in the application for a
 four-step Quick Start or choose **Show me the essentials** for a short guided
 walkthrough of the visible controls.
 
+![Desktop viewer with dataset navigation, linked anatomy, regional context, and visualization settings](../assets/generated/desktop-overview.png)
+
+*Synthetic demonstration data. The full desktop workspace provides orientation; the focused images below keep individual controls legible.*
+
 ## Choose what to explore
 
 The context bar identifies the selected dataset, immutable release, feature,
@@ -33,6 +37,10 @@ Coronal, sagittal, and horizontal views share one ML/AP/DV world cursor. Move
 through the brain with a slice control, the arrow keys while a control is
 focused, or the mouse wheel over a registered view. Moving one plane updates
 the linked guides in the other two.
+
+![Linked coronal, sagittal, and horizontal anatomical views](../assets/generated/linked-anatomical-views.png)
+
+*Synthetic demonstration data. All three views share one ML/AP/DV cursor.*
 
 Top and Swanson occupy the secondary workspace as static regional projections.
 They share regional coloring, hover, selection, and focus, but they are not
@@ -86,6 +94,10 @@ values.
 - **Full** shows the complete declared distribution domain.
 - **Focused** enlarges a reviewed interval while disclosing values below and
   above it.
+
+![Viewer workspace with color settings, distribution controls, and selected-region comparison](../assets/generated/encoding-and-distribution-controls.png)
+
+*Synthetic demonstration data. Presentation controls affect the display, not the underlying observations.*
 
 Open **Info** before interpreting or citing a feature. It records the active
 dataset and release, feature semantics, source population, and provenance.

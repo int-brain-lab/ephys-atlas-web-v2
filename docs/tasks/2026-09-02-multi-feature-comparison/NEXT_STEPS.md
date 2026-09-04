@@ -1,8 +1,7 @@
 # Next steps
 
-As the fourth immediate priority, after the catalog/edition machinery,
-scalar-presentation follow-ups, and documentation screenshots are complete
-unless reprioritized:
+As the current immediate priority, with the catalog/edition machinery,
+scalar-presentation follow-ups, and documentation screenshots complete:
 
 1. inspect the completed D056/D061 URL/catalog state and existing dataset-session,
    repository-port, viewport-factory, and UI-lab seams;
