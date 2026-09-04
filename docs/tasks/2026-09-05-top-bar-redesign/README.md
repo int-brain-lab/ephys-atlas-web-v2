@@ -200,3 +200,14 @@ evidence and remaining work without claiming completion.
   Future implementation agent: append milestone commit IDs and actual validation
   evidence here as work lands.
 - Next action: invoke the start prompt above in the future implementation session.
+
+### Implementation baseline — Linux, 2026-09-05
+
+- Fetched `origin/main` at `e3e032e`; git preflight passed and worktree was clean.
+- Initial `just check`: 424 builder tests (1 skipped), 30 publishing tests,
+  web checks and 120 browser tests passed. The desktop documentation screenshot
+  alone differed (5,141 pixels), confined to the header changed before pickup.
+- Inspected the diff and regenerated that screenshot on Linux. Full `just check`
+  then passed, including all four canonical screenshot cases.
+- Next: grouped Data/Release controls, feature/display composition, regression
+  coverage, independent review, final validation and normal push.
