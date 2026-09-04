@@ -114,6 +114,15 @@ export function switchNavigationDataset(
   return resolveDatasetNavigation(catalog, datasetId, undefined, current.context);
 }
 
+/** Intent: choose a dataset while preserving the active edition/custom baseline. */
+export function selectNavigationDataset(
+  catalog: DatasetCatalog,
+  current: ResolvedDatasetNavigation,
+  datasetId: string,
+): ResolvedDatasetNavigation {
+  return switchNavigationDataset(catalog, current, datasetId);
+}
+
 export function selectNavigationProject(catalog: DatasetCatalog, projectId: string): ResolvedDatasetNavigation {
   return resolveDatasetNavigationRequest(catalog, { projectId });
 }
@@ -124,6 +133,15 @@ export function selectNavigationEdition(
   editionId: string,
 ): ResolvedDatasetNavigation {
   return resolveDatasetNavigationRequest(catalog, { context: 'edition', projectId, editionId });
+}
+
+/** Intent: explicitly return to a coordinated edition from custom context. */
+export function selectNavigationBaselineEdition(
+  catalog: DatasetCatalog,
+  projectId: string,
+  editionId: string,
+): ResolvedDatasetNavigation {
+  return selectNavigationEdition(catalog, projectId, editionId);
 }
 
 export function overrideNavigationRelease(
