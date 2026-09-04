@@ -41,6 +41,7 @@ import type { ResolvedPresentationColormap } from '../application/presentation-c
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
 import { ColorRangeControl } from './color-range-control.js';
 import { ContextMenu, type ContextMenuOption } from './context-menu.js';
+import { DataChooser, type DataChooserSelection } from './data-chooser.js';
 import type { DisplaySliceInventory } from '../rendering/display-slice-inventory.js';
 import type { RegionTooltipModel } from './regional/model.js';
 import type { RegionalPresentation } from '../application/regional-presentation.js';
@@ -63,6 +64,7 @@ import { HelpTour, type HelpTourAnchor } from './help-tour.js';
 
 export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
+  selectData(selection: DataChooserSelection): void;
   selectProject(projectId: string): void;
   selectEdition(projectId: string, editionId: string): void;
   browseCustomVersions(projectId: string): void;
@@ -263,6 +265,7 @@ export class AppShell {
   private readonly headerActionButtons = new Map<HeaderAction, HTMLButtonElement[]>();
   private headerActions!: HTMLElement;
   private readonly datasetContext: ContextMenu;
+  private readonly dataChooser: DataChooser;
   private readonly projectContext: ContextMenu;
   private readonly featureContext: ContextMenu;
   private readonly representationContext: ContextMenu;
@@ -319,6 +322,10 @@ export class AppShell {
         this.callbacks.setDataset({ datasetId, releaseId });
       },
     });
+    this.dataChooser = new DataChooser(
+      (selection) => this.callbacks.selectData(selection),
+      () => { this.closeDrawers(); this.closeContextMenus(); },
+    );
     this.projectContext = new ContextMenu({
       fieldName: 'project',
       label: 'Project',
@@ -489,6 +496,13 @@ export class AppShell {
     const releaseMeta = [release?.label ?? releaseLabel, release?.status, release?.id ? `ID · ${release.id}` : '']
       .filter(Boolean).join(' · ');
     this.datasetContext.setDisplay(datasetLabel, releaseMeta);
+    this.dataChooser.update({
+      catalog,
+      catalogStatus: state.runtime.catalogStatus,
+      error: state.runtime.catalogError,
+      navigation: view.navigation,
+      dataset: view.dataset,
+    });
     this.localDatasetBadge.hidden = view.dataset.datasetId !== 'local';
     this.app.toggleAttribute('data-local-dataset', view.dataset.datasetId === 'local');
     this.featureContext.setDisplay(featureLabel, featureEntry?.unit ?? '');
@@ -598,6 +612,7 @@ export class AppShell {
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('resize', this.onResize);
     this.contextMenus.forEach((menu) => menu.destroy());
+    this.dataChooser.destroy();
     for (const nodes of this.viewFrames.values()) {
       if (nodes.loadingNoticeTimer !== null) window.clearTimeout(nodes.loadingNoticeTimer);
     }
@@ -631,7 +646,13 @@ export class AppShell {
     const context = element('dl', 'app-header__context');
     context.setAttribute('aria-label', 'Atlas context');
     context.dataset.helpAnchor = 'context';
-    context.append(this.projectContext.field, this.datasetContext.field, this.featureContext.field, this.representationContext.field);
+    context.append(
+      this.dataChooser.element,
+      this.projectContext.field,
+      this.datasetContext.field,
+      this.featureContext.field,
+      this.representationContext.field,
+    );
 
     const actions = element('nav', 'app-header__actions');
     actions.setAttribute('aria-label', 'Atlas actions');
@@ -2679,6 +2700,7 @@ export class AppShell {
   }
 
   private openDrawer(drawer: DrawerName, focusContent = true): void {
+    this.closeContextMenus();
     const pane = drawer === 'regions' ? this.regionPane : this.settingsPane;
     const other = drawer === 'regions' ? this.settingsPane : this.regionPane;
     if (this.overflowActions) this.overflowActions.open = false;
@@ -2700,6 +2722,10 @@ export class AppShell {
 
   private closeContextMenus(except?: ContextMenu): boolean {
     let closed = false;
+    if (this.dataChooser.isOpen) {
+      this.dataChooser.close();
+      closed = true;
+    }
     for (const menu of this.contextMenus) {
       if (menu !== except && menu.isOpen) {
         menu.close();
@@ -2718,8 +2744,13 @@ export class AppShell {
   private syncLayoutMode(): void {
     const width = window.innerWidth;
     const mode: LayoutMode = width >= 1480 ? 'wide' : width >= 1100 ? 'compact' : width >= 760 ? 'narrow' : 'phone';
+    const previousMode = this.layoutMode;
     this.layoutMode = mode;
     this.app.dataset.layout = mode;
+    if (mode !== previousMode) {
+      if (mode === 'phone') this.closeContextMenus();
+      else this.dataChooser.close();
+    }
     if (mode !== 'phone' && this.overflowActions) this.overflowActions.open = false;
     if (mode === 'wide') this.closeDrawers();
     else if (mode === 'compact' && this.regionPane.dataset.open === 'true') this.closeDrawers();

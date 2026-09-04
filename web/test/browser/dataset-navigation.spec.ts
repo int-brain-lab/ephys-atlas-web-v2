@@ -37,3 +37,90 @@ test('desktop project and dataset controls disclose edition and exact release co
   await expect.poll(() => new URL(page.url()).searchParams.get('edition')).toBe('synthetic-current');
   await expect(project.locator('.context-field__release')).toHaveText('Synthetic current edition');
 });
+
+test('phone Data chooser stages an edition selection and commits one exact history checkpoint', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect.poll(() => new URL(page.url()).searchParams.get('release')).toBe('golden-v1');
+
+  await expect(page.locator('[data-context-field="project"]')).toBeHidden();
+  await expect(page.locator('[data-context-field="dataset"]')).toBeHidden();
+  const trigger = page.getByRole('button', { name: /^Data:/ });
+  await expect(trigger).toBeVisible();
+  await expect(trigger).toContainText('Synthetic development data / IBL Ephys Atlas v2 golden fixture');
+  await expect(trigger).toContainText('Custom versions / Synthetic golden-v1');
+
+  const initialUrl = page.url();
+  const initialHistoryLength = await page.evaluate(() => history.length);
+  await trigger.press('ArrowDown');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAccessibleName('Choose project');
+  const project = dialog.getByRole('button', { name: /Synthetic development data/ });
+  await expect(project).toBeFocused();
+  await expect(project).toHaveAttribute('aria-current', 'true');
+  await project.press('Enter');
+  await expect(dialog.getByRole('heading')).toHaveText('Choose edition or custom versions');
+  await expect(page).toHaveURL(initialUrl);
+
+  const back = dialog.getByRole('button', { name: /Projects/ });
+  await expect(back).toBeFocused();
+  await back.press('Enter');
+  await expect(dialog.getByRole('heading')).toHaveText('Choose project');
+  await dialog.getByRole('button', { name: /Synthetic development data/ }).click();
+  await dialog.getByRole('button', { name: /Synthetic current edition/ }).click();
+  await expect(dialog.getByRole('heading')).toHaveText('Choose dataset and exact version');
+  await expect(page).toHaveURL(initialUrl);
+  await dialog.getByRole('button', { name: /Synthetic golden-v1/ }).click();
+
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect.poll(() => new URL(page.url()).searchParams.get('edition')).toBe('synthetic-current');
+  await expect.poll(() => new URL(page.url()).searchParams.get('context')).toBeNull();
+  await expect.poll(() => page.evaluate(() => history.length)).toBe(initialHistoryLength + 1);
+  await expect(trigger).toContainText('Synthetic current edition / Synthetic golden-v1');
+
+  await trigger.click();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
+test('Data chooser remains bounded at the phone breakpoint edge', async ({ page }) => {
+  await page.setViewportSize({ width: 759, height: 500 });
+  await page.goto('/');
+  const trigger = page.getByRole('button', { name: /^Data:/ });
+  await expect(trigger).toBeVisible();
+  await trigger.click();
+  const panel = page.getByRole('dialog');
+  const bounds = await panel.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.y).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(759);
+  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(500);
+  await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 759);
+});
+
+test('phone Data chooser announces catalog loading and failure', async ({ page }) => {
+  let rejectCatalog: (() => void) | undefined;
+  const catalogGate = new Promise<void>((resolve) => { rejectCatalog = resolve; });
+  await page.route('**/__real-data/catalog.json', async (route) => {
+    await catalogGate;
+    await route.fulfill({ status: 503, body: 'catalog unavailable' });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+
+  const trigger = page.getByRole('button', { name: /^Data:/ });
+  await expect(trigger).toHaveAttribute('aria-busy', 'true');
+  await trigger.click();
+  const status = page.getByRole('dialog').getByRole('status');
+  await expect(status).toHaveText('Loading projects…');
+
+  rejectCatalog?.();
+  await expect(trigger).toHaveAttribute('aria-busy', 'false');
+  await expect(status).toContainText('Projects unavailable: HTTP 503');
+  await page.keyboard.press('Escape');
+  await expect(trigger).toBeFocused();
+});

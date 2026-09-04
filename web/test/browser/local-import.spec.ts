@@ -61,6 +61,19 @@ test('validated ZIP preview is read-only until confirmation and persists locally
   await expect.poll(() => new URL(page.url()).searchParams.get('dataset')).toBe('local');
   await expect.poll(() => new URL(page.url()).searchParams.get('release')).toBe('golden_fixture@golden-v1');
 
+  await page.setViewportSize({ width: 390, height: 844 });
+  const dataTrigger = page.getByRole('button', { name: /^Data:/ });
+  await expect(dataTrigger).toContainText('My data / Local datasets');
+  await expect(dataTrigger).toContainText('Local browser data / golden_fixture / golden-v1');
+  await dataTrigger.click();
+  const dataDialog = page.getByRole('dialog');
+  await dataDialog.getByRole('button', { name: /My data/ }).click();
+  await expect(dataDialog.getByRole('heading')).toHaveText('Choose dataset and exact version');
+  await expect(dataDialog).toContainText('golden_fixture@golden-v1');
+  await page.keyboard.press('Escape');
+  await expect(dataTrigger).toBeFocused();
+  await page.setViewportSize({ width: 1280, height: 800 });
+
   await page.route('**/__real-data/**', (route) => route.abort());
   await page.reload();
   await expect(dataset.locator('.context-field__local-badge')).toBeVisible();

@@ -38,6 +38,7 @@ import {
   type ProjectionViewportFactory,
 } from './rendering/projection-viewport.js';
 import { AppShell, type ShellModel } from './ui/app-shell.js';
+import type { DataChooserSelection } from './ui/data-chooser.js';
 import { RegionalPanelController } from './ui/regional-panel.js';
 import { buildSelectedComparisonExport } from './ui/regional/comparison-export.js';
 import { buildRegionTooltipModel } from './ui/regional/model.js';
@@ -87,6 +88,7 @@ export class AtlasApp {
     this.viewportFactory = options.viewportFactory ?? new NullProjectionViewportFactory();
     this.shell = new AppShell(root, {
       setDataset: (ref) => this.selectDataset(ref),
+      selectData: (selection) => this.selectData(selection),
       selectProject: (projectId) => this.selectProject(projectId),
       selectEdition: (projectId, editionId) => this.selectEdition(projectId, editionId),
       browseCustomVersions: (projectId) => this.browseCustomVersions(projectId),
@@ -407,6 +409,32 @@ export class AtlasApp {
     }
   }
 
+  private selectData(selection: DataChooserSelection): void {
+    const catalog = this.session.snapshot().catalog;
+    if (!catalog) {
+      this.reportRuntimeError(new Error('Data selection requires the loaded catalog'));
+      return;
+    }
+    try {
+      const resolved = resolveDatasetNavigation(
+        catalog,
+        selection.dataset.datasetId,
+        selection.dataset.releaseId,
+        selection.navigation,
+      );
+      this.commitNavigation(
+        resolved.context.kind === 'local' ? 'navigation/local'
+          : resolved.context.kind === 'edition' ? 'navigation/dataset' : 'navigation/release',
+        resolved,
+      );
+    } catch (error) {
+      this.store.dispatch({
+        type: 'runtime/navigation', status: 'error',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
   private selectProject(projectId: string): void {
     const catalog = this.session.snapshot().catalog;
     if (!catalog) return;
@@ -452,7 +480,7 @@ export class AtlasApp {
   }
 
   private commitNavigation(
-    type: 'navigation/project' | 'navigation/edition' | 'navigation/dataset' | 'navigation/release',
+    type: 'navigation/project' | 'navigation/edition' | 'navigation/dataset' | 'navigation/release' | 'navigation/local',
     resolved: ReturnType<typeof resolveDatasetNavigation>,
   ): void {
     this.store.dispatch({

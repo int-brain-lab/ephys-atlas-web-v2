@@ -44,12 +44,14 @@ export class ContextMenu {
   private readonly search: HTMLInputElement | null;
   private readonly list: HTMLElement;
   private readonly empty: HTMLElement;
+  private readonly groupIdPrefix: string;
   private options: readonly ContextMenuOption[] = [];
   private selectedIds = new Set<string>();
   private unavailableMessage = 'No options are available.';
 
   constructor(private readonly config: ContextMenuConfig) {
     const panelId = `context-menu-${++menuSequence}`;
+    this.groupIdPrefix = `${panelId}-group`;
     this.field = element('div', 'context-field context-menu');
     this.field.dataset.contextField = config.fieldName;
 
@@ -182,13 +184,23 @@ export class ContextMenu {
   private renderOptions(): void {
     const fragment = document.createDocumentFragment();
     let previousGroup: string | undefined;
+    let groupContainer: HTMLElement | undefined;
+    let groupIndex = 0;
     for (const option of this.options) {
       if (option.group && option.group !== previousGroup) {
+        groupContainer = element('div', 'context-menu__option-group');
+        groupContainer.setAttribute('role', 'group');
+        groupContainer.dataset.contextGroup = option.group;
         const group = element('div', 'context-menu__group');
+        group.id = `${this.groupIdPrefix}-${groupIndex++}`;
         group.textContent = option.group;
-        group.dataset.contextGroup = option.group;
-        fragment.append(group);
+        groupContainer.setAttribute('aria-labelledby', group.id);
+        groupContainer.append(group);
+        fragment.append(groupContainer);
         previousGroup = option.group;
+      } else if (!option.group) {
+        groupContainer = undefined;
+        previousGroup = undefined;
       }
       const button = element('button', 'context-menu__option');
       if (option.variant) button.classList.add(`context-menu__option--${option.variant}`);
@@ -234,7 +246,7 @@ export class ContextMenu {
         this.config.onSelect(option);
         this.close(true);
       });
-      fragment.append(button);
+      (groupContainer ?? fragment).append(button);
     }
     this.list.replaceChildren(fragment, this.empty);
     this.filter();
@@ -279,7 +291,7 @@ export class ContextMenu {
       button.hidden = !visible;
       if (visible && button.dataset.group) visibleGroups.add(button.dataset.group);
     }
-    for (const group of this.list.querySelectorAll<HTMLElement>('.context-menu__group')) {
+    for (const group of this.list.querySelectorAll<HTMLElement>('.context-menu__option-group')) {
       group.hidden = !visibleGroups.has(group.dataset.contextGroup ?? '');
     }
     const hasVisibleOptions = this.list.querySelector('.context-menu__option:not([hidden])') !== null;

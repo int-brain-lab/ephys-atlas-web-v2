@@ -525,8 +525,8 @@ test('scientific context menus and color controls are driven by the loaded relea
   const representation = page.locator('[data-context-field="representation"]');
   await representation.locator('.context-menu__trigger').click();
   await expect(representation.getByRole('listbox')).toHaveAttribute('aria-multiselectable', 'true');
-  await expect(representation.locator('[data-context-group="View"]')).toBeVisible();
-  await expect(representation.locator('[data-context-group="Parcellation"]')).toBeVisible();
+  await expect(representation.getByRole('group', { name: 'View' })).toBeVisible();
+  await expect(representation.getByRole('group', { name: 'Parcellation' })).toBeVisible();
   await expect(representation.getByRole('option', { selected: true })).toHaveCount(2);
   await expect(representation.getByRole('option', { name: /Regional/ })).toHaveAttribute('aria-selected', 'true');
   await expect(representation.getByRole('option', { name: /Allen/ })).toHaveAttribute('aria-selected', 'true');
