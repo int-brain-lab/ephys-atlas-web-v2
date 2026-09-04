@@ -45,21 +45,22 @@ authorization and open questions.
 
 ### Catalog and navigation slices
 
-1. atomically cut over the schema-v1 catalog, bundled schema, Python and
-   TypeScript validators, shared corpus, curator-owned compiler/promotion path,
-   publishing adapters, synthetic Vite producer, and distinct public/local
-   browser composition; reject edition-ID remapping and preserve the
-   last-known-good catalog on failure;
-2. add unresolved request versus exact resolved navigation, explicit
+1. add unresolved request versus exact resolved navigation, explicit
    edition/custom-with-optional-baseline/local context, intent-specific
    transitions, catalog-first startup and `popstate`, URL-v4 canonicalization,
    local lifecycle transitions, and separate failure domains;
-3. implement the desktop/tablet Project/Dataset/Feature/View bar, edition or
+2. implement the desktop/tablet Project/Dataset/Feature/View bar, edition or
    custom disclosure, exact release override/re-entry, View terminology, and
    loading/recovery behavior;
-4. implement the narrow staged Data chooser, accessible grouped-menu keyboard
+3. implement the narrow staged Data chooser, accessible grouped-menu keyboard
    behavior, responsive/local/error matrices, production-style synthetic
    catalog coverage, and durable completion documentation.
+
+The atomic catalog/compiler cutover is complete. Schema v1, both validators,
+the shared corpus, curator-owned compile/promote path, immutable edition
+history, the synthetic Vite producer, and distinct public/local browser
+composition now use only the D056/D061 contract. Ordinary release publication
+does not grant catalog discovery or edition membership.
 
 Run targeted contract, publishing, resolver, URL, repository, and browser tests
 within each slice, then `just check` before its commit. The binding field,

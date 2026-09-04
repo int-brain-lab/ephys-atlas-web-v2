@@ -577,6 +577,8 @@ def _document_semantics(document: dict[str, Any], schema_name: str) -> None:
         projects = document["projects"]
         _unique([project["project_id"] for project in projects], "catalog project id")
         project_by_id = {project["project_id"]: project for project in projects}
+        if "local" in project_by_id:
+            _fail("reserved local project id cannot be published")
         if document["default_project"] not in project_by_id:
             _fail("catalog default project is not present in projects")
         memberships: dict[str, list[str]] = {dataset_id: [] for dataset_id in dataset_by_id}

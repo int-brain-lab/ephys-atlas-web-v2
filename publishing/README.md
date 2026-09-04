@@ -13,6 +13,8 @@ credentials. That S3 command remains to be implemented.
 - public reads are static files under `STORAGE/public/`
 - releases are immutable directories
 - `latest` and other aliases live in the mutable dataset index
+- public project membership, editions, release presentation, and defaults are
+  emitted only by an explicit curator-owned catalog promotion
 - uploads are staged privately and become public only after complete size/SHA-256 checks and validation
 - upload is chunked and resumable using server-reported offsets
 - publisher tokens are independently revocable and only salted PBKDF2 hashes are stored server-side
@@ -73,7 +75,11 @@ uv run --project publishing --locked ephys-atlas-publish publish \
   --alias latest
 ```
 
-The browser/CDN should read `STORAGE/public/catalog.json`, dataset `index.json` files, and immutable release files directly. It need not call the publishing API.
+Publishing a release makes immutable bytes available but does not add them to
+public discovery. A curator must compile and promote a complete catalog before
+the browser/CDN can read `STORAGE/public/catalog.json`; no placeholder catalog
+is emitted before the first promotion. Dataset `index.json` files and immutable
+release files remain directly readable without calling the publishing API.
 
 Resume an interrupted upload using its upload ID:
 

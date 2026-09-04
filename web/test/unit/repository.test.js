@@ -6,9 +6,13 @@ function source(kind, datasetId) {
   return {
     kind,
     async loadCatalog() {
+      const isLocal = kind === 'local';
+      const projectId = isLocal ? 'local' : 'published-project';
       return {
         schemaVersion: '1.0',
-        datasets: [{ id: datasetId, title: datasetId, defaultRelease: 'r1', releases: [{ id: 'r1', label: 'r1', manifest: 'manifest.json', immutable: true }] }],
+        defaultProject: projectId,
+        projects: [{ id: projectId, title: projectId, datasetIds: [datasetId], defaultDataset: datasetId, editions: [] }],
+        datasets: [{ id: datasetId, source: kind, projectId, title: datasetId, defaultRelease: 'r1', releases: [{ id: 'r1', label: isLocal ? 'Imported release' : 'Release one', manifest: 'manifest.json', immutable: true }] }],
       };
     },
     async loadManifest(ref) {
@@ -52,6 +56,13 @@ test('unavailable local storage does not take down the published catalog', async
     repository.loadManifest({ datasetId: 'local', releaseId: 'r1' }),
     /IndexedDB unavailable|local/,
   );
+});
+
+test('repository rejects local inventory outside its reserved namespace', async () => {
+  const published = source('published', 'ephys_atlas_channels');
+  const local = source('local', 'another-dataset');
+  const repository = new DatasetRepository(published, local);
+  await assert.rejects(repository.loadCatalog(), /reserved local namespace/);
 });
 
 test('repository routes release and feature artifacts to the selected source', async () => {

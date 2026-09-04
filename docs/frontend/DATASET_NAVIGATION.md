@@ -1,6 +1,6 @@
 # Dataset navigation and project editions
 
-Status: accepted product, catalog, and interaction contract; implementation pending.
+Status: accepted contract; catalog/compiler slice implemented, navigation and UI slices pending.
 
 D056 establishes the Project, Dataset, Release, Feature, and View hierarchy.
 D061 fixes catalog authority, immutable edition identity, explicit browser
@@ -260,6 +260,8 @@ three failure classes into one undifferentiated runtime error.
 
 ### 1. Atomic catalog contract and compiler cutover
 
+Status: implemented.
+
 Update the canonical and bundled catalog schemas, Python and TypeScript
 semantic validators, shared valid/invalid corpus, typed browser parser, curator
 configuration/compiler/promotion path, publishing tests, Vite synthetic
@@ -269,6 +271,8 @@ temporarily consuming the new composed model. Do not accept both catalog
 shapes. Run `just check` and commit the coherent producer/consumer cutover.
 
 ### 2. Resolved navigation and URL v4
+
+Status: next.
 
 Add request/resolved types, edition/custom/local context with optional custom
 baseline, pure resolution and transition functions, intent-specific actions,

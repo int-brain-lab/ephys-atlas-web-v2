@@ -22,7 +22,20 @@ All mutation endpoints use `Authorization: Bearer <publisher-token>`. Public cat
 3. `PUT /api/uploads/{upload}/files/{path}` with `Upload-Offset` appends the next chunk. Nonmatching offsets return `409` plus the expected offset.
 4. `POST /api/uploads/{upload}/publish` with optional aliases.
 
-Publication verifies every artifact, runs the configured validator, writes `_publication.json`, then performs a same-filesystem atomic rename of the staged release directory into `public/datasets/<dataset>/releases/<release>`. Only after that rename the dataset indexes/aliases updated.
+Publication verifies every artifact, runs the configured validator, writes
+`_publication.json`, then performs a same-filesystem atomic rename of the
+staged release directory into
+`public/datasets/<dataset>/releases/<release>`. Only after that rename are the
+administrative dataset indexes and aliases updated. Publication does not change
+public catalog discovery.
+
+Project membership, editions, release labels/status, and defaults are compiled
+from curator-owned configuration against this immutable inventory. The store's
+explicit promotion path validates the prospective cross-dataset graph, rejects
+edition-ID remapping using durable history, and replaces `catalog.json` only
+after validation. No public catalog exists before its first successful curator
+promotion. This path is currently an internal store operation rather than an
+HTTP endpoint; the initial D060 local S3 publisher will reuse it.
 
 ## Static layout
 

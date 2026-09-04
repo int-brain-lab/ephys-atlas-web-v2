@@ -57,6 +57,8 @@ export interface BinaryArrayDescriptor extends EncodedResourceDescriptor {
 export interface DatasetReleaseSummary {
   id: string;
   label: string;
+  status?: 'legacy' | 'development';
+  description?: string;
   manifest: string;
   manifestResource?: EncodedResourceDescriptor;
   immutable: boolean;
@@ -64,14 +66,35 @@ export interface DatasetReleaseSummary {
 
 export interface DatasetCatalogEntry {
   id: DatasetId;
+  source: 'published' | 'local';
+  projectId: string;
   title: string;
   description?: string;
   releases: readonly DatasetReleaseSummary[];
   defaultRelease: string;
 }
 
+export interface DatasetEdition {
+  id: string;
+  label: string;
+  description?: string;
+  datasetReleases: ReadonlyMap<string, string>;
+}
+
+export interface DatasetProject {
+  id: string;
+  title: string;
+  description?: string;
+  datasetIds: readonly DatasetId[];
+  defaultDataset: DatasetId;
+  defaultEdition?: string;
+  editions: readonly DatasetEdition[];
+}
+
 export interface DatasetCatalog {
   schemaVersion: SchemaVersion;
+  defaultProject: string;
+  projects: readonly DatasetProject[];
   datasets: readonly DatasetCatalogEntry[];
 }
 

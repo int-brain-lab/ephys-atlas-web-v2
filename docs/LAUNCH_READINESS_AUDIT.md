@@ -188,7 +188,7 @@ browser matrix.
 | ID | Criterion and compound subclaims | Evidence | Disposition | Smallest next action |
 | --- | --- | --- | --- | --- |
 | [LS10-01](LAUNCH_SPEC.md#ls10-01) | Public reads are static, unauthenticated, object-storage/CDN-suitable. | Architecture, static server paths, publishing API. | satisfied | Verify final origin anonymously. |
-| [LS10-02](LAUNCH_SPEC.md#ls10-02) | Public `catalog.json` matches browser contract. | Cross-consumer catalog tests. | satisfied | Validate deployed catalog. |
+| [LS10-02](LAUNCH_SPEC.md#ls10-02) | Public `catalog.json` matches browser contract. | The D056/D061 catalog compiler output passes the canonical schema and TypeScript parser; ordinary publication remains outside curator-owned discovery. | satisfied | Validate the promoted catalog at the deployed origin. |
 | [LS10-03](LAUNCH_SPEC.md#ls10-03) | Published releases never mutate. | Publishing immutability/atomicity tests. | satisfied | Retain operational permissions. |
 | [LS10-04](LAUNCH_SPEC.md#ls10-04) | Mutable aliases live outside releases and resolve immutable IDs. | Publishing catalog/alias tests. | satisfied | Configure aliases only after Q9. |
 | [LS10-05](LAUNCH_SPEC.md#ls10-05) | Revocable capabilities; no launch-blocking user/OAuth system. | Publishing API/auth tests and D009. | satisfied | Configure credentials outside repository if deployed. |

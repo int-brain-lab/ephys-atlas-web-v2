@@ -372,18 +372,24 @@ export class LocalDatasetSource implements DatasetSource {
     const releases = storedManifests.map((stored) => ({
       id: stored.selector,
       label: `${stored.sourceDatasetId} / ${stored.sourceReleaseId}`,
+      description: 'Imported into this browser.',
       manifest: 'indexeddb://manifest.json',
       immutable: true,
     }));
+    const datasets = releases.length ? [{
+      id: 'local' as const,
+      source: 'local' as const,
+      projectId: 'local',
+      title: 'Local datasets',
+      description: 'Browser-imported schema-v1 datasets stored only on this device.',
+      releases,
+      defaultRelease: releases.at(-1)?.id ?? '',
+    }] : [];
     return {
       schemaVersion: SCHEMA_VERSION,
-      datasets: releases.length ? [{
-        id: 'local',
-        title: 'Local datasets',
-        description: 'Browser-imported schema-v1 datasets stored only on this device.',
-        releases,
-        defaultRelease: releases.at(-1)?.id ?? '',
-      }] : [],
+      defaultProject: 'local',
+      projects: releases.length ? [{ id: 'local', title: 'My data', datasetIds: ['local'], defaultDataset: 'local', editions: [] }] : [],
+      datasets,
     };
   }
 

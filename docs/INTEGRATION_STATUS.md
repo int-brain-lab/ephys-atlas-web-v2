@@ -2,7 +2,7 @@
 
 Status: active pre-launch capability matrix.
 
-Last reviewed: 2026-09-02 on `main` after the D060 deployment decision.
+Last reviewed: 2026-09-04 on `main` after the D056/D061 catalog/compiler cutover.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -145,9 +145,13 @@ implemented-path [`data/CUSTOM_DATA_TUTORIAL.md`](data/CUSTOM_DATA_TUTORIAL.md).
 ## Publishing and deployment
 
 The capability-token publishing service supports resumable private staging,
-byte-size/SHA/schema validation, immutable publication, aliases, catalog
-generation, bounded requests, process-safe filesystem mutations, and external
-validation. D060 keeps that implementation as an optional future
+byte-size/SHA/schema validation, immutable publication, administrative aliases,
+bounded requests, process-safe filesystem mutations, and external validation.
+Its curator-owned compiler now promotes the cross-dataset project/edition
+catalog explicitly, persists immutable edition identity history, and leaves the
+last-known-good catalog visible when validation fails. Ordinary dataset
+publication cannot grant public discovery, edition membership, or defaults.
+D060 keeps that implementation as an optional future
 multi-publisher path; no publishing server will run for the initial deployment.
 The selected initial path is a local repository publisher using temporary,
 least-privilege AWS credentials while preserving the same validation,
@@ -170,11 +174,12 @@ aliases. No remote publication has occurred.
 D056/D061 accept Project/Dataset/Release/Feature/View navigation, immutable
 scoped project editions, curator-owned catalog promotion, explicit
 edition/custom/local browser context, catalog-first exact URL resolution, and
-a staged narrow Data chooser. The current schema-v1 public catalog and top bar
-still expose a flat dataset/release list, and local inventory is still composed
-through that wire type, so the four contract/compiler, resolved-navigation,
-desktop/tablet, and narrow/accessibility slices remain unimplemented. Generic
-machinery may use synthetic edition values; Q9 blocks only the real paper
+a staged narrow Data chooser. The schema-v1 catalog/compiler cutover is
+implemented across canonical and bundled schemas, Python and TypeScript
+validators, publishing, synthetic Vite production, and distinct public/local
+browser composition. The current application state and top bar remain flat, so
+the resolved-navigation, desktop/tablet, and narrow/accessibility slices remain.
+Generic machinery may use synthetic edition values; Q9 blocks only the real paper
 edition identity, scoped release mapping, defaults, aliases, and freeze
 process. The binding product contract is
 [`frontend/DATASET_NAVIGATION.md`](frontend/DATASET_NAVIGATION.md).

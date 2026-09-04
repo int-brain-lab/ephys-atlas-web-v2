@@ -42,6 +42,13 @@ The shared valid/invalid corpus under `tests/contract-fixtures/v1/` is executed
 by both Python and TypeScript validators and covers every top-level schema plus
 the common binary/resource semantics.
 
+`catalog.json` owns ordered public projects, datasets, release presentation,
+defaults, and immutable scoped project editions. Every public dataset belongs
+to exactly one project and the reserved browser-local identity never enters
+the public catalog. Ordinary immutable release publication only updates the
+administrative inventory; an explicit curator compile/promote operation
+validates the complete graph and updates public discovery last.
+
 Every nonempty scalar representation declares Linear/Full and may add reviewed
 Log or Signed-log scales and a Focused domain. The representation-specific
 feature display owns availability and preferences. Regional statistics and

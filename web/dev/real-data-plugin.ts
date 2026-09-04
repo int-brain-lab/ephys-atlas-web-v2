@@ -106,6 +106,14 @@ export function realReleasePlugin(configured: RealDevelopmentRelease | readonly 
           }
           const body = JSON.stringify({
             schema_version: '1.0',
+            default_project: 'synthetic-development',
+            projects: [{
+              project_id: 'synthetic-development',
+              title: 'Synthetic development data',
+              dataset_ids: [...datasets.keys()],
+              default_dataset: releases[0]!.datasetId,
+              editions: [],
+            }],
             datasets: [...datasets.values()].map((group) => ({
               dataset_id: group[0]!.datasetId,
               title: group[0]!.title,
@@ -113,6 +121,8 @@ export function realReleasePlugin(configured: RealDevelopmentRelease | readonly 
               default_release: group[0]!.releaseId,
               releases: group.map((release) => ({
                 release_id: release.releaseId,
+                label: `Synthetic ${release.releaseId}`,
+                status: 'development',
                 manifest: {
                   path: `./${release.datasetId}/${release.releaseId}/manifest.json`,
                   media_type: 'application/json',

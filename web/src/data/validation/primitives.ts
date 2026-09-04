@@ -3,6 +3,7 @@ import type { BinaryDType, JsonValue } from '../contracts.js';
 
 export const RELATIVE_PATH = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$)).+$/;
 export const SHA256 = /^[0-9a-f]{64}$/;
+export const IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 export const DATASET_ID_PATTERN = /^[a-z0-9][a-z0-9._-]*$/;
 export const COMMIT = /^[0-9a-f]{7,40}$/;
 const DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;

@@ -28,7 +28,24 @@ export class DatasetRepository {
     if (published.schemaVersion !== local.schemaVersion) {
       throw new Error(`Catalog schema mismatch: ${published.schemaVersion} vs ${local.schemaVersion}`);
     }
-    return { schemaVersion: published.schemaVersion, datasets: [...published.datasets, ...local.datasets] };
+    if (local.datasets.some((dataset) => dataset.id !== 'local' || dataset.source !== 'local')
+      || local.projects.some((project) => project.id !== 'local')) {
+      throw new Error('Local catalog must use only the reserved local namespace');
+    }
+    if (published.datasets.some((dataset) => dataset.id === 'local')
+      || published.projects.some((project) => project.id === 'local')) {
+      throw new Error('Published catalog collides with the reserved local namespace');
+    }
+    const localDatasets = local.datasets.map((dataset) => ({ ...dataset, source: 'local' as const, projectId: 'local' }));
+    const projects = local.datasets.length
+      ? [...published.projects, ...local.projects]
+      : published.projects;
+    return {
+      schemaVersion: published.schemaVersion,
+      defaultProject: published.defaultProject,
+      projects,
+      datasets: [...published.datasets, ...localDatasets],
+    };
   }
 
   loadManifest(ref: DatasetRef): Promise<DatasetManifest> {

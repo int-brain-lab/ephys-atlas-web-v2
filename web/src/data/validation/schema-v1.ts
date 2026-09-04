@@ -1,5 +1,7 @@
 /** Semantic validator used by the staged cross-language schema-v1 corpus. */
 
+import { parseDatasetCatalog } from './catalog.js';
+
 type JsonObject = Record<string, unknown>;
 
 const DTYPE_BYTES: Readonly<Record<string, number>> = {
@@ -552,14 +554,7 @@ export function validateSchemaV1Document(value: unknown, schemaName: string): vo
       required(document, ['id', 'role', 'resource'], 'artifact');
       break;
     case 'catalog.schema.json': {
-      const datasets = array(document.datasets, 'catalog datasets').map((item) => object(item, 'dataset'));
-      unique(datasets.map((dataset) => dataset.dataset_id), 'catalog dataset id');
-      for (const dataset of datasets) {
-        const releases = array(dataset.releases, 'catalog releases').map((item) => object(item, 'release'));
-        const ids = releases.map((release) => release.release_id);
-        unique(ids, 'catalog release id');
-        if (dataset.default_release !== undefined && !ids.includes(dataset.default_release)) fail('catalog default release is absent');
-      }
+      parseDatasetCatalog(document);
       break;
     }
     case 'provenance.schema.json':
