@@ -324,6 +324,34 @@ export class UrlStateController {
     this.store.dispatch({ type: 'runtime/navigation', status: 'ready' });
     this.writeUrl(initial, 'replace');
 
+    this.listen();
+  }
+
+  /** Resolve an explicit recovery choice after a rejected startup or popstate URL. */
+  recover(request: DatasetNavigationRequest): ViewState {
+    if (!this.catalog) throw new Error('Dataset catalog is not loaded');
+    const requestedView = parseViewState(this.win.location.search, this.defaults);
+    const resolved = resolveDatasetNavigationRequest(this.catalog, request);
+    const recovered = {
+      ...requestedView,
+      navigation: resolved.context,
+      dataset: { datasetId: resolved.dataset.id, releaseId: resolved.releaseId },
+    };
+    this.applyingPopState = true;
+    try {
+      this.store.dispatch({ type: 'view/hydrate', view: recovered });
+      this.store.dispatch({ type: 'runtime/navigation', status: 'ready' });
+      this.writeUrl(recovered, 'push');
+    } finally {
+      this.applyingPopState = false;
+    }
+    this.listen();
+    return recovered;
+  }
+
+  private listen(): void {
+    if (this.stopStore) return;
+
     this.stopStore = this.store.subscribe((state, action) => {
       if (this.applyingPopState || !isViewAction(action)) return;
       if (action.history === 'none') {

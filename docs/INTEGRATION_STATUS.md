@@ -183,7 +183,9 @@ local context before immutable release loading; unresolved published releases
 are rejected. The desktop/tablet four-field context bar now exposes project,
 edition/custom context, dataset release metadata, feature, and View controls
 with exact history-preserving transitions. The staged narrow Data chooser and
-grouped-menu accessibility completion remain.
+grouped-menu accessibility are implemented with atomic edition/custom/local
+selection, bounded phone composition, live catalog status, and explicit
+catalog/navigation recovery. No generic D056/D061 implementation slice remains.
 Generic machinery may use synthetic edition values; Q9 blocks only the real paper
 edition identity, scoped release mapping, defaults, aliases, and freeze
 process. The binding product contract is

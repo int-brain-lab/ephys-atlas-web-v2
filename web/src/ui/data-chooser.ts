@@ -6,12 +6,21 @@ export interface DataChooserSelection {
   readonly dataset: ExactDatasetRef;
 }
 
+export type NavigationRecoveryAction = 'catalog' | 'default' | 'edition' | 'custom';
+
+export interface NavigationRecovery {
+  readonly message: string;
+  readonly canReturnToEdition: boolean;
+  readonly canOpenExactAsCustom: boolean;
+}
+
 export interface DataChooserModel {
   readonly catalog: DatasetCatalog | null;
   readonly catalogStatus: 'idle' | 'loading' | 'ready' | 'error';
   readonly error?: string | null;
   readonly navigation: DatasetNavigationContext;
   readonly dataset: { readonly datasetId: string; readonly releaseId: string | null };
+  readonly recovery?: NavigationRecovery | null;
 }
 
 type Stage = 'project' | 'context' | 'dataset';
@@ -43,6 +52,7 @@ export class DataChooser {
   constructor(
     private readonly onSelect: (selection: DataChooserSelection) => void,
     private readonly onOpen: () => void = () => undefined,
+    private readonly onRecover: (action: NavigationRecoveryAction) => void = () => undefined,
   ) {
     const id = `data-chooser-${++chooserSequence}`;
     this.trigger.type = 'button';
@@ -89,7 +99,9 @@ export class DataChooser {
     this.primary.textContent = navigation.kind === 'local'
       ? `My data / ${dataset?.title ?? model.dataset.datasetId}`
       : `${project?.title ?? projectId} / ${dataset?.title ?? model.dataset.datasetId}`;
-    this.secondary.textContent = `${contextLabel} / ${release?.label ?? model.dataset.releaseId ?? 'Choose release'}`;
+    this.secondary.textContent = model.recovery
+      ? 'Navigation unavailable / open to recover'
+      : `${contextLabel} / ${release?.label ?? model.dataset.releaseId ?? 'Choose release'}`;
     this.trigger.setAttribute('aria-label', `Data: ${this.primary.textContent}, ${this.secondary.textContent}`);
     this.trigger.setAttribute('aria-busy', String(model.catalogStatus === 'idle' || model.catalogStatus === 'loading'));
     if (!this.panel.hidden) this.render(false);
@@ -146,10 +158,16 @@ export class DataChooser {
       this.status.textContent = model?.catalogStatus === 'error'
         ? `Projects unavailable: ${model.error ?? 'The catalog could not be loaded.'}`
         : 'Loading projects…';
+      if (model?.catalogStatus === 'error') {
+        this.addChoice('Retry catalog', 'Load and validate the public catalog again', () => this.recover('catalog'));
+        if (focusChoices) this.choiceButtons()[0]?.focus();
+      }
       return;
     }
-    this.status.textContent = this.stage === 'project' ? 'Step 1 of 3'
-      : this.stage === 'context' ? 'Step 2 of 3' : 'Step 3 of 3';
+    this.status.textContent = model.recovery
+      ? `Navigation unavailable: ${model.recovery.message}`
+      : this.stage === 'project' ? 'Step 1 of 3'
+        : this.stage === 'context' ? 'Step 2 of 3' : 'Step 3 of 3';
     if (this.stage === 'project') this.renderProjects(catalog);
     if (this.stage === 'context') this.renderContexts(catalog);
     if (this.stage === 'dataset') this.renderDatasets(catalog);
@@ -157,6 +175,16 @@ export class DataChooser {
   }
 
   private renderProjects(catalog: DatasetCatalog): void {
+    const recovery = this.model?.recovery;
+    if (recovery) {
+      this.addChoice('Use catalog default', 'Replace the invalid request with the catalog-owned default', () => this.recover('default'));
+      if (recovery.canReturnToEdition) {
+        this.addChoice('Return to edition', 'Use the exact release mapped by the requested edition', () => this.recover('edition'));
+      }
+      if (recovery.canOpenExactAsCustom) {
+        this.addChoice('Open exact release as custom', 'Keep the requested immutable release outside coordinated edition context', () => this.recover('custom'));
+      }
+    }
     const publishedIds = new Set(catalog.datasets.filter(({ source }) => source === 'published').map(({ id }) => id));
     for (const project of catalog.projects.filter(({ datasetIds }) => datasetIds.some((id) => publishedIds.has(id)))) {
       this.addChoice(project.title, project.description ?? project.id, () => {
@@ -229,6 +257,11 @@ export class DataChooser {
 
   private addBack(label: string, description: string, stage: Stage): void {
     this.addChoice(`← ${label}`, description, () => { this.stage = stage; this.render(); }, false, undefined, true);
+  }
+
+  private recover(action: NavigationRecoveryAction): void {
+    this.close(true);
+    this.onRecover(action);
   }
 
   private addChoice(label: string, description: string, activate: () => void, selected = false, metadata?: string, back = false): void {

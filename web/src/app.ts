@@ -38,7 +38,7 @@ import {
   type ProjectionViewportFactory,
 } from './rendering/projection-viewport.js';
 import { AppShell, type ShellModel } from './ui/app-shell.js';
-import type { DataChooserSelection } from './ui/data-chooser.js';
+import type { DataChooserSelection, NavigationRecoveryAction } from './ui/data-chooser.js';
 import { RegionalPanelController } from './ui/regional-panel.js';
 import { buildSelectedComparisonExport } from './ui/regional/comparison-export.js';
 import { buildRegionTooltipModel } from './ui/regional/model.js';
@@ -77,6 +77,7 @@ export class AtlasApp {
   private presentationReconciliationPending = false;
   private pendingLocalArchive: PreparedLocalArchive | null = null;
   private localImportAbort: AbortController | null = null;
+  private stopApplicationStore: (() => void) | null = null;
 
   constructor(root: HTMLElement, private readonly options: AppOptions = {}) {
     const defaultView = options.defaultView ?? DEFAULT_VIEW_STATE;
@@ -89,6 +90,7 @@ export class AtlasApp {
     this.shell = new AppShell(root, {
       setDataset: (ref) => this.selectDataset(ref),
       selectData: (selection) => this.selectData(selection),
+      recoverNavigation: (action) => this.recoverNavigation(action),
       selectProject: (projectId) => this.selectProject(projectId),
       selectEdition: (projectId, editionId) => this.selectEdition(projectId, editionId),
       browseCustomVersions: (projectId) => this.browseCustomVersions(projectId),
@@ -184,7 +186,13 @@ export class AtlasApp {
       this.render();
       return;
     }
-    this.store.subscribe((state, action) => {
+    this.activateApplication();
+    await this.session.loadDataset(requireExactDataset(this.store.getState().view.dataset));
+  }
+
+  private activateApplication(): void {
+    if (this.stopApplicationStore) return;
+    this.stopApplicationStore = this.store.subscribe((state, action) => {
       if (isDatasetNavigationAction(action) || action.type === 'view/hydrate' || action.type === 'parcellation/set') {
         this.hoveredRegionId = null;
       }
@@ -202,11 +210,12 @@ export class AtlasApp {
         }
       }
     });
-    await this.session.loadDataset(requireExactDataset(this.store.getState().view.dataset));
   }
 
   stop(): void {
     this.cancelLocal();
+    this.stopApplicationStore?.();
+    this.stopApplicationStore = null;
     this.session.stop();
     this.urlController.stop();
     this.regionalPanel.destroy();
@@ -305,6 +314,7 @@ export class AtlasApp {
       presentationScale,
       presentationColormap,
       representationDisplay,
+      navigationRecovery: this.navigationRecovery(),
     };
     this.shell.render(model);
     this.regionalPanel.render({
@@ -432,6 +442,76 @@ export class AtlasApp {
         type: 'runtime/navigation', status: 'error',
         error: error instanceof Error ? error.message : String(error),
       });
+    }
+  }
+
+  private navigationRecovery(): ShellModel['navigationRecovery'] {
+    const runtime = this.store.getState().runtime;
+    if (runtime.navigationStatus !== 'error' || !runtime.navigationError) return null;
+    const request = parseNavigationRequest(window.location.search);
+    const editionMismatch = request.context === 'edition'
+      && Boolean(request.projectId && request.editionId && request.datasetId && request.releaseId);
+    return {
+      message: runtime.navigationError,
+      canReturnToEdition: editionMismatch,
+      canOpenExactAsCustom: editionMismatch,
+    };
+  }
+
+  private recoverNavigation(action: NavigationRecoveryAction): void {
+    if (action === 'catalog') {
+      void this.retryCatalog();
+      return;
+    }
+    const request = parseNavigationRequest(window.location.search);
+    try {
+      const recoveryRequest = action === 'default' ? {}
+        : action === 'edition' && request.projectId && request.editionId && request.datasetId
+          ? {
+            context: 'edition' as const,
+            projectId: request.projectId,
+            editionId: request.editionId,
+            datasetId: request.datasetId,
+          }
+          : action === 'custom' && request.projectId && request.editionId && request.datasetId && request.releaseId
+            ? {
+              context: 'custom' as const,
+              projectId: request.projectId,
+              baseEditionId: request.editionId,
+              datasetId: request.datasetId,
+              releaseId: request.releaseId,
+            }
+            : null;
+      if (!recoveryRequest) throw new Error(`Navigation recovery ${action} is not available for this request`);
+      const wasActive = this.stopApplicationStore !== null;
+      const recovered = this.urlController.recover(recoveryRequest);
+      this.activateApplication();
+      this.render();
+      if (!wasActive) void this.session.loadDataset(requireExactDataset(recovered.dataset));
+    } catch (error) {
+      this.store.dispatch({
+        type: 'runtime/navigation', status: 'error',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      this.render();
+    }
+  }
+
+  private async retryCatalog(): Promise<void> {
+    try {
+      const catalog = await this.session.loadCatalog({
+        allowLocalOnly: parseNavigationRequest(window.location.search).context === 'local',
+      });
+      if (this.stopApplicationStore) {
+        this.urlController.setCatalog(catalog);
+        this.render();
+        return;
+      }
+      this.urlController.start(catalog);
+      this.activateApplication();
+      await this.session.loadDataset(requireExactDataset(this.store.getState().view.dataset));
+    } catch {
+      this.render();
     }
   }
 

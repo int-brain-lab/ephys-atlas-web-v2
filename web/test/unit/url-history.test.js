@@ -10,10 +10,13 @@ const catalog = {
   projects: [{
     id: 'ephys-atlas', title: 'Atlas',
     datasetIds: ['ephys_atlas_channels', 'brainwide_map'],
-    defaultDataset: 'ephys_atlas_channels', editions: [],
+    defaultDataset: 'ephys_atlas_channels', editions: [{
+      id: 'paper', label: 'Paper',
+      datasetReleases: new Map([['ephys_atlas_channels', 'r1'], ['brainwide_map', 'paper-2026-09']]),
+    }],
   }],
   datasets: [
-    { id: 'ephys_atlas_channels', source: 'published', projectId: 'ephys-atlas', title: 'Channels', defaultRelease: 'r1', releases: [release('r1')] },
+    { id: 'ephys_atlas_channels', source: 'published', projectId: 'ephys-atlas', title: 'Channels', defaultRelease: 'r1', releases: [release('r1'), release('r2')] },
     { id: 'brainwide_map', source: 'published', projectId: 'ephys-atlas', title: 'BWM', defaultRelease: 'paper-2026-09', releases: [release('paper-2026-09')] },
   ],
 };
@@ -147,6 +150,47 @@ test('invalid exact popstate requests remain visible without replacing resolved 
   assert.match(store.getState().runtime.navigationError, /Unknown release missing/);
   assert.match(win.location.search, /release=missing/);
   assert.equal(win.writes.length, 0);
+  controller.stop();
+});
+
+test('an invalid initial URL can explicitly recover and activate history synchronization', () => {
+  const store = createAppStore(DEFAULT_APP_STATE);
+  const win = new FakeWindow('https://atlas.test/?v=4&project=ephys-atlas&context=custom&dataset=ephys_atlas_channels&release=missing');
+  const controller = new UrlStateController(store, win);
+
+  assert.throws(() => controller.start(catalog), /Unknown release missing/);
+  assert.equal(store.getState().runtime.navigationStatus, 'error');
+  controller.recover({});
+  assert.equal(store.getState().runtime.navigationStatus, 'ready');
+  assert.equal(store.getState().view.dataset.releaseId, 'r1');
+  assert.deepEqual(win.writes.map(({ mode }) => mode), ['push']);
+
+  store.dispatch({ type: 'feature/set', featureId: 'rms_ap', history: 'push' });
+  assert.deepEqual(win.writes.map(({ mode }) => mode), ['push', 'push']);
+  controller.stop();
+});
+
+test('edition mismatch recovery can return to mapping or retain the exact release as custom', () => {
+  const { store, win, controller } = setup('https://atlas.test/');
+  win.writes.length = 0;
+  win.dispatchPopState('/?v=4&project=ephys-atlas&edition=paper&dataset=ephys_atlas_channels&release=r2');
+  assert.equal(store.getState().runtime.navigationStatus, 'error');
+
+  controller.recover({ context: 'edition', projectId: 'ephys-atlas', editionId: 'paper', datasetId: 'ephys_atlas_channels' });
+  assert.equal(store.getState().view.navigation.kind, 'edition');
+  assert.equal(store.getState().view.dataset.releaseId, 'r1');
+  assert.equal(win.writes.at(-1).mode, 'push');
+
+  win.dispatchPopState('/?v=4&project=ephys-atlas&edition=paper&dataset=ephys_atlas_channels&release=r2');
+  controller.recover({
+    context: 'custom', projectId: 'ephys-atlas', baseEditionId: 'paper',
+    datasetId: 'ephys_atlas_channels', releaseId: 'r2',
+  });
+  assert.deepEqual(store.getState().view.navigation, { kind: 'custom', projectId: 'ephys-atlas', baseEditionId: 'paper' });
+  assert.equal(store.getState().view.dataset.releaseId, 'r2');
+  win.writes.length = 0;
+  store.dispatch({ type: 'feature/set', featureId: 'rms_ap', history: 'push' });
+  assert.deepEqual(win.writes.map(({ mode }) => mode), ['push']);
   controller.stop();
 });
 

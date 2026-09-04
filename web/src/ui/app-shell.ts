@@ -41,7 +41,12 @@ import type { ResolvedPresentationColormap } from '../application/presentation-c
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
 import { ColorRangeControl } from './color-range-control.js';
 import { ContextMenu, type ContextMenuOption } from './context-menu.js';
-import { DataChooser, type DataChooserSelection } from './data-chooser.js';
+import {
+  DataChooser,
+  type DataChooserSelection,
+  type NavigationRecovery,
+  type NavigationRecoveryAction,
+} from './data-chooser.js';
 import type { DisplaySliceInventory } from '../rendering/display-slice-inventory.js';
 import type { RegionTooltipModel } from './regional/model.js';
 import type { RegionalPresentation } from '../application/regional-presentation.js';
@@ -65,6 +70,7 @@ import { HelpTour, type HelpTourAnchor } from './help-tour.js';
 export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
   selectData(selection: DataChooserSelection): void;
+  recoverNavigation(action: NavigationRecoveryAction): void;
   selectProject(projectId: string): void;
   selectEdition(projectId: string, editionId: string): void;
   browseCustomVersions(projectId: string): void;
@@ -106,6 +112,7 @@ export interface ShellModel {
   presentationScale: ResolvedPresentationScale;
   presentationColormap: ResolvedPresentationColormap;
   representationDisplay: RepresentationDisplay | undefined;
+  navigationRecovery: NavigationRecovery | null;
 }
 
 type LayoutMode = 'wide' | 'compact' | 'narrow' | 'phone';
@@ -325,6 +332,7 @@ export class AppShell {
     this.dataChooser = new DataChooser(
       (selection) => this.callbacks.selectData(selection),
       () => { this.closeDrawers(); this.closeContextMenus(); },
+      (action) => this.callbacks.recoverNavigation(action),
     );
     this.projectContext = new ContextMenu({
       fieldName: 'project',
@@ -339,6 +347,8 @@ export class AppShell {
           if (navigation && navigation.kind !== 'local') this.callbacks.browseCustomVersions(navigation.projectId);
         } else if (option.id.startsWith('project:')) {
           this.callbacks.selectProject(option.id.slice('project:'.length));
+        } else if (option.id.startsWith('recovery:')) {
+          this.callbacks.recoverNavigation(option.id.slice('recovery:'.length) as NavigationRecoveryAction);
         }
       },
     });
@@ -487,7 +497,8 @@ export class AppShell {
       : undefined;
     this.projectContext.setDisplay(
       view.navigation.kind === 'local' ? 'My data' : project?.title ?? titleCaseToken(navigationProjectId ?? ''),
-      view.navigation.kind === 'edition' ? edition?.label ?? 'Edition'
+      model.navigationRecovery ? 'Navigation unavailable · open to recover'
+        : view.navigation.kind === 'edition' ? edition?.label ?? 'Edition'
         : view.navigation.kind === 'custom'
           ? `Custom versions${baseEdition ? ` · based on ${baseEdition.label}` : ''}`
           : 'Local browser data',
@@ -502,6 +513,7 @@ export class AppShell {
       error: state.runtime.catalogError,
       navigation: view.navigation,
       dataset: view.dataset,
+      recovery: model.navigationRecovery,
     });
     this.localDatasetBadge.hidden = view.dataset.datasetId !== 'local';
     this.app.toggleAttribute('data-local-dataset', view.dataset.datasetId === 'local');
@@ -1695,6 +1707,10 @@ export class AppShell {
       ...(project.description ? { description: project.description } : {}),
       group: 'Projects', keywords: `${project.id} ${project.title}`,
     })) ?? [];
+    if (state.runtime.catalogStatus === 'error') projectOptions.push({
+      id: 'recovery:catalog', label: 'Retry catalog',
+      description: 'Load and validate the public catalog again.', group: 'Catalog recovery',
+    });
     const activeProject = catalog?.projects.find(({ id }) => id === activeProjectId);
     if (activeProject) projectOptions.push(...activeProject.editions.map((edition) => ({
         id: `edition:${activeProject.id}:${edition.id}`, label: edition.label,
@@ -1705,6 +1721,20 @@ export class AppShell {
     if (activeProjectId) projectOptions.push({
       id: 'action:custom', label: 'Browse custom versions', description: 'Choose releases independently.', group: `${activeProject?.title ?? 'Project'} editions`,
     });
+    if (model.navigationRecovery) {
+      projectOptions.push({
+        id: 'recovery:default', label: 'Use catalog default',
+        description: 'Replace the invalid request with the catalog-owned default.', group: 'Navigation recovery',
+      });
+      if (model.navigationRecovery.canReturnToEdition) projectOptions.push({
+        id: 'recovery:edition', label: 'Return to edition',
+        description: 'Use the exact release mapped by the requested edition.', group: 'Navigation recovery',
+      });
+      if (model.navigationRecovery.canOpenExactAsCustom) projectOptions.push({
+        id: 'recovery:custom', label: 'Open exact release as custom',
+        description: 'Keep the requested immutable release outside coordinated edition context.', group: 'Navigation recovery',
+      });
+    }
     const activeProjectOption = state.view.navigation.kind === 'edition'
       ? `edition:${state.view.navigation.projectId}:${state.view.navigation.editionId}`
       : state.view.navigation.kind === 'custom' ? 'action:custom' : '';

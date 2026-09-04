@@ -104,8 +104,14 @@ test('Data chooser remains bounded at the phone breakpoint edge', async ({ page 
 
 test('phone Data chooser announces catalog loading and failure', async ({ page }) => {
   let rejectCatalog: (() => void) | undefined;
+  let catalogAttempts = 0;
   const catalogGate = new Promise<void>((resolve) => { rejectCatalog = resolve; });
   await page.route('**/__real-data/catalog.json', async (route) => {
+    catalogAttempts += 1;
+    if (catalogAttempts > 1) {
+      await route.fallback();
+      return;
+    }
     await catalogGate;
     await route.fulfill({ status: 503, body: 'catalog unavailable' });
   });
@@ -121,6 +127,67 @@ test('phone Data chooser announces catalog loading and failure', async ({ page }
   rejectCatalog?.();
   await expect(trigger).toHaveAttribute('aria-busy', 'false');
   await expect(status).toContainText('Projects unavailable: HTTP 503');
-  await page.keyboard.press('Escape');
+  await page.getByRole('dialog').getByRole('button', { name: /Retry catalog/ }).click();
   await expect(trigger).toBeFocused();
+  await expect.poll(() => new URL(page.url()).searchParams.get('release')).toBe('golden-v1');
+  expect(catalogAttempts).toBe(2);
+});
+
+test('invalid edition URL stays visible and offers explicit recovery choices', async ({ page }) => {
+  let releaseManifestRequests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname.endsWith('/golden_fixture/golden-v1/manifest.json')) releaseManifestRequests += 1;
+  });
+  const invalid = '/?v=4&project=synthetic-development&edition=synthetic-current&dataset=golden_fixture&release=missing';
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(invalid);
+  await expect.poll(() => new URL(page.url()).searchParams.get('release')).toBe('missing');
+  const initialHistoryLength = await page.evaluate(() => history.length);
+
+  const project = page.locator('[data-context-field="project"]');
+  await expect(project.locator('.context-field__release')).toHaveText('Navigation unavailable · open to recover');
+  await project.locator('.context-menu__trigger').click();
+  const recovery = project.getByRole('group', { name: 'Navigation recovery' });
+  await expect(recovery.getByRole('option', { name: /Use catalog default/ })).toBeVisible();
+  await expect(recovery.getByRole('option', { name: /Return to edition/ })).toBeVisible();
+  await expect(recovery.getByRole('option', { name: /Open exact release as custom/ })).toBeVisible();
+  await recovery.getByRole('option', { name: /Return to edition/ }).click();
+
+  await expect.poll(() => new URL(page.url()).searchParams.get('edition')).toBe('synthetic-current');
+  await expect.poll(() => new URL(page.url()).searchParams.get('release')).toBe('golden-v1');
+  await expect(page.locator('[data-context-field="feature"] .context-field__value')).toContainText('AP RMS');
+  expect(releaseManifestRequests).toBe(1);
+  await expect.poll(() => page.evaluate(() => history.length)).toBe(initialHistoryLength + 1);
+
+  await page.goBack();
+  await expect.poll(() => new URL(page.url()).searchParams.get('release')).toBe('missing');
+  expect(releaseManifestRequests).toBe(1);
+  await project.locator('.context-menu__trigger').click();
+  await project.getByRole('option', { name: /Use catalog default/ }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('context')).toBe('custom');
+  await expect.poll(() => new URL(page.url()).searchParams.get('release')).toBe('golden-v1');
+
+  await page.goBack();
+  await page.setViewportSize({ width: 390, height: 844 });
+  const data = page.getByRole('button', { name: /^Data:/ });
+  await expect(data).toContainText('Navigation unavailable / open to recover');
+  await data.click();
+  await expect(page.getByRole('dialog').getByRole('button', { name: /Return to edition/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+});
+
+test('unknown navigation identity exposes only catalog-default recovery', async ({ page }) => {
+  const invalid = '/?v=4&project=unknown-project&context=custom&dataset=golden_fixture&release=golden-v1';
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(invalid);
+  await expect(page).toHaveURL(new RegExp('project=unknown-project'));
+
+  const project = page.locator('[data-context-field="project"]');
+  await project.locator('.context-menu__trigger').click();
+  const recovery = project.getByRole('group', { name: 'Navigation recovery' });
+  await expect(recovery.getByRole('option')).toHaveCount(1);
+  await expect(recovery.getByRole('option')).toHaveText(/Use catalog default/);
+  await recovery.getByRole('option').click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('project')).toBe('synthetic-development');
+  await expect.poll(() => new URL(page.url()).searchParams.get('release')).toBe('golden-v1');
 });

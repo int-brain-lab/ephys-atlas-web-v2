@@ -134,7 +134,7 @@ test('volume mode keeps integrated 3-D anatomy-only and scene failure isolated',
       setInteractionSink() {},
       destroy() { destroyed += 1; },
     };
-    const app = new AtlasApp(root, { scene3dFactory });
+    const app = new AtlasApp(root, { scene3dFactory, catalogUrl: '/__real-data/catalog.json' });
     await app.start();
     root.querySelector<HTMLButtonElement>('[data-secondary-tab="brain-3d"]')!.click();
     await new Promise((resolve) => requestAnimationFrame(resolve));
