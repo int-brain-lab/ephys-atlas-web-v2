@@ -81,7 +81,7 @@ test('legacy significance values and provenance survive the HTTP browser path', 
 
   await page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Data details' }).click();
   const info = page.getByRole('dialog', { name: 'Data details' });
-  await expect(info).toContainText('Immutable development release');
+  await expect(info).toContainText('Preserved legacy data');
   await expect(info).toContainText('not a regeneration from a current Brain-Wide Map paper release');
   await expect(info).toContainText('legacy boolean presentation: false=0.5, true=1.0');
   await expect(info).toContainText('brainwide-map-legacy-website-regional-v1');

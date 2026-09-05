@@ -163,6 +163,13 @@
   align-self: center;
 }
 
+.context-field[data-context-field="data"] .context-field__release {
+  position: absolute;
+  top: .35rem;
+  right: .4rem;
+  max-width: calc(100% - 3rem);
+}
+
 .context-field__value {
   flex: 1 1 auto;
   min-width: 0;

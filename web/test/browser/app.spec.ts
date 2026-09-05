@@ -29,6 +29,13 @@ for (const viewport of reviewViewports) {
     await expect(page.locator('[data-view="horizontal"]')).toHaveAttribute('data-state', 'ready');
     await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.20 mm');
     await expect(page.locator('[data-context-field="representation"] .context-field__release')).toHaveText('Allen CCFv3 · 10 µm');
+    const dataStatus = page.locator('[data-context-field="data"] .context-field__release');
+    const dataValue = page.locator('[data-context-field="data"] .context-field__value');
+    const statusBounds = (await dataStatus.boundingBox())!;
+    const valueBounds = (await dataValue.boundingBox())!;
+    expect(statusBounds.y + statusBounds.height).toBeLessThanOrEqual(valueBounds.y);
+    const headerBounds = (await page.locator('.app-header').boundingBox())!;
+    expect(valueBounds.y + valueBounds.height).toBeLessThanOrEqual(headerBounds.y + headerBounds.height);
     if (viewport.width >= 1100) {
       const representationValue = page.locator('[data-context-field="representation"] .context-field__value');
       expect(await representationValue.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
