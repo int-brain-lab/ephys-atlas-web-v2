@@ -1,6 +1,6 @@
 # Top-bar redesign: implementation handoff
 
-Status: redesign implemented and validated on Linux; final commit/push in progress.
+Status: complete; implemented, validated on Linux, and pushed to `origin/main`.
 Owner direction recorded on 2026-09-05. This is a bounded UI task independent
 of the blocked production launch lanes.
 
@@ -199,7 +199,7 @@ evidence and remaining work without claiming completion.
   `git log -1 --format='%h %s' -- docs/tasks/2026-09-05-top-bar-redesign/README.md`.
   Future implementation agent: append milestone commit IDs and actual validation
   evidence here as work lands.
-- Current next action: finish the final Linux gate, commit the redesign, and push `main` normally.
+- Current next action: none for this redesign; return to the launch execution registry.
 
 ### Implementation baseline — Linux, 2026-09-05
 
@@ -257,4 +257,14 @@ tests, and all four canonical documentation screenshot comparisons. No test or
 pixel tolerance was weakened. The earlier transient screenshot capture failure
 was absent in the final full run. Final diff whitespace checks pass.
 
-The implementation is ready for its green commit and normal `main` push.
+Delivery commits:
+
+- `38ede12` — Refresh Linux header screenshot baseline before redesign.
+- `c7e788c` — Redesign data and release navigation around feature exploration.
+
+Both commits were pushed normally to `origin/main`; remote SHA was verified as
+`c7e788cb6c5aefcb67ae3b4405a2f8e329c1c77b` before this completion-record update.
+The handoff record is committed and pushed through the same normal main workflow.
+No redesign implementation remains. Resume `docs/IMPLEMENTATION_PLAN.md` for a
+separately selected next task; this work does not authorize deployment or resolve
+its scientific blockers.

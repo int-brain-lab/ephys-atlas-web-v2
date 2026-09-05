@@ -1,5 +1,5 @@
 # Next steps
 
-Run final `just check`, commit the coherent redesign, fetch remote `main`,
-push normally, and verify remote SHA equals local HEAD. Scientific release
-and deployment choices remain outside this task.
+None for the completed top-bar redesign. Select subsequent work from
+`docs/IMPLEMENTATION_PLAN.md` under its existing authorization and blockers.
+Q2/Q5/Q8/Q9, scientific releases, catalog defaults, and deployment are unchanged.
