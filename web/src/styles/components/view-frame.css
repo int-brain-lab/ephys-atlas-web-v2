@@ -267,7 +267,7 @@
 .view-frame[data-maximized='true'] {
   position: fixed;
   z-index: 70;
-  inset: calc(var(--header-height) + 2 * var(--space-2)) var(--space-2) var(--space-2) var(--space-2);
+  inset: calc(var(--header-height) + 2 * var(--space-2) + 2.8rem + var(--space-2)) var(--space-2) var(--space-2) var(--space-2);
   display: grid;
   height: auto;
   box-shadow: 0 1.25rem 4rem rgb(0 0 0 / 42%);
@@ -280,7 +280,7 @@
 }
 
 .atlas-app[data-maximized-view] .app-header {
-  z-index: 31;
+  z-index: 80;
 }
 
 .atlas-app[data-maximized-view] .app-header__actions {
@@ -321,6 +321,6 @@
   }
 
   .view-frame[data-maximized='true'] {
-    inset: calc(var(--header-height) + 2 * var(--space-1)) var(--space-1) var(--space-1) var(--space-1);
+    inset: calc(var(--header-height) + 2 * var(--space-1) + 2.8rem + var(--space-1)) var(--space-1) var(--space-1) var(--space-1);
   }
 }

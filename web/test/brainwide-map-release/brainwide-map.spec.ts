@@ -16,12 +16,14 @@ test.beforeEach(async ({ page }) => {
 test('local catalog exposes the complete preserved Beryl release', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page.locator('[data-context-field="dataset"] .context-field__value')).toHaveText(
-    'IBL Brain-Wide Map',
+  await expect(page.locator('[data-context-field="data"] .context-field__value')).toHaveText(
+    'Brain-Wide Map / Preserved legacy results',
   );
-  const release = page.locator('[data-context-field="dataset"] .context-field__release');
-  await expect(release).toContainText(`Local ${releaseId}`);
-  await expect(release).toContainText(`ID · ${releaseId}`);
+  const release = page.locator('[data-context-field="release"]');
+  await expect(release).toContainText('Local preview');
+  await release.locator('.context-menu__trigger').click();
+  await expect(release.getByRole('group', { name: 'Exact dataset releases' })).toContainText(`Immutable release ID · ${releaseId}`);
+  await page.keyboard.press('Escape');
   await expect(release).not.toContainText('Synthetic');
   await expect(page.locator('[data-context-field="feature"] .context-field__value')).toHaveText(
     'choice decoding significant',
@@ -37,20 +39,14 @@ test('local catalog exposes the complete preserved Beryl release', async ({ page
   await expect(page.locator('select[aria-label="Value scale"] option[value="log"]')).toHaveAttribute('disabled', '');
   await page.getByRole('button', { name: 'Close Visualization settings' }).click();
 
-  const dataset = page.locator('[data-context-field="dataset"]');
+  const dataset = page.locator('[data-context-field="data"]');
   await dataset.locator('.context-menu__trigger').click();
   await expect(dataset.getByRole('option', { selected: true }).locator('.context-menu__option-label')).toHaveText(
-    'IBL Brain-Wide Map',
+    'Preserved legacy results',
   );
-  await expect(dataset.getByRole('option', { selected: true }).locator('.context-menu__option-description')).toHaveText(
-    `Local ${releaseId}`,
-  );
-  await expect(dataset.getByRole('option', { selected: true }).locator('.context-menu__option-badge')).toHaveText(
-    'Legacy',
-  );
-  await expect(dataset.getByRole('option', { selected: true })).toContainText(
-    'Preserved Beryl-only regional features from the v1 website',
-  );
+  await page.keyboard.press('Escape');
+  await release.locator('.context-menu__trigger').click();
+  await expect(release.getByRole('group', { name: 'Exact dataset releases' }).getByRole('option', { selected: true })).toContainText('Legacy');
   await page.keyboard.press('Escape');
 
   const feature = page.locator('[data-context-field="feature"]');

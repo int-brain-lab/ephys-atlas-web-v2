@@ -1,6 +1,6 @@
 # Top-bar redesign: implementation handoff
 
-Status: ready for implementation; this commit prepares instructions only.
+Status: redesign implemented and validated on Linux; final commit/push in progress.
 Owner direction recorded on 2026-09-05. This is a bounded UI task independent
 of the blocked production launch lanes.
 
@@ -184,13 +184,13 @@ evidence and remaining work without claiming completion.
 
 ## Progress record
 
-- Completed: repository/code inspection and this executable handoff brief.
+- Preparation completed: repository/code inspection and the executable handoff brief.
 - Preparation validation: `just check` passed on macOS on 2026-09-05;
   424 builder tests passed (1 skipped), 30 publishing tests passed, web
   typecheck/unit/build checks passed, and 120 browser tests passed. Screenshot
   manifest check passed; 4 canonical Linux screenshot cases skipped as intended
   on macOS. No product code or screenshot baselines changed in this brief task.
-- Not started: redesign implementation, delegation, and redesign browser review.
+- Implementation now delivered below; this preparation record is retained as baseline evidence.
 - Risks: conflating an edition with one dataset's release; losing custom/local
   disclosure; treating representation/parcellation as orientation; stale help
   selectors or Linux screenshots; overlapping shared-worktree edits.
@@ -199,7 +199,7 @@ evidence and remaining work without claiming completion.
   `git log -1 --format='%h %s' -- docs/tasks/2026-09-05-top-bar-redesign/README.md`.
   Future implementation agent: append milestone commit IDs and actual validation
   evidence here as work lands.
-- Next action: invoke the start prompt above in the future implementation session.
+- Current next action: finish the final Linux gate, commit the redesign, and push `main` normally.
 
 ### Implementation baseline — Linux, 2026-09-05
 
@@ -211,3 +211,50 @@ evidence and remaining work without claiming completion.
   then passed, including all four canonical screenshot cases.
 - Next: grouped Data/Release controls, feature/display composition, regression
   coverage, independent review, final validation and normal push.
+
+### Redesign implementation — Linux, 2026-09-05
+
+- Baseline commit: `38ede12` (green Linux screenshot refresh).
+- Replaced separate/staged selectors with one catalog-ordered Data chooser and
+  a Release menu grouping coordinated editions and exact versions. Data retains
+  the active baseline; reselecting the current dataset is a no-op. Explicit
+  release choices remain custom until explicit edition re-entry.
+- Feature has a dedicated prominent search control. Display & parcellation is
+  above the retained visualization, including while maximized. Narrow layouts
+  use two header rows and preserve the IBL brand, local identity, and readable
+  custom-baseline disclosure. Shared menus are opaque, viewport-bounded, and
+  restore focus on Escape and resize.
+- D063 refines D056/D061 presentation only. Updated navigation/launch/status/help
+  documents, semantic tests, real-release suites, local validation scripts, and
+  intentional Linux screenshot changes. The tightly coupled header, workspace,
+  and selector migration form one coherent implementation commit rather than
+  a misleading partial navigation milestone.
+- Luna / medium completed the read-only control/selector map. Sol / high delivered
+  findings about opt-in validation selectors and resize focus; all were fixed
+  and tested. The review service then reported an exhausted credit balance before
+  its final report. The lead completed the remaining diff and browser review;
+  no completed independent final sign-off is claimed.
+- Targeted evidence: 60 initial UI/navigation/local-import checks passed; final
+  navigation coverage has 14 cases, including cross-project and custom-baseline
+  transitions at desktop/tablet/phone sizes, exact refresh/history, same-dataset
+  no-op, recovery, menu occlusion, loading, and keyboard behavior.
+- Real-data evidence: `just validate-local-full http://localhost:5174/
+  ../artifacts/top-bar-redesign` visited all four reviewed local releases and
+  Summary/Top/Swanson/3-D without browser errors or repeated geometry uploads.
+  Channel (5), cluster (3), and Brain-Wide Map (3) acceptance tests passed.
+- Browser inspection: synthetic and real desktop/tablet/390 px phone plus
+  759/760 and 1099/1100 breakpoint edges. Ignored reproducible captures and
+  `evidence.json` are in `artifacts/top-bar-redesign/`; canonical documentation
+  screenshots are updated under `docs/assets/generated/` on Linux.
+- Q2/Q5/Q8/Q9 and all scientific/catalog/deployment choices are unchanged. Native
+  Safari validation was not run on this Linux host; its selectors were migrated.
+
+### Final implementation gate
+
+`just check` passed on Linux: 424 builder tests (1 skipped), 30 publishing tests,
+314 web unit tests, 21 rendering tests, typecheck/build/docs gates, 128 browser
+tests, and all four canonical documentation screenshot comparisons. No test or
+pixel tolerance was weakened. The earlier transient screenshot capture failure
+was absent in the final full run. Final diff whitespace checks pass.
+
+The implementation is ready for its green commit and normal `main` push.

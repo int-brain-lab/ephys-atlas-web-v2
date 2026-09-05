@@ -1,8 +1,8 @@
 # Status
 
-Implementation active on `main`. Linux baseline is green after refreshing the
-stale pre-redesign desktop screenshot. See README.md for evidence.
+Redesign implemented and validated on Linux. Full `just check` passes, including
+128 browser tests and all four canonical screenshot comparisons. Real local
+bundle validation and 11 channel/cluster/BWM tests pass. Review findings are
+fixed; the review-service limitation is documented in README.md.
 
-Plan: implement grouped Data and Release controls; complete feature emphasis,
-workspace display controls, responsive and accessibility checks; independent
-review; full gate; green commits and final normal push.
+Remaining: green commit, final fetch, normal push, and remote SHA verification.

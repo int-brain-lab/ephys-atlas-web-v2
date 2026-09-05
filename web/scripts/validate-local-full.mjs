@@ -32,10 +32,6 @@ try {
   if (JSON.stringify(identities) !== JSON.stringify(expected)) {
     throw new Error(`Local full catalog differs: ${JSON.stringify(identities)}`);
   }
-  const projectByDataset = new Map(catalog.projects.flatMap((project) => (
-    project.dataset_ids.map((datasetId) => [datasetId, project.project_id])
-  )));
-
   const scene = page.locator('[data-scene3d-host="connected"]');
   let uploads = null;
   if (expectedMesh) {
@@ -48,25 +44,26 @@ try {
     if (await page.getByRole('tab', { name: tab, exact: true }).count() !== 1) throw new Error(`Missing ${tab} view`);
   }
 
-  const datasetField = page.locator('[data-context-field="dataset"]');
-  const projectField = page.locator('[data-context-field="project"]');
+  const dataField = page.locator('[data-context-field="data"]');
+  const releaseField = page.locator('[data-context-field="release"]');
   const visited = [];
-  for (const [index, [datasetId, releaseId]] of expected.entries()) {
-    if (index > 0) {
-      const projectId = projectByDataset.get(datasetId);
-      if (!projectId) throw new Error(`Catalog has no project for ${datasetId}`);
-      const activeProjectId = new URL(page.url()).searchParams.get('project');
-      if (activeProjectId !== projectId) {
-        await projectField.locator('.context-menu__trigger').click();
-        await projectField.locator(`[data-context-option="project:${projectId}"]`).click();
-      }
-      await datasetField.locator('.context-menu__trigger').click();
-      await datasetField.getByRole('option').filter({ hasText: releaseId }).click();
+  for (const [datasetId, releaseId] of expected) {
+    if (new URL(page.url()).searchParams.get('dataset') !== datasetId) {
+      await dataField.locator('.context-menu__trigger').click();
+      await dataField.locator(`[data-context-option="${datasetId}"]`).click();
     }
-    await page.waitForFunction((id) => {
-      const release = document.querySelector('[data-context-field="dataset"] .context-field__release')?.textContent;
-      return release?.includes(`ID · ${id}`);
-    }, releaseId);
+    if (new URL(page.url()).searchParams.get('release') !== releaseId) {
+      await releaseField.locator('.context-menu__trigger').click();
+      await releaseField.locator(`[data-context-option="release:${releaseId}"]`).click();
+    }
+    await page.waitForFunction(({ datasetId, releaseId }) => {
+      const params = new URL(location.href).searchParams;
+      return params.get('dataset') === datasetId && params.get('release') === releaseId;
+    }, { datasetId, releaseId });
+    await releaseField.locator('.context-menu__trigger').click();
+    await releaseField.getByRole('group', { name: 'Exact dataset releases' })
+      .getByRole('option', { selected: true }).filter({ hasText: `Immutable release ID · ${releaseId}` }).waitFor();
+    await page.keyboard.press('Escape');
     await page.waitForFunction(() => {
       const field = document.querySelector('[data-context-field="feature"]');
       const value = field?.querySelector('.context-field__value')?.textContent?.trim();

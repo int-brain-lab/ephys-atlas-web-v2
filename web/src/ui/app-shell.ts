@@ -40,6 +40,7 @@ import { colormapLabel } from '../application/colormap-palettes.js';
 import type { ResolvedPresentationColormap } from '../application/presentation-colormap.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
 import { ColorRangeControl } from './color-range-control.js';
+import { overrideNavigationRelease, resolveDatasetNavigation } from '../application/dataset-navigation.js';
 import { ContextMenu, type ContextMenuOption } from './context-menu.js';
 import {
   DataChooser,
@@ -63,7 +64,6 @@ import {
   type LayoutPanel,
   type LayoutPreferences,
 } from '../application/layout-preferences.js';
-import { presentDatasetTitle } from './dataset-presentation.js';
 import { HelpGuide } from './help-guide.js';
 import { HelpTour, type HelpTourAnchor } from './help-tour.js';
 
@@ -71,7 +71,6 @@ export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
   selectData(selection: DataChooserSelection): void;
   recoverNavigation(action: NavigationRecoveryAction): void;
-  selectProject(projectId: string): void;
   selectEdition(projectId: string, editionId: string): void;
   browseCustomVersions(projectId: string): void;
   setFeature(featureId: string | null, representation?: RepresentationKind): void;
@@ -271,9 +270,8 @@ export class AppShell {
   private secondaryMaximize!: HTMLButtonElement;
   private readonly headerActionButtons = new Map<HeaderAction, HTMLButtonElement[]>();
   private headerActions!: HTMLElement;
-  private readonly datasetContext: ContextMenu;
   private readonly dataChooser: DataChooser;
-  private readonly projectContext: ContextMenu;
+  private readonly releaseContext: ContextMenu;
   private readonly featureContext: ContextMenu;
   private readonly representationContext: ContextMenu;
   private readonly contextMenus: readonly ContextMenu[];
@@ -305,38 +303,25 @@ export class AppShell {
     this.app.dataset.activeView = 'coronal';
     this.layoutPreferences = this.loadLayoutPreferences();
 
-    this.datasetContext = new ContextMenu({
-      fieldName: 'dataset',
-      label: 'Dataset',
-      onOpen: (menu) => {
-        this.closeDrawers();
-        this.closeContextMenus(menu);
-      },
-      onSelect: (option) => {
-        if (option.id === LOCAL_IMPORT_OPTION_ID) {
-          this.localImportInput.click();
-          return;
-        }
-        if (option.id === LOCAL_MANAGE_OPTION_ID) {
-          void this.openLocalManager();
-          return;
-        }
-        if (option.id === LOCAL_DELETE_OPTION_ID) {
-          this.openLocalDeleteDialog();
-          return;
-        }
-        const [datasetId, releaseId] = JSON.parse(option.id) as [DatasetId, string];
-        this.callbacks.setDataset({ datasetId, releaseId });
-      },
-    });
     this.dataChooser = new DataChooser(
       (selection) => this.callbacks.selectData(selection),
       () => { this.closeDrawers(); this.closeContextMenus(); },
       (action) => this.callbacks.recoverNavigation(action),
+      [
+        { id: LOCAL_IMPORT_OPTION_ID, label: 'Import local dataset…', group: 'My data', description: 'Choose a .ibl-ephys-atlas.zip archive from this device.' },
+        { id: LOCAL_DELETE_OPTION_ID, localOnly: true, label: 'Delete this local dataset…', group: 'My data', description: 'Remove the selected release from this browser.' },
+        { id: LOCAL_MANAGE_OPTION_ID, label: 'Manage local datasets…', group: 'My data', description: 'Inspect storage and imported releases.' },
+      ],
+      (id) => {
+        if (id === LOCAL_IMPORT_OPTION_ID) this.localImportInput.click();
+        if (id === LOCAL_MANAGE_OPTION_ID) void this.openLocalManager();
+        if (id === LOCAL_DELETE_OPTION_ID) this.openLocalDeleteDialog();
+      },
     );
-    this.projectContext = new ContextMenu({
-      fieldName: 'project',
-      label: 'Project',
+    this.releaseContext = new ContextMenu({
+      fieldName: 'release',
+      label: 'Release',
+      multiselectable: true,
       onOpen: (menu) => { this.closeDrawers(); this.closeContextMenus(menu); },
       onSelect: (option) => {
         if (option.id.startsWith('edition:')) {
@@ -345,8 +330,15 @@ export class AppShell {
         } else if (option.id === 'action:custom') {
           const navigation = this.currentModel?.state.view.navigation;
           if (navigation && navigation.kind !== 'local') this.callbacks.browseCustomVersions(navigation.projectId);
-        } else if (option.id.startsWith('project:')) {
-          this.callbacks.selectProject(option.id.slice('project:'.length));
+        } else if (option.id.startsWith('release:')) {
+          const model = this.currentModel;
+          if (model?.catalog) {
+            const view = model.state.view;
+            const current = resolveDatasetNavigation(model.catalog, view.dataset.datasetId, view.dataset.releaseId ?? undefined, view.navigation);
+            const resolved = overrideNavigationRelease(model.catalog, current, option.id.slice(8));
+            this.callbacks.selectData({ navigation: resolved.context, dataset: { datasetId: resolved.dataset.id, releaseId: resolved.releaseId } });
+          }
+
         } else if (option.id.startsWith('recovery:')) {
           this.callbacks.recoverNavigation(option.id.slice('recovery:'.length) as NavigationRecoveryAction);
         }
@@ -356,7 +348,7 @@ export class AppShell {
     this.localDatasetBadge.textContent = 'Local';
     this.localDatasetBadge.title = 'Stored only in this browser on this device';
     this.localDatasetBadge.hidden = true;
-    this.datasetContext.field.querySelector('.context-field__label')?.append(this.localDatasetBadge);
+    this.dataChooser.element.querySelector('.context-field__label')?.append(this.localDatasetBadge);
     this.featureContext = new ContextMenu({
       fieldName: 'feature',
       label: 'Feature',
@@ -371,7 +363,7 @@ export class AppShell {
     });
     this.representationContext = new ContextMenu({
       fieldName: 'representation',
-      label: 'View',
+      label: 'Display & parcellation',
       multiselectable: true,
       onOpen: (menu) => {
         this.closeDrawers();
@@ -383,7 +375,7 @@ export class AppShell {
         if (kind === 'parcellation') this.callbacks.setParcellation(id as ParcellationId);
       },
     });
-    this.contextMenus = [this.projectContext, this.datasetContext, this.featureContext, this.representationContext];
+    this.contextMenus = [this.releaseContext, this.featureContext, this.representationContext];
 
     this.regionPane = this.createRegionPane();
     this.settingsPane = this.createSettingsPane();
@@ -478,9 +470,6 @@ export class AppShell {
     const datasetEntry = catalog?.datasets.find((entry) => entry.id === view.dataset.datasetId);
     const featureEntry = manifest?.features.find((entry) => entry.id === view.featureId);
 
-    const datasetLabel = presentDatasetTitle(
-      datasetEntry?.title ?? manifest?.dataset.title ?? titleCaseToken(view.dataset.datasetId),
-    ).title;
     const releaseLabel = view.dataset.releaseId ?? manifest?.dataset.release ?? datasetEntry?.defaultRelease ?? '';
     const featureLabel = featureEntry?.label ?? (view.featureId ? titleCaseToken(view.featureId) : 'No feature selected');
     const representationLabel = view.representation === 'regional' ? 'Regional' : 'Volume';
@@ -495,18 +484,15 @@ export class AppShell {
     const baseEdition = project && baseEditionId
       ? project.editions.find((item) => item.id === baseEditionId)
       : undefined;
-    this.projectContext.setDisplay(
-      view.navigation.kind === 'local' ? 'My data' : project?.title ?? titleCaseToken(navigationProjectId ?? ''),
+    const release = datasetEntry?.releases.find((item) => item.id === view.dataset.releaseId);
+    this.releaseContext.setDisplay(
+      [release?.label ?? releaseLabel, release?.status].filter(Boolean).join(' · '),
       model.navigationRecovery ? 'Navigation unavailable · open to recover'
         : view.navigation.kind === 'edition' ? edition?.label ?? 'Edition'
         : view.navigation.kind === 'custom'
           ? `Individual releases${baseEdition ? ` · based on ${baseEdition.label}` : ''}`
           : 'Local browser data',
     );
-    const release = datasetEntry?.releases.find((item) => item.id === view.dataset.releaseId);
-    const releaseMeta = [release?.label ?? releaseLabel, release?.status, release?.id ? `ID · ${release.id}` : '']
-      .filter(Boolean).join(' · ');
-    this.datasetContext.setDisplay(datasetLabel, releaseMeta);
     this.dataChooser.update({
       catalog,
       catalogStatus: state.runtime.catalogStatus,
@@ -660,10 +646,8 @@ export class AppShell {
     context.dataset.helpAnchor = 'context';
     context.append(
       this.dataChooser.element,
-      this.projectContext.field,
-      this.datasetContext.field,
+      this.releaseContext.field,
       this.featureContext.field,
-      this.representationContext.field,
     );
 
     const actions = element('nav', 'app-header__actions');
@@ -792,6 +776,9 @@ export class AppShell {
       this.headerActionButton('Info', 'info'),
       this.headerActionButton('Help', 'help'),
     );
+    summary.addEventListener('click', () => {
+      if (!details.open) this.closeContextMenus();
+    });
     details.append(summary, menu);
     this.overflowActions = details;
     return details;
@@ -1707,12 +1694,7 @@ export class AppShell {
     const activeProjectId = state.view.navigation.kind === 'local'
       ? undefined : state.view.navigation.projectId;
     const activeProject = catalog?.projects.find(({ id }) => id === activeProjectId);
-    const projectOptions: ContextMenuOption[] = catalog?.projects.map((project) => ({
-      id: `project:${project.id}`, label: project.title,
-      ...(project.id === activeProjectId ? { badge: 'Active' } : {}),
-      ...(project.description ? { description: project.description } : {}),
-      group: 'Projects', keywords: `${project.id} ${project.title}`,
-    })) ?? [];
+    const projectOptions: ContextMenuOption[] = [];
     if (state.runtime.catalogStatus === 'error') projectOptions.push({
       id: 'recovery:catalog', label: 'Retry catalog',
       description: 'Load and validate the public catalog again.', group: 'Catalog recovery',
@@ -1743,67 +1725,20 @@ export class AppShell {
     const activeProjectOption = state.view.navigation.kind === 'edition'
       ? `edition:${state.view.navigation.projectId}:${state.view.navigation.editionId}`
       : state.view.navigation.kind === 'custom' ? 'action:custom' : '';
-    this.projectContext.setOptions(projectOptions, [activeProjectOption], {
-      emptyMessage: state.runtime.catalogStatus === 'error' ? 'Projects unavailable.' : 'Loading projects…',
-      busy: state.runtime.catalogStatus === 'loading' || state.runtime.catalogStatus === 'idle',
-    });
-    const releaseOptions: ContextMenuOption[] = catalog?.datasets
-      .filter((dataset) => dataset.source === 'local' || dataset.projectId === activeProjectId)
-      .flatMap((dataset) => {
-      const datasetTitle = presentDatasetTitle(dataset.title).title;
-      return dataset.releases.map((release) => {
-        const scientificDescription = release.description ?? dataset.description;
-        const detail = dataset.source === 'local'
-          ? [scientificDescription, 'Stored only in this browser'].filter(Boolean).join(' · ')
-          : scientificDescription;
-        return {
-          id: JSON.stringify([dataset.id, release.id]),
-          label: datasetTitle,
-          ...(release.status ? { badge: titleCaseToken(release.status) } : {}),
-          description: release.label,
-          ...(detail ? { detail } : {}),
-          metadata: `Immutable release ID · ${release.id}`,
-          group: dataset.source === 'local' ? `My data · ${datasetTitle}` : datasetTitle,
-          keywords: `${dataset.id} ${dataset.title} ${release.id} ${release.label}`,
-          variant: 'dataset-release' as const,
-        };
+    const activeDataset = catalog?.datasets.find(({ id }) => id === state.view.dataset.datasetId);
+    const releaseOptions: ContextMenuOption[] = activeDataset?.releases.map((release) => ({
+      id: `release:${release.id}`, label: release.label,
+      ...(release.status ? { badge: titleCaseToken(release.status) } : {}),
+      ...(release.description ?? activeDataset.description ? { detail: release.description ?? activeDataset.description } : {}),
+      metadata: `Immutable release ID · ${release.id}`,
+      group: activeDataset.source === 'local' ? 'Browser-local releases' : 'Exact dataset releases',
+      disabled: !!model.navigationRecovery,
+    })) ?? [];
+    this.releaseContext.setOptions([...projectOptions, ...releaseOptions],
+      [activeProjectOption, `release:${state.view.dataset.releaseId}`], {
+        emptyMessage: 'No releases available.',
+        busy: state.runtime.catalogStatus === 'loading' || state.runtime.catalogStatus === 'idle',
       });
-    }) ?? [];
-    const datasetOptions: ContextMenuOption[] = [
-      ...releaseOptions,
-      {
-        id: LOCAL_IMPORT_OPTION_ID,
-        label: 'Import local dataset…',
-        description: 'Choose one .ibl-ephys-atlas.zip archive from this device.',
-        group: 'Local',
-        keywords: 'import custom zip local dataset',
-      },
-      {
-        id: LOCAL_MANAGE_OPTION_ID,
-        label: 'Manage local datasets…',
-        description: 'Inspect storage, integrity, and every imported release.',
-        group: 'Local',
-        keywords: 'manage inspect verify storage quota local dataset',
-      },
-      ...(state.view.dataset.datasetId === 'local' && state.view.dataset.releaseId ? [{
-        id: LOCAL_DELETE_OPTION_ID,
-        label: 'Delete this local dataset…',
-        description: 'Remove the selected immutable release from this browser.',
-        group: 'Local',
-        keywords: 'delete remove local dataset',
-      }] : []),
-    ];
-    const datasetId = state.view.dataset.releaseId
-      ? JSON.stringify([state.view.dataset.datasetId, state.view.dataset.releaseId])
-      : '';
-    this.datasetContext.setOptions(datasetOptions, [datasetId], {
-      emptyMessage: state.runtime.catalogStatus === 'error'
-        ? `Datasets unavailable: ${state.runtime.error ?? 'The catalog could not be loaded.'}`
-        : state.runtime.catalogStatus === 'loading' || state.runtime.catalogStatus === 'idle'
-          ? 'Loading datasets…'
-          : 'No datasets are available.',
-      busy: state.runtime.catalogStatus === 'loading' || state.runtime.catalogStatus === 'idle',
-    });
 
     this.featureRepresentation.clear();
     const featureOptions: ContextMenuOption[] = manifest?.features.map((feature) => {
@@ -1838,7 +1773,7 @@ export class AppShell {
       id: `representation:${value}`,
       label: value === 'regional' ? 'Regional' : 'Volume',
       description: value === 'regional' ? 'Region-level descriptive summaries' : 'Voxel-space scalar volume',
-      group: 'View',
+      group: 'Representation',
       disabled: representations.length < 2,
     }));
     const parcellationOptions: ContextMenuOption[] = availableParcellations.map((value) => ({
@@ -2320,7 +2255,10 @@ export class AppShell {
     analysisDialog.append(analysisFrame);
     analysis.append(analysisHeader, analysisDialog);
     this.analysisDialog = analysisDialog;
-    workspace.append(switcher, slices, context, analysis);
+    const displayControls = element('dl', 'workspace__display-controls');
+    displayControls.setAttribute('aria-label', 'Visualization controls');
+    displayControls.append(this.representationContext.field);
+    workspace.append(displayControls, switcher, slices, context, analysis);
     return workspace;
   }
 
@@ -2762,6 +2700,10 @@ export class AppShell {
 
   private closeContextMenus(except?: ContextMenu): boolean {
     let closed = false;
+    if (this.overflowActions?.open) {
+      this.overflowActions.open = false;
+      closed = true;
+    }
     if (this.dataChooser.isOpen) {
       this.dataChooser.close();
       closed = true;

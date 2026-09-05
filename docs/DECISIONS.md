@@ -64,13 +64,14 @@ only part of the body; the index states what remains effective.
 | D053 | Focused compact viewport | accepted | 2026-08-29 | current compact behavior |
 | D054 | Complete audited distribution selections | accepted | 2026-08-29 | closes Q14; local rebuilds authorized |
 | D055 | Unlisted expiring dataset shares | accepted | 2026-09-02 | optional sharing transport; separate from publication |
-| D056 | Project/dataset/release navigation | partially superseded | 2026-09-02 | hierarchy and terminology retained; D061 fixes edition identity, authority, context, and delivery |
+| D056 | Project/dataset/release navigation | partially superseded | 2026-09-02 | hierarchy retained; D061 fixes edition identity, authority and context; D063 refines presentation and control labels |
 | D057 | Preferred palettes and explicit diverging centers | accepted | 2026-09-02 | infrastructure policy; Q16 retains real-feature selections |
 | D058 | Flexible multi-feature comparison | accepted | 2026-09-02 | arbitrary feature scopes, z-score comparison, and iterative Focus/Gallery/Profile UX |
 | D059 | Shared S3 staging/production roots | accepted | 2026-09-02 | exact private bucket roots, immutable-key policy, and initial site domain |
 | D060 | Lean AWS static hosting and local publication | accepted | 2026-09-02 | CloudFront serves the viewer and data from private S3; no Cloudflare Pages or always-on publishing server initially |
-| D061 | Curated immutable project editions | accepted | 2026-09-03 | catalog authority, scoped edition identity, resolved navigation, and responsive interaction |
+| D061 | Curated immutable project editions | partially superseded | 2026-09-03 | identity, authority, context and resolution retained; D063 replaces wide/staged UI presentation |
 | D062 | Linux canonical release environment | accepted | 2026-09-04 | Linux-only release build/preflight/publication; macOS preview-only |
+| D063 | Data chooser and exploration-first header | accepted | 2026-09-05 | grouped Data, separate Release, prominent Feature, workspace Display & parcellation |
 
 ## D001 — Separate v2
 
@@ -1403,3 +1404,35 @@ promoted. Canonical screenshot pixels are likewise generated and compared on
 Linux; macOS retains semantic browser coverage without asserting host-specific
 font rasterization pixels. This decision does not select Q2 scientific data,
 Q5 volume transport, Q8 infrastructure details, or Q9 public defaults.
+
+## D063 — Group data selection and prioritize feature exploration
+
+Owner direction recorded 2026-09-05. Refine only the presentation rules in
+D056/D061: one **Data** chooser replaces separate Project and Dataset fields
+at every width. Catalog-ordered project names label groups; datasets are direct
+choices. The closed trigger preserves the project/dataset breadcrumb. **My data**
+remains a distinct browser-local section. Dataset selection uses existing
+navigation transitions, preserving an active edition/custom baseline within a
+project and resolving the target project's catalog-owned context across projects.
+
+A compact **Release** control near Data groups coordinated editions, **Choose
+releases individually**, and the active dataset's exact immutable releases.
+Its secondary line visibly discloses the edition or individual-release baseline.
+An explicit exact-release choice enters custom context even when its ID matches
+an edition; only explicit edition selection restores coordination. Release IDs,
+status and descriptions are readable in the menu; Info retains full provenance.
+
+**Feature** is the most prominent header control, with dynamic search, shortcuts,
+and release-declared metadata/units. **Display & parcellation** sits above the
+visualization, including during maximization. It groups regional/volume
+representation and applicable parcellation choices; it does not imply slice
+orientation or layout. The internal representation contract is unchanged.
+
+Use the same accessible menu implementation at every width, opaque popovers,
+one selected indicator per choice, and two header rows on narrow screens before
+truncating critical names. Preserve local/development/legacy disclosure from
+existing source and catalog metadata. Shorten only exact reviewed title/project
+combinations; arbitrary publisher titles pass through unchanged.
+
+This decision does not change scientific choices, catalog/edition mappings,
+defaults, URL v4, immutable identity, rendering contracts, or Q2/Q5/Q8/Q9.

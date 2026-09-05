@@ -208,7 +208,7 @@ def main() -> int:
         )
         phases["app_ready_ms"] = round((time.monotonic() - started) * 1000, 1)
 
-        click('[data-context-field="dataset"] .context-menu__trigger')
+        click('[data-context-field="data"] .context-menu__trigger')
         click('[data-context-option="__import_local_dataset__"]')
         file_input = find(".local-import__input")
         session_request("POST", f"/element/{file_input}/value", {"text": args.archive})
@@ -232,7 +232,7 @@ def main() -> int:
         wait_script(
             "const element = document.querySelector(arguments[0]); "
             "return Boolean(element && !element.hidden);",
-            ['[data-context-field="dataset"] .context-field__local-badge'],
+            ['[data-context-field="data"] .context-field__local-badge'],
             timeout=args.timeout_seconds,
         )
         feature = wait_text(
@@ -257,7 +257,7 @@ def main() -> int:
         wait_script(
             "const element = document.querySelector(arguments[0]); "
             "return Boolean(element && !element.hidden);",
-            ['[data-context-field="dataset"] .context-field__local-badge'],
+            ['[data-context-field="data"] .context-field__local-badge'],
             timeout=args.timeout_seconds,
         )
         reload_feature = wait_text(

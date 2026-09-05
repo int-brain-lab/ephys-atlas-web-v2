@@ -24,7 +24,7 @@ test('wide header keeps long feature and representation context legible', async 
   await expect(feature).toHaveText('aperiodic exponent (denoised)');
   await expect(representation).toHaveText('Regional · Allen');
   await expect(registration).toHaveText('Allen CCFv3 · 10 µm');
-  for (const [name, field] of [['feature', feature], ['representation', representation], ['registration', registration]] as const) {
+  for (const [name, field] of [['feature', feature], ['representation', representation]] as const) {
     expect(
       await field.evaluate((node) => node.scrollWidth - node.clientWidth),
       `${name} context must not overflow`,
@@ -35,15 +35,17 @@ test('wide header keeps long feature and representation context legible', async 
 test('uses the immutable release and approved denoised feature as development defaults', async ({ page }) => {
   await page.goto('/');
 
-  const release = page.locator('[data-context-field="dataset"] .context-field__release');
+  const release = page.locator('[data-context-field="release"]');
   await expect(release).toContainText('Local preview');
-  await expect(release).toContainText(`ID · ${releaseId}`);
+  await release.locator('.context-menu__trigger').click();
+  await expect(release.getByRole('group', { name: 'Exact dataset releases' })).toContainText(`Immutable release ID · ${releaseId}`);
+  await page.keyboard.press('Escape');
   await expect(release).not.toContainText('Synthetic');
   await expect(page.locator('[data-context-field="feature"] .context-field__value')).toHaveText('rms ap (denoised)');
-  const dataset = page.locator('[data-context-field="dataset"]');
+  const dataset = page.locator('[data-context-field="data"]');
   await dataset.locator('.context-menu__trigger').click();
-  await expect(dataset.locator('.context-menu__group').first()).toHaveText('Ephys Atlas channels');
-  await expect(dataset.getByRole('option', { selected: true })).toContainText(releaseId);
+  await expect(dataset.locator('.context-menu__group').first()).toHaveText('Ephys Atlas');
+  await expect(dataset.getByRole('option', { selected: true })).toContainText('Channels');
   await page.keyboard.press('Escape');
   const feature = page.locator('[data-context-field="feature"]');
   await feature.locator('.context-menu__trigger').click();
@@ -74,9 +76,7 @@ test('loads real float64 alpha values and all launch parcellations', async ({ pa
   await expect(feature.getByRole('option')).toHaveCount(1);
   await feature.getByRole('option').click();
 
-  await expect(page.locator('[data-context-field="dataset"] .context-field__release')).toContainText(
-    `ID · ${releaseId}`,
-  );
+  await expect.poll(() => new URL(page.url()).searchParams.get('release')).toBe(releaseId);
   await expect(page.locator('[data-context-field="feature"] .context-field__value')).toHaveText('alpha mean (raw)');
   await expect(page.locator('[data-context-field="representation"] .context-field__value')).toHaveText('Regional · Allen');
   await expect.poll(() => new URL(page.url()).searchParams.get('feature')).toBe('alpha_mean.raw');

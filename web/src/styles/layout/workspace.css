@@ -1,7 +1,7 @@
 .workspace {
   position: relative;
   display: grid;
-  grid-template-rows: max(14rem, 50vh) minmax(12rem, 1fr);
+  grid-template-rows: 2.8rem max(14rem, calc(50vh - 2.8rem - var(--space-2))) minmax(12rem, 1fr);
   gap: var(--space-2);
   padding-bottom: calc(2.25rem + var(--space-2));
   overflow: hidden;

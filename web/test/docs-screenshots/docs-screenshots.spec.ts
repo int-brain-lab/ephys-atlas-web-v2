@@ -52,7 +52,7 @@ test('encoding and distribution controls', async ({ page }) => {
 
 test('local import preview', async ({ page }) => {
   test.skip(!canonicalPixelPlatform, 'canonical documentation pixels are generated and checked on Linux');
-  const dataset = page.locator('[data-context-field="dataset"]');
+  const dataset = page.locator('[data-context-field="data"]');
   await dataset.locator('.context-menu__trigger').click();
   await dataset.getByRole('option', { name: 'Import local dataset…' }).click();
   await page.getByLabel('Local dataset ZIP archive').setInputFiles(archive);

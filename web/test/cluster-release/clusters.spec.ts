@@ -34,9 +34,11 @@ test('serves the complete approved catalog dynamically', async ({ page }) => {
   expect(features).toHaveLength(14);
   await page.goto('/');
 
-  const release = page.locator('[data-context-field="dataset"] .context-field__release');
-  await expect(release).toContainText(`Local ${releaseId}`);
-  await expect(release).toContainText(`ID · ${releaseId}`);
+  const release = page.locator('[data-context-field="release"]');
+  await expect(release).toContainText('Local preview');
+  await release.locator('.context-menu__trigger').click();
+  await expect(release.getByRole('group', { name: 'Exact dataset releases' })).toContainText(`Immutable release ID · ${releaseId}`);
+  await page.keyboard.press('Escape');
   await expect(release).not.toContainText('Synthetic');
   const featureMenu = page.locator('[data-context-field="feature"]');
   await featureMenu.locator('.context-menu__trigger').click();

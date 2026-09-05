@@ -130,14 +130,14 @@ export async function phase(page: Page, started: number): Promise<PhaseEvidence>
 }
 
 export async function openImport(page: Page): Promise<Locator> {
-  const dataset = page.locator('[data-context-field="dataset"]');
+  const dataset = page.locator('[data-context-field="data"]');
   await dataset.locator('.context-menu__trigger').click();
   await dataset.getByRole('option', { name: 'Import local dataset…' }).click();
   return page.locator('[data-local-import-dialog]');
 }
 
 export async function openManager(page: Page): Promise<Locator> {
-  const dataset = page.locator('[data-context-field="dataset"]');
+  const dataset = page.locator('[data-context-field="data"]');
   await dataset.locator('.context-menu__trigger').click();
   await dataset.getByRole('option', { name: 'Manage local datasets…' }).click();
   const dialog = page.getByRole('dialog', { name: 'Local datasets' });

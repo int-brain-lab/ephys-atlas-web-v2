@@ -2,7 +2,7 @@
 
 Status: active pre-launch capability matrix.
 
-Last reviewed: 2026-09-04 on `main` after the D062 release-environment cutover.
+Last reviewed: 2026-09-05 on `main` during the D063 top-bar redesign.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -175,16 +175,15 @@ aliases. No remote publication has occurred.
 D056/D061 accept Project/Dataset/Release/Feature/View navigation, immutable
 scoped project editions, curator-owned catalog promotion, explicit
 edition/custom/local browser context, catalog-first exact URL resolution, and
-a staged narrow Data chooser. The schema-v1 catalog/compiler cutover is
+responsive data selection refined by D063. The schema-v1 catalog/compiler cutover is
 implemented across canonical and bundled schemas, Python and TypeScript
 validators, publishing, synthetic Vite production, and distinct public/local
 browser composition. Browser startup, Back/Forward, local inventory refresh,
 and URL-v4 canonicalization now resolve that catalog to exact edition/custom/
 local context before immutable release loading; unresolved published releases
-are rejected. The desktop/tablet four-field context bar now exposes project,
-edition/custom context, dataset release metadata, feature, and View controls
-with exact history-preserving transitions. The staged narrow Data chooser and
-grouped-menu accessibility are implemented with atomic edition/custom/local
+are rejected. D063 groups project/dataset selection in Data, moves edition and exact-version
+selection to Release, emphasizes Feature, and places Display & parcellation above
+the visualization. The shared menus preserve atomic edition/custom/local
 selection, bounded phone composition, live catalog status, and explicit
 catalog/navigation recovery. No generic D056/D061 implementation slice remains.
 Generic machinery may use synthetic edition values; Q9 blocks only the real paper
@@ -265,3 +264,12 @@ checks are recorded in
 The executable order and stop conditions live in
 [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md). Launch readiness remains
 defined only by [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md).
+
+## Top-bar presentation
+
+The grouped Data chooser, separate Release control with coordinated/custom-baseline
+disclosure, prominent searchable Feature, and workspace Display & parcellation
+are implemented. Shared menus support direct dataset selection at every width,
+exact-version inspection, recovery, and browser-local management. Navigation and
+scientific identities continue to use D061; Q9 configuration is unchanged.
+Validation and completion evidence: [top-bar task](tasks/2026-09-05-top-bar-redesign/README.md).

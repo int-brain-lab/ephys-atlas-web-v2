@@ -5,8 +5,8 @@ const reviewViewports = [
   { name: 'wide-desktop', width: 1680, height: 1050, layout: 'wide', body: { x: 8, y: 72, width: 1664, height: 970 } },
   { name: 'compact-desktop', width: 1440, height: 900, layout: 'compact', body: { x: 8, y: 72, width: 1424, height: 820 } },
   { name: 'compact-laptop', width: 1280, height: 800, layout: 'compact', body: { x: 8, y: 72, width: 1264, height: 720 } },
-  { name: 'tablet', width: 1024, height: 768, layout: 'narrow', body: { x: 8, y: 72, width: 1008, height: 688 } },
-  { name: 'phone', width: 390, height: 844, layout: 'phone', body: { x: 4, y: 60, width: 382, height: 780 } },
+  { name: 'tablet', width: 1024, height: 768, layout: 'narrow', body: { x: 8, y: 136, width: 1008, height: 624 } },
+  { name: 'phone', width: 390, height: 844, layout: 'phone', body: { x: 4, y: 168, width: 382, height: 672 } },
 ] as const;
 
 for (const viewport of reviewViewports) {
@@ -35,10 +35,9 @@ for (const viewport of reviewViewports) {
     }
     if (viewport.width >= 1480) {
       const atlasRegistration = page.locator('[data-context-field="representation"] .context-field__release');
-      await expect(atlasRegistration).toBeVisible();
-      expect(await atlasRegistration.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+      await expect(atlasRegistration).toBeHidden();
       const contextBounds = await Promise.all(
-        ['project', 'dataset', 'feature', 'representation'].map((field) =>
+        ['data', 'release', 'feature'].map((field) =>
           page.locator(`[data-context-field="${field}"]`).boundingBox(),
         ),
       );
@@ -480,7 +479,7 @@ test('scientific context menus and color controls are driven by the loaded relea
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
 
-  const dataset = page.locator('[data-context-field="dataset"]');
+  const dataset = page.locator('[data-context-field="data"]');
   const datasetTrigger = dataset.locator('.context-menu__trigger');
   await expect(datasetTrigger).toHaveAttribute('aria-expanded', 'false');
   const headerBounds = await page.locator('.app-header').boundingBox();
@@ -493,10 +492,8 @@ test('scientific context menus and color controls are driven by the loaded relea
   await expect(dataset.locator('.context-menu__panel')).toHaveAttribute('data-open', 'true');
   const selectedDataset = dataset.getByRole('option', { selected: true });
   await expect(selectedDataset.locator('.context-menu__option-label')).toHaveText('IBL Ephys Atlas v2 golden fixture');
-  await expect(selectedDataset.locator('.context-menu__option-description')).toHaveText('Synthetic golden-v1');
   await expect(selectedDataset.locator('.context-menu__option-detail')).toContainText('deterministic non-scientific dataset');
-  await expect(selectedDataset.locator('.context-menu__option-metadata')).toHaveText('Immutable release ID · golden-v1');
-  await expect(dataset.locator('.context-menu__group').filter({ hasText: 'IBL Ephys Atlas' })).toHaveCount(1);
+  await expect(dataset.locator('.context-menu__group').filter({ hasText: 'Synthetic development data' })).toHaveCount(1);
   await page.keyboard.press('Escape');
   await expect(datasetTrigger).toBeFocused();
 
@@ -526,7 +523,7 @@ test('scientific context menus and color controls are driven by the loaded relea
   const representation = page.locator('[data-context-field="representation"]');
   await representation.locator('.context-menu__trigger').click();
   await expect(representation.getByRole('listbox')).toHaveAttribute('aria-multiselectable', 'true');
-  await expect(representation.getByRole('group', { name: 'View' })).toBeVisible();
+  await expect(representation.getByRole('group', { name: 'Representation' })).toBeVisible();
   await expect(representation.getByRole('group', { name: 'Parcellation' })).toBeVisible();
   await expect(representation.getByRole('option', { selected: true })).toHaveCount(2);
   await expect(representation.getByRole('option', { name: /Regional/ })).toHaveAttribute('aria-selected', 'true');

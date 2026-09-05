@@ -6,7 +6,6 @@ import {
   resolveDatasetNavigation,
   resolveDatasetNavigationRequest,
   selectNavigationEdition,
-  selectNavigationProject,
   switchNavigationDataset,
 } from './application/dataset-navigation.js';
 import {
@@ -91,7 +90,6 @@ export class AtlasApp {
       setDataset: (ref) => this.selectDataset(ref),
       selectData: (selection) => this.selectData(selection),
       recoverNavigation: (action) => this.recoverNavigation(action),
-      selectProject: (projectId) => this.selectProject(projectId),
       selectEdition: (projectId, editionId) => this.selectEdition(projectId, editionId),
       browseCustomVersions: (projectId) => this.browseCustomVersions(projectId),
       setFeature: (featureId, representation) => this.store.dispatch({
@@ -513,12 +511,6 @@ export class AtlasApp {
     } catch {
       this.render();
     }
-  }
-
-  private selectProject(projectId: string): void {
-    const catalog = this.session.snapshot().catalog;
-    if (!catalog) return;
-    this.commitNavigation('navigation/project', selectNavigationProject(catalog, projectId));
   }
 
   private selectEdition(projectId: string, editionId: string): void {

@@ -7,7 +7,6 @@ export interface ContextMenuOption {
   metadata?: string;
   group?: string;
   keywords?: string;
-  variant?: 'dataset-release';
   disabled?: boolean;
 }
 
@@ -25,6 +24,7 @@ export interface ContextMenuConfig {
 export interface ContextMenuAvailability {
   emptyMessage: string;
   busy?: boolean;
+  statusMessage?: string | undefined;
 }
 
 let menuSequence = 0;
@@ -47,6 +47,7 @@ export class ContextMenu {
   private readonly groupIdPrefix: string;
   private options: readonly ContextMenuOption[] = [];
   private selectedIds = new Set<string>();
+  private statusMessage: string | undefined;
   private unavailableMessage = 'No options are available.';
 
   constructor(private readonly config: ContextMenuConfig) {
@@ -110,6 +111,7 @@ export class ContextMenu {
     this.panel.addEventListener('keydown', this.onPanelKeyDown);
     this.search?.addEventListener('input', this.filter);
     document.addEventListener('pointerdown', this.onDocumentPointerDown);
+    window.addEventListener('resize', this.onResize);
   }
 
   setDisplay(value: string, meta = ''): void {
@@ -127,6 +129,7 @@ export class ContextMenu {
     availability: ContextMenuAvailability,
   ): void {
     this.unavailableMessage = availability.emptyMessage;
+    this.statusMessage = availability.statusMessage;
     const signature = JSON.stringify(options);
     const selection = JSON.stringify(selectedIds);
     if (this.list.dataset.options !== signature || this.list.dataset.selection !== selection) {
@@ -137,7 +140,7 @@ export class ContextMenu {
       this.list.dataset.selection = selection;
     }
     this.filter();
-    const busy = options.length === 0 && availability.busy === true;
+    const busy = availability.busy === true;
     this.trigger.setAttribute('aria-busy', String(busy));
     this.list.setAttribute('aria-busy', String(busy));
   }
@@ -149,6 +152,11 @@ export class ContextMenu {
   open(focusOptions = false): void {
     if (this.trigger.disabled || this.isOpen) return;
     this.config.onOpen(this);
+    const bounds = this.trigger.getBoundingClientRect();
+    const width = this.panel.getBoundingClientRect().width;
+    const headerBottom = this.field.closest('.app-header')?.getBoundingClientRect().bottom ?? 0;
+    this.panel.style.setProperty('--menu-top', `${Math.max(bounds.bottom, headerBottom) + 8}px`);
+    this.panel.style.setProperty('--menu-left', `${Math.max(8, Math.min(bounds.left, window.innerWidth - width - 8))}px`);
     this.panel.dataset.open = 'true';
     this.panel.setAttribute('aria-hidden', 'false');
     this.panel.inert = false;
@@ -179,6 +187,7 @@ export class ContextMenu {
     this.panel.removeEventListener('keydown', this.onPanelKeyDown);
     this.search?.removeEventListener('input', this.filter);
     document.removeEventListener('pointerdown', this.onDocumentPointerDown);
+    window.removeEventListener('resize', this.onResize);
   }
 
   private renderOptions(): void {
@@ -189,7 +198,6 @@ export class ContextMenu {
     for (const option of this.options) {
       if (option.group && option.group !== previousGroup) {
         groupContainer = element('div', 'context-menu__option-group');
-        if (option.variant) groupContainer.classList.add(`context-menu__option-group--${option.variant}`);
         groupContainer.setAttribute('role', 'group');
         groupContainer.dataset.contextGroup = option.group;
         const group = element('div', 'context-menu__group');
@@ -204,7 +212,6 @@ export class ContextMenu {
         previousGroup = undefined;
       }
       const button = element('button', 'context-menu__option');
-      if (option.variant) button.classList.add(`context-menu__option--${option.variant}`);
       button.type = 'button';
       button.dataset.contextOption = option.id;
       button.dataset.search = `${option.label} ${option.badge ?? ''} ${option.description ?? ''} ${option.detail ?? ''} ${option.metadata ?? ''} ${option.keywords ?? ''}`.toLocaleLowerCase();
@@ -253,6 +260,8 @@ export class ContextMenu {
     this.filter();
   }
 
+  private readonly onResize = (): void => { this.close(this.panel.contains(document.activeElement)); };
+
   private readonly toggle = (): void => {
     if (this.isOpen) this.close();
     else this.open();
@@ -296,8 +305,8 @@ export class ContextMenu {
       group.hidden = !visibleGroups.has(group.dataset.contextGroup ?? '');
     }
     const hasVisibleOptions = this.list.querySelector('.context-menu__option:not([hidden])') !== null;
-    this.empty.textContent = this.options.length === 0 ? this.unavailableMessage : 'No matching options';
-    this.empty.hidden = hasVisibleOptions;
+    this.empty.textContent = this.statusMessage ?? (this.options.length === 0 ? this.unavailableMessage : 'No matching options');
+    this.empty.hidden = hasVisibleOptions && !this.statusMessage;
     this.list.dataset.empty = String(!hasVisibleOptions);
   };
 

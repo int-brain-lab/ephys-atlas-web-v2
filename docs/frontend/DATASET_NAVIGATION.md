@@ -4,7 +4,7 @@ Status: implemented generic contract; real paper-facing configuration remains bl
 
 D056 establishes the Project, Dataset, Release, Feature, and View hierarchy.
 D061 fixes catalog authority, immutable edition identity, explicit browser
-context, resolution order, and responsive interaction. Exact paper-facing IDs,
+context and resolution order. D063 refines the responsive presentation. Exact paper-facing IDs,
 labels, release mappings, aliases, and defaults remain governed by Q9.
 
 ## Information hierarchy
@@ -26,7 +26,8 @@ project
   never replaces its release ID.
 - A **feature** is a release-declared measured quantity.
 - A **representation** is a release-declared exploration form such as regional
-  summaries or a scalar volume. The user-facing term is **View**.
+  summaries or a scalar volume. The **Display & parcellation** control groups
+  representation and applicable parcellation choices above the visualization.
 
 The initial public grouping remains:
 
@@ -192,60 +193,59 @@ checkpoints. Derived feature/parcellation reconciliation and canonicalization
 replace the current checkpoint. An invalid explicit identity remains visible
 in the error model and never silently adopts a newer alias or default.
 
-## Desktop and tablet context bar
+## Data, Release, and Feature context bar
 
-The wide order is:
+D063 uses one presentation at desktop, tablet, and phone widths:
 
-| Control | Primary line | Secondary line |
+| Control | Primary content | Supporting content |
 | --- | --- | --- |
-| Project | Ephys Atlas | Coordinated-release label or `Individual releases` |
-| Dataset | Channel features | Friendly release label and durable status |
-| Feature | Spike amplitude | Release-declared supporting detail |
-| View | Regional · Allen | Applicable representation/parcellation detail |
+| Data | Project / dataset breadcrumb | Browser-local or recovery disclosure where applicable |
+| Release | Friendly release label and durable status | Coordinated edition or `Individual releases · based on <edition>` |
+| Feature | Prominent searchable feature label | Release-declared units; descriptions in the menu |
 
-The Project menu presents real scientific project choices, coordinated-release
-choices for the active project, and a clearly labelled **Choose releases
-individually** action. Do not expose the internal term `version set`; `edition`
-and `custom` remain precise catalog/domain terms, but the UI does not require
-users to understand them.
-Local preview catalogs preserve the same Ephys Atlas and Brain-Wide Map project
-grouping and open on their coordinated current-preview edition rather than a
-synthetic `Local development` project or an unexplained custom context. Avoid
-nested popovers. The Dataset menu makes each concise dataset-family name the
-dominant heading inside the selectable release card (for example, **Ephys Atlas
-channels**) and keeps the friendly release label, status, immutable ID, and
-provenance in smaller secondary text. Project and Dataset header controls place
-their context on a separate secondary line so it never competes horizontally
-with the primary project or dataset name.
+Data groups selectable datasets under clearly labelled catalog-ordered projects.
+It does not require a project/edition wizard. Within a project, selection uses
+the active coordinated mapping or custom baseline. Selecting an out-of-scope
+dataset retains that baseline as custom; crossing projects resolves the target
+project's catalog-owned default context and exact release in one checkpoint.
+Browser-local inventory and import/manage/delete actions live under **My data**.
+Only exact reviewed title/project combinations are shortened; arbitrary publisher
+labels remain unchanged.
 
-Release IDs remain exact in URLs, provenance, downloads, and exports. `Latest`
-is an alias affordance, never an immutable label. An override keeps custom
-disclosure visible while the target release is loading; the header must not
-claim a new coordinated context before its manifest validates.
+Release groups the active project's coordinated editions, **Choose releases
+individually**, and the active dataset's exact versions. An explicit exact-version
+choice enters custom context even if it matches the baseline mapping. Explicit
+edition selection restores coordination. Status, descriptions, and exact immutable
+IDs are readable without hover; Info provides full provenance. The closed control
+keeps edition/custom-baseline disclosure visible during release loading and
+exposes invalid navigation as unavailable with explicit recovery actions.
 
-## View terminology
+Local preview catalogs preserve Ephys Atlas and Brain-Wide Map grouping and their
+coordinated local-preview edition. Local preview/development and preserved legacy
+labels come from existing catalog metadata; browser-local identity comes from the
+source discriminant. No example label becomes a new release or default.
 
-The UI label is **View**, not **Representation**. Typical values are
-`Regional · Allen`, `Regional · Beryl`, `Regional · Cosmos`, and
-`Volume · Allen anatomy`. Internal and schema code retains `representation`.
-Availability remains release- and feature-declared. The UI does not manufacture
-choices or hardcode the feature catalog.
+## Display and parcellation
 
-## Narrow interaction and accessibility
+**Display & parcellation**, above the visualization, groups the release/feature's
+regional or volume representation with its applicable anatomical parcellations.
+Typical values are `Regional · Allen` and `Volume · Allen anatomy`. The control
+stays accessible during maximization. It changes neither slice orientation nor
+workspace layout. Internal/schema code retains `representation`, and all
+availability remains data-driven, including volume and optional 3-D interactions.
 
-At widths where four fields no longer fit, replace Project and Dataset with a
-single two-line **Data** breadcrumb trigger. It preserves project/dataset on one
-line and edition-or-custom/release on the other. It opens a staged chooser:
+## Responsive interaction and accessibility
 
-```text
-Project -> Edition or custom -> Dataset and exact version
-```
+At narrow widths Data and Release occupy the first row and Feature the second.
+The same chooser and selection model applies everywhere; resizing never changes
+scientific context. Long names and custom baselines wrap, and popover descriptions
+and immutable IDs remain readable. Phone popovers use a bounded bottom sheet;
+wide popovers stay below the header and inside the viewport.
 
-The chooser must remain keyboard-reversible and must not erase context or alter
-the selected release merely because composition changes. Menus use labelled
-`role="group"` structures, predictable arrow-key traversal, Escape dismissal,
-focus restoration, and live loading/error announcements. Test desktop/tablet
-widths that support four fields plus the 390 px phone composition.
+Menus use labelled `role="group"` structures, predictable arrow-key traversal,
+Escape dismissal, focus restoration, and live loading/error announcements. Opening
+another control closes the previous menu. Browser coverage includes desktop,
+tablet, 390 px phone, and both sides of the responsive breakpoints.
 
 ## Loading, error, and recovery behavior
 
@@ -292,7 +292,7 @@ commit.
 
 ### 3. Desktop/tablet navigation UI
 
-Status: implemented.
+Status: implemented; presentation refined by D063 above.
 
 Implement Project/Dataset/Feature/View, edition/custom secondary disclosure,
 friendly version/status/ID details, View terminology, explicit override and
@@ -302,7 +302,7 @@ loading, and failure. Run `just check` and commit.
 
 ### 4. Narrow UX, accessibility, and durable completion
 
-Status: implemented.
+Status: implemented; D063 replaces the staged chooser with direct grouped selection.
 
 Implement the staged Data chooser, accessible grouped menus, keyboard/focus and
 live-region behavior, responsive overflow cases, local composition, invalid URL

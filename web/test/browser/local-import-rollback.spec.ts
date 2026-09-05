@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 const archive = resolve(process.cwd(), '../fixtures/golden-v1.ibl-ephys-atlas.zip');
 
 async function openImport(page: import('@playwright/test').Page): Promise<void> {
-  const dataset = page.locator('[data-context-field="dataset"]');
+  const dataset = page.locator('[data-context-field="data"]');
   await dataset.locator('.context-menu__trigger').click();
   await dataset.getByRole('option', { name: 'Import local dataset…' }).click();
 }
@@ -52,7 +52,7 @@ test('quota failure after queued resource writes rolls back both stores and rema
 
   await dialog.getByRole('button', { name: 'Import', exact: true }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.locator('[data-context-field="dataset"] .context-field__local-badge')).toBeVisible();
+  await expect(page.locator('[data-context-field="data"] .context-field__local-badge')).toBeVisible();
   await expect.poll(() => localKeys(page)).toEqual(expect.objectContaining({
     manifests: ['golden_fixture@golden-v1'],
   }));

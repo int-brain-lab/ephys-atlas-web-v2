@@ -1,6 +1,6 @@
 ## Choose a dataset and feature {#choose-data}
 
-Start here to choose the release, feature, and representation you want to explore. The current choices are always visible in this bar.
+Choose a dataset in Data, check its edition or exact version in Release, then search Feature. Display & parcellation above the brain views controls regional or volume display and the anatomical mapping.
 
 ## Navigate linked slices {#navigate}
 

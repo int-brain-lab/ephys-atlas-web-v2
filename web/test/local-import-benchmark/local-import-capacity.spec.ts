@@ -122,7 +122,7 @@ test.describe('opt-in local ZIP import capacity evidence', () => {
         await writeEvidence(outputDirectory, browserName, item.id, evidence);
         throw new Error(`Admission rejected: ${evidence.rejection || 'unknown browser storage error'}`);
       }
-      await expect(page.locator('[data-context-field="dataset"] .context-field__local-badge')).toBeVisible();
+      await expect(page.locator('[data-context-field="data"] .context-field__local-badge')).toBeVisible();
       evidence.phases.admission = await phase(page, admissionStarted);
       expect((await indexedDbCounts(page)).manifests).toBe(1);
       const releaseSelector = new URL(page.url()).searchParams.get('release');
@@ -131,7 +131,7 @@ test.describe('opt-in local ZIP import capacity evidence', () => {
 
       const reloadStarted = performance.now();
       await page.reload();
-      await expect(page.locator('[data-context-field="dataset"] .context-field__local-badge')).toBeVisible();
+      await expect(page.locator('[data-context-field="data"] .context-field__local-badge')).toBeVisible();
       await expect.poll(() => new URL(page.url()).searchParams.get('release')).toBe(releaseSelector);
       evidence.phases.reload = await phase(page, reloadStarted);
 
@@ -151,7 +151,7 @@ test.describe('opt-in local ZIP import capacity evidence', () => {
       const deleteStarted = performance.now();
       await deletion.getByRole('button', { name: 'Delete local dataset' }).click();
       await expect(deletion).toBeHidden();
-      await expect(page.locator('[data-context-field="dataset"] .context-field__local-badge')).toBeHidden();
+      await expect(page.locator('[data-context-field="data"] .context-field__local-badge')).toBeHidden();
       evidence.phases.delete = await phase(page, deleteStarted);
       evidence.finalIndexedDb = await indexedDbCounts(page);
       expect(evidence.finalIndexedDb).toEqual({ manifests: 0, resources: 0 });
