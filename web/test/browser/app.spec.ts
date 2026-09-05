@@ -36,7 +36,14 @@ for (const viewport of reviewViewports) {
     expect(statusBounds.y + statusBounds.height).toBeLessThanOrEqual(valueBounds.y);
     const headerBounds = (await page.locator('.app-header').boundingBox())!;
     expect(valueBounds.y + valueBounds.height).toBeLessThanOrEqual(headerBounds.y + headerBounds.height);
+    const displayBounds = (await page.locator('.app-header [data-context-field="representation"]').boundingBox())!;
+    expect(displayBounds.y + displayBounds.height).toBeLessThanOrEqual(headerBounds.y + headerBounds.height);
     if (viewport.width >= 1100) {
+      const dataBounds = (await page.locator('[data-context-field="data"]').boundingBox())!;
+      const featureBounds = (await page.locator('[data-context-field="feature"]').boundingBox())!;
+      expect(displayBounds.y).toBe(dataBounds.y);
+      expect(displayBounds.y).toBe(featureBounds.y);
+      expect(displayBounds.x).toBeGreaterThanOrEqual(featureBounds.x + featureBounds.width);
       const representationValue = page.locator('[data-context-field="representation"] .context-field__value');
       expect(await representationValue.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
     }

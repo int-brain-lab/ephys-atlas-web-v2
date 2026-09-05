@@ -15,7 +15,7 @@ walkthrough of the visible controls.
 ## Choose what to explore
 
 Use **Data** to choose a dataset and **Feature** to choose what to explore.
-**Display & parcellation** above the views controls its representation.
+**Display & parcellation** in the header controls its representation.
 Development, legacy, and browser-local status remain visible beside Data.
 Published choices come from the public catalog and selected release rather
 than a fixed frontend list. Imported releases appear separately under the

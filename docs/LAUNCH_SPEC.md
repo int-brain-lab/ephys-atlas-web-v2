@@ -42,7 +42,7 @@ Acceptance criteria:
 - <a id="ls01-07"></a> **`LS01-07`** — Current Chrome/Edge, Firefox, and Safari are the launch browser targets. Chromium CI is necessary but not sufficient for final release QA.
 - <a id="ls01-08"></a> **`LS01-08`** — Public navigation clearly separates Project, Dataset, immutable Release,
   Feature, and display choices; the grouped Data chooser preserves project/dataset
-  identity, and Display & parcellation sits above the visualization. Ephys Atlas
+  identity, and Display & parcellation sits alongside Data and Feature in the header. Ephys Atlas
   and Brain-Wide Map are distinct projects,
   Data details exposes exact release IDs and optional version selection. A
   paper-facing project edition preserves its coordinated dataset-to-release

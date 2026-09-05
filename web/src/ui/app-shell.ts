@@ -601,6 +601,7 @@ export class AppShell {
     context.append(
       this.dataChooser.element,
       this.featureContext.field,
+      this.representationContext.field,
     );
 
     const actions = element('nav', 'app-header__actions');
@@ -2265,10 +2266,7 @@ export class AppShell {
     analysisDialog.append(analysisFrame);
     analysis.append(analysisHeader, analysisDialog);
     this.analysisDialog = analysisDialog;
-    const displayControls = element('dl', 'workspace__display-controls');
-    displayControls.setAttribute('aria-label', 'Visualization controls');
-    displayControls.append(this.representationContext.field);
-    workspace.append(displayControls, switcher, slices, context, analysis);
+    workspace.append(switcher, slices, context, analysis);
     return workspace;
   }
 

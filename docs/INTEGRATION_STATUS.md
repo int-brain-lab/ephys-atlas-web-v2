@@ -182,8 +182,7 @@ browser composition. Browser startup, Back/Forward, local inventory refresh,
 and URL-v4 canonicalization now resolve that catalog to exact edition/custom/
 local context before immutable release loading; unresolved published releases
 are rejected. D063/D064 group project/dataset selection in Data, move rare version changes
-into Data details, emphasize Feature, and place Display & parcellation above
-the visualization. The shared menus preserve atomic edition/custom/local
+into Data details, emphasize Feature, and place Display & parcellation alongside Data and Feature in the header (D065). The shared menus preserve atomic edition/custom/local
 selection, bounded phone composition, live catalog status, and explicit
 catalog/navigation recovery. No generic D056/D061 implementation slice remains.
 Generic machinery may use synthetic edition values; Q9 blocks only the real paper

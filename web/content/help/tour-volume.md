@@ -1,6 +1,6 @@
 ## Choose a dataset and feature {#choose-data}
 
-Choose a dataset in Data, then search Feature. Data details contains the exact version and provenance. Display & parcellation above the brain views controls regional or volume display and the anatomical mapping.
+Choose a dataset in Data, then search Feature. Data details contains the exact version and provenance. Display & parcellation in the header controls regional or volume display and the anatomical mapping.
 
 ## Navigate linked slices {#navigate}
 

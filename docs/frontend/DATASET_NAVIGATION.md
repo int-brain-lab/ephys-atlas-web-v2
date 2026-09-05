@@ -27,7 +27,7 @@ project
 - A **feature** is a release-declared measured quantity.
 - A **representation** is a release-declared exploration form such as regional
   summaries or a scalar volume. The **Display & parcellation** control groups
-  representation and applicable parcellation choices above the visualization.
+  representation and applicable parcellation choices in the header.
 
 The initial public grouping remains:
 
@@ -233,7 +233,7 @@ source discriminant. No example label becomes a new release or default.
 
 ## Display and parcellation
 
-**Display & parcellation**, above the visualization, groups the release/feature's
+**Display & parcellation**, alongside Data and Feature in the header, groups the release/feature's
 regional or volume representation with its applicable anatomical parcellations.
 Typical values are `Regional · Allen` and `Volume · Allen anatomy`. The control
 stays accessible during maximization. It changes neither slice orientation nor
@@ -242,7 +242,9 @@ availability remains data-driven, including volume and optional 3-D interactions
 
 ## Responsive interaction and accessibility
 
-At narrow widths Data and Release occupy the first row and Feature the second.
+At desktop widths Data, Feature, and Display & parcellation share one header row.
+At narrow widths Data and Display & parcellation occupy the first row and Feature
+the second.
 The same chooser and selection model applies everywhere; resizing never changes
 scientific context. Long names and custom baselines wrap, and popover descriptions
 and immutable IDs remain readable. Phone popovers use a bounded bottom sheet;

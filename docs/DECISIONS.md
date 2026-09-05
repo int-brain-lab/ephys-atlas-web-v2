@@ -71,8 +71,9 @@ only part of the body; the index states what remains effective.
 | D060 | Lean AWS static hosting and local publication | accepted | 2026-09-02 | CloudFront serves the viewer and data from private S3; no Cloudflare Pages or always-on publishing server initially |
 | D061 | Curated immutable project editions | partially superseded | 2026-09-03 | identity, authority, context and resolution retained; D063 replaces wide/staged UI presentation |
 | D062 | Linux canonical release environment | accepted | 2026-09-04 | Linux-only release build/preflight/publication; macOS preview-only |
-| D063 | Data chooser and exploration-first header | partially superseded | 2026-09-05 | D064 moves version selection into Data details; grouped Data and prominent Feature retained |
+| D063 | Data chooser and exploration-first header | partially superseded | 2026-09-05 | D064 moves version selection into Data details; D065 moves display into the header; grouped Data and prominent Feature retained |
 | D064 | Put rare version changes in Data details | accepted | 2026-09-05 | removes header Release and user-facing edition modes; preserves exact scientific navigation |
+| D065 | Compact display control in the header | accepted | 2026-09-05 | Display & parcellation shares the desktop Data/Feature row; removes workspace control row |
 
 ## D001 — Separate v2
 
@@ -1463,3 +1464,15 @@ coordination merely because exact release IDs happen to match.
 This supersedes the presentation/disclosure requirements of D061/D063 only.
 Scientific choices, schema, publication, immutable identities, and Q9 remain
 unchanged. Named snapshot selection need not occupy an everyday control.
+
+
+## D065 — Keep display and parcellation in the header
+
+Owner direction recorded 2026-09-05. Put **Display & parcellation** alongside
+Data and Feature in one desktop header row. Remove its separate workspace row
+and the corresponding reserved space in maximized views. On narrow screens,
+Data and Display & parcellation share the first row, with Feature below.
+
+This supersedes only D063's placement of the display control above the views.
+Representation/parcellation behavior, URL state, and scientific choices remain
+unchanged.
