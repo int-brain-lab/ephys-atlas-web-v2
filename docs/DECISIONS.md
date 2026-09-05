@@ -71,7 +71,8 @@ only part of the body; the index states what remains effective.
 | D060 | Lean AWS static hosting and local publication | accepted | 2026-09-02 | CloudFront serves the viewer and data from private S3; no Cloudflare Pages or always-on publishing server initially |
 | D061 | Curated immutable project editions | partially superseded | 2026-09-03 | identity, authority, context and resolution retained; D063 replaces wide/staged UI presentation |
 | D062 | Linux canonical release environment | accepted | 2026-09-04 | Linux-only release build/preflight/publication; macOS preview-only |
-| D063 | Data chooser and exploration-first header | accepted | 2026-09-05 | grouped Data, separate Release, prominent Feature, workspace Display & parcellation |
+| D063 | Data chooser and exploration-first header | partially superseded | 2026-09-05 | D064 moves version selection into Data details; grouped Data and prominent Feature retained |
+| D064 | Put rare version changes in Data details | accepted | 2026-09-05 | removes header Release and user-facing edition modes; preserves exact scientific navigation |
 
 ## D001 — Separate v2
 
@@ -1436,3 +1437,29 @@ combinations; arbitrary publisher titles pass through unchanged.
 
 This decision does not change scientific choices, catalog/edition mappings,
 defaults, URL v4, immutable identity, rendering contracts, or Q2/Q5/Q8/Q9.
+
+
+## D064 — Put rare version changes in Data details
+
+Owner direction recorded 2026-09-05. Remove Release from the header and rename
+Info to **Data details**. Data and Feature remain the primary exploration
+controls. Keep development, legacy, and browser-local status visible beside Data,
+using catalog/source metadata rather than inferring status from custom context.
+
+Data details exposes the current version, exact release ID, creation date, and
+existing scientific metadata/provenance. Show **Only available version** when
+there is one version; otherwise offer **Change version…**, opening one list for
+the current dataset. Selecting a different version acts directly. Selecting the
+already active version is a no-op. There is no coordinated/custom mode chooser.
+
+Preserve immutable edition mappings, custom baselines, exact URLs, dataset
+switching, and recovery internally. Disclose a deviation from a retained named
+snapshot in Data details in plain language. Offer an explicitly named return to
+that snapshot when applicable, explaining that it also governs subsequent dataset
+switches. Without a retained snapshot, offer the catalog default for the current
+dataset; restoring a project snapshot must name that broader scope. Never infer
+coordination merely because exact release IDs happen to match.
+
+This supersedes the presentation/disclosure requirements of D061/D063 only.
+Scientific choices, schema, publication, immutable identities, and Q9 remain
+unchanged. Named snapshot selection need not occupy an everyday control.
