@@ -40,7 +40,7 @@ import { colormapLabel } from '../application/colormap-palettes.js';
 import type { ResolvedPresentationColormap } from '../application/presentation-colormap.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
 import { ColorRangeControl } from './color-range-control.js';
-import { overrideNavigationRelease, resolveDatasetNavigation } from '../application/dataset-navigation.js';
+import { overrideNavigationRelease, resolveDatasetNavigation, selectNavigationDataset, selectNavigationProject } from '../application/dataset-navigation.js';
 import { ContextMenu, type ContextMenuOption } from './context-menu.js';
 import {
   DataChooser,
@@ -72,7 +72,6 @@ export interface AppShellCallbacks {
   selectData(selection: DataChooserSelection): void;
   recoverNavigation(action: NavigationRecoveryAction): void;
   selectEdition(projectId: string, editionId: string): void;
-  browseCustomVersions(projectId: string): void;
   setFeature(featureId: string | null, representation?: RepresentationKind): void;
   setParcellation(parcellation: ParcellationId): void;
   setStatistic(statistic: ColorStatisticId): void;
@@ -167,7 +166,7 @@ const ACTION_ICONS: Record<HeaderAction, string> = {
 const ACTION_LABELS: Record<HeaderAction, string> = {
   share: 'Share',
   download: 'Download',
-  info: 'Info',
+  info: 'Data details',
   help: 'Help',
 };
 
@@ -271,7 +270,9 @@ export class AppShell {
   private readonly headerActionButtons = new Map<HeaderAction, HTMLButtonElement[]>();
   private headerActions!: HTMLElement;
   private readonly dataChooser: DataChooser;
-  private readonly releaseContext: ContextMenu;
+  private infoSignature = '';
+  private infoManifest: DatasetManifest | null = null;
+  private infoCatalog: DatasetCatalog | null = null;
   private readonly featureContext: ContextMenu;
   private readonly representationContext: ContextMenu;
   private readonly contextMenus: readonly ContextMenu[];
@@ -318,32 +319,6 @@ export class AppShell {
         if (id === LOCAL_DELETE_OPTION_ID) this.openLocalDeleteDialog();
       },
     );
-    this.releaseContext = new ContextMenu({
-      fieldName: 'release',
-      label: 'Release',
-      multiselectable: true,
-      onOpen: (menu) => { this.closeDrawers(); this.closeContextMenus(menu); },
-      onSelect: (option) => {
-        if (option.id.startsWith('edition:')) {
-          const [, projectId, editionId] = option.id.split(':');
-          if (projectId && editionId) this.callbacks.selectEdition(projectId, editionId);
-        } else if (option.id === 'action:custom') {
-          const navigation = this.currentModel?.state.view.navigation;
-          if (navigation && navigation.kind !== 'local') this.callbacks.browseCustomVersions(navigation.projectId);
-        } else if (option.id.startsWith('release:')) {
-          const model = this.currentModel;
-          if (model?.catalog) {
-            const view = model.state.view;
-            const current = resolveDatasetNavigation(model.catalog, view.dataset.datasetId, view.dataset.releaseId ?? undefined, view.navigation);
-            const resolved = overrideNavigationRelease(model.catalog, current, option.id.slice(8));
-            this.callbacks.selectData({ navigation: resolved.context, dataset: { datasetId: resolved.dataset.id, releaseId: resolved.releaseId } });
-          }
-
-        } else if (option.id.startsWith('recovery:')) {
-          this.callbacks.recoverNavigation(option.id.slice('recovery:'.length) as NavigationRecoveryAction);
-        }
-      },
-    });
     this.localDatasetBadge = element('span', 'context-field__local-badge');
     this.localDatasetBadge.textContent = 'Local';
     this.localDatasetBadge.title = 'Stored only in this browser on this device';
@@ -375,7 +350,7 @@ export class AppShell {
         if (kind === 'parcellation') this.callbacks.setParcellation(id as ParcellationId);
       },
     });
-    this.contextMenus = [this.releaseContext, this.featureContext, this.representationContext];
+    this.contextMenus = [this.featureContext, this.representationContext];
 
     this.regionPane = this.createRegionPane();
     this.settingsPane = this.createSettingsPane();
@@ -467,32 +442,11 @@ export class AppShell {
     this.currentModel = model;
     const { state, catalog, manifest } = model;
     const view = state.view;
-    const datasetEntry = catalog?.datasets.find((entry) => entry.id === view.dataset.datasetId);
     const featureEntry = manifest?.features.find((entry) => entry.id === view.featureId);
 
-    const releaseLabel = view.dataset.releaseId ?? manifest?.dataset.release ?? datasetEntry?.defaultRelease ?? '';
     const featureLabel = featureEntry?.label ?? (view.featureId ? titleCaseToken(view.featureId) : 'No feature selected');
     const representationLabel = view.representation === 'regional' ? 'Regional' : 'Volume';
 
-    const navigationProjectId = view.navigation.kind === 'local' ? undefined : view.navigation.projectId;
-    const project = catalog?.projects.find((item) => item.id === navigationProjectId);
-    const navigationEditionId = view.navigation.kind === 'edition' ? view.navigation.editionId : undefined;
-    const edition = project && navigationEditionId
-      ? project.editions.find((item) => item.id === navigationEditionId)
-      : undefined;
-    const baseEditionId = view.navigation.kind === 'custom' ? view.navigation.baseEditionId : undefined;
-    const baseEdition = project && baseEditionId
-      ? project.editions.find((item) => item.id === baseEditionId)
-      : undefined;
-    const release = datasetEntry?.releases.find((item) => item.id === view.dataset.releaseId);
-    this.releaseContext.setDisplay(
-      [release?.label ?? releaseLabel, release?.status].filter(Boolean).join(' · '),
-      model.navigationRecovery ? 'Navigation unavailable · open to recover'
-        : view.navigation.kind === 'edition' ? edition?.label ?? 'Edition'
-        : view.navigation.kind === 'custom'
-          ? `Individual releases${baseEdition ? ` · based on ${baseEdition.label}` : ''}`
-          : 'Local browser data',
-    );
     this.dataChooser.update({
       catalog,
       catalogStatus: state.runtime.catalogStatus,
@@ -518,7 +472,7 @@ export class AppShell {
     this.renderInfo(model);
     this.renderDownloads(model);
     this.setHeaderActionDisabled('share', false);
-    this.setHeaderActionDisabled('info', manifest === null);
+    this.setHeaderActionDisabled('info', state.runtime.navigationStatus !== 'ready' && manifest === null);
     this.setHeaderActionDisabled('download', model.feature === null);
     this.syncWorkspaceState(view.workspace.activeCompactView, view.workspace.maximizedView);
     this.renderSecondaryView(model);
@@ -646,7 +600,6 @@ export class AppShell {
     context.dataset.helpAnchor = 'context';
     context.append(
       this.dataChooser.element,
-      this.releaseContext.field,
       this.featureContext.field,
     );
 
@@ -660,7 +613,7 @@ export class AppShell {
     desktopActions.append(
       this.headerActionButton('Share', 'share'),
       this.headerActionButton('Download', 'download'),
-      this.headerActionButton('Info', 'info'),
+      this.headerActionButton('Data details', 'info'),
       this.headerActionButton('Help', 'help'),
     );
     actions.append(desktopActions, this.createOverflowActions());
@@ -773,7 +726,7 @@ export class AppShell {
     menu.append(
       this.headerActionButton('Share', 'share'),
       this.headerActionButton('Download', 'download'),
-      this.headerActionButton('Info', 'info'),
+      this.headerActionButton('Data details', 'info'),
       this.headerActionButton('Help', 'help'),
     );
     summary.addEventListener('click', () => {
@@ -788,7 +741,7 @@ export class AppShell {
     const dialog = element('dialog', 'info-dialog');
     dialog.setAttribute('aria-labelledby', 'info-dialog-title');
     const header = element('header', 'info-dialog__header');
-    const title = heading('Dataset information', 2);
+    const title = heading('Data details', 2);
     title.id = 'info-dialog-title';
     const close = element('button', 'info-dialog__close');
     close.type = 'button';
@@ -799,6 +752,12 @@ export class AppShell {
     dialog.append(header, content);
     dialog.addEventListener('click', (event) => {
       if (event.target === dialog) dialog.close();
+    });
+    dialog.addEventListener('close', () => {
+      const target = this.layoutMode === 'narrow' || this.layoutMode === 'phone'
+        ? this.overflowActions?.querySelector<HTMLElement>('summary')
+        : this.headerActionButtons.get('info')?.find((button) => this.isVisibleTourTarget(button));
+      target?.focus();
     });
     return { dialog, content };
   }
@@ -1353,15 +1312,31 @@ export class AppShell {
   }
 
   private renderInfo(model: ShellModel): void {
-    const { manifest, state } = model;
-    if (!manifest) {
-      this.infoContent.replaceChildren();
+    const { manifest, state, catalog } = model;
+    const signature = JSON.stringify([state.view.dataset, state.view.navigation,
+      state.view.featureId, state.view.parcellation, state.view.representation,
+      state.runtime.navigationStatus, state.runtime.datasetStatus, state.runtime.error, model.navigationRecovery]);
+    if (signature === this.infoSignature && manifest === this.infoManifest && catalog === this.infoCatalog) return;
+    this.infoManifest = manifest;
+    this.infoCatalog = catalog;
+    this.infoSignature = signature;
+    const versions = this.createVersionDetails(model);
+    if (!manifest || state.runtime.datasetStatus !== 'ready') {
+      const message = this.infoParagraph(model.navigationRecovery ? 'Data unavailable. Open Data to recover.'
+        : state.runtime.datasetStatus === 'error' ? `Data unavailable: ${state.runtime.error ?? 'The version could not be loaded.'}`
+        : 'Loading data…');
+      message.setAttribute('role', 'status');
+      this.infoContent.replaceChildren(versions, message);
       return;
     }
     const feature = manifest.features.find((item) => item.id === state.view.featureId);
-    const releaseStatus = manifest.release.paperSnapshot
-      ? 'Frozen paper snapshot'
-      : manifest.dataset.fixture ? 'Synthetic test fixture' : 'Immutable development release';
+    const entry = catalog?.datasets.find(({ id }) => id === state.view.dataset.datasetId);
+    const release = entry?.releases.find(({ id }) => id === state.view.dataset.releaseId);
+    const releaseStatus = manifest.dataset.fixture ? 'Synthetic test fixture'
+      : entry?.source === 'local' ? 'Stored only in this browser'
+      : release?.status === 'legacy' ? 'Preserved legacy data'
+      : release?.status === 'development' ? 'Development data'
+      : manifest.release.paperSnapshot ? 'Frozen paper snapshot' : 'Immutable release';
     const summary = element('section', 'info-dialog__section');
     const status = element('span', 'info-dialog__status');
     status.dataset.fixture = String(Boolean(manifest.dataset.fixture));
@@ -1370,12 +1345,11 @@ export class AppShell {
     if (manifest.dataset.description) summary.append(this.infoParagraph(manifest.dataset.description));
     summary.append(this.infoList([
       ['Dataset', manifest.dataset.id],
-      ['Release', manifest.release.releaseId],
       ['Created', new Date(manifest.release.createdAt).toLocaleString()],
       [state.view.representation === 'volume' ? 'Anatomy parcellation' : 'Parcellation', titleCaseToken(state.view.parcellation)],
     ]));
 
-    const sections: HTMLElement[] = [summary];
+    const sections: HTMLElement[] = [summary, versions];
     if (feature) {
       const featureSection = element('section', 'info-dialog__section');
       featureSection.append(heading(feature.label, 3));
@@ -1420,6 +1394,91 @@ export class AppShell {
     }
     sections.push(provenance);
     this.infoContent.replaceChildren(...sections);
+  }
+
+  private createVersionDetails(model: ShellModel): HTMLElement {
+    const section = element('section', 'info-dialog__section');
+    section.setAttribute('aria-label', 'Data version');
+    const { catalog, state } = model;
+    const view = state.view;
+    const dataset = catalog?.datasets.find(({ id }) => id === view.dataset.datasetId);
+    const release = dataset?.releases.find(({ id }) => id === view.dataset.releaseId);
+    section.append(heading('Version', 3), this.infoList([
+      ['Version', release?.label ?? view.dataset.releaseId ?? 'Unavailable'],
+      ['Release ID', view.dataset.releaseId ?? 'Unavailable'],
+    ]));
+    if (!catalog || !dataset || model.navigationRecovery || state.runtime.navigationStatus !== 'ready') return section;
+    const current = resolveDatasetNavigation(catalog, dataset.id, view.dataset.releaseId ?? undefined, view.navigation);
+    const apply = (resolved: ReturnType<typeof resolveDatasetNavigation>): void => {
+      this.infoDialog.close();
+      this.callbacks.selectData({ navigation: resolved.context,
+        dataset: { datasetId: resolved.dataset.id, releaseId: resolved.releaseId } });
+    };
+    if (dataset.releases.length === 1) {
+      section.append(this.infoParagraph('Only available version'));
+    } else {
+      const details = element('details', 'data-version-picker');
+      const summary = element('summary');
+      summary.textContent = 'Change version…';
+      const choices = element('fieldset', 'data-version-picker__choices');
+      const legend = element('legend');
+      legend.textContent = 'Available versions';
+      choices.append(legend);
+      for (const item of dataset.releases) {
+        const label = element('label', 'data-version-picker__option');
+        const radio = element('input');
+        radio.type = 'radio';
+        radio.name = 'data-version';
+        radio.value = item.id;
+        radio.checked = item.id === view.dataset.releaseId;
+        const copy = element('span');
+        const title = element('strong');
+        title.textContent = [item.label, item.status ? titleCaseToken(item.status) : ''].filter(Boolean).join(' · ');
+        const id = element('code');
+        id.textContent = item.id;
+        copy.append(title, id);
+        if (item.description) copy.append(this.infoParagraph(item.description));
+        label.append(radio, copy);
+        radio.addEventListener('change', () => {
+          if (radio.checked && item.id !== view.dataset.releaseId) apply(overrideNavigationRelease(catalog, current, item.id));
+        });
+        choices.append(label);
+      }
+      details.append(summary, choices);
+      section.append(details);
+    }
+    if (view.navigation.kind === 'custom') {
+      const baseId = view.navigation.baseEditionId;
+      const baseline = current.project?.editions.find(({ id }) => id === baseId);
+      if (baseline) {
+        const mapped = baseline.datasetReleases.get(dataset.id);
+        section.append(this.infoParagraph(mapped && mapped !== view.dataset.releaseId
+          ? `This version differs from ${baseline.label}.`
+          : mapped ? `This version was selected individually from ${baseline.label}.`
+          : `This dataset is not included in ${baseline.label}.`));
+        const restore = element('button', 'info-dialog__close');
+        restore.type = 'button';
+        restore.textContent = `Return to ${baseline.label}`;
+        const projectId = view.navigation.projectId;
+        restore.addEventListener('click', () => {
+          this.infoDialog.close();
+          this.callbacks.selectEdition(projectId, baseline.id);
+        });
+        section.append(restore, this.infoParagraph('Restores this snapshot’s versions when switching datasets.'));
+      } else if (current.project) {
+        const initial = selectNavigationProject(catalog, current.project.id);
+        const target = initial.dataset.id === dataset.id ? initial : selectNavigationDataset(catalog, initial, dataset.id);
+        if (target.releaseId !== view.dataset.releaseId) {
+          const restore = element('button', 'info-dialog__close');
+          restore.type = 'button';
+          restore.textContent = 'Use default version';
+          // This action changes this dataset only; it makes no coordinated claim.
+          restore.addEventListener('click', () => apply(overrideNavigationRelease(catalog, current, target.releaseId)));
+          section.append(restore);
+        }
+      }
+    }
+    return section;
   }
 
   private renderDownloads(model: ShellModel): void {
@@ -1689,57 +1748,8 @@ export class AppShell {
   }
 
   private renderContextMenus(model: ShellModel): void {
-    const { catalog, manifest, state } = model;
+    const { manifest, state } = model;
     this.featureId = state.view.featureId;
-    const activeProjectId = state.view.navigation.kind === 'local'
-      ? undefined : state.view.navigation.projectId;
-    const activeProject = catalog?.projects.find(({ id }) => id === activeProjectId);
-    const projectOptions: ContextMenuOption[] = [];
-    if (state.runtime.catalogStatus === 'error') projectOptions.push({
-      id: 'recovery:catalog', label: 'Retry catalog',
-      description: 'Load and validate the public catalog again.', group: 'Catalog recovery',
-    });
-    if (activeProject) projectOptions.push(...activeProject.editions.map((edition) => ({
-        id: `edition:${activeProject.id}:${edition.id}`, label: edition.label,
-        ...(edition.description ? { description: edition.description } : { description: `Coordinated ${activeProject.title} release set` }),
-        group: 'Coordinated releases',
-        keywords: `${activeProject.id} ${edition.id} ${edition.label}`,
-      })));
-    if (activeProjectId) projectOptions.push({
-      id: 'action:custom', label: 'Choose releases individually', description: 'Select an exact release for each dataset.', group: 'Other releases',
-    });
-    if (model.navigationRecovery) {
-      projectOptions.push({
-        id: 'recovery:default', label: 'Use catalog default',
-        description: 'Replace the invalid request with the catalog-owned default.', group: 'Navigation recovery',
-      });
-      if (model.navigationRecovery.canReturnToEdition) projectOptions.push({
-        id: 'recovery:edition', label: 'Return to edition',
-        description: 'Use the exact release mapped by the requested edition.', group: 'Navigation recovery',
-      });
-      if (model.navigationRecovery.canOpenExactAsCustom) projectOptions.push({
-        id: 'recovery:custom', label: 'Open exact release as custom',
-        description: 'Keep the requested immutable release outside coordinated edition context.', group: 'Navigation recovery',
-      });
-    }
-    const activeProjectOption = state.view.navigation.kind === 'edition'
-      ? `edition:${state.view.navigation.projectId}:${state.view.navigation.editionId}`
-      : state.view.navigation.kind === 'custom' ? 'action:custom' : '';
-    const activeDataset = catalog?.datasets.find(({ id }) => id === state.view.dataset.datasetId);
-    const releaseOptions: ContextMenuOption[] = activeDataset?.releases.map((release) => ({
-      id: `release:${release.id}`, label: release.label,
-      ...(release.status ? { badge: titleCaseToken(release.status) } : {}),
-      ...(release.description ?? activeDataset.description ? { detail: release.description ?? activeDataset.description } : {}),
-      metadata: `Immutable release ID · ${release.id}`,
-      group: activeDataset.source === 'local' ? 'Browser-local releases' : 'Exact dataset releases',
-      disabled: !!model.navigationRecovery,
-    })) ?? [];
-    this.releaseContext.setOptions([...projectOptions, ...releaseOptions],
-      [activeProjectOption, `release:${state.view.dataset.releaseId}`], {
-        emptyMessage: 'No releases available.',
-        busy: state.runtime.catalogStatus === 'loading' || state.runtime.catalogStatus === 'idle',
-      });
-
     this.featureRepresentation.clear();
     const featureOptions: ContextMenuOption[] = manifest?.features.map((feature) => {
       const representations = this.featureRepresentations(feature);

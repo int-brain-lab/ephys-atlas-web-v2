@@ -91,7 +91,6 @@ export class AtlasApp {
       selectData: (selection) => this.selectData(selection),
       recoverNavigation: (action) => this.recoverNavigation(action),
       selectEdition: (projectId, editionId) => this.selectEdition(projectId, editionId),
-      browseCustomVersions: (projectId) => this.browseCustomVersions(projectId),
       setFeature: (featureId, representation) => this.store.dispatch({
         type: 'feature/set',
         featureId,
@@ -519,37 +518,6 @@ export class AtlasApp {
     this.commitNavigation('navigation/edition', selectNavigationEdition(catalog, projectId, editionId));
   }
 
-  private browseCustomVersions(projectId: string): void {
-    const catalog = this.session.snapshot().catalog;
-    if (!catalog) return;
-    try {
-      const view = this.store.getState().view;
-      const project = catalog.projects.find(({ id }) => id === projectId);
-      if (!project) throw new Error(`Unknown project ${projectId}`);
-      const datasetId = project.datasetIds.includes(view.dataset.datasetId)
-        ? view.dataset.datasetId
-        : project.defaultDataset;
-      const releaseId = datasetId === view.dataset.datasetId
-        ? view.dataset.releaseId ?? undefined
-        : undefined;
-      const resolved = resolveDatasetNavigationRequest(catalog, {
-        context: 'custom', projectId, datasetId,
-        ...(releaseId ? { releaseId } : {}),
-        ...(view.navigation.kind === 'edition' && view.navigation.projectId === projectId
-          ? { baseEditionId: view.navigation.editionId }
-          : view.navigation.kind === 'custom' && view.navigation.projectId === projectId
-            && view.navigation.baseEditionId
-            ? { baseEditionId: view.navigation.baseEditionId }
-            : {}),
-      });
-      this.commitNavigation('navigation/release', resolved);
-    } catch (error) {
-      this.store.dispatch({
-        type: 'runtime/navigation', status: 'error',
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
 
   private commitNavigation(
     type: 'navigation/project' | 'navigation/edition' | 'navigation/dataset' | 'navigation/release' | 'navigation/local',

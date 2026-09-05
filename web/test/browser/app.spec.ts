@@ -37,7 +37,7 @@ for (const viewport of reviewViewports) {
       const atlasRegistration = page.locator('[data-context-field="representation"] .context-field__release');
       await expect(atlasRegistration).toBeHidden();
       const contextBounds = await Promise.all(
-        ['data', 'release', 'feature'].map((field) =>
+        ['data', 'feature'].map((field) =>
           page.locator(`[data-context-field="${field}"]`).boundingBox(),
         ),
       );
@@ -791,8 +791,8 @@ test('share, download and info expose the immutable scientific context', async (
   await expect(actions.getByRole('button', { name: 'Copied' })).toBeVisible();
   expect(await page.evaluate(() => (window as Window & { __copiedUrl?: string }).__copiedUrl)).toBe(page.url());
 
-  await actions.getByRole('button', { name: 'Info' }).click();
-  const info = page.getByRole('dialog', { name: 'Dataset information' });
+  await actions.getByRole('button', { name: 'Data details' }).click();
+  const info = page.getByRole('dialog', { name: 'Data details' });
   await expect(info).toBeVisible();
   await expect(info).toContainText('Synthetic test fixture');
   await expect(info).toContainText('golden-v1');

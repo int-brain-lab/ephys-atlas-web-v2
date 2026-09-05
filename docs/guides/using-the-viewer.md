@@ -14,8 +14,9 @@ walkthrough of the visible controls.
 
 ## Choose what to explore
 
-The context bar identifies the selected dataset, immutable release, feature,
-representation, and parcellation. Open a picker to change one of these values.
+Use **Data** to choose a dataset and **Feature** to choose what to explore.
+**Display & parcellation** above the views controls its representation.
+Development, legacy, and browser-local status remain visible beside Data.
 Published choices come from the public catalog and selected release rather
 than a fixed frontend list. Imported releases appear separately under the
 Local dataset identity.
@@ -24,7 +25,7 @@ Local dataset identity.
 - A **release** is an immutable snapshot of that product. Changing it may
   change the features, values, source population, or scientific recipe.
 - A **feature** is the measured or derived quantity being displayed. Open
-  **Info** to check its unit, source, population, and provenance.
+  **Data details** to check its unit, source, population, and provenance.
 - **Regional** displays release-provided summaries for atlas regions.
 - **Volume** displays values sampled on the feature's declared voxel grid.
 
@@ -99,8 +100,13 @@ values.
 
 *Synthetic demonstration data. Presentation controls affect the display, not the underlying observations.*
 
-Open **Info** before interpreting or citing a feature. It records the active
-dataset and release, feature semantics, source population, and provenance.
+Open **Data details** before interpreting or citing a feature. It records the active
+dataset and exact version, feature semantics, source population, and provenance.
+If other versions are available, **Change version…** lets you select one directly.
+Otherwise it shows **Only available version**. Changing versions may change the
+available features and scientific population. A named snapshot return restores
+its prescribed versions when switching datasets; **Use default version** changes
+only the current dataset. Share links retain exact version identities.
 
 ## Share and download
 

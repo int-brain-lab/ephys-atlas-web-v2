@@ -34,12 +34,12 @@ test('serves the complete approved catalog dynamically', async ({ page }) => {
   expect(features).toHaveLength(14);
   await page.goto('/');
 
-  const release = page.locator('[data-context-field="release"]');
+  await page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Data details' }).click();
+  const release = page.getByRole('dialog', { name: 'Data details' });
   await expect(release).toContainText('Local preview');
-  await release.locator('.context-menu__trigger').click();
-  await expect(release.getByRole('group', { name: 'Exact dataset releases' })).toContainText(`Immutable release ID · ${releaseId}`);
-  await page.keyboard.press('Escape');
+  await expect(release.getByRole('region', { name: 'Data version' })).toContainText(releaseId);
   await expect(release).not.toContainText('Synthetic');
+  await page.keyboard.press('Escape');
   const featureMenu = page.locator('[data-context-field="feature"]');
   await featureMenu.locator('.context-menu__trigger').click();
   await expect(featureMenu.getByRole('option')).toHaveCount(features.length);
@@ -122,8 +122,8 @@ test('exposes approved units, explanations, and conservative scale defaults', as
   );
 
   await page.getByRole('button', { name: 'Close panel' }).click();
-  await page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Info' }).click();
-  const info = page.getByRole('dialog', { name: 'Dataset information' });
+  await page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Data details' }).click();
+  const info = page.getByRole('dialog', { name: 'Data details' });
   await expect(info).toContainText('ephys-atlas-clusters-regional-v1');
   await expect(info).toContainText('Legacy website cluster feature catalog and unit metadata');
   await expect(info).toContainText('1d908bea095be2616a750d939d143f3b4db2a641');

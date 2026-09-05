@@ -81,9 +81,9 @@ local
 
 - Switching datasets in coordinated edition context selects the release mapped
   by that edition.
-- Explicitly choosing another release enters custom context. If the user came
+- Explicitly choosing a different release enters custom context. If the user came
   from an edition, retain it as an optional baseline and disclose
-  `Individual releases · based on <edition>`.
+  its relationship to that named snapshot in Data details (D064).
 - Switching datasets in custom context uses the baseline mapping where that
   dataset is in scope; selecting a dataset outside the scope uses its exact
   catalog default and remains custom.
@@ -193,14 +193,14 @@ checkpoints. Derived feature/parcellation reconciliation and canonicalization
 replace the current checkpoint. An invalid explicit identity remains visible
 in the error model and never silently adopts a newer alias or default.
 
-## Data, Release, and Feature context bar
+## Data, Feature, and Data details
 
-D063 uses one presentation at desktop, tablet, and phone widths:
+D064 refines D063 with one presentation at desktop, tablet, and phone widths:
 
 | Control | Primary content | Supporting content |
 | --- | --- | --- |
-| Data | Project / dataset breadcrumb | Browser-local or recovery disclosure where applicable |
-| Release | Friendly release label and durable status | Coordinated edition or `Individual releases · based on <edition>` |
+| Data | Project / dataset breadcrumb | Development, legacy, browser-local, or recovery disclosure where applicable |
+| Data details | Exact version and provenance | Optional version changes and named snapshot return |
 | Feature | Prominent searchable feature label | Release-declared units; descriptions in the menu |
 
 Data groups selectable datasets under clearly labelled catalog-ordered projects.
@@ -212,13 +212,19 @@ Browser-local inventory and import/manage/delete actions live under **My data**.
 Only exact reviewed title/project combinations are shortened; arbitrary publisher
 labels remain unchanged.
 
-Release groups the active project's coordinated editions, **Choose releases
-individually**, and the active dataset's exact versions. An explicit exact-version
-choice enters custom context even if it matches the baseline mapping. Explicit
-edition selection restores coordination. Status, descriptions, and exact immutable
-IDs are readable without hover; Info provides full provenance. The closed control
-keeps edition/custom-baseline disclosure visible during release loading and
-exposes invalid navigation as unavailable with explicit recovery actions.
+Data details replaces Info and owns rare version changes. It shows the current
+friendly label, exact release ID, and full provenance. A single version has the
+text **Only available version**; multiple versions expose **Change version…**
+with one selected radio choice. The current version is a no-op; a different
+version uses the existing override transition and exact URL history. No edition
+or custom-mode chooser appears in the header or the version list.
+
+For a retained snapshot baseline, details explains whether this version differs
+and offers **Return to <snapshot>**, explicitly describing its effect on dataset
+switches. Without a baseline, **Use default version** changes only the current
+dataset to its catalog-resolved default and keeps custom context. Navigation
+recovery remains in Data. Controls are available after navigation resolves,
+including when loading the selected release fails.
 
 Local preview catalogs preserve Ephys Atlas and Brain-Wide Map grouping and their
 coordinated local-preview edition. Local preview/development and preserved legacy

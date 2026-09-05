@@ -5,6 +5,24 @@ import { readFile } from 'node:fs/promises';
 const field = (page: Page, name: string) => page.locator(`[data-context-field="${name}"]`);
 const param = (page: Page, name: string) => new URL(page.url()).searchParams.get(name);
 
+async function openDetails(page: Page) {
+  if (await page.locator('.app-header__overflow').isVisible()) {
+    await page.locator('.app-header__overflow-trigger').click();
+    await page.locator('.app-header__overflow-menu').getByRole('button', { name: 'Data details' }).click();
+  } else {
+    await page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Data details' }).click();
+  }
+  return page.getByRole('dialog', { name: 'Data details' });
+}
+
+async function changeVersion(page: Page, name: RegExp) {
+  const details = await openDetails(page);
+  await details.getByText('Change version…', { exact: true }).click();
+  await expect(details.getByRole('radio', { checked: true })).toHaveCount(1);
+  await details.getByRole('radio', { name }).click();
+  await expect(details).toBeHidden();
+}
+
 // Additional identities reuse canonical test-server resources with explicitly
 // synthetic manifest identities and recomputed served-byte integrity.
 async function groupedCatalog(page: Page): Promise<void> {
@@ -44,7 +62,7 @@ for (const width of [1680, 1024, 390]) {
     await page.goto('/');
     await expect(field(page, 'feature')).toContainText('AP RMS');
     const data = field(page, 'data');
-    const release = field(page, 'release');
+    await expect(field(page, 'release')).toHaveCount(0);
     const initialHistory = await page.evaluate(() => history.length);
     await data.getByRole('button', { name: /^Data:/ }).press('ArrowDown');
     const ephys = data.getByRole('group', { name: 'Ephys Atlas', exact: true });
@@ -58,25 +76,19 @@ for (const width of [1680, 1024, 390]) {
     await expect.poll(() => page.evaluate(() => history.length)).toBe(initialHistory + 1);
     await expect(data.getByRole('button', { name: /^Data:/ })).toBeFocused();
 
-    await release.getByRole('button', { name: /^Release:/ }).click();
-    await release.getByRole('option', { name: /^Synthetic new/ }).click();
+    await changeVersion(page, /^Synthetic new/);
     await expect.poll(() => param(page, 'context')).toBe('custom');
-    await expect(release).toContainText('Individual releases · based on Synthetic coordinated edition');
-    const contextBounds = (await release.locator('.context-field__release').boundingBox())!;
-    const headerBounds = (await page.locator('.app-header').boundingBox())!;
-    expect(contextBounds.y + contextBounds.height).toBeLessThanOrEqual(headerBounds.y + headerBounds.height);
-    if (width < 1100) expect(contextBounds.y + contextBounds.height).toBeLessThanOrEqual((await field(page, 'feature').boundingBox())!.y);
+    await expect.poll(() => param(page, 'base_edition')).toBe('coordinated');
     const overriddenUrl = page.url();
     await data.getByRole('button', { name: /^Data:/ }).click();
     await data.getByRole('option', { name: /^Clusters/ }).click();
     await expect(page).toHaveURL(overriddenUrl);
-    await release.getByRole('button', { name: /^Release:/ }).click();
-    await release.getByRole('option', { name: /^Synthetic old/ }).click();
+    await changeVersion(page, /^Synthetic old/);
     await expect.poll(() => param(page, 'context')).toBe('custom');
     await page.reload();
-    await expect(release).toContainText('Individual releases · based on Synthetic coordinated edition');
-    await release.getByRole('button', { name: /^Release:/ }).click();
-    await release.getByRole('option', { name: /^Synthetic coordinated edition/ }).click();
+    const details = await openDetails(page);
+    await expect(details).toContainText('This version was selected individually from Synthetic coordinated edition.');
+    await details.getByRole('button', { name: 'Return to Synthetic coordinated edition' }).click();
     await expect.poll(() => param(page, 'edition')).toBe('coordinated');
 
     await data.getByRole('button', { name: /^Data:/ }).click();
@@ -100,19 +112,82 @@ for (const width of [1680, 1024, 390]) {
   });
 }
 
-test('Release exposes exact identity, custom baseline, and explicit edition re-entry', async ({ page }) => {
+test('single version lives in Data details without a mode or version picker', async ({ page }) => {
+  await page.goto('/?v=4&project=synthetic-development&edition=synthetic-current&dataset=golden_fixture&release=golden-v1');
+  await expect(field(page, 'feature')).toContainText('AP RMS');
+  await expect(field(page, 'release')).toHaveCount(0);
+  const url = page.url();
+  const details = await openDetails(page);
+  await expect(details.getByRole('region', { name: 'Data version' })).toContainText('golden-v1');
+  await expect(details).toContainText('Only available version');
+  await expect(details.getByText('Change version…', { exact: true })).toHaveCount(0);
+  await expect(details).not.toContainText('Choose releases individually');
+  await page.keyboard.press('Escape');
+  await expect(details).toBeHidden();
+  await expect(page).toHaveURL(url);
+  await expect(page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Data details' })).toBeFocused();
+});
+
+test('current version is a no-op and overrides preserve exact history', async ({ page }) => {
+  await groupedCatalog(page);
   await page.goto('/');
-  const release = field(page, 'release');
-  await expect(release).toContainText('Individual releases');
-  await release.getByRole('button', { name: /^Release:/ }).click();
-  await expect(release.getByRole('group', { name: 'Exact dataset releases' })).toContainText('Immutable release ID · golden-v1');
-  await release.getByRole('option', { name: /Synthetic current edition/ }).click();
-  await expect.poll(() => param(page, 'edition')).toBe('synthetic-current');
-  await release.getByRole('button', { name: /^Release:/ }).click();
-  await release.getByRole('option', { name: /Choose releases individually/ }).click();
-  await expect(release).toContainText('Individual releases · based on Synthetic current edition');
+  await expect(field(page, 'feature')).toContainText('AP RMS');
+  await expect(field(page, 'data')).toContainText('Development data');
+  const initial = page.url();
+  const details = await openDetails(page);
+  await details.getByText('Change version…', { exact: true }).click();
+  await details.getByRole('radio', { name: /^Synthetic old/ }).click();
+  await expect(page).toHaveURL(initial);
+  await expect(details).toBeVisible();
+  await details.getByRole('radio', { name: /^Synthetic new/ }).click();
+  const changed = page.url();
+  await expect.poll(() => param(page, 'release')).toBe('new');
   await page.goBack();
-  await expect.poll(() => param(page, 'edition')).toBe('synthetic-current');
+  await expect(page).toHaveURL(initial);
+  await page.goForward();
+  await expect(page).toHaveURL(changed);
+  const reopened = await openDetails(page);
+  await expect(reopened).toContainText('This version differs from Synthetic coordinated edition.');
+});
+
+test('exact links can restore the current dataset default without claiming a snapshot', async ({ page }) => {
+  await groupedCatalog(page);
+  await page.goto('/?v=4&project=ephys&context=custom&dataset=clusters&release=new');
+  await expect(field(page, 'feature')).toContainText('AP RMS');
+  const details = await openDetails(page);
+  await details.getByRole('button', { name: 'Use default version' }).click();
+  await expect.poll(() => param(page, 'dataset')).toBe('clusters');
+  await expect.poll(() => param(page, 'release')).toBe('old');
+  await expect.poll(() => param(page, 'context')).toBe('custom');
+});
+
+test('failed version keeps Data details available for recovery', async ({ page }) => {
+  await groupedCatalog(page);
+  await page.route('**/manifest.json?identity=channels-new', (route) => route.fulfill({ status: 503, body: 'unavailable' }));
+  await page.goto('/?v=4&project=ephys&context=custom&dataset=channels&release=new');
+  const details = await openDetails(page);
+  await expect(details.getByRole('status')).toContainText('Data unavailable');
+  await expect(details.getByRole('region', { name: 'Data version' })).toContainText('new');
+  await details.getByRole('button', { name: 'Use default version' }).click();
+  await expect.poll(() => param(page, 'release')).toBe('old');
+  await expect(field(page, 'feature')).toContainText('AP RMS');
+});
+
+test('phone version picker supports keyboard choice and Escape', async ({ page }) => {
+  await groupedCatalog(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect(field(page, 'feature')).toContainText('AP RMS');
+  const details = await openDetails(page);
+  await details.getByText('Change version…', { exact: true }).press('Enter');
+  await details.getByRole('radio', { name: /^Synthetic new/ }).press('Space');
+  await expect.poll(() => param(page, 'release')).toBe('new');
+  await expect(details).toBeHidden();
+  await openDetails(page);
+  await page.keyboard.press('Escape');
+  await expect(details).toBeHidden();
+  await expect(page.getByLabel('More actions', { exact: true })).toBeFocused();
+  await expect(page.locator('body')).toHaveJSProperty('scrollWidth', 390);
 });
 
 for (const width of [390, 759, 760, 1099, 1100, 1480]) {
@@ -121,7 +196,7 @@ for (const width of [390, 759, 760, 1099, 1100, 1480]) {
     await page.goto('/');
     await expect(field(page, 'feature')).toContainText('AP RMS');
     const initialUrl = page.url();
-    for (const name of ['data', 'release', 'feature', 'representation']) {
+    for (const name of ['data', 'feature', 'representation']) {
       const menu = field(page, name);
       const trigger = menu.locator('.context-menu__trigger');
       await trigger.press('ArrowDown');
@@ -177,13 +252,13 @@ test('invalid edition URL preserves its exact request and offers explicit recove
   let requests = 0;
   page.on('request', (request) => { if (new URL(request.url()).pathname.endsWith('/golden_fixture/golden-v1/manifest.json')) requests++; });
   await page.goto('/?v=4&project=synthetic-development&edition=synthetic-current&dataset=golden_fixture&release=missing');
-  const release = field(page, 'release');
+  const release = field(page, 'data');
   await expect(release).toContainText('Navigation unavailable · open to recover');
   await expect.poll(() => param(page, 'release')).toBe('missing');
   expect(requests).toBe(0);
   await release.locator('.context-menu__trigger').click();
   await expect(release.getByRole('group', { name: 'Navigation recovery' }).getByRole('option')).toHaveCount(3);
-  await release.getByRole('option', { name: /Return to edition/ }).click();
+  await release.getByRole('option', { name: /Use snapshot version/ }).click();
   await expect(field(page, 'feature')).toContainText('AP RMS');
   expect(requests).toBe(1);
   await page.goBack();

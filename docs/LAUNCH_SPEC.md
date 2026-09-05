@@ -44,9 +44,9 @@ Acceptance criteria:
   Feature, and display choices; the grouped Data chooser preserves project/dataset
   identity, and Display & parcellation sits above the visualization. Ephys Atlas
   and Brain-Wide Map are distinct projects,
-  release versions remain user-selectable with exact IDs available, and a
+  Data details exposes exact release IDs and optional version selection. A
   paper-facing project edition preserves its coordinated dataset-to-release
-  mapping or explicitly discloses an individual-release override.
+  mapping or discloses an individual-release override in Data details.
 
 ## 2. Regional feature exploration
 

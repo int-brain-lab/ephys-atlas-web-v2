@@ -19,7 +19,7 @@ release-provided region identities and summaries.
   anatomical divisions.
 
 The feature catalog is dynamic, so the viewer enables only parcellations
-declared by the active feature. Check **Info** and the immutable release
+declared by the active feature. Check **Data details** and the immutable release
 metadata for the exact source population, aggregation, and available outputs.
 
 ## Regional data

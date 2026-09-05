@@ -86,7 +86,7 @@ recommendation has not been repeated at the eventual CloudFront origin. See
 
 ## Local data and downloads
 
-Share, Info, current regional CSV, selected comparison CSV, and declared
+Share, Data details, current regional CSV, selected comparison CSV, and declared
 immutable artifact downloads are implemented through the shared resource-reader
 boundary. Published artifacts are verified before download; local artifacts
 use the same interface after complete import validation.
@@ -181,8 +181,8 @@ validators, publishing, synthetic Vite production, and distinct public/local
 browser composition. Browser startup, Back/Forward, local inventory refresh,
 and URL-v4 canonicalization now resolve that catalog to exact edition/custom/
 local context before immutable release loading; unresolved published releases
-are rejected. D063 groups project/dataset selection in Data, moves edition and exact-version
-selection to Release, emphasizes Feature, and places Display & parcellation above
+are rejected. D063/D064 group project/dataset selection in Data, move rare version changes
+into Data details, emphasize Feature, and place Display & parcellation above
 the visualization. The shared menus preserve atomic edition/custom/local
 selection, bounded phone composition, live catalog status, and explicit
 catalog/navigation recovery. No generic D056/D061 implementation slice remains.
@@ -267,9 +267,16 @@ defined only by [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md).
 
 ## Top-bar presentation
 
-The grouped Data chooser, separate Release control with coordinated/custom-baseline
-disclosure, prominent searchable Feature, and workspace Display & parcellation
-are implemented. Shared menus support direct dataset selection at every width,
-exact-version inspection, recovery, and browser-local management. Navigation and
-scientific identities continue to use D061; Q9 configuration is unchanged.
-Validation and completion evidence: [top-bar task](tasks/2026-09-05-top-bar-redesign/README.md).
+The grouped Data chooser, prominent searchable Feature, and workspace Display &
+parcellation are implemented. D064 removes Release from the header. Data details
+shows exact version identity and provenance, with a version picker only when
+alternatives exist, a named snapshot return, and a current-dataset default action
+where applicable. Data retains development/legacy/local status and navigation
+recovery. Exact URLs, immutable mappings, and dataset-switch behavior continue
+to use D061; Q9 configuration is unchanged.
+
+Validation: `just check` passes on macOS (132 semantic browser tests; canonical
+pixel comparisons skip on this host). The reviewed four-dataset local bundle
+also passes `just validate-local-full` without browser errors. The manual
+Documentation screenshots workflow provides Linux-generated, rechecked pixels
+for review from macOS.

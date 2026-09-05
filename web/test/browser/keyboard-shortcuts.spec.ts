@@ -68,7 +68,7 @@ test('shortcuts stay out of text entry and expose the task-first help guide', as
   await concepts.getByText('Concepts and terminology').click();
   await expect(concepts).toContainText('Dataset and immutable release');
   await expect(concepts).toContainText('For volume data, it changes the anatomical overlay and region inspection, not the voxel values');
-  await expect(concepts).toContainText('Check Info before interpreting or citing a feature');
+  await expect(concepts).toContainText('Check Data details before interpreting or citing a feature');
 
   await page.keyboard.press('Shift+ArrowDown');
   await expect(featureField.locator('.context-menu__trigger')).toContainText('AP RMS (golden fixture)');

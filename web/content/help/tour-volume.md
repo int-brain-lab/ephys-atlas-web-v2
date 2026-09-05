@@ -1,6 +1,6 @@
 ## Choose a dataset and feature {#choose-data}
 
-Choose a dataset in Data, check its edition or exact version in Release, then search Feature. Display & parcellation above the brain views controls regional or volume display and the anatomical mapping.
+Choose a dataset in Data, then search Feature. Data details contains the exact version and provenance. Display & parcellation above the brain views controls regional or volume display and the anatomical mapping.
 
 ## Navigate linked slices {#navigate}
 
@@ -16,4 +16,4 @@ Use the global distribution to understand the value range. Visualization setting
 
 ## Verify, share, or download {#verify-share}
 
-Open Info to check units, population, release, and provenance. Share copies this exact view; Download exports the feature data.
+Open Data details to check units, population, release, and provenance. Share copies this exact view; Download exports the feature data.

@@ -19,12 +19,12 @@ test('local catalog exposes the complete preserved Beryl release', async ({ page
   await expect(page.locator('[data-context-field="data"] .context-field__value')).toHaveText(
     'Brain-Wide Map / Preserved legacy results',
   );
-  const release = page.locator('[data-context-field="release"]');
+  await page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Data details' }).click();
+  const release = page.getByRole('dialog', { name: 'Data details' });
   await expect(release).toContainText('Local preview');
-  await release.locator('.context-menu__trigger').click();
-  await expect(release.getByRole('group', { name: 'Exact dataset releases' })).toContainText(`Immutable release ID · ${releaseId}`);
-  await page.keyboard.press('Escape');
+  await expect(release.getByRole('region', { name: 'Data version' })).toContainText(releaseId);
   await expect(release).not.toContainText('Synthetic');
+  await page.keyboard.press('Escape');
   await expect(page.locator('[data-context-field="feature"] .context-field__value')).toHaveText(
     'choice decoding significant',
   );
@@ -45,9 +45,7 @@ test('local catalog exposes the complete preserved Beryl release', async ({ page
     'Preserved legacy results',
   );
   await page.keyboard.press('Escape');
-  await release.locator('.context-menu__trigger').click();
-  await expect(release.getByRole('group', { name: 'Exact dataset releases' }).getByRole('option', { selected: true })).toContainText('Legacy');
-  await page.keyboard.press('Escape');
+  await expect(dataset).toContainText('Preserved legacy data');
 
   const feature = page.locator('[data-context-field="feature"]');
   await feature.locator('.context-menu__trigger').click();
@@ -81,8 +79,8 @@ test('legacy significance values and provenance survive the HTTP browser path', 
     'mean 0.5',
   );
 
-  await page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Info' }).click();
-  const info = page.getByRole('dialog', { name: 'Dataset information' });
+  await page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Data details' }).click();
+  const info = page.getByRole('dialog', { name: 'Data details' });
   await expect(info).toContainText('Immutable development release');
   await expect(info).toContainText('not a regeneration from a current Brain-Wide Map paper release');
   await expect(info).toContainText('legacy boolean presentation: false=0.5, true=1.0');

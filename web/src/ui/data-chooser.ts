@@ -62,8 +62,11 @@ export class DataChooser {
     const projectId = navigation.kind === 'local' ? undefined : navigation.projectId;
     const project = catalog?.projects.find(({ id }) => id === projectId);
     const title = currentDataset ? presentDatasetInProject(currentDataset.title, project?.title) : dataset.datasetId;
+    const release = currentDataset?.releases.find(({ id }) => id === dataset.releaseId);
+    const status = release?.status === 'development' ? 'Development data'
+      : release?.status === 'legacy' ? 'Preserved legacy data' : '';
     this.menu.setDisplay(`${navigation.kind === 'local' ? 'My data' : project?.title ?? 'Data'} / ${title}`,
-      recovery ? 'Navigation unavailable · open to recover' : navigation.kind === 'local' ? 'Stored only in this browser' : '');
+      recovery ? 'Navigation unavailable · open to recover' : navigation.kind === 'local' ? 'Stored only in this browser' : status);
     const options: ContextMenuOption[] = [];
     this.selections.clear();
     const addSelection = (id: string, resolved: ResolvedDatasetNavigation, option: ContextMenuOption): void => {
@@ -100,8 +103,8 @@ export class DataChooser {
     if (model.catalogStatus === 'error') options.push({ id: 'recovery:catalog', label: 'Retry catalog', group: 'Catalog recovery' });
     if (recovery) {
       options.push({ id: 'recovery:default', label: 'Use catalog default', group: 'Navigation recovery' });
-      if (recovery.canReturnToEdition) options.push({ id: 'recovery:edition', label: 'Return to edition', group: 'Navigation recovery' });
-      if (recovery.canOpenExactAsCustom) options.push({ id: 'recovery:custom', label: 'Open exact release as custom', group: 'Navigation recovery' });
+      if (recovery.canReturnToEdition) options.push({ id: 'recovery:edition', label: 'Use snapshot version', group: 'Navigation recovery' });
+      if (recovery.canOpenExactAsCustom) options.push({ id: 'recovery:custom', label: 'Use requested version', group: 'Navigation recovery' });
     }
     options.push(...this.localActions.filter(({ localOnly }) => !localOnly || navigation.kind === 'local'));
     this.selectedId = recovery ? undefined : navigation.kind === 'local'

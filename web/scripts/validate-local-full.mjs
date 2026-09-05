@@ -45,7 +45,8 @@ try {
   }
 
   const dataField = page.locator('[data-context-field="data"]');
-  const releaseField = page.locator('[data-context-field="release"]');
+  const details = page.getByRole('dialog', { name: 'Data details' });
+  const detailsButton = page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Data details' });
   const visited = [];
   for (const [datasetId, releaseId] of expected) {
     if (new URL(page.url()).searchParams.get('dataset') !== datasetId) {
@@ -53,16 +54,20 @@ try {
       await dataField.locator(`[data-context-option="${datasetId}"]`).click();
     }
     if (new URL(page.url()).searchParams.get('release') !== releaseId) {
-      await releaseField.locator('.context-menu__trigger').click();
-      await releaseField.locator(`[data-context-option="release:${releaseId}"]`).click();
+      await detailsButton.click();
+      await details.getByText('Change version…', { exact: true }).click();
+      await details.locator('input[type=radio]').filter({ visible: true }).evaluateAll((inputs, id) => {
+        const input = inputs.find((item) => item.value === id);
+        if (!input) throw new Error(`Missing version ${id}`);
+        input.click();
+      }, releaseId);
     }
     await page.waitForFunction(({ datasetId, releaseId }) => {
       const params = new URL(location.href).searchParams;
       return params.get('dataset') === datasetId && params.get('release') === releaseId;
     }, { datasetId, releaseId });
-    await releaseField.locator('.context-menu__trigger').click();
-    await releaseField.getByRole('group', { name: 'Exact dataset releases' })
-      .getByRole('option', { selected: true }).filter({ hasText: `Immutable release ID · ${releaseId}` }).waitFor();
+    await detailsButton.click();
+    await details.getByRole('region', { name: 'Data version' }).getByText(releaseId, { exact: true }).waitFor();
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => {
       const field = document.querySelector('[data-context-field="feature"]');

@@ -4,7 +4,7 @@ A dataset identifies the scientific product. A release identifies an immutable s
 
 ## Feature {#feature}
 
-A feature is the measured or derived quantity displayed by the viewer. Its unit, source column, transformation, and population are described under Info.
+A feature is the measured or derived quantity displayed by the viewer. Its unit, source column, transformation, and population are described under Data details.
 
 ## Regional and Volume {#representation}
 
@@ -28,5 +28,5 @@ Full shows the complete value domain. Focused enlarges a reviewed part of the di
 
 ## Population and provenance {#population-and-provenance}
 
-Population describes which observations were included in the release. Provenance records the source data, scientific recipe, tools, and builder used to create it. Check Info before interpreting or citing a feature.
+Population describes which observations were included in the release. Provenance records the source data, scientific recipe, tools, and builder used to create it. Check Data details before interpreting or citing a feature.
 

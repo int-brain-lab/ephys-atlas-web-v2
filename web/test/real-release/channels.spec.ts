@@ -35,12 +35,12 @@ test('wide header keeps long feature and representation context legible', async 
 test('uses the immutable release and approved denoised feature as development defaults', async ({ page }) => {
   await page.goto('/');
 
-  const release = page.locator('[data-context-field="release"]');
+  await page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Data details' }).click();
+  const release = page.getByRole('dialog', { name: 'Data details' });
   await expect(release).toContainText('Local preview');
-  await release.locator('.context-menu__trigger').click();
-  await expect(release.getByRole('group', { name: 'Exact dataset releases' })).toContainText(`Immutable release ID · ${releaseId}`);
-  await page.keyboard.press('Escape');
+  await expect(release.getByRole('region', { name: 'Data version' })).toContainText(releaseId);
   await expect(release).not.toContainText('Synthetic');
+  await page.keyboard.press('Escape');
   await expect(page.locator('[data-context-field="feature"] .context-field__value')).toHaveText('rms ap (denoised)');
   const dataset = page.locator('[data-context-field="data"]');
   await dataset.locator('.context-menu__trigger').click();
