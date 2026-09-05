@@ -99,3 +99,14 @@ just check
 
 Do not develop concurrently in two unpushed `main` worktrees. Never discard
 unexpected local changes to make a pull succeed.
+
+
+## Refresh documentation screenshots from macOS
+
+Canonical documentation pixels are generated on Linux. After pushing reviewed
+UI changes, run the **Documentation screenshots** GitHub Actions workflow on
+`main`. It renders the canonical synthetic fixture, regenerates screenshots,
+then runs the pixel comparisons again. Download its `documentation-screenshots`
+artifact from the successful run for that exact commit, inspect the image diffs,
+and copy only intended changes into `docs/assets/generated/` before committing.
+The workflow has read-only repository access and never commits or publishes data.
