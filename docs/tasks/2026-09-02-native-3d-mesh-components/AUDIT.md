@@ -1,7 +1,9 @@
 # Native component baseline audit
 
 Status: review evidence, 2026-09-06. No replacement mesh or runtime contract has
-been selected. Q18 remains open.
+been selected. D068 subsequently selects side-specific presentation and
+independent reviewed movement; see [movement review](MOVEMENT_REVIEW.md).
+The remaining Q18 choices stay open.
 
 ## Reproduction and integrity
 
@@ -75,7 +77,8 @@ the plane. Do not silently increase tolerance or use centroid sign to make it
 explode. Owner review must accept this outcome or specify an explicit,
 source-bound exception policy before candidate acceptance.
 
-Presentation alternatives to review:
+Presentation alternatives considered at audit time (D068 subsequently selects
+the first; these are no longer an open choice):
 
 - Preserve current side-specific coloring and picking using original world ML
   in the shader/hit logic, independently of intact geometry and displacement.
@@ -93,8 +96,8 @@ components, near-plane ambiguity, degenerate triangles, unused vertices, and
 invalid inputs. It preserves source triangle ordinals and does not change
 positions or indices.
 
-The mesh wire contract and renderer are unchanged. Settle Q18 presentation and
-review the asymmetric cases before landing the coherent contract slice. Keep
+The mesh wire contract and renderer are unchanged. D068 settles presentation
+direction; review movement assignments and residual Q18 boundary behavior. Keep
 component/range identity separate from signed presentation mappings; encode
 explicit displacement, including zero. A synthetic end-to-end contract change
 must include the builder, validators, binary codec/source, renderer, fixture,

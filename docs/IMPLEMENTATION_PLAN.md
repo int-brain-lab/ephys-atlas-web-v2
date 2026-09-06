@@ -121,8 +121,9 @@ These remain useful but must not displace the launch path:
 - pursue D055 unlisted sharing only after Q15;
 - develop the D066 [native 3-D component candidate](tasks/2026-09-02-native-3d-mesh-components/README.md).
   The [baseline/component audit](tasks/2026-09-02-native-3d-mesh-components/AUDIT.md)
-  and synthetic topology tests are implemented. Next: review Q18 neutral
-  presentation and asymmetric spanning cases, then implement one green
+  and synthetic topology tests are implemented. D068 fixes side-specific
+  presentation and independent movement; [movement proposals](tasks/2026-09-02-native-3d-mesh-components/MOVEMENT_REVIEW.md)
+  await review. Next: settle residual Q18 boundary/assignment choices and implement one green
   synthetic producer/consumer contract slice. Missing remote archive authorization does
   not block additive work; preserve existing evidence. D042 stays the default
   pending owner visual review. This optional lane does not block launch;

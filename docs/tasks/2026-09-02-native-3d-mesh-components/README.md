@@ -15,6 +15,11 @@ Status: active under D066; baseline/component audit implemented. Runtime contrac
 
 ## Completed work
 
+- D068 records owner agreement on shared-edge connectivity, side-specific
+  presentation using original world ML, and independent reviewed movement.
+  [Movement proposals](MOVEMENT_REVIEW.md) are prepared; exact Q18 assignments
+  and midline boundary handling remain open.
+
 - The 2026-09-06 [baseline/component audit](AUDIT.md) validates D042 and
   compares edge/vertex connectivity and three explicit tolerance probes.
   Pure topology machinery and synthetic tests are implemented; Q18 remains
@@ -90,18 +95,12 @@ Do not land a schema-only change that breaks current readers or configured
 D042 loading. Prepare and validate its new contract repack and configuration
 transition together; preserve the original bytes without adding a legacy reader.
 
-Resolve these design questions under [Q18](../../OPEN_QUESTIONS.md) before real candidate acceptance:
-
-- Define triangle connectivity (shared edge versus shared vertex) using original
-  GLB topology. Audit duplicated positions and seams without welding or silently
-  changing connectivity; specify stable component ordering.
-- Define how neutral components participate in signed left-feature/right-anatomy
-  coloring, hover, picking, selection, and visibility. Geometry classification
-  must not silently assign a scientific hemisphere or duplicate an observation.
-  Exercise alternatives with labelled synthetic fixtures and obtain owner
-  agreement on the real presentation policy.
-- Specify on-plane and near-plane treatment, tolerance units, and ambiguous
-  cases. Do not choose by centroid sign or hide ambiguity in a default.
+D068 settles shared-edge connectivity without welding and original-world-ML
+side-specific coloring, picking, selection and visibility on intact geometry.
+Specify the residual [Q18](../../OPEN_QUESTIONS.md) boundary behavior and review
+[movement assignments](MOVEMENT_REVIEW.md). Exact ML=0, near-plane handling,
+and encoding must not make the shader and picking disagree. Keep component
+ordering deterministic and tied to original source triangle ordinals.
 
 ### 3. Build the native-component candidate
 
@@ -109,12 +108,14 @@ Resolve these design questions under [Q18](../../OPEN_QUESTIONS.md) before real 
 - Within each source Allen object, find triangle-connected components without
   clipping triangles or generating caps.
 - Classify a component wholly left of ML=0 as `left`, wholly right as `right`,
-  and a component spanning the plane as `neutral`.
+  and a component spanning the plane as `neutral` for geometric reporting only.
+  This classification does not prescribe movement or signed presentation.
 - Preserve every in-scope source triangle and its winding. Multiple geometry
   ranges may map to the same regional presentation identity.
-- Give neutral components zero explode displacement. Initially retain the
-  current grouped radial explode vectors for lateral components so geometry
-  preservation is evaluated separately from explode-direction redesign.
+- Use D068 explicit reviewed movement assignments: fixed components have zero
+  displacement; lateral movement uses the assigned side’s current grouped radial
+  vector, even when the component crosses ML=0. Do not derive an accepted
+  movement assignment from geometric classification or an unreviewed threshold.
 - Treat numerical tolerance as a recorded build parameter. Emit near-plane and
   classification-ambiguous cases for review rather than silently resolving a
   scientific/presentation choice.
@@ -188,11 +189,11 @@ Resolve these design questions under [Q18](../../OPEN_QUESTIONS.md) before real 
 
 ## Next steps
 
-1. Review the [audit evidence](AUDIT.md) and resolve Q18 presentation and
-   asymmetric spanning behavior. Arrange authorized durable preservation before
+1. Review the [movement proposals](MOVEMENT_REVIEW.md) and settle the residual
+   Q18 boundary choices under D068. Arrange authorized durable preservation before
    destructive replacement; the local D042 baseline has been revalidated.
-2. Specify the contract and unresolved connectivity, tolerance, and neutral
-   presentation choices under D066.
+2. Specify the coherent contract under D066/D068; implement agreed
+   side-specific presentation and independent displacement with synthetic cases.
 3. Land one green synthetic producer/consumer slice covering left, right,
    neutral, and repeated-presentation components, with D042 repack continuity,
    before changing the real native-component builder.

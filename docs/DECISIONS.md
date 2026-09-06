@@ -76,6 +76,7 @@ only part of the body; the index states what remains effective.
 | D065 | Compact display control in the header | accepted | 2026-09-05 | Display & parcellation shares the desktop Data/Feature row; removes workspace control row |
 | D066 | Native 3-D component candidate | accepted | 2026-09-06 | candidate development/comparison only; D042 default retained |
 | D067 | Full AGEA catalog and bundled metadata direction | accepted | 2026-09-06 | independent single-experiment browsing; source audit and transport evidence precede schema integration |
+| D068 | Intact 3-D components with side-specific presentation | accepted | 2026-09-06 | shared-edge connectivity; original-ML colors/picks; reviewed movement independent of geometry; Q18 retains exact assignments |
 
 ## D001 — Separate v2
 
@@ -1525,3 +1526,33 @@ outside launch acceptance. Q19 retains processing, validity and registration
 choices; candidate transport evidence is not an approved scientific release or
 permission to publish. Preserve the existing renderer, URL and region-panel
 contracts. No AGEA-specific runtime schema or fallback is authorized.
+
+
+## D068 — Preserve intact components with side-specific presentation
+
+Owner agreement recorded 2026-09-06 accepts the recommendations following the
+[D066 native component audit](tasks/2026-09-02-native-3d-mesh-components/AUDIT.md).
+Use shared-edge connectivity on original GLB indices, without welding. Keep
+numerical tolerance small and separate from anatomical movement classification;
+its exact value and on-plane behavior still require specification under Q18.
+
+Preserve left-feature/right-anatomy presentation on intact surfaces using each
+surface point's original, un-exploded world ML coordinate. Picking selects the
+side clicked; hover, selection emphasis and visibility use the same signed
+presentation semantics. Explode displacement must not change the side used for
+presentation. Do not color a crossing triangle by its centroid or interpolate
+left and right colors across the whole triangle: the shader and hit logic must
+agree at the original midline without cutting the geometry.
+
+Movement is an explicit component-level assignment, independent of whether the
+component spans ML=0. Keep clearly medial components fixed; predominantly
+lateral components may move intact using the selected side's grouped radial
+explode behavior. Prepare source-bound proposals, review exceptions, and store
+accepted assignments and displacement in the immutable pack. A centroid sign,
+ML-extent threshold, or browser heuristic must not silently become the accepted
+assignment. This replaces the handoff's blanket rule that every spanning
+component has zero displacement.
+
+Q18 remains open for exact movement assignments, numerical tolerance and
+on-plane behavior. D042 remains the default and rollback authority; this decision
+does not select a new pack or authorize publication.
