@@ -57,7 +57,12 @@ function start(): void {
   void app.start();
 }
 
-if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('lab') === 'multi-feature') {
+if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('lab') === 'agea-coverage') {
+  void import('./labs/agea-coverage-lab.js').then(({ startAgeaCoverageLab }) => {
+    const dispose = startAgeaCoverageLab(root);
+    import.meta.hot?.dispose(dispose);
+  });
+} else if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('lab') === 'multi-feature') {
   void import('./labs/multi-feature-lab.js').then(({ startMultiFeatureLab }) => {
     const dispose = startMultiFeatureLab(root);
     import.meta.hot?.dispose(dispose);

@@ -2,8 +2,10 @@
 
 Status: active evidence and continuation reference for D067.
 
-Artifact maturity: transport-only candidate. No AGEA scientific release, schema
-extension, product feature picker or anatomical overlay has been implemented.
+Artifact maturity: transport-only candidate. The local [coverage lab](AGEA_COVERAGE_LAB.md)
+now permits investigation of the original source and coarse label mismatch.
+No AGEA scientific release, schema extension, production feature picker or
+production-anatomy overlay has been implemented.
 The measurements below are not production-origin acceptance.
 
 ## Scope and source identity

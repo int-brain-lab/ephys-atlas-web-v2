@@ -1,0 +1,52 @@
+.agea-lab { font: 14px/1.5 system-ui, sans-serif; color: #172d42; background: #f3f5f7; min-height: 100vh; padding: 28px 32px; box-sizing: border-box; }
+#app.agea-lab { height: auto; overflow: visible; }
+.agea-lab * { box-sizing: border-box; }
+.agea-lab h1 { font-size: 32px; letter-spacing: -.8px; margin: 0; }
+.agea-lab h2 { font-size: 18px; margin: 0 0 12px; }
+.agea-lab h3 { font-size: 14px; margin: 0 0 10px; }
+.agea-lab p { margin: 6px 0 12px; }
+.agea-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #147987; }
+.agea-badge { display: inline-block; padding: 5px 12px; border: 1px solid #b8d6d9; border-radius: 5px; background: #eaf6f5; }
+.agea-note { padding: 10px 14px; border-left: 3px solid #d58b3c; background: #fff7e8; }
+.agea-status { min-height: 24px; color: #4c6578; }
+.agea-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 24px; align-items: start; }
+.agea-sidebar { position: sticky; top: 12px; background: white; border: 1px solid #dbe3e8; border-radius: 10px; padding: 16px; }
+.agea-lab button, .agea-lab input, .agea-lab select { font: inherit; }
+.agea-lab button { border: 1px solid #c8d4dd; background: white; color: #17334b; border-radius: 6px; padding: 7px 11px; cursor: pointer; }
+.agea-lab button:hover { background: #eef7f7; }
+.agea-lab button[aria-pressed=true] { border-color: #157c89; background: #e3f2f3; color: #075965; }
+.agea-lab :focus-visible { outline: 3px solid #379bc1; outline-offset: 3px; }
+.agea-sidebar input, .agea-sidebar select { width: 100%; border: 1px solid #c8d4dd; border-radius: 5px; padding: 8px; margin-bottom: 8px; background: white; color: #172d42; color-scheme: light; }
+.agea-results { max-height: 460px; overflow: auto; display: grid; gap: 5px; }
+.agea-results button { text-align: left; }
+.agea-results strong, .agea-results small { display: block; }
+.agea-results small { color: #526c7e; font-size: 11px; }
+.agea-pagination { display: flex; gap: 6px; margin-top: 10px; }
+.agea-pagination button { font-size: 11px; padding: 6px; }
+.agea-modes, .agea-controls { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 16px; }
+.agea-controls label { display: flex; align-items: center; gap: 6px; }
+.agea-navigation { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.agea-navigation label { display: grid; gap: 4px; font-size: 12px; }
+.agea-navigation input { width: 100%; accent-color: #137f8b; }
+.agea-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 11px; margin: 16px 0; }
+.agea-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.agea-legend i { width: 10px; height: 10px; display: inline-block; border: 1px solid #0002; border-radius: 2px; }
+.agea-views { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.agea-plane { background: #fff; border: 1px solid #dae2e8; border-radius: 9px; padding: 12px; }
+.agea-pair { display: flex; gap: 8px; align-items: flex-start; }
+.agea-pair figure { min-width: 0; flex: 1; margin: 0; }
+.agea-pair figcaption { min-height: 30px; font-size: 10px; color: #546b7d; }
+.agea-pair canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; background: #172637; cursor: crosshair; }
+.agea-analysis { display: grid; gap: 16px; margin-top: 20px; }
+.agea-inspector, .agea-analysis > div, .agea-card { background: white; border: 1px solid #dae2e8; border-radius: 9px; padding: 16px; margin-bottom: 16px; overflow: auto; }
+.agea-inspector { border-top: 3px solid #1e929e; }
+.agea-inspector p { display: inline-block; margin: 0 24px 6px 0; }
+.agea-lab table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+.agea-lab td, .agea-lab th { padding: 8px 10px; border-bottom: 1px solid #e2e8ed; }
+.agea-counts { display: flex; flex-wrap: wrap; gap: 0 22px; font-size: 11px; color: #536b7b; }
+.agea-card canvas { max-width: 100%; height: auto; }
+.agea-card pre { font-size: 11px; max-height: 320px; overflow: auto; }
+.agea-card summary { cursor: pointer; font-weight: 600; }
+@media(min-width:1500px) { .agea-lab { padding: 32px 5vw; } }
+@media(max-width:1000px) { .agea-layout { grid-template-columns: 200px minmax(0, 1fr); gap: 14px; } .agea-views { grid-template-columns: 1fr; } .agea-pair figure { max-width: 420px; } }
+@media(max-width:650px) { .agea-lab { padding: 16px; } .agea-layout { grid-template-columns: 1fr; } .agea-sidebar { position: static; } .agea-results { max-height: 170px; } .agea-navigation { gap: 8px; } }

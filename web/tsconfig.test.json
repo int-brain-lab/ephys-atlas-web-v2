@@ -8,6 +8,7 @@
     "moduleResolution": "Bundler"
   },
   "include": [
+    "src/labs/agea-model.ts",
     "src/application/**/*.ts",
     "src/core/**/*.ts",
     "src/domain/**/*.ts",

@@ -46,6 +46,13 @@ This is candidate evidence only: the application has no AGEA release, bundled
 metadata reader or searchable AGEA picker yet. Q19 retains real scientific
 choices. See [AGEA evidence](data/AGEA.md).
 
+The separate development-only [AGEA coverage lab](data/AGEA_COVERAGE_LAB.md)
+now loads the full pinned original experiment catalog, linked source-index
+slices, coverage categories, mask comparison, voxel inspection, histograms,
+aggregate measurement frequency and downloadable exploratory reports. It has
+real-data Chromium interaction/failure/mobile coverage and no production
+dataset or registration claim.
+
 ## Scalar exploration
 
 Regional HTTP/local exploration is implemented end to end: dynamic feature and

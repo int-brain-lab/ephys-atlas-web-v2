@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { ageaLabPlugin } from './dev/agea-lab-plugin.js';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { anatomyPackPlugin } from './dev/anatomy-pack-plugin.js';
@@ -19,6 +20,7 @@ export default defineConfig(async () => {
     : null;
   const meshPack = meshPackPath ? await loadLocalMeshPack(meshPackPath) : null;
   const plugins = [
+    ageaLabPlugin(process.env.AGEA_LAB_DIR),
     helpMarkdownPlugin(),
     anatomyPackPlugin(),
     meshPackFixturePlugin(),

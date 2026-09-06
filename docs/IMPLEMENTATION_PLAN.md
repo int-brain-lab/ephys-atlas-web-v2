@@ -103,6 +103,10 @@ Status: active under D067. Source audit and Chromium/Firefox transport evidence
 are implemented; no AGEA application release or bundled schema is implemented.
 See [AGEA evidence and continuation](data/AGEA.md).
 
+The [coverage lab](data/AGEA_COVERAGE_LAB.md) is implemented for scientist review
+of the original-volume/coarse-label mismatch. Use its mask comparison and
+aggregate coverage before selecting Q19's population/validity policy.
+
 Next: implement the shared schema-v1 metadata bundle and synthetic HTTP/local
 producer/consumer coverage, then the searchable bounded feature picker. Build
 the real AGEA release only after Q19 resolves source processing, validity and
