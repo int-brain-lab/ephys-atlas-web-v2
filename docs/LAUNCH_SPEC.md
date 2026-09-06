@@ -265,7 +265,7 @@ Acceptance criteria:
 
 The following are not launch blockers unless later promoted by an explicit decision:
 
-- AGEA
+- AGEA (D067 activates independent development; still not a launch blocker)
 - MERFISH
 - large point-cloud workflows
 - advanced/inferential statistical tests

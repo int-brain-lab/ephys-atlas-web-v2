@@ -11,7 +11,7 @@ only part of the body; the index states what remains effective.
 | --- | --- | --- | --- | --- |
 | D001 | Separate v2 | accepted | — | v1 separately deployable; no v2 runtime compatibility |
 | D002 | Frontend stack | accepted | — | TypeScript, Vite, plain DOM |
-| D003 | Launch datasets | accepted | — | launch scope |
+| D003 | Launch datasets | partially superseded | — | launch scope retained; D067 activates independent AGEA work |
 | D004 | Descriptive statistics | accepted | — | no launch inferential tests |
 | D005 | Immutable releases | accepted | — | aliases remain external |
 | D006 | Legacy compatibility | accepted | — | clean v2 contract and separate v1 fallback |
@@ -75,6 +75,7 @@ only part of the body; the index states what remains effective.
 | D064 | Put rare version changes in Data details | accepted | 2026-09-05 | removes header Release and user-facing edition modes; preserves exact scientific navigation |
 | D065 | Compact display control in the header | accepted | 2026-09-05 | Display & parcellation shares the desktop Data/Feature row; removes workspace control row |
 | D066 | Native 3-D component candidate | accepted | 2026-09-06 | candidate development/comparison only; D042 default retained |
+| D067 | Full AGEA catalog and bundled metadata direction | accepted | 2026-09-06 | independent single-experiment browsing; source audit and transport evidence precede schema integration |
 
 ## D001 — Separate v2
 
@@ -1501,3 +1502,26 @@ Preserve the original D042 graph and produce a separately identified lossless
 contract repack for runtime comparison if the contract changes. Validate a
 durable archive before deleting or replacing local D042 evidence; missing
 archive authorization does not block additive synthetic work.
+
+## D067 — Full AGEA catalog with one metadata bundle
+
+Owner direction recorded 2026-09-06 activates AGEA as independent non-launch
+work. Browse the full source experiment catalog while displaying one selected
+expression volume at a time. Keep anatomical region navigation in the left
+panel and select gene/experiment through a searchable feature control. Preserve
+experiment IDs where gene symbols repeat; do not aggregate duplicate experiments
+implicitly. Correlation maps, multi-gene comparisons and regional aggregation
+are outside this first AGEA slice.
+
+The selected design direction is one compressed release metadata bundle,
+including all experiment descriptors, statistics and resource integrity, with
+shared scientific metadata stored once and one independently fetchable binary
+volume per experiment. Measure real source data before implementing the coherent
+schema-v1 producer/consumer change. The initial source audit and browser
+transport benchmark are recorded in [AGEA evidence](data/AGEA.md).
+
+This supersedes only AGEA's blanket development deferral in D003. AGEA remains
+outside launch acceptance. Q19 retains processing, validity and registration
+choices; candidate transport evidence is not an approved scientific release or
+permission to publish. Preserve the existing renderer, URL and region-panel
+contracts. No AGEA-specific runtime schema or fallback is authorized.

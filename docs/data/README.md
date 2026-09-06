@@ -22,8 +22,13 @@ choices; evidence reports retain hashes, measurements, and reproduction facts.
 
 ## Document roles
 
+AGEA is active independent work under D067. [AGEA evidence and continuation](AGEA.md)
+owns the source audit, transport benchmark and pending implementation sequence;
+Q19 retains scientific release choices. It has no production recipe or release.
+
 | Document | Role | Status |
 | --- | --- | --- |
+| [`AGEA.md`](AGEA.md) | source evidence and implementation continuation | active |
 | [`CHANNELS_RECIPE.md`](CHANNELS_RECIPE.md) | scientific recipe | accepted |
 | [`CLUSTERS_RECIPE.md`](CLUSTERS_RECIPE.md) | scientific recipe | accepted |
 | [`BRAINWIDE_MAP_RECIPE.md`](BRAINWIDE_MAP_RECIPE.md) | scientific recipe | accepted |

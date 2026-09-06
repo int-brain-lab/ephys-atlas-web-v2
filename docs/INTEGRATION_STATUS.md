@@ -39,6 +39,13 @@ Dataset source, recipe, selection, release, and audit ownership is indexed by
 [`data/README.md`](data/README.md). The final paper-facing source vintage and
 all remaining choices are governed by [`OPEN_QUESTIONS.md`](OPEN_QUESTIONS.md).
 
+D067 activates independent AGEA development. The pinned full-catalog source
+audit and Chromium/Firefox metadata/whole-volume transport benchmark are
+implemented, including independent slice hashes and cache recovery checks.
+This is candidate evidence only: the application has no AGEA release, bundled
+metadata reader or searchable AGEA picker yet. Q19 retains real scientific
+choices. See [AGEA evidence](data/AGEA.md).
+
 ## Scalar exploration
 
 Regional HTTP/local exploration is implemented end to end: dynamic feature and

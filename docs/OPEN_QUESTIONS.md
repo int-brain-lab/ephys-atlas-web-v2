@@ -200,6 +200,33 @@ comparisons. The [task handoff](tasks/2026-09-02-native-3d-mesh-components/READM
 defines the evidence and review sequence; remote archive authorization is a
 separate operational prerequisite before destructive replacement.
 
+## Q19 — AGEA processing, validity and registration
+
+Status: **DECISION** for a real AGEA release; not a launch blocker. D067
+authorizes the full catalog and one selected expression volume at a time.
+
+The [source audit](data/AGEA.md) pins the original 4,345-experiment IBL
+collection, confirms one Allen energy-volume conversion exactly, and derives
+the loader's 200 µm coordinate mapping. Original and processed source variants
+are distinct scientific inputs. The raw audit finds both missing measurements
+inside labelled anatomy and nonnegative measurements outside it.
+
+Resolution needed:
+
+- choose original or processed input and pin the selected exact bytes;
+- decide whether valid observations include every measured source voxel or
+  only nonzero labelled anatomy; specify outside/missing precedence and preserve
+  measured zero values;
+- accept the source-derived affine/reference-space evidence against the native
+  anatomy, including the expected coarse-grid boundary behavior;
+- approve expression semantics, display distributions and source release label.
+
+The benchmark's finite/nonnegative statistics are explicitly a sizing
+assumption, not a release selection. Do not reuse W26's zero-as-outside rule.
+Duplicate gene symbols remain distinct experiments under D067. This question
+blocks real scientific release construction, not synthetic bundle/picker/cache
+machinery or transport-only source measurements.
+
 ## Resolution procedure
 
 When authoritative evidence arrives:

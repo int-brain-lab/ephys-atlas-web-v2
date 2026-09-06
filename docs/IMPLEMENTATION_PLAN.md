@@ -97,6 +97,20 @@ Run from the release commit on Linux:
 
 ## Independent non-launch work
 
+### AGEA — full-catalog single-experiment browsing
+
+Status: active under D067. Source audit and Chromium/Firefox transport evidence
+are implemented; no AGEA application release or bundled schema is implemented.
+See [AGEA evidence and continuation](data/AGEA.md).
+
+Next: implement the shared schema-v1 metadata bundle and synthetic HTTP/local
+producer/consumer coverage, then the searchable bounded feature picker. Build
+the real AGEA release only after Q19 resolves source processing, validity and
+registration. Add persistent-cache capacity/quota handling before broad catalog
+browsing, and repeat performance tests through the integrated application.
+
+### Other independent work
+
 These remain useful but must not displace the launch path:
 
 - capture representative native-Safari quota/RSS evidence before advertising
@@ -112,7 +126,7 @@ These remain useful but must not displace the launch path:
   synthetic producer/consumer contract slice. Missing remote archive authorization does
   not block additive work; preserve existing evidence. D042 stays the default
   pending owner visual review. This optional lane does not block launch;
-- keep other richer 3-D, AGEA, MERFISH, point clouds, inferential statistics, and
+- keep other richer 3-D, MERFISH, point clouds, inferential statistics, and
   broad legacy compatibility deferred.
 
 ## Agent completion rule

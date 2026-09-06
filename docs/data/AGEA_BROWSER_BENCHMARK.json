@@ -1,0 +1,1404 @@
+{
+  "status": "transport-only candidate; not production acceptance",
+  "benchmark_script_sha256": "141568d2f5558df880992620b111b719f4b40eae1fd890dc68eb5e6c7933b77b",
+  "reports": [
+    {
+      "benchmark": "agea-browser-transport-v1",
+      "measuredAt": "2026-09-06T10:04:33.723Z",
+      "browserName": "chromium",
+      "profile": "10mbps-80ms",
+      "platform": "Linux 7.0.0-28-generic x64",
+      "node": "v22.17.1",
+      "metadataResource": {
+        "path": "metadata.json.gz",
+        "bytes": 2177235,
+        "decoded_bytes": 7379204,
+        "sha256": "a5f3ec7c74571b83d202de3d44b5a4669e53785d2dd997aff23b279ea9b8df27"
+      },
+      "networkRequests": 26,
+      "networkBytes": 14978283,
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+      "metadata": {
+        "samples": [
+          {
+            "fetchVerifyPersistMs": 1861.6000001430511,
+            "decompressMs": 19.09999990463257,
+            "textDecodeMs": 2,
+            "parseMs": 15.400000095367432,
+            "indexMs": 0.5,
+            "totalMs": 1898.6000001430511
+          },
+          {
+            "fetchVerifyPersistMs": 1864.5,
+            "decompressMs": 17.799999952316284,
+            "textDecodeMs": 2.299999952316284,
+            "parseMs": 10.799999952316284,
+            "indexMs": 0.40000009536743164,
+            "totalMs": 1895.7999999523163
+          },
+          {
+            "fetchVerifyPersistMs": 1862.7000000476837,
+            "decompressMs": 16.700000047683716,
+            "textDecodeMs": 2.200000047683716,
+            "parseMs": 12,
+            "indexMs": 0.2999999523162842,
+            "totalMs": 1893.9000000953674
+          },
+          {
+            "fetchVerifyPersistMs": 1861.7000000476837,
+            "decompressMs": 19.799999952316284,
+            "textDecodeMs": 2.5999999046325684,
+            "parseMs": 9.799999952316284,
+            "indexMs": 0.3000001907348633,
+            "totalMs": 1894.2000000476837
+          },
+          {
+            "fetchVerifyPersistMs": 1879.5,
+            "decompressMs": 24.399999856948853,
+            "textDecodeMs": 3,
+            "parseMs": 9.700000047683716,
+            "indexMs": 0.40000009536743164,
+            "totalMs": 1917
+          }
+        ],
+        "metadataReloadRequests": 0
+      },
+      "searchSamples": [
+        {
+          "query": "",
+          "matches": 4345,
+          "rendered_rows": 30,
+          "milliseconds": 1.4000000953674316
+        },
+        {
+          "query": "a",
+          "matches": 1512,
+          "rendered_rows": 30,
+          "milliseconds": 0.40000009536743164
+        },
+        {
+          "query": "slc",
+          "matches": 127,
+          "rendered_rows": 30,
+          "milliseconds": 0.19999980926513672
+        },
+        {
+          "query": "Slc17a7",
+          "matches": 2,
+          "rendered_rows": 2,
+          "milliseconds": 0.10000014305114746
+        },
+        {
+          "query": "74658173",
+          "matches": 1,
+          "rendered_rows": 1,
+          "milliseconds": 0.20000004768371582
+        },
+        {
+          "query": "not-a-gene",
+          "matches": 0,
+          "rendered_rows": 0,
+          "milliseconds": 0.09999990463256836
+        }
+      ],
+      "samples": [
+        {
+          "name": "first",
+          "trial": 0,
+          "coldMs": 275.5,
+          "coldRequests": 1,
+          "warmMs": 0.20000004768371582,
+          "warmRequests": 0,
+          "revisitMs": 18.90000009536743,
+          "revisitRequests": 0,
+          "paintMs": 0.6000001430511475,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 1,
+          "coldMs": 260.59999990463257,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 12.5,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 2,
+          "coldMs": 257.7000000476837,
+          "coldRequests": 1,
+          "warmMs": 0.10000014305114746,
+          "warmRequests": 0,
+          "revisitMs": 13.399999856948853,
+          "revisitRequests": 0,
+          "paintMs": 0.39999985694885254,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 3,
+          "coldMs": 255.70000004768372,
+          "coldRequests": 1,
+          "warmMs": 0.09999990463256836,
+          "warmRequests": 0,
+          "revisitMs": 19.09999990463257,
+          "revisitRequests": 0,
+          "paintMs": 0.5999999046325684,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 4,
+          "coldMs": 258.69999980926514,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 10.900000095367432,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 0,
+          "coldMs": 246.39999985694885,
+          "coldRequests": 1,
+          "warmMs": 0.20000004768371582,
+          "warmRequests": 0,
+          "revisitMs": 11.099999904632568,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 1,
+          "coldMs": 240.90000009536743,
+          "coldRequests": 1,
+          "warmMs": 0.10000014305114746,
+          "warmRequests": 0,
+          "revisitMs": 11.299999952316284,
+          "revisitRequests": 0,
+          "paintMs": 0.20000004768371582,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 2,
+          "coldMs": 253.29999995231628,
+          "coldRequests": 1,
+          "warmMs": 0.10000014305114746,
+          "warmRequests": 0,
+          "revisitMs": 11.099999904632568,
+          "revisitRequests": 0,
+          "paintMs": 0.5999999046325684,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 3,
+          "coldMs": 261.5,
+          "coldRequests": 1,
+          "warmMs": 0.09999990463256836,
+          "warmRequests": 0,
+          "revisitMs": 10.700000047683716,
+          "revisitRequests": 0,
+          "paintMs": 0.5,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 4,
+          "coldMs": 248.70000004768372,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 12,
+          "revisitRequests": 0,
+          "paintMs": 0.3000001907348633,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 0,
+          "coldMs": 247.79999995231628,
+          "coldRequests": 1,
+          "warmMs": 0.09999990463256836,
+          "warmRequests": 0,
+          "revisitMs": 10.700000047683716,
+          "revisitRequests": 0,
+          "paintMs": 0.20000004768371582,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 1,
+          "coldMs": 251,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 11.5,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 2,
+          "coldMs": 279.7999999523163,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 11.5,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 3,
+          "coldMs": 269.7999999523163,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 13.300000190734863,
+          "revisitRequests": 0,
+          "paintMs": 0.40000009536743164,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 4,
+          "coldMs": 250.90000009536743,
+          "coldRequests": 1,
+          "warmMs": 0.09999990463256836,
+          "warmRequests": 0,
+          "revisitMs": 11.700000047683716,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 0,
+          "coldMs": 297.39999985694885,
+          "coldRequests": 1,
+          "warmMs": 0.10000014305114746,
+          "warmRequests": 0,
+          "revisitMs": 12.599999904632568,
+          "revisitRequests": 0,
+          "paintMs": 0.19999980926513672,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 1,
+          "coldMs": 315,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 12.800000190734863,
+          "revisitRequests": 0,
+          "paintMs": 0.6999998092651367,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 2,
+          "coldMs": 290.2999999523163,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 11.299999952316284,
+          "revisitRequests": 0,
+          "paintMs": 0.20000004768371582,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 3,
+          "coldMs": 327.7999999523163,
+          "coldRequests": 1,
+          "warmMs": 0.09999990463256836,
+          "warmRequests": 0,
+          "revisitMs": 18.100000143051147,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 4,
+          "coldMs": 302.7000000476837,
+          "coldRequests": 1,
+          "warmMs": 0.09999990463256836,
+          "warmRequests": 0,
+          "revisitMs": 13.5,
+          "revisitRequests": 0,
+          "paintMs": 0.7999999523162842,
+          "decodedBytes": 637304
+        }
+      ],
+      "recoveryRequests": 1,
+      "storageEstimate": {
+        "quota": 10740379495,
+        "usage": 2961255,
+        "usageDetails": {
+          "caches": 2961255
+        }
+      },
+      "limitations": "Playwright route delivery; constrained profile adds a deterministic 80ms + bytes/10Mbps delay, not a real CDN/network stack. No production metadata validation, complete application startup, anatomical registration, picker interaction or browser RSS measurement."
+    },
+    {
+      "benchmark": "agea-browser-transport-v1",
+      "measuredAt": "2026-09-06T10:04:18.192Z",
+      "browserName": "chromium",
+      "profile": "local",
+      "platform": "Linux 7.0.0-28-generic x64",
+      "node": "v22.17.1",
+      "metadataResource": {
+        "path": "metadata.json.gz",
+        "bytes": 2177235,
+        "decoded_bytes": 7379204,
+        "sha256": "a5f3ec7c74571b83d202de3d44b5a4669e53785d2dd997aff23b279ea9b8df27"
+      },
+      "networkRequests": 26,
+      "networkBytes": 14978283,
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+      "metadata": {
+        "samples": [
+          {
+            "fetchVerifyPersistMs": 41.39999985694885,
+            "decompressMs": 17.800000190734863,
+            "textDecodeMs": 1.7999999523162842,
+            "parseMs": 15.099999904632568,
+            "indexMs": 0.40000009536743164,
+            "totalMs": 76.5
+          },
+          {
+            "fetchVerifyPersistMs": 34.39999985694885,
+            "decompressMs": 19.200000047683716,
+            "textDecodeMs": 2.4000000953674316,
+            "parseMs": 10.899999856948853,
+            "indexMs": 0.40000009536743164,
+            "totalMs": 67.29999995231628
+          },
+          {
+            "fetchVerifyPersistMs": 35.299999952316284,
+            "decompressMs": 17,
+            "textDecodeMs": 2.3999998569488525,
+            "parseMs": 12.900000095367432,
+            "indexMs": 0.2999999523162842,
+            "totalMs": 67.89999985694885
+          },
+          {
+            "fetchVerifyPersistMs": 35.5,
+            "decompressMs": 17,
+            "textDecodeMs": 2.200000047683716,
+            "parseMs": 8.700000047683716,
+            "indexMs": 0.2999999523162842,
+            "totalMs": 63.700000047683716
+          },
+          {
+            "fetchVerifyPersistMs": 37.09999990463257,
+            "decompressMs": 17.40000009536743,
+            "textDecodeMs": 2.1999998092651367,
+            "parseMs": 9.800000190734863,
+            "indexMs": 0.2999999523162842,
+            "totalMs": 66.79999995231628
+          }
+        ],
+        "metadataReloadRequests": 0
+      },
+      "searchSamples": [
+        {
+          "query": "",
+          "matches": 4345,
+          "rendered_rows": 30,
+          "milliseconds": 4.3999998569488525
+        },
+        {
+          "query": "a",
+          "matches": 1512,
+          "rendered_rows": 30,
+          "milliseconds": 0.40000009536743164
+        },
+        {
+          "query": "slc",
+          "matches": 127,
+          "rendered_rows": 30,
+          "milliseconds": 0.2999999523162842
+        },
+        {
+          "query": "Slc17a7",
+          "matches": 2,
+          "rendered_rows": 2,
+          "milliseconds": 0.09999990463256836
+        },
+        {
+          "query": "74658173",
+          "matches": 1,
+          "rendered_rows": 1,
+          "milliseconds": 0
+        },
+        {
+          "query": "not-a-gene",
+          "matches": 0,
+          "rendered_rows": 0,
+          "milliseconds": 0.20000004768371582
+        }
+      ],
+      "samples": [
+        {
+          "name": "first",
+          "trial": 0,
+          "coldMs": 34.10000014305115,
+          "coldRequests": 1,
+          "warmMs": 0.3000001907348633,
+          "warmRequests": 0,
+          "revisitMs": 20.899999856948853,
+          "revisitRequests": 0,
+          "paintMs": 0.6999998092651367,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 1,
+          "coldMs": 21.09999990463257,
+          "coldRequests": 1,
+          "warmMs": 0.10000014305114746,
+          "warmRequests": 0,
+          "revisitMs": 13.099999904632568,
+          "revisitRequests": 0,
+          "paintMs": 0.19999980926513672,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 2,
+          "coldMs": 18.700000047683716,
+          "coldRequests": 1,
+          "warmMs": 0.09999990463256836,
+          "warmRequests": 0,
+          "revisitMs": 11.799999952316284,
+          "revisitRequests": 0,
+          "paintMs": 0.40000009536743164,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 3,
+          "coldMs": 16.699999809265137,
+          "coldRequests": 1,
+          "warmMs": 0.09999990463256836,
+          "warmRequests": 0,
+          "revisitMs": 11.600000143051147,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 4,
+          "coldMs": 19.399999856948853,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 14,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 0,
+          "coldMs": 22.09999990463257,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 19.200000047683716,
+          "revisitRequests": 0,
+          "paintMs": 0.39999985694885254,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 1,
+          "coldMs": 16.700000047683716,
+          "coldRequests": 1,
+          "warmMs": 0.10000014305114746,
+          "warmRequests": 0,
+          "revisitMs": 11.700000047683716,
+          "revisitRequests": 0,
+          "paintMs": 0.19999980926513672,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 2,
+          "coldMs": 16.200000047683716,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 13.5,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 3,
+          "coldMs": 18.5,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 13.600000143051147,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 4,
+          "coldMs": 17.200000047683716,
+          "coldRequests": 1,
+          "warmMs": 0.09999990463256836,
+          "warmRequests": 0,
+          "revisitMs": 11.5,
+          "revisitRequests": 0,
+          "paintMs": 0.20000004768371582,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 0,
+          "coldMs": 19.5,
+          "coldRequests": 1,
+          "warmMs": 0.20000004768371582,
+          "warmRequests": 0,
+          "revisitMs": 15.599999904632568,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 1,
+          "coldMs": 19.700000047683716,
+          "coldRequests": 1,
+          "warmMs": 0.2999999523162842,
+          "warmRequests": 0,
+          "revisitMs": 14.400000095367432,
+          "revisitRequests": 0,
+          "paintMs": 0.20000004768371582,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 2,
+          "coldMs": 24.90000009536743,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 20.899999856948853,
+          "revisitRequests": 0,
+          "paintMs": 0.5,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 3,
+          "coldMs": 21.5,
+          "coldRequests": 1,
+          "warmMs": 0.20000004768371582,
+          "warmRequests": 0,
+          "revisitMs": 12.099999904632568,
+          "revisitRequests": 0,
+          "paintMs": 0.20000004768371582,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 4,
+          "coldMs": 20,
+          "coldRequests": 1,
+          "warmMs": 0.10000014305114746,
+          "warmRequests": 0,
+          "revisitMs": 19.09999990463257,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 0,
+          "coldMs": 26.799999952316284,
+          "coldRequests": 1,
+          "warmMs": 0.09999990463256836,
+          "warmRequests": 0,
+          "revisitMs": 12.700000047683716,
+          "revisitRequests": 0,
+          "paintMs": 0.2999999523162842,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 1,
+          "coldMs": 16.40000009536743,
+          "coldRequests": 1,
+          "warmMs": 0.09999990463256836,
+          "warmRequests": 0,
+          "revisitMs": 12.099999904632568,
+          "revisitRequests": 0,
+          "paintMs": 0.20000004768371582,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 2,
+          "coldMs": 17.700000047683716,
+          "coldRequests": 1,
+          "warmMs": 0.10000014305114746,
+          "warmRequests": 0,
+          "revisitMs": 15,
+          "revisitRequests": 0,
+          "paintMs": 0.20000004768371582,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 3,
+          "coldMs": 27.799999952316284,
+          "coldRequests": 1,
+          "warmMs": 0.10000014305114746,
+          "warmRequests": 0,
+          "revisitMs": 14.5,
+          "revisitRequests": 0,
+          "paintMs": 0.5,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 4,
+          "coldMs": 25.90000009536743,
+          "coldRequests": 1,
+          "warmMs": 0.20000004768371582,
+          "warmRequests": 0,
+          "revisitMs": 12.399999856948853,
+          "revisitRequests": 0,
+          "paintMs": 0.20000004768371582,
+          "decodedBytes": 637304
+        }
+      ],
+      "recoveryRequests": 1,
+      "storageEstimate": {
+        "quota": 10740379495,
+        "usage": 2961255,
+        "usageDetails": {
+          "caches": 2961255
+        }
+      },
+      "limitations": "Playwright route delivery; constrained profile adds a deterministic 80ms + bytes/10Mbps delay, not a real CDN/network stack. No production metadata validation, complete application startup, anatomical registration, picker interaction or browser RSS measurement."
+    },
+    {
+      "benchmark": "agea-browser-transport-v1",
+      "measuredAt": "2026-09-06T10:04:53.688Z",
+      "browserName": "firefox",
+      "profile": "10mbps-80ms",
+      "platform": "Linux 7.0.0-28-generic x64",
+      "node": "v22.17.1",
+      "metadataResource": {
+        "path": "metadata.json.gz",
+        "bytes": 2177235,
+        "decoded_bytes": 7379204,
+        "sha256": "a5f3ec7c74571b83d202de3d44b5a4669e53785d2dd997aff23b279ea9b8df27"
+      },
+      "networkRequests": 26,
+      "networkBytes": 14978283,
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:153.0) Gecko/20100101 Firefox/153.0",
+      "metadata": {
+        "samples": [
+          {
+            "fetchVerifyPersistMs": 1875,
+            "decompressMs": 36,
+            "textDecodeMs": 5,
+            "parseMs": 23,
+            "indexMs": 0,
+            "totalMs": 1939
+          },
+          {
+            "fetchVerifyPersistMs": 1867,
+            "decompressMs": 21,
+            "textDecodeMs": 4,
+            "parseMs": 23,
+            "indexMs": 0,
+            "totalMs": 1915
+          },
+          {
+            "fetchVerifyPersistMs": 1889,
+            "decompressMs": 30,
+            "textDecodeMs": 3,
+            "parseMs": 20,
+            "indexMs": 0,
+            "totalMs": 1942
+          },
+          {
+            "fetchVerifyPersistMs": 1865,
+            "decompressMs": 21,
+            "textDecodeMs": 6,
+            "parseMs": 33,
+            "indexMs": 0,
+            "totalMs": 1925
+          },
+          {
+            "fetchVerifyPersistMs": 1894,
+            "decompressMs": 20,
+            "textDecodeMs": 4,
+            "parseMs": 20,
+            "indexMs": 0,
+            "totalMs": 1938
+          }
+        ],
+        "metadataReloadRequests": 0
+      },
+      "searchSamples": [
+        {
+          "query": "",
+          "matches": 4345,
+          "rendered_rows": 30,
+          "milliseconds": 3
+        },
+        {
+          "query": "a",
+          "matches": 1512,
+          "rendered_rows": 30,
+          "milliseconds": 0
+        },
+        {
+          "query": "slc",
+          "matches": 127,
+          "rendered_rows": 30,
+          "milliseconds": 1
+        },
+        {
+          "query": "Slc17a7",
+          "matches": 2,
+          "rendered_rows": 2,
+          "milliseconds": 0
+        },
+        {
+          "query": "74658173",
+          "matches": 1,
+          "rendered_rows": 1,
+          "milliseconds": 0
+        },
+        {
+          "query": "not-a-gene",
+          "matches": 0,
+          "rendered_rows": 0,
+          "milliseconds": 0
+        }
+      ],
+      "samples": [
+        {
+          "name": "first",
+          "trial": 0,
+          "coldMs": 310,
+          "coldRequests": 1,
+          "warmMs": 2,
+          "warmRequests": 0,
+          "revisitMs": 19,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 1,
+          "coldMs": 280,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 19,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 2,
+          "coldMs": 268,
+          "coldRequests": 1,
+          "warmMs": 1,
+          "warmRequests": 0,
+          "revisitMs": 20,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 3,
+          "coldMs": 275,
+          "coldRequests": 1,
+          "warmMs": 1,
+          "warmRequests": 0,
+          "revisitMs": 17,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 4,
+          "coldMs": 276,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 19,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 0,
+          "coldMs": 288,
+          "coldRequests": 1,
+          "warmMs": 1,
+          "warmRequests": 0,
+          "revisitMs": 20,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 1,
+          "coldMs": 275,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 18,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 2,
+          "coldMs": 250,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 19,
+          "revisitRequests": 0,
+          "paintMs": 1,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 3,
+          "coldMs": 294,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 19,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 4,
+          "coldMs": 278,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 19,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 0,
+          "coldMs": 292,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 19,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 1,
+          "coldMs": 275,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 20,
+          "revisitRequests": 0,
+          "paintMs": 1,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 2,
+          "coldMs": 282,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 24,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 3,
+          "coldMs": 291,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 28,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 4,
+          "coldMs": 263,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 25,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 0,
+          "coldMs": 338,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 30,
+          "revisitRequests": 0,
+          "paintMs": 1,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 1,
+          "coldMs": 308,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 25,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 2,
+          "coldMs": 334,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 23,
+          "revisitRequests": 0,
+          "paintMs": 1,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 3,
+          "coldMs": 322,
+          "coldRequests": 1,
+          "warmMs": 1,
+          "warmRequests": 0,
+          "revisitMs": 30,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 4,
+          "coldMs": 330,
+          "coldRequests": 1,
+          "warmMs": 1,
+          "warmRequests": 0,
+          "revisitMs": 27,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        }
+      ],
+      "recoveryRequests": 1,
+      "storageEstimate": {
+        "quota": 10737418240,
+        "usage": 3561979
+      },
+      "limitations": "Playwright route delivery; constrained profile adds a deterministic 80ms + bytes/10Mbps delay, not a real CDN/network stack. No production metadata validation, complete application startup, anatomical registration, picker interaction or browser RSS measurement."
+    },
+    {
+      "benchmark": "agea-browser-transport-v1",
+      "measuredAt": "2026-09-06T10:04:37.195Z",
+      "browserName": "firefox",
+      "profile": "local",
+      "platform": "Linux 7.0.0-28-generic x64",
+      "node": "v22.17.1",
+      "metadataResource": {
+        "path": "metadata.json.gz",
+        "bytes": 2177235,
+        "decoded_bytes": 7379204,
+        "sha256": "a5f3ec7c74571b83d202de3d44b5a4669e53785d2dd997aff23b279ea9b8df27"
+      },
+      "networkRequests": 26,
+      "networkBytes": 14978283,
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:153.0) Gecko/20100101 Firefox/153.0",
+      "metadata": {
+        "samples": [
+          {
+            "fetchVerifyPersistMs": 68,
+            "decompressMs": 18,
+            "textDecodeMs": 4,
+            "parseMs": 22,
+            "indexMs": 1,
+            "totalMs": 113
+          },
+          {
+            "fetchVerifyPersistMs": 40,
+            "decompressMs": 23,
+            "textDecodeMs": 4,
+            "parseMs": 22,
+            "indexMs": 0,
+            "totalMs": 89
+          },
+          {
+            "fetchVerifyPersistMs": 49,
+            "decompressMs": 31,
+            "textDecodeMs": 8,
+            "parseMs": 23,
+            "indexMs": 0,
+            "totalMs": 111
+          },
+          {
+            "fetchVerifyPersistMs": 45,
+            "decompressMs": 24,
+            "textDecodeMs": 4,
+            "parseMs": 26,
+            "indexMs": 0,
+            "totalMs": 99
+          },
+          {
+            "fetchVerifyPersistMs": 35,
+            "decompressMs": 18,
+            "textDecodeMs": 4,
+            "parseMs": 20,
+            "indexMs": 0,
+            "totalMs": 77
+          }
+        ],
+        "metadataReloadRequests": 0
+      },
+      "searchSamples": [
+        {
+          "query": "",
+          "matches": 4345,
+          "rendered_rows": 30,
+          "milliseconds": 2
+        },
+        {
+          "query": "a",
+          "matches": 1512,
+          "rendered_rows": 30,
+          "milliseconds": 0
+        },
+        {
+          "query": "slc",
+          "matches": 127,
+          "rendered_rows": 30,
+          "milliseconds": 2
+        },
+        {
+          "query": "Slc17a7",
+          "matches": 2,
+          "rendered_rows": 2,
+          "milliseconds": 0
+        },
+        {
+          "query": "74658173",
+          "matches": 1,
+          "rendered_rows": 1,
+          "milliseconds": 0
+        },
+        {
+          "query": "not-a-gene",
+          "matches": 0,
+          "rendered_rows": 0,
+          "milliseconds": 0
+        }
+      ],
+      "samples": [
+        {
+          "name": "first",
+          "trial": 0,
+          "coldMs": 32,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 18,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 1,
+          "coldMs": 29,
+          "coldRequests": 1,
+          "warmMs": 1,
+          "warmRequests": 0,
+          "revisitMs": 16,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 2,
+          "coldMs": 29,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 17,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 3,
+          "coldMs": 43,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 19,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "first",
+          "trial": 4,
+          "coldMs": 35,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 24,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 0,
+          "coldMs": 34,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 17,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 1,
+          "coldMs": 41,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 17,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 2,
+          "coldMs": 32,
+          "coldRequests": 1,
+          "warmMs": 1,
+          "warmRequests": 0,
+          "revisitMs": 16,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 3,
+          "coldMs": 57,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 18,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "median",
+          "trial": 4,
+          "coldMs": 32,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 17,
+          "revisitRequests": 0,
+          "paintMs": 1,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 0,
+          "coldMs": 48,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 19,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 1,
+          "coldMs": 35,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 19,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 2,
+          "coldMs": 50,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 18,
+          "revisitRequests": 0,
+          "paintMs": 1,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 3,
+          "coldMs": 58,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 18,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "p95",
+          "trial": 4,
+          "coldMs": 32,
+          "coldRequests": 1,
+          "warmMs": 1,
+          "warmRequests": 0,
+          "revisitMs": 19,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 0,
+          "coldMs": 47,
+          "coldRequests": 1,
+          "warmMs": 1,
+          "warmRequests": 0,
+          "revisitMs": 18,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 1,
+          "coldMs": 41,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 24,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 2,
+          "coldMs": 44,
+          "coldRequests": 1,
+          "warmMs": 1,
+          "warmRequests": 0,
+          "revisitMs": 20,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 3,
+          "coldMs": 39,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 19,
+          "revisitRequests": 0,
+          "paintMs": 1,
+          "decodedBytes": 637304
+        },
+        {
+          "name": "largest",
+          "trial": 4,
+          "coldMs": 42,
+          "coldRequests": 1,
+          "warmMs": 0,
+          "warmRequests": 0,
+          "revisitMs": 22,
+          "revisitRequests": 0,
+          "paintMs": 0,
+          "decodedBytes": 637304
+        }
+      ],
+      "recoveryRequests": 1,
+      "storageEstimate": {
+        "quota": 10737418240,
+        "usage": 3561979
+      },
+      "limitations": "Playwright route delivery; constrained profile adds a deterministic 80ms + bytes/10Mbps delay, not a real CDN/network stack. No production metadata validation, complete application startup, anatomical registration, picker interaction or browser RSS measurement."
+    }
+  ]
+}
