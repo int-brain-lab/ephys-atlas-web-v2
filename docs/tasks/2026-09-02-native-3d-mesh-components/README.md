@@ -2,6 +2,91 @@
 
 Status: active under D066; baseline/component audit implemented. Runtime contract and candidate pack remain unimplemented.
 
+## Resume here
+
+Read the repository startup sequence, then D042/D066/D068, this handoff,
+[AUDIT.md](AUDIT.md), and [MOVEMENT_REVIEW.md](MOVEMENT_REVIEW.md). The owner
+is handing implementation to a later agent; no runtime changes were made in
+this session. Do not restart the completed topology investigation or ask again
+whether intact geometry and side-specific presentation are wanted.
+
+Agreed: preserve source triangles; shared-edge connectivity without welding;
+left-feature/right-anatomy colors and signed picking use original world ML,
+independent of explode displacement. Movement is explicitly assigned per
+component. Clearly medial components stay fixed; predominantly lateral
+components may move intact after assignment review. D042 stays the default.
+
+Proposed but **not approved**: use 0.001 µm classification tolerance and assign
+exactly ML=0 to the right for coloring/picking. These were suggested after the
+owner's agreement to D068, so that agreement must not be treated as approval of
+these numerical conventions. Record the owner’s choice under Q18 before using
+them as accepted real-candidate policy. Synthetic tests may exercise them as
+explicitly labelled provisional conventions.
+
+The movement report proposes 85 fixed and 12 right-moving components among the
+97 spanning components. Across the whole source it proposes 539 left, 516 right,
+and 85 fixed. All assignments remain unreviewed. Its 90% ML-extent threshold is
+a review aid, not a tissue-volume fraction or accepted anatomical rule.
+
+### Immediate implementation sequence
+
+1. Implement the coherent synthetic producer/consumer slice under D068, with
+   explicitly provisional boundary choices where necessary. Cover intact
+   crossing geometry, repeated regional identities, independent movement, and
+   the D042 contract repack/configuration transition. Do not commit a schema
+   change with broken consumers or a broken configured baseline.
+2. Test coloring, hover, selection and visibility on both sides of a crossing
+   triangle. Test that explode can move geometry across ML=0 without changing
+   its original presentation side. GPU shading and CPU picking must use the
+   same original-coordinate boundary after quantization/decoding; no centroid
+   coloring, blended side colors, cuts, or caps may substitute for this.
+3. Build a clearly labelled local review candidate alongside D042 with explicit
+   provisional assignments. An unreviewed assignment may be displayed for
+   comparison but must never be promoted as accepted provenance or a production
+   default. Resolve numerical conventions before accepting the real candidate.
+4. Visually compare the 12 asymmetric exceptions, the proposed fixed components,
+   and ordinary lateral pairs at zero and nonzero explode. Accept or revise the
+   source-bound assignments and record the selection before changing defaults.
+
+Do not wait for visual approval of the 12 cases before creating the machinery
+needed to show them. The one retained renderer and one schema-v1 contract remain
+mandatory; the review path is not a second runtime architecture.
+
+### Files and local evidence
+
+- Topology/audit/proposals: `tools/mesh_pack/components.py`, `audit_native.py`,
+  and `propose_movement.py`; tests are `tests/test_mesh_components.py`,
+  `tests/test_mesh_movement_proposal.py`, and `tests/test_mesh_pack.py`.
+- Contract/compiler: `schema/v1/mesh-pack.schema.json`, bundled builder schema,
+  Python/TypeScript semantic validators, `tools/mesh_pack/build.py`, `binary.py`,
+  `validate.py`, `web/scripts/repack-d042-mesh.mjs`, and `fixtures/mesh-pack-v1/`.
+- Browser: `web/src/rendering/3d/mesh-pack-source.ts`, `mesh-pack-codec.ts`,
+  `mesh-pack-worker.ts`, `brain-scene-viewport.ts`, shared
+  `web/src/application/regional-presentation.ts`, and the mesh/scene browser tests.
+- Ignored baseline: `artifacts/mesh-d042-schema-v1/`; original donor evidence:
+  `artifacts/mesh-d042-donor/`. Audit/proposal reports and repeat outputs:
+  `artifacts/native-components-audit/`. Exact hashes and reproduction commands
+  are in the two linked evidence documents. Git does not preserve these bytes.
+- The source was last available at
+  `/home/cyrille/GIT/IBL/ephys-atlas-web-v2-3d-lab/data/source/atlas-mesh-pack/meshes.glb`.
+  Verify the pinned SHA before use. This is a read-only source location, not
+  permission to resume the frozen donor branch. Recover the same pinned public
+  bytes if that local path is absent; never require donor code for implementation.
+
+AGEA integration is being handled independently. Inspect current status before
+editing shared schemas, semantic validators, startup code, or status documents.
+Preserve other work and commit only the intended 3-D changes; do not assume a
+later checkout has the same clean/dirty state as this handoff.
+
+### Validation at handoff
+
+`ead6626` passed `just check`, including browser tests and Linux documentation
+screenshots. The focused mesh suites passed 34 tests. Both the source audit and
+movement proposal repeated byte-for-byte. These gates validate existing audit
+and proposal machinery; they do not establish correctness of the unimplemented
+native runtime or approve any movement assignment. Re-run targeted suites and
+`just check` after the next implementation slice.
+
 ## Context
 
 - D042 currently selects 1,130 signed surfaces produced from 566 pinned GLB
@@ -189,20 +274,17 @@ ordering deterministic and tied to original source triangle ordinals.
 
 ## Next steps
 
-1. Review the [movement proposals](MOVEMENT_REVIEW.md) and settle the residual
-   Q18 boundary choices under D068. Arrange authorized durable preservation before
-   destructive replacement; the local D042 baseline has been revalidated.
-2. Specify the coherent contract under D066/D068; implement agreed
-   side-specific presentation and independent displacement with synthetic cases.
-3. Land one green synthetic producer/consumer slice covering left, right,
-   neutral, and repeated-presentation components, with D042 repack continuity,
-   before changing the real native-component builder.
-4. Build and audit the real native-component candidate.
-5. Integrate the shared renderer path, run A/B review, and request default
-   selection.
+Use the immediate implementation sequence above: synthetic contract/renderer
+slice, local A/B candidate, assignment review, then default selection. Q18
+retains exact numerical boundary and real assignment approval. Arrange durable
+external preservation before destructive replacement; additive local work is
+not blocked by missing archive authorization.
 
 ## Relevant commits
 
+- `5270116` — Link the active task and record D066/Q18.
+- `ebb25b5` — Implement the native component audit and synthetic topology tests.
+- `ead6626` — Record D068 and generate deterministic movement proposals.
 - `073fbca` — Restore GLB-only 3D anatomy scope (D042).
 - `d1249f7` — Recover the complete local development corpus and D042 repack.
 - Planning handoff — the commit containing this file; locate with

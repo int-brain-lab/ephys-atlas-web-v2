@@ -114,7 +114,10 @@ Scientific provenance is part of the product contract, not optional metadata.
   `docs/tasks/2026-09-02-native-3d-mesh-components/README.md`. D042 remains
   the default and rollback authority until owner visual review selects a
   replacement. Preserve the pinned GLB scope, transform, and source triangles;
-  candidate work does not authorize publication.
+  candidate work does not authorize publication. D068 fixes original-world-ML
+  side-specific presentation and independently reviewed component movement;
+  Q18 retains exact boundary conventions and movement assignments. Use the
+  handoff's "Resume here" section to distinguish agreement from proposals.
 
 ## Frontend constraints
 
