@@ -106,9 +106,10 @@ These remain useful but must not displace the launch path:
 - select real-feature palette/center metadata under Q16;
 - pursue D055 unlisted sharing only after Q15;
 - develop the D066 [native 3-D component candidate](tasks/2026-09-02-native-3d-mesh-components/README.md).
-  Implementation has not started. Next: revalidate available D042 evidence,
-  specify contract and neutral-presentation choices, then implement one green
-  synthetic producer/consumer slice. Missing remote archive authorization does
+  The [baseline/component audit](tasks/2026-09-02-native-3d-mesh-components/AUDIT.md)
+  and synthetic topology tests are implemented. Next: review Q18 neutral
+  presentation and asymmetric spanning cases, then implement one green
+  synthetic producer/consumer contract slice. Missing remote archive authorization does
   not block additive work; preserve existing evidence. D042 stays the default
   pending owner visual review. This optional lane does not block launch;
 - keep other richer 3-D, AGEA, MERFISH, point clouds, inferential statistics, and

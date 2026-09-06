@@ -10,8 +10,9 @@ rendering contract.
 ## Planned candidate
 
 D066 permits the [native-component candidate](../tasks/2026-09-02-native-3d-mesh-components/README.md),
-which preserves source components without midline cuts or caps. Implementation
-has not started. D042 remains the selected default and rollback geometry.
+which preserves source components without midline cuts or caps. The
+[baseline/component audit](../tasks/2026-09-02-native-3d-mesh-components/AUDIT.md)
+is implemented; the runtime contract and candidate pack are not. D042 remains the selected default and rollback geometry.
 Selecting a replacement requires owner visual review and a new recorded decision.
 
 ## Authoritative source

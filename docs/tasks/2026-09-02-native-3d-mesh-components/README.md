@@ -1,6 +1,6 @@
 # Preserve native 3-D mesh components
 
-Status: active planned handoff under D066; no implementation has started.
+Status: active under D066; baseline/component audit implemented. Runtime contract and candidate pack remain unimplemented.
 
 ## Context
 
@@ -14,6 +14,11 @@ Status: active planned handoff under D066; no implementation has started.
   comparison asset. Do not overwrite it or reuse its `pack_id`/`geometry_id`.
 
 ## Completed work
+
+- The 2026-09-06 [baseline/component audit](AUDIT.md) validates D042 and
+  compares edge/vertex connectivity and three explicit tolerance probes.
+  Pure topology machinery and synthetic tests are implemented; Q18 remains
+  open, including strongly asymmetric spanning components.
 
 - The design discussion established that geometry, presentation identity,
   lateralization, and explode displacement must be separate concepts.
@@ -183,8 +188,9 @@ Resolve these design questions under [Q18](../../OPEN_QUESTIONS.md) before real 
 
 ## Next steps
 
-1. Revalidate available D042 evidence and record archive availability; arrange
-   authorized durable preservation before destructive replacement.
+1. Review the [audit evidence](AUDIT.md) and resolve Q18 presentation and
+   asymmetric spanning behavior. Arrange authorized durable preservation before
+   destructive replacement; the local D042 baseline has been revalidated.
 2. Specify the contract and unresolved connectivity, tolerance, and neutral
    presentation choices under D066.
 3. Land one green synthetic producer/consumer slice covering left, right,
