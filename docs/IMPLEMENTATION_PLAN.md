@@ -105,7 +105,13 @@ These remain useful but must not displace the launch path:
   UX; Q17 retains real normalization populations;
 - select real-feature palette/center metadata under Q16;
 - pursue D055 unlisted sharing only after Q15;
-- keep richer 3-D, AGEA, MERFISH, point clouds, inferential statistics, and
+- develop the D066 [native 3-D component candidate](tasks/2026-09-02-native-3d-mesh-components/README.md).
+  Implementation has not started. Next: revalidate available D042 evidence,
+  specify contract and neutral-presentation choices, then implement one green
+  synthetic producer/consumer slice. Missing remote archive authorization does
+  not block additive work; preserve existing evidence. D042 stays the default
+  pending owner visual review. This optional lane does not block launch;
+- keep other richer 3-D, AGEA, MERFISH, point clouds, inferential statistics, and
   broad legacy compatibility deferred.
 
 ## Agent completion rule

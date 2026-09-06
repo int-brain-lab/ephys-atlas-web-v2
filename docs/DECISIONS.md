@@ -50,7 +50,7 @@ only part of the body; the index states what remains effective.
 | D039 | Smoothing review protocol | superseded | — | D045 closes investigation |
 | D040 | S3/CloudFront/browser gate | accepted | 2026-08-22 | residual inputs remain Q8 |
 | D041 | 3-D scope/regeneration | partially superseded | 2026-08-22 | D042 replaces regeneration; source scope remains |
-| D042 | GLB-derived 3-D resource | accepted | 2026-08-24 | Q12 authority |
+| D042 | GLB-derived 3-D resource | accepted | 2026-08-24 | Q12/default and rollback authority; D066 permits a candidate only |
 | D043 | W26 volume geometry | accepted | 2026-08-24 | exact-source Q4 authority |
 | D044 | Complete cluster catalog | partially superseded | 2026-08-24 | catalog/units retained; D046-D050 presentation |
 | D045 | Retain exact 2-D geometry | accepted | 2026-08-26 | closes smoothing lane |
@@ -74,6 +74,7 @@ only part of the body; the index states what remains effective.
 | D063 | Data chooser and exploration-first header | partially superseded | 2026-09-05 | D064 moves version selection into Data details; D065 moves display into the header; grouped Data and prominent Feature retained |
 | D064 | Put rare version changes in Data details | accepted | 2026-09-05 | removes header Release and user-facing edition modes; preserves exact scientific navigation |
 | D065 | Compact display control in the header | accepted | 2026-09-05 | Display & parcellation shares the desktop Data/Feature row; removes workspace control row |
+| D066 | Native 3-D component candidate | accepted | 2026-09-06 | candidate development/comparison only; D042 default retained |
 
 ## D001 — Separate v2
 
@@ -1476,3 +1477,27 @@ Data and Display & parcellation share the first row, with Feature below.
 This supersedes only D063's placement of the display control above the views.
 Representation/parcellation behavior, URL state, and scientific choices remain
 unchanged.
+
+
+## D066 — Develop a native 3-D component candidate
+
+Owner direction recorded 2026-09-06 confirms the
+[native-component handoff](tasks/2026-09-02-native-3d-mesh-components/README.md)
+as permitted independent, non-launch candidate work. Preserve the pinned GLB
+scope and source-to-world transform while evaluating connected components
+without clipping triangles or generating caps. Separate component identity,
+regional presentation, lateralization, and explode displacement; medial
+components may have zero displacement. Do not smooth, decimate, weld, or
+replace surfaces with annotation-derived geometry.
+
+D042 remains the selected default and immutable rollback evidence. This permits
+candidate machinery, additive local builds, and comparison; it does not select
+a new default, settle unresolved neutral-presentation or classification choices,
+or authorize remote upload/publication. Record those choices and obtain owner
+visual review before selecting a replacement.
+
+Use one coherent schema-v1 producer/consumer contract and one retained renderer.
+Preserve the original D042 graph and produce a separately identified lossless
+contract repack for runtime comparison if the contract changes. Validate a
+durable archive before deleting or replacing local D042 evidence; missing
+archive authorization does not block additive synthetic work.

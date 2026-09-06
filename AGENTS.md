@@ -110,6 +110,11 @@ Scientific provenance is part of the product contract, not optional metadata.
   scope, bilateral cut, and planar caps; do not smooth, decimate, regenerate
   from annotation voxels, or require geometry absent from the GLB. The 3-D
   view is independent of volume features, which remain linked 2-D slices.
+  D066 permits a native-component candidate without cut/caps under
+  `docs/tasks/2026-09-02-native-3d-mesh-components/README.md`. D042 remains
+  the default and rollback authority until owner visual review selects a
+  replacement. Preserve the pinned GLB scope, transform, and source triangles;
+  candidate work does not authorize publication.
 
 ## Frontend constraints
 

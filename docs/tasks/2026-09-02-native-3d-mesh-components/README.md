@@ -1,6 +1,6 @@
 # Preserve native 3-D mesh components
 
-Status: planned handoff; no implementation has started.
+Status: active planned handoff under D066; no implementation has started.
 
 ## Context
 
@@ -44,7 +44,7 @@ Status: planned handoff; no implementation has started.
 
 ## Plan
 
-### 1. Preserve the rollback asset before geometry work
+### 1. Establish the baseline and preserve rollback evidence
 
 - Validate the complete ignored D042 file graph with
   `just mesh-pack-validate artifacts/mesh-d042-schema-v1`.
@@ -52,14 +52,19 @@ Status: planned handoff; no implementation has started.
   storage, retaining paths, byte sizes, hashes, D042 provenance, and recovery
   instructions. External upload requires an approved destination and
   credentials; do not invent or publish to a production location.
+- Remote archival is required before destructive cleanup or replacement, but
+  does not block additive contract work, synthetic tests, or candidate builds
+  in distinct directories. If local evidence is absent, record the limitation
+  and continue synthetic work; real A/B review needs a recovered, verified
+  baseline. Do not treat this task as authorization for external upload.
 - Record a stable name such as `d042-cut-cap` outside the immutable directory.
 - Never mutate or delete the local evidence until the durable copy has been
   fetched and revalidated independently.
 
-### 2. Record the replacement decision and change the contract once
+### 2. Specify and implement one coherent candidate contract
 
-- Add a reviewed decision that preserves D042 as rollback while replacing its
-  default geometry policy only after candidate approval.
+- Follow D066 for candidate authorization. Record a separate default-selection
+  decision after owner review; contract scaffolding does not supersede D042.
 - Keep one schema-v1 producer/consumer contract. Update the canonical schema,
   bundled schema, Python and TypeScript validators, shared contract corpus,
   builder, codec, source, renderer, and fixtures together; do not add a
@@ -73,6 +78,25 @@ Status: planned handoff; no implementation has started.
 - Re-encode the D042 cut geometry under the revised contract so current code
   can select either geometry policy. Preserve the exact original D042 graph as
   archival evidence even if this compatibility repack has new bytes/identity.
+
+Before committing a contract change, make the synthetic producer, validators,
+codec/source, renderer, and fixtures agree in the same green vertical slice.
+Do not land a schema-only change that breaks current readers or configured
+D042 loading. Prepare and validate its new contract repack and configuration
+transition together; preserve the original bytes without adding a legacy reader.
+
+Resolve these design questions under [Q18](../../OPEN_QUESTIONS.md) before real candidate acceptance:
+
+- Define triangle connectivity (shared edge versus shared vertex) using original
+  GLB topology. Audit duplicated positions and seams without welding or silently
+  changing connectivity; specify stable component ordering.
+- Define how neutral components participate in signed left-feature/right-anatomy
+  coloring, hover, picking, selection, and visibility. Geometry classification
+  must not silently assign a scientific hemisphere or duplicate an observation.
+  Exercise alternatives with labelled synthetic fixtures and obtain owner
+  agreement on the real presentation policy.
+- Specify on-plane and near-plane treatment, tolerance units, and ambiguous
+  cases. Do not choose by centroid sign or hide ambiguity in a default.
 
 ### 3. Build the native-component candidate
 
@@ -96,7 +120,12 @@ Status: planned handoff; no implementation has started.
   lateralization, the complete neutral Allen inventory, mappings, bounds,
   integrity, and exact source/output hashes.
 - Prove that the native candidate adds no triangles or planar caps and drops no
-  in-scope source triangles.
+  in-scope source triangles using source object/triangle correspondence and
+  winding checks, not counts alone. Separate topology preservation from encoded
+  position error and record quantization explicitly.
+- Keep source scope and source-to-world transform fixed. Audit disconnected,
+  duplicated-position, degenerate, and near-plane source cases without silently
+  repairing source defects.
 - Build twice and require byte-identical manifests, resources, and reports.
 - Fail closed on an unclassified component, mapping inconsistency, undeclared
   file, or source-identity mismatch.
@@ -154,10 +183,13 @@ Status: planned handoff; no implementation has started.
 
 ## Next steps
 
-1. Revalidate and durably archive the exact D042 file graph.
-2. Draft the decision and revised single-contract shape with synthetic left,
-   right, neutral, and repeated-presentation-component fixtures.
-3. Land contract/validator/fixture parity before touching the real GLB builder.
+1. Revalidate available D042 evidence and record archive availability; arrange
+   authorized durable preservation before destructive replacement.
+2. Specify the contract and unresolved connectivity, tolerance, and neutral
+   presentation choices under D066.
+3. Land one green synthetic producer/consumer slice covering left, right,
+   neutral, and repeated-presentation components, with D042 repack continuity,
+   before changing the real native-component builder.
 4. Build and audit the real native-component candidate.
 5. Integrate the shared renderer path, run A/B review, and request default
    selection.

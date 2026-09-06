@@ -182,6 +182,24 @@ Blocks: real-data z-score comparison defaults and releases only. It does not
 block pure domain/application machinery, synthetic fixtures, the UX lab, or
 scientist testing with clearly labelled synthetic normalization.
 
+## Q18 — Native 3-D component presentation and classification
+
+Status: **DECISION** for real native-component candidate acceptance; not a launch
+blocker. D066 permits candidate development while D042 remains the default.
+
+Resolution needed: record the component-connectivity rule, near/on-plane
+classification tolerance and ambiguous-case treatment, and the owner-reviewed
+presentation policy for neutral components. In particular, define how neutral
+geometry participates in signed left-feature/right-anatomy colors, picking,
+selection, and visibility without assigning an inferred scientific hemisphere
+or duplicating observations.
+
+Blocks: acceptance of the real native-component candidate and default selection.
+It does not block additive machinery, source audits, or labelled synthetic
+comparisons. The [task handoff](tasks/2026-09-02-native-3d-mesh-components/README.md)
+defines the evidence and review sequence; remote archive authorization is a
+separate operational prerequisite before destructive replacement.
+
 ## Resolution procedure
 
 When authoritative evidence arrives:
