@@ -22,6 +22,7 @@ export function ageaLabPlugin(directory: string | undefined): Plugin {
           const manifest = JSON.parse(gunzipSync(encoded).toString('utf8'));
           if (manifest.format !== 'agea-coverage-lab-only' || manifest.scientific_release !== false) throw new Error('Not a coverage lab');
           for (const entry of [descriptor, manifest.labels, manifest.measured_counts,
+            ...(manifest.anatomy_image ? [manifest.anatomy_image] : []),
             ...manifest.features.map((feature: { volume: { path: string } }) => feature.volume)]) {
             const target = path.resolve(root, entry.path);
             if (!target.startsWith(root + path.sep)) throw new Error('Unsafe lab resource path');

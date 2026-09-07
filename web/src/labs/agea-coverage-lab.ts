@@ -1,4 +1,5 @@
 import { CanvasVolumeSliceRenderer } from '../rendering/canvas-volume-renderer.js';
+import { AlignmentReview } from './agea-alignment.js';
 import { loadArray, loadManifest, type Experiment, type LabManifest } from './agea-data.js';
 import { analyze, AXES, CATEGORIES, category, offset, PLANES, planePoint, readState, writeState,
   type Axis, type LabState, type Stats, type Triple } from './agea-model.js';
@@ -14,6 +15,7 @@ const fmt = (v: number | null): string => v === null ? '—' : v.toLocaleString(
 const pct = (n: number, d: number): string => d ? `${(100 * n / d).toFixed(1)}%` : '—';
 
 class CoverageLab {
+  private alignmentReview: AlignmentReview | null = null;
   private manifest!: LabManifest;
   private labels = new Int32Array();
   private frequency = new Uint16Array();
@@ -53,6 +55,8 @@ class CoverageLab {
     void this.start().catch(error => { this.status.textContent = `Unable to open AGEA lab: ${String(error)}`; });
   }
   dispose(): void {
+    this.alignmentReview?.dispose();
+    for (const panel of this.panels) panel.renderer.dispose();
     this.disposed = true; this.abort?.abort(); this.cache.clear();
     window.removeEventListener('popstate', this.onPop);
   }
@@ -88,7 +92,7 @@ class CoverageLab {
     aside.append(el('h2', 'Experiments'), this.search, this.sort, this.resultCount, this.results, pagination);
     const content = el('main', '', 'agea-content');
     const modes = el('nav', '', 'agea-modes'); modes.setAttribute('aria-label', 'Investigation mode');
-    for (const [mode, text] of [['coverage', 'Coverage'], ['expression', 'Expression'], ['comparison', 'Mask comparison'], ['frequency', 'Across experiments']] as const) {
+    for (const [mode, text] of [['coverage', 'Coverage'], ['expression', 'Expression'], ['comparison', 'Mask comparison'], ['frequency', 'Across experiments'], ['alignment', 'Alignment']] as const) {
       const b = button(text, () => { this.state.mode = mode; this.persist(); this.makePanels(); this.paint(); });
       this.modeButtons.set(mode, b); modes.append(b);
     }
@@ -162,7 +166,13 @@ class CoverageLab {
     if (url !== location.href) { if (push) history.pushState(null, '', url); else history.replaceState(null, '', url); }
   }
   private makePanels(): void {
+    this.alignmentReview?.pause();
     for (const p of this.panels) p.renderer.dispose(); this.panels.length = 0; this.views.replaceChildren();
+    if (this.state.mode === 'alignment') {
+      this.alignmentReview ??= new AlignmentReview(this.manifest, this.labels);
+      this.alignmentReview.attach(this.views);
+      return;
+    }
     for (const axis of AXES) {
       const section = el('section', '', 'agea-plane'); section.append(el('h3', axis[0]!.toUpperCase() + axis.slice(1)));
       const pair = el('div', '', 'agea-pair'); section.append(pair);
@@ -192,6 +202,9 @@ class CoverageLab {
   private paint(): void {
     this.sliders.forEach((s, i) => { s.value = String(this.state.cursor[i]); });
     this.modeButtons.forEach((b, mode) => b.setAttribute('aria-pressed', String(mode === this.state.mode)));
+    const alignment = this.state.mode === 'alignment';
+    this.root.querySelectorAll<HTMLElement>('.agea-controls, .agea-navigation, .agea-legend, .agea-analysis').forEach(node => { node.hidden = alignment; });
+    if (alignment) { this.alignmentReview?.setExpression(this.state.gene, this.values); return; }
     this.outlines.checked = this.state.outlines; this.rescale.checked = this.state.rescale;
     this.rescale.disabled = this.state.mode !== 'comparison';
     this.legend.replaceChildren();

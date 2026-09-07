@@ -1,5 +1,5 @@
 export type Triple = [number, number, number];
-export type Mode = 'coverage' | 'expression' | 'comparison' | 'frequency';
+export type Mode = 'coverage' | 'expression' | 'comparison' | 'frequency' | 'alignment';
 export type Axis = 'coronal' | 'sagittal' | 'horizontal';
 export const AXES: Axis[] = ['coronal', 'sagittal', 'horizontal'];
 // Raw storage is ML,DV,AP. Plane X/Y follow the existing volume slice renderer.
@@ -68,7 +68,7 @@ export function readState(search: string, shape: Triple, ids: readonly string[])
     ? Math.max(0, Math.min(n - 1, raw[i]!)) : Math.floor(n / 2)) as Triple;
   const mode = params.get('mode');
   return { gene: ids.includes(params.get('gene') ?? '') ? params.get('gene')! : ids[0]!, cursor,
-    mode: mode === 'expression' || mode === 'comparison' || mode === 'frequency' ? mode : 'coverage',
+    mode: mode === 'expression' || mode === 'comparison' || mode === 'frequency' || mode === 'alignment' ? mode : 'coverage',
     rescale: params.get('rescale') === '1', outlines: params.get('outlines') !== '0' };
 }
 export function writeState(state: LabState, base: string): string {

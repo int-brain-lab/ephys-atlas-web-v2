@@ -107,6 +107,12 @@ The [coverage lab](data/AGEA_COVERAGE_LAB.md) is implemented for scientist revie
 of the original-volume/coarse-label mismatch. Use its mask comparison and
 aggregate coverage before selecting Q19's population/validity policy.
 
+The same lab now includes fixed-transform alignment review against the actual
+website projection pack: linked native planes, CCF-derived reference image or
+original expression, coarse boundaries, presets and source-grounded note export.
+Coordinate evidence is tested; biological registration remains pending owner
+review and is not implied by agreement with the CCF-derived template.
+
 The [stripe screening and review report](data/AGEA_STRIPE_REPORT.md) is
 implemented: direct-source checks, Ptpru section-gap projection, synthetic
 controls, full-catalog scores and a reproducible 12-page PDF. Next: scientist

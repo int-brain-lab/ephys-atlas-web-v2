@@ -9,6 +9,7 @@
   },
   "include": [
     "src/labs/agea-model.ts",
+    "src/labs/agea-alignment-model.ts",
     "src/application/**/*.ts",
     "src/core/**/*.ts",
     "src/domain/**/*.ts",
@@ -29,6 +30,7 @@
     "src/data/prefetch.ts",
     "src/data/cache.ts",
     "src/rendering/chunked-volume-source.ts",
+    "src/rendering/retained-projection-viewport.ts",
     "src/rendering/display-slice-inventory.ts",
     "src/rendering/region-id.ts",
     "src/rendering/3d/**/*.ts",

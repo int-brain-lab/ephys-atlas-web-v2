@@ -35,7 +35,43 @@ table indexed by the supplied label volume. The aggregate count includes
 measured zero and is divided by all 4,345 experiments, including experiments
 with missing values at that position.
 
-## Investigate coverage
+## Review alignment
+
+Open `/?lab=agea-coverage&mode=alignment` after re-running preparation. This mode
+uses the application's retained projection viewport factory and the pinned
+website projection pack, not a separate anatomy renderer. Preparation adds the
+verified float32 `image.npy` transport and fixed-transform evidence. It checks
+the exact 20:1 native-index relationship and reports the larger AGEA extent;
+it does not approve a reference-space identity for publication.
+
+1. Begin with the anatomical reference image. White lines are website anatomy;
+   orange lines are the supplied coarse labels. Toggle orange boundaries off
+   for a less cluttered image-to-outline comparison; blink the website outlines
+   or lower image opacity as needed.
+2. Visit the midline, striatum, hippocampus, cerebellum and anterior presets.
+   These are starting locations, not certified landmarks. Check all three planes,
+   then inspect adjacent slices. Click a slice to move the shared world cursor;
+   arrow keys move by 200 µm in-plane and sliders use native 10 µm navigation.
+3. Look for systematic shifts, left/right flips, scale differences, and matching
+   ventricles and major boundaries. Read the requested/displayed native slice
+   and AGEA slice coordinates: coarse sampling and sparse website outlines can
+   legitimately show different planes. The inspector reports each displayed
+   plane's website label separately.
+4. Switch to selected expression and compare multiple experiments. Measured zero
+   remains valid, including unlabelled voxels; `-1` remains missing. Do not treat
+   missing-expression stripes as registration evidence by themselves.
+5. Save a judgment and a structure-specific note at each useful location.
+   Download the alignment review JSON before leaving: notes are page-local and
+   reload clears them. The export includes coordinates, experiment, source
+   hashes, fixed affine, displayed planes and explicit non-acceptance flags.
+
+The supplied reference image and labels were generated from CCF anatomy. Their
+agreement is a coordinate/rendering check, **not independent validation of the
+expression's biological registration or historical reference-space vintage**.
+No transform fitting, scientific release or production dataset registration is
+performed here. Q19 remains open.
+
+## Coverage controls
 
 1. Search by gene symbol or experiment ID. Repeated symbols remain separate
    experiment choices. Results are paginated in groups of 30; the sort menu can

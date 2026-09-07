@@ -10,6 +10,9 @@ export interface LabManifest {
   source: Record<string, { bytes: number; sha256: string }>;
   shape: Triple; axis_order: string[]; index_to_world_um: number[]; geometry_status: string;
   labels: Resource; measured_counts: Resource;
+  anatomy_image?: Resource;
+  alignment?: { candidate_reference_space_id: string; projection_pack_url: string;
+    projection_pack: { bytes: number; sha256: string }; evidence: Record<string, unknown> };
   regions: Record<string, { name: string; acronym: string }>; features: Experiment[];
 }
 const fetcher = new ResourceFetcher();
@@ -37,10 +40,15 @@ export async function loadManifest(): Promise<LabManifest> {
     || manifest.axis_order.join(',') !== 'ML,DV,AP' || manifest.index_to_world_um.length !== 16
     || manifest.index_to_world_um.some(v => !Number.isFinite(v))
     || !manifest.features.length || new Set(manifest.features.map(f => f.id)).size !== manifest.features.length) throw new Error('Invalid exploratory lab metadata');
-  for (const r of [manifest.labels, manifest.measured_counts, ...manifest.features.map(f => f.volume)]) descriptor(r);
+  for (const r of [manifest.labels, manifest.measured_counts, ...(manifest.anatomy_image ? [manifest.anatomy_image] : []), ...manifest.features.map(f => f.volume)]) descriptor(r);
+  const alignment = manifest.alignment;
+  if (alignment && (!manifest.anatomy_image || !alignment.candidate_reference_space_id
+    || !/^\/atlas\/projections\/[-a-zA-Z0-9_/]+\/manifest\.json$/.test(alignment.projection_pack_url)
+    || !Number.isSafeInteger(alignment.projection_pack?.bytes) || alignment.projection_pack.bytes <= 0
+    || !/^[0-9a-f]{64}$/.test(alignment.projection_pack.sha256))) throw new Error('Invalid alignment evidence');
   return manifest;
 }
-export async function loadArray(r: Resource, dtype: 'float16' | 'int32' | 'uint16', shape: Triple, signal?: AbortSignal): Promise<number[]> {
+export async function loadArray(r: Resource, dtype: 'float16' | 'float32' | 'int32' | 'uint16', shape: Triple, signal?: AbortSignal): Promise<number[]> {
   return decodeBinaryArray(await loadBytes(r, signal), { ...descriptor(r), format: 'raw-binary-array-v1', dtype,
     shape, order: 'C', endianness: 'little' });
 }
