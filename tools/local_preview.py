@@ -65,7 +65,7 @@ def refresh(descriptor: Path, source_root: Path, *, download: bool = True) -> No
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--descriptor", type=Path, default=Path("data/development-bundle-v4.json")
+        "--descriptor", type=Path, default=Path("data/development-bundle-v5.json")
     )
     parser.add_argument("--source-root", type=Path, default=Path("data/source"))
     parser.add_argument("--no-pull", action="store_true")

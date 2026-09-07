@@ -145,9 +145,10 @@ These remain useful but must not displace the launch path:
   presentation and independent movement; [movement proposals](tasks/2026-09-02-native-3d-mesh-components/MOVEMENT_REVIEW.md)
   are accepted unchanged by D070, closing Q18. Native geometry and weighted
   blended OIT passed owner review; additional Firefox/Safari checks for this
-  selection are waived. Next: build the approved immutable pack and integrate
-  the main-website default through a new development bundle. Preserve D042 as
-  rollback. Public deployment remains separate; this optional lane does not
+  selection are waived. The approved pack and v5 main-website bundle are
+  integrated, with D042 rollback configured separately. Next: ordinary website
+  use; future public distribution is covered by Q8 and release preflight.
+  This optional lane does not
   block launch;
 - keep other richer 3-D, MERFISH, point clouds, inferential statistics, and
   broad legacy compatibility deferred.

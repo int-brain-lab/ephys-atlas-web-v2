@@ -18,9 +18,15 @@ const expected = expectedReleaseList.split(',').map((entry) => {
 });
 const errors = [];
 const expectedMesh = process.env.EPHYS_ATLAS_EXPECTED_MESH === '1';
+const expectedMeshId = process.env.EPHYS_ATLAS_EXPECTED_MESH_PACK_ID;
+if (expectedMesh && !expectedMeshId) throw new Error('Expected mesh identity must come from the validated bundle launcher');
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  let meshManifest;
+  page.on('response', async (response) => {
+    if (response.url().includes('/__local-assets/mesh/') && response.url().endsWith('/manifest.json')) meshManifest = await response.json();
+  });
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
   await page.goto(new URL(`/?v=4&secondary=${expectedMesh ? 'brain-3d' : 'summary'}`, baseUrl).toString(), { waitUntil: 'domcontentloaded' });
@@ -38,7 +44,10 @@ try {
     await scene.waitFor({ state: 'visible', timeout: 30_000 });
     await page.waitForFunction(() => document.querySelector('[data-scene3d-host="connected"]')?.getAttribute('data-scene3d-state') === 'ready');
     uploads = await scene.getAttribute('data-geometry-uploads');
-    if (uploads !== '2') throw new Error(`Expected two retained mesh uploads, received ${uploads}`);
+    if (!Number.isInteger(Number(uploads)) || Number(uploads) < 1) throw new Error(`Expected retained mesh uploads, received ${uploads}`);
+    if (meshManifest?.pack_id !== expectedMeshId || meshManifest.purpose !== 'production') {
+      throw new Error(`Unexpected mesh identity/purpose: ${JSON.stringify(meshManifest?.pack_id)}`);
+    }
   }
   for (const tab of ['Summary', 'Top', 'Swanson', ...(expectedMesh ? ['3-D'] : [])]) {
     if (await page.getByRole('tab', { name: tab, exact: true }).count() !== 1) throw new Error(`Missing ${tab} view`);
@@ -79,7 +88,7 @@ try {
       dataset_id: datasetId,
       release_id: releaseId,
       feature: await page.locator('[data-context-field="feature"] .context-field__value').innerText(),
-      representation: await page.locator('[data-context-field="representation"] .context-field__value').innerText(),
+      representation: new URL(page.url()).searchParams.get('repr') ?? 'regional',
     });
   }
 
@@ -102,7 +111,7 @@ try {
     url: page.url(),
     catalog: identities,
     visited,
-    mesh: expectedMesh ? { state: await scene.getAttribute('data-scene3d-state'), geometry_uploads: uploads } : null,
+    mesh: expectedMesh ? { pack_id: meshManifest.pack_id, geometry_policy: meshManifest.geometry_policy, state: await scene.getAttribute('data-scene3d-state'), geometry_uploads: uploads } : null,
     views: ['summary', 'top', 'swanson', ...(expectedMesh ? ['brain-3d'] : [])],
     browser_errors: errors,
   };

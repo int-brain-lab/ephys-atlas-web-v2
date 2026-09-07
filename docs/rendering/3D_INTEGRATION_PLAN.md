@@ -9,10 +9,12 @@ into the v2 application without importing its experimental composition into the
 product architecture. It is the implementation authority for P3D integration.
 `docs/rendering/3D_EVALUATION.md` remains the experiment evidence source.
 
-The repository owner approved an optional, visibly experimental 3-D view in the
-main application. D042 selects the frozen donor's complete GLB-derived resource
-and retires D041's annotation-derived regeneration direction. Immutable
-deployment and removal of the experimental label remain separate work.
+This historical integration record originally used the experimental D042 view.
+D070 now accepts native anatomy and OIT for the normal main-website 3-D view,
+without review controls or the experimental label. D042 remains immutable rollback
+evidence. Publication is still separate. The current selected asset and build
+instructions are in [3D_SELECTED_ASSET.md](3D_SELECTED_ASSET.md); the implementation
+diary below does not override that decision.
 
 ## Evidence baseline and landing rule
 

@@ -44,9 +44,13 @@ def selected_documents(manifest: dict, report: dict, selection: dict, commit: st
     """Preserve geometry and replace only explicitly approved identity/provenance."""
     selected = deepcopy(manifest)
     evidence = deepcopy(report)
-    pack_id = f'ibl-native-d070-{selection["geometry_resource_sha256"][:16]}'
+    # Future builds must not reuse an immutable asset URL when build provenance changes.
+    # The original v1 output on 3d52114 is preserved separately by the v5 bundle.
+    environment = dict(system=platform.system(), machine=platform.machine(), python=platform.python_version())
+    identity = dict(geometry=selection['geometry_resource_sha256'], selection=SELECTION_SHA, commit=commit, environment=environment)
+    pack_id = f'ibl-native-d070-{digest(_canonical(identity))[:16]}'
     selected.update(pack_id=pack_id, purpose='production', presentation_boundary=selection['presentation_boundary'])
-    selected['builder'] = dict(name='ibl-atlas-mesh-pack-builder', version='native-selected-v1', commit=commit,
+    selected['builder'] = dict(name='ibl-atlas-mesh-pack-builder', version='native-selected-v2', commit=commit,
         command='python -m tools.mesh_pack.build_native_selected --review <pinned-review> --selection docs/data/NATIVE_3D_SELECTION.json --output <new-output> --builder-commit <commit>')
     evidence.update(pack_id=pack_id, test_only=False)
     evidence['evidence'].update(
@@ -58,7 +62,7 @@ def selected_documents(manifest: dict, report: dict, selection: dict, commit: st
         review_builder_source_sha256=report['evidence']['builder_source_sha256'],
         builder_source_sha256=digest(Path(__file__).read_bytes()),
         builder_commit=commit,
-        environment=dict(system=platform.system(), machine=platform.machine(), python=platform.python_version()),
+        environment=environment,
         presentation_rule='Original decoded ML < 0 is left; zero and positive are right (D070). No near-plane geometry adjustment.',
         approval_status='accepted',
     )

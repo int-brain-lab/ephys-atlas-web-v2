@@ -22,7 +22,7 @@ just dev
 
 `just data` reuses and fully validates present artifacts. It downloads a
 missing artifact only when the descriptor contains an exact HTTPS source;
-current v4 sources remain unresolved pending Q8. `just dev` is read-only and
+current v5 sources remain unresolved pending Q8. `just dev` is read-only and
 stops on a missing or corrupt launch-critical artifact.
 
 Use the refresh lane on the macOS development machine when you want to know
@@ -41,9 +41,9 @@ new bytes. Brain-Wide Map stays on its exact D038 preserved source and the
 volume stays on the D043 W26 source because neither has an approved mutable
 development policy.
 
-## Active v4 identity
+## Active v5 identity
 
-[`data/development-bundle-v4.json`](../../data/development-bundle-v4.json) pins:
+[`data/development-bundle-v5.json`](../../data/development-bundle-v5.json) pins:
 
 | Role | Immutable identity | Maturity |
 | --- | --- | --- |
@@ -52,11 +52,41 @@ development policy.
 | Brain-Wide Map | `legacy-v1-1d908bea-d050-q14-linear-full-v1` | reviewed local technical release |
 | Volume | `2026_W26-candidate-depth4-d050-q14-linear-full-v1` | reviewed candidate; Q5 remains open |
 | Projection pack | `ibl-atlas-projections-2363b6958fbf` | production-intent local asset |
-| 3-D mesh pack | `ibl-bwm-d042-c7bb3a88157c42cc` | optional production-intent local asset |
+| 3-D mesh pack | `ibl-native-d070-b5f5abc7d0bb3575` | D070 owner-approved, validated-real-local anatomy |
+| AGEA | `agea-original-local-preview-86b49971-2cdd9bee-c93e9c5b` | D069 original-value preview; registration remains provisional under Q19 |
 
-The currently available graph is 6 artifacts and 551,523,979 stored bytes.
-Historical v2/v3 descriptors are evidence, not active aliases. A future remote
-bundle receives a new immutable ID and exact source URLs; v4 is never retargeted.
+The available graph is 7 artifacts, 30,157 files and 1,376,287,351 stored bytes.
+The core releases and projections are unchanged from v4. AGEA's local copy under
+`data/releases/agea/` also contains the two exact hash-bound provenance inputs
+declared but absent from the original preview package: `AGEA_ALIGNMENT_REVIEW.json`
+and `tools/agea_preview.py`. Their bytes match the committed source files and
+manifest hashes; scientific resources and the manifest are unchanged. The original
+preview directory was preserved.
+
+Historical v2/v3/v4 descriptors are evidence, not active aliases. In particular,
+v4 names an old-contract D042 pack and is not the current rollback command.
+A future remote bundle receives a new immutable ID and exact source URLs;
+existing descriptors are never retargeted.
+
+## Native anatomy and rollback
+
+Open the normal website with `just dev`, then choose the **3-D** context tab.
+The approved Native pack loads lazily, shares feature/anatomy colours and selection,
+retains URL camera/explode state, and uses OIT for translucent context. Lab review
+controls and the experimental label are not in the normal viewer. Build and
+approval evidence: [selected anatomy](../rendering/3D_SELECTED_ASSET.md).
+
+To explicitly run the preserved current-contract D042 rollback with the same
+five datasets, without modifying the default descriptor:
+
+```sh
+uv run --project builder --extra test --locked python -m tools.development_bundle \
+  run --cwd web data/development-bundle-v5-d042-rollback.json -- npm run dev:real
+```
+
+`just validate-local-full <url>` validates every available dataset and verifies
+the served mesh identity against the active bundle. The opt-in automated
+main-website gate is `cd web && npx playwright test --config playwright.native-main.config.ts`.
 
 ## Integrity and installation
 

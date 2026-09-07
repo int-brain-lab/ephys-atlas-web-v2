@@ -22,8 +22,11 @@ distinct experiments. The region panel remains anatomical; no regional gene
 aggregation is implied. **Data details** exposes provisional identity and sources.
 
 Paths above identify this workstation's prepared preview. On another checkout,
-use the absolute release directory printed by the builder below. The ordinary
-development catalog and published data are unchanged.
+use the absolute release directory printed by the builder below. The v5 local
+development bundle now includes this exact preview alongside the four core
+datasets and approved Native 3-D anatomy: use `just dev` and select AGEA from Data.
+Published data is unchanged. See [local bundle](LOCAL_DEVELOPMENT_BUNDLE.md)
+for the complete local graph and provenance-input recovery.
 
 ## Scientific scope
 

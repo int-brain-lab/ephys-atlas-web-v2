@@ -45,7 +45,7 @@ only part of the body; the index states what remains effective.
 | D034 | Projection-pack validation | accepted | — | D049 refines static inputs |
 | D035 | Retained projection viewport | accepted | — | current 2-D boundary |
 | D036 | Affine volume composition | accepted | — | current layering |
-| D037 | 3-D sibling integration | partially superseded | — | integration retained; D042 asset/LOD |
+| D037 | 3-D sibling integration | partially superseded | — | integration retained; D070 native asset/default normal anatomy view; D042 rollback |
 | D038 | Cluster/BWM source freeze | accepted | 2026-08-22 | D044 refines cluster catalog |
 | D039 | Smoothing review protocol | superseded | — | D045 closes investigation |
 | D040 | S3/CloudFront/browser gate | accepted | 2026-08-22 | residual inputs remain Q8 |

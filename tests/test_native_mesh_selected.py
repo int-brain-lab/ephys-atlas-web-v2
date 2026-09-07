@@ -24,7 +24,7 @@ def test_approval_is_bound_to_exact_review_and_cannot_be_edited(tmp_path: Path):
         selected.read_selection(changed)
 
 
-def test_selected_metadata_preserves_geometry_and_records_approval():
+def test_selected_metadata_preserves_geometry_and_records_approval(monkeypatch):
     selection = selected.read_selection(selected.SELECTION)
     # Synthetic metadata only: never written as a real approved pack.
     manifest = {'pack_id': 'synthetic-review', 'purpose': 'review-only', 'components': [{'component_id': 0}],
@@ -46,6 +46,11 @@ def test_selected_metadata_preserves_geometry_and_records_approval():
     assert result['validation']['report']['bytes'] == len(_canonical(evidence))
     assert (manifest, report) == (before_manifest, before_report)
     assert (result, evidence) == selected.selected_documents(manifest, report, selection, 'new-commit')
+    other, _ = selected.selected_documents(manifest, report, selection, 'different-commit')
+    assert other['pack_id'] != result['pack_id']
+    monkeypatch.setattr(selected.platform, 'machine', lambda: 'different-build-machine')
+    other, _ = selected.selected_documents(manifest, report, selection, 'new-commit')
+    assert other['pack_id'] != result['pack_id']
 
 
 def test_selected_build_refuses_overwrite_and_wrong_review(tmp_path: Path):

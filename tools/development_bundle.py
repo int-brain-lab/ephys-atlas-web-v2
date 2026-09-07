@@ -74,6 +74,7 @@ def _environment(bundle: ValidatedDevelopmentBundle) -> dict[str, str]:
         environment["EPHYS_ATLAS_PROJECTION_PACK"] = str(projection.root)
     if mesh is not None:
         environment["EPHYS_ATLAS_REAL_MESH_PACK"] = str(mesh.root)
+        environment["EPHYS_ATLAS_EXPECTED_MESH_PACK_ID"] = mesh.identity["pack_id"]
     else:
         environment.pop("EPHYS_ATLAS_REAL_MESH_PACK", None)
     environment["EPHYS_ATLAS_EXPECTED_MESH"] = "1" if mesh is not None else "0"

@@ -2396,7 +2396,7 @@ export class AppShell {
     host.setAttribute('aria-label', '3-D brain renderer target');
     const notice = element('p', 'secondary-view__scene3d-notice');
     notice.setAttribute('role', 'status');
-    notice.textContent = 'Experimental 3-D context is not connected in this build.';
+    notice.textContent = '3-D anatomy is not connected in this build.';
     const controls = element('label', 'secondary-view__scene3d-controls');
     const label = element('span', 'secondary-view__scene3d-control-label');
     label.textContent = 'Explode';
@@ -2485,7 +2485,7 @@ export class AppShell {
     const visible = selected && (maximized === 'secondary'
       || (maximized === null && (window.innerWidth >= 1100 || view.workspace.activeCompactView === 'secondary')));
     if (!this.scene3dFactory) {
-      this.scene3dNotice.textContent = 'Experimental 3-D context is not connected in this build.';
+      this.scene3dNotice.textContent = '3-D anatomy is not connected in this build.';
       this.scene3dNotice.dataset.state = 'unavailable';
       return;
     }
@@ -2496,7 +2496,7 @@ export class AppShell {
       } catch (error) {
         this.scene3dFailed = true;
         this.scene3dHost.dataset.scene3dState = 'error';
-        this.scene3dNotice.textContent = 'Experimental 3-D context unavailable.';
+        this.scene3dNotice.textContent = '3-D anatomy unavailable.';
         this.scene3dNotice.dataset.state = 'error';
         this.callbacks.reportError(error);
         return;
@@ -2508,7 +2508,7 @@ export class AppShell {
       if (this.scene3dHost.dataset.scene3dState === 'error') {
         this.scene3dFailed = true;
         viewport.deactivate();
-        this.scene3dNotice.textContent = 'Experimental 3-D context unavailable.';
+        this.scene3dNotice.textContent = '3-D anatomy unavailable.';
         this.scene3dNotice.dataset.state = 'error';
         return;
       }
@@ -2523,13 +2523,13 @@ export class AppShell {
       if (visible) viewport.activate();
       else viewport.deactivate();
       this.scene3dNotice.textContent = view.representation === 'volume'
-        ? 'Experimental 3-D context · anatomy only — volume scalars are not defined on this view'
-        : 'Experimental 3-D context';
-      this.scene3dNotice.dataset.state = 'experimental';
+        ? '3-D anatomy · anatomy only — volume scalars are not defined on this view'
+        : '3-D anatomy';
+      this.scene3dNotice.dataset.state = 'ready';
     } catch (error) {
       this.scene3dFailed = true;
       viewport.deactivate();
-      this.scene3dNotice.textContent = 'Experimental 3-D context unavailable.';
+      this.scene3dNotice.textContent = '3-D anatomy unavailable.';
       this.scene3dNotice.dataset.state = 'error';
       this.callbacks.reportError(error);
     }

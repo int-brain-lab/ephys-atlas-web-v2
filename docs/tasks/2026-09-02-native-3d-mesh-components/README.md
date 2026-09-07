@@ -11,9 +11,14 @@ source-bound selection is [NATIVE_3D_SELECTION.json](../../data/NATIVE_3D_SELECT
 Additional Firefox/Safari review for this selection is explicitly waived;
 general launch-browser QA is not waived.
 
-Next implementation step: build a new approved immutable pack and update the
-main website's development-bundle descriptor. Preserve the review and D042
+The approved pack is built as `artifacts/mesh-native-d070-v1`, identity
+`ibl-native-d070-b5f5abc7d0bb3575`, on clean Linux commit `3d52114`.
+Two builds matched every byte. The v5 development bundle selects it for
+`just dev`, alongside all five local datasets. Preserve the review and D042
 packs; do not edit their manifests in place or publish scientific data.
+
+Next: use the normal website. Further anatomy approval is not required.
+Remote distribution remains subject to Q8 and separate publication preflight.
 
 ## Accepted geometry and presentation
 

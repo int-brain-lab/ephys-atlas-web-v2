@@ -661,3 +661,42 @@ def test_committed_descriptor_is_structurally_valid_and_truthful() -> None:
         "pack_id": "ibl-bwm-d042-c7bb3a88157c42cc"
     }
     assert document["unavailable"] == []
+
+
+def test_active_native_bundle_preserves_core_releases_and_pins_approved_mesh():
+    previous = load_development_bundle(ROOT / 'data/development-bundle-v4.json')
+    current = load_development_bundle(ROOT / 'data/development-bundle-v5.json')
+    assert current['bundle_id'] == 'local-development-native-2026-09-07-v5'
+    assert current['default_view'] == previous['default_view']
+    assert current['artifacts'][:5] == previous['artifacts'][:5]
+    mesh = current['artifacts'][5]
+    assert mesh['identity']['pack_id'] == 'ibl-native-d070-b5f5abc7d0bb3575'
+    assert mesh['maturity'] == 'validated-real-local'
+    assert mesh['destination'] == 'artifacts/mesh-native-d070-v1'
+    assert mesh['root_manifest']['sha256'] == '131d3e8cbac9bdadcab8e9fe1b12d3ad2b9b85632f840c4b2c56db07f52d4973'
+    assert current['artifacts'][6]['identity']['dataset_id'] == 'agea'
+    assert current['artifacts'][6]['maturity'] == 'validated-real-local'
+    assert current['unavailable'] == []
+    assert 'development-bundle-v5.json' in (ROOT / 'Justfile').read_text()
+    rollback = load_development_bundle(ROOT / 'data/development-bundle-v5-d042-rollback.json')
+    assert rollback['default_view'] == current['default_view']
+    assert rollback['artifacts'][:5] == current['artifacts'][:5]
+    assert rollback['artifacts'][6:] == current['artifacts'][6:]
+    assert rollback['artifacts'][5]['destination'] == 'artifacts/mesh-d042-components-v1'
+
+
+def test_bundle_environment_binds_mesh_identity_and_clears_stale_override(tmp_path: Path, monkeypatch):
+    release = generate_golden(tmp_path / 'source')
+    repository = tmp_path / 'repo'
+    shutil.copytree(release, repository / 'data/releases/golden/golden-v1')
+    document = descriptor(release)
+    fixture = ROOT / 'fixtures/mesh-pack-v1/pack'
+    mesh, _ = remote_pack(fixture, role='mesh', kind='mesh_pack',
+        destination='artifacts/mesh', base_url='https://static.example.test/mesh/fixture/')
+    shutil.copytree(fixture, repository / 'artifacts/mesh')
+    document['artifacts'].append(mesh)
+    bundle = validate_development_bundle(write_descriptor(repository, document), repository)
+    monkeypatch.setenv('EPHYS_ATLAS_EXPECTED_MESH_PACK_ID', 'stale')
+    environment = _environment(bundle)
+    assert environment['EPHYS_ATLAS_EXPECTED_MESH_PACK_ID'] == mesh['identity']['pack_id']
+    assert environment['EPHYS_ATLAS_REAL_MESH_PACK'] == str(repository / 'artifacts/mesh')

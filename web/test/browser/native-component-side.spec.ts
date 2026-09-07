@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('intact crossing surfaces keep their original side colours and picks after movement', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
   const points = await page.evaluate(async () => {
     const { RetainedBrainScene3DViewportFactory } = await import('/src/rendering/3d/brain-scene-viewport.ts');
     const host = document.createElement('div');
@@ -47,7 +48,9 @@ test('intact crossing surfaces keep their original side colours and picks after 
   });
   const host = page.locator('#native-side-test');
   const canvas = host.locator('canvas');
-  await page.waitForTimeout(100);
+  await expect(canvas).toHaveAttribute('width', '800');
+  await expect(canvas).toHaveAttribute('height', '600');
+  await expect.poll(async () => Number(await host.getAttribute('data-render-count'))).toBeGreaterThan(0);
   const checkPick = async (point: { x: number; y: number }, id: number) => {
     await page.mouse.move(point.x, point.y);
     await expect(host).toHaveAttribute('data-hover', String(id));

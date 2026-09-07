@@ -48,8 +48,8 @@ The dedicated comparison server must explicitly opt into serving review packs.
 signed bilateral Allen identities, nullable reduced mappings, an exact
 `reference_space_id`, explicit source-to-world evidence, manifest-selected
 default/upgrade LODs, and versioned EAM3 decoder contracts. Tiny committed
-packs are marked `test-only`. D042 separately selects the pinned GLB-derived
-compiled-full geometry/LOD baseline; immutable deployment must retain its
+packs are marked `test-only`. D070 selects approved native GLB-derived geometry;
+D042 remains the cut/cap rollback baseline. Immutable deployment must retain
 exact-source provenance, inventory/topology, integrity, and browser evidence.
 
 The shared valid/invalid corpus under `tests/contract-fixtures/v1/` is executed

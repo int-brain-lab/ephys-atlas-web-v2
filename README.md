@@ -26,7 +26,7 @@ just dev
 
 When the ignored local artifacts are staged, open <http://localhost:5173/>
 after Vite starts. `just data` synchronizes every descriptor artifact against
-the pinned [`development-bundle-v4.json`](data/development-bundle-v4.json),
+the pinned [`development-bundle-v5.json`](data/development-bundle-v5.json),
 then runs full validation of root hashes, immutable identities, and complete
 file graphs. Already-valid artifacts are reused without a network request. A
 missing artifact with a resolved descriptor source downloads into bounded
@@ -34,16 +34,17 @@ staging and is installed atomically only after encoded-byte integrity and the
 complete existing graph validator pass.
 
 The complete local corpus validated in the current integration workspace is
-551,523,979 bytes across channels, clusters, Brain-Wide Map, the W26 volume
-candidate, the five-view projection pack, and the optional D042 mesh pack. Its
-v4 descriptor still records unresolved sources because Q8 has not supplied an
+1,376,287,351 bytes across channels, clusters, Brain-Wide Map, the W26 volume
+candidate, the AGEA preview, the five-view projection pack, and the D070-approved
+Native mesh pack. Its v5 descriptor still records unresolved sources because Q8 has not supplied an
 authorized immutable origin. In a fresh checkout, `just data` therefore gives
 an actionable error for each missing unresolved launch-critical artifact, and `just dev` stops
 before startup. Development startup is read-only: it validates local bytes but
 does not download, publish, or fall back to synthetic data, an older release,
 or a mutable alias. An absent optional artifact is reported without blocking
 the launch-critical 2-D corpus; a corrupt artifact that is present still fails
-closed. The exact BWM and D042 inputs have been recovered locally;
+closed. D042 remains available through a separate rollback descriptor. Exact
+source/review bytes and approved Native anatomy are preserved locally;
 Q8 is only the remaining blocker to distributing their immutable browser-ready
 outputs through this path.
 

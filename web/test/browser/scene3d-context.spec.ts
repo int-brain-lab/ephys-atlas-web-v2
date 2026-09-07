@@ -21,7 +21,7 @@ test('3-D context lazily loads its injected immutable fixture and persists respo
   const explode = page.getByRole('slider', { name: 'Explode 3-D brain' });
   await expect(explode).toHaveValue('0.4');
   await expect(page.locator('.secondary-view__scene3d-control-value')).toHaveText('40%');
-  await expect(panel).toContainText('Experimental 3-D context');
+  await expect(panel).toContainText('3-D anatomy');
   await expect(panel.locator('canvas')).toHaveCount(1);
   expect(meshRequests.map((url) => new URL(url).pathname)).toEqual([
     '/__mesh-pack-fixture/manifest.json',
@@ -147,7 +147,7 @@ test('volume mode keeps integrated 3-D anatomy-only and scene failure isolated',
     root.remove();
     return { ...outcome, destroyed };
   });
-  expect(result).toEqual({ notice: 'Experimental 3-D context unavailable.', slices: 3, nullHost: true, destroyed: 1 });
+  expect(result).toEqual({ notice: '3-D anatomy unavailable.', slices: 3, nullHost: true, destroyed: 1 });
 });
 
 for (const resource of ['manifest.json', 'default.eam3.gz']) {
@@ -156,7 +156,7 @@ for (const resource of ['manifest.json', 'default.eam3.gz']) {
     await page.goto('/?v=4&secondary=brain-3d');
     const panel = page.locator('[data-secondary-panel="brain-3d"]');
     await expect(panel.locator('[data-scene3d-host="connected"]')).toHaveAttribute('data-scene3d-state', 'error');
-    await expect(panel.locator('.secondary-view__scene3d-notice')).toHaveText('Experimental 3-D context unavailable.');
+    await expect(panel.locator('.secondary-view__scene3d-notice')).toHaveText('3-D anatomy unavailable.');
     await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
   });
 }

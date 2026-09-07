@@ -70,6 +70,8 @@ retained anatomy SVG and optional scalar-volume Canvas layers. Top and Swanson
 are affine-free static regional SVG views. The optional retained 3-D anatomy
 context shares regional presentation and selection state but does not render
 encoding volumes or replace the launch-critical linked 2-D workspace.
+Its owner-approved native anatomy is fixed by D070 and the hash-bound
+`docs/data/NATIVE_3D_SELECTION.json`; D042 is retained only as rollback evidence.
 
 ## Artifact maturity
 
