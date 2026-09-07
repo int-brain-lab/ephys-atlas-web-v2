@@ -35,7 +35,7 @@ export async function decodeMeshWorkerRequest(request: Extract<MeshWorkerRequest
 function transferables(chunks: readonly MeshChunk[]): Transferable[] {
   const buffers = new Set<ArrayBuffer>();
   for (const chunk of chunks) {
-    for (const array of [chunk.positions, chunk.normals, chunk.featureIds, chunk.indices]) {
+    for (const array of [chunk.positions, chunk.normals, chunk.componentIds, chunk.indices]) {
       if (array.buffer instanceof ArrayBuffer) buffers.add(array.buffer);
     }
   }

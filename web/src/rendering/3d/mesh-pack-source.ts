@@ -172,13 +172,13 @@ export class MeshPackSource {
 
   private validateDecoded(lod: MeshLodV1, manifest: MeshPackV1, decoded: MeshDecodeResult): void {
     const ranges = decoded.chunks.flatMap((chunk) => chunk.ranges.map((range) => ({ chunk, range })));
-    if (ranges.length !== manifest.regions.length) throw new Error(`Mesh LOD ${lod.id} region inventory differs from manifest`);
-    for (const { chunk, range } of ranges) {
-      const region = manifest.regions[range.featureId];
-      if (!region || region.feature_id !== range.featureId || region.hemisphere !== chunk.hemisphere
-        || region.signed_allen_id !== range.signedAllenId
-        || region.signed_explode_group_id !== range.signedExplodeGroupId) {
-        throw new Error(`Mesh LOD ${lod.id} signed feature identity differs from manifest`);
+    if (ranges.length !== manifest.components.length) throw new Error(`Mesh LOD ${lod.id} component inventory differs from manifest`);
+    for (const { range } of ranges) {
+      const component = manifest.components[range.componentId];
+      if (!component || component.component_id !== range.componentId
+        || component.left_presentation_id !== range.leftPresentationId
+        || component.right_presentation_id !== range.rightPresentationId) {
+        throw new Error(`Mesh LOD ${lod.id} component identity differs from manifest`);
       }
     }
     const triangles = decoded.chunks.reduce((total, chunk) => total + chunk.indices.length / 3, 0);

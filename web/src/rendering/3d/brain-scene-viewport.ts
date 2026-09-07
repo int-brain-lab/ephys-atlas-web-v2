@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { regionalPresentationColors, type RegionalPresentation } from '../../application/regional-presentation.js';
 import type { BrainCameraPose, Scene3DViewState } from '../../domain/types.js';
-import type { MeshPackV1, MeshRegionV1 } from '../../data/schema-v1.js';
+import type { MeshPackV1, MeshPresentationV1 } from '../../data/schema-v1.js';
 import type { LoadedMeshLod, MeshPackSource } from './mesh-pack-source.js';
 import { StableArcballControls, type CameraInteractionPhase } from './stable-arcball-controls.js';
 
@@ -44,11 +44,6 @@ interface MeshPackLoader {
   loadDefault(signal?: AbortSignal): Promise<LoadedMeshLod>;
   loadUpgrade(signal?: AbortSignal): Promise<LoadedMeshLod | null>;
   dispose(): void;
-}
-
-interface ManifestGeometryMetadata {
-  readonly whole_brain_centroid_um?: readonly [number, number, number];
-  readonly explode_groups?: readonly { signed_group_id: number; centroid_um: readonly [number, number, number] }[];
 }
 
 const DEFAULT_PRESENTATION: RegionalPresentation = {
@@ -231,24 +226,27 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
 
   private buildMeshes(lod: LoadedMeshLod): THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>[] {
     if (!this.manifest) throw new Error('Mesh manifest is unavailable');
-    const metadata = this.manifest as MeshPackV1 & ManifestGeometryMetadata;
-    const center = metadata.whole_brain_centroid_um ?? [0, 0, 0];
-    const groups = new Map((metadata.explode_groups ?? []).map((group) => [group.signed_group_id, group.centroid_um]));
+    const components = new Map(this.manifest.components.map((component) => [component.component_id, component]));
     const meshes: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>[] = [];
     try {
       for (const chunk of lod.chunks) {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(chunk.positions, 3));
         geometry.setAttribute('normal', new THREE.BufferAttribute(chunk.normals, 3));
-        geometry.setAttribute('featureId', new THREE.BufferAttribute(chunk.featureIds, 1));
-        const explode = new Float32Array(chunk.featureIds.length * 3);
+        const leftPresentation = new Float32Array(chunk.componentIds.length);
+        const rightPresentation = new Float32Array(chunk.componentIds.length);
+        const explode = new Float32Array(chunk.componentIds.length * 3);
         for (const range of chunk.ranges) {
-          const centroid = groups.get(range.signedExplodeGroupId) ?? center;
-          const direction = new THREE.Vector3(centroid[0] - center[0], centroid[1] - center[1], centroid[2] - center[2]);
+          const component = components.get(range.componentId);
+          if (!component) throw new Error(`Mesh component ${range.componentId} is absent from manifest`);
           for (let vertex = range.vertexStart; vertex < range.vertexStart + range.vertexCount; vertex += 1) {
-            explode.set(direction.toArray(), vertex * 3);
+            leftPresentation[vertex] = component.left_presentation_id ?? -1;
+            rightPresentation[vertex] = component.right_presentation_id ?? -1;
+            explode.set(component.explode_displacement_um, vertex * 3);
           }
         }
+        geometry.setAttribute('leftPresentationId', new THREE.BufferAttribute(leftPresentation, 1));
+        geometry.setAttribute('rightPresentationId', new THREE.BufferAttribute(rightPresentation, 1));
         geometry.setAttribute('explodeOffset', new THREE.BufferAttribute(explode, 3));
         geometry.setIndex(new THREE.BufferAttribute(chunk.indices, 1));
         geometry.computeBoundingSphere();
@@ -256,12 +254,17 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
         const material = new THREE.ShaderMaterial({
           transparent: true,
           side: THREE.DoubleSide,
-          uniforms: { uLookup: { value: lookup }, uLookupWidth: { value: this.manifest!.regions.length }, uExplode: { value: this.state.explode } },
-          vertexShader: `attribute float featureId; attribute vec3 explodeOffset; uniform sampler2D uLookup; uniform float uLookupWidth; uniform float uExplode; varying vec3 vNormal; varying vec4 vColor; void main(){ vColor=texture2D(uLookup,vec2((featureId+.5)/uLookupWidth,.5)); vNormal=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position+explodeOffset*uExplode,1.); }`,
-          fragmentShader: `varying vec3 vNormal; varying vec4 vColor; void main(){ if(vColor.a<.01) discard; float light=.82+.20*abs(dot(normalize(vNormal),normalize(vec3(-.3,.4,.85)))); gl_FragColor=linearToOutputTexel(vec4(vColor.rgb*light,vColor.a)); }`,
+          uniforms: { uLookup: { value: lookup }, uLookupWidth: { value: this.manifest!.presentations.length }, uExplode: { value: this.state.explode }, uThreshold: { value: this.manifest.presentation_boundary.threshold_um } },
+          vertexShader: `attribute float leftPresentationId; attribute float rightPresentationId; attribute vec3 explodeOffset; uniform float uExplode; varying vec3 vNormal; varying float vLeftPresentationId; varying float vRightPresentationId; varying float vOriginalMl; void main(){ vLeftPresentationId=leftPresentationId; vRightPresentationId=rightPresentationId; vOriginalMl=position.x; vNormal=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position+explodeOffset*uExplode,1.); }`,
+          fragmentShader: `uniform sampler2D uLookup; uniform float uLookupWidth; uniform float uThreshold; varying vec3 vNormal; varying float vLeftPresentationId; varying float vRightPresentationId; varying float vOriginalMl; void main(){ float presentationId=vOriginalMl < -uThreshold ? vLeftPresentationId : vRightPresentationId; if(presentationId<0.) discard; vec4 vColor=texture2D(uLookup,vec2((presentationId+.5)/uLookupWidth,.5)); if(vColor.a<.01) discard; float light=.82+.20*abs(dot(normalize(vNormal),normalize(vec3(-.3,.4,.85)))); gl_FragColor=linearToOutputTexel(vec4(vColor.rgb*light,vColor.a)); }`,
         });
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.userData.hemisphere = chunk.hemisphere;
+        const baseGetVertexPosition = mesh.getVertexPosition.bind(mesh);
+        mesh.getVertexPosition = (index, target) => {
+          baseGetVertexPosition(index, target);
+          const offset = geometry.getAttribute('explodeOffset');
+          return target.addScaledVector(new THREE.Vector3(offset.getX(index), offset.getY(index), offset.getZ(index)), this.state.explode);
+        };
         this.geometryUploads += 1;
         this.host.dataset.geometryUploads = String(this.geometryUploads);
         meshes.push(mesh);
@@ -274,7 +277,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
   }
 
   private createLookupTexture(): THREE.DataTexture {
-    const count = Math.max(1, this.manifest?.regions.length ?? 1);
+    const count = Math.max(1, this.manifest?.presentations.length ?? 1);
     const texture = new THREE.DataTexture(new Uint8Array(count * 4), count, 1, THREE.RGBAFormat);
     texture.magFilter = THREE.NearestFilter;
     texture.minFilter = THREE.NearestFilter;
@@ -289,15 +292,15 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     for (const mesh of this.meshes) {
       const texture = mesh.material.uniforms.uLookup!.value as THREE.DataTexture;
       const bytes = texture.image.data as Uint8Array;
-      const regions: readonly MeshRegionV1[] = this.manifest.regions;
-      regions.forEach((region: MeshRegionV1) => {
+      const presentations: readonly MeshPresentationV1[] = this.manifest.presentations;
+      presentations.forEach((region: MeshPresentationV1) => {
         const id = this.presentationId(region);
         const visible = id !== null && this.presentation.visibleRegionIds.has(id);
         const selected = id !== null && this.presentation.selectedRegionIds.has(id);
         const highlighted = id !== null && this.presentation.highlightedRegionId === id;
         const color = regionalColorTextureRgb(id === null ? '#73818b' : regionColors.get(id) ?? '#73818b');
         const intensity = selected ? 1.35 : highlighted ? 1.18 : 1;
-        const offset = region.feature_id * 4;
+        const offset = region.presentation_id * 4;
         bytes[offset] = Math.min(255, Math.round(color[0] * intensity));
         bytes[offset + 1] = Math.min(255, Math.round(color[1] * intensity));
         bytes[offset + 2] = Math.min(255, Math.round(color[2] * intensity));
@@ -308,7 +311,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     this.host.dataset.presentationUpdates = String(Number(this.host.dataset.presentationUpdates ?? 0) + 1);
   }
 
-  private presentationId(region: MeshRegionV1): number | null { return region.mappings[this.presentation.mapping]; }
+  private presentationId(region: MeshPresentationV1): number | null { return region.mappings[this.presentation.mapping]; }
 
   private pick(event: PointerEvent): number | null {
     if (!this.manifest) return null;
@@ -316,8 +319,20 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     this.pointer.set(2 * (event.clientX - bounds.left) / Math.max(1, bounds.width) - 1, 1 - 2 * (event.clientY - bounds.top) / Math.max(1, bounds.height));
     this.raycaster.setFromCamera(this.pointer, this.camera);
     for (const hit of this.raycaster.intersectObjects(this.meshes, false)) {
-      const feature = (hit.object as THREE.Mesh).geometry.getAttribute('featureId').getX(hit.face!.a);
-      const region = this.manifest.regions[feature];
+      const mesh = hit.object as THREE.Mesh;
+      const geometry = mesh.geometry;
+      const left = geometry.getAttribute('leftPresentationId');
+      const right = geometry.getAttribute('rightPresentationId');
+      const position = geometry.getAttribute('position');
+      const face = hit.face!;
+      const bary = hit.barycoord;
+      const originalMl = bary
+        ? position.getX(face.a) * bary.x + position.getX(face.b) * bary.y + position.getX(face.c) * bary.z
+        : position.getX(face.a);
+      const presentation = originalMl < -this.manifest.presentation_boundary.threshold_um
+        ? Math.round(left.getX(face.a)) : Math.round(right.getX(face.a));
+      if (presentation < 0) continue;
+      const region = this.manifest.presentations[presentation];
       if (!region) continue;
       const id = this.presentationId(region);
       if (id !== null && this.presentation.visibleRegionIds.has(id)) return id;

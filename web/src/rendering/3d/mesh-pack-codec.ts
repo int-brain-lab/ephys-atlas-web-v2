@@ -1,10 +1,10 @@
 import { MeshoptDecoder } from 'meshoptimizer';
-import type { MeshDecoderV1, MeshHemisphereV1 } from '../../data/schema-v1.js';
+import type { MeshDecoderV1 } from '../../data/schema-v1.js';
 
 export interface MeshRange {
-  readonly featureId: number;
-  readonly signedAllenId: number;
-  readonly signedExplodeGroupId: number;
+  readonly componentId: number;
+  readonly leftPresentationId: number | null;
+  readonly rightPresentationId: number | null;
   readonly indexStart: number;
   readonly indexCount: number;
   readonly vertexStart: number;
@@ -12,10 +12,10 @@ export interface MeshRange {
 }
 
 export interface MeshChunk {
-  readonly hemisphere: MeshHemisphereV1;
+  readonly chunkId: string;
   readonly positions: Float32Array;
   readonly normals: Float32Array;
-  readonly featureIds: Uint16Array;
+  readonly componentIds: Uint16Array;
   readonly indices: Uint32Array;
   readonly ranges: readonly MeshRange[];
 }
@@ -35,9 +35,9 @@ type BlockDescriptor = Readonly<{
 }>;
 
 interface HeaderRange {
-  feature_id: number;
-  signed_allen_id: number;
-  signed_explode_group_id: number;
+  component_id: number;
+  left_presentation_id: number | null;
+  right_presentation_id: number | null;
   index_start: number;
   index_count: number;
   vertex_start: number;
@@ -45,7 +45,7 @@ interface HeaderRange {
 }
 
 interface HeaderChunk {
-  hemisphere: MeshHemisphereV1;
+  chunk_id: string;
   ranges: HeaderRange[];
   arrays?: Record<string, ArrayDescriptor>;
   vertex_count?: number;
@@ -68,22 +68,27 @@ function integer(value: unknown, context: string, minimum = 0): number {
 
 function ranges(value: unknown, vertexCount: number, indexCount: number): MeshRange[] {
   if (!Array.isArray(value)) throw new Error('Mesh range inventory is invalid');
-  const features = new Set<number>();
+  const components = new Set<number>();
   return value.map((candidate) => {
     if (!candidate || typeof candidate !== 'object') throw new Error('Mesh range is invalid');
     const item = candidate as Partial<HeaderRange>;
-    const featureId = integer(item.feature_id, 'Mesh range feature ID');
-    if (features.has(featureId)) throw new Error(`Mesh range feature ${featureId} is duplicated`);
-    features.add(featureId);
+    const componentId = integer(item.component_id, 'Mesh range component ID');
+    if (components.has(componentId)) throw new Error(`Mesh range component ${componentId} is duplicated`);
+    components.add(componentId);
     const indexStart = integer(item.index_start, 'Mesh range index start');
     const indexCountValue = integer(item.index_count, 'Mesh range index count', 1);
     const vertexStart = integer(item.vertex_start, 'Mesh range vertex start');
     const vertexCountValue = integer(item.vertex_count, 'Mesh range vertex count', 1);
-    if (indexStart + indexCountValue > indexCount || indexCountValue % 3) throw new Error(`Mesh range ${featureId} indices are out of bounds`);
-    if (vertexStart + vertexCountValue > vertexCount) throw new Error(`Mesh range ${featureId} vertices are out of bounds`);
-    const signedAllenId = integer(Math.abs(Number(item.signed_allen_id)), 'Mesh range Allen identity', 1) * (Number(item.signed_allen_id) < 0 ? -1 : 1);
-    const signedExplodeGroupId = integer(Math.abs(Number(item.signed_explode_group_id)), 'Mesh range explode identity', 1) * (Number(item.signed_explode_group_id) < 0 ? -1 : 1);
-    return { featureId, signedAllenId, signedExplodeGroupId, indexStart, indexCount: indexCountValue, vertexStart, vertexCount: vertexCountValue };
+    if (indexStart + indexCountValue > indexCount || indexCountValue % 3) throw new Error(`Mesh range ${componentId} indices are out of bounds`);
+    if (vertexStart + vertexCountValue > vertexCount) throw new Error(`Mesh range ${componentId} vertices are out of bounds`);
+    const presentationId = (candidateId: unknown, side: string): number | null => {
+      if (candidateId === null) return null;
+      return integer(candidateId, `Mesh range ${side} presentation ID`);
+    };
+    const leftPresentationId = presentationId(item.left_presentation_id, 'left');
+    const rightPresentationId = presentationId(item.right_presentation_id, 'right');
+    if (leftPresentationId === null && rightPresentationId === null) throw new Error(`Mesh range ${componentId} has no presentation`);
+    return { componentId, leftPresentationId, rightPresentationId, indexStart, indexCount: indexCountValue, vertexStart, vertexCount: vertexCountValue };
   });
 }
 
@@ -112,12 +117,12 @@ function block(data: Uint8Array, payloadOffset: number, descriptor: BlockDescrip
 }
 
 function validateChunk(chunk: MeshChunk): MeshChunk {
-  const vertexCount = chunk.featureIds.length;
+  const vertexCount = chunk.componentIds.length;
   if (chunk.positions.length !== vertexCount * 3 || chunk.normals.length !== vertexCount * 3 || chunk.indices.length % 3) throw new Error('Mesh chunk array counts are inconsistent');
   if ([...chunk.indices].some((index) => index >= vertexCount)) throw new Error('Mesh chunk index is out of bounds');
   for (const range of chunk.ranges) {
     for (let index = range.vertexStart; index < range.vertexStart + range.vertexCount; index += 1) {
-      if (chunk.featureIds[index] !== range.featureId) throw new Error(`Mesh range ${range.featureId} feature buffer differs`);
+      if (chunk.componentIds[index] !== range.componentId) throw new Error(`Mesh range ${range.componentId} component buffer differs`);
     }
   }
   return chunk;
@@ -127,9 +132,10 @@ function decodeRawChunk(data: Uint8Array, payloadOffset: number, chunk: HeaderCh
   if (!chunk.arrays) throw new Error('Mesh raw chunk arrays are missing');
   const positions = typedArray(data, payloadOffset, chunk.arrays.positions, Float32Array, 'float32', 3);
   const normals = typedArray(data, payloadOffset, chunk.arrays.normals, Float32Array, 'float32', 3);
-  const featureIds = typedArray(data, payloadOffset, chunk.arrays.feature_ids, Uint16Array, 'uint16', 1);
+  const componentIds = typedArray(data, payloadOffset, chunk.arrays.component_ids, Uint16Array, 'uint16', 1);
   const indices = typedArray(data, payloadOffset, chunk.arrays.indices, Uint32Array, 'uint32', 1);
-  return validateChunk({ hemisphere: chunk.hemisphere, positions, normals, featureIds, indices, ranges: ranges(chunk.ranges, featureIds.length, indices.length) });
+  if (typeof chunk.chunk_id !== 'string' || !chunk.chunk_id) throw new Error('Mesh chunk ID is invalid');
+  return validateChunk({ chunkId: chunk.chunk_id, positions, normals, componentIds, indices, ranges: ranges(chunk.ranges, componentIds.length, indices.length) });
 }
 
 function finiteVector(value: unknown, context: string): [number, number, number] {
@@ -154,15 +160,16 @@ function decodeMeshoptChunk(data: Uint8Array, payloadOffset: number, chunk: Head
   const signedNormals = new Int8Array(normalBytes.buffer);
   const positions = new Float32Array(vertexCount * 3);
   const normals = new Float32Array(vertexCount * 3);
-  const featureIds = new Uint16Array(vertexCount);
+  const componentIds = new Uint16Array(vertexCount);
   for (let vertex = 0; vertex < vertexCount; vertex += 1) {
     for (let axis = 0; axis < 3; axis += 1) {
       positions[vertex * 3 + axis] = minimum[axis]! + (maximum[axis]! - minimum[axis]!) * vertices[vertex * 4 + axis]! / 16383;
       normals[vertex * 3 + axis] = signedNormals[vertex * 4 + axis]! / 127;
     }
-    featureIds[vertex] = vertices[vertex * 4 + 3]!;
+    componentIds[vertex] = vertices[vertex * 4 + 3]!;
   }
-  return validateChunk({ hemisphere: chunk.hemisphere, positions, normals, featureIds, indices, ranges: ranges(chunk.ranges, vertexCount, indexCount) });
+  if (typeof chunk.chunk_id !== 'string' || !chunk.chunk_id) throw new Error('Mesh chunk ID is invalid');
+  return validateChunk({ chunkId: chunk.chunk_id, positions, normals, componentIds, indices, ranges: ranges(chunk.ranges, vertexCount, indexCount) });
 }
 
 export async function decodeMeshLod(data: Uint8Array, decoder: MeshDecoderV1): Promise<readonly MeshChunk[]> {
@@ -182,10 +189,10 @@ export async function decodeMeshLod(data: Uint8Array, decoder: MeshDecoderV1): P
   if (header.encoding !== decoder.encoding || !Array.isArray(header.chunks)) throw new Error('Mesh LOD encoding differs from decoder contract');
   if (header.encoding === 'meshopt-quantized-v1') await MeshoptDecoder.ready;
   const chunks = header.chunks.map((chunk) => {
-    if (chunk.hemisphere !== 'left' && chunk.hemisphere !== 'right') throw new Error('Mesh chunk hemisphere is invalid');
+    if (typeof chunk.chunk_id !== 'string' || !chunk.chunk_id) throw new Error('Mesh chunk ID is invalid');
     return header.encoding === 'raw-v1' ? decodeRawChunk(data, payloadOffset, chunk) : decodeMeshoptChunk(data, payloadOffset, chunk);
   });
-  if (chunks.length !== 2 || chunks[0]?.hemisphere !== 'left' || chunks[1]?.hemisphere !== 'right') throw new Error('Mesh LOD must contain ordered bilateral chunks');
+  if (!chunks.length || new Set(chunks.map((chunk) => chunk.chunkId)).size !== chunks.length) throw new Error('Mesh LOD chunk inventory is invalid');
   return chunks;
 }
 
@@ -194,7 +201,7 @@ export function meshChunksByteLength(chunks: readonly MeshChunk[]): number {
   for (const chunk of chunks) {
     buffers.add(chunk.positions.buffer);
     buffers.add(chunk.normals.buffer);
-    buffers.add(chunk.featureIds.buffer);
+    buffers.add(chunk.componentIds.buffer);
     buffers.add(chunk.indices.buffer);
   }
   return [...buffers].reduce((total, buffer) => total + buffer.byteLength, 0);
