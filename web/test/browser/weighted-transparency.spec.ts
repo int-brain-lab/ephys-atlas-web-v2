@@ -24,12 +24,12 @@ for (const supported of [true, false]) test(supported
     const components = presentations.map((p) => ({component_id:p.presentation_id, source_allen_id:p.source_allen_id, lateralization:'right', left_presentation_id:null, right_presentation_id:p.presentation_id, explode_displacement_um:[0,0,0]}));
     const base = {mapping:'allen', anatomyColors:new Map([[1,'#ff0000'],[2,'#00ff00'],[3,'#0000ff']]), featureColors:null, featureSide:null, visibleRegionIds:new Set([1,2,3]), selectedRegionIds:new Set([3]), highlightedRegionId:null};
     let factory: any; let viewport: any;
-    const create = (reverse: boolean, split: boolean) => {
+    const create = (reverse: boolean, split: boolean, normal = [0,0,1]) => {
       factory?.destroy();
       const order = reverse ? [2,1,0] : [0,1,2];
       const chunks = (split ? order.map((id) => [id]) : [order]).map((ids, index) => ({chunkId:String(index),
         positions:new Float32Array(ids.flatMap((id) => positions[id]!)),
-        normals:new Float32Array(ids.flatMap(() => [0,0,1,0,0,1,0,0,1])),
+        normals:new Float32Array(ids.flatMap(() => [...normal,...normal,...normal])),
         componentIds:new Uint16Array(ids.flatMap((id) => [id,id,id])),
         indices:new Uint32Array(ids.flatMap((_, i) => [i*3,i*3+1,i*3+2])),
         ranges:ids.map((id,i) => ({componentId:id, vertexStart:i*3,vertexCount:3,indexStart:i*3,indexCount:3})),
@@ -99,6 +99,15 @@ for (const supported of [true, false]) test(supported
   await expect(host).toHaveAttribute('data-scene3d-state','ready');
   const restored = await pixels();
   expect(restored.filter((value,index) => index % 4 !== 3 && value > 100).length).toBeGreaterThan(1000);
+  // Directional shading must reveal orientation, not the nearly flat absolute
+  // normal dot product used before. Both cases retain the same OIT coverage.
+  await page.evaluate(() => { document.querySelector<HTMLElement>('#oit-test')!.style.width='400px'; });
+  await expect(host.locator('canvas')).toHaveAttribute('width','400');
+  await page.evaluate(() => (window as any).oitTest.create(false,false,[-.55,.65,.75]));
+  const lit = await pixels();
+  await page.evaluate(() => (window as any).oitTest.create(false,false,[.55,-.65,.1]));
+  const shaded = await pixels();
+  expect(lit[(220*400+175)*4+2]! - shaded[(220*400+175)*4+2]!).toBeGreaterThan(30);
   await page.evaluate(() => (window as any).oitTest.destroy());
   await expect(host).toHaveAttribute('data-scene3d-state','destroyed');
   expect(errors).toEqual([]);

@@ -1,7 +1,7 @@
 # 3-D transparency
 
 Status: implemented in the shared retained viewport, 2026-09-07. Applies to
-both D042 and the native local review candidate; no pack bytes, source triangles,
+both D042 and the D070-approved native anatomy (including the review lab); no pack bytes, source triangles,
 movement assignments, signed presentation, or picking semantics change.
 
 Selected regions remain opaque. Visible unselected context retains its existing
@@ -37,13 +37,26 @@ explicit 3-D error, with clearing selection restoring opaque rendering. There is
 no silent fallback to order-dependent blending. The existing 2-D failure boundary
 remains unchanged.
 
+## Surface lighting
+
+The shared custom shader uses a view-space directional key plus a soft fill
+and ambient floor. On owner request, the 2026-09-07 lighting refinement replaces
+the nearly flat absolute-normal shading with stronger directional contrast.
+Back-face normals are flipped for double-sided rendering. RGB is multiplied
+by the light intensity without white specular highlights; region hue, lookup
+values, opacity, source normals/triangles and CPU picking remain unchanged.
+Unused Three.js scene lights were removed because this shader never read them.
+This is surface shading, not shadow mapping or ambient occlusion.
+
 ## Evidence
 
 `web/test/browser/weighted-transparency.spec.ts` checks reversed triangle and
 chunk order (pixel differences at most two byte levels), opaque occlusion,
 contribution of transparent foreground/background, signed picking, opaque/OIT
 switching without geometry uploads, resize, context recovery, destruction, and
-unsupported-capability recovery. Existing native original-side/explode and
+unsupported-capability recovery. It also requires a visible brightness
+difference between lit and shaded normals while retaining the OIT path.
+Existing native original-side/explode and
 integrated scene lifecycle tests exercise the same renderer.
 
 `npx playwright test --config playwright.native-review.config.ts` from `web/`

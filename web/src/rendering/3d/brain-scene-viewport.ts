@@ -120,10 +120,6 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
       this.scheduleRender();
       this.sink().cameraChanged?.(this.cameraPose(), phase);
     });
-    this.scene.add(new THREE.HemisphereLight('#ffffff', '#78909c', 2.1));
-    const key = new THREE.DirectionalLight('#ffffff', 2.8);
-    key.position.set(-4, -3, 8);
-    this.scene.add(key);
     this.resizeObserver = new ResizeObserver(() => {
       if (this.resizeFrame !== null) return;
       this.resizeFrame = requestAnimationFrame(() => { this.resizeFrame = null; this.resize(); });
@@ -270,7 +266,10 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
           side: THREE.DoubleSide,
           uniforms: { uPass: { value: 0 }, uOpaqueDepth: { value: null }, uViewport: { value: new THREE.Vector2(1, 1) }, uFar: { value: this.camera.far }, uLookup: { value: lookup }, uLookupWidth: { value: this.manifest!.presentations.length }, uExplode: { value: this.state.explode }, uThreshold: { value: this.manifest.presentation_boundary.threshold_um }, uOnPlaneLeft: { value: this.manifest.presentation_boundary.on_plane_side === 'left' ? 1 : 0 } },
           vertexShader: `attribute float leftPresentationId; attribute float rightPresentationId; attribute vec3 explodeOffset; uniform float uExplode; varying vec3 vNormal; varying float vLeftPresentationId; varying float vRightPresentationId; varying float vOriginalMl; varying float vViewDepth; void main(){ vLeftPresentationId=leftPresentationId; vRightPresentationId=rightPresentationId; vOriginalMl=position.x; vNormal=normalize(normalMatrix*normal); vec4 viewPosition=modelViewMatrix*vec4(position+explodeOffset*uExplode,1.); vViewDepth=-viewPosition.z; gl_Position=projectionMatrix*viewPosition; }`,
-          fragmentShader: `uniform sampler2D uLookup; uniform float uLookupWidth; uniform float uThreshold; uniform float uOnPlaneLeft; varying vec3 vNormal; varying float vLeftPresentationId; varying float vRightPresentationId; varying float vOriginalMl; ${MESH_PRESENTATION_GLSL} ${TRANSPARENCY_FRAGMENT} void main(){ float presentationId=meshPresentationAtMl(vOriginalMl,vLeftPresentationId,vRightPresentationId); if(presentationId<0.) discard; vec4 vColor=texture2D(uLookup,vec2((presentationId+.5)/uLookupWidth,.5)); if(vColor.a<.01) discard; float light=.82+.20*abs(dot(normalize(vNormal),normalize(vec3(-.3,.4,.85)))); gl_FragColor=transparencyOutput(vec4(vColor.rgb*light,vColor.a)); }`,
+          // View-space key and soft fill emphasize curvature without whitening
+          // scientific colours. Flip back-face normals for double-sided anatomy;
+          // lighting changes RGB only, never OIT coverage or picking.
+          fragmentShader: `uniform sampler2D uLookup; uniform float uLookupWidth; uniform float uThreshold; uniform float uOnPlaneLeft; varying vec3 vNormal; varying float vLeftPresentationId; varying float vRightPresentationId; varying float vOriginalMl; ${MESH_PRESENTATION_GLSL} ${TRANSPARENCY_FRAGMENT} void main(){ float presentationId=meshPresentationAtMl(vOriginalMl,vLeftPresentationId,vRightPresentationId); if(presentationId<0.) discard; vec4 vColor=texture2D(uLookup,vec2((presentationId+.5)/uLookupWidth,.5)); if(vColor.a<.01) discard; vec3 normal=normalize(vNormal)*(gl_FrontFacing?1.:-1.); float key=max(0.,dot(normal,normalize(vec3(-.55,.65,.75)))); float fill=max(0.,dot(normal,normalize(vec3(.65,-.15,.6)))); float light=.38+.68*key+.12*fill; gl_FragColor=transparencyOutput(vec4(vColor.rgb*light,vColor.a)); }`,
         });
         const mesh = new THREE.Mesh(geometry, material);
         const baseGetVertexPosition = mesh.getVertexPosition.bind(mesh);
