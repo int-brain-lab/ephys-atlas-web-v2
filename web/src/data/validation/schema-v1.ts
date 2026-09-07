@@ -1,6 +1,7 @@
 /** Semantic validator used by the staged cross-language schema-v1 corpus. */
 
 import { parseDatasetCatalog } from './catalog.js';
+import { parseMetadataBundle, parseMetadataBundleResource } from './metadata-bundle.js';
 
 type JsonObject = Record<string, unknown>;
 
@@ -586,11 +587,15 @@ export function validateSchemaV1Document(value: unknown, schemaName: string): vo
       break;
     }
     case 'dataset.schema.json': {
+      if (document.metadata_bundle !== undefined) parseMetadataBundleResource(document.metadata_bundle);
       const features = array(document.features, 'dataset features').map((item) => object(item, 'feature'));
       unique(features.map((item) => item.id), 'feature id');
       unique(features.map((item) => object(object(item.descriptor, 'descriptor').resource, 'resource').path), 'feature path');
       break;
     }
+    case 'metadata-bundle.schema.json':
+      parseMetadataBundle(document);
+      break;
     case 'registered-projection.schema.json':
       registeredSemantics(document);
       break;

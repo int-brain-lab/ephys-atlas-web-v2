@@ -6,13 +6,14 @@ import math
 import re
 from datetime import date
 from itertools import product
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 import numpy as np
 from jsonschema import FormatChecker
 
 from .io import DTYPES, sha256_file
+from .metadata_bundle import MAX_DECODED_BYTES, MAX_ENTRIES, OUTPUT_NAME
 
 
 class ValidationError(RuntimeError):
@@ -96,6 +97,130 @@ def _check_json_resource(
 ) -> tuple[Path, Any]:
     path = _check_resource(root, descriptor["resource"])
     return path, _load_json(path, description)
+
+
+def _safe_graph_path(value: str, description: str) -> PurePosixPath:
+    if not value or "\\" in value or "\0" in value:
+        raise ValidationError(f"unsafe {description}: {value!r}")
+    path = PurePosixPath(value)
+    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+        raise ValidationError(f"unsafe {description}: {value!r}")
+    return path
+
+
+def _declared_uncompressed_json_resources(
+    release_dir: Path, manifest: dict[str, Any]
+) -> dict[str, bytes]:
+    """Collect authoritative JSON documents using the schema-v1 graph bases."""
+    feature_paths = {
+        item["descriptor"]["resource"]["path"] for item in manifest["features"]
+    }
+    pending: list[tuple[str, PurePosixPath]] = [("manifest.json", PurePosixPath("."))]
+    visited: set[str] = set()
+    resources: dict[str, bytes] = {}
+    bundle_path = manifest.get("metadata_bundle", {}).get("path")
+    while pending:
+        document_path, resource_base = pending.pop()
+        if document_path in visited:
+            continue
+        visited.add(document_path)
+        raw_document = (release_dir / document_path).read_bytes()
+        document = json.loads(raw_document.decode("utf-8"))
+
+        def visit(value: Any, resource_base: PurePosixPath = resource_base) -> None:
+            if isinstance(value, list):
+                for item in value:
+                    visit(item)
+                return
+            if not isinstance(value, dict):
+                return
+            if {"path", "media_type", "bytes", "sha256", "codec"} <= value.keys():
+                relative = _safe_graph_path(value["path"], "resource path")
+                normalized = _safe_graph_path(
+                    (resource_base / relative).as_posix(), "resource path"
+                ).as_posix()
+                if (
+                    value["media_type"] == "application/json"
+                    and value["codec"]["name"] == "none"
+                    and normalized != bundle_path
+                ):
+                    raw = (release_dir / normalized).read_bytes()
+                    resources[normalized] = raw
+                    next_base = (
+                        PurePosixPath(normalized).parent
+                        if normalized in feature_paths
+                        else resource_base
+                    )
+                    pending.append((normalized, next_base))
+            for child in value.values():
+                visit(child)
+
+        visit(document)
+    return resources
+
+
+def _read_bounded_gzip(path: Path, limit: int) -> bytes:
+    try:
+        with gzip.open(path, "rb") as stream:
+            decoded = stream.read(limit + 1)
+    except (OSError, EOFError) as exc:
+        raise ValidationError(f"invalid gzip resource: {path}: {exc}") from exc
+    if len(decoded) > limit:
+        raise ValidationError(f"metadata bundle exceeds {limit} decoded bytes")
+    return decoded
+
+
+def _check_metadata_bundle(
+    release_dir: Path, manifest: dict[str, Any], schema_dir: Path
+) -> None:
+    from .schema_v1 import validate_schema_v1_document
+
+    descriptor = manifest.get("metadata_bundle")
+    if descriptor is None:
+        return
+    if (
+        descriptor["path"] != OUTPUT_NAME
+        or descriptor["media_type"] != "application/json"
+        or descriptor["codec"]["name"] != "gzip"
+    ):
+        raise ValidationError(
+            "metadata bundle must be metadata-bundle.json.gz gzip application/json"
+        )
+    if descriptor["bytes"] > MAX_DECODED_BYTES:
+        raise ValidationError(f"metadata bundle exceeds {MAX_DECODED_BYTES} encoded bytes")
+    path = _resource_path(release_dir, descriptor)
+    if not path.is_file() or path.stat().st_size != descriptor["bytes"]:
+        raise ValidationError(f"missing or size-mismatched metadata bundle: {path}")
+    if sha256_file(path) != descriptor["sha256"]:
+        raise ValidationError(f"resource sha256 mismatch for {path}")
+    decoded = _read_bounded_gzip(path, MAX_DECODED_BYTES)
+    if len(decoded) != descriptor["codec"]["decoded_bytes"]:
+        raise ValidationError(f"decoded resource byte size mismatch for {path}")
+    try:
+        bundle = json.loads(decoded.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValidationError(f"invalid metadata bundle JSON: {path}: {exc}") from exc
+    validate_schema_v1_document(bundle, "metadata-bundle.schema.json", schema_dir)
+    entries = bundle["resources"]
+    if len(entries) > MAX_ENTRIES:
+        raise ValidationError(f"metadata bundle exceeds {MAX_ENTRIES} entries")
+    paths = [entry["path"] for entry in entries]
+    if len(paths) != len(set(paths)):
+        raise ValidationError("duplicate metadata bundle path")
+    declared = _declared_uncompressed_json_resources(release_dir, manifest)
+    for entry in entries:
+        relative = _safe_graph_path(entry["path"], "metadata bundle path").as_posix()
+        if relative in {"manifest.json", OUTPUT_NAME}:
+            raise ValidationError("metadata bundle cannot contain its manifest or itself")
+        authoritative = declared.get(relative)
+        if authoritative is None:
+            raise ValidationError(
+                f"metadata bundle entry is not a declared uncompressed JSON resource: {relative}"
+            )
+        if entry["text"].encode("utf-8") != authoritative:
+            raise ValidationError(
+                f"metadata bundle entry differs from authoritative bytes: {relative}"
+            )
 
 
 def _check_binary(root: Path, descriptor: dict[str, Any]) -> Path:
@@ -311,6 +436,7 @@ def validate_release(release_dir: Path, schema_dir: Path | None = None) -> None:
 
     manifest = _load_json(release_dir / "manifest.json", "release manifest")
     validate_schema_v1_document(manifest, "dataset.schema.json", schema_dir)
+    _check_metadata_bundle(release_dir, manifest, schema_dir)
 
     parcellations = manifest["parcellations"]
     region_counts = {

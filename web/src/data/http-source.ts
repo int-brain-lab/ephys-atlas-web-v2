@@ -4,6 +4,7 @@ import { loadRegionalFeatureFromResources, loadRegionsFromResources } from './re
 import type { ResourceReader } from './resource-reader.js';
 import { parseVolumeResourceIndex, parseVolumeSummary } from './validation/volume-v1.js';
 import { validateDistributionMatchesDisplay } from './validation/distribution.js';
+import { metadataJsonResources, parseMetadataBundle, readBundledJson, validateMetadataBundle } from './validation/metadata-bundle.js';
 import {
   decodeBinaryArray,
   decodeResourceBytes,
@@ -32,6 +33,7 @@ class HttpResourceReader implements ResourceReader {
   constructor(
     private readonly fetcher: ResourceFetcher,
     private readonly immutable: boolean,
+    private readonly bundledText: (location: string) => string | undefined = () => undefined,
   ) {}
 
   resolve(base: string, relative: string): string {
@@ -39,11 +41,17 @@ class HttpResourceReader implements ResourceReader {
   }
 
   async readJson(location: string, signal?: AbortSignal, resource?: EncodedResourceDescriptor): Promise<unknown> {
+    signal?.throwIfAborted();
+    const text = this.bundledText(location);
+    if (text !== undefined && resource) {
+      const value = await readBundledJson(text, resource); signal?.throwIfAborted(); return value;
+    }
     const response = await this.fetcher.fetch(
       location,
       { immutable: this.immutable, ...(signal ? { signal } : {}), ...(resource ? { integrity: resource } : {}) },
     );
-    return response.json() as Promise<unknown>;
+    if (!resource) return response.json() as Promise<unknown>;
+    return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(await decodeResourceBytes(await response.arrayBuffer(), resource))) as unknown;
   }
 
   async readArray(location: string, descriptor: BinaryArrayDescriptor, signal?: AbortSignal): Promise<number[]> {
@@ -67,6 +75,7 @@ export class HttpDatasetSource implements DatasetSource {
   private readonly regionCache = new Map<string, Promise<readonly RegionMetadata[]>>();
   private readonly manifestUrls = new Map<string, string>();
   private readonly featureUrls = new Map<string, string>();
+  private readonly metadataBundles = new Map<string, ReadonlyMap<string, string>>();
 
   constructor(
     private readonly catalogUrl: string,
@@ -97,16 +106,33 @@ export class HttpDatasetSource implements DatasetSource {
         if (document.release.releaseId !== release.id) {
           throw new Error(`Manifest release ${document.release.releaseId} does not match catalog release ${release.id}`);
         }
-        const features = await Promise.all(document.featureRefs.map(async (featureRef) => {
+        let bundle: Map<string, string> | undefined;
+        if (document.metadataBundle) {
+          bundle = parseMetadataBundle(await reader.readJson(reader.resolve(manifestUrl, document.metadataBundle.path), undefined, document.metadataBundle));
+        }
+        const features: FeatureDescriptor[] = [];
+        for (let start = 0; start < document.featureRefs.length; start += 32) {
+          features.push(...await Promise.all(document.featureRefs.slice(start, start + 32).map(async (featureRef) => {
           const featureUrl = reader.resolve(manifestUrl, featureRef.path);
           this.featureUrls.set(this.featureKey(entry.id, release.id, featureRef.id), featureUrl);
           const descriptor = parseFeatureDescriptor(
-            await reader.readJson(featureUrl, undefined, featureRef.resource),
+            bundle?.has(featureRef.path)
+              ? await readBundledJson(bundle.get(featureRef.path)!, featureRef.resource)
+              : await reader.readJson(featureUrl, undefined, featureRef.resource),
             featureRef.path,
           );
           if (descriptor.id !== featureRef.id) throw new Error(`Feature id mismatch for ${featureRef.path}`);
           return descriptor;
-        }));
+          })));
+        }
+        if (bundle) {
+          // Feature bytes were verified above and their parsed descriptors are
+          // retained in the manifest. Do not retain or hash their text twice.
+          document.featureRefs.forEach(ref => bundle!.delete(ref.path));
+          await validateMetadataBundle(bundle, metadataJsonResources(document, features));
+          this.metadataBundles.clear();
+          this.metadataBundles.set(new URL('.', manifestUrl).href, bundle);
+        }
         return resolveDatasetManifest(document, features, entry.id);
       }).catch((error: unknown) => {
         this.manifestCache.delete(key);
@@ -235,7 +261,10 @@ export class HttpDatasetSource implements DatasetSource {
   }
 
   private reader(immutable: boolean): ResourceReader {
-    return new HttpResourceReader(this.fetcher, immutable);
+    return new HttpResourceReader(this.fetcher, immutable, location => {
+      for (const [base, entries] of this.metadataBundles) if (location.startsWith(base)) return entries.get(location.slice(base.length));
+      return undefined;
+    });
   }
 
   private async resolveRelease(ref: DatasetRef): Promise<{ entry: DatasetCatalogEntry; release: DatasetReleaseSummary }> {

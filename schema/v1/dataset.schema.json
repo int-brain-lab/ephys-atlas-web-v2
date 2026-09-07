@@ -38,6 +38,7 @@
         }
       }
     },
+    "metadata_bundle": {"$ref": "common.schema.json#/$defs/encodedResource"},
     "artifacts": {"type": "array", "items": {"$ref": "artifact.schema.json"}}
   }
 }

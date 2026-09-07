@@ -277,6 +277,9 @@ export class AppShell {
   private readonly representationContext: ContextMenu;
   private readonly contextMenus: readonly ContextMenu[];
   private readonly featureRepresentation = new Map<string, RepresentationKind>();
+  private featureOptionsManifest: DatasetManifest | null = null;
+  private featureOptionsRepresentation: RepresentationKind | null = null;
+  private featureOptions: readonly ContextMenuOption[] = [];
   private overflowActions: HTMLDetailsElement | null = null;
   private regionSearch!: HTMLInputElement;
   private colorModeSelect!: HTMLSelectElement;
@@ -330,6 +333,7 @@ export class AppShell {
       keyShortcuts: '/ Shift+ArrowUp Shift+ArrowDown',
       searchable: true,
       searchPlaceholder: 'Search features…',
+      maxVisibleOptions: 30,
       onOpen: (menu) => {
         this.closeDrawers();
         this.closeContextMenus(menu);
@@ -1751,20 +1755,24 @@ export class AppShell {
   private renderContextMenus(model: ShellModel): void {
     const { manifest, state } = model;
     this.featureId = state.view.featureId;
-    this.featureRepresentation.clear();
-    const featureOptions: ContextMenuOption[] = manifest?.features.map((feature) => {
-      const representations = this.featureRepresentations(feature);
-      const preferred = representations.includes(state.view.representation) ? state.view.representation : representations[0];
-      if (preferred) this.featureRepresentation.set(feature.id, preferred);
-      return {
-        id: feature.id,
-        label: feature.label,
-        description: [feature.unit, representations.map(titleCaseToken).join(' / ')].filter(Boolean).join(' · '),
-        detail: feature.description,
-        keywords: `${feature.id} ${feature.description} ${feature.valueSemantics.quantity}`,
-      };
-    }) ?? [];
-    this.featureContext.setOptions(featureOptions, state.view.featureId ? [state.view.featureId] : [], {
+    if (this.featureOptionsManifest !== manifest || this.featureOptionsRepresentation !== state.view.representation) {
+      this.featureOptionsManifest = manifest;
+      this.featureOptionsRepresentation = state.view.representation;
+      this.featureRepresentation.clear();
+      this.featureOptions = manifest?.features.map((feature) => {
+        const representations = this.featureRepresentations(feature);
+        const preferred = representations.includes(state.view.representation) ? state.view.representation : representations[0];
+        if (preferred) this.featureRepresentation.set(feature.id, preferred);
+        return {
+          id: feature.id,
+          label: feature.label,
+          description: [feature.unit, representations.map(titleCaseToken).join(' / ')].filter(Boolean).join(' · '),
+          detail: feature.description,
+          keywords: `${feature.id} ${feature.description} ${feature.valueSemantics.quantity}`,
+        };
+      }) ?? [];
+    }
+    this.featureContext.setOptions(this.featureOptions, state.view.featureId ? [state.view.featureId] : [], {
       emptyMessage: state.runtime.datasetStatus === 'error'
         ? `Features unavailable: ${state.runtime.error ?? 'The release could not be loaded.'}`
         : state.runtime.datasetStatus === 'loading' || state.runtime.datasetStatus === 'idle'

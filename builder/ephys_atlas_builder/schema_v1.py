@@ -614,6 +614,22 @@ def _document_semantics(document: dict[str, Any], schema_name: str) -> None:
         _unique([item["id"] for item in document["features"]], "feature id")
         _unique([item["descriptor"]["resource"]["path"] for item in document["features"]], "feature descriptor path")
         _unique([item["id"] for item in document["artifacts"]], "artifact id")
+        bundle = document.get("metadata_bundle")
+        if bundle and (
+            bundle["path"] != "metadata-bundle.json.gz"
+            or bundle["media_type"] != "application/json"
+            or bundle["codec"]["name"] != "gzip"
+            or bundle["bytes"] > 64 * 1024 * 1024
+            or bundle["codec"]["decoded_bytes"] > 64 * 1024 * 1024
+        ):
+            _fail("dataset metadata bundle encoding is invalid")
+    elif schema_name == "metadata-bundle.schema.json":
+        _unique([item["path"] for item in document["resources"]], "metadata bundle path")
+        for item in document["resources"]:
+            try:
+                json.loads(item["text"])
+            except json.JSONDecodeError:
+                _fail(f"metadata bundle text is not valid JSON: {item['path']}")
     elif schema_name == "regional.schema.json":
         _unique([item["parcellation_id"] for item in document["parcellations"]], "regional parcellation id")
     elif schema_name == "statistics.schema.json":

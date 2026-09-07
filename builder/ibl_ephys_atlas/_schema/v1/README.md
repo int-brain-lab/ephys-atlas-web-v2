@@ -9,6 +9,14 @@ explicit codec and decoded byte length. Consumers must verify encoded bytes
 before persistent caching or decoding. A decoded-cache identity consists of
 the resource SHA-256 and the complete decode contract, not its relative path.
 
+A dataset manifest may declare `metadata_bundle`, a gzip-compressed
+`application/json` resource at `metadata-bundle.json.gz`. Its
+`ephys-atlas-metadata-bundle-v1` document contains exact UTF-8 text copies of
+up to 20,000 declared, uncompressed JSON resources from the release graph.
+The bundle may contain a nonempty subset and is only a loading acceleration:
+the individual descriptor, index, and summary resources remain authoritative.
+Encoded and decoded bundle sizes are each limited to 64 MiB.
+
 `reference_space_id` establishes scientific compositing compatibility.
 `grid_id`, shape, and affine identify a particular sampling grid and may differ
 between compatible assets. Pack and asset IDs are provenance identities only.

@@ -11,6 +11,7 @@ import {
 } from '../contracts.js';
 import { parseBinaryArray, parseEncodedResource } from './binary.js';
 import { parseArtifactDescriptors } from './artifact.js';
+import { parseMetadataBundleResource } from './metadata-bundle.js';
 import {
   array,
   boolean,
@@ -163,6 +164,7 @@ export function parseDatasetManifestDocument(value: unknown): DatasetManifestDoc
     artifacts,
     parcellations,
     featureRefs,
+    ...(root.metadata_bundle === undefined ? {} : { metadataBundle: parseMetadataBundleResource(root.metadata_bundle) }),
   };
 }
 

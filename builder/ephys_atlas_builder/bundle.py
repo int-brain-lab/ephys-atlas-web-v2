@@ -64,7 +64,10 @@ def declared_release_resource_paths(release_dir: Path) -> set[str]:
                 combined = resource_base / relative
                 normalized = _safe_path(combined.as_posix()).as_posix()
                 expected.add(normalized)
-                if value.get("media_type") == "application/json":
+                if (
+                    value.get("media_type") == "application/json"
+                    and value.get("codec", {}).get("name") == "none"
+                ):
                     next_base = (
                         PurePosixPath(normalized).parent
                         if normalized in feature_paths

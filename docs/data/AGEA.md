@@ -2,10 +2,12 @@
 
 Status: active evidence and continuation reference for D067.
 
-Artifact maturity: transport-only candidate. The local [coverage lab](AGEA_COVERAGE_LAB.md)
-now permits investigation of the original source and coarse label mismatch.
-No AGEA scientific release, schema extension, production feature picker or
-production-anatomy overlay has been implemented.
+Artifact maturity: registration-provisional local preview under D069.
+The [main-website integration](AGEA_LOCAL_PREVIEW.md) now includes the full
+catalog, shared schema-v1 metadata bundle, bounded searchable feature picker,
+original expression with linked anatomy, and bounded persistent caching.
+The local [coverage lab](AGEA_COVERAGE_LAB.md) remains available for source
+investigation. No approved public AGEA scientific release has been published.
 The measurements below are not production-origin acceptance.
 
 The [stripe review report](AGEA_STRIPE_REPORT.md) now provides full-catalog
@@ -182,17 +184,15 @@ benchmark samples on a test-only route. Ordinary tests require no AGEA download.
 
 ## Next implementation slice
 
-1. Define the shared schema-v1 bundle, then update every producer/consumer,
-   validator, publication/import path and fixture coherently. Preserve complete
-   offline graph validation while replacing browser descriptor-request fanout.
-2. Implement the accessible searchable feature picker with bounded DOM work,
-   experiment disambiguation and URL restoration. Preserve region navigation.
-3. Add persistent-cache byte/entry bounds and quota-failure fallback. The
-   existing encoded cache is currently unbounded; this benchmark proves reuse
-   and integrity, not a production capacity policy.
-4. Resolve Q19, build the full real release, and verify anatomical composition.
-5. Measure integrated startup, rapid selection/cancellation, decoded-memory
-   release, persistent capacity, and final-origin delivery; run the full gate.
+The D069 local integration implements the metadata acceleration, bounded picker,
+source-preserving preview builder and cache-capacity machinery above. Exact
+current scope, commands and measurements are in [the preview runbook](AGEA_LOCAL_PREVIEW.md).
+
+Next: owner review of the integrated original-expression view; resolve remaining
+Q19 public-release registration/identity/display choices; measure peak memory
+and constrained/final-origin delivery. The full-catalog ZIP currently exceeds
+the existing 20,000-entry local-import limit; do not advertise that archive as
+supported or weaken the limit without a separate measured packaging task.
 
 The measured bundle and experiment sizes support the chosen one-bundle,
 one-volume-per-experiment direction. They do not yet establish production

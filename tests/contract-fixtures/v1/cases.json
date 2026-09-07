@@ -261,6 +261,11 @@
       "features": [{"id": "synthetic-feature", "descriptor": {"$fixture": "jsonResource"}}],
       "artifacts": [{"$fixture": "artifact"}]
     },
+    "metadataBundle": {
+      "schema_version": "1.0",
+      "format": "ephys-atlas-metadata-bundle-v1",
+      "resources": [{"path": "features/synthetic/feature.json", "text": "{}\n"}]
+    },
     "registeredSvgIndex": {
       "schema_version": "1.0", "format": "atlas-registered-svg-resource-index-v1", "projection_id": "coronal",
       "resources": [
@@ -409,7 +414,13 @@
     {"name": "feature range shared with Log must be strictly positive", "schema": "feature.schema.json", "valid": false, "document": "feature", "set": {"/display/regional/range": [0, 4]}},
     {"name": "feature focused bounds must increase", "schema": "feature.schema.json", "valid": false, "document": "feature", "set": {"/display/regional/distribution_domains/1/bounds": [3.5, 1.5]}},
     {"name": "dataset valid", "schema": "dataset.schema.json", "valid": true, "document": "dataset"},
+    {"name": "dataset metadata bundle valid", "schema": "dataset.schema.json", "valid": true, "document": "dataset", "set": {"/metadata_bundle": {"path": "metadata-bundle.json.gz", "media_type": "application/json", "bytes": 20, "sha256": "abababababababababababababababababababababababababababababababab", "codec": {"name": "gzip", "decoded_bytes": 100}}}},
+    {"name": "dataset metadata bundle must be gzip", "schema": "dataset.schema.json", "valid": false, "document": "dataset", "set": {"/metadata_bundle": {"path": "metadata-bundle.json.gz", "media_type": "application/json", "bytes": 20, "sha256": "abababababababababababababababababababababababababababababababab", "codec": {"name": "none", "decoded_bytes": 20}}}},
     {"name": "dataset duplicate feature identifiers", "schema": "dataset.schema.json", "valid": false, "document": "dataset", "append": {"/features": {"id": "synthetic-feature", "descriptor": {"$fixture": "jsonResource"}}}},
+    {"name": "metadata bundle valid", "schema": "metadata-bundle.schema.json", "valid": true, "document": "metadataBundle"},
+    {"name": "metadata bundle duplicate path", "schema": "metadata-bundle.schema.json", "valid": false, "document": "metadataBundle", "append": {"/resources": {"path": "features/synthetic/feature.json", "text": "{}\n"}}},
+    {"name": "metadata bundle unsafe path", "schema": "metadata-bundle.schema.json", "valid": false, "document": "metadataBundle", "set": {"/resources/0/path": "../feature.json"}},
+    {"name": "metadata bundle text must be JSON", "schema": "metadata-bundle.schema.json", "valid": false, "document": "metadataBundle", "set": {"/resources/0/text": "not JSON"}},
     {"name": "registered SVG resource index valid", "schema": "registered-svg-resource-index.schema.json", "valid": true, "document": "registeredSvgIndex"},
     {"name": "registered SVG resource index duplicate slice", "schema": "registered-svg-resource-index.schema.json", "valid": false, "document": "registeredSvgIndex", "set": {"/resources/1/slice_indices/0": 0}},
     {"name": "registered projection valid", "schema": "registered-projection.schema.json", "valid": true, "document": "coronal"},

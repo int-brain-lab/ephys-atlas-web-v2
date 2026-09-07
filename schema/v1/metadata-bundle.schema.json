@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.internationalbrainlab.org/schema/v1/metadata-bundle.schema.json",
+  "title": "IBL Ephys Atlas metadata bundle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "format", "resources"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "format": {"const": "ephys-atlas-metadata-bundle-v1"},
+    "resources": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "text"],
+        "properties": {
+          "path": {"$ref": "common.schema.json#/$defs/relativePath"},
+          "text": {"type": "string"}
+        }
+      }
+    }
+  }
+}

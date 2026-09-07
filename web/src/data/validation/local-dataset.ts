@@ -18,6 +18,7 @@ import { parseStatisticsDocument } from './statistics.js';
 import { parseVolumeResourceIndex, parseVolumeSummary } from './volume-v1.js';
 import { validateDistributionMatchesDisplay } from './distribution.js';
 import { parseArtifactDescriptors } from './artifact.js';
+import { metadataJsonResources, parseMetadataBundle, validateMetadataBundle } from './metadata-bundle.js';
 
 interface ArtifactExpectation {
   path: string;
@@ -691,6 +692,12 @@ export async function validateLocalDatasetFiles(
     }
   }
 
+  if (document.metadataBundle) {
+    const path = addEncodedResource(resources, 'manifest.json', document.metadataBundle, 'metadata bundle', budget, limits);
+    const bundle = parseMetadataBundle(await readDeclaredJsonResource(files, resources.get(path)!, 'metadata bundle', verified, decodedVerified, signal));
+    await validateMetadataBundle(bundle, metadataJsonResources(document, features));
+    signal?.throwIfAborted();
+  }
   const declaredPaths = ['manifest.json', ...resources.keys()].sort();
   const declared = new Set(declaredPaths);
   const undeclared = [...files.keys()].filter((path) => !declared.has(path)).sort();

@@ -1,4 +1,18 @@
 const DEFAULT_CACHE_NAME = 'ibl-ephys-atlas-schema-v1-verified';
+const CACHE_BYTES_HEADER = 'x-ibl-ephys-atlas-cache-bytes';
+const CACHE_ADMISSION_HEADER = 'x-ibl-ephys-atlas-cache-admission';
+
+export interface ResourceCachePolicy {
+  maxBytes: number;
+  maxEntries: number;
+}
+
+const DEFAULT_CACHE_POLICY: ResourceCachePolicy = {
+  maxBytes: 64 * 1024 * 1024,
+  maxEntries: 256,
+};
+
+const mutationQueues = new Map<string, Promise<void>>();
 
 export interface ResourceIntegrity {
   bytes: number;
@@ -18,6 +32,7 @@ export class ResourceFetcher {
   constructor(
     fetchImpl: typeof fetch = fetch,
     private readonly cacheName = DEFAULT_CACHE_NAME,
+    private readonly cachePolicy: ResourceCachePolicy = DEFAULT_CACHE_POLICY,
   ) {
     this.fetchImpl = fetchImpl === fetch ? fetch.bind(globalThis) : fetchImpl;
   }
@@ -46,15 +61,26 @@ export class ResourceFetcher {
     const canPersist = options.immutable === true && options.integrity !== undefined && 'caches' in globalThis;
     let cleanRetry = false;
     if (canPersist) {
-      const cache = await caches.open(this.cacheName);
-      const cached = await cache.match(url);
-      if (cached) {
-        try {
-          return await this.verify(cached, options.integrity!);
-        } catch {
-          await cache.delete(url);
-          cleanRetry = true;
+      try {
+        const cache = await caches.open(this.cacheName);
+        const cached = await cache.match(url);
+        if (cached) {
+          try {
+            const verified = await this.verify(cached, options.integrity!);
+            const bytes = Number(cached.headers.get(CACHE_BYTES_HEADER));
+            const admission = Number(cached.headers.get(CACHE_ADMISSION_HEADER));
+            if (bytes !== options.integrity!.bytes || !Number.isSafeInteger(admission) || admission < 1) {
+              await this.admit(url, verified, options.integrity!);
+            }
+            return verified;
+          } catch {
+            await this.mutateCache(async () => { await cache.delete(url); });
+            cleanRetry = true;
+          }
         }
+      } catch {
+        // Cache availability and eviction are optimizations; verified network
+        // reads remain usable when browser storage is unavailable.
       }
     }
 
@@ -82,10 +108,69 @@ export class ResourceFetcher {
     }
 
     if (canPersist) {
-      const cache = await caches.open(this.cacheName);
-      await cache.put(url, verified.clone());
+      await this.admit(url, verified, options.integrity!);
     }
     return verified;
+  }
+
+  private async admit(url: string, response: Response, integrity: ResourceIntegrity): Promise<void> {
+    if (integrity.bytes > this.cachePolicy.maxBytes || this.cachePolicy.maxEntries < 1) return;
+    try {
+      await this.mutateCache(async () => {
+        const cache = await caches.open(this.cacheName);
+        const requests = await cache.keys();
+        const entries: Array<{ request: Request; bytes: number; admission: number; url: string }> = [];
+        let nextAdmission = 1;
+        for (const request of requests) {
+          const cached = await cache.match(request);
+          const bytes = Number(cached?.headers.get(CACHE_BYTES_HEADER));
+          const admission = Number(cached?.headers.get(CACHE_ADMISSION_HEADER));
+          if (!cached || !Number.isSafeInteger(bytes) || bytes < 0 || !Number.isSafeInteger(admission) || admission < 1) {
+            await cache.delete(request);
+            continue;
+          }
+          nextAdmission = Math.max(nextAdmission, admission + 1);
+          if (request.url === url) {
+            await cache.delete(request);
+            continue;
+          }
+          entries.push({ request, bytes, admission, url: request.url });
+        }
+        entries.sort((left, right) => left.admission - right.admission || left.url.localeCompare(right.url));
+        let bytes = entries.reduce((total, entry) => total + entry.bytes, 0);
+        let count = entries.length;
+        while (entries.length && (bytes + integrity.bytes > this.cachePolicy.maxBytes || count + 1 > this.cachePolicy.maxEntries)) {
+          const oldest = entries.shift()!;
+          if (!await cache.delete(oldest.request)) return;
+          bytes -= oldest.bytes;
+          count -= 1;
+        }
+        if (bytes + integrity.bytes > this.cachePolicy.maxBytes || count + 1 > this.cachePolicy.maxEntries) return;
+        const headers = new Headers(response.headers);
+        headers.set(CACHE_BYTES_HEADER, String(integrity.bytes));
+        headers.set(CACHE_ADMISSION_HEADER, String(nextAdmission));
+        const cached = new Response(await response.clone().arrayBuffer(), {
+          status: response.status,
+          statusText: response.statusText,
+          headers,
+        });
+        await cache.put(url, cached);
+      });
+    } catch {
+      // Quota, Cache API, and private-mode failures never invalidate a verified
+      // network response. A later request may retry admission.
+    }
+  }
+
+  private async mutateCache(operation: () => Promise<void>): Promise<void> {
+    const previous = mutationQueues.get(this.cacheName) ?? Promise.resolve();
+    const current = previous.catch(() => undefined).then(operation);
+    mutationQueues.set(this.cacheName, current);
+    try {
+      await current;
+    } finally {
+      if (mutationQueues.get(this.cacheName) === current) mutationQueues.delete(this.cacheName);
+    }
   }
 
   private async verify(response: Response, integrity: ResourceIntegrity): Promise<Response> {
@@ -106,6 +191,6 @@ export class ResourceFetcher {
   }
 
   async clearPersistentCache(): Promise<void> {
-    if ('caches' in globalThis) await caches.delete(this.cacheName);
+    if ('caches' in globalThis) await this.mutateCache(async () => { await caches.delete(this.cacheName); });
   }
 }

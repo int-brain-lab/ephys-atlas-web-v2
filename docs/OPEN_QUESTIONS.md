@@ -220,6 +220,10 @@ a separate prerequisite before destructive replacement.
 
 Status: **DECISION** for a real AGEA release; not a launch blocker. D067
 authorizes the full catalog and one selected expression volume at a time.
+D069 additionally authorizes a main-website local preview: original values,
+all measured nonnegative voxels valid, `-1` missing, no coarse-label outside
+mask, and unchanged source affine with explicitly provisional registration.
+This resolves the local-preview recipe only, not public release acceptance.
 
 The [source audit](data/AGEA.md) pins the original 4,345-experiment IBL
 collection, confirms one Allen energy-volume conversion exactly, and derives

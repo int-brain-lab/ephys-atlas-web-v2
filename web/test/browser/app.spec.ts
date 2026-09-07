@@ -438,6 +438,7 @@ test('long feature menus scroll without option descriptions overlapping', async 
 
   const feature = page.locator('[data-context-field="feature"]');
   await feature.locator('.context-menu__trigger').click();
+  await expect(feature.getByRole('option')).toHaveCount(1);
   const list = feature.locator('.context-menu__list');
   await list.evaluate((node) => {
     node.style.height = '180px';
@@ -459,6 +460,56 @@ test('long feature menus scroll without option descriptions overlapping', async 
     const copyBounds = copy.getBoundingClientRect();
     return copyBounds.top >= optionBounds.top && copyBounds.bottom <= optionBounds.bottom;
   }))).toBe(true);
+});
+
+test('large feature catalogs stay bounded while search covers every feature field', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(async () => {
+    const { ContextMenu } = await import('/src/ui/context-menu.ts');
+    const host = document.createElement('dl');
+    host.id = 'large-feature-picker-test';
+    document.body.append(host);
+    const menu = new ContextMenu({
+      fieldName: 'large-feature-test',
+      label: 'Feature',
+      searchable: true,
+      maxVisibleOptions: 30,
+      onOpen: () => undefined,
+      onSelect: (option: { id: string }) => { host.dataset.selected = option.id; },
+    });
+    host.append(menu.field);
+    const options = Array.from({ length: 4_345 }, (_, index) => ({
+      id: `experiment-${index + 1}`,
+      label: index === 4_344 ? 'Reln — sagittal experiment' : `Gene display name ${index + 1}`,
+      description: index === 4_344 ? 'duplicate symbol disambiguated by feature display name' : 'AGEA expression energy',
+      metadata: `experiment ${index + 1}`,
+      keywords: index === 4_344 ? 'unique archive metadata' : '',
+    }));
+    menu.setDisplay('Gene display name 4,001');
+    menu.setOptions(options, ['experiment-4001'], { emptyMessage: 'No features are available.' });
+  });
+
+  const picker = page.locator('#large-feature-picker-test');
+  await picker.locator('.context-menu__trigger').click();
+  await expect(picker.getByRole('option')).toHaveCount(30);
+  await expect(picker.locator('.context-menu__list')).not.toHaveAttribute('data-options');
+  await expect(picker.getByRole('option', { selected: true })).toHaveAttribute('data-context-option', 'experiment-4001');
+  await expect(picker.getByRole('status')).toHaveText('Showing 30 of 4,345 matching feature options; selected option included.');
+
+  const search = picker.getByRole('searchbox');
+  await search.fill('unique archive metadata');
+  await expect(picker.getByRole('option')).toHaveCount(1);
+  await expect(picker.getByRole('option')).toContainText('Reln — sagittal experiment');
+  await expect(picker.getByRole('status')).toHaveText('1 matching feature option.');
+  await search.press('ArrowDown');
+  await expect(picker.getByRole('option')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(picker).toHaveAttribute('data-selected', 'experiment-4345');
+  await expect(picker.locator('.context-menu__panel')).toBeHidden();
+
+  await picker.locator('.context-menu__trigger').click();
+  await page.keyboard.press('Escape');
+  await expect(picker.locator('.context-menu__trigger')).toBeFocused();
 });
 
 test('context menus explain release loading and failure instead of becoming inert', async ({ page }) => {

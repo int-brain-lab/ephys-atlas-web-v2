@@ -42,9 +42,12 @@ all remaining choices are governed by [`OPEN_QUESTIONS.md`](OPEN_QUESTIONS.md).
 D067 activates independent AGEA development. The pinned full-catalog source
 audit and Chromium/Firefox metadata/whole-volume transport benchmark are
 implemented, including independent slice hashes and cache recovery checks.
-This is candidate evidence only: the application has no AGEA release, bundled
-metadata reader or searchable AGEA picker yet. Q19 retains real scientific
-choices. See [AGEA evidence](data/AGEA.md).
+D069 now adds the [main-website AGEA local preview](data/AGEA_LOCAL_PREVIEW.md):
+4,345 original experiments, shared schema-v1 metadata-bundle HTTP/local-validation
+support, bounded searchable feature selection, linked anatomy, and 64 MiB/256
+entry verified caching with quota fallback. Real-data Chromium tests pass;
+registration remains provisional and public release choices remain Q19.
+See [AGEA evidence](data/AGEA.md).
 
 The separate development-only [AGEA coverage lab](data/AGEA_COVERAGE_LAB.md)
 now loads the full pinned original experiment catalog, linked source-index

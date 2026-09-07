@@ -68,6 +68,7 @@ test('a corrupt persistent hit is evicted and replaced only after a verified ret
   let puts = 0;
   const cache = {
     async match() { return cached?.clone(); },
+    async keys() { return cached ? [new Request('https://example.test/same/path.bin')] : []; },
     async delete() { deletes += 1; cached = undefined; return true; },
     async put(_url, response) { puts += 1; cached = response.clone(); },
   };
@@ -123,6 +124,7 @@ test('an integrity failure never enters the persistent cache', async () => {
   let puts = 0;
   const cache = {
     async match() { return undefined; },
+    async keys() { return []; },
     async delete() { return true; },
     async put() { puts += 1; },
   };
@@ -134,6 +136,87 @@ test('an integrity failure never enters the persistent cache', async () => {
       integrity: { bytes: 7, sha256: await sha256('correct') },
     }), /SHA-256 mismatch/);
     assert.equal(puts, 0);
+  } finally {
+    globalThis.caches = previousCaches;
+  }
+});
+
+function memoryCache() {
+  const entries = new Map();
+  let activeInventories = 0;
+  let maximumConcurrentInventories = 0;
+  const key = (request) => typeof request === 'string' ? request : request.url;
+  return {
+    entries,
+    get maximumConcurrentInventories() { return maximumConcurrentInventories; },
+    async match(request) { return entries.get(key(request))?.clone(); },
+    async keys() {
+      activeInventories += 1;
+      maximumConcurrentInventories = Math.max(maximumConcurrentInventories, activeInventories);
+      await Promise.resolve();
+      activeInventories -= 1;
+      return [...entries.keys()].map((url) => new Request(url));
+    },
+    async delete(request) { return entries.delete(key(request)); },
+    async put(request, response) { entries.set(key(request), response.clone()); },
+  };
+}
+
+test('bounded cache evicts oldest admissions and serializes mutations across fetcher instances', async () => {
+  const previousCaches = globalThis.caches;
+  const cache = memoryCache();
+  globalThis.caches = { async open() { return cache; }, async delete() { cache.entries.clear(); return true; } };
+  try {
+    const policy = { maxBytes: 4, maxEntries: 2 };
+    const first = new ResourceFetcher(async (url) => new Response(new URL(url).pathname.slice(1)), 'shared-bounded', policy);
+    const second = new ResourceFetcher(async (url) => new Response(new URL(url).pathname.slice(1)), 'shared-bounded', policy);
+    const integrity = async (value) => ({ bytes: value.length, sha256: await sha256(value) });
+
+    await first.fetch('https://example.test/aa', { immutable: true, integrity: await integrity('aa') });
+    await Promise.all([
+      first.fetch('https://example.test/bb', { immutable: true, integrity: await integrity('bb') }),
+      second.fetch('https://example.test/cc', { immutable: true, integrity: await integrity('cc') }),
+    ]);
+
+    assert.equal(cache.maximumConcurrentInventories, 1);
+    assert.deepEqual([...cache.entries.keys()].sort(), ['https://example.test/bb', 'https://example.test/cc']);
+  } finally {
+    globalThis.caches = previousCaches;
+  }
+});
+
+test('oversize verified resources are served without cache admission', async () => {
+  const previousCaches = globalThis.caches;
+  const cache = memoryCache();
+  globalThis.caches = { async open() { return cache; }, async delete() { return true; } };
+  try {
+    const value = 'verified-network';
+    const fetcher = new ResourceFetcher(async () => new Response(value), 'oversize', { maxBytes: 4, maxEntries: 2 });
+    const response = await fetcher.fetch('https://example.test/large.bin', {
+      immutable: true,
+      integrity: { bytes: value.length, sha256: await sha256(value) },
+    });
+    assert.equal(await response.text(), value);
+    assert.equal(cache.entries.size, 0);
+  } finally {
+    globalThis.caches = previousCaches;
+  }
+});
+
+test('cache availability and quota failures do not prevent verified network reads', async () => {
+  const previousCaches = globalThis.caches;
+  const value = 'verified';
+  const integrity = { bytes: value.length, sha256: await sha256(value) };
+  try {
+    globalThis.caches = { async open() { throw new Error('cache unavailable'); }, async delete() { return false; } };
+    const unavailable = new ResourceFetcher(async () => new Response(value));
+    assert.equal(await (await unavailable.fetch('https://example.test/unavailable', { immutable: true, integrity })).text(), value);
+
+    const cache = memoryCache();
+    cache.put = async () => { throw new DOMException('quota exceeded', 'QuotaExceededError'); };
+    globalThis.caches = { async open() { return cache; }, async delete() { return true; } };
+    const quota = new ResourceFetcher(async () => new Response(value));
+    assert.equal(await (await quota.fetch('https://example.test/quota', { immutable: true, integrity })).text(), value);
   } finally {
     globalThis.caches = previousCaches;
   }

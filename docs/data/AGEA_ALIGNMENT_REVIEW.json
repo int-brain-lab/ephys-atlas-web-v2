@@ -1,0 +1,534 @@
+{
+  "format": "agea-alignment-review-only",
+  "scientific_release": false,
+  "alignment_accepted": false,
+  "sources": {
+    "gene-expression.bin": {
+      "bytes": 1384542940,
+      "sha256": "86b4997133435f830c33941e443d86baf1ef4195a8eb6343f5a9df2523f8e69d"
+    },
+    "gene-expression.pqt": {
+      "bytes": 66733,
+      "sha256": "90433973765b0361921c48dc70bce8291885c427d23d930b1eb6617348024572"
+    },
+    "label.npy": {
+      "bytes": 318780,
+      "sha256": "0a09957f2e6b9c70081928e15587e9f3b97382ac7a79baa2788160206ad8a81a"
+    },
+    "image.npy": {
+      "bytes": 637432,
+      "sha256": "665d671ad51976e9e0680da43eab8b74d5d6e84c11c230be31451c00d3ea71ba"
+    }
+  },
+  "alignment": {
+    "candidate_reference_space_id": "allen-ccf-2017",
+    "projection_pack_url": "/atlas/projections/ibl-static-registered-v1/manifest.json",
+    "projection_pack": {
+      "bytes": 7336,
+      "sha256": "d402496d63044ac26edf1a4128a4ccd291f32a53c1bd7ef97ee1558c949c05a5"
+    },
+    "evidence": {
+      "status": "geometric candidate only; zero biological registration acceptance",
+      "source_axis_order": [
+        "ML",
+        "DV",
+        "AP"
+      ],
+      "source_shape": [
+        58,
+        41,
+        67
+      ],
+      "native_shape": [
+        1140,
+        800,
+        1320
+      ],
+      "source_index_to_world_um": [
+        199.9999999999991,
+        0,
+        0,
+        -5739,
+        0,
+        0,
+        -199.9999999999991,
+        5400,
+        0,
+        -200.00000000000003,
+        0,
+        332,
+        0,
+        0,
+        0,
+        1
+      ],
+      "native_index_to_world_um": [
+        10,
+        0,
+        0,
+        -5739,
+        0,
+        0,
+        -10,
+        5400,
+        0,
+        -10,
+        0,
+        332,
+        0,
+        0,
+        0,
+        1
+      ],
+      "native_indices_per_source_index": [
+        20,
+        20,
+        20
+      ],
+      "native_index_offset": [
+        0,
+        0,
+        0
+      ],
+      "in_bounds_source_index_min": [
+        0,
+        0,
+        0
+      ],
+      "in_bounds_source_index_max": [
+        56,
+        39,
+        65
+      ],
+      "in_bounds_voxel_centres": 150480,
+      "source_voxel_centres": 159326,
+      "extent_mismatch": [
+        {
+          "axis": "ML",
+          "source_last_native_index": 1140,
+          "native_last_index": 1139
+        },
+        {
+          "axis": "DV",
+          "source_last_native_index": 800,
+          "native_last_index": 799
+        },
+        {
+          "axis": "AP",
+          "source_last_native_index": 1320,
+          "native_last_index": 1319
+        }
+      ],
+      "clamping_permitted": false,
+      "source_loader_module_sha256": "912a41c89413d1f6873fd21ca310fc92efe9366734f7f26a4b4b2aca00480185",
+      "template_provenance": {
+        "description": "image.npy was generated from the 25 um CCF template mean; label.npy used modal labels",
+        "independent_biological_alignment_evidence": false,
+        "generation_script": {
+          "path": "iblatlas/genomics/gene_expression_scrapping/05-generate-atlas-templates.py",
+          "bytes": 3782,
+          "sha256": "c20c673981db6253ec5e3e202895d08da13c417bef197deeca65fd207d400b75"
+        }
+      }
+    }
+  },
+  "grid": {
+    "referenceSpaceId": "allen-ccf-2017",
+    "gridId": "agea-200um-alignment-candidate-only",
+    "shape": [
+      58,
+      41,
+      67
+    ],
+    "axisOrder": [
+      "ml",
+      "dv",
+      "ap"
+    ],
+    "coordinateSystem": "Candidate ML/AP/DV micrometres",
+    "voxelSizeUm": [
+      200,
+      200,
+      200
+    ],
+    "originUm": [
+      -5739,
+      5400,
+      332
+    ],
+    "indexToWorldUm": [
+      200,
+      0,
+      0,
+      -5739,
+      0,
+      0,
+      -200,
+      5400,
+      0,
+      -200,
+      0,
+      332,
+      0,
+      0,
+      0,
+      1
+    ],
+    "worldToIndex": [
+      0.005,
+      0,
+      0,
+      28.695,
+      0,
+      0,
+      -0.005,
+      1.66,
+      0,
+      -0.005,
+      0,
+      27,
+      0,
+      0,
+      0,
+      1
+    ],
+    "voxelEdgeExtentUm": [
+      -5839,
+      5761,
+      -7900,
+      5500,
+      -7768,
+      432
+    ]
+  },
+  "current": {
+    "world": {
+      "ml": 3801,
+      "ap": 320,
+      "dv": -1998
+    },
+    "fractional_source_index": [
+      47.7,
+      11.65,
+      25.4
+    ],
+    "source_index": [
+      48,
+      12,
+      25
+    ],
+    "review_stop": {
+      "index": 4,
+      "label": "Anterior extent"
+    },
+    "coarse_label": 878,
+    "expression": 18.3125,
+    "experiment_id": "experiment-74658173",
+    "layer": "image",
+    "outlines": true,
+    "coarse_boundaries": false,
+    "opacity": 1,
+    "website_regions": {
+      "coronal": 657,
+      "sagittal": 657,
+      "horizontal": 657
+    },
+    "displayed_planes": {
+      "coronal": {
+        "native_index": 508,
+        "world_coordinate_um": 320,
+        "source_index": 25
+      },
+      "sagittal": {
+        "native_index": 950,
+        "world_coordinate_um": 3761,
+        "source_index": 48
+      },
+      "horizontal": {
+        "native_index": 233,
+        "world_coordinate_um": -1998,
+        "source_index": 12
+      }
+    },
+    "url": "http://127.0.0.1:4190/?lab=agea-coverage&mode=alignment&align_world=3801%2C320%2C-1998&align_stop=4&align_layer=image&align_outlines=1&align_coarse=0&align_blink=0&align_opacity=1"
+  },
+  "notes": [
+    {
+      "judgment": "Looks consistent",
+      "note": "",
+      "context": {
+        "world": {
+          "ml": 801,
+          "ap": -6340,
+          "dv": -5168
+        },
+        "fractional_source_index": [
+          32.7,
+          27.5,
+          58.7
+        ],
+        "source_index": [
+          33,
+          28,
+          59
+        ],
+        "review_stop": {
+          "index": 0,
+          "label": "Midline / ventricles"
+        },
+        "coarse_label": 136,
+        "expression": 14.9609375,
+        "experiment_id": "experiment-74658173",
+        "layer": "image",
+        "outlines": true,
+        "coarse_boundaries": false,
+        "opacity": 1,
+        "website_regions": {
+          "coronal": 136,
+          "sagittal": 136,
+          "horizontal": 136
+        },
+        "displayed_planes": {
+          "coronal": {
+            "native_index": 1172,
+            "world_coordinate_um": -6320,
+            "source_index": 59
+          },
+          "sagittal": {
+            "native_index": 654,
+            "world_coordinate_um": 801,
+            "source_index": 33
+          },
+          "horizontal": {
+            "native_index": 553,
+            "world_coordinate_um": -5198,
+            "source_index": 28
+          }
+        },
+        "url": "http://127.0.0.1:4190/?lab=agea-coverage&mode=alignment&align_world=801%2C-6340%2C-5168&align_stop=0&align_layer=image&align_outlines=1&align_coarse=0&align_blink=0&align_opacity=1"
+      }
+    },
+    {
+      "judgment": "Looks consistent",
+      "note": "",
+      "context": {
+        "world": {
+          "ml": 451,
+          "ap": -1820,
+          "dv": -1078
+        },
+        "fractional_source_index": [
+          30.95,
+          7.05,
+          36.1
+        ],
+        "source_index": [
+          31,
+          7,
+          36
+        ],
+        "review_stop": {
+          "index": 1,
+          "label": "Striatum"
+        },
+        "coarse_label": 940,
+        "expression": 17.890625,
+        "experiment_id": "experiment-74658173",
+        "layer": "image",
+        "outlines": true,
+        "coarse_boundaries": false,
+        "opacity": 1,
+        "website_regions": {
+          "coronal": 940,
+          "sagittal": 940,
+          "horizontal": 622
+        },
+        "displayed_planes": {
+          "coronal": {
+            "native_index": 724,
+            "world_coordinate_um": -1840,
+            "source_index": 36
+          },
+          "sagittal": {
+            "native_index": 622,
+            "world_coordinate_um": 481,
+            "source_index": 31
+          },
+          "horizontal": {
+            "native_index": 137,
+            "world_coordinate_um": -1038,
+            "source_index": 7
+          }
+        },
+        "url": "http://127.0.0.1:4190/?lab=agea-coverage&mode=alignment&align_world=451%2C-1820%2C-1078&align_stop=1&align_layer=image&align_outlines=1&align_coarse=0&align_blink=0&align_opacity=1"
+      }
+    },
+    {
+      "judgment": "Looks consistent",
+      "note": "",
+      "context": {
+        "world": {
+          "ml": -1959,
+          "ap": -3900,
+          "dv": -1798
+        },
+        "fractional_source_index": [
+          18.9,
+          10.65,
+          46.5
+        ],
+        "source_index": [
+          19,
+          11,
+          47
+        ],
+        "review_stop": {
+          "index": 2,
+          "label": "Hippocampus"
+        },
+        "coarse_label": -1037,
+        "expression": 6.59375,
+        "experiment_id": "experiment-74658173",
+        "layer": "image",
+        "outlines": true,
+        "coarse_boundaries": false,
+        "opacity": 1,
+        "website_regions": {
+          "coronal": -1037,
+          "sagittal": -1037,
+          "horizontal": -1037
+        },
+        "displayed_planes": {
+          "coronal": {
+            "native_index": 932,
+            "world_coordinate_um": -3920,
+            "source_index": 47
+          },
+          "sagittal": {
+            "native_index": 374,
+            "world_coordinate_um": -1999,
+            "source_index": 19
+          },
+          "horizontal": {
+            "native_index": 209,
+            "world_coordinate_um": -1758,
+            "source_index": 11
+          }
+        },
+        "url": "http://127.0.0.1:4190/?lab=agea-coverage&mode=alignment&align_world=-1959%2C-3900%2C-1798&align_stop=2&align_layer=image&align_outlines=1&align_coarse=0&align_blink=0&align_opacity=1"
+      }
+    },
+    {
+      "judgment": "Looks consistent",
+      "note": "",
+      "context": {
+        "world": {
+          "ml": 1,
+          "ap": -1980,
+          "dv": -2598
+        },
+        "fractional_source_index": [
+          28.7,
+          14.65,
+          36.9
+        ],
+        "source_index": [
+          29,
+          15,
+          37
+        ],
+        "review_stop": {
+          "index": 3,
+          "label": "Cerebellum"
+        },
+        "coarse_label": 129,
+        "expression": 4.75390625,
+        "experiment_id": "experiment-74658173",
+        "layer": "image",
+        "outlines": true,
+        "coarse_boundaries": false,
+        "opacity": 1,
+        "website_regions": {
+          "coronal": 129,
+          "sagittal": 129,
+          "horizontal": 129
+        },
+        "displayed_planes": {
+          "coronal": {
+            "native_index": 740,
+            "world_coordinate_um": -2000,
+            "source_index": 37
+          },
+          "sagittal": {
+            "native_index": 574,
+            "world_coordinate_um": 1,
+            "source_index": 29
+          },
+          "horizontal": {
+            "native_index": 289,
+            "world_coordinate_um": -2558,
+            "source_index": 15
+          }
+        },
+        "url": "http://127.0.0.1:4190/?lab=agea-coverage&mode=alignment&align_world=1%2C-1980%2C-2598&align_stop=3&align_layer=image&align_outlines=1&align_coarse=0&align_blink=0&align_opacity=1"
+      }
+    },
+    {
+      "judgment": "Looks consistent",
+      "note": "",
+      "context": {
+        "world": {
+          "ml": 3801,
+          "ap": 320,
+          "dv": -1998
+        },
+        "fractional_source_index": [
+          47.7,
+          11.65,
+          25.4
+        ],
+        "source_index": [
+          48,
+          12,
+          25
+        ],
+        "review_stop": {
+          "index": 4,
+          "label": "Anterior extent"
+        },
+        "coarse_label": 878,
+        "expression": 18.3125,
+        "experiment_id": "experiment-74658173",
+        "layer": "image",
+        "outlines": true,
+        "coarse_boundaries": false,
+        "opacity": 1,
+        "website_regions": {
+          "coronal": 657,
+          "sagittal": 657,
+          "horizontal": 657
+        },
+        "displayed_planes": {
+          "coronal": {
+            "native_index": 508,
+            "world_coordinate_um": 320,
+            "source_index": 25
+          },
+          "sagittal": {
+            "native_index": 950,
+            "world_coordinate_um": 3761,
+            "source_index": 48
+          },
+          "horizontal": {
+            "native_index": 233,
+            "world_coordinate_um": -1998,
+            "source_index": 12
+          }
+        },
+        "url": "http://127.0.0.1:4190/?lab=agea-coverage&mode=alignment&align_world=3801%2C320%2C-1998&align_stop=4&align_layer=image&align_outlines=1&align_coarse=0&align_blink=0&align_opacity=1"
+      }
+    }
+  ],
+  "limitations": "Fixed source-affine candidate; CCF-derived template is not independent expression registration. Website labels come from sparse displayed planes.",
+  "created_utc": "2026-09-07T11:31:40.800Z"
+}

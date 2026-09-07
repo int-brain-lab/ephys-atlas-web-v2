@@ -16,6 +16,7 @@ export interface ContextMenuConfig {
   keyShortcuts?: string;
   searchable?: boolean;
   searchPlaceholder?: string;
+  maxVisibleOptions?: number;
   multiselectable?: boolean;
   onOpen(menu: ContextMenu): void;
   onSelect(option: ContextMenuOption): void;
@@ -43,10 +44,14 @@ export class ContextMenu {
   private readonly panel: HTMLElement;
   private readonly search: HTMLInputElement | null;
   private readonly list: HTMLElement;
+  private readonly results: HTMLElement | null;
   private readonly empty: HTMLElement;
   private readonly groupIdPrefix: string;
   private options: readonly ContextMenuOption[] = [];
   private selectedIds = new Set<string>();
+  private selectionSignature = '[]';
+  private filterDirty = true;
+  private filteredQuery = '';
   private statusMessage: string | undefined;
   private unavailableMessage = 'No options are available.';
 
@@ -94,6 +99,12 @@ export class ContextMenu {
       this.panel.append(searchWrap);
     }
     this.search = search;
+    this.results = config.maxVisibleOptions ? element('div', 'context-menu__results') : null;
+    if (this.results) {
+      this.results.setAttribute('role', 'status');
+      this.results.setAttribute('aria-live', 'polite');
+      this.search?.parentElement?.append(this.results);
+    }
     this.list = element('div', 'context-menu__list');
     this.list.setAttribute('role', 'listbox');
     this.list.setAttribute('aria-label', config.label);
@@ -128,17 +139,21 @@ export class ContextMenu {
     selectedIds: readonly string[],
     availability: ContextMenuAvailability,
   ): void {
+    const availabilityChanged = this.unavailableMessage !== availability.emptyMessage
+      || this.statusMessage !== availability.statusMessage;
     this.unavailableMessage = availability.emptyMessage;
     this.statusMessage = availability.statusMessage;
-    const signature = JSON.stringify(options);
     const selection = JSON.stringify(selectedIds);
-    if (this.list.dataset.options !== signature || this.list.dataset.selection !== selection) {
-      this.options = options;
+    const optionsChanged = this.options !== options && !this.optionsEqual(this.options, options);
+    const selectionChanged = this.selectionSignature !== selection;
+    if (optionsChanged || selectionChanged) {
+      if (optionsChanged) this.options = options;
       this.selectedIds = new Set(selectedIds);
-      this.renderOptions();
-      this.list.dataset.options = signature;
-      this.list.dataset.selection = selection;
+      if (!this.usesBoundedResults()) this.renderOptions(this.options);
+      this.selectionSignature = selection;
+      this.filterDirty = true;
     }
+    if (availabilityChanged) this.filterDirty = true;
     this.filter();
     const busy = availability.busy === true;
     this.trigger.setAttribute('aria-busy', String(busy));
@@ -190,12 +205,12 @@ export class ContextMenu {
     window.removeEventListener('resize', this.onResize);
   }
 
-  private renderOptions(): void {
+  private renderOptions(options: readonly ContextMenuOption[]): void {
     const fragment = document.createDocumentFragment();
     let previousGroup: string | undefined;
     let groupContainer: HTMLElement | undefined;
     let groupIndex = 0;
-    for (const option of this.options) {
+    for (const option of options) {
       if (option.group && option.group !== previousGroup) {
         groupContainer = element('div', 'context-menu__option-group');
         groupContainer.setAttribute('role', 'group');
@@ -257,7 +272,6 @@ export class ContextMenu {
       (groupContainer ?? fragment).append(button);
     }
     this.list.replaceChildren(fragment, this.empty);
-    this.filter();
   }
 
   private readonly onResize = (): void => { this.close(this.panel.contains(document.activeElement)); };
@@ -295,6 +309,30 @@ export class ContextMenu {
 
   private readonly filter = (): void => {
     const query = this.search?.value.trim().toLocaleLowerCase() ?? '';
+    const bounded = this.usesBoundedResults();
+    if (this.results) this.results.hidden = !bounded;
+    if (bounded) {
+      if (!this.filterDirty && query === this.filteredQuery) return;
+      const matches = this.options.filter((option) => !query || this.searchText(option).includes(query));
+      const visible = matches.slice(0, this.config.maxVisibleOptions);
+      const selected = !query
+        ? matches.find((option) => this.selectedIds.has(option.id) && !visible.some((item) => item.id === option.id))
+        : undefined;
+      if (selected && visible.length === this.config.maxVisibleOptions) visible[visible.length - 1] = selected;
+      this.renderOptions(visible);
+      const noun = this.config.label.toLocaleLowerCase();
+      const shown = visible.length;
+      this.results!.textContent = matches.length > shown
+        ? `Showing ${shown.toLocaleString()} of ${matches.length.toLocaleString()} matching ${noun} options${selected ? '; selected option included' : ''}.`
+        : `${matches.length.toLocaleString()} matching ${noun} option${matches.length === 1 ? '' : 's'}.`;
+      const hasVisibleOptions = visible.length > 0;
+      this.empty.textContent = this.statusMessage ?? (this.options.length === 0 ? this.unavailableMessage : 'No matching options');
+      this.empty.hidden = hasVisibleOptions && !this.statusMessage;
+      this.list.dataset.empty = String(!hasVisibleOptions);
+      this.filterDirty = false;
+      this.filteredQuery = query;
+      return;
+    }
     const visibleGroups = new Set<string>();
     for (const button of this.list.querySelectorAll<HTMLButtonElement>('.context-menu__option')) {
       const visible = !query || (button.dataset.search ?? '').includes(query);
@@ -308,7 +346,34 @@ export class ContextMenu {
     this.empty.textContent = this.statusMessage ?? (this.options.length === 0 ? this.unavailableMessage : 'No matching options');
     this.empty.hidden = hasVisibleOptions && !this.statusMessage;
     this.list.dataset.empty = String(!hasVisibleOptions);
+    this.filterDirty = false;
+    this.filteredQuery = query;
   };
+
+  private optionsEqual(left: readonly ContextMenuOption[], right: readonly ContextMenuOption[]): boolean {
+    if (left.length !== right.length) return false;
+    return left.every((option, index) => {
+      const candidate = right[index];
+      return candidate !== undefined
+        && option.id === candidate.id
+        && option.label === candidate.label
+        && option.badge === candidate.badge
+        && option.description === candidate.description
+        && option.detail === candidate.detail
+        && option.metadata === candidate.metadata
+        && option.group === candidate.group
+        && option.keywords === candidate.keywords
+        && option.disabled === candidate.disabled;
+    });
+  }
+
+  private searchText(option: ContextMenuOption): string {
+    return `${option.label} ${option.badge ?? ''} ${option.description ?? ''} ${option.detail ?? ''} ${option.metadata ?? ''} ${option.keywords ?? ''}`.toLocaleLowerCase();
+  }
+
+  private usesBoundedResults(): boolean {
+    return this.config.maxVisibleOptions !== undefined && this.options.length > this.config.maxVisibleOptions;
+  }
 
   private visibleOptionButtons(): HTMLButtonElement[] {
     return [...this.list.querySelectorAll<HTMLButtonElement>('.context-menu__option:not([hidden]):not(:disabled)')];

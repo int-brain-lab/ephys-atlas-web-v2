@@ -77,6 +77,7 @@ only part of the body; the index states what remains effective.
 | D066 | Native 3-D component candidate | accepted | 2026-09-06 | candidate development/comparison only; D042 default retained |
 | D067 | Full AGEA catalog and bundled metadata direction | accepted | 2026-09-06 | independent single-experiment browsing; source audit and transport evidence precede schema integration |
 | D068 | Intact 3-D components with side-specific presentation | accepted | 2026-09-06 | shared-edge connectivity; original-ML colors/picks; reviewed movement independent of geometry; Q18 retains exact assignments |
+| D069 | AGEA original-value local integration preview | accepted | 2026-09-07 | owner-authorized local website integration with provisional source registration; no public release approval |
 
 ## D001 — Separate v2
 
@@ -1556,3 +1557,33 @@ component has zero displacement.
 Q18 remains open for exact movement assignments, numerical tolerance and
 on-plane behavior. D042 remains the default and rollback authority; this decision
 does not select a new pack or authorize publication.
+
+## D069 — Original AGEA values in a registration-provisional local preview
+
+After reviewing the alignment lab on 2026-09-07, the owner requested integration
+into the main website. The authorized first deliverable is a working local
+preview, not a published scientific release. Preserve the original pinned IBL
+experiment catalog and expression bytes: every measured nonnegative voxel,
+including zero and label-zero positions, is valid; `-1` means missing. Do not
+apply a coarse anatomical outside mask, denoise, impute, aggregate experiments,
+or introduce a corrective shift/warp.
+
+Use the unchanged source-loader affine for this explicitly provisional preview
+against the website's `allen-ccf-2017` anatomy. The local preview must identify
+its provisional registration in catalog, dataset description and provenance;
+the candidate reference-space assignment is not approval for publication.
+Linear/Full descriptive summaries cover those valid original values. Production
+release identity, registration acceptance and display choices remain Q19.
+
+The [owner review](data/AGEA_ALIGNMENT_REVIEW.json) contains five “Looks
+consistent” judgments, all saved on the CCF-derived reference-image layer,
+without written comments. Actual saved coordinates differ from the labelled
+starting presets; use the coordinates as evidence, not the preset names as
+certified anatomical locations. This is visual coordinate/rendering evidence,
+not independent validation of expression registration or historical atlas vintage.
+
+Original downloaded export SHA-256:
+`06edb666d57e5b8506be6cc32c23fe07d6b71f12238d86e0bf530dd5138ae31b`.
+The repository copy adds a final newline and preserves the JSON content.
+Its automatic `alignment_accepted: false` is retained rather than edited into
+an approval claim. D069 authorizes the local integration separately.

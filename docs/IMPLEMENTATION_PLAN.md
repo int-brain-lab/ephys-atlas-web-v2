@@ -99,8 +99,9 @@ Run from the release commit on Linux:
 
 ### AGEA — full-catalog single-experiment browsing
 
-Status: active under D067. Source audit and Chromium/Firefox transport evidence
-are implemented; no AGEA application release or bundled schema is implemented.
+Status: active under D067/D069. Source audit, Chromium/Firefox transport evidence,
+shared metadata-bundle machinery and the main-website original-value local
+preview are implemented. No public scientific release is approved.
 See [AGEA evidence and continuation](data/AGEA.md).
 
 The [coverage lab](data/AGEA_COVERAGE_LAB.md) is implemented for scientist review
@@ -121,11 +122,12 @@ controls, full-catalog scores and a reproducible 12-page PDF. Next: scientist
 adjudication of the declared examples and confirmation of section conventions.
 Screening flags are not confirmed defects; no production QC choice is implied.
 
-Next: implement the shared schema-v1 metadata bundle and synthetic HTTP/local
-producer/consumer coverage, then the searchable bounded feature picker. Build
-the real AGEA release only after Q19 resolves source processing, validity and
-registration. Add persistent-cache capacity/quota handling before broad catalog
-browsing, and repeat performance tests through the integrated application.
+The [main-website local preview](data/AGEA_LOCAL_PREVIEW.md) now provides all
+4,345 experiments, 30-result searchable selection, original values with explicit
+missing masks, shared metadata acceleration and bounded/quota-safe caching.
+Next: owner review of integrated expression, remaining Q19 public-release
+decisions, and peak-memory/constrained/final-origin browser measurements.
+Full-catalog ZIP import remains outside the current archive entry limit.
 
 ### Other independent work
 

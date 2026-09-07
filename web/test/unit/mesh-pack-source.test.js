@@ -134,12 +134,14 @@ test('verified fetch evicts a corrupt persistent mesh hit and refetches clean by
   const cacheEntries = new Map([['https://mesh.test/pack/default.eam3.gz', new Response('corrupt')]]);
   let deletes = 0;
   let networkLodCalls = 0;
+  const cacheKey = (request) => typeof request === 'string' ? request : request.url;
   globalThis.caches = {
     async open() {
       return {
-        async match(url) { return cacheEntries.get(url)?.clone(); },
-        async delete(url) { deletes += 1; return cacheEntries.delete(url); },
-        async put(url, response) { cacheEntries.set(url, response.clone()); },
+        async match(request) { return cacheEntries.get(cacheKey(request))?.clone(); },
+        async keys() { return [...cacheEntries.keys()].map((url) => new Request(url)); },
+        async delete(request) { deletes += 1; return cacheEntries.delete(cacheKey(request)); },
+        async put(request, response) { cacheEntries.set(cacheKey(request), response.clone()); },
       };
     },
     async delete() { return true; },

@@ -186,6 +186,7 @@ export interface RegionMetadata {
 }
 
 export interface DatasetManifestDocument {
+  metadataBundle?: EncodedResourceDescriptor;
   schemaVersion: SchemaVersion;
   datasetId: string;
   title: string;
