@@ -273,8 +273,10 @@ The following are not launch blockers unless later promoted by an explicit decis
 - full OAuth/user identity
 - broad compatibility with legacy custom-bucket URLs
 
-The optional 3-D anatomy view uses only the pinned GLB-derived compiled-full
-surface resource selected by D042. It remains failure-isolated and outside
+The optional 3-D anatomy view uses the pinned GLB-derived native-component
+surface resource selected by D070; D042 remains immutable rollback evidence.
+The additional Firefox/Safari review for this 3-D selection is owner-waived,
+without changing the general launch-browser requirements. It remains failure-isolated and outside
 launch acceptance. It must not trigger voxel-derived mesh generation or delay
 the launch-critical linked 2-D volume workspace.
 

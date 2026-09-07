@@ -15,8 +15,9 @@ linked evidence remain the authority; this file does not rewrite their history.
 | Q7 | Preserve the five checksummed Beryl-only legacy website Parquet families as a legacy snapshot, not a regenerated paper release. | D038; [`data/PROVENANCE.md`](data/PROVENANCE.md) |
 | Q10 | Use the committed immutable generated registered geometry/projection pack; do not contact the legacy host at runtime. | D023, refined through D031/D034/D035 |
 | Q11 | Keep automated Chromium and require a documented manual Firefox/Safari release matrix; automated Firefox/WebKit CI is not required. | D040 |
-| Q12 | Use the pinned GLB-derived compiled-full 3-D geometry: 4,958,039 served bytes, 989,811 triangles, no smoothing/decimation/voxel replacement, and no upgrade LOD. | D042; [`rendering/3D_SELECTED_ASSET.md`](rendering/3D_SELECTED_ASSET.md) |
+| Q12 | Use the pinned GLB source without smoothing/decimation/voxel replacement or upgrade LOD. D070 selects native intact geometry; D042 cut/cap geometry remains rollback evidence. | D042/D070; [`rendering/3D_SELECTED_ASSET.md`](rendering/3D_SELECTED_ASSET.md) |
 | Q13 | Retain exact legacy Top and authorize the pinned Top/Swanson byte sequences under the committed MIT notice. | D049; `LICENSES/IBL-EPHYS-ATLAS-V1-STATIC-ASSETS-MIT.txt` |
 | Q14 | Use the complete owner-reviewed 155-feature distribution selections: accept 34 audited policy-v1 proposals and retain 121 existing choices unchanged, with exact representation-specific scales, thresholds, domains, bounds, and preferences frozen in the four selection artifacts. | D054; [`data/Q14_DISTRIBUTION_REVIEW_2026-08-29.json`](data/Q14_DISTRIBUTION_REVIEW_2026-08-29.json); [`data/DISTRIBUTION_AUDIT_EVIDENCE.md`](data/DISTRIBUTION_AUDIT_EVIDENCE.md) |
+| Q18 | Accept every source-bound movement assignment in the reviewed native pack (539 left, 516 right, 85 fixed), including all 12 flagged cases; original decoded ML < 0 is left, exact zero is right, 0.001 µm tolerance is audit-only with no geometry adjustment. | D070; [`data/NATIVE_3D_SELECTION.json`](data/NATIVE_3D_SELECTION.json) |
 
 Q8 remains partially open. Q2, Q5, and Q9 remain wholly open.

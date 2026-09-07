@@ -182,39 +182,6 @@ Blocks: real-data z-score comparison defaults and releases only. It does not
 block pure domain/application machinery, synthetic fixtures, the UX lab, or
 scientist testing with clearly labelled synthetic normalization.
 
-## Q18 — Native 3-D component movement assignments and midline boundary
-
-Status: **DECISION; partially resolved by D068** for real native-component
-candidate acceptance; not a launch blocker. D042 remains the default.
-
-D068 selects shared-edge connectivity without welding, original-world-ML
-left-feature/right-anatomy presentation and picking of the side clicked, and
-explicit component movement assignments independent of geometric crossing.
-Clearly medial components stay fixed; predominantly lateral components may move
-intact. These directions no longer need to be re-decided.
-
-Resolution still needed:
-
-- review the exact source-bound movement assignments, including asymmetric
-  spanning components; [the proposal](tasks/2026-09-02-native-3d-mesh-components/MOVEMENT_REVIEW.md)
-  is a review aid, not an accepted selection;
-- specify the exact small numerical tolerance and near/on-plane ambiguity
-  handling independently of anatomical movement;
-- specify the exact ML=0 coloring/picking/selection/visibility boundary policy
-  consistently, including preservation through encoding and explode movement.
-
-Suggested for discussion, not approved: 0.001 µm classification tolerance and
-exactly ML=0 assigned to the right consistently for presentation and picking.
-These suggestions postdate the agreement recorded as D068. Numerical tolerance
-must never determine explode movement. Synthetic work may exercise provisional
-conventions, and a labelled local A/B candidate may display proposed assignments
-before their visual acceptance; neither constitutes an accepted real selection.
-
-Blocks: acceptance of the real candidate and default selection. It does not
-block synthetic contract/renderer work under D068 or additive source audits and
-review proposals. The [task handoff](tasks/2026-09-02-native-3d-mesh-components/README.md)
-defines the evidence and review sequence; external archive authorization remains
-a separate prerequisite before destructive replacement.
 
 ## Q19 — AGEA processing, validity and registration
 

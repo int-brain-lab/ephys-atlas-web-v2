@@ -52,5 +52,6 @@ transparent context. A local 1152 × 866 drawing-buffer run on Chromium's **Swif
 software Vulkan backend** measured median 270 ms / p95 313 ms interaction-to-GPU
 completion (20 samples after four warmups). These are software-rendering diagnostics,
 not desktop GPU frame-rate acceptance. Hardware Chromium, Firefox, and Safari
-performance/visual review remains necessary. Local screenshot inspection confirmed
+performance/visual evidence is not claimed. D070 records owner acceptance and
+waives additional Firefox/Safari review for this 3-D selection. Local screenshot inspection confirmed
 composited anatomy without changing the source geometry.

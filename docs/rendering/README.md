@@ -17,7 +17,7 @@ anatomy-pack documents remain derivation and reproducibility authorities.
 | Five-view browser projection pack | schema v1, D034, and projection-pack tooling/tests |
 | Volume layers and transport-neutral slice source | [`VOLUME_ARCHITECTURE.md`](VOLUME_ARCHITECTURE.md), D036, and Q5 |
 | Static Top/Swanson sources | D049 and `LICENSES/IBL-EPHYS-ATLAS-V1-STATIC-ASSETS-MIT.txt` |
-| Optional 3-D selected geometry | D042 and [`3D_SELECTED_ASSET.md`](3D_SELECTED_ASSET.md) |
+| Optional 3-D selected geometry | D070 native default, D042 rollback, and [`3D_SELECTED_ASSET.md`](3D_SELECTED_ASSET.md) |
 | Native 3-D component candidate | D066/D068 and [active task handoff](../tasks/2026-09-02-native-3d-mesh-components/README.md) |
 | Optional 3-D application integration | D037 and [`3D_INTEGRATION_PLAN.md`](3D_INTEGRATION_PLAN.md) |
 | Optional 3-D transparency | [`3D_TRANSPARENCY.md`](3D_TRANSPARENCY.md) |
@@ -33,8 +33,8 @@ anatomy-pack documents remain derivation and reproducibility authorities.
 | [`ANATOMY_PACKS.md`](ANATOMY_PACKS.md) | historical v1 build record | superseded |
 | [`ANATOMY_NAVIGATION_PERFORMANCE.md`](ANATOMY_NAVIGATION_PERFORMANCE.md) | current benchmark evidence | frozen evidence |
 | [`VOLUME_ARCHITECTURE.md`](VOLUME_ARCHITECTURE.md) | volume rendering boundary | accepted |
-| [Native 3-D components](../tasks/2026-09-02-native-3d-mesh-components/README.md) | real local comparison implemented; movement/boundary acceptance pending | active |
-| [`3D_SELECTED_ASSET.md`](3D_SELECTED_ASSET.md) | selected geometry evidence | frozen evidence |
+| [Native 3-D components](../tasks/2026-09-02-native-3d-mesh-components/README.md) | D070 owner-approved geometry; main-website integration | accepted |
+| [`3D_SELECTED_ASSET.md`](3D_SELECTED_ASSET.md) | selected geometry evidence | accepted |
 | [`3D_INTEGRATION_PLAN.md`](3D_INTEGRATION_PLAN.md) | completed application-integration record | frozen evidence |
 | [`3D_EVALUATION.md`](3D_EVALUATION.md) | lab and asset-evaluation evidence | frozen evidence |
 | [`3D_PROMOTION_REVIEW.md`](3D_PROMOTION_REVIEW.md) | abandoned annotation-regeneration direction | retired |

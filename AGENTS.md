@@ -105,19 +105,17 @@ Scientific provenance is part of the product contract, not optional metadata.
   integrity, coverage, LOD, and visual-quality gates; do not serve the raw
   monolithic source GLB as the production contract.
 - The pinned public GLB is the geometry authority for the optional 3-D anatomy
-  view. D042 selects the donor lab's 4,958,039-byte compiled-full resource:
-  retain every in-scope GLB triangle after the already-reviewed grey-matter
-  scope, bilateral cut, and planar caps; do not smooth, decimate, regenerate
-  from annotation voxels, or require geometry absent from the GLB. The 3-D
-  view is independent of volume features, which remain linked 2-D slices.
-  D066 permits a native-component candidate without cut/caps under
-  `docs/tasks/2026-09-02-native-3d-mesh-components/README.md`. D042 remains
-  the default and rollback authority until owner visual review selects a
-  replacement. Preserve the pinned GLB scope, transform, and source triangles;
-  candidate work does not authorize publication. D068 fixes original-world-ML
-  side-specific presentation and independently reviewed component movement;
-  Q18 retains exact boundary conventions and movement assignments. Use the
-  handoff's "Resume here" section to distinguish agreement from proposals.
+  view. D070 selects the owner-approved native-component geometry without cuts
+  or caps: preserve all 966,645 in-scope source triangles in 1,140 shared-edge
+  components. Do not smooth, decimate, weld, regenerate from annotation voxels,
+  or require geometry absent from the GLB. The 3-D view is independent of
+  volume features, which remain linked 2-D slices. The exact source-bound
+  movement assignments and original-world-ML boundary are frozen in
+  `docs/data/NATIVE_3D_SELECTION.json`; Q18 is resolved. Original ML < 0 is
+  left; exact zero is right. The 0.001 µm audit tolerance never changes geometry
+  or movement. D042 cut/cap packs remain immutable rollback evidence, not the
+  default. D070 waives additional Firefox/Safari review for this 3-D selection
+  only; it does not authorize publication or waive general launch QA.
 
 ## Frontend constraints
 

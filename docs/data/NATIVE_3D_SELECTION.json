@@ -1,0 +1,23 @@
+{
+  "selection_id": "native-3d-d070-2026-09-07",
+  "decision": "D070",
+  "approved_by": "repository-owner",
+  "approved_on": "2026-09-07",
+  "source_glb_sha256": "487a72172249acd4dba5b40c392fa8eb065b09bc8638f3195163c4cbf8f569db",
+  "review_manifest_sha256": "17b23f3a20806637242b9480c05ca07b90e95aae0b459b050195ef33b39f6379",
+  "review_report_sha256": "e43f6f6d17a3c4fb43f2e0abb88aad4b4f1db8f2aa8b7cf8aecce056f92f5ce3",
+  "geometry_resource_sha256": "b5f5abc7d0bb357520a65dacf33a24251e2bd6f75873d7d5ac650ef2cd271799",
+  "movement_proposal_sha256": "00cb03cdee2a0d1c971731228ff4d3af03cd1b1d50cdd5ef04a277a33c12543d",
+  "accept_all_reviewed_assignments": true,
+  "component_count": 1140,
+  "triangle_count": 966645,
+  "movement_counts": {"left": 539, "right": 516, "fixed": 85},
+  "classification_tolerance_um": 0.001,
+  "presentation_boundary": {"coordinate": "original-world-ml", "threshold_um": 0, "on_plane_side": "right", "status": "reviewed"},
+  "near_plane_policy": "No geometry adjustment; negative original decoded ML is left, zero and positive are right. Classification tolerance is audit-only and never chooses movement.",
+  "geometry_policy": "native-components",
+  "encoding": "raw-v1",
+  "oit_accepted": true,
+  "additional_firefox_safari_review": "waived-by-owner-for-this-3d-selection",
+  "public_deployment_authorized": false
+}

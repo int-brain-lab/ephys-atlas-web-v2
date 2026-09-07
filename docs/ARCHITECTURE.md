@@ -125,8 +125,8 @@ reproducibility evidence.
 
 The optional retained 3-D viewport is a sibling, not another 2-D facade. It
 shares reference-space identity, regional presentation, selection, and hover,
-while owning camera, explode, GPU resources, lifecycle, and failures. D042 fixes
-its GLB-derived geometry/LOD direction. Encoding volumes remain linked 2-D
+while owning camera, explode, GPU resources, lifecycle, and failures. D070 selects
+native GLB-derived geometry and D042 remains rollback evidence. Encoding volumes remain linked 2-D
 slices and are never converted into that anatomy mesh path.
 
 Opaque anatomy uses a single pass. Translucent regional context uses retained

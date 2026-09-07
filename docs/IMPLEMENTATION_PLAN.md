@@ -143,14 +143,12 @@ These remain useful but must not displace the launch path:
   The [baseline/component audit](tasks/2026-09-02-native-3d-mesh-components/AUDIT.md)
   and synthetic topology tests are implemented. D068 fixes side-specific
   presentation and independent movement; [movement proposals](tasks/2026-09-02-native-3d-mesh-components/MOVEMENT_REVIEW.md)
-  await review. The contract/renderer slice and real, labelled local A/B candidate
-  are implemented, with direct navigation through the 12 flagged components.
-  Transparent context now uses [weighted blended OIT](rendering/3D_TRANSPARENCY.md).
-  Next: owner review in the standalone lab, including hardware-GPU and
-  non-Chromium transparency checks. Q18 retains real acceptance of proposed boundary conventions
-  and movement assignments. Missing remote archive authorization does
-  not block additive work; preserve existing evidence. D042 stays the default
-  pending owner visual review. This optional lane does not block launch;
+  are accepted unchanged by D070, closing Q18. Native geometry and weighted
+  blended OIT passed owner review; additional Firefox/Safari checks for this
+  selection are waived. Next: build the approved immutable pack and integrate
+  the main-website default through a new development bundle. Preserve D042 as
+  rollback. Public deployment remains separate; this optional lane does not
+  block launch;
 - keep other richer 3-D, MERFISH, point clouds, inferential statistics, and
   broad legacy compatibility deferred.
 

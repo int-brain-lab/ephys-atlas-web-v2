@@ -50,7 +50,7 @@ only part of the body; the index states what remains effective.
 | D039 | Smoothing review protocol | superseded | — | D045 closes investigation |
 | D040 | S3/CloudFront/browser gate | accepted | 2026-08-22 | residual inputs remain Q8 |
 | D041 | 3-D scope/regeneration | partially superseded | 2026-08-22 | D042 replaces regeneration; source scope remains |
-| D042 | GLB-derived 3-D resource | accepted | 2026-08-24 | Q12/default and rollback authority; D066 permits a candidate only |
+| D042 | GLB-derived 3-D resource | partially superseded | 2026-08-24 | source and immutable rollback retained; D070 selects native default |
 | D043 | W26 volume geometry | accepted | 2026-08-24 | exact-source Q4 authority |
 | D044 | Complete cluster catalog | partially superseded | 2026-08-24 | catalog/units retained; D046-D050 presentation |
 | D045 | Retain exact 2-D geometry | accepted | 2026-08-26 | closes smoothing lane |
@@ -74,10 +74,11 @@ only part of the body; the index states what remains effective.
 | D063 | Data chooser and exploration-first header | partially superseded | 2026-09-05 | D064 moves version selection into Data details; D065 moves display into the header; grouped Data and prominent Feature retained |
 | D064 | Put rare version changes in Data details | accepted | 2026-09-05 | removes header Release and user-facing edition modes; preserves exact scientific navigation |
 | D065 | Compact display control in the header | accepted | 2026-09-05 | Display & parcellation shares the desktop Data/Feature row; removes workspace control row |
-| D066 | Native 3-D component candidate | accepted | 2026-09-06 | candidate development/comparison only; D042 default retained |
+| D066 | Native 3-D component candidate | partially superseded | 2026-09-06 | source-preservation rules retained; D070 accepts candidate |
 | D067 | Full AGEA catalog and bundled metadata direction | accepted | 2026-09-06 | independent single-experiment browsing; source audit and transport evidence precede schema integration |
-| D068 | Intact 3-D components with side-specific presentation | accepted | 2026-09-06 | shared-edge connectivity; original-ML colors/picks; reviewed movement independent of geometry; Q18 retains exact assignments |
+| D068 | Intact 3-D components with side-specific presentation | accepted | 2026-09-06 | shared-edge connectivity; original-ML colors/picks; D070 resolves Q18 assignments/boundary |
 | D069 | AGEA original-value local integration preview | accepted | 2026-09-07 | owner-authorized local website integration with provisional source registration; no public release approval |
+| D070 | Accept native 3-D anatomy and OIT | accepted | 2026-09-07 | closes Q18; native default, exact reviewed movements/boundary; D042 rollback; additional 3-D Firefox/Safari review waived |
 
 ## D001 — Separate v2
 
@@ -1587,3 +1588,35 @@ Original downloaded export SHA-256:
 The repository copy adds a final newline and preserves the JSON content.
 Its automatic `alignment_accepted: false` is retained rather than edited into
 an approval claim. D069 authorizes the local integration separately.
+
+## D070 — Accept native 3-D anatomy, movements, boundary, and OIT
+
+On 2026-09-07 the repository owner completed the real native lab review,
+approved the whole result, and requested main-website integration. Accept the
+exact geometry and all component assignments bound by
+[`NATIVE_3D_SELECTION.json`](data/NATIVE_3D_SELECTION.json). This closes Q18
+and supersedes D042's default geometry selection, not its pinned source or
+immutable rollback evidence.
+
+The selected resource has 966,645 source triangles and 1,140 shared-edge
+components from 566 in-scope GLB objects, without cuts, caps, welding,
+smoothing, decimation, or invented surfaces. Accept all 539 left, 516 right,
+and 85 fixed movements, including the 12 flagged asymmetric cases, exactly
+as displayed in the hash-bound review. Retain raw float32 encoding and its
+recorded maximum rounding error (0.000244140625 µm), with zero original-ML
+side flips and no upgrade LOD.
+
+Presentation/picking/visibility/selection use original decoded ML < 0 for left,
+and ML >= 0 for right, independent of explode displacement. The 0.001 µm
+classification tolerance is audit-only; do not adjust near-plane geometry or
+derive movements from it. The existing weighted blended OIT rendering is
+accepted. The owner explicitly waives additional Firefox/Safari checks for
+this 3-D selection; this is not a claim those checks passed, nor a waiver of
+general launch-browser QA under D040.
+
+Build a separately identified immutable approved pack with unchanged geometry
+bytes and complete review/source/build provenance. Configure it as the normal
+website's default anatomy, retain D042 and the original review pack, and keep
+comparison/review controls in the lab. Artifact maturity remains
+validated-real-local until separate publication authorization and preflight.
+This approval does not authorize remote scientific-data publication.
