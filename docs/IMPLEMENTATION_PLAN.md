@@ -21,8 +21,9 @@ The launch path is constrained by Q8, then Q5, Q2, and Q9.
 
 ## M6 — Finish staging and publication machinery
 
-Status: active; locally testable release preflight is complete, remote
-infrastructure and the local S3 publisher are not.
+Status: active; release preflight and the offline-tested S3 dataset-release
+transaction are implemented. Remote infrastructure, S3 curator catalog/edition
+promotion, and pack/site publication remain incomplete.
 
 Blocker: Q8 for exact CloudFront/OAC/DNS/TLS/header policy, publisher IAM, and
 authorization of the first staging artifact set. Remote mutation requires
@@ -30,9 +31,11 @@ explicit authorization and credentials.
 
 Next actions:
 
-1. Implement the D060 operator-invoked S3 publisher by reusing schema/integrity
-   validation and immutable create-only semantics. It must invoke the same
-   checks as `just production-release-preflight <release...>`.
+1. Extend the D060 S3 release publisher with curator catalog promotion using
+   the shared compiler and durable edition history, then validated pack/site
+   publication. The release command already invokes production preflight,
+   snapshots declared files, stages and verifies create-only objects, and
+   updates dataset indexes with conditional writes. No remote test is claimed.
 2. Provision the isolated staging distribution and origin path selected by Q8.
 3. Publish one authorized Linux-built immutable artifact set, promote mutable
    indexes last, and record served-byte SHA-256, MIME, CORS, Range, and cache

@@ -6,7 +6,45 @@ D060 keeps this HTTP service as an optional future multi-publisher path. The
 initial production deployment uses no always-on publishing server: an
 operator-invoked local repository command will apply the same validation and
 immutable-publication rules directly to private S3 with temporary scoped AWS
-credentials. That S3 command remains to be implemented.
+credentials. The first S3 dataset-release command is implemented with offline
+tests; curator catalog/edition-history promotion, pack/site deployment and
+remote integration evidence remain next steps.
+
+## Local S3 release command
+
+Run from the repository root with the builder's locked environment:
+
+```bash
+uv run --project builder --extra test --locked python -m tools.s3_publish \
+  data/releases/<dataset>/<release-id> --environment staging
+```
+
+This default mode is fully offline. It applies the canonical Linux/clean-main/
+exact-build-commit preflight to a temporary snapshot, rejects undeclared files,
+and prints an inventory, hashes, destination and transaction ID. It does not
+promote the existing local-preview/candidate releases or select public defaults.
+
+Only after Q8 infrastructure and the exact upload are authorized:
+
+```bash
+uv run --project builder --extra test --locked python -m tools.s3_publish \
+  data/releases/<dataset>/<release-id> --environment staging \
+  --apply --profile ibl-atlas \
+  --confirm-root aggregates/atlas/ephys-atlas-web-v2/staging/
+```
+
+Optional `--alias latest` changes the administrative dataset alias, never the
+curator catalog. Re-run the same command after an interruption or index-write
+conflict. Complete objects are reused only after checksum, size and serving
+metadata verification; a partial object restarts. Objects above 5 GB fail
+before network access (multipart is not yet implemented). Budget temporary
+disk space for one full release copy and S3 space for private and public copies.
+
+Private `_staging/` reservations and objects are retained for recovery; no
+delete/cleanup command is provided. CloudFront must not be allowed to read
+`_staging/`. A different inventory cannot reuse a reserved release identity.
+The command creates no bucket, distribution, DNS record, or public catalog.
+See [AWS console setup](../docs/publishing/AWS_CONSOLE_SETUP.md) before applying.
 
 ## Properties
 

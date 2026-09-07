@@ -4,7 +4,8 @@ Status: runbook for the authorized S3 bucket, D059-selected environment roots,
 and D060-selected local-publisher/CloudFront topology. This document records
 access evidence and safe operator commands; it does not authorize publication
 of a particular release. Remaining deployment details and scientific release
-choices are governed by Q8 and Q9.
+choices are governed by Q8 and Q9. The console/DNS walkthrough is
+[AWS console setup](AWS_CONSOLE_SETUP.md).
 
 ## Canonical build preflight
 
@@ -20,9 +21,9 @@ just production-release-preflight \
 
 The command validates complete schema-v1 graphs and requires immutable IDs,
 resolved source releases, Linux build provenance, and an exact builder-commit
-match. Passing it does not authorize an upload and does not replace the local
-S3 publisher still required by Q8. That publisher must call the same checks
-before opening a remote transaction.
+match. Passing it does not authorize an upload. The local dataset-release
+publisher in `tools/s3_publish.py` calls the same checks on its private snapshot
+before opening a remote transaction; see [commands and limits](../../publishing/README.md#local-s3-release-command).
 
 ## Confirmed candidate location
 
@@ -31,7 +32,7 @@ before opening a remote transaction.
 - existing scientific prefix: `aggregates/atlas/`
 - staging root: `aggregates/atlas/ephys-atlas-web-v2/staging/`
 - production root: `aggregates/atlas/ephys-atlas-web-v2/production/`
-- planned initial viewer domain: `ephys-atlas.iblcore.org`
+- production viewer domain (D071): `ephys-atlas.internationalbrainlab.org`
 - production delivery: one CloudFront distribution serving the compiled Vite
   viewer and same-origin public data from the private production namespace
 - publication: operator-invoked local repository command; no always-on
@@ -133,14 +134,15 @@ alone is not an equivalent publication transaction.
 ## Selected static hosting model
 
 CloudFront serves both the Vite application and public artifacts from private
-S3 at `ephys-atlas.iblcore.org`. Place the application below `site/` within the
+S3 at `ephys-atlas.internationalbrainlab.org`. Place the application below `site/` within the
 selected environment root. Its entry document is mutable and short-lived or
 revalidated; its content-addressed build assets are immutable and long-lived.
 Schema-v1 catalogs/aliases remain separately mutable, while releases and packs
 remain create-once.
 
 Use S3 REST origins with Origin Access Control and scope the bucket policy to
-the exact selected deployment root. The production distribution must not
+the public child paths within the selected deployment root, excluding private
+`_staging/` and administrative state. The production distribution must not
 expose the staging root or sibling canonical/source aggregates. A staging
 distribution or equivalently isolated non-production boundary must be
 provisioned before production. DNS may remain with its current provider; the

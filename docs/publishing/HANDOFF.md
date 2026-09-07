@@ -78,10 +78,11 @@ That is a deployment adapter change, not a scientific contract change.
 ## Remaining deployment work
 
 D059 selects exact staging and production roots in the authenticated private
-bucket and plans `ephys-atlas.iblcore.org` as the initial viewer domain. D060
+bucket; D071 selects `ephys-atlas.internationalbrainlab.org` as the viewer domain. D060
 selects the local publisher plus a CloudFront/OAC boundary for both the
-S3-hosted Vite application and data. Q8 still requires implementation of that
-publisher, exact staging/production distributions and origin restrictions,
+S3-hosted Vite application and data. The S3 dataset-release transaction is
+offline-tested; Q8 still requires curator catalog/edition-history and pack/site
+publication, exact staging/production distributions and origin restrictions,
 staging hostname, DNS/ACM, cache/CORS/MIME/Range policy, minimum IAM policy,
 and first staging artifact authorization. Q9 still requires the frozen paper
 aliases and release set.

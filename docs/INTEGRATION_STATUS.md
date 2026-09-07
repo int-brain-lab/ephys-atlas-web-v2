@@ -18,7 +18,7 @@ completed implementation diaries.
 | Scientific navigation | One URL-v4 ML/AP/DV cursor drives the native bilateral 10 µm grid; sparse 80 µm SVG sampling changes display only. | Parent/sparse/projection-pack validation and performance evidence are complete. | Production-origin delivery verification. |
 | Optional 3-D context | A sibling retained Three.js viewport shares regional presentation/selection and owns camera, explode, GPU lifecycle, and failure isolation. Volume features remain anatomy-only in 3-D. | D042 real pack is losslessly repackaged; Chromium plus owner Safari/Firefox review passed. The D066/D068 real native review-only pack preserves 966,645 triangles in 1,140 components. The standalone lab compares Native / Old cut and directly opens 12 flagged components. | D070 owner approval closes Q18 and selects the exact native movements/boundary. The approved pack is the v5 bundle's default; lazy loading, retained shared presentation/OIT and all five local datasets pass real-site Chromium checks. D042 cut/cap remains rollback evidence. Normal-view label is implemented; optional public deployment remains separate and not launch-blocking. |
 | Integrity/cache | Encoded resources are byte-size/SHA verified before persistent admission; corrupt entries are evicted/retried; decoded identity includes hash plus decode contract. | HTTP/local/mesh/projection/volume tests are green. | Verify final CDN headers and cache behavior. |
-| Release environments | Builders record OS, machine, Python, and NumPy. Production preflight requires Linux, clean `main`, exact HEAD provenance, immutable IDs, and a fully valid release graph. macOS real-data catalogs are labelled Local. | Deterministic preflight tests and complete local-bundle validation are green. | Make the future Q8 S3 publisher invoke the same preflight before upload. |
+| Release environments | Builders record OS, machine, Python, and NumPy. Production preflight requires Linux, clean `main`, exact HEAD provenance, immutable IDs, and a fully valid release graph. macOS real-data catalogs are labelled Local. | Deterministic preflight tests and complete local-bundle validation are green. S3 release planning/apply invoke the same preflight on a private snapshot. | Q8 remote staging evidence. |
 
 Stable boundaries and end-to-end flow are in
 [`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md) and
@@ -193,15 +193,22 @@ D060 keeps that implementation as an optional future
 multi-publisher path; no publishing server will run for the initial deployment.
 The selected initial path is a local repository publisher using temporary,
 least-privilege AWS credentials while preserving the same validation,
-immutability, resumability, and catalog-last guarantees. This S3 publisher is
-not implemented yet. Public reads remain static and unauthenticated.
+immutability, resumability, and catalog-last guarantees. The first S3 slice is
+implemented in `tools/s3_publish.py`: offline plans, canonical preflight of a
+private snapshot, complete declared-file inventory, private create-only
+reservation/staging, SHA-256/size/header verification, immutable dependencies
+before manifest, completion marker, and conditional dataset-index update last.
+Retries reuse verified objects and preserve concurrent index changes. No AWS
+calls were made during implementation. S3 curator catalog/edition history,
+pack/site publication, and multipart objects above 5 GB remain unimplemented.
+Public reads remain static and unauthenticated.
 
 D040 selects IBL-owned S3 plus CloudFront. Authenticated terminal reads and a
 non-mutating conditional-write authorization probe now pass against the
 private candidate `us-east-1` location recorded in
 [`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md). D059 selects
-isolated staging and production roots there plus
-`ephys-atlas.iblcore.org` as the planned initial viewer domain. D060 selects
+isolated staging and production roots there; D071 selects
+`ephys-atlas.internationalbrainlab.org` as the production viewer domain. D060 selects
 CloudFront for both the S3-hosted compiled Vite viewer and same-origin public
 data, with no Cloudflare Pages deployment. Q8 still requires the exact
 distribution/origin configuration, isolated staging hostname, DNS/ACM,
