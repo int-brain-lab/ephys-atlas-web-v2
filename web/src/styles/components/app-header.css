@@ -313,6 +313,28 @@
   overscroll-behavior: contain;
 }
 
+.context-menu__list--virtual {
+  display: block;
+  padding: 0;
+  overflow-anchor: none;
+}
+
+.context-menu__virtual-content { position: relative; }
+
+.context-menu__virtual-content .context-menu__option {
+  position: absolute;
+  left: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.context-menu__virtual-content .context-menu__option-copy > span,
+.context-menu__virtual-content .context-menu__option-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .context-menu__empty {
   padding: var(--space-4);
   color: var(--color-text-muted);

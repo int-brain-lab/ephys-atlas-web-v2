@@ -32,7 +32,10 @@ test('full real catalog loads through one metadata bundle and the existing atlas
   await expect(page.getByRole('complementary', { name: 'Brain regions' })).toBeVisible();
   const field = page.locator('[data-context-field="feature"]');
   await field.locator('.context-menu__trigger').click();
-  await expect(field.getByRole('option')).toHaveCount(30);
+  await expect.poll(() => field.getByRole('option').count()).toBeLessThan(30);
+  await field.getByRole('listbox').evaluate(node => { node.scrollTop = node.scrollHeight; });
+  await expect(field.locator(`[data-context-option="${manifest.features.at(-1).id}"]`)).toBeVisible();
+  expect(requests.filter(url => url.endsWith('.f16.gz'))).toHaveLength(1);
   await page.getByRole('searchbox', { name: 'Search features…' }).fill('Slc17a7');
   await expect(field.getByRole('option')).toHaveCount(2);
   const id = (await field.getByRole('option').first().getAttribute('data-context-option'))!;

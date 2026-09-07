@@ -123,7 +123,7 @@ adjudication of the declared examples and confirmation of section conventions.
 Screening flags are not confirmed defects; no production QC choice is implied.
 
 The [main-website local preview](data/AGEA_LOCAL_PREVIEW.md) now provides all
-4,345 experiments, 30-result searchable selection, original values with explicit
+4,345 experiments, fully scrollable virtualized search, original values with explicit
 missing masks, shared metadata acceleration and bounded/quota-safe caching.
 Next: owner review of integrated expression, remaining Q19 public-release
 decisions, and peak-memory/constrained/final-origin browser measurements.

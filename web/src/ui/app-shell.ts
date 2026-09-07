@@ -333,7 +333,7 @@ export class AppShell {
       keyShortcuts: '/ Shift+ArrowUp Shift+ArrowDown',
       searchable: true,
       searchPlaceholder: 'Search features…',
-      maxVisibleOptions: 30,
+      virtualizeAbove: 30,
       onOpen: (menu) => {
         this.closeDrawers();
         this.closeContextMenus(menu);

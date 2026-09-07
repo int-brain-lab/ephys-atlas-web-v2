@@ -473,7 +473,7 @@ test('large feature catalogs stay bounded while search covers every feature fiel
       fieldName: 'large-feature-test',
       label: 'Feature',
       searchable: true,
-      maxVisibleOptions: 30,
+      virtualizeAbove: 30,
       onOpen: () => undefined,
       onSelect: (option: { id: string }) => { host.dataset.selected = option.id; },
     });
@@ -491,12 +491,32 @@ test('large feature catalogs stay bounded while search covers every feature fiel
 
   const picker = page.locator('#large-feature-picker-test');
   await picker.locator('.context-menu__trigger').click();
-  await expect(picker.getByRole('option')).toHaveCount(30);
+  await expect.poll(() => picker.getByRole('option').count()).toBeLessThan(30);
   await expect(picker.locator('.context-menu__list')).not.toHaveAttribute('data-options');
   await expect(picker.getByRole('option', { selected: true })).toHaveAttribute('data-context-option', 'experiment-4001');
-  await expect(picker.getByRole('status')).toHaveText('Showing 30 of 4,345 matching feature options; selected option included.');
+  await expect(picker.getByRole('status')).toHaveText('4,345 matching feature options.');
+  const list = picker.getByRole('listbox');
+  await list.evaluate(node => { node.scrollTop = node.scrollHeight; });
+  await expect(picker.locator('[data-context-option="experiment-4345"]')).toBeVisible();
+  await expect(picker.locator('[data-context-option="experiment-4345"]')).toHaveAttribute('aria-posinset', '4345');
+  await expect(picker.locator('[data-context-option="experiment-4345"]')).toHaveAttribute('aria-setsize', '4345');
+  await list.evaluate(node => { node.scrollTop = 0; });
+  await expect(picker.locator('[data-context-option="experiment-1"]')).toBeVisible();
+  await picker.getByRole('searchbox').press('ArrowDown');
+  await page.keyboard.press('End');
+  await expect(picker.locator('[data-context-option="experiment-4345"]')).toBeFocused();
+  await page.keyboard.press('Home');
+  await expect(picker.locator('[data-context-option="experiment-1"]')).toBeFocused();
+  for (let index = 0; index < 35; index++) await page.keyboard.press('ArrowDown');
+  await expect(picker.locator('[data-context-option="experiment-36"]')).toBeFocused();
+  await page.keyboard.press('PageDown');
+  await expect(picker.locator('[data-context-option="experiment-36"]')).not.toBeFocused();
+  await expect.poll(() => picker.getByRole('option').count()).toBeLessThan(30);
 
   const search = picker.getByRole('searchbox');
+  await search.fill('no matching experiment anywhere');
+  await expect(picker.getByRole('option')).toHaveCount(0);
+  await expect(picker.getByText('No matching options', { exact: true })).toBeVisible();
   await search.fill('unique archive metadata');
   await expect(picker.getByRole('option')).toHaveCount(1);
   await expect(picker.getByRole('option')).toContainText('Reln — sagittal experiment');
@@ -510,6 +530,13 @@ test('large feature catalogs stay bounded while search covers every feature fiel
   await picker.locator('.context-menu__trigger').click();
   await page.keyboard.press('Escape');
   await expect(picker.locator('.context-menu__trigger')).toBeFocused();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await picker.locator('.context-menu__trigger').click();
+  await list.evaluate(node => { node.scrollTop = node.scrollHeight; });
+  await expect(picker.locator('[data-context-option="experiment-4345"]')).toBeVisible();
+  await picker.locator('[data-context-option="experiment-4345"]').click();
+  await expect(picker).toHaveAttribute('data-selected', 'experiment-4345');
 });
 
 test('context menus explain release loading and failure instead of becoming inert', async ({ page }) => {

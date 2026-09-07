@@ -14,8 +14,10 @@ npm --prefix web run dev:real -- --host 127.0.0.1 --port 4192 --strictPort
 ```
 
 Open `http://127.0.0.1:4192/`. This is the main atlas application, not a lab route.
-Use **Feature** to search a gene or experiment ID. At most 30 matches are rendered;
-search covers the full 4,345-experiment catalog. Repeated gene symbols remain
+Use **Feature** to scroll through all 4,345 experiments or search a gene or
+experiment ID. Large lists render only the visible window plus nearby rows;
+the scrollbar and keyboard navigation cover every match. Arrow keys, Home/End
+(from an option) and Page Up/Down navigate the list. Repeated gene symbols remain
 distinct experiments. The region panel remains anatomical; no regional gene
 aggregation is implied. **Data details** exposes provisional identity and sources.
 

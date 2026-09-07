@@ -44,7 +44,7 @@ audit and Chromium/Firefox metadata/whole-volume transport benchmark are
 implemented, including independent slice hashes and cache recovery checks.
 D069 now adds the [main-website AGEA local preview](data/AGEA_LOCAL_PREVIEW.md):
 4,345 original experiments, shared schema-v1 metadata-bundle HTTP/local-validation
-support, bounded searchable feature selection, linked anatomy, and 64 MiB/256
+support, fully scrollable virtualized feature search, linked anatomy, and 64 MiB/256
 entry verified caching with quota fallback. Real-data Chromium tests pass;
 registration remains provisional and public release choices remain Q19.
 See [AGEA evidence](data/AGEA.md).

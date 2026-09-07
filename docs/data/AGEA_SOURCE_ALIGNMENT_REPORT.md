@@ -18,7 +18,8 @@ its membership with the complete Allen catalog, so "all Allen genes" would
 overstate the evidence. The source table supplies experiment IDs and gene
 symbols only; it has no full names or aliases. Multiple experiments for a gene
 remain separate, for example Slc17a7 experiments 75081210 and 70436317.
-The picker shows at most 30 matches, but searches the complete catalog.
+The picker supports scrolling and searching the complete catalog, rendering
+only a small window of rows at a time.
 
 The checked release is
 `agea-original-local-preview-86b49971-2cdd9bee-c93e9c5b`.

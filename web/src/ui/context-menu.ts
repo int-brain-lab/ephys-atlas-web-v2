@@ -16,7 +16,7 @@ export interface ContextMenuConfig {
   keyShortcuts?: string;
   searchable?: boolean;
   searchPlaceholder?: string;
-  maxVisibleOptions?: number;
+  virtualizeAbove?: number;
   multiselectable?: boolean;
   onOpen(menu: ContextMenu): void;
   onSelect(option: ContextMenuOption): void;
@@ -29,6 +29,8 @@ export interface ContextMenuAvailability {
 }
 
 let menuSequence = 0;
+const VIRTUAL_ROW_HEIGHT = 104;
+const VIRTUAL_OVERSCAN = 4;
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -52,6 +54,8 @@ export class ContextMenu {
   private selectionSignature = '[]';
   private filterDirty = true;
   private filteredQuery = '';
+  private matches: readonly ContextMenuOption[] = [];
+  private virtualWindow = '';
   private statusMessage: string | undefined;
   private unavailableMessage = 'No options are available.';
 
@@ -99,7 +103,7 @@ export class ContextMenu {
       this.panel.append(searchWrap);
     }
     this.search = search;
-    this.results = config.maxVisibleOptions ? element('div', 'context-menu__results') : null;
+    this.results = config.virtualizeAbove ? element('div', 'context-menu__results') : null;
     if (this.results) {
       this.results.setAttribute('role', 'status');
       this.results.setAttribute('aria-live', 'polite');
@@ -121,6 +125,7 @@ export class ContextMenu {
     this.trigger.addEventListener('keydown', this.onTriggerKeyDown);
     this.panel.addEventListener('keydown', this.onPanelKeyDown);
     this.search?.addEventListener('input', this.filter);
+    this.list.addEventListener('scroll', this.renderVirtualWindow);
     document.addEventListener('pointerdown', this.onDocumentPointerDown);
     window.addEventListener('resize', this.onResize);
   }
@@ -149,7 +154,7 @@ export class ContextMenu {
     if (optionsChanged || selectionChanged) {
       if (optionsChanged) this.options = options;
       this.selectedIds = new Set(selectedIds);
-      if (!this.usesBoundedResults()) this.renderOptions(this.options);
+      if (!this.usesVirtualResults()) this.renderOptions(this.options);
       this.selectionSignature = selection;
       this.filterDirty = true;
     }
@@ -180,6 +185,11 @@ export class ContextMenu {
     if (this.search) {
       this.search.value = '';
       this.filter();
+      if (this.usesVirtualResults()) {
+        const selected = this.matches.findIndex(option => this.selectedIds.has(option.id));
+        this.list.scrollTop = Math.max(0, selected) * VIRTUAL_ROW_HEIGHT;
+        this.renderVirtualWindow();
+      }
       this.search.focus();
     } else if (focusOptions) {
       this.focusOption(0);
@@ -201,6 +211,7 @@ export class ContextMenu {
     this.trigger.removeEventListener('keydown', this.onTriggerKeyDown);
     this.panel.removeEventListener('keydown', this.onPanelKeyDown);
     this.search?.removeEventListener('input', this.filter);
+    this.list.removeEventListener('scroll', this.renderVirtualWindow);
     document.removeEventListener('pointerdown', this.onDocumentPointerDown);
     window.removeEventListener('resize', this.onResize);
   }
@@ -295,7 +306,33 @@ export class ContextMenu {
       this.close(true);
       return;
     }
-    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End', 'PageDown', 'PageUp'].includes(event.key)) return;
+    if (this.usesVirtualResults()) {
+      // Home/End in the search box retain native text-editing behavior.
+      if (event.target === this.search && ['Home', 'End'].includes(event.key)) return;
+      const enabled = this.matches.map((option, index) => ({ option, index })).filter(row => !row.option.disabled);
+      if (!enabled.length) return;
+      event.preventDefault();
+      const id = (document.activeElement as HTMLElement | null)?.dataset.contextOption;
+      const current = enabled.findIndex(row => row.option.id === id);
+      const page = Math.max(1, Math.floor(this.list.clientHeight / VIRTUAL_ROW_HEIGHT));
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? enabled.length - 1
+        : event.key === 'ArrowDown' ? Math.min(enabled.length - 1, current + 1)
+        : event.key === 'PageDown' ? Math.min(enabled.length - 1, Math.max(0, current) + page)
+        : event.key === 'PageUp' ? Math.max(0, current - page)
+        : current <= 0 ? enabled.length - 1 : current - 1;
+      const row = enabled[next]!;
+      const top = row.index * VIRTUAL_ROW_HEIGHT;
+      if (top < this.list.scrollTop) this.list.scrollTop = top;
+      else if (top + VIRTUAL_ROW_HEIGHT > this.list.scrollTop + this.list.clientHeight) {
+        this.list.scrollTop = top + VIRTUAL_ROW_HEIGHT - this.list.clientHeight;
+      }
+      this.renderVirtualWindow();
+      [...this.list.querySelectorAll<HTMLButtonElement>('.context-menu__option')]
+        .find(button => button.dataset.contextOption === row.option.id)?.focus({ preventScroll: true });
+      return;
+    }
+    if (event.key === 'PageDown' || event.key === 'PageUp') return;
     const options = this.visibleOptionButtons();
     if (!options.length) return;
     event.preventDefault();
@@ -309,23 +346,18 @@ export class ContextMenu {
 
   private readonly filter = (): void => {
     const query = this.search?.value.trim().toLocaleLowerCase() ?? '';
-    const bounded = this.usesBoundedResults();
+    const bounded = this.usesVirtualResults();
+    this.list.classList.toggle('context-menu__list--virtual', bounded);
     if (this.results) this.results.hidden = !bounded;
     if (bounded) {
       if (!this.filterDirty && query === this.filteredQuery) return;
-      const matches = this.options.filter((option) => !query || this.searchText(option).includes(query));
-      const visible = matches.slice(0, this.config.maxVisibleOptions);
-      const selected = !query
-        ? matches.find((option) => this.selectedIds.has(option.id) && !visible.some((item) => item.id === option.id))
-        : undefined;
-      if (selected && visible.length === this.config.maxVisibleOptions) visible[visible.length - 1] = selected;
-      this.renderOptions(visible);
+      this.matches = this.options.filter((option) => !query || this.searchText(option).includes(query));
+      this.virtualWindow = '';
+      this.list.scrollTop = 0;
+      this.renderVirtualWindow();
       const noun = this.config.label.toLocaleLowerCase();
-      const shown = visible.length;
-      this.results!.textContent = matches.length > shown
-        ? `Showing ${shown.toLocaleString()} of ${matches.length.toLocaleString()} matching ${noun} options${selected ? '; selected option included' : ''}.`
-        : `${matches.length.toLocaleString()} matching ${noun} option${matches.length === 1 ? '' : 's'}.`;
-      const hasVisibleOptions = visible.length > 0;
+      this.results!.textContent = `${this.matches.length.toLocaleString()} matching ${noun} option${this.matches.length === 1 ? '' : 's'}.`;
+      const hasVisibleOptions = this.matches.length > 0;
       this.empty.textContent = this.statusMessage ?? (this.options.length === 0 ? this.unavailableMessage : 'No matching options');
       this.empty.hidden = hasVisibleOptions && !this.statusMessage;
       this.list.dataset.empty = String(!hasVisibleOptions);
@@ -371,9 +403,46 @@ export class ContextMenu {
     return `${option.label} ${option.badge ?? ''} ${option.description ?? ''} ${option.detail ?? ''} ${option.metadata ?? ''} ${option.keywords ?? ''}`.toLocaleLowerCase();
   }
 
-  private usesBoundedResults(): boolean {
-    return this.config.maxVisibleOptions !== undefined && this.options.length > this.config.maxVisibleOptions;
+  private usesVirtualResults(): boolean {
+    // Grouped menus retain their semantic group headings and ordinary layout.
+    return this.config.virtualizeAbove !== undefined && this.options.length > this.config.virtualizeAbove
+      && !this.options.some(option => option.group);
   }
+
+  private readonly renderVirtualWindow = (): void => {
+    if (!this.usesVirtualResults()) return;
+    const start = Math.max(0, Math.floor(this.list.scrollTop / VIRTUAL_ROW_HEIGHT) - VIRTUAL_OVERSCAN);
+    const end = Math.min(this.matches.length, Math.ceil((this.list.scrollTop + (this.list.clientHeight || 400))
+      / VIRTUAL_ROW_HEIGHT) + VIRTUAL_OVERSCAN);
+    const focused = this.list.contains(document.activeElement)
+      ? (document.activeElement as HTMLElement).dataset.contextOption : undefined;
+    const focusedIndex = focused ? this.matches.findIndex(option => option.id === focused) : -1;
+    const indices = Array.from({ length: Math.max(0, end - start) }, (_, index) => start + index);
+    // Keep a focused offscreen row mounted so wheel/touch scrolling never loses keyboard focus.
+    if (focusedIndex >= 0 && !indices.includes(focusedIndex)) indices.push(focusedIndex);
+    indices.sort((a, b) => a - b);
+    const signature = `${this.matches.length}:${indices.join(',')}`;
+    if (signature === this.virtualWindow) return;
+    this.virtualWindow = signature;
+    const scrollTop = this.list.scrollTop;
+    this.renderOptions(indices.map(index => this.matches[index]!));
+    const content = element('div', 'context-menu__virtual-content');
+    content.setAttribute('role', 'presentation');
+    content.style.height = `${this.matches.length * VIRTUAL_ROW_HEIGHT}px`;
+    const buttons = [...this.list.querySelectorAll<HTMLButtonElement>('.context-menu__option')];
+    buttons.forEach((button, offset) => {
+      const index = indices[offset]!;
+      button.style.top = `${index * VIRTUAL_ROW_HEIGHT}px`;
+      button.style.height = `${VIRTUAL_ROW_HEIGHT}px`;
+      button.setAttribute('aria-posinset', String(index + 1));
+      button.setAttribute('aria-setsize', String(this.matches.length));
+      button.title = this.searchText(this.matches[index]!);
+      content.append(button);
+    });
+    this.list.replaceChildren(content, this.empty);
+    this.list.scrollTop = scrollTop;
+    if (focused) buttons.find(button => button.dataset.contextOption === focused)?.focus({ preventScroll: true });
+  };
 
   private visibleOptionButtons(): HTMLButtonElement[] {
     return [...this.list.querySelectorAll<HTMLButtonElement>('.context-menu__option:not([hidden]):not(:disabled)')];
