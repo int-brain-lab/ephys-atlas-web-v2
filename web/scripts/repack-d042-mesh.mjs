@@ -83,9 +83,9 @@ function snakeBlock(block) {
 function snakeRange(range) {
   const sign = range.signedAllenId < 0 ? -1 : 1;
   return {
-    feature_id: range.featureId,
-    signed_allen_id: range.signedAllenId,
-    signed_explode_group_id: sign * Math.abs(range.explodeGroupId),
+    component_id: range.featureId,
+    left_presentation_id: sign < 0 ? range.featureId : null,
+    right_presentation_id: sign > 0 ? range.featureId : null,
     index_start: range.indexStart,
     index_count: range.indexCount,
     vertex_start: range.vertexStart,
@@ -95,7 +95,7 @@ function snakeRange(range) {
 
 function snakeChunk(chunk) {
   return {
-    hemisphere: chunk.hemisphere,
+    chunk_id: chunk.hemisphere,
     vertex_count: chunk.vertexCount,
     index_count: chunk.indexCount,
     position_bits: chunk.positionBits,
@@ -292,6 +292,29 @@ const explodeGroups = donorManifest.explodeGroups.map((group) => ({
   hemisphere: group.hemisphere,
   centroid_um: group.centroidUm,
 }));
+const presentations = regions.map((region) => ({
+  presentation_id: region.feature_id,
+  source_allen_id: region.source_allen_id,
+  signed_allen_id: region.signed_allen_id,
+  side: region.hemisphere,
+  mappings: region.mappings,
+}));
+const components = regions.map((region) => {
+  const group = explodeGroups.find((candidate) => candidate.signed_group_id === region.signed_explode_group_id);
+  assert(group, `D042 explode group absent for ${region.feature_id}`);
+  return {
+    component_id: region.feature_id,
+    source_allen_id: region.source_allen_id,
+    lateralization: region.hemisphere,
+    left_presentation_id: region.hemisphere === 'left' ? region.feature_id : null,
+    right_presentation_id: region.hemisphere === 'right' ? region.feature_id : null,
+    bounds: region.bounds,
+    vertex_count: region.vertex_count,
+    triangle_count: region.triangle_count,
+    centroid_um: region.centroid_um,
+    explode_displacement_um: group.centroid_um.map((value, axis) => value - donorManifest.wholeBrainCentroidUm[axis]),
+  };
+});
 const anatomy = projectionManifest.parent.source.annotation;
 const lut = projectionManifest.parent.source.region_lut;
 const results = { rebuild: true, coverage: true, midline: true, topology: true, mapping: true, bounds: true, integrity: true, complete_file_graph: true };
@@ -342,8 +365,10 @@ const manifest = {
   },
   geometry_scope: { ontology: 'Allen CCF 2017', root_allen_id: 8, root_acronym: 'grey', policy: 'deepest-active-grey-descendants', active_allen_ids: activeIds, excluded_allen_ids: excludedIds },
   whole_brain_centroid_um: donorManifest.wholeBrainCentroidUm,
-  explode_groups: explodeGroups,
-  regions,
+  geometry_policy: 'bilateral-cut-cap',
+  presentation_boundary: { coordinate: 'original-world-ml', threshold_um: 0, on_plane_side: 'right', status: 'reviewed' },
+  presentations,
+  components,
   default_lod_id: 'compiled-full',
   upgrade_lod_id: null,
   lods: [{

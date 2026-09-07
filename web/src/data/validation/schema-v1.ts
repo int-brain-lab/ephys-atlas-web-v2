@@ -517,7 +517,7 @@ function meshPackSemantics(document: JsonObject): void {
     signs.add(sign);
     signsBySource.set(sourceId, signs);
   }
-  if (signsBySource.size !== active.length || [...signsBySource.values()].some((signs) => signs.size !== 2)) fail('mesh presentation coverage differs from active Allen scope');
+  if (signsBySource.size !== active.length) fail('mesh presentation coverage differs from active Allen scope');
   const components = array(document.components, 'mesh components').map((value) => object(value, 'mesh component'));
   unique(components.map((component) => component.component_id), 'mesh component id');
   if (components.some((component, index) => component.component_id !== index)) fail('mesh component IDs must be contiguous in manifest order');

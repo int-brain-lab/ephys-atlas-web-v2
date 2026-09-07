@@ -9,8 +9,10 @@ import {
 
 const root = document.querySelector<HTMLElement>('#app');
 if (!root) throw new Error('3-D lab root is missing');
+const realMesh = import.meta.env.VITE_3D_LAB_MESH as { url: string; bytes: number; sha256: string } | undefined;
+const catalog = import.meta.env.VITE_3D_LAB_CATALOG as { mappings: Record<string, { atlas_id: number; acronym: string; color_hex: string }[]> } | undefined;
 root.innerHTML = `<main class="mesh-lab">
-  <header><div><p>Non-production · canonical synthetic fixture</p><h1>Retained 3-D viewport</h1></div><strong id="status" role="status">Loading…</strong></header>
+  <header><div><p>${realMesh ? 'Allen brain anatomy · D042 reviewed geometry · local preview' : 'Non-production · canonical synthetic fixture'}</p><h1>${realMesh ? '3-D brain anatomy' : 'Retained 3-D viewport'}</h1></div><strong id="status" role="status">Loading…</strong></header>
   <section class="mesh-layout">
     <div id="scene" aria-label="Interactive bilateral 3-D brain fixture"></div>
     <aside>
@@ -18,7 +20,7 @@ root.innerHTML = `<main class="mesh-lab">
       <label>Explode <input id="explode" type="range" min="0" max="1" step="0.01" value="0"><output id="explode-value">0.00</output></label>
       <button id="show-all" type="button">Show both hemispheres</button>
       <button id="deactivate" type="button">Deactivate</button>
-      <p>Click a hemisphere to select it. Drag rotates; double-click resets the camera.</p>
+      <p>Click a region to select it. Drag rotates; scroll zooms; double-click resets the camera.</p>
       <pre id="diagnostics"></pre>
     </aside>
   </section>
@@ -29,20 +31,29 @@ const status = required('#status');
 const diagnostics = required('#diagnostics');
 const source = new MeshPackSource({
   manifest: {
-    url: new URL('/__mesh-pack-fixture/manifest.json', location.href).toString(),
-    bytes: 3917,
-    sha256: '6076d1604f67b3e711506e0d400adf58db49f5f6077790ca4d96d2557c56737a',
+    url: new URL(realMesh?.url ?? '/__mesh-pack-fixture/manifest.json', location.href).toString(),
+    bytes: realMesh?.bytes ?? 3917,
+    sha256: realMesh?.sha256 ?? '6076d1604f67b3e711506e0d400adf58db49f5f6077790ca4d96d2557c56737a',
   },
   fetcher: new ResourceFetcher(),
 });
 const factory = new RetainedBrainScene3DViewportFactory(source);
-const visible = new Set([-315, 315]);
+const manifest = await source.loadManifest();
+const visible = new Set<number>();
 const selected = new Set<number>();
 let mapping: RegionalPresentation['mapping'] = 'allen';
+function showAll(): void {
+  visible.clear();
+  for (const item of manifest.presentations) {
+    const id = item.mappings[mapping];
+    if (id !== null) visible.add(id);
+  }
+}
+showAll();
 
 const presentation = (): RegionalPresentation => ({
   mapping,
-  anatomyColors: new Map([[-315, '#3f8fbd'], [315, '#db7c3d']]),
+  anatomyColors: catalog ? new Map((catalog.mappings[mapping] ?? []).map((region) => [region.atlas_id, region.color_hex])) : new Map([[-315, '#3f8fbd'], [315, '#db7c3d']]),
   featureColors: null,
   visibleRegionIds: visible,
   selectedRegionIds: selected,
@@ -72,6 +83,7 @@ ready.observe(scene, { attributes: true, attributeFilter: ['data-scene3d-state',
 
 document.querySelector<HTMLSelectElement>('#mapping')!.onchange = (event) => {
   mapping = (event.target as HTMLSelectElement).value as RegionalPresentation['mapping'];
+  showAll();
   selected.clear();
   diagnostics.textContent = '';
   viewport.setPresentation(presentation());
@@ -81,7 +93,7 @@ document.querySelector<HTMLInputElement>('#explode')!.oninput = (event) => {
   required('#explode-value').textContent = explode.toFixed(2);
   viewport.setViewState({ explode, camera: null });
 };
-required('#show-all').onclick = () => { visible.clear(); visible.add(-315); visible.add(315); viewport.setPresentation(presentation()); };
+required('#show-all').onclick = () => { showAll(); selected.clear(); diagnostics.textContent = ''; viewport.setPresentation(presentation()); };
 required('#deactivate').onclick = (event) => {
   const button = event.currentTarget as HTMLButtonElement;
   if (button.dataset.active === 'false') { viewport.activate(); button.dataset.active = 'true'; button.textContent = 'Deactivate'; }

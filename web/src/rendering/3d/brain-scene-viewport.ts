@@ -249,14 +249,20 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
         geometry.setAttribute('rightPresentationId', new THREE.BufferAttribute(rightPresentation, 1));
         geometry.setAttribute('explodeOffset', new THREE.BufferAttribute(explode, 3));
         geometry.setIndex(new THREE.BufferAttribute(chunk.indices, 1));
-        geometry.computeBoundingSphere();
+        const bounds = new THREE.Box3();
+        for (let vertex = 0; vertex < chunk.componentIds.length; vertex += 1) {
+          const point = new THREE.Vector3().fromArray(chunk.positions, vertex * 3);
+          bounds.expandByPoint(point);
+          bounds.expandByPoint(point.add(new THREE.Vector3().fromArray(explode, vertex * 3)));
+        }
+        geometry.boundingSphere = bounds.getBoundingSphere(new THREE.Sphere());
         const lookup = this.createLookupTexture();
         const material = new THREE.ShaderMaterial({
           transparent: true,
           side: THREE.DoubleSide,
           uniforms: { uLookup: { value: lookup }, uLookupWidth: { value: this.manifest!.presentations.length }, uExplode: { value: this.state.explode }, uThreshold: { value: this.manifest.presentation_boundary.threshold_um } },
           vertexShader: `attribute float leftPresentationId; attribute float rightPresentationId; attribute vec3 explodeOffset; uniform float uExplode; varying vec3 vNormal; varying float vLeftPresentationId; varying float vRightPresentationId; varying float vOriginalMl; void main(){ vLeftPresentationId=leftPresentationId; vRightPresentationId=rightPresentationId; vOriginalMl=position.x; vNormal=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position+explodeOffset*uExplode,1.); }`,
-          fragmentShader: `uniform sampler2D uLookup; uniform float uLookupWidth; uniform float uThreshold; varying vec3 vNormal; varying float vLeftPresentationId; varying float vRightPresentationId; varying float vOriginalMl; void main(){ float presentationId=vOriginalMl < -uThreshold ? vLeftPresentationId : vRightPresentationId; if(presentationId<0.) discard; vec4 vColor=texture2D(uLookup,vec2((presentationId+.5)/uLookupWidth,.5)); if(vColor.a<.01) discard; float light=.82+.20*abs(dot(normalize(vNormal),normalize(vec3(-.3,.4,.85)))); gl_FragColor=linearToOutputTexel(vec4(vColor.rgb*light,vColor.a)); }`,
+          fragmentShader: `uniform sampler2D uLookup; uniform float uLookupWidth; uniform float uThreshold; varying vec3 vNormal; varying float vLeftPresentationId; varying float vRightPresentationId; varying float vOriginalMl; void main(){ float presentationId=vLeftPresentationId<0. ? vRightPresentationId : vRightPresentationId<0. ? vLeftPresentationId : vOriginalMl < -uThreshold ? vLeftPresentationId : vRightPresentationId; if(presentationId<0.) discard; vec4 vColor=texture2D(uLookup,vec2((presentationId+.5)/uLookupWidth,.5)); if(vColor.a<.01) discard; float light=.82+.20*abs(dot(normalize(vNormal),normalize(vec3(-.3,.4,.85)))); gl_FragColor=linearToOutputTexel(vec4(vColor.rgb*light,vColor.a)); }`,
         });
         const mesh = new THREE.Mesh(geometry, material);
         const baseGetVertexPosition = mesh.getVertexPosition.bind(mesh);
@@ -329,8 +335,10 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
       const originalMl = bary
         ? position.getX(face.a) * bary.x + position.getX(face.b) * bary.y + position.getX(face.c) * bary.z
         : position.getX(face.a);
-      const presentation = originalMl < -this.manifest.presentation_boundary.threshold_um
-        ? Math.round(left.getX(face.a)) : Math.round(right.getX(face.a));
+      const leftId = Math.round(left.getX(face.a));
+      const rightId = Math.round(right.getX(face.a));
+      const presentation = leftId < 0 ? rightId : rightId < 0 ? leftId
+        : originalMl < -this.manifest.presentation_boundary.threshold_um ? leftId : rightId;
       if (presentation < 0) continue;
       const region = this.manifest.presentations[presentation];
       if (!region) continue;

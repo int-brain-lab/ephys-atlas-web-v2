@@ -9,6 +9,38 @@ rendering contract.
 
 ## Planned candidate
 
+### Local real-anatomy lab (2026-09-07)
+
+`npm --prefix web run dev:3d` opens the real D042 anatomy at
+`http://127.0.0.1:4194/`. Its default local pack is
+`artifacts/mesh-d042-components-v1`; the pinned catalog supplies regional colours.
+The native no-cut candidate and its movement-review workflow are separate,
+unfinished work. The earlier synthetic lab cannot support anatomical review.
+
+The updated repackager maps the original D042 signed surfaces into the shared
+component/presentation contract. It preserves the meshopt geometry payload
+byte-for-byte and the original grouped displacement vectors. One-sided surfaces
+retain their signed presentation on their caps, so Q18's crossing-component
+boundary proposals are not applied to D042.
+
+Reproduce into a new, empty output directory:
+
+```sh
+node web/scripts/repack-d042-mesh.mjs \
+  --donor-dir artifacts/mesh-d042-donor \
+  --projection-manifest web/public/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1-display-80um-d8-f8277956e67a/manifest.json \
+  --output artifacts/mesh-d042-components-v1 \
+  --builder-commit "$(git rev-parse HEAD)"
+uv run --project builder --extra test --locked python -m tools.mesh_pack.validate artifacts/mesh-d042-components-v1
+```
+
+The new resource SHA-256 is
+`c04a274561bac51c6becea9cfbc83b02e1b9266b211b1722ba0d327f949c9bd6`
+(4,957,138 served bytes, 989,811 triangles, 1,130 signed surfaces).
+The original local D042 pack is preserved. Existing development-bundle
+descriptors still referencing its old contract require a separate descriptor
+transition; the standalone lab does not load those bundles.
+
 D066 permits the [native-component candidate](../tasks/2026-09-02-native-3d-mesh-components/README.md),
 which preserves source components without midline cuts or caps. The
 [baseline/component audit](../tasks/2026-09-02-native-3d-mesh-components/AUDIT.md)

@@ -4,16 +4,17 @@ This directory is deterministic, synthetic, and test-only. It is not Allen
 geometry and must never be published as scientific data or used as a runtime
 fallback.
 
-Launch the standalone browser lab from the repository root:
+The fixture remains available to browser tests at `/3d-lab/` on their test
+server. The owner-facing standalone command now loads real D042 anatomy:
 
 ```sh
 npm --prefix web run dev:3d
 ```
 
 It opens `http://127.0.0.1:4194/3d-lab/`; the server's root redirects there
-as well. This command does not validate or load the scientific development
-bundle. It displays synthetic shapes only, not the real Allen components
-whose movement assignments await review.
+as well. It requires `artifacts/mesh-d042-components-v1` and the pinned donor
+catalog. Missing real inputs fail at startup, without a synthetic fallback.
+See `docs/rendering/3D_SELECTED_ASSET.md` for the repackaging command.
 
 `source/source.glb` contains one synthetic Allen surface with an intact component
 that crosses ML=0 and a disconnected right-lateral component. Both components
