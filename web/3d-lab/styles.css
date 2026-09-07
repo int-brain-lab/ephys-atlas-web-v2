@@ -1,14 +1,21 @@
 :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #07111a; color: #e8f2f5; }
 body { margin: 0; }
-.mesh-lab { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+.mesh-lab { height: 100vh; display: flex; flex-direction: column; }
 .mesh-lab header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #28404d; }
 .mesh-lab h1, .mesh-lab p { margin: .2rem 0; }
 .mesh-lab header p { color: #8fb6c2; text-transform: uppercase; font-size: .72rem; letter-spacing: .08em; }
-.mesh-layout { min-height: 0; display: grid; grid-template-columns: 1fr 18rem; }
+.review-warning { padding: .7rem 1.5rem; color: #ffe4a3; background: #3a2b13; border-bottom: 1px solid #8d6d2e; }
+.review-warning strong { margin-right: .45rem; text-transform: uppercase; letter-spacing: .05em; }
+.mesh-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 18rem; }
 #scene { min-height: 32rem; position: relative; }
 #scene canvas { display: block; width: 100%; height: 100%; }
-aside { padding: 1.2rem; border-left: 1px solid #28404d; display: flex; flex-direction: column; gap: 1rem; background: #0d1b25; }
+aside { overflow-y: auto; padding: 1.2rem; border-left: 1px solid #28404d; display: flex; flex-direction: column; gap: 1rem; background: #0d1b25; }
 label { display: grid; gap: .4rem; }
+label.check { grid-template-columns: auto 1fr; align-items: center; justify-content: start; }
+.movement-review { display: grid; gap: .7rem; padding: .8rem; background: #132632; border: 1px solid #416172; border-radius: .4rem; }
+.movement-review[hidden] { display: none; }
+.movement-review h2 { margin: 0; font-size: .95rem; }
+.movement-review p { color: #c9dce2; font-size: .82rem; line-height: 1.4; }
 select, button, input { font: inherit; }
 button, select { color: inherit; background: #17303d; border: 1px solid #416172; border-radius: .35rem; padding: .55rem; }
 pre { white-space: pre-wrap; color: #9fc9d4; }

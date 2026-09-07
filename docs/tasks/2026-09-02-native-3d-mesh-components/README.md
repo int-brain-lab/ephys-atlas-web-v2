@@ -1,13 +1,69 @@
 # Preserve native 3-D mesh components
 
-Status: active under D066; baseline/component audit implemented. Runtime contract and candidate pack remain unimplemented.
+Status: active under D066/D068; real native comparison pack and review lab implemented locally. Movement and boundary acceptance remain Q18.
 
 ## Resume here
 
+### Current local review (2026-09-07)
+
+Run `npm --prefix web run dev:3d` and open
+`http://127.0.0.1:4194/?variant=native`. Geometry switches between the real
+**Native intact** candidate and **Old cut · D042**. Use the flagged-component
+selector and surrounding-anatomy toggle to review the 12 asymmetric cases.
+Both variants use the same renderer and retain the explode/view state.
+The candidate is a local review default only; D042 remains the selected
+product geometry. No movement assignment or boundary convention has been accepted.
+
+The native pack is `artifacts/mesh-native-review-v1`, purpose `review-only`,
+with 966,645 source triangles in 1,140 shared-edge components from 566 source
+objects. All original triangle indices/winding are verified through the local
+component reindexing and encoded buffers. There are no cuts, caps, welding,
+decimation or discarded in-scope triangles. The pack displays all 539 left,
+516 right and 85 fixed proposed movements. The 12 exceptions remain unreviewed.
+
+Resource SHA-256:
+`b5f5abc7d0bb357520a65dacf33a24251e2bd6f75873d7d5ac650ef2cd271799`.
+Served bytes: 14,055,506; decoded
+EAM3 bytes: 24,433,484. The local raw-float32 encoding introduces at most
+0.000244140625 µm coordinate rounding and zero original-ML side flips.
+Classification tolerance 0.001 µm is retained as audit evidence; presentation
+uses original decoded ML < 0 for left and exact zero for right, explicitly
+provisional. Near-plane geometry is not adjusted. One near-plane source vertex
+is reported. Production encoding/performance acceptance is not implied.
+
+Build a new output directory from pinned local inputs:
+
+```sh
+uv run --project builder --extra test --locked python -m tools.mesh_pack.build_native_review \
+  --glb ../ephys-atlas-web-v2-3d-lab/data/source/atlas-mesh-pack/meshes.glb \
+  --baseline artifacts/mesh-d042-components-v1 \
+  --proposal artifacts/native-components-audit/movement-proposal.json \
+  --output artifacts/mesh-native-review-v1 \
+  --builder-commit "$(git rev-parse HEAD)"
+```
+
+The builder verifies pinned source/proposal hashes, explicit assignments,
+scope/transform, triangle correspondence and serialized arrays. It records
+the builder source hash, environment and input identities in the report.
+A second build to `artifacts/mesh-native-review-v1-repeat` matched every byte.
+An existing output directory is rejected. Do not overwrite either D042 pack.
+
+Validation: `just check` covers synthetic contract, original-side GPU/CPU
+interaction, and lifecycle regressions. The explicit real-data browser gate is:
+
+```sh
+cd web
+npx playwright test --config playwright.native-review.config.ts
+```
+
+Next: owner review of the real candidate's 12 exceptions and fixed medial
+components; record Q18 choices before accepting or promoting the candidate.
+The older implementation sequence below provides rationale, not current status.
+
 Read the repository startup sequence, then D042/D066/D068, this handoff,
 [AUDIT.md](AUDIT.md), and [MOVEMENT_REVIEW.md](MOVEMENT_REVIEW.md). The owner
-is handing implementation to a later agent; no runtime changes were made in
-this session. Do not restart the completed topology investigation or ask again
+originally handed off implementation before runtime changes. That implementation
+is now available above. Do not restart the completed topology investigation or ask again
 whether intact geometry and side-specific presentation are wanted.
 
 Agreed: preserve source triangles; shared-edge connectivity without welding;

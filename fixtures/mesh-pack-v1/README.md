@@ -5,14 +5,15 @@ geometry and must never be published as scientific data or used as a runtime
 fallback.
 
 The fixture remains available to browser tests at `/3d-lab/` on their test
-server. The owner-facing standalone command now loads real D042 anatomy:
+server. The owner-facing standalone command loads real Native / D042 anatomy:
 
 ```sh
 npm --prefix web run dev:3d
 ```
 
 It opens `http://127.0.0.1:4194/3d-lab/`; the server's root redirects there
-as well. It requires `artifacts/mesh-d042-components-v1` and the pinned donor
+as well. It requires `artifacts/mesh-d042-components-v1`,
+`artifacts/mesh-native-review-v1` (including its integrity-checked evidence report), and the pinned donor
 catalog. Missing real inputs fail at startup, without a synthetic fallback.
 See `docs/rendering/3D_SELECTED_ASSET.md` for the repackaging command.
 

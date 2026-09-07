@@ -499,8 +499,12 @@ def _mesh_pack_semantics(document: dict[str, Any]) -> None:
     boundary = document["presentation_boundary"]
     if not math.isfinite(boundary["threshold_um"]):
         _fail("mesh presentation threshold must be finite")
-    if document["purpose"] != "test-only" and boundary["status"] == "provisional-test-only":
+    if document["purpose"] == "production" and boundary["status"] != "reviewed":
         _fail("production mesh cannot use a provisional presentation boundary")
+    if boundary["status"] == "provisional-review" and document["purpose"] != "review-only":
+        _fail("review boundary requires review-only mesh purpose")
+    if boundary["status"] == "provisional-test-only" and document["purpose"] != "test-only":
+        _fail("test boundary requires test-only mesh purpose")
 
     presentations = document["presentations"]
     _unique([item["presentation_id"] for item in presentations], "mesh presentation id")

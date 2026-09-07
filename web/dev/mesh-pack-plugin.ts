@@ -14,7 +14,7 @@ export interface LocalMeshPack {
   readonly allowedPaths: ReadonlySet<string>;
 }
 
-export async function loadLocalMeshPack(root: string): Promise<LocalMeshPack> {
+export async function loadLocalMeshPack(root: string, options: { allowReview?: boolean } = {}): Promise<LocalMeshPack> {
   const resolvedRoot = path.resolve(root);
   const manifestBytes = await readFile(path.join(resolvedRoot, 'manifest.json'));
   const manifest = JSON.parse(manifestBytes.toString('utf8')) as {
@@ -24,7 +24,7 @@ export async function loadLocalMeshPack(root: string): Promise<LocalMeshPack> {
     lods?: Array<{ resource?: { path?: string } }>;
     validation?: { report?: { path?: string } };
   };
-  if (manifest.format !== 'atlas-mesh-pack-v1' || manifest.purpose !== 'production') {
+  if (manifest.format !== 'atlas-mesh-pack-v1' || (manifest.purpose !== 'production' && !(options.allowReview && manifest.purpose === 'review-only'))) {
     throw new Error('EPHYS_ATLAS_REAL_MESH_PACK must contain a production atlas-mesh-pack-v1 manifest');
   }
   if (typeof manifest.pack_id !== 'string' || !PACK_ID.test(manifest.pack_id)) {

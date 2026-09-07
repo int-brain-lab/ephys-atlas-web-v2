@@ -173,6 +173,7 @@ export class MeshPackSource {
   private validateDecoded(lod: MeshLodV1, manifest: MeshPackV1, decoded: MeshDecodeResult): void {
     const ranges = decoded.chunks.flatMap((chunk) => chunk.ranges.map((range) => ({ chunk, range })));
     if (ranges.length !== manifest.components.length) throw new Error(`Mesh LOD ${lod.id} component inventory differs from manifest`);
+    if (new Set(ranges.map(({ range }) => range.componentId)).size !== ranges.length) throw new Error(`Mesh LOD ${lod.id} component identity is duplicated`);
     for (const { range } of ranges) {
       const component = manifest.components[range.componentId];
       if (!component || component.component_id !== range.componentId

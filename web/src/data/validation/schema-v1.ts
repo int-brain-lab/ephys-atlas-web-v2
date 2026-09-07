@@ -494,8 +494,10 @@ function meshPackSemantics(document: JsonObject): void {
   const boundary = object(document.presentation_boundary, 'mesh presentation boundary');
   if (boundary.coordinate !== 'original-world-ml' || typeof boundary.threshold_um !== 'number' || !Number.isFinite(boundary.threshold_um)
     || boundary.threshold_um < 0 || !['left', 'right'].includes(String(boundary.on_plane_side))
-    || !['provisional-test-only', 'reviewed'].includes(String(boundary.status))) fail('mesh presentation boundary is invalid');
+    || !['provisional-test-only', 'provisional-review', 'reviewed'].includes(String(boundary.status))) fail('mesh presentation boundary is invalid');
   if (document.purpose === 'production' && boundary.status !== 'reviewed') fail('production mesh boundary must be reviewed');
+  if (boundary.status === 'provisional-review' && document.purpose !== 'review-only') fail('review boundary requires review-only mesh purpose');
+  if (boundary.status === 'provisional-test-only' && document.purpose !== 'test-only') fail('test boundary requires test-only mesh purpose');
   const presentations = array(document.presentations, 'mesh presentations').map((value) => object(value, 'mesh presentation'));
   unique(presentations.map((presentation) => presentation.presentation_id), 'mesh presentation id');
   if (presentations.some((presentation, index) => presentation.presentation_id !== index)) fail('mesh presentation IDs must be contiguous in manifest order');

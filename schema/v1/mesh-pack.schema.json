@@ -17,7 +17,7 @@
     "pack_id": {"$ref": "common.schema.json#/$defs/identifier"},
     "geometry_id": {"$ref": "common.schema.json#/$defs/identifier"},
     "immutable": {"const": true},
-    "purpose": {"enum": ["test-only", "production"]},
+    "purpose": {"enum": ["test-only", "review-only", "production"]},
     "reference_space_id": {"$ref": "common.schema.json#/$defs/identifier"},
     "coordinate_system": {"$ref": "#/$defs/coordinateSystem"},
     "sources": {"$ref": "#/$defs/sources"},
@@ -151,7 +151,7 @@
         "coordinate": {"const": "original-world-ml"},
         "threshold_um": {"type": "number", "minimum": 0},
         "on_plane_side": {"enum": ["left", "right"]},
-        "status": {"enum": ["provisional-test-only", "reviewed"]}
+        "status": {"enum": ["provisional-test-only", "provisional-review", "reviewed"]}
       }
     },
     "presentation": {

@@ -38,6 +38,12 @@ indexed-SVG packs and their exact native slice inventories. A complete
 projection-pack validator must verify the manifest, the three indexes, every
 transitive registered/static resource, and the absence of undeclared files.
 
+Mesh packs may also have purpose `review-only` for real local candidate
+geometry with unaccepted presentation/movement proposals. Their boundary
+status may be `provisional-review`; this status is rejected for production
+packs and is distinct from a synthetic `provisional-test-only` fixture.
+The dedicated comparison server must explicitly opt into serving review packs.
+
 `mesh-pack.schema.json` is the only 3-D geometry asset contract. It uses
 signed bilateral Allen identities, nullable reduced mappings, an exact
 `reference_space_id`, explicit source-to-world evidence, manifest-selected

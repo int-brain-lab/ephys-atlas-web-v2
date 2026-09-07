@@ -143,9 +143,9 @@ These remain useful but must not displace the launch path:
   The [baseline/component audit](tasks/2026-09-02-native-3d-mesh-components/AUDIT.md)
   and synthetic topology tests are implemented. D068 fixes side-specific
   presentation and independent movement; [movement proposals](tasks/2026-09-02-native-3d-mesh-components/MOVEMENT_REVIEW.md)
-  await review. Next: follow the handoff's "Resume here" sequence: one coherent
-  synthetic contract/renderer slice, then a labelled local A/B candidate for
-  assignment review. Q18 retains real acceptance of proposed boundary conventions
+  await review. The contract/renderer slice and real, labelled local A/B candidate
+  are implemented, with direct navigation through the 12 flagged components.
+  Next: owner review in the standalone lab. Q18 retains real acceptance of proposed boundary conventions
   and movement assignments. Missing remote archive authorization does
   not block additive work; preserve existing evidence. D042 stays the default
   pending owner visual review. This optional lane does not block launch;

@@ -445,6 +445,9 @@
     {"name": "mesh pack neutral component requires both presentations", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/components/0/left_presentation_id": null}},
     {"name": "mesh pack component presentation must match source and side", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/components/1/right_presentation_id": 0}},
     {"name": "mesh pack production boundary cannot be provisional", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/purpose": "production"}},
+    {"name": "mesh pack real review candidate may use provisional review boundary", "schema": "mesh-pack.schema.json", "valid": true, "document": "meshPack", "set": {"/purpose": "review-only", "/presentation_boundary/status": "provisional-review"}},
+    {"name": "mesh pack review boundary cannot be labelled production", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/purpose": "production", "/presentation_boundary/status": "provisional-review"}},
+    {"name": "mesh pack review boundary cannot be labelled synthetic", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/presentation_boundary/status": "provisional-review"}},
     {"name": "mesh pack selected LOD exists", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/default_lod_id": "missing"}},
     {"name": "mesh pack LOD ratio matches counts", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/lods/0/actual_triangle_ratio": 0.5}}
   ]

@@ -119,12 +119,21 @@ function block(data: Uint8Array, payloadOffset: number, descriptor: BlockDescrip
 function validateChunk(chunk: MeshChunk): MeshChunk {
   const vertexCount = chunk.componentIds.length;
   if (chunk.positions.length !== vertexCount * 3 || chunk.normals.length !== vertexCount * 3 || chunk.indices.length % 3) throw new Error('Mesh chunk array counts are inconsistent');
-  if ([...chunk.indices].some((index) => index >= vertexCount)) throw new Error('Mesh chunk index is out of bounds');
+  let nextVertex = 0;
+  let nextIndex = 0;
   for (const range of chunk.ranges) {
+    if (range.vertexStart !== nextVertex || range.indexStart !== nextIndex) throw new Error('Mesh ranges must cover the chunk without gaps or overlaps');
+    nextVertex += range.vertexCount;
+    nextIndex += range.indexCount;
     for (let index = range.vertexStart; index < range.vertexStart + range.vertexCount; index += 1) {
       if (chunk.componentIds[index] !== range.componentId) throw new Error(`Mesh range ${range.componentId} component buffer differs`);
     }
+    for (let offset = range.indexStart; offset < nextIndex; offset += 1) {
+      const vertex = chunk.indices[offset]!;
+      if (vertex < range.vertexStart || vertex >= nextVertex) throw new Error('Mesh triangle index escapes its component range');
+    }
   }
+  if (nextVertex !== vertexCount || nextIndex !== chunk.indices.length) throw new Error('Mesh ranges do not cover the chunk');
   return chunk;
 }
 

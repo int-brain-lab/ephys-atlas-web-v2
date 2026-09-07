@@ -175,7 +175,7 @@ export interface MeshPresentationBoundaryV1 {
   readonly coordinate: 'original-world-ml';
   readonly threshold_um: number;
   readonly on_plane_side: MeshHemisphereV1;
-  readonly status: 'provisional-test-only' | 'reviewed';
+  readonly status: 'provisional-test-only' | 'provisional-review' | 'reviewed';
 }
 
 export interface MeshLodV1 {
@@ -191,7 +191,7 @@ export interface MeshPackV1 {
   readonly pack_id: string;
   readonly geometry_id: string;
   readonly immutable: true;
-  readonly purpose: 'test-only' | 'production';
+  readonly purpose: 'test-only' | 'review-only' | 'production';
   readonly reference_space_id: ReferenceSpaceId;
   readonly geometry_policy: 'bilateral-cut-cap' | 'native-components';
   readonly presentation_boundary: MeshPresentationBoundaryV1;

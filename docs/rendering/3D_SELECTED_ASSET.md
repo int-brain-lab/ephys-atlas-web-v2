@@ -11,11 +11,14 @@ rendering contract.
 
 ### Local real-anatomy lab (2026-09-07)
 
-`npm --prefix web run dev:3d` opens the real D042 anatomy at
-`http://127.0.0.1:4194/`. Its default local pack is
-`artifacts/mesh-d042-components-v1`; the pinned catalog supplies regional colours.
-The native no-cut candidate and its movement-review workflow are separate,
-unfinished work. The earlier synthetic lab cannot support anatomical review.
+`npm --prefix web run dev:3d` opens the real native review candidate at
+`http://127.0.0.1:4194/`, with an Old cut / Native comparison selector.
+It requires `artifacts/mesh-d042-components-v1` and
+`artifacts/mesh-native-review-v1`; the pinned catalog supplies regional colours.
+The native pack is explicitly review-only, with 966,645 intact source triangles
+and 1,140 components. The 12 flagged movement proposals are directly selectable.
+See the candidate handoff below for build commands and evidence. The earlier
+synthetic lab remains test-only and cannot support anatomical review.
 
 The updated repackager maps the original D042 signed surfaces into the shared
 component/presentation contract. It preserves the meshopt geometry payload
@@ -44,7 +47,8 @@ transition; the standalone lab does not load those bundles.
 D066 permits the [native-component candidate](../tasks/2026-09-02-native-3d-mesh-components/README.md),
 which preserves source components without midline cuts or caps. The
 [baseline/component audit](../tasks/2026-09-02-native-3d-mesh-components/AUDIT.md)
-is implemented; the runtime contract and candidate pack are not. D042 remains the selected default and rollback geometry.
+and runtime contract are implemented, and a labelled local candidate is available.
+D042 remains the selected product default and rollback geometry.
 Selecting a replacement requires owner visual review and a new recorded decision.
 
 ## Authoritative source
