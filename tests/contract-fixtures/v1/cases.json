@@ -330,19 +330,21 @@
         "ontology": "Allen CCF 2017", "root_allen_id": 8, "root_acronym": "grey",
         "policy": "deepest-active-grey-descendants", "active_allen_ids": [315], "excluded_allen_ids": [1009]
       },
+      "geometry_policy": "native-components",
+      "presentation_boundary": {"coordinate": "original-world-ml", "threshold_um": 0, "on_plane_side": "right", "status": "provisional-test-only"},
       "whole_brain_centroid_um": [0, 0, 0],
-      "explode_groups": [
-        {"signed_group_id": -315, "hemisphere": "left", "centroid_um": [-1, 0, 0]},
-        {"signed_group_id": 315, "hemisphere": "right", "centroid_um": [1, 0, 0]}
+      "presentations": [
+        {"presentation_id": 0, "source_allen_id": 315, "signed_allen_id": -315, "side": "left", "mappings": {"allen": -315, "beryl": null, "cosmos": -315}},
+        {"presentation_id": 1, "source_allen_id": 315, "signed_allen_id": 315, "side": "right", "mappings": {"allen": 315, "beryl": null, "cosmos": 315}}
       ],
-      "regions": [
-        {"feature_id": 0, "source_allen_id": 315, "signed_allen_id": -315, "hemisphere": "left", "mappings": {"allen": -315, "beryl": null, "cosmos": -315}, "bounds": {"minimum_um": [-2, -1, -1], "maximum_um": [0, 1, 1]}, "vertex_count": 6, "triangle_count": 8, "component_count": 1, "centroid_um": [-1, 0, 0], "signed_explode_group_id": -315},
-        {"feature_id": 1, "source_allen_id": 315, "signed_allen_id": 315, "hemisphere": "right", "mappings": {"allen": 315, "beryl": null, "cosmos": 315}, "bounds": {"minimum_um": [0, -1, -1], "maximum_um": [2, 1, 1]}, "vertex_count": 6, "triangle_count": 8, "component_count": 1, "centroid_um": [1, 0, 0], "signed_explode_group_id": 315}
+      "components": [
+        {"component_id": 0, "source_allen_id": 315, "lateralization": "neutral", "left_presentation_id": 0, "right_presentation_id": 1, "bounds": {"minimum_um": [-2, -1, -1], "maximum_um": [2, 1, 1]}, "vertex_count": 6, "triangle_count": 8, "centroid_um": [0, 0, 0], "explode_displacement_um": [0, 0, 0]},
+        {"component_id": 1, "source_allen_id": 315, "lateralization": "right", "left_presentation_id": null, "right_presentation_id": 1, "bounds": {"minimum_um": [3, -1, 0], "maximum_um": [5, 0, 1]}, "vertex_count": 4, "triangle_count": 4, "centroid_um": [4, -0.25, 0.25], "explode_displacement_um": [2, -0.125, 0.125]}
       ],
       "default_lod_id": "default", "upgrade_lod_id": null,
       "lods": [{
         "id": "default", "target_triangle_ratio": 1, "actual_triangle_ratio": 1,
-        "triangle_count": 16, "maximum_error_um": 0, "adaptive_fallback_region_count": 0,
+        "triangle_count": 12, "maximum_error_um": 0, "adaptive_fallback_region_count": 0,
         "resource": {"path": "default.eam3.gz", "media_type": "application/vnd.ibl.eam3", "bytes": 20, "sha256": "6060606060606060606060606060606060606060606060606060606060606060", "codec": {"name": "gzip", "decoded_bytes": 100, "level": 9}},
         "decoder": {"container": "EAM3", "container_version": 1, "encoding": "raw-v1", "position_bits": 0, "normal_bits": 0}
       }],
@@ -435,12 +437,14 @@
     {"name": "mesh pack valid", "schema": "mesh-pack.schema.json", "valid": true, "document": "meshPack"},
     {"name": "mesh pack reference space required", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/reference_space_id": ""}},
     {"name": "mesh pack transform invertible", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/coordinate_system/source_to_world_um/0": 0}},
-    {"name": "mesh pack signed hemisphere", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/regions/0/signed_allen_id": 315}},
-    {"name": "mesh pack mapping null preserved", "schema": "mesh-pack.schema.json", "valid": true, "document": "meshPack", "set": {"/regions/0/mappings/beryl": null}},
-    {"name": "mesh pack source-authoritative one-sided regions", "schema": "mesh-pack.schema.json", "valid": true, "document": "meshPack", "set": {"/geometry_scope/active_allen_ids": [315, 316], "/sources/source_glb/inventory_allen_ids": [315, 316], "/regions/1/source_allen_id": 316, "/regions/1/signed_allen_id": 316, "/regions/1/mappings/allen": 316}},
-    {"name": "mesh pack reduced mapping cannot use root", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/regions/0/mappings/beryl": -997}},
+    {"name": "mesh pack signed presentation side", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/presentations/0/signed_allen_id": 315}},
+    {"name": "mesh pack mapping null preserved", "schema": "mesh-pack.schema.json", "valid": true, "document": "meshPack", "set": {"/presentations/0/mappings/beryl": null}},
+    {"name": "mesh pack reduced mapping cannot use root", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/presentations/0/mappings/beryl": -997}},
     {"name": "mesh pack active scope excludes source", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/geometry_scope/active_allen_ids/0": 8}},
-    {"name": "mesh pack centroid inside bounds", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/regions/1/centroid_um/0": 3}},
+    {"name": "mesh pack centroid inside bounds", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/components/1/centroid_um/0": 6}},
+    {"name": "mesh pack neutral component requires both presentations", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/components/0/left_presentation_id": null}},
+    {"name": "mesh pack component presentation must match source and side", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/components/1/right_presentation_id": 0}},
+    {"name": "mesh pack production boundary cannot be provisional", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/purpose": "production"}},
     {"name": "mesh pack selected LOD exists", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/default_lod_id": "missing"}},
     {"name": "mesh pack LOD ratio matches counts", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/lods/0/actual_triangle_ratio": 0.5}}
   ]

@@ -491,40 +491,50 @@ function meshPackSemantics(document: JsonObject): void {
   }
   if (active.some((id) => excluded.includes(id))) fail('mesh active and excluded Allen IDs overlap');
 
-  const groups = array(document.explode_groups, 'mesh explode groups').map((value) => object(value, 'mesh explode group'));
-  unique(groups.map((group) => group.signed_group_id), 'mesh explode group id');
-  const groupById = new Map(groups.map((group) => [Number(group.signed_group_id), group]));
-  const regions = array(document.regions, 'mesh regions').map((value) => object(value, 'mesh region'));
-  unique(regions.map((region) => region.feature_id), 'mesh feature id');
-  unique(regions.map((region) => region.signed_allen_id), 'mesh signed Allen id');
-  if (regions.some((region, index) => region.feature_id !== index)) fail('mesh feature IDs must be contiguous in manifest order');
+  const boundary = object(document.presentation_boundary, 'mesh presentation boundary');
+  if (boundary.coordinate !== 'original-world-ml' || typeof boundary.threshold_um !== 'number' || !Number.isFinite(boundary.threshold_um)
+    || boundary.threshold_um < 0 || !['left', 'right'].includes(String(boundary.on_plane_side))
+    || !['provisional-test-only', 'reviewed'].includes(String(boundary.status))) fail('mesh presentation boundary is invalid');
+  if (document.purpose === 'production' && boundary.status !== 'reviewed') fail('production mesh boundary must be reviewed');
+  const presentations = array(document.presentations, 'mesh presentations').map((value) => object(value, 'mesh presentation'));
+  unique(presentations.map((presentation) => presentation.presentation_id), 'mesh presentation id');
+  if (presentations.some((presentation, index) => presentation.presentation_id !== index)) fail('mesh presentation IDs must be contiguous in manifest order');
   const signsBySource = new Map<number, Set<number>>();
-  for (const region of regions) {
-    const sourceId = Number(region.source_allen_id);
-    const signedId = Number(region.signed_allen_id);
-    const sign = region.hemisphere === 'left' ? -1 : 1;
-    if (signedId !== sign * sourceId) fail(`mesh signed Allen identity is inconsistent for feature ${String(region.feature_id)}`);
-    if (!active.includes(sourceId) || !inventory.includes(sourceId) || excluded.includes(sourceId)) fail(`mesh region ${sourceId} is outside the declared source scope`);
-    const mappings = object(region.mappings, 'mesh mappings');
+  for (const presentation of presentations) {
+    const sourceId = Number(presentation.source_allen_id);
+    const signedId = Number(presentation.signed_allen_id);
+    const sign = presentation.side === 'left' ? -1 : 1;
+    if (signedId !== sign * sourceId) fail(`mesh signed Allen identity is inconsistent for presentation ${String(presentation.presentation_id)}`);
+    if (!active.includes(sourceId) || !inventory.includes(sourceId) || excluded.includes(sourceId)) fail(`mesh presentation ${sourceId} is outside the declared source scope`);
+    const mappings = object(presentation.mappings, 'mesh mappings');
     if (mappings.allen !== signedId) fail(`mesh Allen mapping differs from signed identity ${signedId}`);
     for (const name of ['beryl', 'cosmos'] as const) {
       const mapped = mappings[name];
       if (mapped !== null && (typeof mapped !== 'number' || !Number.isInteger(mapped)
         || mapped === sign * 997 || (mapped < 0) !== (sign < 0))) fail(`mesh ${name} mapping is invalid for signed identity ${signedId}`);
     }
-    const groupId = Number(region.signed_explode_group_id);
-    const group = groupById.get(groupId);
-    if (!group || group.hemisphere !== region.hemisphere || (groupId < 0) !== (sign < 0)) fail(`mesh explode group is inconsistent for signed identity ${signedId}`);
-    const bounds = object(region.bounds, 'mesh bounds');
-    const minimum = numberArray(bounds.minimum_um, 3, 'mesh minimum bounds');
-    const maximum = numberArray(bounds.maximum_um, 3, 'mesh maximum bounds');
-    const centroid = numberArray(region.centroid_um, 3, 'mesh centroid');
-    if (minimum.some((low, axis) => low > maximum[axis]! || centroid[axis]! < low || centroid[axis]! > maximum[axis]!)) fail(`mesh centroid or bounds are invalid for signed identity ${signedId}`);
     const signs = signsBySource.get(sourceId) ?? new Set<number>();
     signs.add(sign);
     signsBySource.set(sourceId, signs);
   }
-  if (signsBySource.size !== active.length) fail('mesh region coverage differs from active Allen scope');
+  if (signsBySource.size !== active.length || [...signsBySource.values()].some((signs) => signs.size !== 2)) fail('mesh presentation coverage differs from active Allen scope');
+  const components = array(document.components, 'mesh components').map((value) => object(value, 'mesh component'));
+  unique(components.map((component) => component.component_id), 'mesh component id');
+  if (components.some((component, index) => component.component_id !== index)) fail('mesh component IDs must be contiguous in manifest order');
+  for (const component of components) {
+    const sourceId = Number(component.source_allen_id);
+    if (!active.includes(sourceId)) fail(`mesh component ${sourceId} is outside declared source scope`);
+    const left = component.left_presentation_id === null ? null : presentations[Number(component.left_presentation_id)];
+    const right = component.right_presentation_id === null ? null : presentations[Number(component.right_presentation_id)];
+    if ((!left && !right) || (left && (left.source_allen_id !== sourceId || left.side !== 'left')) || (right && (right.source_allen_id !== sourceId || right.side !== 'right'))) fail('mesh component presentation identity is invalid');
+    if (component.lateralization === 'neutral' && (!left || !right)) fail('neutral mesh component requires both presentations');
+    const bounds = object(component.bounds, 'mesh component bounds');
+    const minimum = numberArray(bounds.minimum_um, 3, 'mesh component minimum bounds');
+    const maximum = numberArray(bounds.maximum_um, 3, 'mesh component maximum bounds');
+    const centroid = numberArray(component.centroid_um, 3, 'mesh component centroid');
+    numberArray(component.explode_displacement_um, 3, 'mesh component displacement');
+    if (minimum.some((low, axis) => low > maximum[axis]! || centroid[axis]! < low || centroid[axis]! > maximum[axis]!)) fail(`mesh component bounds are invalid for ${sourceId}`);
+  }
 
   const lods = array(document.lods, 'mesh LODs').map((value) => object(value, 'mesh LOD'));
   const lodIds = lods.map((lod) => lod.id);
@@ -533,7 +543,7 @@ function meshPackSemantics(document: JsonObject): void {
   if (document.upgrade_lod_id !== null && (!lodIds.includes(document.upgrade_lod_id) || document.upgrade_lod_id === document.default_lod_id)) fail('mesh upgrade LOD is absent or duplicates the default');
   const validation = object(document.validation, 'mesh validation');
   unique([...lods.map((lod) => object(lod.resource, 'mesh resource').path), object(validation.report, 'mesh report').path], 'mesh resource path');
-  const sourceTriangles = regions.reduce((total, region) => total + Number(region.triangle_count), 0);
+  const sourceTriangles = components.reduce((total, component) => total + Number(component.triangle_count), 0);
   for (const lod of lods) {
     const triangles = Number(lod.triangle_count);
     if (triangles > sourceTriangles || !close(Number(lod.actual_triangle_ratio), triangles / sourceTriangles)) fail(`mesh LOD ${String(lod.id)} triangle ratio is inconsistent`);

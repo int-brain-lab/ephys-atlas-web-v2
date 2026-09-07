@@ -9,7 +9,7 @@ test('retained 3-D lab loads the canonical pack with bounded requests and retain
   const scene = page.locator('#scene');
   await expect(scene).toHaveAttribute('data-scene3d-state', 'ready');
   await expect(scene).toHaveAttribute('data-lod', 'default');
-  await expect(scene).toHaveAttribute('data-geometry-uploads', '2');
+  await expect(scene).toHaveAttribute('data-geometry-uploads', '1');
   expect(fixtureRequests).toEqual([
     '/__mesh-pack-fixture/manifest.json',
     '/__mesh-pack-fixture/default.eam3.gz',
@@ -18,7 +18,7 @@ test('retained 3-D lab loads the canonical pack with bounded requests and retain
   await page.locator('#explode').fill('0.75');
   await expect(scene).toHaveAttribute('data-explode', '0.75');
   await page.locator('#mapping').selectOption('cosmos');
-  await expect(scene).toHaveAttribute('data-geometry-uploads', '2');
+  await expect(scene).toHaveAttribute('data-geometry-uploads', '1');
   await expect(scene).toHaveAttribute('data-presentation-updates', '2');
 });
 
@@ -94,25 +94,30 @@ test('a failed upgrade retains the default LOD and destruction releases viewport
     const host = document.createElement('div');
     host.style.cssText = 'position:fixed;width:320px;height:240px';
     document.body.append(host);
-    const triangle = (hemisphere: 'left' | 'right', featureId: number, signedAllenId: number) => ({
-      hemisphere,
+    const triangle = (componentId: number, signedAllenId: number) => ({
+      chunkId: `component-${componentId}`,
       positions: new Float32Array([signedAllenId < 0 ? -2 : 0, -1, 0, signedAllenId < 0 ? 0 : 2, -1, 0, signedAllenId < 0 ? -1 : 1, 1, 0]),
       normals: new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]),
-      featureIds: new Uint16Array([featureId, featureId, featureId]),
+      componentIds: new Uint16Array([componentId, componentId, componentId]),
       indices: new Uint32Array([0, 1, 2]),
-      ranges: [{ featureId, signedAllenId, signedExplodeGroupId: signedAllenId, indexStart: 0, indexCount: 3, vertexStart: 0, vertexCount: 3 }],
+      ranges: [{ componentId, leftPresentationId: componentId === 0 ? 0 : null, rightPresentationId: componentId === 1 ? 1 : null, indexStart: 0, indexCount: 3, vertexStart: 0, vertexCount: 3 }],
     });
     let disposed = false;
     const source = {
       async loadManifest() { return {
         schema_version: '1.0', format: 'atlas-mesh-pack-v1', pack_id: 'test', geometry_id: 'test', immutable: true,
-        purpose: 'test-only', reference_space_id: 'allen-ccf-2017', default_lod_id: 'default', upgrade_lod_id: 'upgrade', lods: [],
-        regions: [
-          { feature_id: 0, source_allen_id: 1, signed_allen_id: -1, hemisphere: 'left', mappings: { allen: -1, beryl: null, cosmos: -1 }, signed_explode_group_id: -1 },
-          { feature_id: 1, source_allen_id: 1, signed_allen_id: 1, hemisphere: 'right', mappings: { allen: 1, beryl: null, cosmos: 1 }, signed_explode_group_id: 1 },
+        purpose: 'test-only', reference_space_id: 'allen-ccf-2017', default_lod_id: 'default', upgrade_lod_id: 'upgrade', lods: [], geometry_policy: 'native-components',
+        presentation_boundary: { coordinate: 'original-world-ml', threshold_um: 0, on_plane_side: 'right', status: 'provisional-test-only' },
+        presentations: [
+          { presentation_id: 0, source_allen_id: 1, signed_allen_id: -1, side: 'left', mappings: { allen: -1, beryl: null, cosmos: -1 } },
+          { presentation_id: 1, source_allen_id: 1, signed_allen_id: 1, side: 'right', mappings: { allen: 1, beryl: null, cosmos: 1 } },
+        ],
+        components: [
+          { component_id: 0, source_allen_id: 1, lateralization: 'left', left_presentation_id: 0, right_presentation_id: null, explode_displacement_um: [0, 0, 0] },
+          { component_id: 1, source_allen_id: 1, lateralization: 'right', left_presentation_id: null, right_presentation_id: 1, explode_displacement_um: [0, 0, 0] },
         ],
       }; },
-      async loadDefault() { return { id: 'default', chunks: [triangle('left', 0, -1), triangle('right', 1, 1)], byteLength: 128 }; },
+      async loadDefault() { return { id: 'default', chunks: [triangle(0, -1), triangle(1, 1)], byteLength: 128 }; },
       async loadUpgrade() { throw new Error('synthetic upgrade failure'); },
       dispose() { disposed = true; },
     };

@@ -55,7 +55,8 @@ def test_clipping_retains_exact_midline_caps_and_bilateral_half_spaces() -> None
     split = split_and_cap_hemispheres(spec["positions_um"], spec["triangles"])
     assert split.intersection_loop_count == 1
     assert split.open_intersection_component_count == 0
-    assert split.left.surface_triangle_count == split.right.surface_triangle_count == 4
+    assert split.left.surface_triangle_count == 4
+    assert split.right.surface_triangle_count == 8
     assert split.left.cap_triangle_count == split.right.cap_triangle_count == 2
     assert all(point[0] <= 0 for point in split.left.positions)
     assert all(point[0] >= 0 for point in split.right.positions)
@@ -92,17 +93,23 @@ def test_active_mesh_inventory_is_derived_from_projection_fragments(tmp_path: Pa
     assert document["sampled_resource_count"] == 1
 
 
-def test_manifest_enforces_signed_identity_and_bounds_semantics() -> None:
+def test_manifest_separates_signed_presentation_from_component_geometry() -> None:
     manifest = json.loads((FIXTURE / "pack/manifest.json").read_text())
-    left, right = manifest["regions"]
+    left, right = manifest["presentations"]
     assert (left["signed_allen_id"], right["signed_allen_id"]) == (-315, 315)
     assert left["mappings"]["beryl"] is right["mappings"]["beryl"] is None
+    crossing, lateral = manifest["components"]
+    assert crossing["lateralization"] == "neutral"
+    assert (crossing["left_presentation_id"], crossing["right_presentation_id"]) == (0, 1)
+    assert crossing["explode_displacement_um"] == [0.0, 0.0, 0.0]
+    assert lateral["source_allen_id"] == crossing["source_allen_id"]
+    assert lateral["explode_displacement_um"] != [0.0, 0.0, 0.0]
     broken = deepcopy(manifest)
-    broken["regions"][0]["hemisphere"] = "right"
+    broken["presentations"][0]["side"] = "right"
     with pytest.raises(ValidationError, match="signed Allen identity"):
         validate_schema_v1_document(broken, "mesh-pack.schema.json")
     broken = deepcopy(manifest)
-    broken["regions"][1]["centroid_um"][0] = 3
+    broken["components"][1]["centroid_um"][0] = 6
     with pytest.raises(ValidationError, match="centroid or bounds"):
         validate_schema_v1_document(broken, "mesh-pack.schema.json")
 
@@ -111,8 +118,11 @@ def test_manifest_allows_source_authoritative_one_sided_geometry() -> None:
     manifest = deepcopy(json.loads((FIXTURE / "pack/manifest.json").read_text()))
     manifest["geometry_scope"]["active_allen_ids"] = [315, 316]
     manifest["sources"]["source_glb"]["inventory_allen_ids"] = [315, 316]
-    manifest["regions"][1].update({"source_allen_id": 316, "signed_allen_id": 316})
-    manifest["regions"][1]["mappings"]["allen"] = 316
+    manifest["presentations"].extend([
+        {**manifest["presentations"][0], "presentation_id": 2, "source_allen_id": 316, "signed_allen_id": -316, "mappings": {"allen": -316, "beryl": None, "cosmos": -315}},
+        {**manifest["presentations"][1], "presentation_id": 3, "source_allen_id": 316, "signed_allen_id": 316, "mappings": {"allen": 316, "beryl": None, "cosmos": 315}},
+    ])
+    manifest["components"][1].update({"source_allen_id": 316, "right_presentation_id": 3})
     validate_schema_v1_document(manifest, "mesh-pack.schema.json")
 
 
@@ -204,4 +214,4 @@ def test_graph_validation_checks_decoded_size_and_decoder_contract(tmp_path: Pat
     with pytest.raises(ValueError, match="decoder contract"):
         validate_pack(pack)
     decoded = gzip.decompress((FIXTURE / "pack/default.eam3.gz").read_bytes())
-    assert inspect_lod(decoded)["chunks"][0]["hemisphere"] == "left"
+    assert inspect_lod(decoded)["chunks"][0]["chunk_id"] == "all"

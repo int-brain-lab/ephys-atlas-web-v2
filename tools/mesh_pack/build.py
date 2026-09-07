@@ -11,7 +11,14 @@ from pathlib import Path
 from typing import Any
 
 from .binary import encode_raw_lod
-from .geometry import HalfMesh, bounds, centroid, component_count, split_and_cap_hemispheres, vertex_normals
+from .components import triangle_components
+from .geometry import (
+    HalfMesh,
+    bounds,
+    centroid,
+    split_and_cap_hemispheres,
+    vertex_normals,
+)
 from .ontology import resolve_mapping, select_grey_matter_source_ids
 
 FORMAT = "atlas-mesh-pack-v1"
@@ -91,51 +98,85 @@ def _identity(identifier: str, url: str, data: bytes) -> dict[str, Any]:
     return {"id": identifier, "url": url, "bytes": len(data), "sha256": _sha(data)}
 
 
-def _region_record(feature_id: int, source_id: int, hemisphere: str, mesh: HalfMesh, catalog: dict[str, Any]) -> dict[str, Any]:
-    sign = -1 if hemisphere == "left" else 1
+def _presentation_record(presentation_id: int, source_id: int, side: str, catalog: dict[str, Any]) -> dict[str, Any]:
+    sign = -1 if side == "left" else 1
     signed_id = sign * source_id
-    mappings = {name: (None if (mapped := resolve_mapping(source_id, name, catalog)) is None else sign * mapped) for name in ("allen", "beryl", "cosmos")}
     return {
-        "feature_id": feature_id,
+        "presentation_id": presentation_id,
         "source_allen_id": source_id,
         "signed_allen_id": signed_id,
-        "hemisphere": hemisphere,
-        "mappings": mappings,
-        "bounds": bounds(mesh.positions),
-        "vertex_count": len(mesh.positions),
-        "triangle_count": len(mesh.triangles),
-        "component_count": component_count(mesh.triangles),
-        "centroid_um": centroid(mesh.positions),
-        "signed_explode_group_id": signed_id,
+        "side": side,
+        "mappings": {
+            name: (None if (mapped := resolve_mapping(source_id, name, catalog)) is None else sign * mapped)
+            for name in ("allen", "beryl", "cosmos")
+        },
     }
 
 
-def _merge(regions: list[tuple[dict[str, Any], HalfMesh]], hemisphere: str) -> dict[str, Any]:
+def _merge(components: list[tuple[dict[str, Any], HalfMesh]]) -> dict[str, Any]:
     positions: list[float] = []
     normals: list[float] = []
-    feature_ids: list[int] = []
+    component_ids: list[int] = []
     indices: list[int] = []
     ranges = []
-    for region, mesh in regions:
+    for component, mesh in components:
         vertex_start = len(positions) // 3
         index_start = len(indices)
         positions.extend(value for point in mesh.positions for value in point)
         normals.extend(vertex_normals(mesh.positions, mesh.triangles))
-        feature_ids.extend([region["feature_id"]] * len(mesh.positions))
+        component_ids.extend([component["component_id"]] * len(mesh.positions))
         indices.extend(vertex_start + index for face in mesh.triangles for index in face)
         ranges.append({
-            "feature_id": region["feature_id"],
-            "signed_allen_id": region["signed_allen_id"],
-            "signed_explode_group_id": region["signed_explode_group_id"],
+            "component_id": component["component_id"],
+            "left_presentation_id": component["left_presentation_id"],
+            "right_presentation_id": component["right_presentation_id"],
             "index_start": index_start,
             "index_count": len(mesh.triangles) * 3,
             "vertex_start": vertex_start,
             "vertex_count": len(mesh.positions),
         })
-    return {"hemisphere": hemisphere, "positions": positions, "normals": normals, "feature_ids": feature_ids, "indices": indices, "ranges": ranges}
+    return {"chunk_id": "all", "positions": positions, "normals": normals, "component_ids": component_ids, "indices": indices, "ranges": ranges}
 
 
-def build_pack(source_dir: Path, output: Path, *, builder_commit: str = "synthetic") -> dict[str, Any]:
+def _component_mesh(positions: list[list[float]], triangles: list[list[int]], ordinals: list[int]) -> HalfMesh:
+    source_vertices = sorted({index for ordinal in ordinals for index in triangles[ordinal]})
+    local_by_source = {source: local for local, source in enumerate(source_vertices)}
+    return HalfMesh(
+        positions=[positions[index] for index in source_vertices],
+        triangles=[[local_by_source[index] for index in triangles[ordinal]] for ordinal in ordinals],
+        surface_triangle_count=len(ordinals),
+        cap_triangle_count=0,
+    )
+
+
+def _component_record(
+    component_id: int,
+    source_id: int,
+    mesh: HalfMesh,
+    lateralization: str,
+    presentation_ids: dict[tuple[int, str], int],
+) -> dict[str, Any]:
+    return {
+        "component_id": component_id,
+        "source_allen_id": source_id,
+        "lateralization": lateralization,
+        "left_presentation_id": presentation_ids[(source_id, "left")] if lateralization != "right" else None,
+        "right_presentation_id": presentation_ids[(source_id, "right")] if lateralization != "left" else None,
+        "bounds": bounds(mesh.positions),
+        "vertex_count": len(mesh.positions),
+        "triangle_count": len(mesh.triangles),
+        "centroid_um": centroid(mesh.positions),
+        "explode_displacement_um": [0.0, 0.0, 0.0],
+    }
+
+
+def build_pack(
+    source_dir: Path,
+    output: Path,
+    *,
+    builder_commit: str = "synthetic",
+    geometry_policy: str = "native-components",
+) -> dict[str, Any]:
     paths = {
         "source_glb": source_dir / "source.glb",
         "active_inventory": source_dir / "active-allen-ids.json",
@@ -165,28 +206,46 @@ def build_pack(source_dir: Path, output: Path, *, builder_commit: str = "synthet
     if sorted(lut.get("signed_allen_ids", [])) != sorted([-identifier for identifier in renderable] + renderable):
         raise ValueError("bilateral LUT differs from source geometry")
 
+    if geometry_policy not in {"bilateral-cut-cap", "native-components"}:
+        raise ValueError("mesh geometry policy is unsupported")
+    presentations = [
+        _presentation_record(index, source_id, side, catalog)
+        for index, (source_id, side) in enumerate((source_id, side) for source_id in renderable for side in ("left", "right"))
+    ]
+    presentation_ids = {(item["source_allen_id"], item["side"]): item["presentation_id"] for item in presentations}
     compiled: list[tuple[dict[str, Any], HalfMesh]] = []
     open_sources: list[int] = []
     loop_counts: dict[str, int] = {}
     for source_id in renderable:
         positions, triangles = surfaces[source_id]
-        split = split_and_cap_hemispheres(positions, triangles)
-        loop_counts[str(source_id)] = split.intersection_loop_count
-        if split.open_intersection_component_count:
-            open_sources.append(source_id)
-        for hemisphere, mesh in (("left", split.left), ("right", split.right)):
-            if not mesh.triangles or any((point[0] > 1e-5 if hemisphere == "left" else point[0] < -1e-5) for point in mesh.positions):
-                raise ValueError(f"compiled {source_id} {hemisphere} violates the ML half-space")
-            record = _region_record(len(compiled), source_id, hemisphere, mesh, catalog)
-            compiled.append((record, mesh))
+        if geometry_policy == "bilateral-cut-cap":
+            split = split_and_cap_hemispheres(positions, triangles)
+            loop_counts[str(source_id)] = split.intersection_loop_count
+            if split.open_intersection_component_count:
+                open_sources.append(source_id)
+            for side, mesh in (("left", split.left), ("right", split.right)):
+                if not mesh.triangles or any((point[0] > 1e-5 if side == "left" else point[0] < -1e-5) for point in mesh.positions):
+                    raise ValueError(f"compiled {source_id} {side} violates the ML half-space")
+                compiled.append((_component_record(len(compiled), source_id, mesh, side, presentation_ids), mesh))
+        else:
+            loop_counts[str(source_id)] = 0
+            for ordinals in triangle_components(triangles, connectivity="edge"):
+                mesh = _component_mesh(positions, triangles, ordinals)
+                low, high = bounds(mesh.positions)["minimum_um"][0], bounds(mesh.positions)["maximum_um"][0]
+                lateralization = "left" if high < 0 else "right" if low > 0 else "neutral"
+                compiled.append((_component_record(len(compiled), source_id, mesh, lateralization, presentation_ids), mesh))
     if open_sources:
         raise ValueError("source contains open medial intersections")
 
-    regions = [region for region, _ in compiled]
-    chunks = [_merge([(region, mesh) for region, mesh in compiled if region["hemisphere"] == hemisphere], hemisphere) for hemisphere in ("left", "right")]
+    components = [component for component, _ in compiled]
+    whole_centroid = [sum(component["centroid_um"][axis] for component in components) / len(components) for axis in range(3)]
+    for component in components:
+        if component["lateralization"] != "neutral":
+            component["explode_displacement_um"] = [component["centroid_um"][axis] - whole_centroid[axis] for axis in range(3)]
+    chunks = [_merge(compiled)]
     decoded = encode_raw_lod(chunks)
     encoded = _deterministic_gzip(decoded)
-    source_triangles = sum(region["triangle_count"] for region in regions)
+    source_triangles = sum(component["triangle_count"] for component in components)
     input_digest = _sha(b"".join(blobs[name] for name in sorted(blobs)))
     pack_id = f"synthetic-mesh-{input_digest[:12]}"
     report = {
@@ -202,7 +261,8 @@ def build_pack(source_dir: Path, output: Path, *, builder_commit: str = "synthet
             "excluded_non_grey_allen_ids": sorted(scope["excluded_non_grey_active_ids"]),
             "intersection_loop_counts": loop_counts,
             "open_midline_source_allen_ids": open_sources,
-            "signed_region_count": len(regions),
+            "presentation_count": len(presentations),
+            "component_count": len(components),
             "source_triangle_count": source_triangles,
             "lod_triangle_count": source_triangles,
         },
@@ -218,7 +278,6 @@ def build_pack(source_dir: Path, output: Path, *, builder_commit: str = "synthet
         "annotation": _identity("synthetic-annotation-v1", "fixture://atlas/annotation.txt", blobs["annotation"]),
         "lut": _identity("synthetic-bilateral-lut-v1", "fixture://atlas/lut.json", blobs["lut"]),
     }
-    whole_centroid = [sum(region["centroid_um"][axis] for region in regions) / len(regions) for axis in range(3)]
     manifest = {
         "schema_version": "1.0", "format": FORMAT, "pack_id": pack_id,
         "geometry_id": f"synthetic-bilateral-grey-{input_digest[:12]}",
@@ -234,9 +293,14 @@ def build_pack(source_dir: Path, output: Path, *, builder_commit: str = "synthet
             "policy": "deepest-active-grey-descendants", "active_allen_ids": renderable,
             "excluded_allen_ids": sorted(scope["excluded_non_grey_active_ids"]),
         },
+        "geometry_policy": geometry_policy,
+        "presentation_boundary": {
+            "coordinate": "original-world-ml", "threshold_um": 0,
+            "on_plane_side": "right", "status": "provisional-test-only",
+        },
         "whole_brain_centroid_um": whole_centroid,
-        "explode_groups": [{"signed_group_id": region["signed_explode_group_id"], "hemisphere": region["hemisphere"], "centroid_um": region["centroid_um"]} for region in regions],
-        "regions": regions,
+        "presentations": presentations,
+        "components": components,
         "default_lod_id": "default", "upgrade_lod_id": None,
         "lods": [{
             "id": "default", "target_triangle_ratio": 1.0, "actual_triangle_ratio": 1.0,
@@ -265,8 +329,9 @@ def main() -> None:
     parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--builder-commit", default="synthetic")
+    parser.add_argument("--geometry-policy", choices=("bilateral-cut-cap", "native-components"), default="native-components")
     arguments = parser.parse_args()
-    build_pack(arguments.source_dir, arguments.output, builder_commit=arguments.builder_commit)
+    build_pack(arguments.source_dir, arguments.output, builder_commit=arguments.builder_commit, geometry_policy=arguments.geometry_policy)
 
 
 if __name__ == "__main__":

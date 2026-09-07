@@ -496,44 +496,69 @@ def _mesh_pack_semantics(document: dict[str, Any]) -> None:
     if set(active) & set(excluded):
         _fail("mesh active and excluded Allen IDs overlap")
 
-    groups = document["explode_groups"]
-    _unique([group["signed_group_id"] for group in groups], "mesh explode group id")
-    group_by_id = {group["signed_group_id"]: group for group in groups}
-    regions = document["regions"]
-    _unique([region["feature_id"] for region in regions], "mesh feature id")
-    _unique([region["signed_allen_id"] for region in regions], "mesh signed Allen id")
-    if [region["feature_id"] for region in regions] != list(range(len(regions))):
-        _fail("mesh feature IDs must be contiguous in manifest order")
+    boundary = document["presentation_boundary"]
+    if not math.isfinite(boundary["threshold_um"]):
+        _fail("mesh presentation threshold must be finite")
+    if document["purpose"] != "test-only" and boundary["status"] == "provisional-test-only":
+        _fail("production mesh cannot use a provisional presentation boundary")
+
+    presentations = document["presentations"]
+    _unique([item["presentation_id"] for item in presentations], "mesh presentation id")
+    _unique([item["signed_allen_id"] for item in presentations], "mesh signed Allen id")
+    if [item["presentation_id"] for item in presentations] != list(range(len(presentations))):
+        _fail("mesh presentation IDs must be contiguous in manifest order")
+    presentation_by_id = {item["presentation_id"]: item for item in presentations}
     signed_by_source: dict[int, set[int]] = {}
-    for region in regions:
-        source_id = region["source_allen_id"]
-        signed_id = region["signed_allen_id"]
-        sign = -1 if region["hemisphere"] == "left" else 1
+    for presentation in presentations:
+        source_id = presentation["source_allen_id"]
+        signed_id = presentation["signed_allen_id"]
+        sign = -1 if presentation["side"] == "left" else 1
         if signed_id != sign * source_id:
-            _fail(f"mesh signed Allen identity is inconsistent for feature {region['feature_id']}")
+            _fail(f"mesh signed Allen identity is inconsistent for presentation {presentation['presentation_id']}")
         if source_id not in active or source_id not in inventory or source_id in excluded:
-            _fail(f"mesh region {source_id} is outside the declared source scope")
-        mappings = region["mappings"]
+            _fail(f"mesh presentation {source_id} is outside the declared source scope")
+        mappings = presentation["mappings"]
         if mappings["allen"] != signed_id:
             _fail(f"mesh Allen mapping differs from signed identity {signed_id}")
         for name in ("beryl", "cosmos"):
             mapped = mappings[name]
             if mapped is not None and (mapped == sign * 997 or (mapped < 0) != (sign < 0)):
                 _fail(f"mesh {name} mapping is invalid for signed identity {signed_id}")
-        group_id = region["signed_explode_group_id"]
-        group = group_by_id.get(group_id)
-        if group is None or group["hemisphere"] != region["hemisphere"] or (group_id < 0) != (sign < 0):
-            _fail(f"mesh explode group is inconsistent for signed identity {signed_id}")
-        minimum = region["bounds"]["minimum_um"]
-        maximum = region["bounds"]["maximum_um"]
-        centroid = region["centroid_um"]
-        if any(not math.isfinite(value) for value in [*minimum, *maximum, *centroid]):
-            _fail("mesh bounds and centroids must be finite")
-        if any(low > high or center < low or center > high for low, high, center in zip(minimum, maximum, centroid)):
-            _fail(f"mesh centroid or bounds are invalid for signed identity {signed_id}")
         signed_by_source.setdefault(source_id, set()).add(sign)
     if set(signed_by_source) != set(active):
-        _fail("mesh region coverage differs from active Allen scope")
+        _fail("mesh presentation coverage differs from active Allen scope")
+
+    components = document["components"]
+    _unique([item["component_id"] for item in components], "mesh component id")
+    if [item["component_id"] for item in components] != list(range(len(components))):
+        _fail("mesh component IDs must be contiguous in manifest order")
+    for component in components:
+        source_id = component["source_allen_id"]
+        if source_id not in active or source_id not in inventory or source_id in excluded:
+            _fail(f"mesh component {component['component_id']} is outside the declared source scope")
+        presentation_ids = {
+            "left": component["left_presentation_id"],
+            "right": component["right_presentation_id"],
+        }
+        expected_sides = ({"left"} if component["lateralization"] == "left" else
+                          {"right"} if component["lateralization"] == "right" else {"left", "right"})
+        if {side for side, identifier in presentation_ids.items() if identifier is not None} != expected_sides:
+            _fail(f"mesh component presentation sides differ: {component['component_id']}")
+        for side, identifier in presentation_ids.items():
+            if identifier is not None:
+                presentation = presentation_by_id.get(identifier)
+                if presentation is None or presentation["source_allen_id"] != source_id or presentation["side"] != side:
+                    _fail(f"mesh component presentation identity differs: {component['component_id']}")
+        minimum = component["bounds"]["minimum_um"]
+        maximum = component["bounds"]["maximum_um"]
+        centroid = component["centroid_um"]
+        displacement = component["explode_displacement_um"]
+        if any(not math.isfinite(value) for value in [*minimum, *maximum, *centroid, *displacement]):
+            _fail("mesh bounds, centroids and displacement must be finite")
+        if any(low > high or center < low or center > high for low, high, center in zip(minimum, maximum, centroid)):
+            _fail(f"mesh centroid or bounds are invalid for component {component['component_id']}")
+    if {component["source_allen_id"] for component in components} != set(active):
+        _fail("mesh component coverage differs from active Allen scope")
 
     lods = document["lods"]
     lod_ids = [lod["id"] for lod in lods]
@@ -544,7 +569,7 @@ def _mesh_pack_semantics(document: dict[str, Any]) -> None:
     if upgrade is not None and (upgrade not in lod_ids or upgrade == document["default_lod_id"]):
         _fail("mesh upgrade LOD is absent or duplicates the default")
     _unique([lod["resource"]["path"] for lod in lods] + [document["validation"]["report"]["path"]], "mesh resource path")
-    source_triangles = sum(region["triangle_count"] for region in regions)
+    source_triangles = sum(component["triangle_count"] for component in components)
     for lod in lods:
         if lod["triangle_count"] > source_triangles:
             _fail(f"mesh LOD {lod['id']} exceeds source triangle count")

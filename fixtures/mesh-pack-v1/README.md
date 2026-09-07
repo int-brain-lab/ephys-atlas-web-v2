@@ -4,9 +4,10 @@ This directory is deterministic, synthetic, and test-only. It is not Allen
 geometry and must never be published as scientific data or used as a runtime
 fallback.
 
-`source/source.glb` is a 660-byte GLB containing one closed synthetic surface
-that crosses ML=0. The compiler clips and caps it into signed left/right
-surfaces. The source catalog also includes a non-grey active identity so scope
+`source/source.glb` contains one synthetic Allen surface with an intact component
+that crosses ML=0 and a disconnected right-lateral component. Both components
+share the same left/right regional presentations. The crossing component has an
+explicit zero explode displacement while the lateral component moves. The source catalog also includes a non-grey active identity so scope
 exclusion is exercised, and its reduced Beryl mapping intentionally remains
 `null`.
 

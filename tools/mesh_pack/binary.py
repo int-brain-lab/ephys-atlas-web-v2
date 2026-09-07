@@ -23,7 +23,7 @@ def encode_raw_lod(chunks: list[dict[str, Any]]) -> bytes:
         specifications = (
             ("positions", "f", "float32", 3),
             ("normals", "f", "float32", 3),
-            ("feature_ids", "H", "uint16", 1),
+            ("component_ids", "H", "uint16", 1),
             ("indices", "I", "uint32", 1),
         )
         for name, code, component_type, item_size in specifications:
@@ -33,7 +33,7 @@ def encode_raw_lod(chunks: list[dict[str, Any]]) -> bytes:
             payload.extend(b"\0" * padding)
             arrays[name] = {"byte_offset": len(payload), "count": len(values), "component_type": component_type, "item_size": item_size}
             payload.extend(struct.pack(f"<{len(values)}{code}", *values))
-        descriptors.append({"hemisphere": chunk["hemisphere"], "arrays": arrays, "ranges": chunk["ranges"]})
+        descriptors.append({"chunk_id": chunk["chunk_id"], "arrays": arrays, "ranges": chunk["ranges"]})
     header = _canonical_json({"encoding": "raw-v1", "chunks": descriptors})
     payload_offset = (PREFIX_BYTES + len(header) + 3) // 4 * 4
     output = bytearray(payload_offset + len(payload))

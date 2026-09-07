@@ -144,6 +144,7 @@ export interface ProjectionPackV1 {
 
 export type MeshHemisphereV1 = 'left' | 'right';
 export type MeshMappingV1 = 'allen' | 'beryl' | 'cosmos';
+export type MeshComponentLateralizationV1 = MeshHemisphereV1 | 'neutral';
 
 export interface MeshDecoderV1 {
   readonly container: 'EAM3';
@@ -153,13 +154,28 @@ export interface MeshDecoderV1 {
   readonly normal_bits: number;
 }
 
-export interface MeshRegionV1 {
-  readonly feature_id: number;
+export interface MeshPresentationV1 {
+  readonly presentation_id: number;
   readonly source_allen_id: number;
   readonly signed_allen_id: number;
-  readonly hemisphere: MeshHemisphereV1;
+  readonly side: MeshHemisphereV1;
   readonly mappings: Readonly<Record<MeshMappingV1, number | null>>;
-  readonly signed_explode_group_id: number;
+}
+
+export interface MeshComponentV1 {
+  readonly component_id: number;
+  readonly source_allen_id: number;
+  readonly lateralization: MeshComponentLateralizationV1;
+  readonly left_presentation_id: number | null;
+  readonly right_presentation_id: number | null;
+  readonly explode_displacement_um: readonly [number, number, number];
+}
+
+export interface MeshPresentationBoundaryV1 {
+  readonly coordinate: 'original-world-ml';
+  readonly threshold_um: number;
+  readonly on_plane_side: MeshHemisphereV1;
+  readonly status: 'provisional-test-only' | 'reviewed';
 }
 
 export interface MeshLodV1 {
@@ -177,7 +193,10 @@ export interface MeshPackV1 {
   readonly immutable: true;
   readonly purpose: 'test-only' | 'production';
   readonly reference_space_id: ReferenceSpaceId;
-  readonly regions: readonly MeshRegionV1[];
+  readonly geometry_policy: 'bilateral-cut-cap' | 'native-components';
+  readonly presentation_boundary: MeshPresentationBoundaryV1;
+  readonly presentations: readonly MeshPresentationV1[];
+  readonly components: readonly MeshComponentV1[];
   readonly default_lod_id: string;
   readonly upgrade_lod_id: string | null;
   readonly lods: readonly MeshLodV1[];

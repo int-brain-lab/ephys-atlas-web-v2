@@ -53,19 +53,19 @@ def validate_pack(pack: Path) -> dict[str, Any]:
         header = inspect_lod(_resource(pack, descriptor))
         if header["encoding"] != lod["decoder"]["encoding"]:
             raise ValueError(f"mesh LOD decoder contract differs: {lod['id']}")
-        hemispheres = [chunk.get("hemisphere") for chunk in header["chunks"]]
-        if hemispheres != ["left", "right"]:
-            raise ValueError(f"mesh LOD hemisphere inventory differs: {lod['id']}")
-        feature_ids = sorted(range_ ["feature_id"] for chunk in header["chunks"] for range_ in chunk.get("ranges", []))
-        if feature_ids != list(range(len(manifest["regions"]))):
-            raise ValueError(f"mesh LOD feature ranges differ: {lod['id']}")
+        chunk_ids = [chunk.get("chunk_id") for chunk in header["chunks"]]
+        if not chunk_ids or any(not isinstance(item, str) or not item for item in chunk_ids) or len(chunk_ids) != len(set(chunk_ids)):
+            raise ValueError(f"mesh LOD chunk inventory differs: {lod['id']}")
+        component_ids = sorted(range_["component_id"] for chunk in header["chunks"] for range_ in chunk.get("ranges", []))
+        if component_ids != list(range(len(manifest["components"]))):
+            raise ValueError(f"mesh LOD component ranges differ: {lod['id']}")
         meshopt = header["encoding"] == "meshopt-quantized-v1"
         index_count = sum(chunk["index_count"] if meshopt else chunk["arrays"]["indices"]["count"] for chunk in header["chunks"])
         if index_count % 3 or index_count // 3 != lod["triangle_count"]:
             raise ValueError(f"mesh LOD triangle count differs: {lod['id']}")
         for chunk in header["chunks"]:
             chunk_index_count = chunk["index_count"] if meshopt else chunk["arrays"]["indices"]["count"]
-            chunk_vertex_count = chunk["vertex_count"] if meshopt else chunk["arrays"]["feature_ids"]["count"]
+            chunk_vertex_count = chunk["vertex_count"] if meshopt else chunk["arrays"]["component_ids"]["count"]
             if not meshopt and (chunk["arrays"]["positions"]["count"] != chunk_vertex_count * 3 or chunk["arrays"]["normals"]["count"] != chunk_vertex_count * 3):
                 raise ValueError(f"mesh LOD vertex arrays differ: {lod['id']}")
             for range_ in chunk["ranges"]:
@@ -73,9 +73,10 @@ def validate_pack(pack: Path) -> dict[str, Any]:
                     raise ValueError(f"mesh LOD index range is invalid: {lod['id']}")
                 if range_["vertex_start"] < 0 or range_["vertex_count"] <= 0 or range_["vertex_start"] + range_["vertex_count"] > chunk_vertex_count:
                     raise ValueError(f"mesh LOD vertex range is invalid: {lod['id']}")
-                region = manifest["regions"][range_["feature_id"]]
-                if range_["signed_allen_id"] != region["signed_allen_id"] or range_["signed_explode_group_id"] != region["signed_explode_group_id"] or chunk["hemisphere"] != region["hemisphere"]:
-                    raise ValueError(f"mesh LOD signed range identity differs: {lod['id']}")
+                component = manifest["components"][range_["component_id"]]
+                if (range_["left_presentation_id"] != component["left_presentation_id"]
+                        or range_["right_presentation_id"] != component["right_presentation_id"]):
+                    raise ValueError(f"mesh LOD component presentation identity differs: {lod['id']}")
     report_descriptor = manifest["validation"]["report"]
     declared.add(report_descriptor["path"])
     report = json.loads(_resource(pack, report_descriptor))

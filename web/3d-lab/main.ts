@@ -30,8 +30,8 @@ const diagnostics = required('#diagnostics');
 const source = new MeshPackSource({
   manifest: {
     url: new URL('/__mesh-pack-fixture/manifest.json', location.href).toString(),
-    bytes: 3664,
-    sha256: '782724b36203a2329fae047f81f5cf432e870d719b6db1d5e0ed75b982c022d4',
+    bytes: 3917,
+    sha256: '6076d1604f67b3e711506e0d400adf58db49f5f6077790ca4d96d2557c56737a',
   },
   fetcher: new ResourceFetcher(),
 });

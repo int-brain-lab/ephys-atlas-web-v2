@@ -7,7 +7,8 @@
   "required": [
     "schema_version", "format", "pack_id", "geometry_id", "immutable",
     "purpose", "reference_space_id", "coordinate_system", "sources",
-    "geometry_scope", "whole_brain_centroid_um", "explode_groups", "regions",
+    "geometry_scope", "geometry_policy", "presentation_boundary",
+    "whole_brain_centroid_um", "presentations", "components",
     "default_lod_id", "upgrade_lod_id", "lods", "builder", "validation"
   ],
   "properties": {
@@ -21,16 +22,18 @@
     "coordinate_system": {"$ref": "#/$defs/coordinateSystem"},
     "sources": {"$ref": "#/$defs/sources"},
     "geometry_scope": {"$ref": "#/$defs/geometryScope"},
+    "geometry_policy": {"enum": ["bilateral-cut-cap", "native-components"]},
+    "presentation_boundary": {"$ref": "#/$defs/presentationBoundary"},
     "whole_brain_centroid_um": {"$ref": "#/$defs/vector3"},
-    "explode_groups": {
+    "presentations": {
       "type": "array",
-      "minItems": 2,
-      "items": {"$ref": "#/$defs/explodeGroup"}
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/presentation"}
     },
-    "regions": {
+    "components": {
       "type": "array",
-      "minItems": 2,
-      "items": {"$ref": "#/$defs/region"}
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/component"}
     },
     "default_lod_id": {"$ref": "common.schema.json#/$defs/identifier"},
     "upgrade_lod_id": {
@@ -140,29 +143,28 @@
     "mappingValue": {
       "oneOf": [{"type": "integer", "not": {"const": 0}}, {"type": "null"}]
     },
-    "explodeGroup": {
+    "presentationBoundary": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["signed_group_id", "hemisphere", "centroid_um"],
+      "required": ["coordinate", "threshold_um", "on_plane_side", "status"],
       "properties": {
-        "signed_group_id": {"type": "integer", "not": {"const": 0}},
-        "hemisphere": {"enum": ["left", "right"]},
-        "centroid_um": {"$ref": "#/$defs/vector3"}
+        "coordinate": {"const": "original-world-ml"},
+        "threshold_um": {"type": "number", "minimum": 0},
+        "on_plane_side": {"enum": ["left", "right"]},
+        "status": {"enum": ["provisional-test-only", "reviewed"]}
       }
     },
-    "region": {
+    "presentation": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "feature_id", "source_allen_id", "signed_allen_id", "hemisphere",
-        "mappings", "bounds", "vertex_count", "triangle_count",
-        "component_count", "centroid_um", "signed_explode_group_id"
+        "presentation_id", "source_allen_id", "signed_allen_id", "side", "mappings"
       ],
       "properties": {
-        "feature_id": {"type": "integer", "minimum": 0, "maximum": 65535},
+        "presentation_id": {"type": "integer", "minimum": 0, "maximum": 65535},
         "source_allen_id": {"type": "integer", "minimum": 1},
         "signed_allen_id": {"type": "integer", "not": {"const": 0}},
-        "hemisphere": {"enum": ["left", "right"]},
+        "side": {"enum": ["left", "right"]},
         "mappings": {
           "type": "object", "additionalProperties": false,
           "required": ["allen", "beryl", "cosmos"],
@@ -171,13 +173,32 @@
             "beryl": {"$ref": "#/$defs/mappingValue"},
             "cosmos": {"$ref": "#/$defs/mappingValue"}
           }
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component_id", "source_allen_id", "lateralization",
+        "left_presentation_id", "right_presentation_id", "bounds",
+        "vertex_count", "triangle_count", "centroid_um", "explode_displacement_um"
+      ],
+      "properties": {
+        "component_id": {"type": "integer", "minimum": 0, "maximum": 65535},
+        "source_allen_id": {"type": "integer", "minimum": 1},
+        "lateralization": {"enum": ["left", "right", "neutral"]},
+        "left_presentation_id": {
+          "oneOf": [{"type": "integer", "minimum": 0, "maximum": 65535}, {"type": "null"}]
+        },
+        "right_presentation_id": {
+          "oneOf": [{"type": "integer", "minimum": 0, "maximum": 65535}, {"type": "null"}]
         },
         "bounds": {"$ref": "#/$defs/bounds3"},
         "vertex_count": {"type": "integer", "minimum": 3},
         "triangle_count": {"type": "integer", "minimum": 1},
-        "component_count": {"type": "integer", "minimum": 1},
         "centroid_um": {"$ref": "#/$defs/vector3"},
-        "signed_explode_group_id": {"type": "integer", "not": {"const": 0}}
+        "explode_displacement_um": {"$ref": "#/$defs/vector3"}
       }
     },
     "decoderContract": {

@@ -57,7 +57,7 @@ class FixtureRuntime {
   dispose() { this.disposed = true; }
 }
 
-test('worker-owned decoder consumes the committed bilateral EAM3 fixture', async () => {
+test('worker-owned decoder consumes the committed native-component EAM3 fixture', async () => {
   const result = await decodeMeshWorkerRequest({
     id: 1,
     op: 'decode',
@@ -66,8 +66,8 @@ test('worker-owned decoder consumes the committed bilateral EAM3 fixture', async
     decoder: lod.decoder,
     maxDecodedBytes: 1024 * 1024,
   });
-  assert.deepEqual(result.chunks.map((chunk) => chunk.hemisphere), ['left', 'right']);
-  assert.deepEqual(result.chunks.flatMap((chunk) => chunk.ranges.map((range) => range.signedAllenId)), [-315, 315]);
+  assert.deepEqual(result.chunks.map((chunk) => chunk.chunkId), ['all']);
+  assert.deepEqual(result.chunks.flatMap((chunk) => chunk.ranges.map((range) => range.componentId)), [0, 1]);
   assert.equal(result.chunks.reduce((sum, chunk) => sum + chunk.indices.length / 3, 0), lod.triangle_count);
   assert.ok(result.byteLength > 0);
 });
@@ -232,7 +232,7 @@ test('decoder fails closed on malformed container, ranges, codec, and decoded si
   const badRange = decoded.slice();
   const headerLength = new DataView(badRange.buffer).getUint32(8, true);
   const header = new TextDecoder().decode(badRange.subarray(12, 12 + headerLength));
-  const changed = header.replace('"index_count":18', '"index_count":99');
+  const changed = header.replace('"index_count":24', '"index_count":99');
   assert.notEqual(changed, header);
   badRange.set(new TextEncoder().encode(changed), 12);
   await assert.rejects(decodeMeshLod(badRange, lod.decoder), /out of bounds/);
@@ -252,8 +252,7 @@ test('meshopt decoder fails closed on incomplete block metadata', async () => {
   const header = new TextEncoder().encode(JSON.stringify({
     encoding: 'meshopt-quantized-v1',
     chunks: [
-      { hemisphere: 'left', ranges: [], vertex_count: 3, index_count: 3 },
-      { hemisphere: 'right', ranges: [], vertex_count: 3, index_count: 3 },
+      { chunk_id: 'all', ranges: [], vertex_count: 3, index_count: 3 },
     ],
   }));
   const payloadOffset = Math.ceil((12 + header.length) / 4) * 4;
