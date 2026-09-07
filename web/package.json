@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:3d": "vite --config vite.3d-lab.config.ts",
     "dev:real": "VITE_DATASET_CATALOG_URL=/__real-data/catalog.json vite",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "typecheck": "tsc -p tsconfig.json --noEmit",

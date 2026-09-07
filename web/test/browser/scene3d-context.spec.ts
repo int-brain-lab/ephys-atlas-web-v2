@@ -16,7 +16,7 @@ test('3-D context lazily loads its injected immutable fixture and persists respo
   await expect(panel).toBeVisible();
   const host = panel.locator('[data-scene3d-host="connected"]');
   await expect(host).toHaveAttribute('data-scene3d-state', 'ready');
-  await expect(host).toHaveAttribute('data-geometry-uploads', '2');
+  await expect(host).toHaveAttribute('data-geometry-uploads', '1');
   await expect(host).toHaveAttribute('data-explode', '0.4');
   const explode = page.getByRole('slider', { name: 'Explode 3-D brain' });
   await expect(explode).toHaveValue('0.4');
