@@ -16,6 +16,20 @@ preserve the reviewed geometry bytes; the existing review-only pack is not edite
 Additional Firefox/Safari review for this 3-D selection is owner-waived.
 See the [active integration record](../tasks/2026-09-02-native-3d-mesh-components/README.md).
 
+Build the approved graph from the exact reviewed pack on clean Linux `main`:
+
+```sh
+uv run --project builder --extra test --locked python -m tools.mesh_pack.build_native_selected \
+  --review artifacts/mesh-native-review-v1 \
+  --output artifacts/mesh-native-d070-v1 \
+  --builder-commit "$(git rev-parse HEAD)"
+```
+
+The builder hash-verifies the committed selection, review manifest/report, and
+complete geometry graph before packaging accepted metadata. It reuses numeric
+bytes verbatim, records the exact clean build commit/environment and review
+lineage, rejects an existing output, and does not authorize publication.
+
 ### Local real-anatomy lab (2026-09-07)
 
 `npm --prefix web run dev:3d` opens the real native review candidate at
