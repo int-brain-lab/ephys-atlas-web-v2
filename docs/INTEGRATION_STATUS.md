@@ -25,6 +25,11 @@ Stable boundaries and end-to-end flow are in
 [`ARCHITECTURE.md`](ARCHITECTURE.md). Rendering evidence is indexed by
 [`rendering/README.md`](rendering/README.md).
 
+The shared 3-D renderer now uses [weighted blended OIT](rendering/3D_TRANSPARENCY.md)
+for translucent context, with opaque-depth occlusion and a single-pass opaque
+fast path. Synthetic order/recovery tests and real Native / D042 Chromium checks
+pass; hardware-GPU and non-Chromium transparency review remain outstanding.
+
 ## Scientific datasets
 
 | Dataset | Builder and browser machinery | Current real artifact maturity | Blocker/next action |

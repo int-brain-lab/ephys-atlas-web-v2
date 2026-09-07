@@ -5,6 +5,7 @@ import type { MeshPackV1, MeshPresentationV1 } from '../../data/schema-v1.js';
 import type { LoadedMeshLod, MeshPackSource } from './mesh-pack-source.js';
 import { StableArcballControls, type CameraInteractionPhase } from './stable-arcball-controls.js';
 import { meshPresentationAtMl, MESH_PRESENTATION_GLSL } from './mesh-presentation-boundary.js';
+import { WeightedTransparency, TRANSPARENCY_FRAGMENT } from './weighted-transparency.js';
 
 export type { BrainCameraPose, Scene3DViewState } from '../../domain/types.js';
 
@@ -98,6 +99,9 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
   private geometryUploads = 0;
   private pointerPress: { id: number; x: number; y: number } | null = null;
   private hovered: number | null = null;
+  private transparency: WeightedTransparency | null = null;
+  private hasTranslucency = false;
+  private renderFailed = false;
 
   constructor(
     private readonly host: HTMLElement,
@@ -172,6 +176,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     this.canvas.removeEventListener('webglcontextlost', this.onContextLost);
     this.canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
     this.disposeMeshes(this.meshes);
+    this.transparency?.dispose();
     this.renderer.dispose();
     this.canvas.remove();
     this.host.dataset.scene3dState = 'destroyed';
@@ -260,11 +265,12 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
         geometry.boundingSphere = bounds.getBoundingSphere(new THREE.Sphere());
         const lookup = this.createLookupTexture();
         const material = new THREE.ShaderMaterial({
-          transparent: true,
+          transparent: false,
+          blending: THREE.NoBlending,
           side: THREE.DoubleSide,
-          uniforms: { uLookup: { value: lookup }, uLookupWidth: { value: this.manifest!.presentations.length }, uExplode: { value: this.state.explode }, uThreshold: { value: this.manifest.presentation_boundary.threshold_um }, uOnPlaneLeft: { value: this.manifest.presentation_boundary.on_plane_side === 'left' ? 1 : 0 } },
-          vertexShader: `attribute float leftPresentationId; attribute float rightPresentationId; attribute vec3 explodeOffset; uniform float uExplode; varying vec3 vNormal; varying float vLeftPresentationId; varying float vRightPresentationId; varying float vOriginalMl; void main(){ vLeftPresentationId=leftPresentationId; vRightPresentationId=rightPresentationId; vOriginalMl=position.x; vNormal=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position+explodeOffset*uExplode,1.); }`,
-          fragmentShader: `uniform sampler2D uLookup; uniform float uLookupWidth; uniform float uThreshold; uniform float uOnPlaneLeft; varying vec3 vNormal; varying float vLeftPresentationId; varying float vRightPresentationId; varying float vOriginalMl; ${MESH_PRESENTATION_GLSL} void main(){ float presentationId=meshPresentationAtMl(vOriginalMl,vLeftPresentationId,vRightPresentationId); if(presentationId<0.) discard; vec4 vColor=texture2D(uLookup,vec2((presentationId+.5)/uLookupWidth,.5)); if(vColor.a<.01) discard; float light=.82+.20*abs(dot(normalize(vNormal),normalize(vec3(-.3,.4,.85)))); gl_FragColor=linearToOutputTexel(vec4(vColor.rgb*light,vColor.a)); }`,
+          uniforms: { uPass: { value: 0 }, uOpaqueDepth: { value: null }, uViewport: { value: new THREE.Vector2(1, 1) }, uFar: { value: this.camera.far }, uLookup: { value: lookup }, uLookupWidth: { value: this.manifest!.presentations.length }, uExplode: { value: this.state.explode }, uThreshold: { value: this.manifest.presentation_boundary.threshold_um }, uOnPlaneLeft: { value: this.manifest.presentation_boundary.on_plane_side === 'left' ? 1 : 0 } },
+          vertexShader: `attribute float leftPresentationId; attribute float rightPresentationId; attribute vec3 explodeOffset; uniform float uExplode; varying vec3 vNormal; varying float vLeftPresentationId; varying float vRightPresentationId; varying float vOriginalMl; varying float vViewDepth; void main(){ vLeftPresentationId=leftPresentationId; vRightPresentationId=rightPresentationId; vOriginalMl=position.x; vNormal=normalize(normalMatrix*normal); vec4 viewPosition=modelViewMatrix*vec4(position+explodeOffset*uExplode,1.); vViewDepth=-viewPosition.z; gl_Position=projectionMatrix*viewPosition; }`,
+          fragmentShader: `uniform sampler2D uLookup; uniform float uLookupWidth; uniform float uThreshold; uniform float uOnPlaneLeft; varying vec3 vNormal; varying float vLeftPresentationId; varying float vRightPresentationId; varying float vOriginalMl; ${MESH_PRESENTATION_GLSL} ${TRANSPARENCY_FRAGMENT} void main(){ float presentationId=meshPresentationAtMl(vOriginalMl,vLeftPresentationId,vRightPresentationId); if(presentationId<0.) discard; vec4 vColor=texture2D(uLookup,vec2((presentationId+.5)/uLookupWidth,.5)); if(vColor.a<.01) discard; float light=.82+.20*abs(dot(normalize(vNormal),normalize(vec3(-.3,.4,.85)))); gl_FragColor=transparencyOutput(vec4(vColor.rgb*light,vColor.a)); }`,
         });
         const mesh = new THREE.Mesh(geometry, material);
         const baseGetVertexPosition = mesh.getVertexPosition.bind(mesh);
@@ -296,6 +302,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
 
   private updateLookupTextures(): void {
     if (!this.manifest) return;
+    this.hasTranslucency = false;
     const regionColors = regionalPresentationColors(this.presentation, true);
     for (const mesh of this.meshes) {
       const texture = mesh.material.uniforms.uLookup!.value as THREE.DataTexture;
@@ -313,6 +320,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
         bytes[offset + 1] = Math.min(255, Math.round(color[1] * intensity));
         bytes[offset + 2] = Math.min(255, Math.round(color[2] * intensity));
         bytes[offset + 3] = visible ? (this.presentation.selectedRegionIds.size && !selected ? 28 : 255) : 0;
+        if (bytes[offset + 3] === 28) this.hasTranslucency = true;
       });
       texture.needsUpdate = true;
     }
@@ -425,7 +433,25 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     this.frame = requestAnimationFrame(() => {
       this.frame = null;
       if (!this.active || this.destroyed) return;
-      this.renderer.render(this.scene, this.camera);
+      try {
+        if (this.hasTranslucency) {
+          if (!this.renderer.extensions.has('EXT_color_buffer_float')) {
+            this.renderer.clear();
+            throw new Error('3-D transparency requires floating-point render targets (EXT_color_buffer_float). Clear the selection to view opaque anatomy.');
+          }
+          this.transparency ??= new WeightedTransparency();
+          this.transparency.render(this.renderer, this.scene, this.camera, this.meshes);
+          this.host.dataset.transparency = 'weighted-blended';
+        } else {
+          this.renderer.render(this.scene, this.camera);
+          this.host.dataset.transparency = 'opaque';
+        }
+        if (this.renderFailed) {
+          this.renderFailed = false;
+          this.host.dataset.scene3dState = 'ready';
+          delete this.host.dataset.error;
+        }
+      } catch (error) { this.renderFailed = true; this.fail(error); return; }
       this.host.dataset.renderCount = String(Number(this.host.dataset.renderCount ?? 0) + 1);
     });
   }

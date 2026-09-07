@@ -62,3 +62,44 @@ test('all twelve real movement exceptions can be focused and compared', async ({
   await expect(scene).toHaveAttribute('data-lod', 'native-full');
   await expect(page.locator('#review-component')).toHaveValue('11');
 });
+
+test('real native transparent context stays retained while rotating and exploding', async ({ page }) => {
+  test.setTimeout(60_000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+  await page.goto('/?variant=native');
+  const scene = page.locator('#scene');
+  await expect(scene).toHaveAttribute('data-scene3d-state','ready');
+  await page.locator('#review-component').selectOption('0');
+  await expect(scene).toHaveAttribute('data-transparency','weighted-blended');
+  const timing = await page.evaluate(async () => {
+    const host=document.querySelector<HTMLElement>('#scene')!;
+    const slider=document.querySelector<HTMLInputElement>('#explode')!;
+    const gl=host.querySelector('canvas')!.getContext('webgl2')!;
+    const samples:number[]=[];
+    for(let index=0;index<24;index++) {
+      const before=host.dataset.renderCount; const start=performance.now();
+      slider.value=String(.2+index*.01);slider.dispatchEvent(new Event('input',{bubbles:true}));
+      while(host.dataset.renderCount===before) await new Promise(requestAnimationFrame);
+      gl.finish(); // test-only synchronized GPU completion, not just command submission
+      if(index>=4) samples.push(performance.now()-start);
+    }
+    samples.sort((a,b)=>a-b);
+    return {medianMs:samples[10],p95Ms:samples[18],width:gl.drawingBufferWidth,height:gl.drawingBufferHeight};
+  });
+  console.log('Native OIT interaction-to-GPU-complete (headless Chromium):',JSON.stringify(timing));
+  const box=await scene.locator('canvas').boundingBox();
+  await page.mouse.move(box!.x+box!.width*.5,box!.y+box!.height*.5);
+  await page.mouse.down();
+  await page.mouse.move(box!.x+box!.width*.6,box!.y+box!.height*.55,{steps:5});
+  await page.mouse.up();
+  await expect(scene).toHaveAttribute('data-camera-phase','end');
+  await expect(scene).toHaveAttribute('data-geometry-uploads','1');
+  await expect(scene).toHaveAttribute('data-transparency','weighted-blended');
+  await page.screenshot({path:'/tmp/atlas-oit-native.png'});
+  await page.locator('#variant').selectOption('d042');
+  await expect(scene).toHaveAttribute('data-lod','compiled-full');
+  await expect(scene).toHaveAttribute('data-transparency','weighted-blended');
+  expect(errors).toEqual([]);
+});

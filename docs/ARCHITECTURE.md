@@ -129,6 +129,11 @@ while owning camera, explode, GPU resources, lifecycle, and failures. D042 fixes
 its GLB-derived geometry/LOD direction. Encoding volumes remain linked 2-D
 slices and are never converted into that anatomy mesh path.
 
+Opaque anatomy uses a single pass. Translucent regional context uses retained
+[weighted blended OIT targets](rendering/3D_TRANSPARENCY.md), with opaque depth
+occlusion and one final display-colour conversion; it does not sort or alter
+source triangles.
+
 ## Scalar presentation
 
 The immutable release owns representation-specific scale/domain availability,

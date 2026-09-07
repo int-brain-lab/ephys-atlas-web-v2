@@ -145,7 +145,9 @@ These remain useful but must not displace the launch path:
   presentation and independent movement; [movement proposals](tasks/2026-09-02-native-3d-mesh-components/MOVEMENT_REVIEW.md)
   await review. The contract/renderer slice and real, labelled local A/B candidate
   are implemented, with direct navigation through the 12 flagged components.
-  Next: owner review in the standalone lab. Q18 retains real acceptance of proposed boundary conventions
+  Transparent context now uses [weighted blended OIT](rendering/3D_TRANSPARENCY.md).
+  Next: owner review in the standalone lab, including hardware-GPU and
+  non-Chromium transparency checks. Q18 retains real acceptance of proposed boundary conventions
   and movement assignments. Missing remote archive authorization does
   not block additive work; preserve existing evidence. D042 stays the default
   pending owner visual review. This optional lane does not block launch;

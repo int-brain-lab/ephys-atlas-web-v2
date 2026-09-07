@@ -11,6 +11,8 @@ Run `npm --prefix web run dev:3d` and open
 **Native intact** candidate and **Old cut · D042**. Use the flagged-component
 selector and surrounding-anatomy toggle to review the 12 asymmetric cases.
 Both variants use the same renderer and retain the explode/view state.
+Transparent surrounding anatomy uses [weighted blended OIT](../../rendering/3D_TRANSPARENCY.md)
+to remove triangle-order blending artifacts; selected regions remain opaque.
 The candidate is a local review default only; D042 remains the selected
 product geometry. No movement assignment or boundary convention has been accepted.
 
