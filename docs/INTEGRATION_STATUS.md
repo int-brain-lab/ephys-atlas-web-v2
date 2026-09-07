@@ -53,6 +53,12 @@ aggregate measurement frequency and downloadable exploratory reports. It has
 real-data Chromium interaction/failure/mobile coverage and no production
 dataset or registration claim.
 
+Its alignment mode uses the actual retained website projection viewports and
+fixed source-transform evidence. The dark-theme guided review records judgments
+across five starting locations, with optional original expression, additional
+overlays and coordinate diagnostics. Exported judgments do not approve biological
+registration; the CCF-derived reference image is not independent evidence of it.
+
 The [AGEA stripe review report](data/AGEA_STRIPE_REPORT.md) adds deterministic
 missing-slab/intensity diagnostics, full-catalog screening, six exact Allen
 archive comparisons, Ptpru section-projection evidence and a reproducible

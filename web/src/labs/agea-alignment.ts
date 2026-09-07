@@ -54,7 +54,13 @@ export class AlignmentReview {
   private layer: Layer = 'image';
   private world: WorldCoordinateUm = { ml: 0, ap: -800, dv: -2000 };
   private outlines = true;
-  private coarse = true;
+  private coarse = false;
+  private stop = 0;
+  private readonly stopControl = el('select');
+  private readonly previous = button('Previous', () => this.visit(this.stop - 1));
+  private readonly next = button('Next', () => this.visit(this.stop + 1));
+  private readonly reviewCount = el('span', 'No notes yet', 'alignment-review-count');
+  private readonly judgments: HTMLButtonElement[] = [];
   private opacity = 1;
   private blink = false;
   private phase = true;
@@ -138,10 +144,15 @@ export class AlignmentReview {
   }
 
   private build(): void {
-    this.root.append(el('h3', 'Alignment review'),
-      el('p', 'Fixed source-transform candidate · white: website anatomy · orange: coarse AGEA label boundaries.'),
-      el('p', 'The reference image and labels are CCF-derived. Their agreement checks coordinates and rendering, not independent biological registration of expression.', 'alignment-caveat'));
+    this.root.append(el('p', 'Check the white outlines against the image. Record your impression, then move to the next location.', 'alignment-instruction'));
+    const navigator = el('div', '', 'alignment-presets');
+    this.stopControl.setAttribute('aria-label', 'Review location');
+    PRESETS.forEach(([name], i) => { const option = el('option', `${i + 1} / ${PRESETS.length} · ${name}`); option.value = String(i); this.stopControl.append(option); });
+    this.stopControl.onchange = () => this.visit(Number(this.stopControl.value));
+    navigator.append(this.previous, this.stopControl, this.next);
     const controls = el('div', '', 'alignment-controls');
+    const advanced = el('details', '', 'alignment-options'); advanced.append(el('summary', 'More overlay options'));
+    const extraControls = el('div', '', 'alignment-controls'); advanced.append(extraControls);
     this.layerControl.setAttribute('aria-label', 'Alignment base layer');
     for (const [value, label] of [['image', 'Anatomical reference image'], ['expression', 'Selected expression']]) {
       const option = el('option', label); option.value = value!; this.layerControl.append(option);
@@ -151,30 +162,45 @@ export class AlignmentReview {
     for (const [input, title, key] of [[this.outlineControl, 'Website outlines', 'outlines'],
       [this.coarseControl, 'Coarse AGEA boundaries', 'coarse'], [this.blinkControl, 'Blink website outlines', 'blink']] as const) {
       input.type = 'checkbox'; input.onchange = () => { this[key] = input.checked; this.phase = true; this.persist(); this.setBlinkTimer(); this.present(); };
-      const label = el('label'); label.append(input, title); controls.append(label);
+      const label = el('label'); label.append(input, title); (key === 'outlines' ? controls : extraControls).append(label);
     }
     this.opacityControl.type = 'range'; this.opacityControl.min = '0'; this.opacityControl.max = '1'; this.opacityControl.step = '.05';
     this.opacityControl.setAttribute('aria-label', 'Alignment image opacity');
     this.opacityControl.oninput = () => { this.opacity = Number(this.opacityControl.value); this.persist(false); this.present(); };
-    const opacity = el('label', 'Image opacity '); opacity.append(this.opacityControl); controls.append(opacity);
-    const presets = el('div', '', 'alignment-presets');
-    for (const [name, world] of PRESETS) presets.append(button(name, () => this.move(world)));
-    this.root.append(controls, el('p', 'Presets are review starting points, not certified landmark coordinates.'), presets, this.status, this.views, this.inspector);
-    const review = el('section', '', 'alignment-review-form'); review.append(el('h3', 'Record this location'));
-    const judgment = el('select'); judgment.setAttribute('aria-label', 'Alignment judgment');
-    for (const text of ['Uncertain', 'Looks consistent', 'Clear mismatch']) judgment.append(el('option', text));
-    const note = el('textarea'); note.setAttribute('aria-label', 'Alignment review note'); note.placeholder = 'Which structure or boundary? In which plane?'; note.maxLength = 4000;
-    review.append(judgment, note, button('Save review note', () => {
-      if (!this.grid || !this.factory || this.root.dataset.ready !== 'true') { this.status.textContent = 'Wait for the current alignment views before saving a note.'; return; }
-      this.notes.push({ judgment: judgment.value, note: note.value, context: this.snapshot() });
-      const item = el('li', `${judgment.value} · ${Object.values(this.world).map(fmt).join(' / ')} µm · ${note.value}`);
-      // Capture the coordinate by value; later notes must not change this target.
-      const saved = { ...this.world }; item.append(button('Revisit', () => this.move(saved)));
-      this.noteList.append(item); note.value = '';
-    }), button('Download alignment review', () => this.download()), el('p', 'Notes stay in this page until downloaded; reload clears unsaved notes.'), this.noteList);
+    const opacity = el('label', 'Image opacity '); opacity.append(this.opacityControl); extraControls.append(opacity);
+    this.root.append(navigator, controls, advanced, this.status, this.views);
+    const review = el('section', '', 'alignment-review-form'); review.append(el('h3', 'Do the outlines line up?'));
+    const note = el('textarea'); note.setAttribute('aria-label', 'Alignment review note'); note.placeholder = 'Optional comment — which boundary looks shifted?'; note.maxLength = 4000; note.rows = 1;
+    const actions = el('div', '', 'alignment-judgments');
+    for (const [title, judgment] of [['Looks consistent', 'Looks consistent'], ['Unsure', 'Uncertain'], ['Mismatch', 'Clear mismatch']] as const) {
+      const action = button(title, () => {
+        if (!this.grid || !this.factory || this.root.dataset.ready !== 'true') { this.status.textContent = 'Wait for the current alignment views before saving a note.'; return; }
+        this.notes.push({ judgment, note: note.value, context: this.snapshot() });
+        const item = el('li', `${PRESETS[this.stop]![0]} · ${judgment} · ${note.value}`);
+        // Capture the coordinate by value; later notes must not change this target.
+        const saved = { ...this.world }; const savedStop = this.stop;
+        item.append(button('Revisit', () => { this.stop = savedStop; this.updateControls(); this.move(saved); }));
+        this.noteList.append(item); note.value = '';
+        this.reviewCount.textContent = `${this.notes.length} ${this.notes.length === 1 ? 'note' : 'notes'} saved${this.stop === PRESETS.length - 1 ? ' · Last location reached — download your review.' : ''}`;
+        if (this.stop < PRESETS.length - 1) this.visit(this.stop + 1);
+      });
+      action.disabled = true; this.judgments.push(action); actions.append(action);
+    }
+    const savedNotes = el('details'); savedNotes.append(el('summary', 'Saved notes'), this.noteList);
+    this.reviewCount.setAttribute('aria-live', 'polite');
+    const footer = el('div', '', 'alignment-export'); footer.append(this.reviewCount, button('Download alignment review', () => this.download()));
+    review.append(note, actions, el('small', 'Each choice saves this location and advances. Notes are cleared on reload; download before leaving.'), footer, savedNotes);
+    const diagnostics = el('details', '', 'alignment-diagnostics'); diagnostics.append(el('summary', 'Coordinates & source evidence'), this.inspector);
     const provenance = el('details'); provenance.append(el('summary', 'Fixed transform and source evidence'),
       el('pre', JSON.stringify({ affine: this.manifest.index_to_world_um, source: this.manifest.source, alignment: this.manifest.alignment }, null, 2)));
-    this.root.append(review, provenance); this.updateControls();
+    diagnostics.append(el('p', 'Locations are review starting points, not certified landmarks. Orange lines, when enabled, show coarse AGEA labels.'), provenance);
+    this.root.append(review,
+      el('p', 'CCF-derived image: a coordinate check, not independent biological registration. Fixed transform; review only.', 'alignment-caveat'), diagnostics); this.updateControls();
+  }
+
+  private visit(index: number): void {
+    this.stop = Math.max(0, Math.min(PRESETS.length - 1, index));
+    this.updateControls(); this.move(PRESETS[this.stop]![1]);
   }
 
   private createPanel(axis: Axis, registration: RegisteredProjectionRegistration): void {
@@ -201,7 +227,9 @@ export class AlignmentReview {
       const point = worldToPlane(registration.worldToPlaneIndex, this.world);
       this.move(planeToWorld(registration.planeIndexToWorldUm, { slice: point.slice, u: point.u + shift[0]! * 20, v: point.v + shift[1]! * 20 }));
     };
-    const caption = el('p', '', 'alignment-caption'); section.append(control, host, caption); this.views.append(section);
+    const caption = el('p', '', 'alignment-caption');
+    const planeDetails = el('details', '', 'alignment-plane-details'); planeDetails.append(el('summary', 'Slice coordinates'), caption);
+    section.append(control, host, planeDetails); this.views.append(section);
     this.panels.set(axis, { host, caption, viewport, registration, overlay, control });
   }
 
@@ -215,17 +243,21 @@ export class AlignmentReview {
   }
   private readUrl(): void {
     const p = new URLSearchParams(location.search); const xyz = p.get('align_world')?.split(',').map(Number);
+    const stop = Number(p.get('align_stop')); this.stop = Number.isInteger(stop) && stop >= 0 && stop < PRESETS.length ? stop : 0;
+    this.world = regionalIndicesToWorld(worldToRegionalIndices(PRESETS[this.stop]![1]));
     if (xyz?.length === 3 && xyz.every(Number.isFinite)) this.world = regionalIndicesToWorld(worldToRegionalIndices({ ml: xyz[0]!, ap: xyz[1]!, dv: xyz[2]! }));
     this.layer = p.get('align_layer') === 'expression' ? 'expression' : 'image';
-    this.outlines = p.get('align_outlines') !== '0'; this.coarse = p.get('align_coarse') !== '0'; this.blink = p.get('align_blink') === '1';
+    this.outlines = p.get('align_outlines') !== '0'; this.coarse = p.get('align_coarse') === '1'; this.blink = p.get('align_blink') === '1';
     const opacity = p.get('align_opacity'); this.opacity = opacity !== null && Number.isFinite(Number(opacity)) ? Math.max(0, Math.min(1, Number(opacity))) : 1;
   }
   private persist(push = true): void {
     const url = new URL(location.href); url.searchParams.set('align_world', [this.world.ml, this.world.ap, this.world.dv].join(','));
+    url.searchParams.set('align_stop', String(this.stop));
     for (const [key, value] of Object.entries({ layer: this.layer, outlines: this.outlines ? '1' : '0', coarse: this.coarse ? '1' : '0', blink: this.blink ? '1' : '0', opacity: String(this.opacity) })) url.searchParams.set(`align_${key}`, value);
     if (url.href !== location.href) { if (push) history.pushState(null, '', url); else history.replaceState(null, '', url); }
   }
   private updateControls(): void {
+    this.stopControl.value = String(this.stop); this.previous.disabled = this.stop === 0; this.next.disabled = this.stop === PRESETS.length - 1;
     this.layerControl.value = this.layer; this.outlineControl.checked = this.outlines; this.coarseControl.checked = this.coarse;
     this.blinkControl.checked = this.blink; this.opacityControl.value = String(this.opacity); this.setBlinkTimer();
   }
@@ -241,10 +273,11 @@ export class AlignmentReview {
       regional: resolveRegionalPresentation({ mapping: 'allen', feature, anatomyRegions: this.regions, coloring, selectedRegionIds: [], hoveredRegionId: null }) });
     for (const panel of this.panels.values()) panel.overlay.style.display = this.coarse ? '' : 'none';
   }
-  private clearViews(): void { ++this.renderGeneration; this.root.dataset.ready = 'false'; for (const panel of this.panels.values()) { panel.viewport.clear(); panel.overlay.replaceChildren(); } }
+  private setReady(ready: boolean): void { this.root.dataset.ready = String(ready); this.judgments.forEach(button => { button.disabled = !ready; }); }
+  private clearViews(): void { ++this.renderGeneration; this.setReady(false); for (const panel of this.panels.values()) { panel.viewport.clear(); panel.overlay.replaceChildren(); } }
   private async render(): Promise<void> {
     if (!this.active || !this.factory || !this.grid || this.disposed) return;
-    const feature = this.feature(); this.root.dataset.ready = 'false';
+    const feature = this.feature(); this.setReady(false);
     if (!feature) { this.status.textContent = 'Expression loading or unavailable. Choose the anatomical reference image to continue reviewing.'; return; }
     const token = ++this.renderGeneration; const world = { ...this.world }; const indices = worldToRegionalIndices(world);
     this.present(); this.status.textContent = 'Loading aligned views…';
@@ -271,7 +304,7 @@ export class AlignmentReview {
         panel.caption.textContent = `Native request ${indices[axis]} · displayed outline ${asset} (${fmt(displayedWorld)} µm) · AGEA ${location.index} (${fmt(sourceFixed)} µm) · plane difference ${fmt(displayedWorld - sourceFixed)} µm`;
       }));
       if (token !== this.renderGeneration || this.disposed) return;
-      this.root.dataset.ready = 'true'; this.status.textContent = `Alignment ready · ${this.layer === 'image' ? 'CCF-derived reference image (Cividis)' : 'original expression energy (Viridis)'} · fixed transform, awaiting review.`;
+      this.setReady(true); this.status.textContent = `Alignment ready · ${this.layer === 'image' ? 'reference image' : 'original expression energy'} · Click a slice to inspect; use sliders to move through it.`;
       this.inspect();
     } catch (error) { if (token === this.renderGeneration && !this.disposed) { this.clearViews(); this.fail(error); } }
   }
@@ -290,6 +323,7 @@ export class AlignmentReview {
     const voxel = this.grid ? sourceVoxel(this.grid, this.world) : null;
     const index = voxel?.index; const flat = index ? offset(index, this.manifest.shape) : null;
     return { world: { ...this.world }, fractional_source_index: voxel?.fractional ?? null, source_index: index ?? null,
+      review_stop: { index: this.stop, label: PRESETS[this.stop]![0] },
       coarse_label: flat === null ? null : this.labels[flat]!, expression: flat === null ? null : this.values?.[flat] ?? null,
       experiment_id: this.gene, layer: this.layer, outlines: this.outlines, coarse_boundaries: this.coarse, opacity: this.opacity,
       website_regions: Object.fromEntries(AXES.map(axis => [axis, this.websiteRegion(axis)])),
@@ -306,7 +340,7 @@ export class AlignmentReview {
         return `${axis}: ${id === null ? 'no path' : `${region?.acronym ?? id} (${id})`}`;
       }).join(' · ')), el('small', 'Different labels near boundaries may reflect the 200 µm modal labels and sparse outline-plane offsets shown above.'));
   }
-  private fail(error: unknown): void { if (!this.disposed) { this.root.dataset.ready = 'false'; this.status.textContent = `Alignment unavailable: ${String(error)}`; } }
+  private fail(error: unknown): void { if (!this.disposed) { this.setReady(false); this.status.textContent = `Alignment unavailable: ${String(error)}`; } }
   private download(): void {
     const report = { format: 'agea-alignment-review-only', scientific_release: false, alignment_accepted: false,
       sources: this.manifest.source, alignment: this.manifest.alignment, grid: this.grid, current: this.snapshot(), notes: this.notes,

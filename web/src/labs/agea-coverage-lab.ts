@@ -16,6 +16,9 @@ const pct = (n: number, d: number): string => d ? `${(100 * n / d).toFixed(1)}%`
 
 class CoverageLab {
   private alignmentReview: AlignmentReview | null = null;
+  private readonly experiments = el('details', '', 'agea-experiments');
+  private readonly experimentSummary = el('summary', 'Change experiment');
+  private readonly otherTools = el('details', '', 'agea-other-tools');
   private manifest!: LabManifest;
   private labels = new Int32Array();
   private frequency = new Uint16Array();
@@ -90,6 +93,7 @@ class CoverageLab {
     pagination.append(button('Previous results', () => { this.page = Math.max(0, this.page - 1); this.renderResults(); }),
       button('Next results', () => { if ((this.page + 1) * 30 < this.filtered().length) this.page++; this.renderResults(); }));
     aside.append(el('h2', 'Experiments'), this.search, this.sort, this.resultCount, this.results, pagination);
+    this.experiments.open = true; this.experiments.append(this.experimentSummary, aside);
     const content = el('main', '', 'agea-content');
     const modes = el('nav', '', 'agea-modes'); modes.setAttribute('aria-label', 'Investigation mode');
     for (const [mode, text] of [['coverage', 'Coverage'], ['expression', 'Expression'], ['comparison', 'Mask comparison'], ['frequency', 'Across experiments'], ['alignment', 'Alignment']] as const) {
@@ -117,9 +121,11 @@ class CoverageLab {
     geometry.append(el('p', this.manifest.geometry_status), el('pre', JSON.stringify({
       shape: this.manifest.shape, axis_order: this.manifest.axis_order, index_to_world_um: this.manifest.index_to_world_um,
       variant: this.manifest.source_variant, sources: this.manifest.source }, null, 2)));
-    content.append(this.selected, modes, controls, navigation, this.legend, this.views, analysis, geometry,
-      button('Download inspection report', () => this.download()));
-    const layout = el('div', '', 'agea-layout'); layout.append(aside, content);
+    this.otherTools.open = true; this.otherTools.append(el('summary', 'Other investigation tools'), modes);
+    const sourceDetails = el('div', '', 'agea-source-details');
+    sourceDetails.append(geometry, button('Download inspection report', () => this.download()));
+    content.append(this.selected, this.otherTools, controls, navigation, this.legend, this.views, analysis, sourceDetails);
+    const layout = el('div', '', 'agea-layout'); layout.append(this.experiments, content);
     this.root.replaceChildren(header, badge, note, this.status, layout); this.renderResults();
   }
   private filtered(): Experiment[] {
@@ -147,6 +153,7 @@ class CoverageLab {
     this.state.gene = id; if (persist) this.persist();
     const feature = this.manifest.features.find(f => f.id === id)!;
     this.values = null; this.analysis = null; this.selected.textContent = `${feature.gene} · experiment ${feature.experiment_id}`;
+    this.experimentSummary.textContent = `Change experiment · ${feature.gene} (${feature.experiment_id})`;
     this.status.textContent = 'Loading expression volume…'; this.renderResults(); this.paint();
     try {
       const key = feature.volume.sha256; let values = this.cache.get(key);
@@ -203,6 +210,13 @@ class CoverageLab {
     this.sliders.forEach((s, i) => { s.value = String(this.state.cursor[i]); });
     this.modeButtons.forEach((b, mode) => b.setAttribute('aria-pressed', String(mode === this.state.mode)));
     const alignment = this.state.mode === 'alignment';
+    if (alignment !== this.root.classList.contains('agea-lab--alignment')) {
+      this.experiments.open = !alignment; this.otherTools.open = !alignment;
+      if (alignment) this.otherTools.parentElement!.append(this.otherTools);
+      else this.selected.after(this.otherTools);
+    }
+    this.root.classList.toggle('agea-lab--alignment', alignment);
+    this.root.querySelector('h1')!.textContent = alignment ? 'AGEA alignment review' : 'AGEA coverage lab';
     this.root.querySelectorAll<HTMLElement>('.agea-controls, .agea-navigation, .agea-legend, .agea-analysis').forEach(node => { node.hidden = alignment; });
     if (alignment) { this.alignmentReview?.setExpression(this.state.gene, this.values); return; }
     this.outlines.checked = this.state.outlines; this.rescale.checked = this.state.rescale;

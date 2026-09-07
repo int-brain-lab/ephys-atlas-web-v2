@@ -44,26 +44,36 @@ verified float32 `image.npy` transport and fixed-transform evidence. It checks
 the exact 20:1 native-index relationship and reports the larger AGEA extent;
 it does not approve a reference-space identity for publication.
 
-1. Begin with the anatomical reference image. White lines are website anatomy;
-   orange lines are the supplied coarse labels. Toggle orange boundaries off
-   for a less cluttered image-to-outline comparison; blink the website outlines
-   or lower image opacity as needed.
-2. Visit the midline, striatum, hippocampus, cerebellum and anterior presets.
-   These are starting locations, not certified landmarks. Check all three planes,
-   then inspect adjacent slices. Click a slice to move the shared world cursor;
-   arrow keys move by 200 µm in-plane and sliders use native 10 µm navigation.
-3. Look for systematic shifts, left/right flips, scale differences, and matching
-   ventricles and major boundaries. Read the requested/displayed native slice
-   and AGEA slice coordinates: coarse sampling and sparse website outlines can
-   legitimately show different planes. The inspector reports each displayed
-   plane's website label separately.
-4. Switch to selected expression and compare multiple experiments. Measured zero
-   remains valid, including unlabelled voxels; `-1` remains missing. Do not treat
-   missing-expression stripes as registration evidence by themselves.
-5. Save a judgment and a structure-specific note at each useful location.
-   Download the alignment review JSON before leaving: notes are page-local and
-   reload clears them. The export includes coordinates, experiment, source
-   hashes, fixed affine, displayed planes and explicit non-acceptance flags.
+The lab uses the atlas website's shared dark-theme tokens. The default review
+is a short guided pass, with experiment browsing and diagnostics collapsed:
+
+1. Compare the white website outlines with the reference image in all three
+   planes. Use **Website outlines** to toggle the overlay for comparison.
+2. Optionally add a comment, then choose **Looks consistent**, **Unsure**, or
+   **Mismatch**. Each button saves the current coordinates and advances to the
+   next starting location. The five locations cover midline, striatum,
+   hippocampus, cerebellum and anterior extent. **Previous**, **Next**, and the
+   location selector allow navigation without recording a judgment.
+3. **Download alignment review** before leaving. Notes are page-local; reload
+   clears them. The last location does not wrap to the start. Saved notes can
+   be revisited, and exported notes include their location label, exact cursor,
+   experiment, source hashes, affine, displayed planes and non-acceptance flags.
+
+For closer inspection:
+
+- Click a slice to move the shared world cursor; arrow keys move by 200 µm
+  in-plane, and sliders use native 10 µm navigation. Locations are starting
+  points, not certified landmarks.
+- **More overlay options** contains blinking, opacity and coarse AGEA label
+  boundaries (orange, off by default). Explicit overlay choices persist in URLs.
+- **Slice coordinates** and **Coordinates & source evidence** expose requested,
+  displayed and coarse plane positions and labels. Coarse sampling and sparse
+  website outlines can legitimately produce different planes and labels.
+- Choose **Selected expression** and expand **Change experiment** to compare
+  genes. Measured zero stays valid, including unlabelled voxels; `-1` stays
+  missing. Missing-expression stripes alone are not registration evidence.
+- **Other investigation tools** retains the original coverage, mask-comparison
+  and aggregate-frequency modes.
 
 The supplied reference image and labels were generated from CCF anatomy. Their
 agreement is a coordinate/rendering check, **not independent validation of the
@@ -120,11 +130,10 @@ fill persistent Cache Storage while browsing. Switching experiments cancels
 superseded work, clears stale expression and permits retry after a failure.
 The two small shared label/frequency arrays remain loaded.
 
-The existing Canvas volume painter draws the diagnostic planes. This is an
-isolated investigation of source-index arrays, not another renderer facade for
-the main scientific application. All measurements use original, unnormalized
-source energy values. The processed variant and production anatomy overlay
-remain outside this lab iteration.
+The existing Canvas volume painter draws the source-index diagnostic planes;
+alignment mode uses the application's retained registered projection factory.
+Neither adds a renderer facade. Measurements use original, unnormalized source
+energy values. The processed variant remains outside this lab.
 
 ## Verification
 

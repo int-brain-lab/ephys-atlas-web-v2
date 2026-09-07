@@ -110,6 +110,8 @@ aggregate coverage before selecting Q19's population/validity policy.
 The same lab now includes fixed-transform alignment review against the actual
 website projection pack: linked native planes, CCF-derived reference image or
 original expression, coarse boundaries, presets and source-grounded note export.
+The review uses the atlas dark theme and a five-location save-and-advance flow;
+experiment browsing, extra overlays and coordinate evidence are collapsed.
 Coordinate evidence is tested; biological registration remains pending owner
 review and is not implied by agreement with the CCF-derived template.
 
