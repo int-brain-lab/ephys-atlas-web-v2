@@ -171,8 +171,8 @@ build. Source volumes and generated binary figures/PDF are never committed.
 
 ## Review request draft
 
-> We are checking the original IBL AGEA volumes before integrating them into
-> the viewer. Ptpru 858 has oblique missing bands that reproduce exactly from
+> We are reviewing the original IBL AGEA volumes in a local viewer preview.
+> Ptpru 858 has oblique missing bands that reproduce exactly from
 > Allen's energy grid. Projecting the four absent section numbers through
 > Allen's documented transform places them close to those bands. Available
 > neighbouring images do not explain why the sections are absent.
@@ -190,3 +190,7 @@ build. Source volumes and generated binary figures/PDF are never committed.
 This is a draft only; no message has been sent. Next: scientist adjudication
 and section-convention confirmation, then Q19's source/validity/registration
 decisions. The processed source comparison remains optional and unperformed.
+
+The [source and alignment report](AGEA_SOURCE_ALIGNMENT_REPORT.md) adds the
+complete-preview catalog check and owner reference-image review. Neither
+resolves the upstream cause of the missing bands.

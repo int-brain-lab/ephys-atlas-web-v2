@@ -10,6 +10,10 @@ The local [coverage lab](AGEA_COVERAGE_LAB.md) remains available for source
 investigation. No approved public AGEA scientific release has been published.
 The measurements below are not production-origin acceptance.
 
+The [source and alignment report](AGEA_SOURCE_ALIGNMENT_REPORT.md) summarizes
+catalog completeness, upstream missing-band evidence and the saved owner
+review, with their separate limits.
+
 The [stripe review report](AGEA_STRIPE_REPORT.md) now provides full-catalog
 exploratory screening, six direct Allen archive checks and Ptpru section-gap
 projection evidence. It informs scientist review without resolving Q19.
