@@ -199,21 +199,28 @@ private snapshot, complete declared-file inventory, private create-only
 reservation/staging, SHA-256/size/header verification, immutable dependencies
 before manifest, completion marker, and conditional dataset-index update last.
 Retries reuse verified objects and preserve concurrent index changes. No AWS
-calls were made during implementation. S3 curator catalog/edition history,
-pack/site publication, and multipart objects above 5 GB remain unimplemented.
+mutation calls were made during implementation. The additional S3 curator path
+uses the shared compiler, immutable cumulative edition history, unique public
+catalog generations and a conditional catalog-last write. Pack/site transactions
+reuse immutable verified staging; the production Vite wrapper excludes dev
+data/defaults and binds each build to explicit same-origin dependencies. The
+tested root routing function is not deployed. All are locally tested only;
+multipart objects above 5 GB remain unimplemented. See
+[Local publisher operations](publishing/LOCAL_PUBLISHER.md).
 Public reads remain static and unauthenticated.
 
 D040 selects IBL-owned S3 plus CloudFront. Authenticated terminal reads and a
 non-mutating conditional-write authorization probe now pass against the
 private candidate `us-east-1` location recorded in
 [`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md). D059 selects
-isolated staging and production roots there; D071 selects
-`ephys-atlas.internationalbrainlab.org` as the production viewer domain. D060 selects
+isolated staging and production roots there; D072 selects
+`ephys-atlas.iblcore.org` as the production viewer domain. D060 selects
 CloudFront for both the S3-hosted compiled Vite viewer and same-origin public
 data, with no Cloudflare Pages deployment. Q8 still requires the exact
 distribution/origin configuration, isolated staging hostname, DNS/ACM,
-cache/CORS choices, publisher IAM policy and implementation, and first staging
-artifact authorization; Q9 still requires the frozen paper release set and
+cache/CORS choices, publisher IAM policy, and first staging
+artifact authorization. The current AWS audit is blocked by an expired login;
+Q9 still requires the frozen paper release set and
 aliases. No remote publication has occurred.
 
 D056/D061 accept Project/Dataset/Release/Feature/View navigation, immutable

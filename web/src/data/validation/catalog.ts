@@ -42,7 +42,10 @@ function parseStatus(value: unknown, context: string): 'legacy' | 'development' 
 
 export function parseDatasetCatalog(value: unknown): DatasetCatalog {
   const root = object(value, 'catalog');
-  fields(root, ['schema_version', 'default_project', 'projects', 'datasets'], [], 'catalog');
+  fields(root, ['schema_version', 'default_project', 'projects', 'datasets'], ['publication_id'], 'catalog');
+  if (root.publication_id !== undefined && (typeof root.publication_id !== 'string' || !/^[0-9a-f]{32}$/.test(root.publication_id))) {
+    throw new Error('catalog.publication_id is invalid');
+  }
   if (root.schema_version !== SCHEMA_VERSION) {
     throw new Error(`catalog.schema_version must be ${SCHEMA_VERSION}`);
   }

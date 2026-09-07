@@ -1,6 +1,6 @@
 # AWS console and DNS setup
 
-Status: runbook; D071 selects the production hostname. These are setup
+Status: runbook; D072 selects the production hostname. These are setup
 instructions, not evidence that resources exist or permission to upload data.
 Current publishing support and stop conditions are in
 [S3 deployment](S3_DEPLOYMENT.md).
@@ -11,11 +11,10 @@ Use the IBL AWS account that owns `ibl-brain-wide-map-private`, not a personal
 account. Ask its administrator for infrastructure access and a separate,
 temporary, prefix-scoped publishing identity. Do not use root credentials.
 
-Ask whoever manages `internationalbrainlab.org` to add DNS records. The domain
+The owner has Cloudflare DNS access for `iblcore.org`. The domain
 does **not** need to move to AWS or change nameservers. Production is
-`ephys-atlas.internationalbrainlab.org`. Proposed staging is
-`ephys-atlas-staging.internationalbrainlab.org`, pending owner confirmation;
-the staging distribution's AWS hostname can be used initially instead.
+`ephys-atlas.iblcore.org`. Use the staging distribution's generated AWS hostname
+initially; a custom staging hostname has not been selected.
 
 Record account ID, distribution IDs/domain names, OAC IDs, certificate ARN,
 DNS provider/contact and the selected credential profile in the deployment
@@ -75,7 +74,7 @@ S3 bucket as origin. For staging, use origin path
   before benchmarking the real origin.
 
 Use a separate production distribution with the production origin path and
-D071 hostname. Never add the staging origin to production as a fallback.
+D072 hostname. Never add the staging origin to production as a fallback.
 OAC and the bucket policy, not the origin path alone, enforce isolation.
 See [AWS S3 origin access control](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html).
 
@@ -114,14 +113,16 @@ change encryption.
 ## 5. Configure routing and cache behavior
 
 The site build is stored below `site/`; datasets stay below `datasets/` and the
-catalog at `catalog.json`. Before site deployment, implement and test a narrow
-viewer-request rewrite: `/` → `/site/index.html`; existing `/assets/*`,
-`/brand/*`, and `/favicon.png` → their `/site/` counterparts. Preserve query
+catalog at `catalog.json`. Use the tested narrow viewer-request rewrite:
+`/` → `/site/index.html`. Preserve query
 strings (the atlas uses URL query state), but do not forward them to S3 or
 include them in the cache key. Do not rewrite arbitrary missing paths to HTML.
 Other runtime asset URLs must be supplied by the reviewed build/catalog and
-validated pack paths. This routing is a deployment requirement, not a deployed
-or tested CloudFront Function in this implementation slice.
+validated pack paths. The production build embeds immutable
+`/site/builds/<build-id>/` asset URLs, so only the `/` entry rewrite is needed;
+root asset rewrites are unnecessary. The tested function is
+`tools/deployment/site-router.js`; it is not deployed. See
+[Local publisher operations](LOCAL_PUBLISHER.md).
 
 Set explicit cache behavior ordering, with mutable index rules ahead of broad
 dataset rules. CloudFront matches behaviors before a viewer-request URI
@@ -132,7 +133,7 @@ direct `/site/` path that is retained.
 | --- | --- |
 | `/`, entry HTML, catalog, dataset indexes | `Cache-Control: no-cache`; CloudFront minimum TTL 0, initially CachingDisabled |
 | Content-hashed JS/CSS and immutable release/pack objects | `public,max-age=31536000,immutable`; never overwrite |
-| Non-content-hashed favicon/brand assets | Revalidate; do not mark immutable |
+| Favicon/brand inside immutable build directories | Immutable with that build; never overwrite |
 | `.isvg.gz` and other encoded numeric payloads | Opaque bytes, `application/octet-stream`, **no Content-Encoding**, no CDN recompression |
 | JSON | `application/json`; schema-declared stored-byte identity remains authoritative |
 
@@ -150,7 +151,7 @@ See [AWS cache behavior settings](https://docs.aws.amazon.com/AmazonCloudFront/l
 After the certificate is issued and the distribution has the alternate domain
 configured, copy its generated hostname, for example `dEXAMPLE.cloudfront.net`.
 
-| DNS provider | Record for `ephys-atlas.internationalbrainlab.org` |
+| DNS provider | Record for `ephys-atlas.iblcore.org` |
 | --- | --- |
 | Existing non-AWS provider | CNAME `ephys-atlas` → the exact production distribution hostname; start with TTL 300 if supported |
 | Route 53 authoritative hosted zone | A alias → CloudFront distribution; also AAAA alias if distribution IPv6 is enabled |
@@ -175,7 +176,7 @@ with prefix-limited permissions. The command then requires a successful
 exact-prefix listing to prove absence; denied reads alone are never treated
 as absence. An existing but unreadable object still fails closed.
 
-The current command uses single-object PUTs with SHA-256 validation and
+The release command uses single-object PUTs with SHA-256 validation and
 conditional headers, not multipart. It rejects objects above 5 GB before
 network access. Add multipart/KMS permissions only if the corresponding
 implementation or selected encryption requires them. Temporary authentication

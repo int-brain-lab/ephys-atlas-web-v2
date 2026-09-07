@@ -69,6 +69,13 @@ the public catalog. Ordinary immutable release publication only updates the
 administrative inventory; an explicit curator compile/promote operation
 validates the complete graph and updates public discovery last.
 
+An optional `publication_id` (32 lowercase hexadecimal characters) identifies
+a catalog publication generation, not a scientific release or edition. S3
+promotion always emits a fresh value, including when restoring older catalog
+contents, so conditional ETag writes cannot mistake an A→B→A rollback for
+unchanged state. Its immutable private history records all previously exposed
+edition mappings. Browsers validate this field but do not use it for navigation.
+
 Every nonempty scalar representation declares Linear/Full and may add reviewed
 Log or Signed-log scales and a Focused domain. The representation-specific
 feature display owns availability and preferences. Regional statistics and

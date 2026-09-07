@@ -67,8 +67,8 @@ only part of the body; the index states what remains effective.
 | D056 | Project/dataset/release navigation | partially superseded | 2026-09-02 | hierarchy retained; D061 fixes edition identity, authority and context; D063 refines presentation and control labels |
 | D057 | Preferred palettes and explicit diverging centers | accepted | 2026-09-02 | infrastructure policy; Q16 retains real-feature selections |
 | D058 | Flexible multi-feature comparison | accepted | 2026-09-02 | arbitrary feature scopes, z-score comparison, and iterative Focus/Gallery/Profile UX |
-| D059 | Shared S3 staging/production roots | partially superseded | 2026-09-02 | bucket roots and immutable-key policy retained; D071 replaces hostname |
-| D060 | Lean AWS static hosting and local publication | partially superseded | 2026-09-02 | AWS topology and local publication retained; D071 replaces hostname |
+| D059 | Shared S3 staging/production roots | partially superseded | 2026-09-02 | bucket roots and immutable-key policy retained; D072 confirms hostname after D071 |
+| D060 | Lean AWS static hosting and local publication | partially superseded | 2026-09-02 | AWS topology and local publication retained; D072 confirms hostname after D071 |
 | D061 | Curated immutable project editions | partially superseded | 2026-09-03 | identity, authority, context and resolution retained; D063 replaces wide/staged UI presentation |
 | D062 | Linux canonical release environment | accepted | 2026-09-04 | Linux-only release build/preflight/publication; macOS preview-only |
 | D063 | Data chooser and exploration-first header | partially superseded | 2026-09-05 | D064 moves version selection into Data details; D065 moves display into the header; grouped Data and prominent Feature retained |
@@ -79,7 +79,8 @@ only part of the body; the index states what remains effective.
 | D068 | Intact 3-D components with side-specific presentation | accepted | 2026-09-06 | shared-edge connectivity; original-ML colors/picks; D070 resolves Q18 assignments/boundary |
 | D069 | AGEA original-value local integration preview | accepted | 2026-09-07 | owner-authorized local website integration with provisional source registration; no public release approval |
 | D070 | Accept native 3-D anatomy and OIT | accepted | 2026-09-07 | closes Q18; native default, exact reviewed movements/boundary; D042 rollback; additional 3-D Firefox/Safari review waived |
-| D071 | International Brain Laboratory production hostname | accepted | 2026-09-07 | ephys-atlas.internationalbrainlab.org replaces the D059/D060 hostname; no infrastructure or data publication claimed |
+| D071 | International Brain Laboratory production hostname | superseded | 2026-09-07 | D072 restores ephys-atlas.iblcore.org |
+| D072 | Confirm iblcore.org with Cloudflare DNS | accepted | 2026-09-07 | production hostname ephys-atlas.iblcore.org; Cloudflare DNS, existing AWS delivery model retained |
 
 ## D001 — Separate v2
 
@@ -1634,3 +1635,19 @@ specific remote upload or infrastructure mutation. DNS administration, staging
 hostname, certificate/distribution identifiers, and first staging artifacts
 remain Q8 inputs. The proposed staging hostname is
 `ephys-atlas-staging.internationalbrainlab.org`, pending owner confirmation.
+
+## D072 — Confirm ephys-atlas.iblcore.org with Cloudflare DNS
+
+The owner confirms `ephys-atlas.iblcore.org` as the production hostname,
+superseding D071. `iblcore.org` is active in the owner's Cloudflare account;
+its authoritative nameservers are `vern.ns.cloudflare.com` and
+`aliza.ns.cloudflare.com`. A scoped token successfully read that zone and
+confirmed no existing exact `ephys-atlas.iblcore.org` DNS records. DNS writes
+have not been tested or authorized. Gandi registrar access does not require
+moving the authoritative DNS away from Cloudflare.
+
+Retain D059's bucket/environment roots and D060's same-origin CloudFront/S3
+topology. This authorizes hostname documentation, a read-only AWS audit and
+local publishing machinery, not infrastructure creation or data publication.
+Staging may use the distribution-generated hostname until a custom name is
+selected. Q2/Q5/Q9/Q19 scientific choices remain unchanged.

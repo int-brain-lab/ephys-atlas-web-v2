@@ -49,7 +49,7 @@ Blocks: final browser transport and the immutable production volume release.
 
 ## Q8 — Production public origin and storage
 
-Status: **DECISION; partially resolved by D040, D059, D060, and D071**.
+Status: **DECISION; partially resolved by D040, D059, D060, and D072**.
 
 Resolved direction: use IBL-owned S3 for immutable objects with CloudFront as
 the preferred HTTPS/browser origin. Do not use or modify `iblviz` without
@@ -58,14 +58,14 @@ explicit repository-owner permission.
 D059 selects `ibl-brain-wide-map-private` in `us-east-1` for both environments,
 with exact roots
 `aggregates/atlas/ephys-atlas-web-v2/staging/` and
-`aggregates/atlas/ephys-atlas-web-v2/production/`. D071 selects
-`ephys-atlas.internationalbrainlab.org` as the production viewer domain. D059
+`aggregates/atlas/ephys-atlas-web-v2/production/`. D072 selects
+`ephys-atlas.iblcore.org` as the production viewer domain. D059
 requires immutable release/pack keys to be protected against overwrite while
 catalogs and aliases remain separately mutable.
 
 D060 selects a lean, AWS-only runtime topology for initial deployment:
 CloudFront serves both the compiled Vite viewer and public data from the
-private S3 namespace at `ephys-atlas.internationalbrainlab.org`; Cloudflare Pages and an
+private S3 namespace at `ephys-atlas.iblcore.org`; Cloudflare Pages and an
 always-on publishing server are not used. Publication is an operator-invoked
 local repository command using temporary least-privilege AWS credentials and
 the existing validation/immutability semantics. The HTTP capability-token
@@ -80,15 +80,17 @@ reads, and a non-mutating conditional `PutObject` authorization probe succeeded
 on 2026-09-02 for the private `us-east-1` bucket
 `ibl-brain-wide-map-private` below `aggregates/atlas/`. Anonymous listing is
 denied. No remote object was mutated. The 2026-09-02 DNS check concerned the
-former iblcore.org hostname; the new D071 hostname has not been verified.
+iblcore.org hostname. D072 records the current Cloudflare zone/DNS-read evidence.
+The 2026-09-07 AWS audit attempt found an expired `ibl-atlas` login; it could not
+verify current identity, permissions or infrastructure until reauthentication.
 See
 [`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md).
 
 Resolution still needed: the exact production and staging CloudFront
 distribution/origin-path configuration, isolated staging hostname, DNS and
 ACM/TLS provisioning, cache/CORS/MIME/Range policy, minimum publisher IAM
-policy, S3 curator catalog/edition-history and pack/site publication beyond the
-offline-tested dataset-release transaction, and first artifact set authorized for
+policy, real-origin validation of the offline-tested S3 release/catalog/pack/site
+machinery, and first artifact set authorized for
 staging. A separate data hostname is no longer required for the initial
 same-origin topology, though a later decision may introduce one.
 

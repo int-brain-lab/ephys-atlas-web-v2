@@ -7,8 +7,10 @@ initial production deployment uses no always-on publishing server: an
 operator-invoked local repository command will apply the same validation and
 immutable-publication rules directly to private S3 with temporary scoped AWS
 credentials. The first S3 dataset-release command is implemented with offline
-tests; curator catalog/edition-history promotion, pack/site deployment and
-remote integration evidence remain next steps.
+tests. Curator catalog/edition-history promotion, pack/site publication and an
+isolated production site build are also implemented; see
+[Local publisher operations](../docs/publishing/LOCAL_PUBLISHER.md).
+Remote infrastructure and integration evidence remain next steps.
 
 ## Local S3 release command
 

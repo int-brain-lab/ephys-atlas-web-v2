@@ -369,6 +369,8 @@
     {"name": "catalog project dataset scope empty", "schema": "catalog.schema.json", "valid": false, "document": "catalog", "set": {"/projects/0/dataset_ids": []}},
     {"name": "catalog edition dataset scope empty", "schema": "catalog.schema.json", "valid": false, "document": "catalog", "set": {"/projects/0/editions/0/dataset_releases": []}},
     {"name": "catalog description wrong type", "schema": "catalog.schema.json", "valid": false, "document": "catalog", "set": {"/datasets/0/description": 42}},
+    {"name": "catalog publication generation", "schema": "catalog.schema.json", "valid": true, "document": "catalog", "set": {"/publication_id": "0123456789abcdef0123456789abcdef"}},
+    {"name": "catalog invalid publication generation", "schema": "catalog.schema.json", "valid": false, "document": "catalog", "set": {"/publication_id": "invalid"}},
     {"name": "catalog unknown field", "schema": "catalog.schema.json", "valid": false, "document": "catalog", "set": {"/unexpected": true}},
     {"name": "catalog release identifier unsafe", "schema": "catalog.schema.json", "valid": false, "document": "catalog", "set": {"/datasets/0/releases/0/release_id": "release/v1", "/datasets/0/default_release": "release/v1", "/projects/0/editions/0/dataset_releases/0/release_id": "release/v1"}},
     {"name": "provenance valid", "schema": "provenance.schema.json", "valid": true, "document": "provenance"},

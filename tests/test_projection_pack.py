@@ -497,3 +497,21 @@ def test_checked_in_production_pack_is_complete_authorized_and_sanitized() -> No
         assert fragment.count("<path ") == path_count
         assert "_region_" not in fragment
         assert "<script" not in fragment
+
+
+def test_future_projection_environment_changes_identity_not_geometry(tmp_path):
+    from ephys_atlas_builder.build_environment import build_environment
+    registered, catalog, sources = _inputs(tmp_path)
+    environments = [None, build_environment()]
+    manifests = []
+    for index, environment in enumerate(environments):
+        manifests.append(build_projection_pack(
+            registered, catalog, sources, tmp_path / f"pack-{index}",
+            created_at="2026-09-07T00:00:00Z", generator_commit="a"*40,
+            static_mode="synthetic-fixture", builder_environment=environment,
+        ))
+    assert manifests[0]["pack_id"] != manifests[1]["pack_id"]
+    assert manifests[1]["provenance"]["builder"]["environment"] == build_environment()
+    for path in (tmp_path / "pack-0").rglob("*"):
+        if path.is_file() and path.name != "manifest.json":
+            assert path.read_bytes() == (tmp_path / "pack-1" / path.relative_to(tmp_path / "pack-0")).read_bytes()

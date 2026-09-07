@@ -582,7 +582,7 @@ export class AppShell {
     const brand = element('div', 'app-header__brand');
     const logo = document.createElement('img');
     logo.className = 'app-header__logo';
-    logo.src = '/brand/ibl-core-logo.svg';
+    logo.src = `${import.meta.env.BASE_URL}brand/ibl-core-logo.svg`;
     logo.alt = 'IBL Core';
     logo.width = 240;
     logo.height = 209;

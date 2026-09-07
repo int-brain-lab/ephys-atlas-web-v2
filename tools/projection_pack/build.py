@@ -614,6 +614,7 @@ def build_projection_pack(
     grid_id: str = GRID_ID,
     static_mode: StaticSourceMode = "pinned-curated",
     license_evidence: str | None = None,
+    builder_environment: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     if output.exists():
         raise FileExistsError(f"refusing to overwrite projection pack: {output}")
@@ -703,6 +704,7 @@ def build_projection_pack(
             "static_source_mode": static_mode,
             "static_projection_modes": static_projection_modes,
             "license_evidence": license_evidence,
+            **({"builder_environment": builder_environment} if builder_environment is not None else {}),
         }
         prefix = {
             "synthetic-fixture": "synthetic-atlas-projections",
@@ -754,6 +756,7 @@ def build_projection_pack(
                 "version": "1",
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 "commit": generator_commit,
+                **({"environment": builder_environment} if builder_environment is not None else {}),
                 "command": (
                     "python -m tools.projection_pack.build_top_review"
                     if static_mode == "pinned-top-review"
@@ -821,6 +824,7 @@ def build_projection_pack(
 
 
 def main() -> None:
+    from ephys_atlas_builder.build_environment import build_environment
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--registered-parent", type=Path, required=True)
     parser.add_argument("--regions", type=Path, required=True)
@@ -862,6 +866,7 @@ def main() -> None:
         reference_space_id=args.reference_space_id,
         grid_id=args.grid_id,
         license_evidence=args.license_evidence,
+        builder_environment=build_environment(),
     )
 
 

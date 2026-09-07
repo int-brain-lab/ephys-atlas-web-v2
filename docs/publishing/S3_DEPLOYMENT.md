@@ -6,6 +6,7 @@ access evidence and safe operator commands; it does not authorize publication
 of a particular release. Remaining deployment details and scientific release
 choices are governed by Q8 and Q9. The console/DNS walkthrough is
 [AWS console setup](AWS_CONSOLE_SETUP.md).
+Implemented commands and recovery semantics: [Local publisher operations](LOCAL_PUBLISHER.md).
 
 ## Canonical build preflight
 
@@ -32,7 +33,7 @@ before opening a remote transaction; see [commands and limits](../../publishing/
 - existing scientific prefix: `aggregates/atlas/`
 - staging root: `aggregates/atlas/ephys-atlas-web-v2/staging/`
 - production root: `aggregates/atlas/ephys-atlas-web-v2/production/`
-- production viewer domain (D071): `ephys-atlas.internationalbrainlab.org`
+- production viewer domain (D072): `ephys-atlas.iblcore.org`
 - production delivery: one CloudFront distribution serving the compiled Vite
   viewer and same-origin public data from the private production namespace
 - publication: operator-invoked local repository command; no always-on
@@ -134,7 +135,7 @@ alone is not an equivalent publication transaction.
 ## Selected static hosting model
 
 CloudFront serves both the Vite application and public artifacts from private
-S3 at `ephys-atlas.internationalbrainlab.org`. Place the application below `site/` within the
+S3 at `ephys-atlas.iblcore.org`. Place the application below `site/` within the
 selected environment root. Its entry document is mutable and short-lived or
 revalidated; its content-addressed build assets are immutable and long-lived.
 Schema-v1 catalogs/aliases remain separately mutable, while releases and packs

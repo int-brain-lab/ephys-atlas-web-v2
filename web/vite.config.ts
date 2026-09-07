@@ -10,6 +10,11 @@ import { loadLocalProjectionPack, localProjectionPackPlugin } from './dev/projec
 import { loadRealDevelopmentRelease, realReleasePlugin } from './dev/real-data-plugin.js';
 
 export default defineConfig(async () => {
+  if (process.env.EPHYS_ATLAS_SITE_BUILD === '1') {
+    // The production wrapper supplies reviewed URLs explicitly. Never load
+    // local .env settings, development plugins, or the legacy public corpus.
+    return { publicDir: false, envDir: false, plugins: [helpMarkdownPlugin()] };
+  }
   const releasePath = process.env.EPHYS_ATLAS_REAL_RELEASE;
   const additionalReleasePaths = (process.env.EPHYS_ATLAS_ADDITIONAL_RELEASES ?? '')
     .split(',').map((value) => value.trim()).filter(Boolean);
