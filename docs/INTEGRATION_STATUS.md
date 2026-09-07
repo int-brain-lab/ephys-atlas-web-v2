@@ -47,6 +47,9 @@ D069 now adds the [main-website AGEA local preview](data/AGEA_LOCAL_PREVIEW.md):
 support, fully scrollable virtualized feature search, linked anatomy, and 64 MiB/256
 entry verified caching with quota fallback. Real-data Chromium tests pass;
 registration remains provisional and public release choices remain Q19.
+Compact virtual rows, deferred bounded cache admission, recent decoded-source
+reuse, stride-based decoding and retained anatomy-tree rows reduce gene-switch
+work; local before/after evidence is recorded in the preview runbook.
 See [AGEA evidence](data/AGEA.md).
 
 The separate development-only [AGEA coverage lab](data/AGEA_COVERAGE_LAB.md)

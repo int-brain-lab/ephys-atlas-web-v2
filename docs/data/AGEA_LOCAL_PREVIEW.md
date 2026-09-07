@@ -88,10 +88,58 @@ bundled text is retained. Parsed manifests remain cached. This is not a peak-hea
 measurement: decoding temporarily holds byte buffers, JSON strings and objects.
 The existing retained renderer owns bounded decoded volume memory.
 
+The renderer retains up to eight recent volume sources under the shared
+96 MiB default decoded-cache budget. Each source reserves its full float32
+volume size plus validity mask, capped at that shared budget; a large source
+evicts smaller retained sources. Identity includes transport location and the
+complete decoding/resource-hash contract. Payloads without a transport location
+(including local imports) reuse only the same payload object, so re-imports
+cannot inherit a loader for a deleted local selector. Temporary decode buffers,
+displayed planes and canvas memory are additional to this retained-cache budget.
+
 Verified encoded cache admission is bounded to 64 MiB / 256 entries by default,
 with oldest-admission eviction and serialized mutations across fetchers within
 the page. Cached entries are reverified; quota/storage errors fall back to
 verified network delivery. This is not an offline-availability guarantee.
+Persistent admission runs after verified delivery, outside the rendering wait.
+Pending admission reservations are also bounded by 64 MiB / 256 entries;
+when that queue is full, further verified reads skip persistence. A quick
+reload can therefore fetch resources whose background writes have not finished.
+
+## Gene-switch performance
+
+The feature menu uses 72-pixel rows and preserves the full virtual scrollbar.
+Gene switches retain an unchanged anatomical region tree, avoiding redundant
+row construction and layout. The chunk decoder precomputes storage strides
+rather than allocating index arrays for every voxel; permutation tests cover
+all grid/storage axis orders for float16 and float32. No neighbor expression
+prefetch has been added: volumes still load on selection.
+
+One sequential local Chromium 151 comparison on 2026-09-07 measured these
+click-to-render times, including the next animation frame. Each fresh browser
+context loaded experiments 71247618, 74511936, 571 and 2719 in that order,
+then revisited them. Values below are milliseconds, rounded to one decimal.
+
+| Selection | Before (`3d7cc0e`) | After |
+| --- | --- | --- |
+| Four cold switches | 160.0, 160.5, 153.6, 154.7 | 70.2, 49.0, 58.5, 55.7 |
+| Four revisits | 168.7, 126.5, 128.0, 156.4 | 47.0, 38.3, 42.0, 40.6 |
+
+These are local diagnostic samples, not production latency budgets or a
+peak-memory measurement. The metric starts at a programmatic option click,
+excluding menu/search automation wait time. Reproduce with the preview running:
+
+```bash
+AGEA_BASELINE_REF=3d7cc0e node tools/agea_switch_benchmark.mjs
+node tools/agea_switch_benchmark.mjs
+```
+
+The baseline serves the old cache, decoder, viewport, anatomy-tree and picker
+modules only to the diagnostic browser. It leaves the checkout, running server
+and scientific release unchanged. Run the two commands sequentially without
+other browser tests. The real-data suite separately asserts no additional
+expression requests or decompression on a recent revisit, and retention of
+anatomical row nodes during a gene switch.
 
 ## Verification and remaining limits
 

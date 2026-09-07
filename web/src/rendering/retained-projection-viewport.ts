@@ -13,6 +13,7 @@ import {
 } from './chunked-volume-source.js';
 import { SchemaSlicePackVolumeSource } from './slice-pack-volume-source.js';
 import { VolumeValiditySliceSource } from './volume-validity-source.js';
+import { RecentVolumeSources } from './recent-volume-sources.js';
 import { RetainedStaticProjectionViewport } from './static-projection-viewport.js';
 import { VolumeSliceLoader, type VolumeSlice, type VolumeSliceSource } from './volume.js';
 import { paletteRgb } from '../application/colormap-palettes.js';
@@ -670,8 +671,7 @@ export class RetainedProjectionViewportFactory implements ProjectionViewportFact
   private readonly viewports = new Set<RetainedProjectionViewport>();
   private readonly staticViewports = new Set<RetainedStaticProjectionViewport>();
   private readonly maxVolumeDecodedBytes: number;
-  private activeVolumeFeature: VolumeFeaturePayload | null = null;
-  private activeVolumeSource: VolumeSliceSource | null = null;
+  private readonly recentVolumes: RecentVolumeSources;
   private presentation: ProjectionPresentation = DEFAULT_PRESENTATION;
   private sink: ProjectionInteractionSink | null = null;
 
@@ -680,6 +680,14 @@ export class RetainedProjectionViewportFactory implements ProjectionViewportFact
     if (!Number.isFinite(this.maxVolumeDecodedBytes) || this.maxVolumeDecodedBytes <= 0) {
       throw new RangeError('maxVolumeDecodedBytes must be positive');
     }
+    this.recentVolumes = new RecentVolumeSources(this.maxVolumeDecodedBytes, (feature, budget) => {
+      const cacheBytes = volumeScalarCacheBudget(feature, budget);
+      const scalarSource: VolumeSliceSource = feature.descriptor.layout === 'chunks3d'
+        ? new VolumeSliceLoader(new SchemaChunks3dVolumeSource(feature), { cacheBytes })
+        : new SchemaSlicePackVolumeSource(feature, cacheBytes);
+      return feature.descriptor.validity.kind === 'mask'
+        ? new VolumeValiditySliceSource(feature, scalarSource) : scalarSource;
+    });
     if (options.source) this.source = options.source;
     else {
       if (!options.projectionPackUrl) throw new Error('projectionPackUrl is required without a test source');
@@ -735,24 +743,11 @@ export class RetainedProjectionViewportFactory implements ProjectionViewportFact
     this.viewports.clear();
     for (const viewport of this.staticViewports) viewport.destroy();
     this.staticViewports.clear();
-    this.activeVolumeSource?.dispose?.();
-    this.activeVolumeSource = null;
-    this.activeVolumeFeature = null;
+    this.recentVolumes.dispose();
     this.source.dispose();
   }
 
   private volumeSource(feature: VolumeFeaturePayload): VolumeSliceSource {
-    if (this.activeVolumeFeature === feature && this.activeVolumeSource) return this.activeVolumeSource;
-    this.activeVolumeSource?.dispose?.();
-    const cacheBytes = volumeScalarCacheBudget(feature, this.maxVolumeDecodedBytes);
-    const scalarSource: VolumeSliceSource = feature.descriptor.layout === 'chunks3d'
-      ? new VolumeSliceLoader(new SchemaChunks3dVolumeSource(feature), { cacheBytes })
-      : new SchemaSlicePackVolumeSource(feature, cacheBytes);
-    const source = feature.descriptor.validity.kind === 'mask'
-      ? new VolumeValiditySliceSource(feature, scalarSource)
-      : scalarSource;
-    this.activeVolumeFeature = feature;
-    this.activeVolumeSource = source;
-    return source;
+    return this.recentVolumes.get(feature);
   }
 }

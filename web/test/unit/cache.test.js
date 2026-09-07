@@ -29,6 +29,14 @@ async function sha256(value) {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+async function waitFor(predicate) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (predicate()) return;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+  assert.fail('Timed out waiting for deferred cache admission');
+}
+
 test('in-flight identity includes declared bytes so inconsistent integrity cannot bypass validation', async () => {
   const previousCaches = globalThis.caches;
   delete globalThis.caches;
@@ -87,6 +95,7 @@ test('a corrupt persistent hit is evicted and replaced only after a verified ret
       integrity: { bytes: expected.length, sha256: await sha256(expected) },
     });
     assert.equal(await response.text(), expected);
+    await waitFor(() => cached !== undefined && puts === 1);
     assert.equal(await cached.text(), expected);
     assert.equal(deletes, 1);
     assert.equal(puts, 1);
@@ -173,14 +182,49 @@ test('bounded cache evicts oldest admissions and serializes mutations across fet
     const integrity = async (value) => ({ bytes: value.length, sha256: await sha256(value) });
 
     await first.fetch('https://example.test/aa', { immutable: true, integrity: await integrity('aa') });
+    await waitFor(() => cache.entries.has('https://example.test/aa'));
     await Promise.all([
       first.fetch('https://example.test/bb', { immutable: true, integrity: await integrity('bb') }),
       second.fetch('https://example.test/cc', { immutable: true, integrity: await integrity('cc') }),
     ]);
+    await waitFor(() => cache.entries.has('https://example.test/cc'));
 
     assert.equal(cache.maximumConcurrentInventories, 1);
     assert.deepEqual([...cache.entries.keys()].sort(), ['https://example.test/bb', 'https://example.test/cc']);
   } finally {
+    globalThis.caches = previousCaches;
+  }
+});
+
+test('deferred admission does not delay delivery and has bounded pending work', async () => {
+  const previousCaches = globalThis.caches;
+  const cache = memoryCache();
+  let releasePut;
+  const putGate = new Promise((resolve) => { releasePut = resolve; });
+  let puts = 0;
+  cache.put = async (request, response) => {
+    puts += 1;
+    await putGate;
+    cache.entries.set(typeof request === 'string' ? request : request.url, response.clone());
+  };
+  globalThis.caches = { async open() { return cache; }, async delete() { return true; } };
+  try {
+    const policy = { maxBytes: 4, maxEntries: 2 };
+    const fetcher = new ResourceFetcher(async (url) => new Response(new URL(url).pathname.slice(1)), 'pending-bounded', policy);
+    const integrity = async (value) => ({ bytes: value.length, sha256: await sha256(value) });
+    const responses = await Promise.all(['aa', 'bb', 'cc'].map(async (value) => fetcher.fetch(`https://example.test/${value}`, {
+      immutable: true,
+      integrity: await integrity(value),
+    })));
+    assert.deepEqual(await Promise.all(responses.map((response) => response.text())), ['aa', 'bb', 'cc']);
+    await waitFor(() => puts === 1);
+    assert.equal(puts, 1);
+    assert.equal(cache.entries.size, 0);
+    releasePut();
+    await waitFor(() => cache.entries.size === 2);
+    assert.equal(puts, 2);
+  } finally {
+    releasePut?.();
     globalThis.caches = previousCaches;
   }
 });

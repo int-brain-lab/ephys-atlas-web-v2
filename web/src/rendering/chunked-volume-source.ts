@@ -99,15 +99,6 @@ function rawChunkKey(feature: VolumeFeaturePayload, key: VolumeChunkKey): [numbe
   }) as [number, number, number];
 }
 
-function rawLocalIndex(feature: VolumeFeaturePayload, c: number, s: number, h: number): [number, number, number] {
-  const byName = { ap: c, ml: s, dv: h };
-  return feature.descriptor.grid.axisOrder.map((name) => {
-    const value = byName[name.toLowerCase() as keyof typeof byName];
-    if (value === undefined) throw new Error(`unsupported volume axis ${name}`);
-    return value;
-  }) as [number, number, number];
-}
-
 async function maybeDecompress(buffer: ArrayBuffer, codec: EncodedResourceDescriptor['codec']): Promise<ArrayBuffer> {
   if (codec.name === 'none') return buffer;
   if (!('DecompressionStream' in globalThis)) throw new Error('gzip volume chunks require DecompressionStream support');
@@ -124,17 +115,6 @@ function rawChunkShape(
     const start = key[dimension]! * chunkShape[dimension]!;
     return Math.min(chunkShape[dimension]!, count - start);
   }) as [number, number, number];
-}
-
-function rawValue(values: readonly number[], shape: readonly [number, number, number], index: readonly [number, number, number]): number {
-  return values[((index[0] * shape[1]) + index[1]) * shape[2] + index[2]] ?? NaN;
-}
-
-function storageIndex(
-  axes: Chunks3dResource['chunks'][number]['storageAxes'],
-  rawIndex: readonly [number, number, number],
-): [number, number, number] {
-  return axes.map((axis) => rawIndex[Number(axis[1])]!) as [number, number, number];
 }
 
 export class SchemaChunks3dVolumeSource implements VolumeChunkSource {
@@ -176,12 +156,20 @@ export class SchemaChunks3dVolumeSource implements VolumeChunkSource {
     });
     const shape = anatomicalShape(this.feature, rawShape);
     const data = new Float32Array(shape.coronal * shape.sagittal * shape.horizontal);
+    const storageStrides = [entry.decodedShape[1] * entry.decodedShape[2], entry.decodedShape[2], 1];
+    const strideByRawDimension = [0, 0, 0];
+    for (let storageDimension = 0; storageDimension < 3; storageDimension += 1) {
+      const rawDimension = Number(entry.storageAxes[storageDimension]![1]);
+      strideByRawDimension[rawDimension] = storageStrides[storageDimension]!;
+    }
+    const coronalStride = strideByRawDimension[volumeAxisDimension(this.feature, 'coronal')]!;
+    const sagittalStride = strideByRawDimension[volumeAxisDimension(this.feature, 'sagittal')]!;
+    const horizontalStride = strideByRawDimension[volumeAxisDimension(this.feature, 'horizontal')]!;
     let offset = 0;
     for (let c = 0; c < shape.coronal; c += 1) {
       for (let s = 0; s < shape.sagittal; s += 1) {
         for (let h = 0; h < shape.horizontal; h += 1) {
-          const rawIndex = rawLocalIndex(this.feature, c, s, h);
-          data[offset++] = rawValue(values, entry.decodedShape, storageIndex(entry.storageAxes, rawIndex));
+          data[offset++] = values[c * coronalStride + s * sagittalStride + h * horizontalStride] ?? NaN;
         }
       }
     }

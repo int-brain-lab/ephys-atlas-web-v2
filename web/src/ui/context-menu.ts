@@ -29,7 +29,7 @@ export interface ContextMenuAvailability {
 }
 
 let menuSequence = 0;
-const VIRTUAL_ROW_HEIGHT = 104;
+const VIRTUAL_ROW_HEIGHT = 72;
 const VIRTUAL_OVERSCAN = 4;
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K] {

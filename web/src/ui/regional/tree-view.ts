@@ -53,6 +53,14 @@ export class RegionalTreeView {
   private rovingButton: HTMLButtonElement | null = null;
   private hoveredRegionId: string | null = null;
   private currentOrder: RegionOrder = 'anatomy';
+  private lastRender: {
+    regions: readonly RegionMetadata[];
+    values: ReadonlyMap<string, number>;
+    statistic: StatisticId;
+    unit: string | null;
+    selection: string;
+    order: RegionOrder;
+  } | null = null;
 
   constructor(root: ParentNode, private readonly callbacks: RegionalTreeCallbacks) {
     this.pane = required(root, '.region-pane');
@@ -116,6 +124,15 @@ export class RegionalTreeView {
     selected: ReadonlySet<string>,
     order: RegionOrder,
   ): void {
+    // Volume switches have no regional values: keep the anatomical DOM, focus,
+    // collapsed branches and scroll position intact while summaries change.
+    unit = values.size ? unit : null;
+    const selection = JSON.stringify([...selected]);
+    const last = this.lastRender;
+    if (last && last.regions === regions && last.statistic === statistic && last.unit === unit
+      && last.selection === selection && last.order === order && last.values.size === values.size
+      && [...values].every(([id, value]) => last.values.has(id) && Object.is(last.values.get(id), value))) return;
+    this.lastRender = { regions, values, statistic, unit, selection, order };
     this.setRegions(regions);
     this.currentOrder = order;
     this.syncOrderButton();
@@ -153,6 +170,7 @@ export class RegionalTreeView {
   }
 
   renderEmpty(text: string): void {
+    this.lastRender = null;
     this.rowById.clear();
     this.regionById.clear();
     this.rovingButton = null;

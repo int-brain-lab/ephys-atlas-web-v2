@@ -13,6 +13,7 @@ const DEFAULT_CACHE_POLICY: ResourceCachePolicy = {
 };
 
 const mutationQueues = new Map<string, Promise<void>>();
+const pendingAdmissions = new Map<string, { bytes: number; entries: number }>();
 
 export interface ResourceIntegrity {
   bytes: number;
@@ -70,7 +71,7 @@ export class ResourceFetcher {
             const bytes = Number(cached.headers.get(CACHE_BYTES_HEADER));
             const admission = Number(cached.headers.get(CACHE_ADMISSION_HEADER));
             if (bytes !== options.integrity!.bytes || !Number.isSafeInteger(admission) || admission < 1) {
-              await this.admit(url, verified, options.integrity!);
+              this.scheduleAdmission(url, verified, options.integrity!);
             }
             return verified;
           } catch {
@@ -108,9 +109,24 @@ export class ResourceFetcher {
     }
 
     if (canPersist) {
-      await this.admit(url, verified, options.integrity!);
+      this.scheduleAdmission(url, verified, options.integrity!);
     }
     return verified;
+  }
+
+  private scheduleAdmission(url: string, response: Response, integrity: ResourceIntegrity): void {
+    if (integrity.bytes > this.cachePolicy.maxBytes || this.cachePolicy.maxEntries < 1) return;
+    const pending = pendingAdmissions.get(this.cacheName) ?? { bytes: 0, entries: 0 };
+    if (pending.bytes + integrity.bytes > this.cachePolicy.maxBytes
+      || pending.entries + 1 > this.cachePolicy.maxEntries) return;
+    pending.bytes += integrity.bytes;
+    pending.entries += 1;
+    pendingAdmissions.set(this.cacheName, pending);
+    void this.admit(url, response, integrity).finally(() => {
+      pending.bytes -= integrity.bytes;
+      pending.entries -= 1;
+      if (pending.entries === 0) pendingAdmissions.delete(this.cacheName);
+    });
   }
 
   private async admit(url: string, response: Response, integrity: ResourceIntegrity): Promise<void> {

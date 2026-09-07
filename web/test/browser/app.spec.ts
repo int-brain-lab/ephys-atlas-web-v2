@@ -495,6 +495,7 @@ test('large feature catalogs stay bounded while search covers every feature fiel
   await expect(picker.locator('.context-menu__list')).not.toHaveAttribute('data-options');
   await expect(picker.getByRole('option', { selected: true })).toHaveAttribute('data-context-option', 'experiment-4001');
   await expect(picker.getByRole('status')).toHaveText('4,345 matching feature options.');
+  expect(await picker.getByRole('option', { selected: true }).evaluate(node => node.getBoundingClientRect().height)).toBeLessThanOrEqual(72);
   const list = picker.getByRole('listbox');
   await list.evaluate(node => { node.scrollTop = node.scrollHeight; });
   await expect(picker.locator('[data-context-option="experiment-4345"]')).toBeVisible();

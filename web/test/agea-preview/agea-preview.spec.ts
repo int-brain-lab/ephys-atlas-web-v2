@@ -81,3 +81,25 @@ test('cache quota failures do not prevent real expression browsing', async ({ pa
   await page.goto('/'); await ready(page, first);
   const id = await choose(page, 'Slc17a7'); await ready(page, id);
 });
+
+test('revisiting a recent gene reuses decoded data without another fetch or decompression', async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = globalThis as typeof globalThis & { ageaDecodeCount: number };
+    state.ageaDecodeCount = 0;
+    const Original = DecompressionStream;
+    globalThis.DecompressionStream = class extends Original {
+      constructor(format: CompressionFormat) { super(format); state.ageaDecodeCount++; }
+    };
+  });
+  const requests: string[] = [];
+  page.on('request', request => { if (request.url().includes('/__real-data/')) requests.push(request.url()); });
+  await page.goto('/'); await ready(page, first);
+  await page.locator('.region-row').first().evaluate(node => { node.setAttribute('data-retained-test', 'true'); });
+  const id = await choose(page, 'Slc17a7'); await ready(page, id);
+  await expect(page.locator('.region-row').first()).toHaveAttribute('data-retained-test', 'true');
+  const before = await page.evaluate(() => (globalThis as typeof globalThis & { ageaDecodeCount: number }).ageaDecodeCount);
+  const scalarRequests = requests.filter(url => /\.(f16|u8)\.gz$/.test(url)).length;
+  await choose(page, '74658173'); await ready(page, first);
+  expect(await page.evaluate(() => (globalThis as typeof globalThis & { ageaDecodeCount: number }).ageaDecodeCount)).toBe(before);
+  expect(requests.filter(url => /\.(f16|u8)\.gz$/.test(url))).toHaveLength(scalarRequests);
+});
