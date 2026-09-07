@@ -53,6 +53,12 @@ aggregate measurement frequency and downloadable exploratory reports. It has
 real-data Chromium interaction/failure/mobile coverage and no production
 dataset or registration claim.
 
+The [AGEA stripe review report](data/AGEA_STRIPE_REPORT.md) adds deterministic
+missing-slab/intensity diagnostics, full-catalog screening, six exact Allen
+archive comparisons, Ptpru section-projection evidence and a reproducible
+12-page PDF. Controls and source checks pass; flags remain unadjudicated
+screening evidence. Scientific source/validity/registration choices remain Q19.
+
 ## Scalar exploration
 
 Regional HTTP/local exploration is implemented end to end: dynamic feature and

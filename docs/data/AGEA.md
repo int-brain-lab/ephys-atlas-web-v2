@@ -8,6 +8,10 @@ No AGEA scientific release, schema extension, production feature picker or
 production-anatomy overlay has been implemented.
 The measurements below are not production-origin acceptance.
 
+The [stripe review report](AGEA_STRIPE_REPORT.md) now provides full-catalog
+exploratory screening, six direct Allen archive checks and Ptpru section-gap
+projection evidence. It informs scientist review without resolving Q19.
+
 ## Scope and source identity
 
 D067 selects full-catalog discovery with one selected experiment displayed in

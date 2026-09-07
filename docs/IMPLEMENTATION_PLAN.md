@@ -107,11 +107,11 @@ The [coverage lab](data/AGEA_COVERAGE_LAB.md) is implemented for scientist revie
 of the original-volume/coarse-label mismatch. Use its mask comparison and
 aggregate coverage before selecting Q19's population/validity policy.
 
-Requested scientific-review follow-up: implement the
-[stripe detection and PDF report plan](data/AGEA_STRIPE_REPORT_PLAN.md), starting
-with direct-source reproduction of Ptpru 858 and section-gap investigation.
-Catalog-wide screening must distinguish missing slabs from intensity curtaining
-and anatomical boundary mismatch; no production QC choice is implied.
+The [stripe screening and review report](data/AGEA_STRIPE_REPORT.md) is
+implemented: direct-source checks, Ptpru section-gap projection, synthetic
+controls, full-catalog scores and a reproducible 12-page PDF. Next: scientist
+adjudication of the declared examples and confirmation of section conventions.
+Screening flags are not confirmed defects; no production QC choice is implied.
 
 Next: implement the shared schema-v1 metadata bundle and synthetic HTTP/local
 producer/consumer coverage, then the searchable bounded feature picker. Build

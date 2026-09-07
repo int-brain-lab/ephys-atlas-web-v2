@@ -1,10 +1,18 @@
 # AGEA stripe detection and scientific review report
 
-Status: planned follow-up, requested 2026-09-06. This handoff records the work;
-the detector and PDF/slides are not implemented. Independent exploratory work
-under D067; Q19 still governs scientific release choices.
+Status: original scope and investigation plan, requested 2026-09-06.
+The detector and 12-page PDF are now implemented; use the
+[report evidence and reproduction runbook](AGEA_STRIPE_REPORT.md) for current
+findings, exact limits and continuation. Scientist adjudication, independent
+full-volume reader validation and optional processed-source comparison remain
+incomplete. Q19 still governs scientific release choices.
 
 ## Resume here
+
+Continue with scientist review using the report runbook above. The sequence
+below preserves the original investigation requirements and hypotheses; it
+does not supersede the implemented evidence or imply that every optional
+investigation has been completed.
 
 Build a reproducible screening tool for missing-data slabs and intensity
 banding across the original 4,345 AGEA experiments, then produce a concise PDF

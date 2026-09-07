@@ -1,0 +1,2396 @@
+{
+  "status": "Exploratory screening; no scientific QC or release selection",
+  "sources": {
+    "gene-expression.bin": {
+      "bytes": 1384542940,
+      "sha256": "86b4997133435f830c33941e443d86baf1ef4195a8eb6343f5a9df2523f8e69d"
+    },
+    "gene-expression.pqt": {
+      "bytes": 66733,
+      "sha256": "90433973765b0361921c48dc70bce8291885c427d23d930b1eb6617348024572"
+    },
+    "label.npy": {
+      "bytes": 318780,
+      "sha256": "0a09957f2e6b9c70081928e15587e9f3b97382ac7a79baa2788160206ad8a81a"
+    },
+    "image.npy": {
+      "bytes": 637432,
+      "sha256": "665d671ad51976e9e0680da43eab8b74d5d6e84c11c230be31451c00d3ea71ba"
+    }
+  },
+  "experiments": 4345,
+  "gene_symbols": 4082,
+  "parameters": {
+    "erosion": 1,
+    "widths": [
+      1,
+      2,
+      3
+    ],
+    "min_support": 100,
+    "slopes": [
+      -1.0,
+      -0.5,
+      -0.25,
+      -0.125,
+      0.0,
+      0.125,
+      0.25,
+      0.5,
+      1.0
+    ]
+  },
+  "directions": 193,
+  "detector_development": "Shallow slopes added after initial Ptpru investigation; synthetic controls are engineering validation, not held-out scientific validation.",
+  "independent_reader": "No established MetaImage library available in locked environment; complete NumPy decode plus struct.unpack offsets, not two independent full-volume libraries.",
+  "mask_support": {
+    "labelled": 62959,
+    "interior": 54354
+  },
+  "missing_labelled_quantiles": [
+    0.02626153528486793,
+    0.0663924141107705,
+    0.19883098524436543
+  ],
+  "slab_threshold_counts": {
+    "0.3": 2919,
+    "0.5": 2656,
+    "0.7": 2347
+  },
+  "selected_ids": [
+    "858",
+    "74658173",
+    "71247618",
+    "79591731",
+    "74988767",
+    "74988768",
+    "75042248",
+    "74988757",
+    "71717136",
+    "75144655",
+    "74425567"
+  ],
+  "random_ids": [
+    "71717136",
+    "75144655",
+    "74425567"
+  ],
+  "selection_rule": "Ptpru + top 3/bottom 2 slab + top 2 intensity + 3 random (seed 20260907); deduplicated",
+  "repeated_experiments": [
+    [
+      {
+        "experiment_id": "75042244",
+        "gene": "Fam196a",
+        "slab_score": 1.0,
+        "intensity_score": 0.47412935207778883
+      },
+      {
+        "experiment_id": "75042243",
+        "gene": "Fam196a",
+        "slab_score": 0.03842899521015827,
+        "intensity_score": 0.2658382005711183
+      }
+    ],
+    [
+      {
+        "experiment_id": "77869863",
+        "gene": "Cdh13",
+        "slab_score": 1.0,
+        "intensity_score": 0.25245518173633935
+      },
+      {
+        "experiment_id": "234",
+        "gene": "Cdh13",
+        "slab_score": 0.04132075471698113,
+        "intensity_score": 0.10363420907470196
+      },
+      {
+        "experiment_id": "79490066",
+        "gene": "Cdh13",
+        "slab_score": 1.0,
+        "intensity_score": 0.15795821183558384
+      }
+    ],
+    [
+      {
+        "experiment_id": "72081548",
+        "gene": "Cyp26b1",
+        "slab_score": 0.04270957560863962,
+        "intensity_score": 0.25755328638821884
+      },
+      {
+        "experiment_id": "79568022",
+        "gene": "Cyp26b1",
+        "slab_score": 1.0,
+        "intensity_score": 0.23222870379233537
+      }
+    ],
+    [
+      {
+        "experiment_id": "77887882",
+        "gene": "Tdrd3",
+        "slab_score": 1.0,
+        "intensity_score": 0.25296809175133694
+      },
+      {
+        "experiment_id": "73817944",
+        "gene": "Tdrd3",
+        "slab_score": 0.0450386560141155,
+        "intensity_score": 0.3335628887701554
+      }
+    ],
+    [
+      {
+        "experiment_id": "70928250",
+        "gene": "Tmc6",
+        "slab_score": 0.0450386560141155,
+        "intensity_score": 0.04420090684998587
+      },
+      {
+        "experiment_id": "77887880",
+        "gene": "Tmc6",
+        "slab_score": 1.0,
+        "intensity_score": 0.06720688255424746
+      }
+    ]
+  ],
+  "references": [
+    {
+      "title": "Allen adult mouse acquisition and processing",
+      "url": "https://brain-map.org/support/documentation/api-for-mouse-brain-atlas"
+    },
+    {
+      "title": "Allen Alignment3d: transform direction and encoding",
+      "url": "https://api.brain-map.org/doc/Alignment3d.html"
+    },
+    {
+      "title": "Allen SectionDataSet: reference_to_image implementation",
+      "url": "https://api.brain-map.org/doc/SectionDataSet.html"
+    },
+    {
+      "title": "Allen expression grid download and missing sentinel",
+      "url": "https://brain-map.org/support/tutorials/downloading-3-d-expression-grid-data"
+    },
+    {
+      "title": "Pinned IBL PPCA / bilateral averaging / curtaining",
+      "url": "https://github.com/int-brain-lab/iblatlas/blob/52083adf44825d0622a503705e095699a5957587/iblatlas/genomics/gene_expression_scrapping/06-denoise-impute.py"
+    }
+  ],
+  "manual_review": "No scientist adjudication; displayed examples require review. Flags are not confirmed problems.",
+  "metadata_coverage": "Section/specimen metadata acquired for direct-source subset only; unavailable for remaining catalog.",
+  "environment": {
+    "commit": "53d5241fdbe77b811dc88262196e684bdc6062f2",
+    "python": "3.12.3",
+    "numpy": "2.5.2",
+    "platform": "Linux-7.0.0-28-generic-x86_64-with-glibc2.39",
+    "command": [
+      "/home/cyrille/GIT/IBL/ephys-atlas-web-v2/tools/agea_stripe_report.py",
+      "--source",
+      "artifacts/agea-metadata-sizing",
+      "--output",
+      "artifacts/agea-stripe-report"
+    ],
+    "generated_utc": "2026-09-07T10:22:51.703999+00:00",
+    "lock_sha256": "b79dfabd96ea52828cc9db51bf2fcfe88a68b9e95b9491ae5626c08cb2e44dc9",
+    "scripts": {
+      "tools/agea_stripes.py": "4653edc784f66f2ac592e2b1856502aaaaf3ec017ef524d31612689b184d933b",
+      "tools/agea_stripe_report.py": "f079b993ae54ca8d588e28fdf469294f3825659909526c6737bdb3ffafb6c89b",
+      "tools/agea_source_verification.py": "b2266a395d842af485c3293fc9597ea8e88b4abdde2596dead8c2e2ccad0c793"
+    }
+  },
+  "direct_source_subset": {
+    "selection_rule": "Ptpru + top3 slab + lowest slab + first seeded random; deduplicated",
+    "ids": [
+      "858",
+      "74658173",
+      "71247618",
+      "79591731",
+      "74988768",
+      "71717136"
+    ],
+    "checked": 6,
+    "matches": 6,
+    "evidence_file": "direct-source-subset.json"
+  },
+  "controls": {
+    "constant": {
+      "slab_score": 0.0,
+      "intensity_score": 0.0
+    },
+    "tilted_slab_1": {
+      "slab_score": 1.0,
+      "intensity_score": 0.0
+    },
+    "tilted_slab_2": {
+      "slab_score": 0.712280701754386,
+      "intensity_score": 0.0
+    },
+    "tilted_slab_3": {
+      "slab_score": 1.0,
+      "intensity_score": 0.0
+    },
+    "shallow_slab": {
+      "slab_score": 0.6437317756700174,
+      "intensity_score": 0.0
+    },
+    "random_missing": {
+      "slab_score": 0.09473684210526317,
+      "intensity_score": 0.0
+    },
+    "boundary_only": {
+      "slab_score": 0.0,
+      "intensity_score": 0.0
+    },
+    "hemisphere": {
+      "slab_score": 0.08333333333333326,
+      "intensity_score": 0.0
+    },
+    "log_gradient": {
+      "slab_score": 0.0,
+      "intensity_score": 1.8041124150158794e-15
+    },
+    "intensity_bands": {
+      "slab_score": 0.0,
+      "intensity_score": 1.5040773967762764
+    },
+    "regional_boundary": {
+      "slab_score": 0.0,
+      "intensity_score": 0.7520386983881364
+    },
+    "misstrided_slab": {
+      "slab_score": 0.2043132803632236,
+      "intensity_score": 0.0
+    }
+  },
+  "ptpru": {
+    "missing_all": 0.272968630355372,
+    "missing_labelled": 0.09634841722390762,
+    "missing_interior": 0.09195275416712662,
+    "missing_boundary": 0.12411388727484021,
+    "interior_support": 54354,
+    "largest_connected_gap": 1303,
+    "slab": {
+      "score": 0.5431518582316601,
+      "normal": [
+        0.12403473458920847,
+        0.0,
+        0.9922778767136677
+      ],
+      "start": 51.0,
+      "width": 1,
+      "missing_fraction": 0.7905638665132336,
+      "shoulder_fraction": 0.2474120082815735,
+      "support": 869,
+      "missing_support": 687,
+      "residual_rms_voxels": 0.2739364896768288
+    },
+    "experiment_id": "858",
+    "gene": "Ptpru"
+  },
+  "mask_sensitivity": {
+    "0": {
+      "858": {
+        "slab_score": 0.48097368421052633,
+        "missing_interior": 0.09634841722390762
+      },
+      "74658173": {
+        "slab_score": 1.0,
+        "missing_interior": 0.05716418621642656
+      },
+      "71247618": {
+        "slab_score": 1.0,
+        "missing_interior": 0.07892437935799489
+      },
+      "79591731": {
+        "slab_score": 1.0,
+        "missing_interior": 0.23280229990946488
+      },
+      "74988767": {
+        "slab_score": 0.05263157894736842,
+        "missing_interior": 0.0007465175749297162
+      },
+      "74988768": {
+        "slab_score": 0.023964268610912928,
+        "missing_interior": 0.00041296716911005574
+      },
+      "75042248": {
+        "slab_score": 0.6757596693309192,
+        "missing_interior": 0.09336234692418875
+      },
+      "74988757": {
+        "slab_score": 0.7691280004798517,
+        "missing_interior": 0.2572308962975905
+      },
+      "71717136": {
+        "slab_score": 0.04454568553291456,
+        "missing_interior": 0.03268793977032672
+      },
+      "75144655": {
+        "slab_score": 0.046084243369734795,
+        "missing_interior": 0.023459711875982784
+      },
+      "74425567": {
+        "slab_score": 1.0,
+        "missing_interior": 0.13504026429898824
+      }
+    },
+    "1": {
+      "858": {
+        "slab_score": 0.5431518582316601,
+        "missing_interior": 0.09195275416712662
+      },
+      "74658173": {
+        "slab_score": 1.0,
+        "missing_interior": 0.05138536262280605
+      },
+      "71247618": {
+        "slab_score": 1.0,
+        "missing_interior": 0.06873459175037716
+      },
+      "79591731": {
+        "slab_score": 1.0,
+        "missing_interior": 0.23801376163667806
+      },
+      "74988767": {
+        "slab_score": 0.014018691588785047,
+        "missing_interior": 5.519372999227288e-05
+      },
+      "74988768": {
+        "slab_score": 0.0,
+        "missing_interior": 0.0
+      },
+      "75042248": {
+        "slab_score": 0.7085488901119061,
+        "missing_interior": 0.08875151782757479
+      },
+      "74988757": {
+        "slab_score": 0.7938509055649355,
+        "missing_interior": 0.2550870221142878
+      },
+      "71717136": {
+        "slab_score": 0.05073430407684512,
+        "missing_interior": 0.026971336056224014
+      },
+      "75144655": {
+        "slab_score": 0.04270957560863962,
+        "missing_interior": 0.017202045847591715
+      },
+      "74425567": {
+        "slab_score": 1.0,
+        "missing_interior": 0.13099311918166096
+      }
+    },
+    "2": {
+      "858": {
+        "slab_score": 0.6151766656670605,
+        "missing_interior": 0.08672821572298621
+      },
+      "74658173": {
+        "slab_score": 1.0,
+        "missing_interior": 0.0476251963759227
+      },
+      "71247618": {
+        "slab_score": 1.0,
+        "missing_interior": 0.05926786751888437
+      },
+      "79591731": {
+        "slab_score": 1.0,
+        "missing_interior": 0.24509867217595283
+      },
+      "74988767": {
+        "slab_score": 0.0,
+        "missing_interior": 0.0
+      },
+      "74988768": {
+        "slab_score": 0.0,
+        "missing_interior": 0.0
+      },
+      "75042248": {
+        "slab_score": 0.74191394123168,
+        "missing_interior": 0.0845976714657714
+      },
+      "74988757": {
+        "slab_score": 0.8187912915294018,
+        "missing_interior": 0.2547829642542019
+      },
+      "71717136": {
+        "slab_score": 0.05269414568242027,
+        "missing_interior": 0.022123227236533455
+      },
+      "75144655": {
+        "slab_score": 0.043802144115523085,
+        "missing_interior": 0.012546538403598253
+      },
+      "74425567": {
+        "slab_score": 1.0,
+        "missing_interior": 0.12927453892009383
+      }
+    }
+  },
+  "ptpru_sections": {
+    "experiment_id": "858",
+    "specimen_id": "702566",
+    "reference_space_id": "9",
+    "section_thickness_um": 25.0,
+    "modal_section_step": 8,
+    "absent_numbers": [
+      42,
+      122,
+      138,
+      170
+    ],
+    "trv": [
+      -0.0754917,
+      -0.00500436,
+      0.756216,
+      0.00929635,
+      0.838369,
+      0.00670015,
+      -0.80617,
+      0.0158547,
+      -0.0759265,
+      2746.33,
+      2366.38,
+      11210.8
+    ],
+    "tvr": [
+      -0.123555,
+      0.022497,
+      -1.2286,
+      -0.00909914,
+      1.19246,
+      0.0146029,
+      1.30998,
+      0.0101371,
+      -0.122553,
+      14059.8,
+      -2960.54,
+      -2247.7
+    ],
+    "roundtrip_max_error_um": 0.12490109240025049,
+    "band_half_width_um": 100.0,
+    "sections": [
+      {
+        "number": 2,
+        "present": true,
+        "labelled": {
+          "support": 110,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 0,
+          "missing": 0,
+          "fraction": null
+        }
+      },
+      {
+        "number": 10,
+        "present": true,
+        "labelled": {
+          "support": 553,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 178,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 18,
+        "present": true,
+        "labelled": {
+          "support": 756,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 585,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 26,
+        "present": true,
+        "labelled": {
+          "support": 916,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 752,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 34,
+        "present": true,
+        "labelled": {
+          "support": 1031,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 898,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 42,
+        "present": false,
+        "labelled": {
+          "support": 1115,
+          "missing": 947,
+          "fraction": 0.8493273542600897
+        },
+        "interior": {
+          "support": 978,
+          "missing": 824,
+          "fraction": 0.8425357873210634
+        }
+      },
+      {
+        "number": 50,
+        "present": true,
+        "labelled": {
+          "support": 1202,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1049,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 58,
+        "present": true,
+        "labelled": {
+          "support": 1293,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1135,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 66,
+        "present": true,
+        "labelled": {
+          "support": 1326,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1164,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 74,
+        "present": true,
+        "labelled": {
+          "support": 1313,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1130,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 82,
+        "present": true,
+        "labelled": {
+          "support": 1271,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1086,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 90,
+        "present": true,
+        "labelled": {
+          "support": 1245,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1033,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 98,
+        "present": true,
+        "labelled": {
+          "support": 1244,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 996,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 106,
+        "present": true,
+        "labelled": {
+          "support": 1183,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 924,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 114,
+        "present": true,
+        "labelled": {
+          "support": 1297,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 984,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 122,
+        "present": false,
+        "labelled": {
+          "support": 1403,
+          "missing": 1300,
+          "fraction": 0.9265858873841768
+        },
+        "interior": {
+          "support": 1146,
+          "missing": 1057,
+          "fraction": 0.9223385689354275
+        }
+      },
+      {
+        "number": 130,
+        "present": true,
+        "labelled": {
+          "support": 1486,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1245,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 138,
+        "present": false,
+        "labelled": {
+          "support": 1571,
+          "missing": 1439,
+          "fraction": 0.9159770846594526
+        },
+        "interior": {
+          "support": 1357,
+          "missing": 1240,
+          "fraction": 0.9137803979366249
+        }
+      },
+      {
+        "number": 146,
+        "present": true,
+        "labelled": {
+          "support": 1659,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1448,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 154,
+        "present": true,
+        "labelled": {
+          "support": 1663,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1467,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 162,
+        "present": true,
+        "labelled": {
+          "support": 1666,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1486,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 170,
+        "present": false,
+        "labelled": {
+          "support": 1719,
+          "missing": 1452,
+          "fraction": 0.8446771378708552
+        },
+        "interior": {
+          "support": 1540,
+          "missing": 1303,
+          "fraction": 0.8461038961038961
+        }
+      },
+      {
+        "number": 178,
+        "present": true,
+        "labelled": {
+          "support": 1797,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1631,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 186,
+        "present": true,
+        "labelled": {
+          "support": 1838,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1671,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 194,
+        "present": true,
+        "labelled": {
+          "support": 1848,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1672,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 202,
+        "present": true,
+        "labelled": {
+          "support": 1834,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1672,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 210,
+        "present": true,
+        "labelled": {
+          "support": 1859,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1694,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 218,
+        "present": true,
+        "labelled": {
+          "support": 1856,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1694,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 226,
+        "present": true,
+        "labelled": {
+          "support": 1794,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1627,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 234,
+        "present": true,
+        "labelled": {
+          "support": 1744,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1594,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 242,
+        "present": true,
+        "labelled": {
+          "support": 1721,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1561,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 250,
+        "present": true,
+        "labelled": {
+          "support": 1687,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1530,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 258,
+        "present": true,
+        "labelled": {
+          "support": 1613,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1460,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 266,
+        "present": true,
+        "labelled": {
+          "support": 1558,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1422,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 274,
+        "present": true,
+        "labelled": {
+          "support": 1493,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1354,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 282,
+        "present": true,
+        "labelled": {
+          "support": 1416,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1269,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 290,
+        "present": true,
+        "labelled": {
+          "support": 1340,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1200,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 298,
+        "present": true,
+        "labelled": {
+          "support": 1262,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1136,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 306,
+        "present": true,
+        "labelled": {
+          "support": 1176,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 1043,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 314,
+        "present": true,
+        "labelled": {
+          "support": 1059,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 930,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 322,
+        "present": true,
+        "labelled": {
+          "support": 945,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 823,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 330,
+        "present": true,
+        "labelled": {
+          "support": 845,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 727,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 338,
+        "present": true,
+        "labelled": {
+          "support": 731,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 619,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 346,
+        "present": true,
+        "labelled": {
+          "support": 644,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 541,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 354,
+        "present": true,
+        "labelled": {
+          "support": 539,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 418,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 362,
+        "present": true,
+        "labelled": {
+          "support": 456,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 358,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 370,
+        "present": true,
+        "labelled": {
+          "support": 414,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 307,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 378,
+        "present": true,
+        "labelled": {
+          "support": 355,
+          "missing": 5,
+          "fraction": 0.014084507042253521
+        },
+        "interior": {
+          "support": 273,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 386,
+        "present": true,
+        "labelled": {
+          "support": 386,
+          "missing": 6,
+          "fraction": 0.015544041450777202
+        },
+        "interior": {
+          "support": 305,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 394,
+        "present": true,
+        "labelled": {
+          "support": 410,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 338,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      },
+      {
+        "number": 402,
+        "present": true,
+        "labelled": {
+          "support": 400,
+          "missing": 0,
+          "fraction": 0.0
+        },
+        "interior": {
+          "support": 330,
+          "missing": 0,
+          "fraction": 0.0
+        }
+      }
+    ],
+    "sensitivity": [
+      {
+        "grid_shift_voxels": -0.5,
+        "section_shift": -1,
+        "support": 4829,
+        "missing": 1937,
+        "fraction": 0.4011182439428453
+      },
+      {
+        "grid_shift_voxels": -0.5,
+        "section_shift": 0,
+        "support": 4863,
+        "missing": 2583,
+        "fraction": 0.5311536088834053
+      },
+      {
+        "grid_shift_voxels": -0.5,
+        "section_shift": 1,
+        "support": 4893,
+        "missing": 3206,
+        "fraction": 0.6552217453505007
+      },
+      {
+        "grid_shift_voxels": 0.0,
+        "section_shift": -1,
+        "support": 4958,
+        "missing": 4103,
+        "fraction": 0.827551432029044
+      },
+      {
+        "grid_shift_voxels": 0.0,
+        "section_shift": 0,
+        "support": 5021,
+        "missing": 4424,
+        "fraction": 0.8810993825931089
+      },
+      {
+        "grid_shift_voxels": 0.0,
+        "section_shift": 1,
+        "support": 5095,
+        "missing": 4102,
+        "fraction": 0.8051030421982336
+      },
+      {
+        "grid_shift_voxels": 0.5,
+        "section_shift": -1,
+        "support": 5164,
+        "missing": 3173,
+        "fraction": 0.6144461657629744
+      },
+      {
+        "grid_shift_voxels": 0.5,
+        "section_shift": 0,
+        "support": 5197,
+        "missing": 2528,
+        "fraction": 0.4864344814315952
+      },
+      {
+        "grid_shift_voxels": 0.5,
+        "section_shift": 1,
+        "support": 5214,
+        "missing": 1885,
+        "fraction": 0.3615266589950134
+      }
+    ],
+    "mapping": "Header xyz physical coordinates -> trv -> specimen z; section*thickness per Allen code",
+    "limitation": "Grid-to-API reference identity is tested as a source-coordinate hypothesis; no production registration approval. Missing records do not prove damaged sections."
+  },
+  "direct_source_checks": [
+    {
+      "archive": {
+        "bytes": 446877,
+        "sha256": "9bcb957a867a083fde9714acac308374274ba5cc4b3af97f0d0204c51acd6d21"
+      },
+      "members": {
+        "energy.mhd": {
+          "bytes": 283,
+          "sha256": "321e75b5ab9528d323621c49949828a712924f9ab892b1d4e17213782d13593f"
+        },
+        "energy.raw": {
+          "bytes": 637304,
+          "sha256": "23f16910ba9516261345603ecaffa9786bd52c5e35afcfff3389aff6c8b93c3e"
+        },
+        "data_set.xml": {
+          "bytes": 81221,
+          "sha256": "a55177fd3027e9438d2d70b380312e0592535d234d69f330485cd6bc8a81c0bc"
+        }
+      },
+      "metaimage": {
+        "original_header": "ObjectType = Image\nNDims = 3\nBinaryData = True\nBinaryDataByteOrderMSB = False\nTransformMatrix = 1 0 0 0 1 0 0 0 1\nOffset = 0 0 0\nCenterOfRotation = 0 0 0\nAnatomicalOrientation = RAI\nElementSpacing = 200 200 200\nDimSize = 67 41 58\nElementType = MET_FLOAT\nElementDataFile = energy.raw\n",
+        "fields": {
+          "ObjectType": "Image",
+          "NDims": "3",
+          "BinaryData": "True",
+          "BinaryDataByteOrderMSB": "False",
+          "TransformMatrix": "1 0 0 0 1 0 0 0 1",
+          "Offset": "0 0 0",
+          "CenterOfRotation": "0 0 0",
+          "AnatomicalOrientation": "RAI",
+          "ElementSpacing": "200 200 200",
+          "DimSize": "67 41 58",
+          "ElementType": "MET_FLOAT",
+          "ElementDataFile": "energy.raw"
+        },
+        "header_dimensions": [
+          67,
+          41,
+          58
+        ],
+        "numpy_shape": [
+          58,
+          41,
+          67
+        ],
+        "dtype": "little-endian float32",
+        "order": "C"
+      },
+      "xml": {
+        "section_numbers": [
+          2,
+          10,
+          18,
+          26,
+          34,
+          50,
+          58,
+          66,
+          74,
+          82,
+          90,
+          98,
+          106,
+          114,
+          130,
+          146,
+          154,
+          162,
+          178,
+          186,
+          194,
+          202,
+          210,
+          218,
+          226,
+          234,
+          242,
+          250,
+          258,
+          266,
+          274,
+          282,
+          290,
+          298,
+          306,
+          314,
+          322,
+          330,
+          338,
+          346,
+          354,
+          362,
+          370,
+          378,
+          386,
+          394,
+          402
+        ],
+        "alignment3d": {
+          "id": "348505314",
+          "trv": "-0.0754917,-0.00500436,0.756216,0.00929635,0.838369,0.00670015,-0.80617,0.0158547,-0.0759265,2746.33,2366.38,11210.8",
+          "tvr": "-0.123555,0.022497,-1.2286,-0.00909914,1.19246,0.0146029,1.30998,0.0101371,-0.122553,14059.8,-2960.54,-2247.7"
+        }
+      },
+      "comparison": {
+        "voxel_count": 159326,
+        "float16_full_volume_equal": true,
+        "float16_mismatch_count": 0,
+        "selected_voxels": [
+          {
+            "coordinate": [
+              0,
+              0,
+              0
+            ],
+            "flat_index": 0,
+            "raw_byte_offset": 0,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          },
+          {
+            "coordinate": [
+              29,
+              0,
+              0
+            ],
+            "flat_index": 79663,
+            "raw_byte_offset": 318652,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          },
+          {
+            "coordinate": [
+              57,
+              40,
+              66
+            ],
+            "flat_index": 159325,
+            "raw_byte_offset": 637300,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          }
+        ]
+      },
+      "experiment_id": "858",
+      "gene": "Ptpru",
+      "download": {
+        "url": "https://api.brain-map.org/grid_data/download/858",
+        "downloaded_utc": null,
+        "note": "Three required members identical on recorded re-download; ZIP container bytes may differ. Original acquisition time unavailable.",
+        "bytes": 446877,
+        "sha256": "9bcb957a867a083fde9714acac308374274ba5cc4b3af97f0d0204c51acd6d21",
+        "rechecked_utc": "2026-09-07T10:17:11.520532+00:00",
+        "recheck_sha256": "eedaaab62c8c176525f6719c8539b8fa2f11246fbfd0e351cf87e5b7c3c7a5f7",
+        "recheck_file": "allen-858-recheck-eedaaab62c8c.zip"
+      }
+    },
+    {
+      "archive": {
+        "bytes": 362179,
+        "sha256": "425fd06a5ed99c3b9ae25d457344ecd293760356866927cbe2ae9d6180e630a3"
+      },
+      "members": {
+        "energy.mhd": {
+          "bytes": 283,
+          "sha256": "321e75b5ab9528d323621c49949828a712924f9ab892b1d4e17213782d13593f"
+        },
+        "energy.raw": {
+          "bytes": 637304,
+          "sha256": "fd54814572a292dfbe6fc99fb4f000cb3c1350b12cdf53922d3193ccd5b8241d"
+        },
+        "data_set.xml": {
+          "bytes": 98948,
+          "sha256": "b3b5ddb052b56d6a29701a7f12f63b3cac91d9b8ba53c86c499bc81ebe0bd8f4"
+        }
+      },
+      "metaimage": {
+        "original_header": "ObjectType = Image\nNDims = 3\nBinaryData = True\nBinaryDataByteOrderMSB = False\nTransformMatrix = 1 0 0 0 1 0 0 0 1\nOffset = 0 0 0\nCenterOfRotation = 0 0 0\nAnatomicalOrientation = RAI\nElementSpacing = 200 200 200\nDimSize = 67 41 58\nElementType = MET_FLOAT\nElementDataFile = energy.raw\n",
+        "fields": {
+          "ObjectType": "Image",
+          "NDims": "3",
+          "BinaryData": "True",
+          "BinaryDataByteOrderMSB": "False",
+          "TransformMatrix": "1 0 0 0 1 0 0 0 1",
+          "Offset": "0 0 0",
+          "CenterOfRotation": "0 0 0",
+          "AnatomicalOrientation": "RAI",
+          "ElementSpacing": "200 200 200",
+          "DimSize": "67 41 58",
+          "ElementType": "MET_FLOAT",
+          "ElementDataFile": "energy.raw"
+        },
+        "header_dimensions": [
+          67,
+          41,
+          58
+        ],
+        "numpy_shape": [
+          58,
+          41,
+          67
+        ],
+        "dtype": "little-endian float32",
+        "order": "C"
+      },
+      "xml": {
+        "section_numbers": [
+          0,
+          8,
+          16,
+          24,
+          32,
+          40,
+          48,
+          64,
+          72,
+          80,
+          88,
+          96,
+          104,
+          112,
+          120,
+          128,
+          136,
+          144,
+          152,
+          160,
+          168,
+          176,
+          184,
+          192,
+          200,
+          208,
+          216,
+          224,
+          232,
+          240,
+          248,
+          256,
+          264,
+          272,
+          280,
+          288,
+          296,
+          304,
+          312,
+          320,
+          328,
+          336,
+          344,
+          352,
+          360,
+          368,
+          376,
+          384,
+          392,
+          416,
+          424,
+          432,
+          440,
+          448,
+          456,
+          464,
+          472
+        ],
+        "alignment3d": {
+          "id": "340973809",
+          "trv": "0.00540077,-0.00147776,0.948954,0.00199923,0.931485,0.00178566,-0.967469,0.00243287,0.0055082,957.977,1550.6,13006.5",
+          "tvr": "0.00599435,0.00270905,-1.03359,-0.00203291,1.07355,0.00220709,1.05375,0.00165636,0.00588587,13433.4,-1691.4,-1088.6"
+        }
+      },
+      "comparison": {
+        "voxel_count": 159326,
+        "float16_full_volume_equal": true,
+        "float16_mismatch_count": 0,
+        "selected_voxels": [
+          {
+            "coordinate": [
+              0,
+              0,
+              0
+            ],
+            "flat_index": 0,
+            "raw_byte_offset": 0,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          },
+          {
+            "coordinate": [
+              29,
+              0,
+              0
+            ],
+            "flat_index": 79663,
+            "raw_byte_offset": 318652,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          },
+          {
+            "coordinate": [
+              57,
+              40,
+              66
+            ],
+            "flat_index": 159325,
+            "raw_byte_offset": 637300,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          }
+        ]
+      },
+      "experiment_id": "74658173",
+      "gene": "Ndufa10",
+      "download": {
+        "url": "https://api.brain-map.org/grid_data/download/74658173",
+        "downloaded_utc": "2026-09-07T10:12:53.381347+00:00",
+        "bytes": 362179,
+        "sha256": "425fd06a5ed99c3b9ae25d457344ecd293760356866927cbe2ae9d6180e630a3",
+        "etag": "\"e882885d85e3b70389dc4b65e8445486\"",
+        "last_modified": null
+      }
+    },
+    {
+      "archive": {
+        "bytes": 370140,
+        "sha256": "0084a0ece83a1c6841ecd256fcbf7dcd0e81d76daa29b1426d1c5eb522cd5e4a"
+      },
+      "members": {
+        "energy.mhd": {
+          "bytes": 283,
+          "sha256": "321e75b5ab9528d323621c49949828a712924f9ab892b1d4e17213782d13593f"
+        },
+        "energy.raw": {
+          "bytes": 637304,
+          "sha256": "897f1a2b270f0cd053acf130227869e668d117c3023ad4fc7b2662c9c77d7a42"
+        },
+        "data_set.xml": {
+          "bytes": 100800,
+          "sha256": "0881687ff009dd54fbd9dfa1bbfbec1206e0ca341e08764e263764a1631ddf2d"
+        }
+      },
+      "metaimage": {
+        "original_header": "ObjectType = Image\nNDims = 3\nBinaryData = True\nBinaryDataByteOrderMSB = False\nTransformMatrix = 1 0 0 0 1 0 0 0 1\nOffset = 0 0 0\nCenterOfRotation = 0 0 0\nAnatomicalOrientation = RAI\nElementSpacing = 200 200 200\nDimSize = 67 41 58\nElementType = MET_FLOAT\nElementDataFile = energy.raw\n",
+        "fields": {
+          "ObjectType": "Image",
+          "NDims": "3",
+          "BinaryData": "True",
+          "BinaryDataByteOrderMSB": "False",
+          "TransformMatrix": "1 0 0 0 1 0 0 0 1",
+          "Offset": "0 0 0",
+          "CenterOfRotation": "0 0 0",
+          "AnatomicalOrientation": "RAI",
+          "ElementSpacing": "200 200 200",
+          "DimSize": "67 41 58",
+          "ElementType": "MET_FLOAT",
+          "ElementDataFile": "energy.raw"
+        },
+        "header_dimensions": [
+          67,
+          41,
+          58
+        ],
+        "numpy_shape": [
+          58,
+          41,
+          67
+        ],
+        "dtype": "little-endian float32",
+        "order": "C"
+      },
+      "xml": {
+        "section_numbers": [
+          6,
+          14,
+          22,
+          30,
+          38,
+          46,
+          54,
+          62,
+          70,
+          78,
+          86,
+          94,
+          102,
+          110,
+          118,
+          126,
+          134,
+          142,
+          150,
+          158,
+          174,
+          182,
+          190,
+          198,
+          206,
+          214,
+          222,
+          230,
+          238,
+          246,
+          254,
+          262,
+          270,
+          278,
+          286,
+          294,
+          302,
+          310,
+          318,
+          326,
+          334,
+          342,
+          350,
+          358,
+          366,
+          374,
+          382,
+          390,
+          398,
+          406,
+          414,
+          422,
+          430,
+          438,
+          454,
+          462,
+          470,
+          478
+        ],
+        "alignment3d": {
+          "id": "343815101",
+          "trv": "-0.000554781,0.0500841,0.951095,-0.018647,0.887981,-0.0481552,-1.05193,-0.019955,0.00143352,800.553,1912.56,14527.1",
+          "tvr": "0.000350057,-0.0213742,-0.950258,0.0568635,1.1225,-0.0199279,1.04843,-0.0591224,0.000495101,13845.0,-1902.86,-733.437"
+        }
+      },
+      "comparison": {
+        "voxel_count": 159326,
+        "float16_full_volume_equal": true,
+        "float16_mismatch_count": 0,
+        "selected_voxels": [
+          {
+            "coordinate": [
+              0,
+              0,
+              0
+            ],
+            "flat_index": 0,
+            "raw_byte_offset": 0,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          },
+          {
+            "coordinate": [
+              29,
+              0,
+              0
+            ],
+            "flat_index": 79663,
+            "raw_byte_offset": 318652,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          },
+          {
+            "coordinate": [
+              57,
+              40,
+              66
+            ],
+            "flat_index": 159325,
+            "raw_byte_offset": 637300,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          }
+        ]
+      },
+      "experiment_id": "71247618",
+      "gene": "Grik2",
+      "download": {
+        "url": "https://api.brain-map.org/grid_data/download/71247618",
+        "downloaded_utc": "2026-09-07T10:12:54.902961+00:00",
+        "bytes": 370140,
+        "sha256": "0084a0ece83a1c6841ecd256fcbf7dcd0e81d76daa29b1426d1c5eb522cd5e4a",
+        "etag": "\"07ac4c2a2170cbd58f7b2eb5d15cdf55\"",
+        "last_modified": null
+      }
+    },
+    {
+      "archive": {
+        "bytes": 325800,
+        "sha256": "e372445d839ffad668dc06687553650bb884d69faa0e429e3344ee1db5abfce1"
+      },
+      "members": {
+        "energy.mhd": {
+          "bytes": 283,
+          "sha256": "321e75b5ab9528d323621c49949828a712924f9ab892b1d4e17213782d13593f"
+        },
+        "energy.raw": {
+          "bytes": 637304,
+          "sha256": "aacaea107207281d66be5ecef2fbb5573c79ff4faf719cdd9cbcaeec8983e8dd"
+        },
+        "data_set.xml": {
+          "bytes": 84374,
+          "sha256": "ff7a01b1b39c005b67407e5f5ed471628256ae462006d95504b769ce301f1fdb"
+        }
+      },
+      "metaimage": {
+        "original_header": "ObjectType = Image\nNDims = 3\nBinaryData = True\nBinaryDataByteOrderMSB = False\nTransformMatrix = 1 0 0 0 1 0 0 0 1\nOffset = 0 0 0\nCenterOfRotation = 0 0 0\nAnatomicalOrientation = RAI\nElementSpacing = 200 200 200\nDimSize = 67 41 58\nElementType = MET_FLOAT\nElementDataFile = energy.raw\n",
+        "fields": {
+          "ObjectType": "Image",
+          "NDims": "3",
+          "BinaryData": "True",
+          "BinaryDataByteOrderMSB": "False",
+          "TransformMatrix": "1 0 0 0 1 0 0 0 1",
+          "Offset": "0 0 0",
+          "CenterOfRotation": "0 0 0",
+          "AnatomicalOrientation": "RAI",
+          "ElementSpacing": "200 200 200",
+          "DimSize": "67 41 58",
+          "ElementType": "MET_FLOAT",
+          "ElementDataFile": "energy.raw"
+        },
+        "header_dimensions": [
+          67,
+          41,
+          58
+        ],
+        "numpy_shape": [
+          58,
+          41,
+          67
+        ],
+        "dtype": "little-endian float32",
+        "order": "C"
+      },
+      "xml": {
+        "section_numbers": [
+          6,
+          14,
+          22,
+          30,
+          38,
+          46,
+          54,
+          62,
+          70,
+          78,
+          86,
+          94,
+          102,
+          110,
+          118,
+          126,
+          134,
+          142,
+          150,
+          158,
+          174,
+          182,
+          206,
+          214,
+          238,
+          246,
+          270,
+          278,
+          302,
+          310,
+          318,
+          334,
+          342,
+          350,
+          366,
+          374,
+          382,
+          390,
+          398,
+          406,
+          414,
+          422,
+          430,
+          438,
+          446,
+          454,
+          462,
+          470,
+          478
+        ],
+        "alignment3d": {
+          "id": "337509638",
+          "trv": "8.38409e-21,-0.0274491,0.947536,6.49586e-18,0.935724,0.0283007,-0.947951,1.31555e-17,-3.15731e-16,1167.93,1368.57,12792.5",
+          "tvr": "0.0,0.0,-1.05491,-0.0318914,1.06776,0.0,1.05445,0.0309317,0.0,13494.9,-1424.05,-1273.85"
+        }
+      },
+      "comparison": {
+        "voxel_count": 159326,
+        "float16_full_volume_equal": true,
+        "float16_mismatch_count": 0,
+        "selected_voxels": [
+          {
+            "coordinate": [
+              0,
+              0,
+              0
+            ],
+            "flat_index": 0,
+            "raw_byte_offset": 0,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          },
+          {
+            "coordinate": [
+              29,
+              0,
+              0
+            ],
+            "flat_index": 79663,
+            "raw_byte_offset": 318652,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          },
+          {
+            "coordinate": [
+              57,
+              40,
+              66
+            ],
+            "flat_index": 159325,
+            "raw_byte_offset": 637300,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          }
+        ]
+      },
+      "experiment_id": "79591731",
+      "gene": "Lhx1",
+      "download": {
+        "url": "https://api.brain-map.org/grid_data/download/79591731",
+        "downloaded_utc": "2026-09-07T10:12:56.534502+00:00",
+        "bytes": 325800,
+        "sha256": "e372445d839ffad668dc06687553650bb884d69faa0e429e3344ee1db5abfce1",
+        "etag": "\"4d5ef39f18f69fc97c8b73c7edc4e849\"",
+        "last_modified": null
+      }
+    },
+    {
+      "archive": {
+        "bytes": 415185,
+        "sha256": "ce04daa3810d6c86971ece676255dfbd26789044beb577868b6d5491ef93dd51"
+      },
+      "members": {
+        "energy.mhd": {
+          "bytes": 283,
+          "sha256": "321e75b5ab9528d323621c49949828a712924f9ab892b1d4e17213782d13593f"
+        },
+        "energy.raw": {
+          "bytes": 637304,
+          "sha256": "5b5312ee956e80937c51c4ddaf17cda0842167da4461adcccab0998a9521fe8c"
+        },
+        "data_set.xml": {
+          "bytes": 102944,
+          "sha256": "a223725b0d5656599f7fc5f2254c3ac4b880835a72ecfa5a63edb4fe237fdf32"
+        }
+      },
+      "metaimage": {
+        "original_header": "ObjectType = Image\nNDims = 3\nBinaryData = True\nBinaryDataByteOrderMSB = False\nTransformMatrix = 1 0 0 0 1 0 0 0 1\nOffset = 0 0 0\nCenterOfRotation = 0 0 0\nAnatomicalOrientation = RAI\nElementSpacing = 200 200 200\nDimSize = 67 41 58\nElementType = MET_FLOAT\nElementDataFile = energy.raw\n",
+        "fields": {
+          "ObjectType": "Image",
+          "NDims": "3",
+          "BinaryData": "True",
+          "BinaryDataByteOrderMSB": "False",
+          "TransformMatrix": "1 0 0 0 1 0 0 0 1",
+          "Offset": "0 0 0",
+          "CenterOfRotation": "0 0 0",
+          "AnatomicalOrientation": "RAI",
+          "ElementSpacing": "200 200 200",
+          "DimSize": "67 41 58",
+          "ElementType": "MET_FLOAT",
+          "ElementDataFile": "energy.raw"
+        },
+        "header_dimensions": [
+          67,
+          41,
+          58
+        ],
+        "numpy_shape": [
+          58,
+          41,
+          67
+        ],
+        "dtype": "little-endian float32",
+        "order": "C"
+      },
+      "xml": {
+        "section_numbers": [
+          14,
+          22,
+          30,
+          38,
+          46,
+          54,
+          62,
+          70,
+          78,
+          86,
+          94,
+          102,
+          110,
+          118,
+          126,
+          134,
+          142,
+          150,
+          158,
+          166,
+          174,
+          182,
+          190,
+          198,
+          206,
+          214,
+          222,
+          230,
+          238,
+          246,
+          254,
+          262,
+          270,
+          278,
+          286,
+          294,
+          302,
+          310,
+          318,
+          326,
+          334,
+          342,
+          350,
+          358,
+          366,
+          374,
+          382,
+          390,
+          398,
+          406,
+          414,
+          422,
+          430,
+          438,
+          446,
+          454,
+          462,
+          470,
+          478
+        ],
+        "alignment3d": {
+          "id": "340340879",
+          "trv": "-2.05626e-21,-0.0422719,0.973652,6.79675e-18,0.978606,0.0421889,-0.847192,0.0,9.40573e-17,1048.0,1061.37,11841.8",
+          "tvr": "0.0,0.0,-1.18037,-0.0441951,1.01995,0.0,1.02514,0.0442821,0.0,13977.8,-1036.23,-1121.35"
+        }
+      },
+      "comparison": {
+        "voxel_count": 159326,
+        "float16_full_volume_equal": true,
+        "float16_mismatch_count": 0,
+        "selected_voxels": [
+          {
+            "coordinate": [
+              0,
+              0,
+              0
+            ],
+            "flat_index": 0,
+            "raw_byte_offset": 0,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          },
+          {
+            "coordinate": [
+              29,
+              0,
+              0
+            ],
+            "flat_index": 79663,
+            "raw_byte_offset": 318652,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          },
+          {
+            "coordinate": [
+              57,
+              40,
+              66
+            ],
+            "flat_index": 159325,
+            "raw_byte_offset": 637300,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          }
+        ]
+      },
+      "experiment_id": "74988768",
+      "gene": "Glul",
+      "download": {
+        "url": "https://api.brain-map.org/grid_data/download/74988768",
+        "downloaded_utc": "2026-09-07T10:12:57.878549+00:00",
+        "bytes": 415185,
+        "sha256": "ce04daa3810d6c86971ece676255dfbd26789044beb577868b6d5491ef93dd51",
+        "etag": "\"2a070fbaeb7da0451b81bf0cf777b4fb\"",
+        "last_modified": null
+      }
+    },
+    {
+      "archive": {
+        "bytes": 378155,
+        "sha256": "5e57e95dd7c9b1290bce029a591167fd1e6bb6681456b30d6739feac1e481fbe"
+      },
+      "members": {
+        "energy.mhd": {
+          "bytes": 283,
+          "sha256": "321e75b5ab9528d323621c49949828a712924f9ab892b1d4e17213782d13593f"
+        },
+        "energy.raw": {
+          "bytes": 637304,
+          "sha256": "fa4b5ed69e799f8e646a85e598d32744370d44a90c5635a91fa34ad927c506a2"
+        },
+        "data_set.xml": {
+          "bytes": 196290,
+          "sha256": "986c6e6d1ce389cfb7db69c2026d31a869e2bec9d4d9f9d124a72cb869350994"
+        }
+      },
+      "metaimage": {
+        "original_header": "ObjectType = Image\nNDims = 3\nBinaryData = True\nBinaryDataByteOrderMSB = False\nTransformMatrix = 1 0 0 0 1 0 0 0 1\nOffset = 0 0 0\nCenterOfRotation = 0 0 0\nAnatomicalOrientation = RAI\nElementSpacing = 200 200 200\nDimSize = 67 41 58\nElementType = MET_FLOAT\nElementDataFile = energy.raw\n",
+        "fields": {
+          "ObjectType": "Image",
+          "NDims": "3",
+          "BinaryData": "True",
+          "BinaryDataByteOrderMSB": "False",
+          "TransformMatrix": "1 0 0 0 1 0 0 0 1",
+          "Offset": "0 0 0",
+          "CenterOfRotation": "0 0 0",
+          "AnatomicalOrientation": "RAI",
+          "ElementSpacing": "200 200 200",
+          "DimSize": "67 41 58",
+          "ElementType": "MET_FLOAT",
+          "ElementDataFile": "energy.raw"
+        },
+        "header_dimensions": [
+          67,
+          41,
+          58
+        ],
+        "numpy_shape": [
+          58,
+          41,
+          67
+        ],
+        "dtype": "little-endian float32",
+        "order": "C"
+      },
+      "xml": {
+        "section_numbers": [
+          17,
+          25,
+          33,
+          41,
+          49,
+          57,
+          65,
+          73,
+          81,
+          89,
+          97,
+          105,
+          113,
+          121,
+          129,
+          137,
+          145,
+          153,
+          161,
+          169,
+          177,
+          185,
+          193,
+          201,
+          209,
+          217,
+          225,
+          233,
+          241,
+          249,
+          257,
+          265,
+          273,
+          281,
+          289,
+          297,
+          305,
+          313,
+          321,
+          329,
+          337,
+          345,
+          353,
+          361,
+          369,
+          377,
+          385,
+          393,
+          409,
+          417,
+          425,
+          433,
+          441,
+          449,
+          457,
+          465,
+          473,
+          5,
+          13,
+          21,
+          29,
+          37,
+          45,
+          53,
+          61,
+          69,
+          77,
+          85,
+          93,
+          109,
+          117,
+          125,
+          133,
+          141,
+          149,
+          157,
+          165,
+          173,
+          181,
+          189,
+          197,
+          205,
+          213,
+          221,
+          229,
+          237,
+          245,
+          253,
+          261,
+          269,
+          277,
+          285,
+          293,
+          301,
+          309,
+          317,
+          325,
+          333,
+          341,
+          349,
+          357,
+          365,
+          373,
+          381,
+          389,
+          397,
+          405,
+          413,
+          421,
+          429,
+          437,
+          445,
+          453,
+          461,
+          469,
+          477
+        ],
+        "alignment3d": {
+          "id": "343075902",
+          "trv": "0.00158426,0.0220635,0.957833,0.00689737,0.924999,-0.0213186,-0.984723,0.00737633,0.00145882,835.16,1669.73,13503.4",
+          "tvr": "0.0017259,0.0080565,-1.01546,0.0240361,1.08045,0.00760654,1.04347,-0.0249013,0.00150435,13697.2,-1926.85,-850.197"
+        }
+      },
+      "comparison": {
+        "voxel_count": 159326,
+        "float16_full_volume_equal": true,
+        "float16_mismatch_count": 0,
+        "selected_voxels": [
+          {
+            "coordinate": [
+              0,
+              0,
+              0
+            ],
+            "flat_index": 0,
+            "raw_byte_offset": 0,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          },
+          {
+            "coordinate": [
+              29,
+              0,
+              0
+            ],
+            "flat_index": 79663,
+            "raw_byte_offset": 318652,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          },
+          {
+            "coordinate": [
+              57,
+              40,
+              66
+            ],
+            "flat_index": 159325,
+            "raw_byte_offset": 637300,
+            "raw_float32": -1.0,
+            "raw_as_float16": -1.0,
+            "supplied_float16": -1.0,
+            "float16_equal": true,
+            "raw_vs_float16_absolute_error": 0.0
+          }
+        ]
+      },
+      "experiment_id": "71717136",
+      "gene": "Rab3ip",
+      "download": {
+        "url": "https://api.brain-map.org/grid_data/download/71717136",
+        "downloaded_utc": "2026-09-07T10:12:59.973754+00:00",
+        "bytes": 378155,
+        "sha256": "5e57e95dd7c9b1290bce029a591167fd1e6bb6681456b30d6739feac1e481fbe",
+        "etag": "\"73ff2b40c155cf833f8e19dffc7e8057\"",
+        "last_modified": null
+      }
+    }
+  ],
+  "adjacent_images": {
+    "retrieved_at": "2026-09-07T12:12:12+02:00",
+    "source_archive": "allen-858.zip",
+    "selection": {
+      "reason": "Available SectionImages immediately adjacent to absent section_number 42",
+      "section_thickness_um": 25.0
+    },
+    "images": [
+      {
+        "section_number": 34,
+        "image_id": 101322757,
+        "xml_failed": false,
+        "url": "https://api.brain-map.org/api/v2/image_download/101322757?downsample=3&quality=85",
+        "file": "allen-858-section-34-image-101322757.jpg",
+        "bytes": 59282,
+        "sha256": "19ef0e4188b020b295090039923cd18a3a675f3709838f22a510a78092388990"
+      },
+      {
+        "section_number": 50,
+        "image_id": 101322767,
+        "xml_failed": false,
+        "url": "https://api.brain-map.org/api/v2/image_download/101322767?downsample=3&quality=85",
+        "file": "allen-858-section-50-image-101322767.jpg",
+        "bytes": 64243,
+        "sha256": "511ecfccc43a809d90b1ea283a96f5f0abab247877fbadadaa235af31002a50c"
+      }
+    ]
+  },
+  "report": {
+    "path": "artifacts/agea-stripe-report/report.pdf",
+    "sha256": "7ac1882da3c1bfe182960534d0438492aa1591cd18b0e46f1b0b8bfddf7676ac"
+  },
+  "render_evidence": {
+    "pdf_sha256": "7ac1882da3c1bfe182960534d0438492aa1591cd18b0e46f1b0b8bfddf7676ac",
+    "renderer_sha256": "bb044b5607a89bbdcdb4ff76112998b0df3c954ec0ea31b03554ae195d689553",
+    "matplotlib": "3.11.1",
+    "inputs": {
+      "scores.json": "b53955153638ac4d09a6ac0582c7d471b21ec8a0cd5e633ff71cb8df824f26be",
+      "summary.json": "dd4c19d42947ef9c5993ac080c0b7765eee18658752d9fe5daf914197432b51d",
+      "ptpru-source.json": "abd90f4460aeebe99e3d059b7504c3ea8e074783f61d1f232b35507178f349eb",
+      "ptpru-sections.json": "c4da790431a51c90d354f1ef8dd81b238e094429215953da8190d9f57203ed27",
+      "regions.json": "bb7878376e26a8746751afd99469c9eb8ba32c76db961b3e58c830c27331c7ba",
+      "missing-frequency.npy": "34d24b9659d5a6bad7670936cc92c378d947b342db01c7b85924b595c184be9e",
+      "downloads/allen-858-adjacent-image-receipt.json": "8aa5f0763430910a8be29e2879502520752adee1dd811b833f95b9caf849418b",
+      "downloads/allen-858-section-34-image-101322757.jpg": "19ef0e4188b020b295090039923cd18a3a675f3709838f22a510a78092388990",
+      "downloads/allen-858-section-50-image-101322767.jpg": "511ecfccc43a809d90b1ea283a96f5f0abab247877fbadadaa235af31002a50c"
+    }
+  }
+}
