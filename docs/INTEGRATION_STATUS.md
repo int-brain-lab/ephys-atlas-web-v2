@@ -214,8 +214,9 @@ with the assets. Visits load no viewer runtime or scientific data. The landing
 credits the International Brain Laboratory, the Allen CCFv3 source and paper,
 and the IBL supporters listed on iblcore.org. About/credits remain on the
 landing, and `/app/#help` opens the existing guide. Responsive, navigation and
-isolated production-build browser tests cover these routes; final design remains
-open to owner review. All publication machinery is locally tested only;
+isolated production-build browser tests cover these routes. The owner approved
+the landing design, revised copy, acknowledgements and vector slices at
+`a3a88cd` on 2026-09-08. All publication machinery is locally tested only;
 multipart objects above 5 GB remain unimplemented. See
 [Local publisher operations](publishing/LOCAL_PUBLISHER.md).
 Public reads remain static and unauthenticated.

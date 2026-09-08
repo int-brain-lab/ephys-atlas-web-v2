@@ -34,8 +34,9 @@ explicit authorization and credentials.
 
 Next actions:
 
-1. Review and iterate on D073's implemented local landing at `/` and viewer at
-   `/app/`, with one coherent site build/publication. The offline
+1. D073's local landing at `/` and viewer at `/app/` are implemented as one
+   coherent site build/publication; the owner approved the landing at `a3a88cd`
+   on 2026-09-08. The offline
    [staging change plan](publishing/STAGING_CHANGE_PLAN.md) and scoped AWS
    templates are prepared. Review exact publisher IAM, isolated staging, the observed OAI
    versus runbook OAC policy, cache/routing changes and the first staging
