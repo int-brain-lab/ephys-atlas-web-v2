@@ -107,15 +107,16 @@ bucket settings. The approved artifact set and initial defaults are fixed;
 remaining work is scoped routing/cache setup, actual publisher authorization,
 remote delivery validation and Q5 benchmarking.
 
-The direct production-router creation attempt on 2026-09-08 was denied for
-`cloudfront:CreateFunction`; it created no resource. `GetDistribution` supplies
-the current configuration and ETag despite the separate
-`GetDistributionConfig` denial. Upload and distribution-update permissions
-remain unverified. See the reduced
-[administrator request](publishing/AWS_DEPLOYMENT_ACCESS_REQUEST.md).
+The administrator subsequently enabled router creation/read/test/publication
+and distribution/function updates (conditional probes reach ETag validation).
+Invalidation creation/read and S3 private write/readback/update passed. The
+router is LIVE but unattached. GetFunction and GetDistribution supply the
+needed code/configuration and ETags; the remaining DescribeFunction and
+GetDistributionConfig denials are not operational blockers. No additional
+administrator request is currently needed for the direct deployment path.
 
-Blocks: production-origin QA, initial artifact deployment and Q5 confirmation.
-Owner authorization is already recorded; no separate staging identity is needed.
+Remaining: canonical publication, actual distribution update, production-origin
+QA and Q5 confirmation. Owner authorization is already recorded.
 
 ## Q9 — Paper-facing release aliases and defaults
 

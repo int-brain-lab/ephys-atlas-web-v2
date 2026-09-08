@@ -1,5 +1,15 @@
 # Existing atlas website deployment access
 
+Current status after administrator changes (2026-09-08): **no further request
+needed for the direct deployment path**. Router creation/read/test/publication,
+invalidation and S3 private write/readback/update succeeded. Conditional
+UpdateDistribution/UpdateFunction probes reach ETag validation. Use available
+GetDistribution/GetFunction reads instead of denied GetDistributionConfig/
+DescribeFunction, and distribution-local cache settings. The request below is
+historical context, not an outstanding action list. Actual data/site deployment
+and distribution update remain pending; the LIVE router is not yet attached.
+
+
 Status: revised direct first-deployment request, prepared locally and **not
 sent**. Supersedes the earlier separate-staging setup request. D074 authorizes
 the deployment; no additional owner approval is needed.

@@ -28,16 +28,19 @@ remain incomplete. The 2026-09-08 authenticated audit confirms the production
 distribution, DNS/TLS, private bucket and narrowed OAI grant; isolated staging
 and publisher write authorization remain unverified.
 
-Blocker: Q8 for existing-site routing setup and unverified publisher access.
-D074's direct first-deployment amendment removes separate staging infrastructure
-as a prerequisite. Actual creation of the production router was denied; see the
-reduced, unsent [administrator request](publishing/AWS_DEPLOYMENT_ACCESS_REQUEST.md).
+AWS access for the direct deployment path is now verified sufficiently to
+proceed: router creation/read/test/publication and invalidation succeeded;
+conditional distribution/function updates reached ETag validation. Equivalent
+GetDistribution/GetFunction reads supply configuration/code and ETags despite
+two denied convenience APIs. S3 private write/readback/update succeeded. No
+further administrator request is currently required. The published router is
+unattached; data/site deployment and actual distribution update remain pending.
 
 Next actions:
 
-1. Obtain the production router and scoped operator access for the existing
-   distribution. Preserve the existing OAI, origin, DNS, certificate and bucket
-   settings; no staging identity or distribution is required.
+1. Use the verified existing-site access and published router. Preserve the
+   OAI, origin, DNS, certificate and bucket settings; no staging identity or
+   distribution is required. Use distribution-local cache settings.
 2. Rebuild/preflight the approved initial releases and packs on clean Linux
    `main` at the publication commit. The complete earlier build and eight offline
    publication plans passed at `9e8d116`; later commits require fresh provenance.

@@ -1745,3 +1745,28 @@ No function was created and no distribution or S3 object was changed. This
 proves a routing setup permission gap, not denial of all production writes.
 See the reduced administrator request in
 `docs/publishing/AWS_DEPLOYMENT_ACCESS_REQUEST.md`.
+
+
+### Access verification after administrator changes — 2026-09-08
+
+The `iblmember` profile now successfully creates, reads, tests and publishes
+`ephys-atlas-web-v2-production-router`. All five exact route tests passed;
+the LIVE bytes match the committed router. It remains unattached, and fresh
+before/after distribution configurations are equal. A single invalidation of
+a unique nonexistent audit URL was created and read successfully.
+
+Non-mutating UpdateDistribution and UpdateFunction requests with intentionally
+invalid ETags now return InvalidIfMatchVersion instead of AccessDenied. This
+supports write authorization; the actual configuration update remains pending.
+DescribeFunction and GetDistributionConfig are still denied, but GetFunction
+and GetDistribution return the required code/configuration and ETags. They do
+not block the direct deployment workflow. Use distribution-local cache settings
+to avoid new cache-policy creation permissions in this first deployment.
+
+S3 listing, checksummed private upload/readback and conditional update passed;
+public-path conditional probes found no authorization denial. The tiny audit
+file is retained under production `_staging/access-audit/`, outside CloudFront's
+public grant. No scientific data or site entry has been published. Evidence is
+under ignored `artifacts/deployment-direct-20260908/`. No further administrator
+request is currently needed; proceed with canonical builds and actual
+publication/delivery validation, retaining the existing scientific gates.
