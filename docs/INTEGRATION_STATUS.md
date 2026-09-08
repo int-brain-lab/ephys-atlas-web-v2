@@ -109,7 +109,9 @@ center selection; the implementation changes only synthetic fixtures.
 D076 adds progressive nearby-first encoded SVG cache warming after visible
 rendering, bounded directional active-volume prefetch, and per-view updating
 feedback that retains the previous pixels until replacement rendering completes.
-Foreground and background request budgets are assessed separately.
+Foreground and background request budgets are assessed separately. Empty views show Loading atlas immediately, and
+uncached slice navigation shows Loading slice without a delay; background
+prefetch never holds the visible view busy.
 
 ## Volume exploration
 

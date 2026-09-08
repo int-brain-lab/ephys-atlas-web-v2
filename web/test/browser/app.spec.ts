@@ -216,7 +216,6 @@ test('an existing anatomy slice stays visible while an adjacent pack loads', asy
   await expect(page.getByLabel('coronal slice')).toHaveValue('88');
   await expect(target).toHaveAttribute('data-asset-index', '660');
   await expect(frame).toHaveAttribute('data-state', 'ready');
-  await expect(frame.locator('.view-frame__status')).toHaveText('');
   await expect(frame.locator('.view-frame__state-message')).toHaveCSS('opacity', '0');
 
   await expect(frame.locator('.view-frame__status')).toHaveText('Loading slice…');
@@ -1184,4 +1183,21 @@ test('drawers still close on Escape and composition changes', async ({ page }) =
   await page.getByRole('button', { name: 'Regions' }).click();
   await page.setViewportSize({ width: 1440, height: 900 });
   await expect(page.getByRole('complementary', { name: 'Brain regions' })).toHaveAttribute('data-open', 'false');
+});
+
+test('empty atlas views disclose pending SVG downloads', async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  await page.route('**/registered/**/*.isvg.gz', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  await page.goto('/app/');
+  const frame = page.locator('[data-view="coronal"]');
+  await expect(frame).toHaveAttribute('aria-busy', 'true');
+  await expect(frame.locator('.view-frame__status')).toHaveText('Loading atlas…');
+  await expect(frame.locator('.view-frame__state-message')).toHaveCSS('opacity', '1');
+  release();
+  await expect(frame).toHaveAttribute('aria-busy', 'false');
+  await expect(frame.locator('.view-frame__status')).toHaveText('');
 });

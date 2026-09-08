@@ -133,7 +133,6 @@ interface ViewFrameNodes {
   renderKey: string;
   geometryKey: string;
   renderToken: number;
-  loadingNoticeTimer: number | null;
 }
 
 interface ProjectionTooltipNodes {
@@ -152,7 +151,6 @@ interface StaticFrameNodes extends ProjectionTooltipNodes {
   renderToken: number;
 }
 
-const SLICE_LOADING_NOTICE_DELAY_MS = 400;
 const LOCAL_IMPORT_OPTION_ID = '__import_local_dataset__';
 const LOCAL_MANAGE_OPTION_ID = '__manage_local_datasets__';
 const LOCAL_DELETE_OPTION_ID = '__delete_local_dataset__';
@@ -571,7 +569,6 @@ export class AppShell {
     this.contextMenus.forEach((menu) => menu.destroy());
     this.dataChooser.destroy();
     for (const nodes of this.viewFrames.values()) {
-      if (nodes.loadingNoticeTimer !== null) window.clearTimeout(nodes.loadingNoticeTimer);
     }
     this.viewportFactory.destroy();
     this.scene3dFactory?.destroy();
@@ -2356,7 +2353,7 @@ export class AppShell {
     this.viewFrames.set(axis, {
       frame, target, viewport: projectionViewport, coordinate, slider, status, maximize,
       tooltip, tooltipIdentity, tooltipValue, tooltipMeta,
-      renderKey: '', geometryKey: '', renderToken: 0, loadingNoticeTimer: null,
+      renderKey: '', geometryKey: '', renderToken: 0,
     });
     return frame;
   }
@@ -2584,15 +2581,13 @@ export class AppShell {
         nodes.geometryKey = '';
         nodes.viewport.suspend?.();
       }
-      if (nodes.loadingNoticeTimer !== null) {
-        window.clearTimeout(nodes.loadingNoticeTimer);
-        nodes.loadingNoticeTimer = null;
-      }
       this.hideRegionTooltip(axis);
       nodes.frame.dataset.updating = 'feature';
       nodes.frame.setAttribute('aria-busy', 'true');
       nodes.status.removeAttribute('aria-label');
-      nodes.status.textContent = 'Updating…';
+      const hasImage = !!nodes.target.dataset.sliceAsset;
+      if (!hasImage) nodes.frame.dataset.state = 'loading';
+      nodes.status.textContent = hasImage ? 'Updating…' : 'Loading atlas…';
       return;
     }
     const featureWasLoading = nodes.frame.dataset.updating === 'feature';
@@ -2616,24 +2611,14 @@ export class AppShell {
     const retainsRenderedFrame = retainedSliceAsset === 'projection-pack-v1'
       || retainedSliceAsset === 'schema-volume-v1';
     const stateMessage = nodes.frame.querySelector<HTMLElement>('.view-frame__state-message');
-    if (nodes.loadingNoticeTimer !== null) {
-      window.clearTimeout(nodes.loadingNoticeTimer);
-      nodes.loadingNoticeTimer = null;
-    }
-    if (!geometryChanged && nodes.status.textContent === 'Loading slice…') nodes.status.textContent = '';
     if (geometryChanged) {
       this.hideRegionTooltip(axis);
       nodes.frame.dataset.state = retainsRenderedFrame ? 'ready' : 'loading';
       nodes.status.removeAttribute('aria-label');
       nodes.frame.dataset.updating = featureWasLoading ? 'feature' : 'slice';
       nodes.frame.setAttribute('aria-busy', 'true');
-      nodes.status.textContent = featureWasLoading ? 'Updating…' : retainsRenderedFrame ? '' : 'Loading';
-      if (retainsRenderedFrame) {
-        nodes.loadingNoticeTimer = window.setTimeout(() => {
-          nodes.loadingNoticeTimer = null;
-          if (nodes.renderToken === token && !featureWasLoading) nodes.status.textContent = 'Loading slice…';
-        }, SLICE_LOADING_NOTICE_DELAY_MS);
-      }
+      nodes.status.textContent = !retainsRenderedFrame ? 'Loading atlas…'
+        : featureWasLoading ? 'Updating…' : 'Loading slice…';
       if (stateMessage) {
         stateMessage.textContent = retainsRenderedFrame
           ? ''
@@ -2655,20 +2640,11 @@ export class AppShell {
       if (nodes.renderToken !== token) return;
       delete nodes.frame.dataset.updating;
       nodes.frame.setAttribute('aria-busy', 'false');
-      if (!geometryChanged) return;
-      if (nodes.loadingNoticeTimer !== null) {
-        window.clearTimeout(nodes.loadingNoticeTimer);
-        nodes.loadingNoticeTimer = null;
-      }
       nodes.frame.dataset.state = 'ready';
       nodes.status.textContent = '';
       nodes.status.setAttribute('aria-label', view.representation === 'volume' ? 'Scientific volume ready' : 'Registered anatomy ready');
     }).catch((error: unknown) => {
       if (nodes.renderToken !== token) return;
-      if (nodes.loadingNoticeTimer !== null) {
-        window.clearTimeout(nodes.loadingNoticeTimer);
-        nodes.loadingNoticeTimer = null;
-      }
       delete nodes.frame.dataset.updating;
       nodes.frame.setAttribute('aria-busy', 'false');
       const preservedSliceAsset = nodes.target.dataset.sliceAsset;
