@@ -1,0 +1,121 @@
+{
+  "schema_version": "1.0",
+  "default_project": "ephys-atlas",
+  "projects": [
+    {
+      "project_id": "ephys-atlas",
+      "title": "Ephys Atlas",
+      "dataset_ids": [
+        "ephys_atlas_channels",
+        "ephys_atlas_clusters"
+      ],
+      "default_dataset": "ephys_atlas_channels",
+      "default_edition": "ibl-review-20260908-v1",
+      "editions": [
+        {
+          "edition_id": "ibl-review-20260908-v1",
+          "label": "September 2026",
+          "dataset_releases": [
+            {
+              "dataset_id": "ephys_atlas_channels",
+              "release_id": "2026_W32-ibl-review-20260908-v1"
+            },
+            {
+              "dataset_id": "ephys_atlas_clusters",
+              "release_id": "sha256-9b5e55215b306f26-ibl-review-20260908-v1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "project_id": "brainwide-map",
+      "title": "Brain-Wide Map",
+      "dataset_ids": [
+        "brainwide_map"
+      ],
+      "default_dataset": "brainwide_map",
+      "default_edition": "ibl-review-20260908-v1",
+      "editions": [
+        {
+          "edition_id": "ibl-review-20260908-v1",
+          "label": "September 2026",
+          "dataset_releases": [
+            {
+              "dataset_id": "brainwide_map",
+              "release_id": "legacy-v1-1d908bea-ibl-review-20260908-v1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "project_id": "agea",
+      "title": "AGEA",
+      "dataset_ids": [
+        "agea"
+      ],
+      "default_dataset": "agea",
+      "default_edition": "ibl-review-20260908-v1",
+      "editions": [
+        {
+          "edition_id": "ibl-review-20260908-v1",
+          "label": "September 2026",
+          "dataset_releases": [
+            {
+              "dataset_id": "agea",
+              "release_id": "agea-original-20260908-v1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "datasets": [
+    {
+      "dataset_id": "ephys_atlas_channels",
+      "title": "Channels",
+      "default_release": "2026_W32-ibl-review-20260908-v1",
+      "releases": [
+        {
+          "release_id": "2026_W32-ibl-review-20260908-v1",
+          "label": "2026 W32"
+        }
+      ]
+    },
+    {
+      "dataset_id": "ephys_atlas_clusters",
+      "title": "Clusters",
+      "default_release": "sha256-9b5e55215b306f26-ibl-review-20260908-v1",
+      "releases": [
+        {
+          "release_id": "sha256-9b5e55215b306f26-ibl-review-20260908-v1",
+          "label": "Frozen cluster snapshot"
+        }
+      ]
+    },
+    {
+      "dataset_id": "brainwide_map",
+      "title": "Brain-Wide Map",
+      "default_release": "legacy-v1-1d908bea-ibl-review-20260908-v1",
+      "releases": [
+        {
+          "release_id": "legacy-v1-1d908bea-ibl-review-20260908-v1",
+          "label": "Legacy website snapshot",
+          "status": "legacy"
+        }
+      ]
+    },
+    {
+      "dataset_id": "agea",
+      "title": "AGEA",
+      "default_release": "agea-original-20260908-v1",
+      "releases": [
+        {
+          "release_id": "agea-original-20260908-v1",
+          "label": "Original expression"
+        }
+      ]
+    }
+  ]
+}

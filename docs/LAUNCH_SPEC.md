@@ -32,6 +32,12 @@ content. Separate help, about and documentation pages are not required for the
 first version. Landing visits must not initialize the viewer or fetch scientific
 data; viewer navigation retains its query-persisted state under `/app/`.
 
+D074 authorizes the initial website deployment for IBL review, including the
+full AGEA catalog under D069's original-value recipe. Its provisional processing
+and registration notes appear only in Data details. Initial defaults select
+W32 channels, denoised AP RMS and linked 2-D slices. This deployment does not
+declare the separately reviewed final paper freeze complete.
+
 ## 1. Application shell and navigation
 
 Acceptance criteria:

@@ -27,6 +27,9 @@ immutable vintage used for each release.
 
 Blocks: paper-facing channel release and final catalog defaults.
 
+D074 selects the reviewed `2026_W32` source for the initial website deployment.
+This question remains only for a separately promoted final paper freeze.
+
 ## Q5 — Production volume transport
 
 Status: **BLOCKER** for production volume packaging.
@@ -110,6 +113,13 @@ same-origin topology, though a later decision may introduce one.
 Blocks: production-origin QA, immutable asset/release deployment, Q5
 confirmation, and final deployment documentation.
 
+D074 authorizes scoped staging/production changes and uploads after validation;
+owner authorization is no longer a blocker. The 2026-09-08 apply attempt found
+`iblmember` lacks `cloudfront:CreateOriginAccessControl` and
+`cloudfront:GetDistributionConfig`. No resource was created by that attempt.
+The shared bucket has no explicit ownership controls; do not change bucket-wide
+ownership to provision staging. Resolve delivery within the scoped policy.
+
 ## Q9 — Paper-facing release aliases and defaults
 
 Status: **DECISION**.
@@ -130,6 +140,11 @@ edition baseline; they do not choose the real values.
 
 Blocks: final production catalog/defaults and the publication reproducibility
 statement.
+
+D074 approves initial website defaults: Ephys Atlas channels, denoised AP RMS,
+Allen parcellation and linked 2-D slices. The implementation may assign initial
+edition/release IDs and build the tracked catalog. The final paper freeze stays
+separate from this first deployment.
 
 ## Q15 — Unlisted-sharing deployment policy
 
@@ -206,6 +221,12 @@ D069 additionally authorizes a main-website local preview: original values,
 all measured nonnegative voxels valid, `-1` missing, no coarse-label outside
 mask, and unchanged source affine with explicitly provisional registration.
 This resolves the local-preview recipe only, not public release acceptance.
+
+D074 subsequently authorizes this exact recipe for the initial website
+deployment, with provisional processing/registration notes only in Data details.
+Neutral main-viewer labels do not imply completed scientific validation. The
+remaining review below concerns final scientific acceptance, not whether this
+provisional dataset may be deployed.
 
 The [source audit](data/AGEA.md) pins the original 4,345-experiment IBL
 collection, confirms one Allen energy-volume conversion exactly, and derives

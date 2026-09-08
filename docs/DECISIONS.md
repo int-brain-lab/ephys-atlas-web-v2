@@ -77,11 +77,12 @@ only part of the body; the index states what remains effective.
 | D066 | Native 3-D component candidate | partially superseded | 2026-09-06 | source-preservation rules retained; D070 accepts candidate |
 | D067 | Full AGEA catalog and bundled metadata direction | accepted | 2026-09-06 | independent single-experiment browsing; source audit and transport evidence precede schema integration |
 | D068 | Intact 3-D components with side-specific presentation | accepted | 2026-09-06 | shared-edge connectivity; original-ML colors/picks; D070 resolves Q18 assignments/boundary |
-| D069 | AGEA original-value local integration preview | accepted | 2026-09-07 | owner-authorized local website integration with provisional source registration; no public release approval |
+| D069 | AGEA original-value local integration preview | partially superseded | 2026-09-07 | original-value recipe and provisional registration retained; D074 authorizes initial website deployment |
 | D070 | Accept native 3-D anatomy and OIT | accepted | 2026-09-07 | closes Q18; native default, exact reviewed movements/boundary; D042 rollback; additional 3-D Firefox/Safari review waived |
 | D071 | International Brain Laboratory production hostname | superseded | 2026-09-07 | D072 restores ephys-atlas.iblcore.org |
 | D072 | Confirm iblcore.org with Cloudflare DNS | accepted | 2026-09-07 | production hostname ephys-atlas.iblcore.org; Cloudflare DNS, existing AWS delivery model retained |
 | D073 | Landing page and viewer routes | accepted | 2026-09-08 | lightweight themed landing at `/`, viewer at `/app/`; integrated about/credits and existing user guide; no separate help/about/docs launch pages |
+| D074 | Authorize initial atlas deployment | accepted | 2026-09-08 | scoped staging/production deployment, W32 channels/defaults and AGEA inclusion; provisional AGEA notes only in Data details; paper freeze remains separate |
 
 ## D001 — Separate v2
 
@@ -1673,3 +1674,39 @@ Missing scientific resources remain errors; there is no arbitrary HTML fallback.
 This authorizes local design and staging preparation, not infrastructure changes
 or public uploads. The first visual design remains open to owner iteration;
 Q2/Q5/Q8/Q9/Q19 release and deployment gates remain in force.
+
+## D074 — Authorize initial atlas deployment
+
+The owner approves the landing at `a3a88cd` and authorizes end-to-end staging
+and deployment at `ephys-atlas.iblcore.org` after checks pass, without another
+routine approval. This is an initial website deployment for IBL review before
+wider promotion, not a declaration of a final paper freeze. Public static reads
+remain unauthenticated; an unadvertised URL is not access control.
+
+Include the reviewed `2026_W32` channels, existing frozen cluster and legacy
+Brain-Wide Map recipes, the reviewed D070 3-D anatomy, and the full AGEA catalog.
+Volumes follow real-origin Q5 benchmarking. Preserve pinned inputs, recipes,
+source hashes and immutable build identities; rebuild on clean Linux rather
+than relabelling existing local artifacts.
+
+The initial default is Ephys Atlas channels, `rms_ap.denoised`, Allen
+parcellation and linked 2-D slices. Defaults must remain changeable through
+tracked configuration without changing immutable scientific releases. Routine
+initial-deployment edition/release naming may be assigned by the implementation;
+do not label that edition as the final paper release.
+
+For AGEA, use D069's original expression values, all measured nonnegative
+voxels valid (including zero), `-1` missing, no coarse-label outside mask and
+the unchanged source affine. The owner approves deployment of this recipe
+with provisional processing/registration notes only in Data details. Do not add
+provisional labels to the landing, dataset chooser or main viewer. This does
+not establish biological registration or close Q19's final scientific review.
+
+Authorized remote changes are confined to dedicated atlas staging resources,
+production distribution `ET6VJW8JWAGVR`, and the D059 staging/production S3
+prefixes. Preserve the production OAI and all unrelated bucket-policy
+statements, domains, DNS records, distributions, IAM permissions and bucket-wide
+settings. Scoped access grants needed by this website are authorized. Save
+before/after configuration evidence and prepare rollback. Stop for missing
+permissions, unresolved failures or a required out-of-scope change; do not
+broaden access or modify unrelated resources to work around a denial.
