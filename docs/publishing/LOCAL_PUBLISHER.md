@@ -6,15 +6,21 @@ see [the reduced access request](AWS_DEPLOYMENT_ACCESS_REQUEST.md). References
 below to required staging setup describe the earlier isolated-staging path.
 
 
-Status: runbook; offline-tested implementation. Repository publication commands
-have made no remote upload or site deployment. The separate 2026-09-08 audit
-observed existing production DNS/CloudFront setup. D074 authorizes the scoped
-initial deployment; missing AWS administrator setup/access and validation are
-the current execution blockers. Q5 and the remaining paper/final-review
-questions retain their stated scientific scope.
+Status: runbook; direct initial deployment authorized by D074. S3 access and
+CloudFront router publication/invalidation are verified. The v2 distribution's
+routing/cache update was accepted on 2026-09-08; scientific/site publication
+and live delivery acceptance are the current work. Q5 and final paper/scientific
+review questions retain their stated scope.
 
 Run these commands from the repository root with the locked builder environment.
-All publication commands default to offline validation/planning. `--apply`
+All publication commands default to offline validation/planning. For large
+releases, add `--transport sdk` and run the builder environment with
+`--extra scientific --extra test --locked`. The SDK reuses authenticated
+connections with up to 16 independent object operations per phase; CLI remains
+the default serial transport. Both implement the same checksum/conditional-write
+protocol. Reservations, phase boundaries, entry manifests, completion records
+and mutable index/catalog/site commits remain ordered. Failed parallel phases
+finish in-flight work and stop before exposing the next entry/commit. `--apply`
 requires an explicit temporary-credential profile and the exact environment
 prefix via `--confirm-root`. They create no infrastructure and delete nothing.
 Do not substitute `aws s3 sync` for these transactions.
@@ -42,6 +48,15 @@ release objects are addressable only by an exact staging URL and carry a
 distinct `_benchmark_publication.json` record. Fill the exact candidate and
 transaction placeholders in the staging benchmark IAM template from the
 offline plan before an authorized `--apply` run.
+
+For the approved direct-origin Q5 path, use `--direct-benchmark` with
+`--environment production`. This is restricted to candidate-ID
+`ephys_atlas_volumes` releases and writes only
+`datasets/ephys_atlas_volumes/benchmarks/<candidate-id>/`, plus private
+transaction/reservation objects. It cannot write ordinary release keys,
+dataset indexes, aliases or catalog entries. Its benchmark completion marker
+is not accepted by curator promotion. The existing `--staging-benchmark`
+remains staging-only; neither mode relabels a candidate as production data.
 
 ## 2. Publish validated projection and optional mesh packs
 
@@ -90,7 +105,13 @@ uv run --project builder --extra test --locked python -m tools.s3_catalog \
   --release <release-directory> --release <another-release-directory>
 ```
 
-Provide every release referenced by the configuration. Offline mode validates
+Provide every release referenced by the configuration. Catalog compilation may
+reuse historical, canonical Linux-built immutable releases; their builder commit
+need not equal the current curator commit. The operator still uses clean Linux
+`main`. Apply must match each historical graph against the remote ordinary
+publication record, index and every resource checksum/serving descriptor before
+writing a catalog. This exception is catalog-only: publishing new release bytes
+still requires exact current-HEAD/environment preflight. Offline mode validates
 local graphs and catalog structure, but explicitly does not claim to have
 checked remote publication or historical edition mappings. Apply mode verifies
 published completion records, indexes and every declared remote object's
@@ -182,7 +203,8 @@ before network access because multipart is not implemented.
 work. `tools/deployment/site-router.js` is the tested CloudFront viewer-request
 function: `/`, `/app`, and `/app/` become `/site/index.html`; that entry keeps
 the landing static at `/` and bootstraps the viewer at `/app/`. URL queries and
-data errors are preserved. It is not deployed. The incoming public routes and
+data errors are preserved. The function is published and the v2 distribution
+update has been accepted; live delivery verification remains required. The incoming public routes and
 direct site entry must not cache stale HTML; immutable build/pack/release
 behaviors can cache for one year. Production routing does not need legacy
 `/assets` or `/brand` rewrites because the build embeds its immutable base.

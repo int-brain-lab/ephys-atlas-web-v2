@@ -10,7 +10,8 @@ requires-python = ">=3.11"
 dependencies = []
 
 [project.optional-dependencies]
-test = ["pytest>=8"]
+test = ["pytest>=8", "boto3==1.43.75"]
+sdk = ["boto3==1.43.75", "botocore[crt]==1.43.75"]
 server = ["gunicorn>=23,<24"]
 
 [project.scripts]

@@ -1770,3 +1770,26 @@ public grant. No scientific data or site entry has been published. Evidence is
 under ignored `artifacts/deployment-direct-20260908/`. No further administrator
 request is currently needed; proceed with canonical builds and actual
 publication/delivery validation, retaining the existing scientific gates.
+
+
+### Direct benchmark and publication execution — 2026-09-08
+
+D074's direct-origin validation uses an explicit volume-only candidate
+namespace `production/datasets/ephys_atlas_volumes/benchmarks/<candidate-id>/`.
+It is public by exact URL for transport measurement, but has no ordinary release
+completion record, dataset index, alias or catalog entry. Candidates retain
+canonical Linux/current-commit preflight and full byte/graph validation. The
+staging-only benchmark flag stays staging-only. A measured transport is built
+again under a new immutable production release identity before catalog inclusion.
+
+The optional persistent SDK publisher implements the existing object-store
+protocol. Bounded independent transfers within a phase reuse connections;
+reservations, public entry manifests, completion records and mutable commits
+remain sequential barriers. This changes transport efficiency, not scientific
+artifacts, integrity checks or publication semantics. CLI remains available.
+
+The actual production distribution update uses its existing distribution-local
+TTL fields (zero for mutable entries, up to one year for immutable assets),
+with compression disabled and the tested LIVE router. No cache policy, OAI,
+bucket policy, DNS or certificate was created or changed. Saved configuration
+evidence is in ignored `artifacts/deployment-live-20260908/`.

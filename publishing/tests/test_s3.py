@@ -13,6 +13,7 @@ from ibl_ephys_atlas_publish.s3 import (
     AwsCliStore,
     Destination,
     checksum,
+    publish_direct_benchmark,
     publish_release,
     publish_staging_benchmark,
     release_plan,
@@ -60,6 +61,19 @@ def release(tmp_path):
 
 
 @pytest.fixture
+def direct_benchmark_release(tmp_path):
+    root = tmp_path / "2026_W26-candidate-depth4"
+    root.mkdir()
+    (root / "manifest.json").write_text(
+        json.dumps({"dataset_id": "ephys_atlas_volumes", "release": {"release_id": root.name}})
+    )
+    (root / "slice.isvg.gz").write_bytes(b"opaque synthetic direct candidate bytes")
+    destination = Destination("production")
+    plan = release_plan(root, destination, ["manifest.json", "slice.isvg.gz"], [])
+    return root, destination, plan
+
+
+@pytest.fixture
 def benchmark_release(tmp_path):
     root = tmp_path / "r1-candidate-depth4"
     root.mkdir()
@@ -94,6 +108,54 @@ def test_stage_before_immutable_manifest_and_index_last_with_idempotent_resume(r
     index, _ = store.get_json(store.writes[-1])
     assert index["releases"] == [{"release_id": "r1"}]
     assert index["aliases"] == {"latest": "r1"}
+
+
+def test_direct_benchmark_uses_production_benchmark_namespace_only(direct_benchmark_release):
+    root, destination, plan = direct_benchmark_release
+    store = FakeS3()
+    result = publish_direct_benchmark(root, destination, plan, store)
+    assert result["publication_scope"] == "direct-origin-benchmark"
+    assert result["dataset_index_changed"] is False
+    assert result["catalog_changed"] is False
+    assert store.get_json(destination.key("datasets/ephys_atlas_volumes/index.json")) is None
+    assert store.get_json(destination.key("catalog.json")) is None
+    assert not any("/releases/" in key for key in store.writes)
+    public = [key for key in store.writes if "/_staging/" not in key]
+    assert all(key.startswith(destination.root + "datasets/ephys_atlas_volumes/benchmarks/") for key in public)
+    assert public[-2].endswith("/manifest.json")
+    assert public[-1].endswith("/_benchmark_publication.json")
+    completion = store.get_json(result["completion_key"])
+    assert completion[0]["publication_scope"] == "direct-origin-benchmark"
+    count = len(store.writes)
+    publish_direct_benchmark(root, destination, plan, store)
+    assert len(store.writes) == count
+
+
+def test_direct_benchmark_rejects_staging_alias_nonvolume_and_non_candidate(direct_benchmark_release):
+    root, destination, plan = direct_benchmark_release
+    store = FakeS3()
+    staging = Destination("staging")
+    staging_plan = release_plan(root, staging, ["manifest.json", "slice.isvg.gz"], [])
+    with pytest.raises(ValidationError, match="restricted to production"):
+        publish_direct_benchmark(root, staging, staging_plan, store)
+    aliased = release_plan(root, destination, ["manifest.json", "slice.isvg.gz"], ["latest"])
+    with pytest.raises(ValidationError, match="aliases"):
+        publish_direct_benchmark(root, destination, aliased, store)
+    (root / "manifest.json").write_text(
+        json.dumps({"dataset_id": "channels", "release": {"release_id": root.name}})
+    )
+    nonvolume = release_plan(root, destination, ["manifest.json", "slice.isvg.gz"], [])
+    with pytest.raises(ValidationError, match="ephys_atlas_volumes"):
+        publish_direct_benchmark(root, destination, nonvolume, store)
+    (root / "manifest.json").write_text(
+        json.dumps({"dataset_id": "ephys_atlas_volumes", "release": {"release_id": "ordinary-v1"}})
+    )
+    ordinary = root.with_name("ordinary-v1")
+    root.rename(ordinary)
+    noncandidate = release_plan(ordinary, destination, ["manifest.json", "slice.isvg.gz"], [])
+    with pytest.raises(ValidationError, match="candidate identity"):
+        publish_direct_benchmark(ordinary, destination, noncandidate, store)
+    assert store.writes == []
 
 
 def test_staging_benchmark_is_direct_only_and_cannot_be_curated(benchmark_release):

@@ -16,6 +16,7 @@ from typing import Any, Protocol
 
 from .client import file_info
 from .core import Conflict, ValidationError, _id, _relpath
+from .s3_transfer import run_independent
 
 BUCKET = "ibl-brain-wide-map-private"
 PREFIX = "aggregates/atlas/ephys-atlas-web-v2"
@@ -235,13 +236,17 @@ def publish_release(root: Path, destination: Destination, plan: dict, store: Obj
         descriptor = {**file_info(metadata), "content_type": "application/json"}
         _create_verified(store, destination.key(f"_staging/releases/{dataset}/{release}.json"),
                          metadata, descriptor, MUTABLE_CACHE)
-        for artifact in plan["artifacts"]:
-            _create_verified(store, destination.key(f"_staging/{plan['transaction_id']}/{artifact['path']}"),
-                             root / artifact["path"], artifact, MUTABLE_CACHE)
+        run_independent(store, lambda artifact: _create_verified(
+            store, destination.key(f"_staging/{plan['transaction_id']}/{artifact['path']}"),
+            root / artifact["path"], artifact, MUTABLE_CACHE), plan["artifacts"])
         # No manifest is exposed until every dependency is verified remotely.
-        for artifact in sorted(plan["artifacts"], key=lambda item: item["path"] == "manifest.json"):
-            _create_verified(store, destination.key(prefix + artifact["path"]),
-                             root / artifact["path"], artifact, IMMUTABLE_CACHE)
+        run_independent(store, lambda artifact: _create_verified(
+            store, destination.key(prefix + artifact["path"]),
+            root / artifact["path"], artifact, IMMUTABLE_CACHE),
+            (artifact for artifact in plan["artifacts"] if artifact["path"] != "manifest.json"))
+        manifest = next(artifact for artifact in plan["artifacts"] if artifact["path"] == "manifest.json")
+        _create_verified(store, destination.key(prefix + manifest["path"]),
+                         root / manifest["path"], manifest, IMMUTABLE_CACHE)
         _create_verified(store, destination.root + prefix + "_publication.json",
                          metadata, descriptor, IMMUTABLE_CACHE)
         if not any(item.get("release_id") == release for item in index["releases"]):
@@ -257,6 +262,68 @@ def publish_release(root: Path, destination: Destination, plan: dict, store: Obj
         _verify_head(head, {**file_info(metadata), "content_type": "application/json"}, MUTABLE_CACHE, index_key)
     return {"dataset_id": dataset, "release_id": release, "transaction_id": plan["transaction_id"],
             "index_key": index_key, "catalog_changed": False}
+
+
+def publish_direct_benchmark(root: Path, destination: Destination, plan: dict,
+                             store: ObjectStore) -> dict:
+    """Deliver the Q5 volume candidate at the existing production origin only.
+
+    This uses a distinct benchmark namespace, never a dataset release identity,
+    so the ordinary index and catalog promotion paths cannot discover it.
+    """
+    if destination.environment != "production":
+        raise ValidationError("direct benchmark publication is restricted to production")
+    if plan != release_plan(root, destination, [a["path"] for a in plan["artifacts"]], []):
+        raise ValidationError("direct benchmark snapshot, aliases or destination differ from plan")
+    dataset, release = plan["dataset_id"], plan["release_id"]
+    if dataset != "ephys_atlas_volumes":
+        raise ValidationError("direct benchmark is restricted to ephys_atlas_volumes")
+    lowered = release.lower()
+    if "candidate" not in lowered:
+        raise ValidationError("direct benchmark release_id must retain its candidate identity")
+    if any(marker in lowered for marker in ("local-preview", "local-rebuild")):
+        raise ValidationError("local preview and rebuild releases are not direct benchmarks")
+    prefix = f"datasets/{dataset}/benchmarks/{release}/"
+    publication = {
+        "publication_scope": "direct-origin-benchmark",
+        "dataset_id": dataset,
+        "release_id": release,
+        "transaction_id": plan["transaction_id"],
+        "artifacts": plan["artifacts"],
+    }
+    with tempfile.TemporaryDirectory(prefix="atlas-s3-direct-benchmark-") as temporary:
+        metadata = Path(temporary) / "publication.json"
+        metadata.write_bytes(json_bytes(publication))
+        descriptor = {**file_info(metadata), "content_type": "application/json"}
+        _create_verified(
+            store,
+            destination.key(f"_staging/benchmarks/{dataset}/{release}.json"),
+            metadata,
+            descriptor,
+            MUTABLE_CACHE,
+        )
+        run_independent(store, lambda artifact: _create_verified(
+            store, destination.key(f"_staging/{plan['transaction_id']}/{artifact['path']}"),
+            root / artifact["path"], artifact, MUTABLE_CACHE), plan["artifacts"])
+        run_independent(store, lambda artifact: _create_verified(
+            store, destination.key(prefix + artifact["path"]),
+            root / artifact["path"], artifact, IMMUTABLE_CACHE),
+            (artifact for artifact in plan["artifacts"] if artifact["path"] != "manifest.json"))
+        manifest = next(artifact for artifact in plan["artifacts"] if artifact["path"] == "manifest.json")
+        _create_verified(store, destination.key(prefix + manifest["path"]),
+                         root / manifest["path"], manifest, IMMUTABLE_CACHE)
+        completion_key = destination.key(prefix + "_benchmark_publication.json")
+        _create_verified(store, completion_key, metadata, descriptor, IMMUTABLE_CACHE)
+    return {
+        "dataset_id": dataset,
+        "release_id": release,
+        "transaction_id": plan["transaction_id"],
+        "completion_key": completion_key,
+        "dataset_index_changed": False,
+        "catalog_changed": False,
+        "publication_scope": "direct-origin-benchmark",
+    }
+
 
 
 def publish_staging_benchmark(root: Path, destination: Destination, plan: dict,
@@ -296,22 +363,16 @@ def publish_staging_benchmark(root: Path, destination: Destination, plan: dict,
             descriptor,
             MUTABLE_CACHE,
         )
-        for artifact in plan["artifacts"]:
-            _create_verified(
-                store,
-                destination.key(f"_staging/{plan['transaction_id']}/{artifact['path']}"),
-                root / artifact["path"],
-                artifact,
-                MUTABLE_CACHE,
-            )
-        for artifact in sorted(plan["artifacts"], key=lambda item: item["path"] == "manifest.json"):
-            _create_verified(
-                store,
-                destination.key(prefix + artifact["path"]),
-                root / artifact["path"],
-                artifact,
-                IMMUTABLE_CACHE,
-            )
+        run_independent(store, lambda artifact: _create_verified(
+            store, destination.key(f"_staging/{plan['transaction_id']}/{artifact['path']}"),
+            root / artifact["path"], artifact, MUTABLE_CACHE), plan["artifacts"])
+        run_independent(store, lambda artifact: _create_verified(
+            store, destination.key(prefix + artifact["path"]),
+            root / artifact["path"], artifact, IMMUTABLE_CACHE),
+            (artifact for artifact in plan["artifacts"] if artifact["path"] != "manifest.json"))
+        manifest = next(artifact for artifact in plan["artifacts"] if artifact["path"] == "manifest.json")
+        _create_verified(store, destination.key(prefix + manifest["path"]),
+                         root / manifest["path"], manifest, IMMUTABLE_CACHE)
         completion_key = destination.key(prefix + "_benchmark_publication.json")
         _create_verified(store, completion_key, metadata, descriptor, IMMUTABLE_CACHE)
     return {

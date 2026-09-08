@@ -8,6 +8,7 @@ import re
 import tempfile
 import uuid
 
+from .s3_transfer import run_independent
 from .client import file_info
 from .core import PublicationStore, ValidationError, atomic_json
 from .s3 import (Destination, ObjectStore, IMMUTABLE_CACHE, MUTABLE_CACHE,
@@ -89,7 +90,7 @@ def promote_catalog(config: dict, releases: list[tuple[Path, dict]], destination
                     "transaction_id": plan["transaction_id"], "artifacts": plan["artifacts"]}
         if publication is None or publication[0] != expected:
             raise ValidationError(f"release is incomplete or differs from local snapshot: {dataset}/{release}")
-        for artifact in plan["artifacts"]:
+        def verify_artifact(artifact):
             if file_info(root / artifact["path"]) != {k: artifact[k] for k in ("size", "sha256")}:
                 raise ValidationError("local release changed during catalog promotion")
             key = destination.key(prefix + artifact["path"])
@@ -97,6 +98,7 @@ def promote_catalog(config: dict, releases: list[tuple[Path, dict]], destination
             if head is None:
                 raise ValidationError(f"published dependency is absent: {key}")
             _verify_head(head, artifact, IMMUTABLE_CACHE, key)
+        run_independent(store, verify_artifact, plan["artifacts"])
     catalog, updated_history = compile_catalog(config, releases, indexes=indexes, history=history, previous=previous)
     catalog["publication_id"] = uuid.uuid4().hex
     validate_catalog(catalog)

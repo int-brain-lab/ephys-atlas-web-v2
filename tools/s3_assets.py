@@ -11,11 +11,11 @@ import tempfile
 
 from ephys_atlas_builder.build_environment import build_environment
 from tools.release_preflight import repository_state
-from tools.s3_publish import REPOSITORY
+from tools.s3_publish import REPOSITORY, publication_store
 from tools.mesh_pack.validate import validate_pack
 from tools.projection_pack.build import validate_projection_pack
 from ibl_ephys_atlas_publish.core import PublishingError
-from ibl_ephys_atlas_publish.s3 import AwsCliStore, Destination
+from ibl_ephys_atlas_publish.s3 import Destination
 from ibl_ephys_atlas_publish.s3_assets import asset_plan, publish_assets
 
 
@@ -74,6 +74,7 @@ def main(argv=None):
     parser.add_argument("--environment", choices=("staging", "production"), required=True)
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--profile")
+    parser.add_argument("--transport", choices=("cli", "sdk"), default="cli")
     parser.add_argument("--confirm-root")
     args = parser.parse_args(argv)
     destination = Destination(args.environment)
@@ -84,7 +85,13 @@ def main(argv=None):
             identity, files, dependencies = validate_asset(root, args.kind)
             plan = asset_plan(root, destination, args.kind, identity, files, dependencies)
             if args.apply:
-                result = publish_assets(root, destination, plan, AwsCliStore(destination, args.profile))
+                store = publication_store(destination, args.profile, args.transport)
+                try:
+                    result = publish_assets(root, destination, plan, store)
+                finally:
+                    close = getattr(store, "close", None)
+                    if close is not None:
+                        close()
             else:
                 result = {"mode": "offline-plan", **plan}
             print(json.dumps(result, indent=2))

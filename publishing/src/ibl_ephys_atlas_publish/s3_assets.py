@@ -6,6 +6,7 @@ from pathlib import Path
 import tempfile
 import uuid
 
+from .s3_transfer import run_independent
 from .client import file_info
 from .core import ValidationError, _id, _relpath
 from .s3 import (Destination, ObjectStore, MAX_OBJECT_BYTES, IMMUTABLE_CACHE,
@@ -63,12 +64,16 @@ def publish_assets(root: Path, destination: Destination, plan: dict, store: Obje
         descriptor = {**file_info(path), "content_type": "application/json"}
         _create_verified(store, destination.key(f"_staging/assets/{plan['kind']}/{plan['identity']}.json"),
                          path, descriptor, IMMUTABLE_CACHE)
-        for artifact in plan["artifacts"]:
-            _create_verified(store, destination.key(f"_staging/{plan['transaction_id']}/{artifact['path']}"),
-                             root / artifact["path"], artifact, MUTABLE_CACHE)
-        for artifact in sorted(plan["artifacts"], key=lambda a: a["path"] == plan["entry"]):
-            _create_verified(store, destination.key(plan["prefix"] + artifact["path"]),
-                             root / artifact["path"], artifact, IMMUTABLE_CACHE)
+        run_independent(store, lambda artifact: _create_verified(
+            store, destination.key(f"_staging/{plan['transaction_id']}/{artifact['path']}"),
+            root / artifact["path"], artifact, MUTABLE_CACHE), plan["artifacts"])
+        run_independent(store, lambda artifact: _create_verified(
+            store, destination.key(plan["prefix"] + artifact["path"]),
+            root / artifact["path"], artifact, IMMUTABLE_CACHE),
+            (a for a in plan["artifacts"] if a["path"] != plan["entry"]))
+        entry = next(a for a in plan["artifacts"] if a["path"] == plan["entry"])
+        _create_verified(store, destination.key(plan["prefix"] + entry["path"]),
+                         root / entry["path"], entry, IMMUTABLE_CACHE)
         _create_verified(store, destination.key(plan["prefix"] + "_publication.json"), path, descriptor, IMMUTABLE_CACHE)
         if plan["kind"] == "site":
             # A unique HTML comment prevents an A→B→A ETag reuse on rollback.

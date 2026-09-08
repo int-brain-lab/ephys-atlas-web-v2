@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -89,6 +90,65 @@ def check_release(
     )
     if any(marker in release_id.lower() for marker in ("candidate", "local-preview", "local-rebuild")):
         errors.append("candidate and local release identifiers cannot be published")
+    if errors:
+        raise PreflightError("; ".join(errors))
+
+
+def check_catalog_release(
+    release_dir: Path,
+    *,
+    repo: RepositoryState,
+    host_os: str,
+) -> None:
+    """Validate an immutable historical release for curator compilation only.
+
+    Remote catalog promotion separately proves the complete, ordinary release
+    publication record and every artifact at the selected destination. The
+    operator remains on clean Linux main; the recorded canonical builder commit
+    and environment may be historical rather than equal to the current host.
+    """
+    validate_release(release_dir)
+    manifest = json.loads((release_dir / "manifest.json").read_text())
+    release = manifest["release"]
+    release_id = release["release_id"]
+    builder = manifest["provenance"]["builder"]
+    environment = builder.get("environment")
+    errors: list[str] = []
+    if host_os.lower() != "linux":
+        errors.append("catalog promotion must run on Linux")
+    if repo.branch != "main":
+        errors.append(f"catalog promotion requires main, found {repo.branch!r}")
+    if not repo.clean:
+        errors.append("catalog promotion requires a clean tracked worktree")
+    if release_dir.name != release_id:
+        errors.append("release directory name must equal manifest release_id")
+    if not release.get("immutable"):
+        errors.append("release must be immutable")
+    if (
+        not isinstance(builder.get("commit"), str)
+        or not re.fullmatch(r"[0-9a-f]{40}", builder["commit"])
+    ):
+        errors.append("release requires a canonical 40-character builder commit")
+    expected_environment = set(build_environment())
+    if (
+        not isinstance(environment, dict)
+        or set(environment) != expected_environment
+        or any(
+            not isinstance(environment.get(key), str) or not environment[key]
+            for key in expected_environment
+        )
+        or environment.get("operating_system") != "linux"
+    ):
+        errors.append("release requires complete canonical Linux builder environment provenance")
+    if any(
+        marker in release_id.lower()
+        for marker in ("candidate", "local-preview", "local-rebuild")
+    ):
+        errors.append("candidate and local release identifiers cannot enter a curator catalog")
+    for source in manifest["provenance"]["sources"]:
+        if source.get("release") in {"latest", "current"}:
+            errors.append("provenance sources must resolve mutable aliases to immutable IDs")
+            break
     if errors:
         raise PreflightError("; ".join(errors))
 
