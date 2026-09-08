@@ -374,6 +374,11 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
   }
 
   private enqueueEncodedPrefetch(entry: IndexedPack, priority: number): Promise<void> {
+    // A visible pack has already passed integrity verification and scheduled
+    // encoded cache admission. Do not race that asynchronous admission with a
+    // second network read during the first background pass.
+    const loaded = this.loadedPacks.get(entry.pack_id);
+    if (loaded) return loaded;
     const existing = this.prefetchedPacks.get(entry.pack_id);
     if (existing) return existing;
     const pending = this.enqueue(entry.pack_id, priority, async () => {

@@ -166,6 +166,7 @@ test('visible anatomy renders before progressive packs and persists the warmup',
     const cache = await caches.open('ibl-ephys-atlas-schema-v1-verified');
     return (await cache.keys()).filter((request) => request.url.includes('/registered/') && request.url.endsWith('.isvg.gz')).length;
   })).toBe(52);
+  expect(packRequests).toHaveLength(52);
   packRequests.length = 0;
   await page.reload();
   await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
