@@ -17,39 +17,24 @@ macOS is a preview host. `just data-refresh-local` verifies whether upstream
 channel/cluster `latest` aliases still match the reviewed releases and stops if
 new scientific review is needed.
 
-The launch path is constrained by Q8, then Q5, Q2, and Q9.
+The initial IBL review website is live. Finish Q5 volume measurements and
+publication, then record final live acceptance. Q2/Q9 concern a later paper
+freeze and do not block the authorized initial deployment.
 
 ## M6 — Finish staging and publication machinery
 
-Status: active; release preflight, S3 dataset-release and curator catalog/edition
-transactions, validated pack/site publication and the isolated site build are
-implemented with offline tests. Remote infrastructure and staging evidence
-remain incomplete. The 2026-09-08 authenticated audit confirms the production
-distribution, DNS/TLS, private bucket and narrowed OAI grant; isolated staging
-and publisher write authorization remain unverified.
-
-AWS access for the direct deployment path is now verified sufficiently to
-proceed: router creation/read/test/publication and invalidation succeeded;
-conditional distribution/function updates reached ETag validation. Equivalent
-GetDistribution/GetFunction reads supply configuration/code and ETags despite
-two denied convenience APIs. S3 private write/readback/update succeeded. No
-further administrator request is currently required. The published router is
-unattached; data/site deployment and actual distribution update remain pending.
+Status: publication machinery and initial direct deployment complete. The
+production router/cache configuration is deployed, four scientific releases
+and both anatomy packs are public, and the approved landing/viewer is live.
+Actual HTTPS byte hashes, MIME, Range, cache and private-prefix denial checks
+passed. No separate staging identity or further administrator request is needed.
 
 Next actions:
 
-1. Use the verified existing-site access and published router. Preserve the
-   OAI, origin, DNS, certificate and bucket settings; no staging identity or
-   distribution is required. Use distribution-local cache settings.
-2. Rebuild/preflight the approved initial releases and packs on clean Linux
-   `main` at the publication commit. The complete earlier build and eight offline
-   publication plans passed at `9e8d116`; later commits require fresh provenance.
-3. Publish approved immutable data, promote the catalog, and build/publish the
-   landing/viewer against actual dependency hashes. Apply reviewed routing/cache
-   settings to the existing atlas distribution with fresh ETag and rollback evidence.
-4. Record actual served-byte SHA-256, MIME, Range, cache, private-prefix denial
-   and desktop/mobile browser evidence before wider promotion.
-5. Create a development-bundle descriptor with exact immutable HTTPS sources
+1. Finish volume publication and live browser acceptance below.
+2. Preserve the OAI, origin, DNS, certificate and bucket settings during future
+   deployments; use the validated publisher and retain immutable history.
+3. Create a development-bundle descriptor with exact immutable HTTPS sources
    and prove `just data` from a clean checkout.
 
 Runbook: [S3 deployment](publishing/S3_DEPLOYMENT.md). Acceptance:
@@ -57,23 +42,14 @@ Runbook: [S3 deployment](publishing/S3_DEPLOYMENT.md). Acceptance:
 
 ## M2 — Confirm and build the production volume release
 
-Status: blocked by Q5, which depends on working Q8 CloudFront delivery. D043 already
-fixes W26 geometry and validity; local evidence favors depth-four orthogonal
-slice packs.
+Status: D075 resolves Q5. The real CloudFront actual-slider matrix passes all
+180 trials and the 41-feature correctness sweep. Depth-four packs are selected.
 
-For the direct first-deployment path, first implement and test a non-catalogued
-benchmark delivery mode at the existing origin. Preserve ordinary production
-release guards; the current benchmark mode is staging-only.
-
-The earlier isolated-staging alternative remains:
-
-1. Use the implemented staging-only candidate publication path:
-   preserve candidate IDs and keep candidates out of production and
-   curator defaults. Then repeat depth-four measurements at the real origin, recording requests,
-   bytes, decode/interaction latency, and memory.
-2. Resolve Q5 from that evidence.
-3. Build a new immutable W26 release on clean Linux `main`, run production
-   preflight, stage it, and repeat linked-slice acceptance.
+1. Build the new W26 production release on clean Linux `main` with D075 committed.
+2. Run production preflight and compare every numeric resource with the reviewed
+   source-derived candidate.
+3. Publish the immutable release and promote the new project edition without
+   remapping the exposed v1 edition; verify production catalog/slider/deep links.
 
 Never generalize D043 beyond the pinned W26 source. Evidence and procedure:
 [`data/VOLUME_2026_W26_EVIDENCE.md`](data/VOLUME_2026_W26_EVIDENCE.md).
@@ -101,7 +77,8 @@ Dataset authority: [`data/README.md`](data/README.md). Acceptance:
 
 ## M7 — Final release QA
 
-Status: blocked until the production origin, releases, and defaults exist.
+Status: initial live QA in progress; production origin, four initial releases
+and defaults exist. Finish the volume lane before declaring the full set deployed.
 
 Run from the release commit on Linux:
 

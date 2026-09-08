@@ -1,6 +1,15 @@
 # Encoding-volume `2026_W26` source and transport evidence
 
-Status: frozen evidence supporting D043 and the provisional Q5 recommendation.
+Status: frozen evidence supporting D043 and the D075 production transport selection.
+
+## Production-origin confirmation — 2026-09-08
+
+D075 closes Q5 using the [frozen real CloudFront benchmark](../../benchmarks/rendering/volume-origin-20260908/README.md).
+All 180 actual-slider trials passed the request, byte, memory-contract and
+latency gates; all 41 features rendered, with zero in-pack requests and exactly
+one boundary request. The owner retains depth-four orthogonal slice packs.
+The earlier local results below remain historical evidence. They do not replace
+the origin measurement or authorize relabelling a candidate as production.
 
 ## Scope
 

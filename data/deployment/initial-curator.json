@@ -7,10 +7,11 @@
       "title": "Ephys Atlas",
       "dataset_ids": [
         "ephys_atlas_channels",
-        "ephys_atlas_clusters"
+        "ephys_atlas_clusters",
+        "ephys_atlas_volumes"
       ],
       "default_dataset": "ephys_atlas_channels",
-      "default_edition": "ibl-review-20260908-v1",
+      "default_edition": "ibl-review-20260908-v2",
       "editions": [
         {
           "edition_id": "ibl-review-20260908-v1",
@@ -23,6 +24,24 @@
             {
               "dataset_id": "ephys_atlas_clusters",
               "release_id": "sha256-9b5e55215b306f26-ibl-review-20260908-v1"
+            }
+          ]
+        },
+        {
+          "edition_id": "ibl-review-20260908-v2",
+          "label": "September 2026 (with volumes)",
+          "dataset_releases": [
+            {
+              "dataset_id": "ephys_atlas_channels",
+              "release_id": "2026_W32-ibl-review-20260908-v1"
+            },
+            {
+              "dataset_id": "ephys_atlas_clusters",
+              "release_id": "sha256-9b5e55215b306f26-ibl-review-20260908-v1"
+            },
+            {
+              "dataset_id": "ephys_atlas_volumes",
+              "release_id": "2026_W26-ibl-review-20260908-v1"
             }
           ]
         }
@@ -91,6 +110,17 @@
         {
           "release_id": "sha256-9b5e55215b306f26-ibl-review-20260908-v1",
           "label": "Frozen cluster snapshot"
+        }
+      ]
+    },
+    {
+      "dataset_id": "ephys_atlas_volumes",
+      "title": "Volumes",
+      "default_release": "2026_W26-ibl-review-20260908-v1",
+      "releases": [
+        {
+          "release_id": "2026_W26-ibl-review-20260908-v1",
+          "label": "2026 W26"
         }
       ]
     },

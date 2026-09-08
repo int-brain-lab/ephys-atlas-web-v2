@@ -1,8 +1,8 @@
 # Integration status
 
-Status: active pre-launch capability matrix.
+Status: active initial-deployment capability matrix.
 
-Last updated: 2026-09-07 on `main` for D070 approved Native anatomy and the v5 local bundle.
+Last updated: 2026-09-08 on `main` for the live initial IBL review deployment.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -14,11 +14,11 @@ completed implementation diaries.
 | --- | --- | --- | --- |
 | Release contract | Schema v1 is the sole builder, browser HTTP/local, publishing, fixture, and download contract; no v0.1 adapters remain. | Cross-language valid/invalid corpus and deterministic golden fixture are green. | None for contract machinery. |
 | Browser boundaries | `core/domain`, `application`, `data`, `rendering`, and `ui` dependencies point inward; catalog IDs and feature catalogs remain open/data-driven. | Architecture tests are green; the [frontend lifecycle audit](FRONTEND_LIFECYCLE_AUDIT.md) records race fixes and bounded follow-ups. | None for current launch behavior. |
-| 2-D workspace | One retained `ProjectionViewport` per registered frame composites scalar Canvas, regional SVG, guides, interaction, and errors. Top/Swanson use affine-free retained static viewports. Bounded, locally persisted desktop pane resizing/collapse gives space back to the retained workspace without changing share URLs or mobile drawers. | Production projection pack and responsive pane/keyboard Chromium coverage are green. | Deploy and verify immutable bytes at the Q8 origin. |
-| Scientific navigation | One URL-v4 ML/AP/DV cursor drives the native bilateral 10 µm grid; sparse 80 µm SVG sampling changes display only. | Parent/sparse/projection-pack validation and performance evidence are complete. | Production-origin delivery verification. |
-| Optional 3-D context | A sibling retained Three.js viewport shares regional presentation/selection and owns camera, explode, GPU lifecycle, and failure isolation. Volume features remain anatomy-only in 3-D. | D042 real pack is losslessly repackaged; Chromium plus owner Safari/Firefox review passed. The D066/D068 real native review-only pack preserves 966,645 triangles in 1,140 components. The standalone lab compares Native / Old cut and directly opens 12 flagged components. | D070 owner approval closes Q18 and selects the exact native movements/boundary. The approved pack is the v5 bundle's default; lazy loading, retained shared presentation/OIT and all five local datasets pass real-site Chromium checks. D042 cut/cap remains rollback evidence. Normal-view label is implemented; optional public deployment remains separate and not launch-blocking. |
-| Integrity/cache | Encoded resources are byte-size/SHA verified before persistent admission; corrupt entries are evicted/retried; decoded identity includes hash plus decode contract. | HTTP/local/mesh/projection/volume tests are green. | Verify final CDN headers and cache behavior. |
-| Release environments | Builders record OS, machine, Python, and NumPy. Production preflight requires Linux, clean `main`, exact HEAD provenance, immutable IDs, and a fully valid release graph. macOS real-data catalogs are labelled Local. | Deterministic preflight tests and complete local-bundle validation are green. S3 release planning/apply invoke the same preflight on a private snapshot. | Q8 remote staging evidence. |
+| 2-D workspace | One retained `ProjectionViewport` per registered frame composites scalar Canvas, regional SVG, guides, interaction, and errors. Top/Swanson use affine-free retained static viewports. Bounded, locally persisted desktop pane resizing/collapse gives space back to the retained workspace without changing share URLs or mobile drawers. | Production projection pack and responsive pane/keyboard Chromium coverage are green. | Published; HTTPS hashes and live Chromium/Firefox workflows verified. |
+| Scientific navigation | One URL-v4 ML/AP/DV cursor drives the native bilateral 10 µm grid; sparse 80 µm SVG sampling changes display only. | Parent/sparse/projection-pack validation and performance evidence are complete. | Production-origin delivery verified. |
+| Optional 3-D context | A sibling retained Three.js viewport shares regional presentation/selection and owns camera, explode, GPU lifecycle, and failure isolation. Volume features remain anatomy-only in 3-D. | D042 real pack is losslessly repackaged; Chromium plus owner Safari/Firefox review passed. The D066/D068 real native review-only pack preserves 966,645 triangles in 1,140 components. The standalone lab compares Native / Old cut and directly opens 12 flagged components. | D070 owner approval closes Q18 and selects the exact native movements/boundary. The approved pack is the v5 bundle's default; lazy loading, retained shared presentation/OIT and all five local datasets pass real-site Chromium checks. D042 cut/cap remains rollback evidence. Normal-view label is implemented; the D070 pack is published and the live Chromium 3-D check passes. |
+| Integrity/cache | Encoded resources are byte-size/SHA verified before persistent admission; corrupt entries are evicted/retried; decoded identity includes hash plus decode contract. | HTTP/local/mesh/projection/volume tests are green. | Opaque gzip, immutable cache, Range and denial behavior verified at CloudFront. |
+| Release environments | Builders record OS, machine, Python, and NumPy. Production preflight requires Linux, clean `main`, exact HEAD provenance, immutable IDs, and a fully valid release graph. macOS real-data catalogs are labelled Local. | Deterministic preflight tests and complete local-bundle validation are green. S3 release planning/apply invoke the same preflight on a private snapshot. | Initial direct production transactions verified under D074. |
 
 Stable boundaries and end-to-end flow are in
 [`SYSTEM_OVERVIEW.md`](SYSTEM_OVERVIEW.md) and
@@ -34,10 +34,10 @@ pass; D070 records owner acceptance and waives additional Firefox/Safari review 
 
 | Dataset | Builder and browser machinery | Current real artifact maturity | Blocker/next action |
 | --- | --- | --- | --- |
-| `ephys_atlas_channels` | Dynamic raw/denoised discovery, explicit `inside` recipe, Allen/Beryl/Cosmos summaries, D050 distributions, provenance, HTTP acceptance. | D054-reviewed, deterministic validated-real-local technical revision `2026_W32-d050-q14-v1`; not paper-facing or published. | Q2 paper vintage; Q8 staging origin. Keep release/suite reproducible. |
-| `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048/D054 presentation, D050 distributions, HTTP acceptance. | D054-reviewed, deterministic validated-real-local technical revision `sha256-9b5e55215b306f26-d050-d048-q14-v1`; not published. | Q8 staging delivery and clean D074 release build. |
-| `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | D054-reviewed, deterministic validated-real-local technical revision `legacy-v1-1d908bea-d050-q14-linear-full-v1`, rebuilt from all six exact hash-pinned Parquets; not published. | Q8 staging delivery and clean D074 release build. |
-| `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | D054-reviewed, validated-real-local depth-4 deterministic technical revision `2026_W26-candidate-depth4-d050-q14-linear-full-v1`; explicitly non-production. | Q5 confirmation at the Q8 CloudFront origin, then immutable production build. |
+| `ephys_atlas_channels` | Dynamic raw/denoised discovery, explicit `inside` recipe, Allen/Beryl/Cosmos summaries, D050 distributions, provenance, HTTP acceptance. | Published `2026_W32-ibl-review-20260908-v1` from the reviewed recipe; not the final paper freeze. | Q2 paper vintage remains separate; initial live browsing passed. |
+| `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048/D054 presentation, D050 distributions, HTTP acceptance. | Published `sha256-9b5e55215b306f26-ibl-review-20260908-v1` from the frozen source. | Initial live browsing passed. |
+| `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | Published `legacy-v1-1d908bea-ibl-review-20260908-v1` from all six exact hash-pinned Parquets. | Initial live browsing passed. |
+| `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | Direct-origin benchmark `2026_W26-candidate-depth4-20260908-v1` is public by exact benchmark URL, outside the catalog. | D075 measurement passed; next is the new immutable production release. |
 | `local` | Same schema-v1 graph and materializers; public regional and explicit-grid volume `ibl_ephys_atlas` authoring; deterministic validated ZIP packaging; strict bounded two-phase browser import, atomic IndexedDB admission/deletion, inventory, and integrity recovery. | Real regional and 467 MiB/6,807-entry volume archives pass Chromium, Firefox, and native Safari import/reload checks; near-1 GiB and 20,000-entry boundaries pass Chromium/Firefox; adversarial, cancellation, quota, rollback, reload, delete, and recovery regressions are recorded. | Supported capacity remains provisional pending native-Safari quota/RSS and representative end-user-device evidence; publish the Python distribution only after authorization. |
 
 Dataset source, recipe, selection, release, and audit ownership is indexed by
@@ -51,7 +51,7 @@ D069 now adds the [main-website AGEA local preview](data/AGEA_LOCAL_PREVIEW.md):
 4,345 original experiments, shared schema-v1 metadata-bundle HTTP/local-validation
 support, fully scrollable virtualized feature search, linked anatomy, and 64 MiB/256
 entry verified caching with quota fallback. Real-data Chromium tests pass;
-D074 authorizes initial deployment of this recipe; registration remains
+D074-authorized `agea-original-20260908-v1` is now published; registration remains
 provisional and final scientific acceptance remains Q19.
 Compact virtual rows, deferred bounded cache admission, recent decoded-source
 reuse, stride-based decoding and retained anatomy-tree rows reduce gene-switch
@@ -91,8 +91,8 @@ tails. D053 preserves off-scale color bounds without clamping. D054 closes Q14
 with complete owner-reviewed selections for all 155 feature/representation
 entries, retaining D052 and D048 exactly. Four new immutable D054-bound
 releases pass complete graph validation, byte-identical rebuilds,
-dataset-specific Chromium acceptance, and integrated v4 bundle validation; no
-remote publication occurred. See
+dataset-specific Chromium acceptance, and integrated v4 bundle validation; the reviewed recipes have since been rebuilt and published for the D074 initial
+deployment (volumes await Q5). See
 [`data/DISTRIBUTION_AUDIT_EVIDENCE.md`](data/DISTRIBUTION_AUDIT_EVIDENCE.md).
 
 The bounded D057 presentation follow-ups are implemented. Regional standard
@@ -118,8 +118,8 @@ diagnostics.
 
 D043 fixes the exact W26 reference space, grid, affine, voxel-center convention,
 and `0.0` outside semantics. Full depth-4/depth-8 candidates and local/network-
-profile evidence favor depth four. Q5 remains open only because the provisional
-recommendation has not been repeated at the eventual CloudFront origin. See
+profile evidence favor depth four. D075 now confirms depth four with the 180-trial real CloudFront slider matrix
+and all-41-feature correctness sweep. See
 [`data/VOLUME_2026_W26_EVIDENCE.md`](data/VOLUME_2026_W26_EVIDENCE.md).
 
 ## Local data and downloads
@@ -207,7 +207,7 @@ reuse immutable verified staging; the production Vite wrapper excludes inherited
 dev data/defaults and binds each build to explicit same-origin dependencies.
 Its tracked optional `default_view` config supplies the approved feature and
 2-D startup defaults after validation against the curator input. The
-tested route function is not deployed. D073's static landing at `/` and lazy
+tested route function is deployed on the existing v2 distribution. D073's static landing at `/` and lazy
 viewer at `/app/` share one mutable `site/index.html` entry and one immutable
 build graph, preserving the existing conditional site-promotion transaction.
 The landing reuses the app theme, a genuine reviewed-local 3-D capture and a
@@ -219,42 +219,36 @@ and the IBL supporters listed on iblcore.org. About/credits remain on the
 landing, and `/app/#help` opens the existing guide. Responsive, navigation and
 isolated production-build browser tests cover these routes. The owner approved
 the landing design, revised copy, acknowledgements and vector slices at
-`a3a88cd` on 2026-09-08. All publication machinery is locally tested only;
+`a3a88cd` on 2026-09-08. Dataset, pack, catalog and site transactions have now succeeded against S3;
 multipart objects above 5 GB remain unimplemented. See
 [Local publisher operations](publishing/LOCAL_PUBLISHER.md).
 Public reads remain static and unauthenticated.
 
-D040 selects IBL-owned S3 plus CloudFront. Authenticated terminal reads and a
-non-mutating conditional-write authorization probe now pass against the
-private candidate `us-east-1` location recorded in
-[`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md). D059 selects
-isolated staging and production roots there; D072 selects
-`ephys-atlas.iblcore.org` as the production viewer domain. D060 selects
-CloudFront for both the S3-hosted compiled Vite viewer and same-origin public
-data, with no Cloudflare Pages deployment. The 2026-09-08 read-only audit confirms
-production distribution `ET6VJW8JWAGVR`, the selected origin path, working
-DNS/TLS and a private bucket with narrowed OAI access. Both environment prefixes
-are empty. Q8 still requires isolated staging provisioning, D073 routing/cache
-application, publisher access and real-origin delivery evidence;
-Q9 still requires the frozen paper release set and
-aliases. No remote publication has occurred.
+D040/D059/D060/D072 select private IBL-owned S3 and the existing CloudFront
+origin `ephys-atlas.iblcore.org`. D074 authorizes initial IBL review and removes
+a separate staging identity as a prerequisite. Distribution `ET6VJW8JWAGVR`
+now serves the live landing/viewer and four scientific datasets. The existing
+OAI, origin, aliases, certificate, DNS and shared bucket settings are preserved;
+only distribution routing/cache fields and exact v2 object prefixes changed.
+An existing private transaction object is denied through CloudFront and public
+objects remain denied through anonymous S3.
 
-D074 now authorizes the initial deployment, W32 channel/default selection and
-AGEA original-value recipe. The tracked initial curator configuration excludes
-volumes until Q5 real-origin measurements. AGEA has a clean-Linux production
-builder profile with neutral labels and provisional processing/registration
-notes rendered only in Data details. The staging-only benchmark publisher
-preserves candidate IDs and never writes ordinary publication completion,
-dataset indexes or curator defaults. These paths are covered by local tests;
-they are not remote deployment evidence.
+The clean-Linux releases and packs identify source commit `62199f5`; the current
+site build `9fbcf5935cfe344374f9c0c84c2f35b8` identifies `db87240`. The latter
+bundles hash-verified atlas region metadata and removes automatic speculative
+volume pack requests. Full `just check` and CI pass. Live Chromium workflows
+pass; Firefox completes the same workflows with six separately recorded
+navigation cancellations and no HTTP or application errors. Native Safari on
+this final origin remains unmeasured before wider promotion. Evidence:
+[initial deployment](publishing/INITIAL_DEPLOYMENT_20260908.md) and
+[live QA](publishing/initial-live-qa-20260908.json).
 
-Authenticated OAC and dedicated OAI creation attempts were denied and created
-no resources. The dedicated staging OAI variant preserves shared bucket
-ownership and SSE-S3 configuration. The
-[administrator access request](publishing/AWS_DEPLOYMENT_ACCESS_REQUEST.md)
-and [initial clean build runbook](publishing/INITIAL_RELEASE_BUILD.md) identify
-the next operations. Remote deployment is blocked on administrator provisioning,
-not owner approval; no other domain or AWS resource was changed.
+AGEA is included with provisional notes only in Data details. Ephys volume
+benchmark bytes remain separate from ordinary releases and public discovery;
+D075's completed Q5 measurement permits a new production build and curator promotion.
+Q2/Q9 still govern the later paper freeze; Q19 remains final AGEA scientific
+acceptance. No further administrator intervention is needed for the approved
+initial deployment operations.
 
 D056/D061 accept Project/Dataset/Release/Feature/View navigation, immutable
 scoped project editions, curator-owned catalog promotion, explicit
@@ -303,8 +297,9 @@ read-only; no interactive compatibility recipes remain. Local Chromium
 acceptance covers all four real datasets plus Summary, Top, Swanson, and the
 optional 3-D context. The currently available graph contains 6 artifacts and
 551,523,979 bytes. Every v4 origin remains explicitly unresolved,
-so a fresh checkout receives actionable missing-origin errors and remote
-distribution remains blocked on Q8 despite the completed downloader machinery.
+so a fresh checkout receives actionable missing-origin errors. A new descriptor
+can now pin the published production releases; the historical v4/v5 descriptors
+must not be silently relabelled.
 An absent optional mesh is reported but does not block launch-critical 2-D;
 an invalid mesh already present fails closed.
 
@@ -337,12 +332,12 @@ checks are recorded in
 
 ## Remaining launch sequence
 
-1. Resolve Q8 staging details and deploy immutable projection/data assets.
-2. Confirm depth-four volume transport at that origin and resolve Q5.
-3. Resolve Q2 and build the exact paper channel release.
-4. Resolve Q9, publish the frozen release set, and configure defaults.
-5. Run final production-origin, responsive, performance, failure, download,
-   local-import, Chromium, Firefox, and Safari QA.
+1. Finish Q5 real-origin measurements and publish the approved volume release.
+2. Verify the complete initial catalog and final volume viewer at the live origin.
+3. Before wider promotion, complete the remaining general browser matrix,
+   including native Safari and any compound launch-readiness gaps.
+4. Treat Q2/Q9 as a separate paper freeze: select and publish its exact release
+   set without changing the already exposed initial edition mappings.
 
 The executable order and stop conditions live in
 [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md). Launch readiness remains

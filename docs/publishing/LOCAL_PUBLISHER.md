@@ -12,7 +12,8 @@ routing/cache update is deployed. The four initial scientific releases, both
 anatomy packs and initial catalog were published on 2026-09-08. Their exact
 dependencies and approved default are pinned in
 [`initial-site.json`](../../data/deployment/initial-site.json). The site is live;
-browser acceptance and delivery fixes are in progress. The separate volume benchmark is public
+Chromium/Firefox live workflows and delivery fixes have been verified; see
+[initial deployment evidence](INITIAL_DEPLOYMENT_20260908.md). The separate volume benchmark is public
 by exact URL but remains outside the catalog pending Q5. Final paper/scientific
 review questions retain their stated scope.
 
@@ -217,7 +218,7 @@ work. `tools/deployment/site-router.js` is the tested CloudFront viewer-request
 function: `/`, `/app`, and `/app/` become `/site/index.html`; that entry keeps
 the landing static at `/` and bootstraps the viewer at `/app/`. URL queries and
 data errors are preserved. The function is published and the v2 distribution
-update has been accepted; live delivery verification remains required. The incoming public routes and
+update is deployed and live routing has been verified. The incoming public routes and
 direct site entry must not cache stale HTML; immutable build/pack/release
 behaviors can cache for one year. Production routing does not need legacy
 `/assets` or `/brand` rewrites because the build embeds its immutable base.
@@ -236,5 +237,5 @@ interruption/resume, catalog omission/remapping, stale writers after rollback,
 site dependency failure and last-known-good entry preservation. A browser test
 builds and loads the production Vite mode against the canonical test-only
 release server without copying synthetic data into the build. `just check`
-is the full local gate. Real-origin IAM, MIME/Range/cache and browser evidence
-remain unclaimed until the first authorized staging deployment.
+is the full local gate. Real-origin IAM, MIME/Range/cache, private-boundary and browser evidence
+is recorded in [initial deployment evidence](INITIAL_DEPLOYMENT_20260908.md).

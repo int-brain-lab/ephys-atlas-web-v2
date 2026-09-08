@@ -83,6 +83,7 @@ only part of the body; the index states what remains effective.
 | D072 | Confirm iblcore.org with Cloudflare DNS | accepted | 2026-09-07 | production hostname ephys-atlas.iblcore.org; Cloudflare DNS, existing AWS delivery model retained |
 | D073 | Landing page and viewer routes | accepted | 2026-09-08 | lightweight themed landing at `/`, viewer at `/app/`; integrated about/credits and existing user guide; no separate help/about/docs launch pages |
 | D074 | Authorize initial atlas deployment | accepted | 2026-09-08 | scoped staging/production deployment, W32 channels/defaults and AGEA inclusion; provisional AGEA notes only in Data details; paper freeze remains separate |
+| D075 | Select production W26 volume transport | accepted | 2026-09-08 | owner retains depth-four orthogonal slice packs; real CloudFront slider matrix and all-feature correctness pass; preserve D043 and build a new production release |
 
 ## D001 — Separate v2
 
@@ -1793,3 +1794,45 @@ TTL fields (zero for mutable entries, up to one year for immutable assets),
 with compression disabled and the tested LIVE router. No cache policy, OAI,
 bucket policy, DNS or certificate was created or changed. Saved configuration
 evidence is in ignored `artifacts/deployment-live-20260908/`.
+
+
+## D075 — Select production W26 volume transport
+
+The owner confirms retaining the existing three-orientation, depth-four
+`orthogonal_slice_packs` strategy for the first deployment. Real CloudFront
+measurements at the deployed `db87240` site confirm that choice and close Q5.
+D043 geometry, the pinned W26 source and the reviewed D054 distribution
+selection remain unchanged. Do not substitute whole-volume loading, change
+resolution/precision or relabel the benchmark candidate.
+
+The [frozen origin benchmark](../benchmarks/rendering/volume-origin-20260908/README.md)
+records six worst linked-Bregma features, ten browser-cold trials each under
+unthrottled, 20 ms/100 Mbps and 80 ms/10 Mbps profiles: 180 trials total.
+All use three initial pack requests, 198,849–212,743 encoded bytes and
+2,222,592 decoded float32 bytes. Same-pack slider movement/return makes zero
+pack requests. The 41-feature correctness sweep renders every feature and
+crosses a pack boundary with exactly one new pack request.
+
+Maximum per-feature startup p95 is 1.151 s, 1.399 s and 2.891 s respectively;
+maximum per-feature actual-slider frame p95 is 26.5 ms, 47.7 ms and 90.6 ms,
+within the declared 100 ms interaction budget. Transport checks establish
+exact encoded hashes, opaque gzip without HTTP Content-Encoding, immutable
+cache headers, Range 206 and non-HTML missing-resource denial. These runs are
+browser-cold at an edge warmed by preceding runs, not claims of cold CDN edges
+or representative mobile hardware. Pack-request-to-render latency includes
+network and application work; it is not an isolated decode measurement.
+
+Two earlier findings remain in the evidence. The original site speculatively
+fetched two extra packs; `db87240` removed that automatic prefetch before the
+passing measurements. An early interaction harness restored the whole URL,
+which reloads the dataset session; five constrained-profile URL-restoration
+p95 values exceeded 100 ms. The corrected harness drives the actual native
+slice slider. The URL-restoration results are retained as separate diagnostics,
+not erased or represented as slider latency; no threshold was relaxed.
+
+Build `2026_W26-ibl-review-20260908-v1` on clean Linux `main` with this decision
+committed, validate the complete graph and numerical equivalence, and publish
+through the ordinary release transaction. Curator promotion adds volumes in
+new Ephys Atlas edition `ibl-review-20260908-v2`; the exposed v1 edition mapping
+remains unchanged. Channels `rms_ap.denoised` remains the initial default.
+This is D074's initial IBL review deployment, not the Q2/Q9 paper freeze.

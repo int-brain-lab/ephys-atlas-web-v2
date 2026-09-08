@@ -1,0 +1,134 @@
+{
+  "format": "ibl-ephys-atlas-live-qa-v1",
+  "date": "2026-09-08",
+  "target": {
+    "origin": "https://ephys-atlas.iblcore.org",
+    "site_build_id": "9fbcf5935cfe344374f9c0c84c2f35b8",
+    "benchmark_namespace_requested": false
+  },
+  "raw_evidence": {
+    "postfix_strict_report": "artifacts/deployment-live-20260908/live-qa/result.json",
+    "postfix_strict_report_sha256": "0a0dfd2c2e221bd5728e08a56743a3cc38908cd4504d09215682d48a40662bcc",
+    "initial_failure_report": "artifacts/deployment-live-20260908/live-qa/first-run/result.json",
+    "initial_failure_report_sha256": "4b8c3e897a74bf0a33029c40e9bf2da67ffc353b6ed40d067bcea959a5075c8e",
+    "postfix_screenshots": "artifacts/deployment-live-20260908/live-qa/screenshots/",
+    "postfix_screenshot_count": 21,
+    "postfix_screenshot_manifest_sha256": "ad88a2ebbe56ac48ab97c7185522cd0fdde18a81e54ba4da5077504223991095"
+  },
+  "method": {
+    "browsers": [
+      "Chromium headless",
+      "Firefox headless"
+    ],
+    "contexts": "fresh context for every landing viewport; one new context per browser for viewer/deep-link/import coverage",
+    "ready_condition": "application shell visible; selected data and feature loaded; all three 2-D views ready; regional rows present",
+    "startup_measurement": "navigation to all three 2-D views and selected regional data ready; Resource Timing document totals"
+  },
+  "checks": {
+    "landing": {
+      "viewports": [
+        "1680x1000",
+        "1024x768",
+        "320x844",
+        "390x844"
+      ],
+      "browsers": [
+        "Chromium",
+        "Firefox"
+      ],
+      "result": "passed; exact body width and no catalog, dataset, atlas, or mesh request"
+    },
+    "viewer": {
+      "default": "channels 2026_W32-ibl-review-20260908-v1, rms_ap.denoised, Allen, linked 2-D",
+      "deep_links": [
+        "ephys_atlas_channels",
+        "ephys_atlas_clusters",
+        "brainwide_map",
+        "agea"
+      ],
+      "result": "all reached ready state in Chromium and Firefox; screenshots retain each selected dataset"
+    },
+    "agea": {
+      "result": "provisional registration, unchanged source transform, and missing/zero policy appeared only in Data details"
+    },
+    "local_import": {
+      "archive": "brainwide-map-ibl-review-20260908-v1.ibl-ephys-atlas.zip",
+      "sha256": "58ceef5256dd968299dd9056d80a8bdf8a9e215a57fe1cf1b119df39d0ba3991",
+      "result": "passed in Chromium and Firefox; imported release identified as browser-local"
+    },
+    "download": "client-generated default channels CSV passed in Chromium and Firefox",
+    "scene_3d": "Chromium optional 3-D context passed; Firefox headless 3-D not attempted because its Linux WebGL driver is unsupported"
+  },
+  "chromium_observed_startup": [
+    {
+      "dataset": "ephys_atlas_channels",
+      "context": "catalog default",
+      "ready_ms": 848,
+      "request_count": 94,
+      "transfer_bytes": 2323144,
+      "encoded_body_bytes": 2294944,
+      "decoded_body_bytes": 2294944,
+      "zero_transfer_requests": 0
+    },
+    {
+      "dataset": "ephys_atlas_channels",
+      "context": "explicit edition deep link",
+      "ready_ms": 676,
+      "request_count": 13,
+      "transfer_bytes": 601304,
+      "encoded_body_bytes": 597404,
+      "decoded_body_bytes": 597404,
+      "zero_transfer_requests": 0
+    },
+    {
+      "dataset": "ephys_atlas_clusters",
+      "context": "explicit edition deep link",
+      "ready_ms": 743,
+      "request_count": 29,
+      "transfer_bytes": 688319,
+      "encoded_body_bytes": 679619,
+      "decoded_body_bytes": 679619,
+      "zero_transfer_requests": 0
+    },
+    {
+      "dataset": "brainwide_map",
+      "context": "explicit edition deep link",
+      "ready_ms": 458,
+      "request_count": 45,
+      "transfer_bytes": 700269,
+      "encoded_body_bytes": 686769,
+      "decoded_body_bytes": 686769,
+      "zero_transfer_requests": 0
+    },
+    {
+      "dataset": "agea",
+      "context": "explicit edition deep link",
+      "ready_ms": 1943,
+      "request_count": 17,
+      "transfer_bytes": 6290145,
+      "encoded_body_bytes": 6285045,
+      "decoded_body_bytes": 6285045,
+      "zero_transfer_requests": 0
+    }
+  ],
+  "expected_navigation_cancellations": {
+    "browser": "Firefox headless",
+    "error": "NS_BINDING_ABORTED",
+    "count": 6,
+    "resources": [
+      "channels rms_ap.raw Allen values, region IDs, and statistics",
+      "clusters Allen regions",
+      "brainwide_map Beryl distribution and summary"
+    ],
+    "interpretation": "The saved strict report lists only resources from a selected context immediately superseded by the next sequential deep link. Each successor reached ready state and has a screenshot; local import then completed. This is recorded separately from HTTP or application failures, not discarded."
+  },
+  "diagnostics": {
+    "chromium": "no console errors, page errors, failed requests, HTTP >=400 responses, or benchmark requests",
+    "firefox": "no console errors, page errors, HTTP >=400 responses, or benchmark requests; six expected navigation cancellations are retained above and make the unmodified raw strict report fail"
+  },
+  "limitations": [
+    "The strict raw runner records Firefox startup metrics only after clean diagnostics, so Firefox timing and byte totals are unavailable in this run despite all selected contexts reaching ready state.",
+    "Later dataset navigations reuse one browser context and may reuse HTTP or memory cache; Chromium zero-transfer requests are retained rather than excluded.",
+    "This evidence does not test the benchmark namespace."
+  ]
+}
