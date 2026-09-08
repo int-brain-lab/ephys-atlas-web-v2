@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import test from 'node:test';
 import {
   ALLEN_ATLAS_REGIONS_URL,
@@ -93,4 +94,23 @@ test('catalog loading bypasses incompatible cached hierarchy metadata', async ()
   assert.equal(request.input, ALLEN_ATLAS_REGIONS_URL);
   assert.match(request.input, /[?&]v=3$/);
   assert.equal(request.init.cache, 'no-cache');
+});
+
+
+test('immutable site atlas metadata is verified before parsing', async () => {
+  const body = JSON.stringify(document([row(-10, 'root', null, 0)]));
+  const integrity = { bytes: Buffer.byteLength(body), sha256: createHash('sha256').update(body).digest('hex') };
+  let request;
+  const catalog = await loadAtlasRegionCatalog('/site/builds/test-only/atlas/allen-ccf-2017/regions.json', async (input, init) => {
+    request = { input, init };
+    return new Response(body, { status: 200, headers: { 'content-type': 'application/json' } });
+  }, integrity);
+  assert.equal(request.input, 'http://localhost/site/builds/test-only/atlas/allen-ccf-2017/regions.json');
+  assert.equal(request.init.cache, undefined);
+  assert.equal(catalog.mappings.allen[0].acronym, 'root');
+
+  await assert.rejects(
+    loadAtlasRegionCatalog('/site/builds/test-only/atlas/allen-ccf-2017/regions.json', async () => new Response(body), { ...integrity, sha256: '0'.repeat(64) }),
+    /SHA-256 mismatch/,
+  );
 });

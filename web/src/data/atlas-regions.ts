@@ -1,5 +1,6 @@
 import type { ParcellationId } from '../domain/types.js';
 import type { RegionMetadata } from './contracts.js';
+import { ResourceFetcher, type ResourceIntegrity } from './cache.js';
 
 // Version the stable public path so browsers cannot reuse an older catalog
 // whose schema predates parent-closed hierarchy metadata.
@@ -78,8 +79,13 @@ export function parseAtlasRegionCatalog(value: unknown): AtlasRegionCatalog {
 export async function loadAtlasRegionCatalog(
   url = ALLEN_ATLAS_REGIONS_URL,
   fetchImpl: typeof fetch = fetch.bind(globalThis),
+  integrity?: ResourceIntegrity,
 ): Promise<AtlasRegionCatalog> {
-  const response = await fetchImpl(url, { cache: 'no-cache' });
-  if (!response.ok) throw new Error(`Allen atlas region metadata request failed (${response.status})`);
+  if (!integrity) {
+    const response = await fetchImpl(url, { cache: 'no-cache' });
+    if (!response.ok) throw new Error(`Allen atlas region metadata request failed (${response.status})`);
+    return parseAtlasRegionCatalog(await response.json());
+  }
+  const response = await new ResourceFetcher(fetchImpl).fetch(url, { immutable: true, integrity });
   return parseAtlasRegionCatalog(await response.json());
 }

@@ -32,6 +32,20 @@ const viewportFactory = new RetainedProjectionViewportFactory({
   projectionPackUrl: projectionPackUrl ?? defaultProjectionPackUrl,
 });
 const catalogUrl = import.meta.env.VITE_DATASET_CATALOG_URL as string | undefined;
+
+function atlasRegionsAsset() {
+  const url = import.meta.env.VITE_ATLAS_REGIONS_URL as string | undefined;
+  const sha256 = import.meta.env.VITE_ATLAS_REGIONS_SHA256 as string | undefined;
+  const bytesText = import.meta.env.VITE_ATLAS_REGIONS_BYTES as string | undefined;
+  if (!url && !sha256 && !bytesText) return undefined;
+  const bytes = Number(bytesText);
+  if (!url || !/^[0-9a-f]{64}$/.test(sha256 ?? '') || !Number.isSafeInteger(bytes) || bytes <= 0) {
+    throw new Error('VITE_ATLAS_REGIONS_* configuration is incomplete');
+  }
+  return { url: new URL(url, location.href).toString(), bytes, sha256: sha256! };
+}
+
+const atlasRegions = atlasRegionsAsset();
 const developmentDatasetId = import.meta.env.VITE_DEFAULT_DATASET_ID as string | undefined;
 const developmentReleaseId = import.meta.env.VITE_DEFAULT_RELEASE_ID as string | undefined;
 const developmentFeatureId = import.meta.env.VITE_DEFAULT_FEATURE_ID as string | undefined;
@@ -69,6 +83,7 @@ function start(): void {
     viewportFactory,
     ...(scene3dFactory ? { scene3dFactory } : {}),
     ...(catalogUrl ? { catalogUrl } : {}),
+    ...(atlasRegions ? { atlasRegionsUrl: atlasRegions.url, atlasRegionsIntegrity: atlasRegions } : {}),
     ...(developmentDefaultView ? { defaultView: developmentDefaultView } : {}),
   });
   if (window.location.hash === '#help') app.openHelpGuide();

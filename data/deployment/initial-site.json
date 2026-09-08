@@ -21,5 +21,10 @@
     "feature_id": "rms_ap.denoised",
     "parcellation_id": "allen",
     "curator_config": "data/deployment/initial-curator.json"
+  },
+  "atlas_regions": {
+    "path": "atlas/allen-ccf-2017/regions.json",
+    "bytes": 657517,
+    "sha256": "aa5615bdf76493a815ad20bd77441998415b13272bc58101cd8da674848ed3ad"
   }
 }

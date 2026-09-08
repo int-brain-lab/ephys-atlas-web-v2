@@ -17,6 +17,9 @@ test('production build serves a static landing page and lazy viewer from immutab
       cwd: process.cwd(), timeout:60_000, env: {...env, EPHYS_ATLAS_SITE_BUILD:'1',
         VITE_DATASET_CATALOG_URL:'/__real-data/catalog.json',
         VITE_PROJECTION_PACK_URL:'/atlas/projections/ibl-static-registered-v1/manifest.json',
+        VITE_ATLAS_REGIONS_URL:'/site/builds/test-only/atlas/allen-ccf-2017/regions.json',
+        VITE_ATLAS_REGIONS_BYTES:'657517',
+        VITE_ATLAS_REGIONS_SHA256:'aa5615bdf76493a815ad20bd77441998415b13272bc58101cd8da674848ed3ad',
         VITE_DEFAULT_DATASET_ID:'golden_fixture', VITE_DEFAULT_RELEASE_ID:'golden-v1',
         VITE_DEFAULT_FEATURE_ID:'rms_ap', VITE_DEFAULT_PARCELLATION_ID:'allen'},
     });
@@ -26,10 +29,13 @@ test('production build serves a static landing page and lazy viewer from immutab
     await mkdir(path.join(output, 'brand'));
     await copyFile('public/brand/ibl-core-logo.svg', path.join(output, 'brand/ibl-core-logo.svg'));
     await copyFile('public/favicon.png', path.join(output, 'favicon.png'));
+    await mkdir(path.join(output, 'atlas/allen-ccf-2017'), { recursive: true });
+    await copyFile('public/atlas/allen-ccf-2017/regions.json', path.join(output, 'atlas/allen-ccf-2017/regions.json'));
     await page.route('**/site/builds/test-only/**', async route => {
       const relative = new URL(route.request().url()).pathname.slice('/site/builds/test-only/'.length);
       const mime = relative.endsWith('.js') ? 'text/javascript' : relative.endsWith('.css') ? 'text/css'
-        : relative.endsWith('.svg') ? 'image/svg+xml' : relative.endsWith('.jpg') ? 'image/jpeg' : 'image/png';
+        : relative.endsWith('.svg') ? 'image/svg+xml' : relative.endsWith('.jpg') ? 'image/jpeg'
+          : relative.endsWith('.json') ? 'application/json' : 'image/png';
       await route.fulfill({body:await readFile(path.join(output, relative)), contentType:mime});
     });
     await page.route(/http:\/\/127\.0\.0\.1:4173\/(?:app\/?)?$/, async route => route.fulfill({
@@ -54,6 +60,8 @@ test('production build serves a static landing page and lazy viewer from immutab
     await expect(page.locator('[data-context-field="feature"]')).toContainText('AP RMS');
     await expect(page.locator('[data-view="coronal"] .view-frame__brain-svg')).toBeVisible();
     expect(assetRequests).toContain(`/site/builds/test-only/assets/${viewerScript}`);
+    expect(assetRequests).toContain('/site/builds/test-only/atlas/allen-ccf-2017/regions.json');
+    expect(assetRequests).not.toContain('/atlas/allen-ccf-2017/regions.json');
     await expect(page.locator('[data-view="coronal"] path[data-allen-id]').first()).toBeVisible();
     await expect(page.locator('img[src="/site/builds/test-only/brand/ibl-core-logo.svg"]')).toBeVisible();
     expect(errors).toEqual([]);

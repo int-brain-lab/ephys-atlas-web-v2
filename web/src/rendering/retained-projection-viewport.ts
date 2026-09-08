@@ -215,7 +215,6 @@ class RetainedProjectionViewport implements ProjectionViewport {
   private inFlight = false;
   private activeRenderAbort: AbortController | null = null;
   private activeVolumeTarget: VolumeRenderTarget | null = null;
-  private volumePrefetchAbort: AbortController | null = null;
   private frame: RegionalSliceFrame | null = null;
   private volumeFeature: VolumeFeaturePayload | null = null;
   private volumeSlice: VolumeSlice | null = null;
@@ -243,11 +242,6 @@ class RetainedProjectionViewport implements ProjectionViewport {
     const token = ++this.renderToken;
     const nextVolumeTarget = this.volumeRenderTarget(model);
     if (!this.sameVolumeTarget(this.activeVolumeTarget, nextVolumeTarget)) this.activeRenderAbort?.abort();
-    const retainsPrefetchTarget = nextVolumeTarget !== null
-      && nextVolumeTarget.index !== null
-      && this.volumeFeature === nextVolumeTarget.feature
-      && this.volumeSlice?.index === nextVolumeTarget.index;
-    if (!retainsPrefetchTarget) this.volumePrefetchAbort?.abort();
     this.requestedIndex = model.sliceIndex;
     this.requestedParcellation = model.parcellation;
     this.hideError();
@@ -296,8 +290,6 @@ class RetainedProjectionViewport implements ProjectionViewport {
     this.activeRenderAbort?.abort();
     this.activeRenderAbort = null;
     this.activeVolumeTarget = null;
-    this.volumePrefetchAbort?.abort();
-    this.volumePrefetchAbort = null;
     this.pending?.resolve();
     this.pending = null;
     this.frame = null;
@@ -483,11 +475,6 @@ class RetainedProjectionViewport implements ProjectionViewport {
     this.target.dataset.assetIndex = String(anatomySlice.sliceIndex);
     this.target.dataset.worldCoordinateUm = String(anatomySlice.worldCoordinateUm);
     this.renderedRequestedIndex = model.sliceIndex;
-    if (!reusesVolume) {
-      const prefetchAbort = new AbortController();
-      this.volumePrefetchAbort = prefetchAbort;
-      void this.volumeSource(feature).prefetchAdjacent?.(model.axis, volumeIndex, 1, prefetchAbort.signal)?.catch(() => undefined);
-    }
   }
 
   private placeVolume(placement: RegisteredVolumeCanvasPlacement): void {

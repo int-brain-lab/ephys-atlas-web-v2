@@ -32,12 +32,26 @@ class SiteResources(HTMLParser):
                 self.urls.append(value or "")
 
 
+ATLAS_REGIONS_PATH = "atlas/allen-ccf-2017/regions.json"
+
+
+def atlas_regions(config: dict) -> dict:
+    descriptor = config.get("atlas_regions")
+    if not isinstance(descriptor, dict) or set(descriptor) != {"path", "bytes", "sha256"}:
+        raise ValueError("site config requires atlas_regions path/bytes/sha256")
+    if (descriptor.get("path") != ATLAS_REGIONS_PATH
+            or type(descriptor.get("bytes")) is not int or descriptor["bytes"] <= 0
+            or not isinstance(descriptor.get("sha256"), str) or not re.fullmatch("[0-9a-f]{64}", descriptor["sha256"])):
+        raise ValueError("site atlas_regions descriptor is invalid")
+    return descriptor
+
+
 def dependencies(config: dict) -> list[dict]:
-    if set(config) not in (
-        {"catalog", "projection"}, {"catalog", "projection", "mesh"},
-        {"catalog", "projection", "default_view"}, {"catalog", "projection", "mesh", "default_view"},
-    ):
-        raise ValueError("site config requires catalog/projection, optional mesh and optional default_view")
+    required = {"catalog", "projection", "atlas_regions"}
+    optional = {"mesh", "default_view"}
+    if not required.issubset(config) or not set(config).issubset(required | optional):
+        raise ValueError("site config requires catalog/projection/atlas_regions, optional mesh and optional default_view")
+    atlas_regions(config)
     result = []
     for kind in ("catalog", "projection", "mesh"):
         if kind not in config:
@@ -98,11 +112,20 @@ def default_view(config: dict) -> dict[str, str] | None:
     return {key: str(value) for key, value in identifiers.items()}
 
 
-def build_environment_for_site(config: dict) -> dict[str, str]:
+def build_environment_for_site(config: dict, build_id: str) -> dict[str, str]:
     dependencies(config)
+    if not re.fullmatch("[0-9a-f]{32}", build_id):
+        raise ValueError("site build identity is invalid")
+    regions = atlas_regions(config)
     environment = {k: v for k, v in os.environ.items() if not k.startswith(("VITE_", "EPHYS_ATLAS_", "AGEA_"))}
-    environment.update(EPHYS_ATLAS_SITE_BUILD="1", VITE_DATASET_CATALOG_URL="/catalog.json",
-                       VITE_PROJECTION_PACK_URL="/" + config["projection"]["path"])
+    environment.update(
+        EPHYS_ATLAS_SITE_BUILD="1",
+        VITE_DATASET_CATALOG_URL="/catalog.json",
+        VITE_PROJECTION_PACK_URL="/" + config["projection"]["path"],
+        VITE_ATLAS_REGIONS_URL=f"/site/builds/{build_id}/{regions['path']}",
+        VITE_ATLAS_REGIONS_BYTES=str(regions["bytes"]),
+        VITE_ATLAS_REGIONS_SHA256=regions["sha256"],
+    )
     if "mesh" in config:
         environment.update(VITE_BRAIN_MESH_MANIFEST_URL="/" + config["mesh"]["path"],
                            VITE_BRAIN_MESH_MANIFEST_BYTES=str(config["mesh"]["bytes"]),
@@ -141,8 +164,13 @@ def validate_site(root: Path, repo) -> dict:
     for url in resources.urls:
         if not url.startswith(base) or url[len(base):] not in actual:
             raise ValueError("site HTML references a missing or non-build asset")
+    regions = atlas_regions(receipt["config"])
+    if actual.get(regions["path"]) != {"size": regions["bytes"], "sha256": regions["sha256"]}:
+        raise ValueError("site atlas_regions file differs from its pinned descriptor")
     for path in actual:
-        if not (path == "index.html" or path == "favicon.png" or path == "brand/ibl-core-logo.svg" or re.fullmatch(r"assets/[A-Za-z0-9_.-]+\.(js|css|woff2|png|jpg|svg)", path)):
+        if not (path == "index.html" or path == "favicon.png" or path == "brand/ibl-core-logo.svg"
+                or path == regions["path"]
+                or re.fullmatch(r"assets/[A-Za-z0-9_.-]+\.(js|css|woff2|png|jpg|svg)", path)):
             raise ValueError(f"unexpected site file: {path}")
     return receipt
 
@@ -165,11 +193,19 @@ def build(config_path: Path, output: Path) -> dict:
         root = Path(temporary) / "site"
         subprocess.run(["npm", "run", "build", "--", "--base", f"/site/builds/{identity}/",
                         "--outDir", str(root)], cwd=REPOSITORY / "web", check=True,
-                       env=build_environment_for_site(config))
-        for relative in ("favicon.png", "brand/ibl-core-logo.svg"):
+                       env=build_environment_for_site(config, identity))
+        for relative in ("favicon.png", "brand/ibl-core-logo.svg", atlas_regions(config)["path"]):
+            source = REPOSITORY / "web/public" / relative
+            subprocess.run(["git", "ls-files", "--error-unmatch", "--", str(source.relative_to(REPOSITORY))],
+                           cwd=REPOSITORY, check=True, capture_output=True)
+            if source.is_symlink() or not source.is_file():
+                raise ValueError(f"site asset is not a tracked regular file: {relative}")
             target = root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(REPOSITORY / "web/public" / relative, target)
+            shutil.copyfile(source, target)
+        regions = atlas_regions(config)
+        if file_info(root / regions["path"]) != {"size": regions["bytes"], "sha256": regions["sha256"]}:
+            raise ValueError("tracked atlas_regions source differs from the site descriptor")
         receipt["files"] = {p.relative_to(root).as_posix(): file_info(p) for p in root.rglob("*") if p.is_file()}
         (root / "_site.json").write_bytes(json_bytes(receipt))
         validate_site(root, repo)

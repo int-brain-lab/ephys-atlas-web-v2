@@ -194,9 +194,18 @@ The current 3-D chunk prototype uses:
 - optional adjacent-slice prefetch through the same bounded cache;
 - `AbortSignal` for stale feature/slice requests.
 
-The slice-pack source uses a 48 MiB decoded LRU by default, reuses all slices in
-the current pack, prefetches only adjacent packs, and deduplicates in-flight
-requests. Both schema layouts now terminate at the same canonical
+The slice-pack source uses a bounded decoded LRU, reuses all slices in the
+current pack, and deduplicates in-flight requests. Its standalone default is
+48 MiB; the retained factory supplies the shared 96 MiB volume budget after
+reserving validity-mask space. Both source adapters retain an explicit optional
+adjacent-prefetch API, but the retained viewport requests only visible planes.
+The first CloudFront trace showed automatic neighboring-pack requests competing
+with the three initial foreground planes. Depth-four packs already contain
+neighboring slices; crossing a pack boundary loads the next required resource
+on demand. Any future automatic prefetch should be justified by live request,
+latency and memory measurements.
+
+Both schema layouts terminate at the same canonical
 `VolumeSliceSource`; the real HTTP/browser benchmark still determines which
 layout is published for launch.
 

@@ -15,6 +15,7 @@ import {
 } from './application/regional-presentation.js';
 import { maxRegionalSliceIndex } from './core/slice-calibration.js';
 import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
+import type { ResourceIntegrity } from './data/cache.js';
 import { HttpDatasetSource } from './data/http-source.js';
 import { LocalDatasetSource } from './data/local-source.js';
 import type { PreparedLocalArchive, LocalArchivePreview } from './data/local-archive.js';
@@ -46,6 +47,7 @@ import { parseNavigationRequest, UrlStateController } from './url/url-state.js';
 export interface AppOptions {
   catalogUrl?: string;
   atlasRegionsUrl?: string;
+  atlasRegionsIntegrity?: ResourceIntegrity;
   defaultView?: ViewState;
   viewportFactory?: ProjectionViewportFactory;
   scene3dFactory?: BrainScene3DViewportFactory;
@@ -639,7 +641,7 @@ export class AtlasApp {
   }
 
   private loadAtlasRegions(): void {
-    void loadAtlasRegionCatalog(this.options.atlasRegionsUrl)
+    void loadAtlasRegionCatalog(this.options.atlasRegionsUrl, fetch.bind(globalThis), this.options.atlasRegionsIntegrity)
       .then((catalog) => {
         this.atlasRegions = catalog;
         this.render();

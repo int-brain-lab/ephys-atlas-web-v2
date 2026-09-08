@@ -11,8 +11,8 @@ CloudFront router publication/invalidation are verified. The v2 distribution's
 routing/cache update is deployed. The four initial scientific releases, both
 anatomy packs and initial catalog were published on 2026-09-08. Their exact
 dependencies and approved default are pinned in
-[`initial-site.json`](../../data/deployment/initial-site.json); site publication
-and live browser acceptance are next. The separate volume benchmark is public
+[`initial-site.json`](../../data/deployment/initial-site.json). The site is live;
+browser acceptance and delivery fixes are in progress. The separate volume benchmark is public
 by exact URL but remains outside the catalog pending Q5. Final paper/scientific
 review questions retain their stated scope.
 
@@ -140,11 +140,18 @@ migration; there is no silent history reset or automatic garbage collection.
 
 ## 4. Build the site for the deployed dependency set
 
-Commit a site configuration containing `catalog`, `projection` and optional
-`mesh` objects. Each has exact `path`, `bytes`, and lowercase `sha256` fields.
+Commit a site configuration containing `catalog`, `projection`, `atlas_regions`
+and optional `mesh` objects. Each has exact `path`, `bytes`, and lowercase `sha256` fields.
 Paths are relative to the deployment root: `catalog.json` and the public pack
 manifest paths above. Use actual published manifest/catalog bytes, including
 the catalog's generation. No placeholder hashes can satisfy remote checks.
+
+`atlas_regions` instead pins the committed local file
+`web/public/atlas/allen-ccf-2017/regions.json`, with descriptor path
+`atlas/allen-ccf-2017/regions.json`. The wrapper copies those exact bytes into
+the immutable site build and supplies its build-specific URL, size and SHA-256
+to the viewer. The browser verifies it before parsing. This bundled asset is
+not an additional remote dependency or a mutable root-level atlas file.
 
 ```bash
 uv run --project builder --extra test --locked python -m tools.site_build \
@@ -155,8 +162,8 @@ uv run --project builder --extra test --locked python -m tools.s3_assets \
 
 The build wrapper requires clean Linux `main` and Node 22. It clears inherited
 preview defaults and disables `.env` loading, dev plugins and Vite's public
-directory copying. Only the compiled application and explicit brand/favicon
-files are included. Scientific data and packs remain separate.
+directory copying. Only the compiled application, explicit brand/favicon files
+and pinned atlas region metadata are included. Numeric datasets and packs remain separate.
 
 To pin the initial viewer selection, add this optional `default_view` object to
 the tracked site configuration, alongside the dependency descriptors:
