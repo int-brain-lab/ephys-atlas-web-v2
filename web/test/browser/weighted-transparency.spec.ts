@@ -14,7 +14,9 @@ for (const supported of [true, false]) test(supported
     };
   });
   await page.goto('/app/');
-  await page.evaluate(async () => {
+  await expect(page.locator('.atlas-app')).toBeVisible();
+  // Keep the asynchronous module/setup promise reachable while CDP awaits it.
+  await page.evaluate(() => (window as any).oitSetup = (async () => {
     const { RetainedBrainScene3DViewportFactory } = await import('/src/rendering/3d/brain-scene-viewport.ts');
     const host = document.createElement('div'); host.id = 'oit-test';
     host.style.cssText = 'position:fixed;inset:0;width:400px;height:400px;z-index:99999'; document.body.append(host);
@@ -45,7 +47,8 @@ for (const supported of [true, false]) test(supported
     };
     (window as any).oitTest = {create, select(ids:number[]){viewport.setPresentation({...base,selectedRegionIds:new Set(ids)});}, visible(ids:number[]){viewport.setPresentation({...base,visibleRegionIds:new Set(ids)});}, destroy(){factory.destroy();}};
     create(false,false);
-  });
+  })());
+  await page.evaluate(() => { delete (window as any).oitSetup; });
   const host = page.locator('#oit-test');
   if (!supported) {
     await expect(host).toHaveAttribute('data-scene3d-state','error');
