@@ -324,3 +324,18 @@
     inset: calc(var(--header-height) + 2 * var(--space-1)) var(--space-1) var(--space-1) var(--space-1);
   }
 }
+
+/* Retained pixels remain visible, but cannot be inspected as the new feature. */
+.view-frame[data-updating='feature'] .view-frame__renderer,
+.secondary-view__surface[aria-busy='true'] .view-frame__renderer {
+  pointer-events: none;
+}
+
+.view-frame[data-updating='feature'] .view-frame__status {
+  color: var(--color-text-secondary);
+}
+
+.view-frame[data-updating='feature'] .view-frame__status::before {
+  background: var(--color-text-muted);
+  box-shadow: none;
+}

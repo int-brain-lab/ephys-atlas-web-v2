@@ -106,6 +106,11 @@ a midpoint. Region rows use shared-domain dot tracks rather than unlabelled
 fill proportions. Q16 continues to retain every real-feature palette and
 center selection; the implementation changes only synthetic fixtures.
 
+D076 adds progressive nearby-first encoded SVG cache warming after visible
+rendering, bounded directional active-volume prefetch, and per-view updating
+feedback that retains the previous pixels until replacement rendering completes.
+Foreground and background request budgets are assessed separately.
+
 ## Volume exploration
 
 The retained volume path supports `chunks3d` and `orthogonal_slice_packs`,

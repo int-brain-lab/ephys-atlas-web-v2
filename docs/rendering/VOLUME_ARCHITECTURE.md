@@ -197,13 +197,13 @@ The current 3-D chunk prototype uses:
 The slice-pack source uses a bounded decoded LRU, reuses all slices in the
 current pack, and deduplicates in-flight requests. Its standalone default is
 48 MiB; the retained factory supplies the shared 96 MiB volume budget after
-reserving validity-mask space. Both source adapters retain an explicit optional
-adjacent-prefetch API, but the retained viewport requests only visible planes.
-The first CloudFront trace showed automatic neighboring-pack requests competing
-with the three initial foreground planes. Depth-four packs already contain
-neighboring slices; crossing a pack boundary loads the next required resource
-on demand. Any future automatic prefetch should be justified by live request,
-latency and memory measurements.
+reserving validity-mask space. D076 enables bounded directional prefetch after a visible render: slice-pack
+sources warm the next declared pack, while chunk sources can warm an adjacent
+plane. Feature/target changes cancel obsolete work. Foreground slice requests
+and background warmup are measured separately; the three foreground planes do
+not wait for background completion. D075's frozen trace describes the earlier
+foreground-only runtime and continues to justify the production depth-four
+layout without changing scientific geometry.
 
 Both schema layouts terminate at the same canonical
 `VolumeSliceSource`; the real HTTP/browser benchmark still determines which

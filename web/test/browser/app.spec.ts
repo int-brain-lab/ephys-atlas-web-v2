@@ -142,22 +142,35 @@ test('small pixel wheel deltas accumulate sensitively for smooth macOS scrolling
   await expect.poll(() => new URL(page.url()).searchParams.get('cursor')).toBe('-239,-1040,-3668');
 });
 
-test('initial anatomy display fetches only the three visible packs', async ({ page }) => {
-  const packRequests: string[] = [];
-  page.on('request', (request) => {
-    if (request.url().includes('/registered/') && request.url().endsWith('.isvg.gz')) {
-      packRequests.push(new URL(request.url()).pathname);
-    }
-  });
-  await page.goto('/app/');
-  await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
-  await page.waitForTimeout(250);
-
-  expect(new Set(packRequests)).toEqual(new Set([
+test('visible anatomy renders before progressive packs and persists the warmup', async ({ page }) => {
+  const visible = new Set([
     '/atlas/projections/ibl-static-registered-v1/registered/coronal/10.isvg.gz',
     '/atlas/projections/ibl-static-registered-v1/registered/sagittal/8.isvg.gz',
     '/atlas/projections/ibl-static-registered-v1/registered/horizontal/6.isvg.gz',
-  ]));
+  ]);
+  const packRequests: string[] = [];
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  await page.route('**/registered/**/*.isvg.gz', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    packRequests.push(path);
+    if (!visible.has(path)) await gate;
+    await route.continue();
+  });
+  await page.goto('/app/');
+  await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
+  expect(new Set(packRequests.filter((path) => visible.has(path)))).toEqual(visible);
+  release();
+  await expect.poll(() => new Set(packRequests).size).toBe(52);
+  await expect.poll(() => page.evaluate(async () => {
+    const cache = await caches.open('ibl-ephys-atlas-schema-v1-verified');
+    return (await cache.keys()).filter((request) => request.url.includes('/registered/') && request.url.endsWith('.isvg.gz')).length;
+  })).toBe(52);
+  packRequests.length = 0;
+  await page.reload();
+  await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
+  await page.waitForLoadState('networkidle');
+  expect(packRequests).toEqual([]);
 });
 
 test('a wheel burst is coalesced and only updates linked guides in other projections', async ({ page }) => {

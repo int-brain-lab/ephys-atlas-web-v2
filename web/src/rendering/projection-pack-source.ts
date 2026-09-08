@@ -57,6 +57,8 @@ export interface ProjectionPackSourceOptions {
   readonly manifestUrl: string;
   readonly fetchImpl?: typeof fetch;
   readonly maxDecodedBytes?: number;
+  /** Test hook for avoiding a module worker; production callers use the default runtime. */
+  readonly runtime?: IsvgPackRuntime;
 }
 
 export interface RegisteredProjectionSource {
@@ -65,6 +67,8 @@ export interface RegisteredProjectionSource {
   loadSlice(axis: SliceAxis, nativeIndex: number, signal?: AbortSignal): Promise<RegisteredProjectionSlice>;
   guidesForWorld(axis: SliceAxis, world: WorldCoordinateUm): Promise<readonly SliceGuide[]>;
   prefetchNeighbor(axis: SliceAxis, nativeIndex: number, direction: -1 | 1): Promise<void>;
+  /** Queue the visible pack, nearby packs, then the rest for encoded-byte caching. */
+  prefetchProgressively?(axis: SliceAxis, nativeIndex: number): Promise<void>;
   loadStaticProjection?(projectionId: StaticProjectionId, signal?: AbortSignal): Promise<StaticProjectionFrame>;
   dispose(): void;
 }
@@ -73,6 +77,14 @@ interface IndexedPack {
   readonly pack_id: string;
   readonly slice_indices: readonly number[];
   readonly resource: EncodedResourceV1;
+}
+
+interface QueuedFetch {
+  readonly packId: string;
+  priority: number;
+  readonly run: () => Promise<void>;
+  readonly resolve: () => void;
+  readonly reject: (error: unknown) => void;
 }
 
 function matrix(value: readonly number[]): Matrix4 {
@@ -116,12 +128,18 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
   private manifestPromise: Promise<ProjectionPackV1> | null = null;
   private readonly indexPromises = new Map<SliceAxis, Promise<RegisteredSvgResourceIndexV1>>();
   private readonly loadedPacks = new Map<string, Promise<void>>();
+  private readonly prefetchedPacks = new Map<string, Promise<void>>();
+  private readonly queuedFetches: QueuedFetch[] = [];
+  private readonly backgroundAbort = new AbortController();
+  private fetchInProgress = false;
+  private foregroundActive = 0;
+  private backgroundTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: ProjectionPackSourceOptions) {
     const baseUrl = typeof globalThis.location?.href === 'string' ? globalThis.location.href : 'http://localhost/';
     this.manifestUrl = new URL(options.manifestUrl, baseUrl).toString();
     this.fetcher = new ResourceFetcher(options.fetchImpl);
-    this.runtime = createIsvgPackRuntime({ maxDecodedBytes: options.maxDecodedBytes ?? 32 * 1024 * 1024 });
+    this.runtime = options.runtime ?? createIsvgPackRuntime({ maxDecodedBytes: options.maxDecodedBytes ?? 32 * 1024 * 1024 });
   }
 
   async loadManifest(): Promise<ProjectionPackV1> {
@@ -190,35 +208,41 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
   }
 
   async loadSlice(axis: SliceAxis, nativeIndex: number, signal?: AbortSignal): Promise<RegisteredProjectionSlice> {
-    const manifest = await this.loadManifest();
-    const projection = this.projection(manifest, axis);
-    if (!Number.isInteger(nativeIndex) || nativeIndex < 0 || nativeIndex >= projection.slice_count) {
-      throw new RangeError(`${axis} projection index ${nativeIndex} is outside [0, ${projection.slice_count - 1}]`);
-    }
-    const resolved = nearestDisplaySlice(projection.display_slices, nativeIndex);
-    const index = await this.loadIndex(axis, projection);
-    const entry = index.resources.find((candidate) => candidate.slice_indices.includes(resolved.nativeIndex));
-    if (!entry) throw new Error(`${axis} display slice ${resolved.nativeIndex} is absent from its resource index`);
-    await this.ensurePack(axis, projection, entry, signal);
-    let fragment = await this.runtime.get(entry.pack_id, resolved.nativeIndex);
-    if (!fragment) {
-      this.loadedPacks.delete(entry.pack_id);
+    this.foregroundActive += 1;
+    try {
+      const manifest = await this.loadManifest();
+      const projection = this.projection(manifest, axis);
+      if (!Number.isInteger(nativeIndex) || nativeIndex < 0 || nativeIndex >= projection.slice_count) {
+        throw new RangeError(`${axis} projection index ${nativeIndex} is outside [0, ${projection.slice_count - 1}]`);
+      }
+      const resolved = nearestDisplaySlice(projection.display_slices, nativeIndex);
+      const index = await this.loadIndex(axis, projection);
+      const entry = index.resources.find((candidate) => candidate.slice_indices.includes(resolved.nativeIndex));
+      if (!entry) throw new Error(`${axis} display slice ${resolved.nativeIndex} is absent from its resource index`);
       await this.ensurePack(axis, projection, entry, signal);
-      fragment = await this.runtime.get(entry.pack_id, resolved.nativeIndex);
+      let fragment = await this.runtime.get(entry.pack_id, resolved.nativeIndex);
+      if (!fragment) {
+        this.loadedPacks.delete(entry.pack_id);
+        await this.ensurePack(axis, projection, entry, signal);
+        fragment = await this.runtime.get(entry.pack_id, resolved.nativeIndex);
+      }
+      if (!fragment) throw new Error(`${entry.resource.path} did not retain slice ${resolved.nativeIndex}`);
+      const world = planeToWorld(matrix(projection.plane_index_to_world_um), {
+        slice: resolved.nativeIndex,
+        u: 0,
+        v: 0,
+      });
+      return {
+        axis,
+        sliceIndex: resolved.nativeIndex,
+        worldCoordinateUm: world[projection.world_slice_axis],
+        svgFragment: fragment.svg,
+        viewBox: viewBox(projection.view_box),
+      };
+    } finally {
+      this.foregroundActive -= 1;
+      this.scheduleBackgroundDrain();
     }
-    if (!fragment) throw new Error(`${entry.resource.path} did not retain slice ${resolved.nativeIndex}`);
-    const world = planeToWorld(matrix(projection.plane_index_to_world_um), {
-      slice: resolved.nativeIndex,
-      u: 0,
-      v: 0,
-    });
-    return {
-      axis,
-      sliceIndex: resolved.nativeIndex,
-      worldCoordinateUm: world[projection.world_slice_axis],
-      svgFragment: fragment.svg,
-      viewBox: viewBox(projection.view_box),
-    };
   }
 
   async guidesForWorld(axis: SliceAxis, world: WorldCoordinateUm): Promise<readonly SliceGuide[]> {
@@ -246,10 +270,35 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
     if (entry) await this.ensurePack(axis, projection, entry);
   }
 
+  async prefetchProgressively(axis: SliceAxis, nativeIndex: number): Promise<void> {
+    if (this.backgroundAbort.signal.aborted) return;
+    const manifest = await this.loadManifest();
+    const projection = this.projection(manifest, axis);
+    const resolved = nearestDisplaySlice(projection.display_slices, nativeIndex);
+    const index = await this.loadIndex(axis, projection);
+    if (this.backgroundAbort.signal.aborted) return;
+    const ordinalBySlice = new Map(projection.display_slices.map((slice, ordinal) => [slice, ordinal]));
+    const visibleOrdinal = resolved.ordinal;
+    const entries = [...index.resources].sort((left, right) => {
+      const leftDistance = Math.min(...left.slice_indices.map((slice) => Math.abs(ordinalBySlice.get(slice)! - visibleOrdinal)));
+      const rightDistance = Math.min(...right.slice_indices.map((slice) => Math.abs(ordinalBySlice.get(slice)! - visibleOrdinal)));
+      return leftDistance - rightDistance || left.pack_id.localeCompare(right.pack_id);
+    });
+    const pending = entries.map((entry, ordinal) => this.enqueueEncodedPrefetch(entry, ordinal));
+    this.reprioritize(entries);
+    this.scheduleBackgroundDrain();
+    await Promise.all(pending);
+  }
+
   dispose(): void {
+    this.backgroundAbort.abort();
+    if (this.backgroundTimer !== null) clearTimeout(this.backgroundTimer);
     this.runtime.dispose();
     this.indexPromises.clear();
     this.loadedPacks.clear();
+    this.prefetchedPacks.clear();
+    for (const queued of this.queuedFetches) queued.reject(new Error('Projection pack source was disposed'));
+    this.queuedFetches.length = 0;
   }
 
   private async fetchManifest(): Promise<ProjectionPackV1> {
@@ -322,6 +371,56 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
       void pending.catch(() => this.loadedPacks.delete(entry.pack_id));
     }
     return pending;
+  }
+
+  private enqueueEncodedPrefetch(entry: IndexedPack, priority: number): Promise<void> {
+    const existing = this.prefetchedPacks.get(entry.pack_id);
+    if (existing) return existing;
+    const pending = this.enqueue(entry.pack_id, priority, async () => {
+      await this.fetcher.fetch(new URL(entry.resource.path, this.manifestUrl).toString(), {
+        immutable: true,
+        integrity: entry.resource,
+        signal: this.backgroundAbort.signal,
+      });
+    });
+    this.prefetchedPacks.set(entry.pack_id, pending);
+    void pending.catch(() => this.prefetchedPacks.delete(entry.pack_id));
+    return pending;
+  }
+
+  private enqueue(packId: string, priority: number, run: () => Promise<void>): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.queuedFetches.push({ packId, priority, run, resolve, reject });
+      this.scheduleBackgroundDrain();
+    });
+  }
+
+  private reprioritize(entries: readonly IndexedPack[]): void {
+    const priorities = new Map(entries.map((entry, ordinal) => [entry.pack_id, ordinal]));
+    for (const queued of this.queuedFetches) {
+      const priority = priorities.get(queued.packId);
+      if (priority !== undefined) queued.priority = priority;
+    }
+    this.queuedFetches.sort((left, right) => left.priority - right.priority || left.packId.localeCompare(right.packId));
+  }
+
+  private scheduleBackgroundDrain(): void {
+    if (this.backgroundAbort.signal.aborted || this.backgroundTimer !== null || this.foregroundActive > 0 || this.fetchInProgress || this.queuedFetches.length === 0) return;
+    this.backgroundTimer = setTimeout(() => {
+      this.backgroundTimer = null;
+      this.drainFetchQueue();
+    }, 25);
+  }
+
+  private drainFetchQueue(): void {
+    if (this.backgroundAbort.signal.aborted || this.foregroundActive > 0 || this.fetchInProgress) return;
+    const next = this.queuedFetches.shift();
+    if (!next) return;
+    this.fetchInProgress = true;
+    void next.run().then(next.resolve, next.reject).finally(() => {
+      this.fetchInProgress = false;
+      this.scheduleBackgroundDrain();
+    });
   }
 
   private async fetchPack(

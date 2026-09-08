@@ -84,6 +84,7 @@ only part of the body; the index states what remains effective.
 | D073 | Landing page and viewer routes | accepted | 2026-09-08 | lightweight themed landing at `/`, viewer at `/app/`; integrated about/credits and existing user guide; no separate help/about/docs launch pages |
 | D074 | Authorize initial atlas deployment | accepted | 2026-09-08 | scoped staging/production deployment, W32 channels/defaults and AGEA inclusion; provisional AGEA notes only in Data details; paper freeze remains separate |
 | D075 | Select production W26 volume transport | accepted | 2026-09-08 | owner retains depth-four orthogonal slice packs; real CloudFront slider matrix and all-feature correctness pass; preserve D043 and build a new production release |
+| D076 | Progressive slice prefetch and updating feedback | accepted | 2026-09-08 | foreground rendering takes priority; progressively cache all registered SVG packs, bound directional volume prefetch to the active feature, retain explicitly updating pixels until replacement is ready |
 
 ## D001 — Separate v2
 
@@ -1836,3 +1837,24 @@ through the ordinary release transaction. Curator promotion adds volumes in
 new Ephys Atlas edition `ibl-review-20260908-v2`; the exposed v1 edition mapping
 remains unchanged. Channels `rms_ap.denoised` remains the initial default.
 This is D074's initial IBL review deployment, not the Q2/Q9 paper freeze.
+
+## D076 — Progressive slice prefetch and updating feedback
+
+The owner approves warming all registered SVG packs progressively after visible
+slices are usable: nearby packs first, then farther packs, across the three
+orientations. Cache verified compressed bytes with the existing bounded Cache
+API policy; persistence remains subject to browser storage availability and
+eviction. Foreground navigation takes priority over queued background work.
+
+Volume prefetch remains bounded to the current feature and the next pack in the
+direction of travel, using its declared layout. Cancel obsolete work when the
+feature, dataset or target changes; never warm whole feature volumes implicitly.
+Retain the previous image with an immediate Updating notice while a feature
+loads, then clear the notice only when its replacement renders. Failed loads
+must clear busy feedback and disclose the failure.
+
+D075's three-pack startup requirement counts the three visible foreground
+planes. Background prefetch is measured separately; it is not a fourth required
+startup request or a reason to reject useful warming. D075's frozen measurements
+remain evidence for its original runtime, not measurements of this new policy.
+The depth-four scientific release, source values and geometry remain unchanged.

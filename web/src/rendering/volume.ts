@@ -35,6 +35,7 @@ export interface VolumeChunkSource {
 export interface VolumeSliceSource {
   loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<VolumeSlice>;
   prefetchAdjacent?(axis: SliceAxis, index: number, radius?: number, signal?: AbortSignal): Promise<void>;
+  prefetchNextPack?(axis: SliceAxis, index: number, direction: -1 | 1, signal?: AbortSignal): Promise<void>;
   dispose?(): void;
 }
 
@@ -300,6 +301,10 @@ export class VolumeSliceLoader implements VolumeSliceSource {
         return chunk;
       }, signal);
     });
+  }
+
+  async prefetchNextPack(axis: SliceAxis, index: number, direction: -1 | 1, signal?: AbortSignal): Promise<void> {
+    await this.prefetchAdjacent(axis, index + direction, 0, signal);
   }
 
   dispose(): void {

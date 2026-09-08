@@ -77,6 +77,8 @@ export interface ProjectionInteractionSink {
 /** One retained DOM viewport owned by one projection frame. */
 export interface ProjectionViewport {
   render(model: ProjectionRenderModel): void | Promise<void>;
+  /** Abort pending work while retaining the currently displayed layers. */
+  suspend?(): void;
   clear(): void;
   showError(error: unknown): void;
   destroy(): void;

@@ -173,6 +173,16 @@ export class SchemaSlicePackVolumeSource implements VolumeSliceSource {
     await Promise.all([...packs].map((pack) => this.loadPack(axis, pack, signal).then(() => undefined)));
   }
 
+  async prefetchNextPack(axis: SliceAxis, index: number, direction: -1 | 1, signal?: AbortSignal): Promise<void> {
+    if (this.disposed) return;
+    const dimension = axisDimension(this.feature, axis);
+    const count = this.feature.descriptor.grid.shape[dimension]!;
+    const currentPack = Math.floor(index / this.resource.packDepth);
+    const nextPack = currentPack + direction;
+    if (nextPack < 0 || nextPack * this.resource.packDepth >= count) return;
+    await this.loadPack(axis, nextPack, signal).then(() => undefined);
+  }
+
   dispose(): void {
     this.disposed = true;
     this.pending.clear();

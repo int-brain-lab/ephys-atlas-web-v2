@@ -227,7 +227,16 @@ export class AtlasApp {
 
   private render(): void {
     const state = this.store.getState();
-    const data = this.session.snapshot();
+    const snapshot = this.session.snapshot();
+    const manifestMatches = snapshot.manifest?.dataset.id === state.view.dataset.datasetId
+      && snapshot.manifest?.dataset.release === state.view.dataset.releaseId;
+    const featureMatches = manifestMatches && snapshot.feature?.featureId === state.view.featureId
+      && snapshot.feature?.representation === state.view.representation
+      && (snapshot.feature?.representation !== 'regional'
+        || snapshot.feature.parcellation === state.view.parcellation);
+    const data = { ...snapshot, feature: featureMatches ? snapshot.feature : null };
+    const featureLoading = state.runtime.datasetStatus !== 'error'
+      && (!manifestMatches || (!!state.view.featureId && !featureMatches));
     const anatomyRegions = this.atlasRegions?.mappings[state.view.parcellation] ?? data.regions;
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
     const representationDisplay = data.feature
@@ -302,7 +311,7 @@ export class AtlasApp {
       volumeOpacity: state.view.layers.volumeOpacity,
       anatomyOutlines: state.view.layers.anatomyOutlines,
     };
-    if (this.presentationChanged(presentation)) {
+    if (!featureLoading && this.presentationChanged(presentation)) {
       this.viewportPresentation = presentation;
       this.viewportFactory.updatePresentation(presentation);
     }
@@ -312,6 +321,7 @@ export class AtlasApp {
       catalog: data.catalog,
       manifest: data.manifest,
       feature: data.feature,
+      featureLoading,
       displaySliceInventories: this.displaySliceInventories,
       regionalPresentation: this.viewportPresentation?.regional ?? presentation.regional,
       presentationScale,

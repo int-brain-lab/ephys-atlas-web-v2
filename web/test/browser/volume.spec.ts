@@ -1,22 +1,30 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
-test('volume loading requests only visible planes, then one new chunk at a boundary', async ({ page }) => {
+test('visible volume planes finish without background chunks, then navigation reuses prefetch', async ({ page }) => {
   const chunks: string[] = [];
   page.on('request', (request) => {
     if (request.url().includes('/features/rms_ap/volume/chunks/')) {
       chunks.push(new URL(request.url()).pathname.split('/').at(-1)!);
     }
   });
+  let releaseBackground!: () => void;
+  const backgroundGate = new Promise<void>((resolve) => { releaseBackground = resolve; });
+  await page.route('**/features/rms_ap/volume/chunks/1.1.1.f32', async (route) => {
+    await backgroundGate;
+    await route.continue();
+  });
   await page.goto('/app/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
-  await page.waitForLoadState('networkidle');
-  // The three planes cross seven of the fixture's eight chunks. The far
-  // corner is unnecessary until the coronal plane crosses its chunk boundary.
-  expect([...chunks].sort()).toEqual([
+  // The seven visible chunks render while the optional far corner is blocked.
+  // Background traffic is measured separately from the foreground requirement.
+  expect(chunks.filter((chunk) => chunk !== '1.1.1.f32').sort()).toEqual([
     '0.0.0.f32', '0.0.1.f32', '0.1.0.f32', '0.1.1.f32',
     '1.0.0.f32', '1.0.1.f32', '1.1.0.f32',
   ]);
+  releaseBackground();
+  await page.waitForLoadState('networkidle');
+  expect(chunks).toHaveLength(8);
   const navigate = (cursor: string) => page.evaluate((value) => {
     const url = new URL(location.href);
     url.searchParams.set('cursor', value);

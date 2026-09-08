@@ -105,6 +105,7 @@ export interface ShellModel {
   catalog: DatasetCatalog | null;
   manifest: DatasetManifest | null;
   feature: FeaturePayload | null;
+  featureLoading?: boolean;
   displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null;
   regionalPresentation: RegionalPresentation;
   presentationScale: ResolvedPresentationScale;
@@ -1792,7 +1793,7 @@ export class AppShell {
         : state.runtime.datasetStatus === 'loading' || state.runtime.datasetStatus === 'idle'
           ? 'Loading features…'
           : 'No features are available for this release.',
-      busy: state.runtime.datasetStatus === 'loading' || state.runtime.datasetStatus === 'idle',
+      busy: !!model.featureLoading || state.runtime.datasetStatus === 'loading' || state.runtime.datasetStatus === 'idle',
     });
 
     const selectedFeature = manifest?.features.find((feature) => feature.id === state.view.featureId);
@@ -2454,12 +2455,21 @@ export class AppShell {
     const nodes = this.staticFrames.get(content.projectionId);
     if (!nodes) return;
     const view = model.state.view;
+    if (model.featureLoading) {
+      nodes.renderToken += 1;
+      nodes.renderKey = '';
+      nodes.frame.setAttribute('aria-busy', 'true');
+      nodes.notice.hidden = false;
+      nodes.notice.textContent = 'Updating…';
+      return;
+    }
     const projectionParcellation = model.regionalPresentation.mapping;
     const renderKey = [view.dataset.datasetId, view.dataset.releaseId ?? '', projectionParcellation,
       model.feature?.featureId ?? '', model.feature?.representation ?? ''].join(':');
     if (renderKey === nodes.renderKey) return;
     nodes.renderKey = renderKey;
     const token = ++nodes.renderToken;
+    nodes.notice.hidden = false;
     nodes.notice.textContent = 'Loading static projection…';
     const pending = nodes.viewport.render({
       projectionId: content.projectionId,
@@ -2468,6 +2478,7 @@ export class AppShell {
     });
     Promise.resolve(pending).then(() => {
       if (nodes.renderToken !== token) return;
+      nodes.frame.setAttribute('aria-busy', 'false');
       const viewport = nodes.target.querySelector<HTMLElement>('[data-static-source-mode]');
       const sourceMode = viewport?.dataset.staticSourceMode;
       nodes.notice.textContent = sourceMode === 'pinned-review'
@@ -2484,6 +2495,7 @@ export class AppShell {
       nodes.notice.hidden = nodes.notice.textContent === '';
     }).catch((error: unknown) => {
       if (nodes.renderToken !== token) return;
+      nodes.frame.setAttribute('aria-busy', 'false');
       nodes.notice.textContent = 'Static projection unavailable';
       nodes.viewport.showError(error);
       this.callbacks.reportError(error);
@@ -2536,7 +2548,8 @@ export class AppShell {
       }
       if (visible) viewport.activate();
       else viewport.deactivate();
-      this.scene3dNotice.textContent = view.representation === 'volume'
+      this.scene3dHost.setAttribute('aria-busy', String(!!model.featureLoading));
+      this.scene3dNotice.textContent = model.featureLoading ? 'Updating…' : view.representation === 'volume'
         ? '3-D anatomy · anatomy only — volume scalars are not defined on this view'
         : '3-D anatomy';
       this.scene3dNotice.dataset.state = 'ready';
@@ -2564,6 +2577,25 @@ export class AppShell {
     nodes.slider.value = String(displayOrdinal);
     nodes.slider.setAttribute('aria-valuetext', coordinate);
 
+    if (model.featureLoading) {
+      if (nodes.frame.dataset.updating !== 'feature') {
+        nodes.renderToken += 1;
+        nodes.renderKey = '';
+        nodes.geometryKey = '';
+        nodes.viewport.suspend?.();
+      }
+      if (nodes.loadingNoticeTimer !== null) {
+        window.clearTimeout(nodes.loadingNoticeTimer);
+        nodes.loadingNoticeTimer = null;
+      }
+      this.hideRegionTooltip(axis);
+      nodes.frame.dataset.updating = 'feature';
+      nodes.frame.setAttribute('aria-busy', 'true');
+      nodes.status.removeAttribute('aria-label');
+      nodes.status.textContent = 'Updating…';
+      return;
+    }
+    const featureWasLoading = nodes.frame.dataset.updating === 'feature';
     const projectionParcellation = model.regionalPresentation.mapping;
     const geometryKey = [
       view.dataset.datasetId,
@@ -2593,11 +2625,13 @@ export class AppShell {
       this.hideRegionTooltip(axis);
       nodes.frame.dataset.state = retainsRenderedFrame ? 'ready' : 'loading';
       nodes.status.removeAttribute('aria-label');
-      nodes.status.textContent = retainsRenderedFrame ? '' : 'Loading';
+      nodes.frame.dataset.updating = featureWasLoading ? 'feature' : 'slice';
+      nodes.frame.setAttribute('aria-busy', 'true');
+      nodes.status.textContent = featureWasLoading ? 'Updating…' : retainsRenderedFrame ? '' : 'Loading';
       if (retainsRenderedFrame) {
         nodes.loadingNoticeTimer = window.setTimeout(() => {
           nodes.loadingNoticeTimer = null;
-          if (nodes.renderToken === token) nodes.status.textContent = 'Loading slice…';
+          if (nodes.renderToken === token && !featureWasLoading) nodes.status.textContent = 'Loading slice…';
         }, SLICE_LOADING_NOTICE_DELAY_MS);
       }
       if (stateMessage) {
@@ -2619,6 +2653,8 @@ export class AppShell {
 
     Promise.resolve(pending).then(() => {
       if (nodes.renderToken !== token) return;
+      delete nodes.frame.dataset.updating;
+      nodes.frame.setAttribute('aria-busy', 'false');
       if (!geometryChanged) return;
       if (nodes.loadingNoticeTimer !== null) {
         window.clearTimeout(nodes.loadingNoticeTimer);
@@ -2633,6 +2669,8 @@ export class AppShell {
         window.clearTimeout(nodes.loadingNoticeTimer);
         nodes.loadingNoticeTimer = null;
       }
+      delete nodes.frame.dataset.updating;
+      nodes.frame.setAttribute('aria-busy', 'false');
       const preservedSliceAsset = nodes.target.dataset.sliceAsset;
       const preservedFrame = preservedSliceAsset === 'projection-pack-v1'
         || preservedSliceAsset === 'schema-volume-v1';
