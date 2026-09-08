@@ -67,12 +67,26 @@ for (const supported of [true, false]) test(supported
       const image=new Image(); image.src=`data:image/png;base64,${data}`; await image.decode();
       const canvas=document.createElement('canvas'); canvas.width=image.width;canvas.height=image.height;
       const context=canvas.getContext('2d')!;context.drawImage(image,0,0);
-      return [...context.getImageData(0,0,image.width,image.height).data];
+      const rgba=context.getImageData(0,0,image.width,image.height).data;
+      const state=(window as any).oitTest;
+      const baseline: Uint8ClampedArray | undefined = state.baselinePixels;
+      let maxDifference: number | null = null;
+      if (baseline) {
+        if (baseline.length === rgba.length) {
+          maxDifference = 0;
+          for (let index=0; index<rgba.length; index++) maxDifference=Math.max(maxDifference,Math.abs(rgba[index]! - baseline[index]!));
+        }
+      } else {
+        state.baselinePixels = new Uint8ClampedArray(rgba);
+      }
+      const sample = (x:number,y:number) => Array.from(rgba.slice((y*image.width+x)*4,(y*image.width+x)*4+3));
+      let brightRgbComponents = 0;
+      for (let index=0; index<rgba.length; index++) if (index % 4 !== 3 && rgba[index]! > 100) brightRgbComponents++;
+      return {left:sample(175,220),right:sample(225,220),brightRgbComponents,maxDifference};
     }, bytes.toString('base64'));
   };
   const initial = await pixels();
-  const sample = (x:number,y:number) => initial.slice((y*400+x)*4,(y*400+x)*4+3);
-  const left = sample(175,220); const right = sample(225,220);
+  const left = initial.left; const right = initial.right;
   expect(left[2]).toBeGreaterThan(180); // opaque blue survives behind translucent red
   expect(left[0]).toBeGreaterThan(50); // front red contributes
   expect(left[1]).toBeLessThan(30); // green behind opaque blue is rejected
@@ -80,7 +94,8 @@ for (const supported of [true, false]) test(supported
   for (const split of [false,true]) {
     await page.evaluate((split) => (window as any).oitTest.create(true,split), split);
     const reversed = await pixels();
-    expect(reversed.reduce((max,value,index) => Math.max(max,Math.abs(value-initial[index]!)),0)).toBeLessThanOrEqual(2);
+    expect(reversed.maxDifference).not.toBeNull();
+    expect(reversed.maxDifference!).toBeLessThanOrEqual(2);
   }
   await page.mouse.move(225,220); await expect(host).toHaveAttribute('data-pick','1');
   await page.evaluate(() => (window as any).oitTest.select([]));
@@ -101,7 +116,7 @@ for (const supported of [true, false]) test(supported
   await page.evaluate(() => (window as any).oitTest.restore());
   await expect(host).toHaveAttribute('data-scene3d-state','ready');
   const restored = await pixels();
-  expect(restored.filter((value,index) => index % 4 !== 3 && value > 100).length).toBeGreaterThan(1000);
+  expect(restored.brightRgbComponents).toBeGreaterThan(1000);
   // Directional shading must reveal orientation, not the nearly flat absolute
   // normal dot product used before. Both cases retain the same OIT coverage.
   await page.evaluate(() => { document.querySelector<HTMLElement>('#oit-test')!.style.width='400px'; });
@@ -110,8 +125,12 @@ for (const supported of [true, false]) test(supported
   const lit = await pixels();
   await page.evaluate(() => (window as any).oitTest.create(false,false,[.55,-.65,.1]));
   const shaded = await pixels();
-  expect(lit[(220*400+175)*4+2]! - shaded[(220*400+175)*4+2]!).toBeGreaterThan(30);
-  await page.evaluate(() => (window as any).oitTest.destroy());
+  expect(lit.left[2]! - shaded.left[2]!).toBeGreaterThan(30);
+  await page.evaluate(() => {
+    const state = (window as any).oitTest;
+    state.destroy();
+    delete state.baselinePixels;
+  });
   await expect(host).toHaveAttribute('data-scene3d-state','destroyed');
   expect(errors).toEqual([]);
 });
