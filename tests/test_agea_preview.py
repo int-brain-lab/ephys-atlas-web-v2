@@ -11,7 +11,8 @@ import pytest
 from ephys_atlas_builder.schema_v1 import validate_schema_v1_document
 from ephys_atlas_builder.validate import validate_release
 
-from tools.agea_preview import build_preview
+from tools.agea_preview import build_preview, build_production_release
+from tools.release_preflight import RepositoryState, check_release
 
 AFFINE = (
     200.0,
@@ -153,6 +154,61 @@ def test_refuses_existing_output_and_changed_source(tmp_path: Path) -> None:
             source_hashes=hashes,
             affine=AFFINE,
             builder_commit="abcdef0",
+        )
+
+
+def test_builds_preflightable_original_release_with_provisional_notes_only_in_provenance(
+    tmp_path: Path,
+) -> None:
+    source, hashes = _source(tmp_path)
+    review = tmp_path / "review.json"
+    review.write_text('{"alignment_accepted":false}\n')
+    commit = "a" * 40
+    release = build_production_release(
+        source,
+        tmp_path / "production",
+        created_at="2026-09-08T12:00:00Z",
+        alignment_review=review,
+        shape=(2, 2, 2, 2),
+        source_hashes=hashes,
+        affine=AFFINE,
+        builder_commit=commit,
+        release_id="agea-original-20260908-v1",
+    )
+    manifest = json.loads((release / "manifest.json").read_text())
+    catalog = json.loads((release.parents[2] / "catalog.json").read_text())
+    assert release.name == "agea-original-20260908-v1"
+    assert manifest["title"] == "Allen Gene Expression Atlas"
+    assert manifest["provenance"]["recipe"]["id"] == "agea-original-v1"
+    assert manifest["provenance"]["recipe"]["decision"] == "D074"
+    assert manifest["provenance"]["recipe"]["registration_status"] == "provisional"
+    assert "-1 is treated as missing" in manifest["provenance"]["notes"][1]
+    assert "Alignment with the anatomical atlas is provisional" in manifest["provenance"]["notes"][2]
+    assert "preview" not in json.dumps(catalog).lower()
+    assert "status" not in catalog["datasets"][0]["releases"][0]
+    check_release(
+        release,
+        repo=RepositoryState(branch="main", commit=commit, clean=True),
+        host_os="Linux",
+    )
+
+
+@pytest.mark.parametrize("release_id", ["agea-local-preview-v1", "agea-candidate-v1"])
+def test_production_release_rejects_local_or_candidate_identity(tmp_path: Path, release_id: str) -> None:
+    source, hashes = _source(tmp_path)
+    review = tmp_path / "review.json"
+    review.write_text("{}\n")
+    with pytest.raises(ValueError, match="cannot be candidate or local"):
+        build_production_release(
+            source,
+            tmp_path / "production",
+            created_at="2026-09-08T12:00:00Z",
+            alignment_review=review,
+            shape=(2, 2, 2, 2),
+            source_hashes=hashes,
+            affine=AFFINE,
+            builder_commit="a" * 40,
+            release_id=release_id,
         )
 
 

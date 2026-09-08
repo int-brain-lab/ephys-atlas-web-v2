@@ -1405,6 +1405,12 @@ export class AppShell {
       }
       provenance.append(sources);
     }
+    if (manifest.provenance.notes.length) {
+      const notes = element('section', 'info-dialog__notes');
+      notes.append(heading('Release notes', 3));
+      for (const note of manifest.provenance.notes) notes.append(this.infoParagraph(note));
+      provenance.append(notes);
+    }
     sections.push(provenance);
     this.infoContent.replaceChildren(...sections);
   }

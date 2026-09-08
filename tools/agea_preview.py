@@ -1,12 +1,14 @@
-"""Build the explicitly non-public AGEA schema-v1 local preview."""
+"""Build the reviewed original AGEA schema-v1 release or local preview."""
 
 from __future__ import annotations
 
 import argparse
 import gzip
 import json
+import re
 import shutil
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -31,11 +33,66 @@ from iblatlas.genomics import agea
 
 from tools.agea_benchmark import SHAPE, SOURCE_HASHES, verify
 
-TITLE = "AGEA — local preview; registration provisional"
 DATASET_ID = "agea"
 SOURCE_URI = "https://ibl-brain-wide-map-public.s3.amazonaws.com/atlas/agea/"
 IBLATLAS_COMMIT = "52083adf44825d0622a503705e095699a5957587"
 GRID_ID = "agea-original-200um-loader-grid"
+
+
+@dataclass(frozen=True)
+class ReleaseProfile:
+    """Publication identity only; the source recipe remains identical."""
+
+    title: str
+    project_id: str
+    release_prefix: str
+    recipe_id: str
+    decision: str
+    scientific_release: bool
+    catalog_status: str | None
+    catalog_description: str
+    release_description: str
+    builder_name: str
+    builder_command: str
+    notes: tuple[str, ...]
+
+
+LOCAL_PREVIEW = ReleaseProfile(
+    title="AGEA — local preview; registration provisional",
+    project_id="agea-local-preview",
+    release_prefix="agea-original-local-preview",
+    recipe_id="agea-original-local-preview-v1",
+    decision="D069",
+    scientific_release=False,
+    catalog_status="development",
+    catalog_description="Owner-authorized local preview only; never production or publication.",
+    release_description="Owner-authorized local preview only; never production or publication.",
+    builder_name="agea-local-preview-builder",
+    builder_command="python -m tools.agea_preview (local preview only)",
+    notes=(
+        "Explicitly owner-authorized for local preview only; this is not an approved scientific or publishable release.",
+        "No anatomical mask was invented. Source values and the pinned loader affine are unchanged.",
+    ),
+)
+
+PRODUCTION = ReleaseProfile(
+    title="Allen Gene Expression Atlas",
+    project_id="agea",
+    release_prefix="agea-original",
+    recipe_id="agea-original-v1",
+    decision="D074",
+    scientific_release=True,
+    catalog_status=None,
+    catalog_description="Original Allen gene-expression experiments.",
+    release_description="Original Allen gene-expression experiments.",
+    builder_name="agea-original-builder",
+    builder_command="python -m tools.agea_preview --production",
+    notes=(
+        "Original AGEA expression-energy values are preserved as source float16 values: no denoising, imputation, normalization, anatomical masking, or experiment aggregation was applied.",
+        "-1 is treated as missing; zero and other nonnegative values are retained, including outside the coarse brain labels.",
+        "Alignment with the anatomical atlas is provisional and has not yet been independently validated. The source coordinate transform is unchanged.",
+    ),
+)
 
 
 def _loader_affine(source: Path) -> tuple[float, ...]:
@@ -123,6 +180,7 @@ def _write_feature(
     grid: dict,
     transport: Path | None,
     transport_item: dict | None,
+    profile: ReleaseProfile,
 ) -> dict:
     feature_root = release / "features" / feature_id
     if transport_item is None:
@@ -225,7 +283,7 @@ def _write_feature(
         "schema_version": "1.0",
         "id": feature_id,
         "label": label,
-        "description": f"{TITLE}. Original Allen expression-energy experiment {experiment_id}; raw source values.",
+        "description": f"{profile.title}. Original Allen expression-energy experiment {experiment_id}; raw source values.",
         "unit": None,
         "display": {"volume": display},
         "value_semantics": {
@@ -263,10 +321,11 @@ def _write_feature(
     }
 
 
-def build_preview(
+def build_release(
     source: Path,
     output: Path,
     *,
+    profile: ReleaseProfile,
     created_at: str,
     alignment_review: Path,
     transport: Path | None = None,
@@ -274,6 +333,7 @@ def build_preview(
     source_hashes: dict[str, str] = SOURCE_HASHES,
     affine: tuple[float, ...] | None = None,
     builder_commit: str | None = None,
+    release_id: str | None = None,
 ) -> Path:
     if output.exists():
         raise ValueError(f"output already exists: {output}")
@@ -300,10 +360,14 @@ def build_preview(
         ).stdout.strip()
     )
     script_sha = sha256_file(Path(__file__))
-    release_id = (
-        f"agea-original-local-preview-{source_hashes['gene-expression.bin'][:8]}-"
+    release_id = release_id or (
+        f"{profile.release_prefix}-{source_hashes['gene-expression.bin'][:8]}-"
         f"{commit[:8]}-{script_sha[:8]}"
     )
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", release_id):
+        raise ValueError("release ID is invalid")
+    if profile is PRODUCTION and any(marker in release_id.lower() for marker in ("candidate", "local-preview", "local-rebuild")):
+        raise ValueError("production AGEA release ID cannot be candidate or local")
     release = output / "releases" / DATASET_ID / release_id
     release.mkdir(parents=True)
     volumes = np.memmap(source_volume, dtype="<f2", mode="r", shape=shape)
@@ -337,6 +401,7 @@ def build_preview(
                 grid,
                 transport,
                 item,
+                profile,
             )
         )
     json_paths = [entry["descriptor"]["resource"]["path"] for entry in features]
@@ -346,8 +411,8 @@ def build_preview(
     manifest = {
         "schema_version": "1.0",
         "dataset_id": DATASET_ID,
-        "title": TITLE,
-        "description": f"{TITLE}. Owner-authorized real-data preview only; never production or publication.",
+        "title": profile.title,
+        "description": profile.release_description,
         "release": {
             "release_id": release_id,
             "immutable": True,
@@ -373,29 +438,29 @@ def build_preview(
                 },
                 {
                     "role": "selection-freeze",
-                    "description": "Owner AGEA local-preview alignment review; registration remains provisional",
+                    "description": "Owner AGEA alignment review",
                     "path": alignment_review.name,
                     "sha256": review_sha,
                 },
                 {
                     "role": "publication-input",
-                    "description": "Exact local-preview builder script; not a production publication input",
+                    "description": "Exact AGEA release-builder script",
                     "path": "tools/agea_preview.py",
                     "sha256": script_sha,
                 },
             ],
             "builder": {
-                "name": "agea-local-preview-builder",
+                "name": profile.builder_name,
                 "version": "1.0.0",
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 "commit": commit,
-                "command": "python -m tools.agea_preview (local preview only)",
+                "command": profile.builder_command,
                 "environment": build_environment(),
             },
             "recipe": {
-                "id": "agea-original-local-preview-v1",
-                "decision": "D069",
-                "scientific_release": False,
+                "id": profile.recipe_id,
+                "decision": profile.decision,
+                "scientific_release": profile.scientific_release,
                 "source_variant": "original",
                 "source_vintage_marker": "2025-03-18.version",
                 "original_binary_last_modified": "2024-01-21",
@@ -414,13 +479,8 @@ def build_preview(
                 "normalization": "none",
                 "layout": "chunks3d-one-chunk-per-experiment",
                 "histogram": "Linear/Full, 64 bins",
-                "builder_worktree": "dirty local preview allowed; exact script SHA recorded",
             },
-            "notes": [
-                TITLE,
-                "Explicitly owner-authorized for local preview only; this is not an approved scientific or publishable release.",
-                "No anatomical mask was invented. Source values and the pinned loader affine are unchanged.",
-            ],
+            "notes": list(profile.notes),
         },
         "parcellations": [],
         "features": features,
@@ -434,20 +494,20 @@ def build_preview(
     )
     catalog = {
         "schema_version": "1.0",
-        "default_project": "agea-local-preview",
+        "default_project": profile.project_id,
         "projects": [
             {
-                "project_id": "agea-local-preview",
-                "title": TITLE,
-                "description": f"{TITLE}. Never production or publication.",
+                "project_id": profile.project_id,
+                "title": profile.title,
+                "description": profile.catalog_description,
                 "dataset_ids": [DATASET_ID],
                 "default_dataset": DATASET_ID,
                 "default_edition": release_id,
                 "editions": [
                     {
                         "edition_id": release_id,
-                        "label": TITLE,
-                        "description": f"{TITLE}. Original source; owner-authorized local preview only.",
+                        "label": profile.title,
+                        "description": profile.catalog_description,
                         "dataset_releases": [
                             {"dataset_id": DATASET_ID, "release_id": release_id}
                         ],
@@ -458,15 +518,15 @@ def build_preview(
         "datasets": [
             {
                 "dataset_id": DATASET_ID,
-                "title": TITLE,
-                "description": f"{TITLE}. Full original AGEA experiment catalog.",
+                "title": profile.title,
+                "description": profile.catalog_description,
                 "default_release": release_id,
                 "releases": [
                     {
                         "release_id": release_id,
-                        "label": TITLE,
-                        "status": "development",
-                        "description": f"{TITLE}. Never production or publication.",
+                        "label": profile.title,
+                        **({"status": profile.catalog_status} if profile.catalog_status else {}),
+                        "description": profile.catalog_description,
                         "manifest": manifest_resource,
                     }
                 ],
@@ -475,6 +535,48 @@ def build_preview(
     }
     write_json(output / "catalog.json", catalog)
     return release
+
+
+def build_preview(
+    source: Path,
+    output: Path,
+    *,
+    created_at: str,
+    alignment_review: Path,
+    transport: Path | None = None,
+    shape: tuple[int, int, int, int] = SHAPE,
+    source_hashes: dict[str, str] = SOURCE_HASHES,
+    affine: tuple[float, ...] | None = None,
+    builder_commit: str | None = None,
+) -> Path:
+    """Retain the D069 local-preview entry point and identity."""
+    return build_release(
+        source, output, profile=LOCAL_PREVIEW, created_at=created_at,
+        alignment_review=alignment_review, transport=transport, shape=shape,
+        source_hashes=source_hashes, affine=affine, builder_commit=builder_commit,
+    )
+
+
+def build_production_release(
+    source: Path,
+    output: Path,
+    *,
+    created_at: str,
+    alignment_review: Path,
+    transport: Path | None = None,
+    shape: tuple[int, int, int, int] = SHAPE,
+    source_hashes: dict[str, str] = SOURCE_HASHES,
+    affine: tuple[float, ...] | None = None,
+    builder_commit: str | None = None,
+    release_id: str | None = None,
+) -> Path:
+    """Build D074's original-value release; deployment maturity is external."""
+    return build_release(
+        source, output, profile=PRODUCTION, created_at=created_at,
+        alignment_review=alignment_review, transport=transport, shape=shape,
+        source_hashes=source_hashes, affine=affine, builder_commit=builder_commit,
+        release_id=release_id,
+    )
 
 
 def main() -> None:
@@ -490,14 +592,33 @@ def main() -> None:
         default=Path("docs/data/AGEA_ALIGNMENT_REVIEW.json"),
     )
     parser.add_argument("--transport", type=Path)
-    args = parser.parse_args()
-    release = build_preview(
-        args.source,
-        args.output,
-        created_at=args.created_at,
-        alignment_review=args.alignment_review,
-        transport=args.transport,
+    parser.add_argument(
+        "--production",
+        action="store_true",
+        help="build the D074 production-intent original-value release",
     )
+    parser.add_argument(
+        "--release-id",
+        help="required immutable release ID for --production",
+    )
+    args = parser.parse_args()
+    if args.production:
+        if not args.release_id:
+            parser.error("--production requires --release-id")
+        if args.output == Path("artifacts/agea-local-preview"):
+            parser.error("--production requires an explicit --output directory")
+        release = build_production_release(
+            args.source, args.output, created_at=args.created_at,
+            alignment_review=args.alignment_review, transport=args.transport,
+            release_id=args.release_id,
+        )
+    else:
+        if args.release_id:
+            parser.error("--release-id requires --production")
+        release = build_preview(
+            args.source, args.output, created_at=args.created_at,
+            alignment_review=args.alignment_review, transport=args.transport,
+        )
     print(release)
 
 

@@ -33,10 +33,16 @@ class SiteResources(HTMLParser):
 
 
 def dependencies(config: dict) -> list[dict]:
-    if set(config) not in ({"catalog", "projection"}, {"catalog", "projection", "mesh"}):
-        raise ValueError("site config requires catalog/projection and optional mesh")
+    if set(config) not in (
+        {"catalog", "projection"}, {"catalog", "projection", "mesh"},
+        {"catalog", "projection", "default_view"}, {"catalog", "projection", "mesh", "default_view"},
+    ):
+        raise ValueError("site config requires catalog/projection, optional mesh and optional default_view")
     result = []
-    for kind, descriptor in config.items():
+    for kind in ("catalog", "projection", "mesh"):
+        if kind not in config:
+            continue
+        descriptor = config[kind]
         if not isinstance(descriptor, dict) or set(descriptor) != {"path", "bytes", "sha256"}:
             raise ValueError("site dependencies require exact path/bytes/sha256")
         path = descriptor["path"]
@@ -51,6 +57,47 @@ def dependencies(config: dict) -> list[dict]:
     return sorted(result, key=lambda d: d["path"])
 
 
+def default_view(config: dict) -> dict[str, str] | None:
+    """Validate a site-bound initial view against its tracked curator input."""
+    raw = config.get("default_view")
+    if raw is None:
+        return None
+    if not isinstance(raw, dict) or set(raw) != {
+        "project_id", "dataset_id", "release_id", "feature_id", "parcellation_id", "curator_config",
+    }:
+        raise ValueError("site default_view requires project/dataset/release/feature/parcellation and curator_config")
+    identifiers = {key: raw[key] for key in ("project_id", "dataset_id", "release_id", "feature_id", "parcellation_id")}
+    if any(not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", value) for value in identifiers.values()):
+        raise ValueError("site default_view identifiers are invalid")
+    if identifiers["parcellation_id"] not in {"allen", "beryl", "cosmos"}:
+        raise ValueError("site default_view parcellation is invalid")
+    curator = raw["curator_config"]
+    if not isinstance(curator, str) or not re.fullmatch(r"data/deployment/[A-Za-z0-9][A-Za-z0-9._-]*\.json", curator):
+        raise ValueError("site default_view curator_config is invalid")
+    curator_path = REPOSITORY / curator
+    subprocess.run(["git", "ls-files", "--error-unmatch", "--", curator], cwd=REPOSITORY, check=True, capture_output=True)
+    catalog = json.loads(curator_path.read_bytes())
+    if catalog.get("default_project") != identifiers["project_id"]:
+        raise ValueError("site default_view project must equal the curator default_project")
+    projects = catalog.get("projects")
+    datasets = catalog.get("datasets")
+    if not isinstance(projects, list) or not isinstance(datasets, list):
+        raise ValueError("site default_view curator config is invalid")
+    project = next((item for item in projects if isinstance(item, dict) and item.get("project_id") == identifiers["project_id"]), None)
+    dataset = next((item for item in datasets if isinstance(item, dict) and item.get("dataset_id") == identifiers["dataset_id"]), None)
+    if project is None or dataset is None or dataset.get("default_release") != identifiers["release_id"]:
+        raise ValueError("site default_view dataset/release is absent from curator defaults")
+    if project.get("default_dataset") != identifiers["dataset_id"]:
+        raise ValueError("site default_view dataset must equal the curator default_dataset")
+    if identifiers["dataset_id"] not in project.get("dataset_ids", []):
+        raise ValueError("site default_view dataset is outside curator project")
+    edition_id = project.get("default_edition")
+    edition = next((item for item in project.get("editions", []) if isinstance(item, dict) and item.get("edition_id") == edition_id), None)
+    if edition is None or {"dataset_id": identifiers["dataset_id"], "release_id": identifiers["release_id"]} not in edition.get("dataset_releases", []):
+        raise ValueError("site default_view release is absent from curator default edition")
+    return {key: str(value) for key, value in identifiers.items()}
+
+
 def build_environment_for_site(config: dict) -> dict[str, str]:
     dependencies(config)
     environment = {k: v for k, v in os.environ.items() if not k.startswith(("VITE_", "EPHYS_ATLAS_", "AGEA_"))}
@@ -60,6 +107,14 @@ def build_environment_for_site(config: dict) -> dict[str, str]:
         environment.update(VITE_BRAIN_MESH_MANIFEST_URL="/" + config["mesh"]["path"],
                            VITE_BRAIN_MESH_MANIFEST_BYTES=str(config["mesh"]["bytes"]),
                            VITE_BRAIN_MESH_MANIFEST_SHA256=config["mesh"]["sha256"])
+    view = default_view(config)
+    if view is not None:
+        environment.update(
+            VITE_DEFAULT_DATASET_ID=view["dataset_id"],
+            VITE_DEFAULT_RELEASE_ID=view["release_id"],
+            VITE_DEFAULT_FEATURE_ID=view["feature_id"],
+            VITE_DEFAULT_PARCELLATION_ID=view["parcellation_id"],
+        )
     return environment
 
 
@@ -68,6 +123,7 @@ def validate_site(root: Path, repo) -> dict:
     if receipt.get("format") != "atlas-site-build-v1" or receipt.get("commit") != repo.commit or receipt.get("environment") != build_environment():
         raise ValueError("site requires exact current Linux build provenance")
     expected_dependencies = dependencies(receipt["config"])
+    default_view(receipt["config"])
     if receipt.get("dependencies") != expected_dependencies:
         raise ValueError("site dependency inventory differs")
     identity = hashlib.sha256(json_bytes({k: receipt[k] for k in ("commit", "environment", "node", "config")})).hexdigest()[:32]

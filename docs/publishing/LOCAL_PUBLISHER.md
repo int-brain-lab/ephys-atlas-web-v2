@@ -2,8 +2,10 @@
 
 Status: runbook; offline-tested implementation. Repository publication commands
 have made no remote upload or site deployment. The separate 2026-09-08 audit
-observed existing production DNS/CloudFront setup; Q8 still gates changes and
-remote publisher use. Q2/Q5/Q9/Q19 govern scientific content and defaults.
+observed existing production DNS/CloudFront setup. D074 authorizes the scoped
+initial deployment; missing AWS administrator setup/access and validation are
+the current execution blockers. Q5 and the remaining paper/final-review
+questions retain their stated scientific scope.
 
 Run these commands from the repository root with the locked builder environment.
 All publication commands default to offline validation/planning. `--apply`
@@ -18,6 +20,22 @@ It preflights a private snapshot on clean Linux `main`, stages/validates encoded
 objects, creates immutable dependencies before the manifest, writes the
 completion record, and conditionally updates the administrative dataset index.
 It never changes the public catalog, project editions or scientific defaults.
+
+For a Q5 transport candidate, use the explicit non-catalogued staging mode:
+
+```bash
+uv run --project builder --extra test --locked python -m tools.s3_publish \
+  data/releases/ephys_atlas_volumes/<candidate-release-id> \
+  --environment staging --staging-benchmark
+```
+
+This mode retains the candidate ID, applies the clean Linux `main`, exact
+HEAD/environment, resolved-source, schema and complete-graph checks, and rejects
+production, aliases, dataset-index updates and curator completion. Its public
+release objects are addressable only by an exact staging URL and carry a
+distinct `_benchmark_publication.json` record. Fill the exact candidate and
+transaction placeholders in the staging benchmark IAM template from the
+offline plan before an authorized `--apply` run.
 
 ## 2. Publish validated projection and optional mesh packs
 
@@ -56,8 +74,9 @@ HTTP Content-Encoding.
 Commit a curator configuration selecting the exact projects, editions, release
 labels and defaults. Its shape matches the public catalog except that release
 `manifest` descriptors are omitted; the shared compiler derives these from
-validated releases. No real configuration is supplied by this task because Q9
-remains unresolved. Config files must be tracked on clean `main`.
+validated releases. The D074 initial deployment selection is tracked in
+[`initial-curator.json`](../../data/deployment/initial-curator.json). Config
+files must be tracked on clean `main`.
 
 ```bash
 uv run --project builder --extra test --locked python -m tools.s3_catalog \
@@ -105,6 +124,30 @@ The build wrapper requires clean Linux `main` and Node 22. It clears inherited
 preview defaults and disables `.env` loading, dev plugins and Vite's public
 directory copying. Only the compiled application and explicit brand/favicon
 files are included. Scientific data and packs remain separate.
+
+To pin the initial viewer selection, add this optional `default_view` object to
+the tracked site configuration, alongside the dependency descriptors:
+
+```json
+{
+  "default_view": {
+    "project_id": "ephys-atlas",
+    "dataset_id": "ephys_atlas_channels",
+    "release_id": "2026_W32-ibl-review-20260908-v1",
+    "feature_id": "rms_ap.denoised",
+    "parcellation_id": "allen",
+    "curator_config": "data/deployment/initial-curator.json"
+  }
+}
+```
+
+The wrapper accepts only this explicit field set. It verifies that the tracked
+curator configuration selects the named default project, dataset, release and
+edition, then supplies only those four `VITE_DEFAULT_*` values to Vite. The
+full configuration is part of the receipt and build identity. A later default
+change requires a new coherent site build and site publication; it does not
+rebuild or relabel a scientific release. The catalog/release build audit still
+verifies that the selected feature exists.
 
 The receipt binds commit, Linux/Node environment, configuration and every file
 hash. Assets and HTML refer to `/site/builds/<build-id>/...`; generated HTML

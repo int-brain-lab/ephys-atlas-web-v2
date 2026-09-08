@@ -1,0 +1,13 @@
+{
+  "_template": {
+    "status": "offline-proposal-not-cli-ready",
+    "required_replacements": [
+      "<REQUIRED_UNIQUE_CALLER_REFERENCE>"
+    ],
+    "apply_shape": "Remove _template and pass the remaining object with --cli-input-json to create-cloud-front-origin-access-identity. Requires the recorded staging OAI exception; no bucket ownership or encryption change."
+  },
+  "CloudFrontOriginAccessIdentityConfig": {
+    "CallerReference": "<REQUIRED_UNIQUE_CALLER_REFERENCE>",
+    "Comment": "ephys-atlas-web-v2-staging; dedicated identity; public staging prefixes only"
+  }
+}

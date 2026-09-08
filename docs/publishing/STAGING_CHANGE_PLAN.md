@@ -1,7 +1,9 @@
 # Staging infrastructure change plan
 
-Status: offline proposal for owner and IBL AWS administrator review. Nothing in
-this plan records an AWS mutation or authorizes an artifact upload.
+Status: D074 authorizes the scoped deployment after validation. This remains an
+offline operator proposal because the authenticated user was denied both OAC
+and dedicated staging OAI creation; those attempts created no AWS resource.
+No repository-managed artifact has been uploaded.
 
 ## Known state and proposed state
 
@@ -11,23 +13,29 @@ production origin path and legacy OAI `E359S50BKNNGWZ`. It has no ordered cache
 behaviors or route function. Both selected S3 environment roots were empty.
 There is no known staging distribution or staging CloudFront bucket grant.
 
-The proposal creates a separate OAC-backed distribution over the fixed staging
-origin path and starts on its generated `*.cloudfront.net` hostname. CloudFront
+The D074-selected proposal creates a separate dedicated-OAI distribution over
+the fixed staging origin path and starts on its generated `*.cloudfront.net` hostname. CloudFront
 may read only `catalog.json`, `atlas/*`, `datasets/*`, and `site/*` below that
 origin. It cannot read `_staging/*`, the production environment, or sibling
 source aggregates. The production distribution and its OAI remain unchanged
 while staging is created and tested.
 
+The OAI exception preserves the shared bucket's observed ownership settings.
+The OAC files remain a future alternative if a separately approved ownership
+configuration satisfies its prerequisites. The exact administrator request and
+denial evidence are in
+[Atlas deployment access request](AWS_DEPLOYMENT_ACCESS_REQUEST.md).
+
 The checked-in review inputs are:
 
 | File | Purpose |
 | --- | --- |
-| `tools/deployment/staging-oac.json` | S3 SigV4 OAC creation input |
+| `tools/deployment/staging-oai.json` | selected dedicated staging OAI creation draft |
 | `tools/deployment/staging-cache-policy-mutable.json` | TTL-zero entry/catalog/index policy |
 | `tools/deployment/staging-cache-policy-immutable.json` | one-year immutable policy with compression disabled |
-| `tools/deployment/staging-cloudfront-distribution.json` | isolated generated-hostname distribution draft |
-| `tools/deployment/staging-bucket-policy-statement.json` | staging public-prefix read statement to merge into the shared bucket policy |
-| `tools/deployment/publisher-iam-policies.staging.json` | separate minimum policy drafts for release, projection, mesh, site, and curator operations |
+| `tools/deployment/staging-cloudfront-distribution-oai.json` | selected isolated generated-hostname distribution draft |
+| `docs/publishing/AWS_DEPLOYMENT_ACCESS_REQUEST.md` | exact OAI public-prefix grant and administrator operations |
+| `tools/deployment/publisher-iam-policies.staging.json` | separate minimum policy drafts for benchmark, release, projection, mesh, site, and curator operations |
 | `tools/deployment/production-cloudfront-patch-plan.json` | exact later routing/cache changes for existing production, retaining its OAI |
 
 Files marked `offline-proposal-not-cli-ready` contain required placeholders
@@ -58,15 +66,15 @@ changing shared-bucket CORS speculatively.
 
 ## Proposed operation order
 
-1. Review the templates, the generated-hostname staging choice, and the exact
-   first staging artifact set. Record the responsible AWS administrator and
-   temporary publisher credential profile without recording credentials.
-2. Create the OAC and the two cache policies. Publish an exact copy of
+1. Resolve the already-authorized artifact inventory and generated-hostname
+   staging templates. Record the responsible AWS administrator and temporary
+   publisher credential profile without recording credentials.
+2. Create the dedicated staging OAI and the two cache policies. Publish an exact copy of
    `site-router.js` as a CloudFront Function, record its ARN, and substitute only
-   those created identifiers into a reviewed copy of the distribution draft.
+   those created identifiers into the OAI distribution draft.
 3. Create the isolated staging distribution. Record its ID and generated
-   hostname. Merge the staging statement into the existing bucket policy using
-   that exact distribution ARN; do not replace existing statements or add
+   hostname. Merge only the OAI public-prefix statement from the access request
+   into the existing bucket policy; do not replace existing statements or add
    `_staging/*`.
 4. Before upload, prove anonymous S3 access is denied, CloudFront cannot read
    `_staging/*`, production, or sibling source prefixes, and missing objects
@@ -90,23 +98,26 @@ changing shared-bucket CORS speculatively.
 8. After staging evidence is accepted, prepare an ETag-bound update for
    production distribution `ET6VJW8JWAGVR` from
    `production-cloudfront-patch-plan.json`. Keep OAI `E359S50BKNNGWZ` during
-   this change. Apply the route and cache changes only after separate owner
-   review, verify them, and then remove only the obsolete root `index.html`
+   this change. Apply the D074-authorized route and cache changes after staging
+   validation, verify them, and then remove only the obsolete root `index.html`
    bucket-policy resource. Any OAI-to-OAC migration remains a later, separately
    reviewed operation.
 
-## Volume benchmark stop condition
+## Volume benchmark path
 
 The reviewed W26 depth-four artifact remains a scientifically labelled local
 candidate. The current release publisher runs production preflight for staging
 too, and production preflight correctly rejects `candidate` release IDs.
 Renaming or relabelling those bytes would hide their maturity and is forbidden.
 
-Before Q5 can use the staging origin, review and implement a staging-only
-benchmark publication path. It must preserve the candidate identity, require
-clean Linux/HEAD provenance and complete schema/hash validation, prevent a
-production destination, and avoid curator/default promotion. Whether that path
-uses a dedicated public `benchmarks/*` namespace or a non-catalogued staging
-dataset release is still an operational choice. Until it is selected and
-tested, staging infrastructure and an authorized landing/site build can
-progress, but no real-origin Q5 result can be claimed.
+The implemented `tools.s3_publish --staging-benchmark` path preserves that
+candidate identity, requires clean Linux/HEAD provenance and complete
+schema/hash validation, rejects production and aliases, and never writes the
+dataset index or curator-recognized completion record. It places immutable
+candidate bytes below the existing staging `datasets/*/releases/*` public
+prefix for exact-URL measurement and records `_benchmark_publication.json` so
+the curator path rejects it. Use the exact transaction-scoped benchmark IAM
+template and the command in [Local publisher operations](LOCAL_PUBLISHER.md).
+The artifact is authorized by D074. Administrator-created infrastructure,
+temporary scoped access and successful validation are still required before
+applying the command or claiming a real-origin Q5 result.

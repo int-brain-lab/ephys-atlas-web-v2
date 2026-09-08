@@ -1710,3 +1710,10 @@ settings. Scoped access grants needed by this website are authorized. Save
 before/after configuration evidence and prepare rollback. Stop for missing
 permissions, unresolved failures or a required out-of-scope change; do not
 broaden access or modify unrelated resources to work around a denial.
+
+Within that scope, initial staging uses a dedicated OAI instead of the proposed
+OAC: the observed shared bucket has no explicit ownership controls, and changing
+bucket-wide ownership for OAC is outside authorization. Keep default SSE-S3 and
+upload under the bucket account; verify OAI delivery on actual staged objects.
+The OAC template remains an alternative for a future separately approved
+ownership configuration, not a prerequisite for this deployment.

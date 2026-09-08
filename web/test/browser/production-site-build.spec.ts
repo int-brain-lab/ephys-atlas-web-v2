@@ -16,7 +16,9 @@ test('production build serves a static landing page and lazy viewer from immutab
     await promisify(execFile)('node', ['node_modules/vite/bin/vite.js', 'build', '--base', '/site/builds/test-only/', '--outDir', output], {
       cwd: process.cwd(), timeout:60_000, env: {...env, EPHYS_ATLAS_SITE_BUILD:'1',
         VITE_DATASET_CATALOG_URL:'/__real-data/catalog.json',
-        VITE_PROJECTION_PACK_URL:'/atlas/projections/ibl-static-registered-v1/manifest.json'},
+        VITE_PROJECTION_PACK_URL:'/atlas/projections/ibl-static-registered-v1/manifest.json',
+        VITE_DEFAULT_DATASET_ID:'golden_fixture', VITE_DEFAULT_RELEASE_ID:'golden-v1',
+        VITE_DEFAULT_FEATURE_ID:'rms_ap', VITE_DEFAULT_PARCELLATION_ID:'allen'},
     });
     expect((await readdir(output)).sort()).toEqual(['assets', 'index.html']);
     const viewerScript = (await readdir(path.join(output, 'assets'))).find((file) => /^main-[A-Za-z0-9_-]+\.js$/.test(file));
@@ -49,6 +51,7 @@ test('production build serves a static landing page and lazy viewer from immutab
       pathname === '/catalog.json' || pathname.startsWith('/datasets/') || pathname.startsWith('/atlas/')
     ))).toEqual([]);
     await page.goto('/app/');
+    await expect(page.locator('[data-context-field="feature"]')).toContainText('AP RMS');
     await expect(page.locator('[data-view="coronal"] .view-frame__brain-svg')).toBeVisible();
     expect(assetRequests).toContain(`/site/builds/test-only/assets/${viewerScript}`);
     await expect(page.locator('[data-view="coronal"] path[data-allen-id]').first()).toBeVisible();

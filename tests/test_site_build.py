@@ -16,6 +16,19 @@ def config():
             "projection": {"path": "atlas/projections/test-only/manifest.json", "bytes": 2, "sha256": "b"*64}}
 
 
+def config_with_default():
+    value = config()
+    value["default_view"] = {
+        "project_id": "ephys-atlas",
+        "dataset_id": "ephys_atlas_channels",
+        "release_id": "2026_W32-ibl-review-20260908-v1",
+        "feature_id": "rms_ap.denoised",
+        "parcellation_id": "allen",
+        "curator_config": "data/deployment/initial-curator.json",
+    }
+    return value
+
+
 def test_production_environment_cannot_inherit_preview_defaults(monkeypatch):
     monkeypatch.setenv("EPHYS_ATLAS_REAL_RELEASE", "/private/preview")
     monkeypatch.setenv("VITE_DEFAULT_RELEASE_ID", "preview")
@@ -26,6 +39,30 @@ def test_production_environment_cannot_inherit_preview_defaults(monkeypatch):
     assert "EPHYS_ATLAS_REAL_RELEASE" not in env
     assert "VITE_DEFAULT_RELEASE_ID" not in env
     assert "VITE_BRAIN_MESH_MANIFEST_URL" not in env
+
+
+def test_site_default_view_is_pinned_to_the_tracked_curator_default(monkeypatch):
+    monkeypatch.setenv("VITE_DEFAULT_FEATURE_ID", "inherited-preview-feature")
+    env = site_build.build_environment_for_site(config_with_default())
+    assert env["VITE_DEFAULT_DATASET_ID"] == "ephys_atlas_channels"
+    assert env["VITE_DEFAULT_RELEASE_ID"] == "2026_W32-ibl-review-20260908-v1"
+    assert env["VITE_DEFAULT_FEATURE_ID"] == "rms_ap.denoised"
+    assert env["VITE_DEFAULT_PARCELLATION_ID"] == "allen"
+
+
+def test_site_default_view_rejects_a_release_outside_the_curator_default_edition():
+    value = config_with_default()
+    value["default_view"]["release_id"] = "not-in-curator"
+    with pytest.raises(ValueError, match="dataset/release"):
+        site_build.build_environment_for_site(value)
+
+
+def test_site_default_view_rejects_a_nondefault_curator_dataset():
+    value = config_with_default()
+    value["default_view"]["dataset_id"] = "ephys_atlas_clusters"
+    value["default_view"]["release_id"] = "sha256-9b5e55215b306f26-ibl-review-20260908-v1"
+    with pytest.raises(ValueError, match="default_dataset"):
+        site_build.build_environment_for_site(value)
 
 
 @pytest.mark.parametrize("path", ["https://external/catalog.json", "../catalog.json", "_staging/catalog.json", "catalog.json?x"])

@@ -1,0 +1,341 @@
+{
+  "_template": {
+    "status": "offline-proposal-not-cli-ready",
+    "required_replacements": [
+      "<REQUIRED_STAGING_OAI_ID>",
+      "<REQUIRED_MUTABLE_CACHE_POLICY_ID>",
+      "<REQUIRED_IMMUTABLE_CACHE_POLICY_ID>",
+      "<REQUIRED_PUBLISHED_SITE_ROUTER_FUNCTION_ARN>",
+      "<REQUIRED_UNIQUE_CALLER_REFERENCE>"
+    ],
+    "apply_shape": "Remove this _template member and pass DistributionConfig to aws cloudfront create-distribution only after review.",
+    "origin_access_note": "Dedicated staging OAI variant preserves existing shared bucket ownership settings; verify bucket-account object ownership and OAI-compatible encryption before use."
+  },
+  "DistributionConfig": {
+    "CallerReference": "<REQUIRED_UNIQUE_CALLER_REFERENCE>",
+    "Aliases": {
+      "Quantity": 0
+    },
+    "DefaultRootObject": "",
+    "Origins": {
+      "Quantity": 1,
+      "Items": [
+        {
+          "Id": "ephys-atlas-staging-s3",
+          "DomainName": "ibl-brain-wide-map-private.s3.us-east-1.amazonaws.com",
+          "OriginPath": "/aggregates/atlas/ephys-atlas-web-v2/staging",
+          "CustomHeaders": {
+            "Quantity": 0
+          },
+          "S3OriginConfig": {
+            "OriginAccessIdentity": "origin-access-identity/cloudfront/<REQUIRED_STAGING_OAI_ID>"
+          },
+          "ConnectionAttempts": 3,
+          "ConnectionTimeout": 10,
+          "OriginShield": {
+            "Enabled": false
+          }
+        }
+      ]
+    },
+    "OriginGroups": {
+      "Quantity": 0
+    },
+    "DefaultCacheBehavior": {
+      "TargetOriginId": "ephys-atlas-staging-s3",
+      "TrustedSigners": {
+        "Enabled": false,
+        "Quantity": 0
+      },
+      "TrustedKeyGroups": {
+        "Enabled": false,
+        "Quantity": 0
+      },
+      "ViewerProtocolPolicy": "redirect-to-https",
+      "AllowedMethods": {
+        "Quantity": 2,
+        "Items": [
+          "HEAD",
+          "GET"
+        ],
+        "CachedMethods": {
+          "Quantity": 2,
+          "Items": [
+            "HEAD",
+            "GET"
+          ]
+        }
+      },
+      "SmoothStreaming": false,
+      "Compress": false,
+      "FunctionAssociations": {
+        "Quantity": 1,
+        "Items": [
+          {
+            "FunctionARN": "<REQUIRED_PUBLISHED_SITE_ROUTER_FUNCTION_ARN>",
+            "EventType": "viewer-request"
+          }
+        ]
+      },
+      "LambdaFunctionAssociations": {
+        "Quantity": 0
+      },
+      "FieldLevelEncryptionId": "",
+      "CachePolicyId": "<REQUIRED_MUTABLE_CACHE_POLICY_ID>"
+    },
+    "CacheBehaviors": {
+      "Quantity": 6,
+      "Items": [
+        {
+          "PathPattern": "catalog.json",
+          "TargetOriginId": "ephys-atlas-staging-s3",
+          "TrustedSigners": {
+            "Enabled": false,
+            "Quantity": 0
+          },
+          "TrustedKeyGroups": {
+            "Enabled": false,
+            "Quantity": 0
+          },
+          "ViewerProtocolPolicy": "redirect-to-https",
+          "AllowedMethods": {
+            "Quantity": 2,
+            "Items": [
+              "HEAD",
+              "GET"
+            ],
+            "CachedMethods": {
+              "Quantity": 2,
+              "Items": [
+                "HEAD",
+                "GET"
+              ]
+            }
+          },
+          "SmoothStreaming": false,
+          "Compress": false,
+          "FunctionAssociations": {
+            "Quantity": 0
+          },
+          "LambdaFunctionAssociations": {
+            "Quantity": 0
+          },
+          "FieldLevelEncryptionId": "",
+          "CachePolicyId": "<REQUIRED_MUTABLE_CACHE_POLICY_ID>"
+        },
+        {
+          "PathPattern": "datasets/*/index.json",
+          "TargetOriginId": "ephys-atlas-staging-s3",
+          "TrustedSigners": {
+            "Enabled": false,
+            "Quantity": 0
+          },
+          "TrustedKeyGroups": {
+            "Enabled": false,
+            "Quantity": 0
+          },
+          "ViewerProtocolPolicy": "redirect-to-https",
+          "AllowedMethods": {
+            "Quantity": 2,
+            "Items": [
+              "HEAD",
+              "GET"
+            ],
+            "CachedMethods": {
+              "Quantity": 2,
+              "Items": [
+                "HEAD",
+                "GET"
+              ]
+            }
+          },
+          "SmoothStreaming": false,
+          "Compress": false,
+          "FunctionAssociations": {
+            "Quantity": 0
+          },
+          "LambdaFunctionAssociations": {
+            "Quantity": 0
+          },
+          "FieldLevelEncryptionId": "",
+          "CachePolicyId": "<REQUIRED_MUTABLE_CACHE_POLICY_ID>"
+        },
+        {
+          "PathPattern": "site/index.html",
+          "TargetOriginId": "ephys-atlas-staging-s3",
+          "TrustedSigners": {
+            "Enabled": false,
+            "Quantity": 0
+          },
+          "TrustedKeyGroups": {
+            "Enabled": false,
+            "Quantity": 0
+          },
+          "ViewerProtocolPolicy": "redirect-to-https",
+          "AllowedMethods": {
+            "Quantity": 2,
+            "Items": [
+              "HEAD",
+              "GET"
+            ],
+            "CachedMethods": {
+              "Quantity": 2,
+              "Items": [
+                "HEAD",
+                "GET"
+              ]
+            }
+          },
+          "SmoothStreaming": false,
+          "Compress": false,
+          "FunctionAssociations": {
+            "Quantity": 0
+          },
+          "LambdaFunctionAssociations": {
+            "Quantity": 0
+          },
+          "FieldLevelEncryptionId": "",
+          "CachePolicyId": "<REQUIRED_MUTABLE_CACHE_POLICY_ID>"
+        },
+        {
+          "PathPattern": "site/builds/*",
+          "TargetOriginId": "ephys-atlas-staging-s3",
+          "TrustedSigners": {
+            "Enabled": false,
+            "Quantity": 0
+          },
+          "TrustedKeyGroups": {
+            "Enabled": false,
+            "Quantity": 0
+          },
+          "ViewerProtocolPolicy": "redirect-to-https",
+          "AllowedMethods": {
+            "Quantity": 2,
+            "Items": [
+              "HEAD",
+              "GET"
+            ],
+            "CachedMethods": {
+              "Quantity": 2,
+              "Items": [
+                "HEAD",
+                "GET"
+              ]
+            }
+          },
+          "SmoothStreaming": false,
+          "Compress": false,
+          "FunctionAssociations": {
+            "Quantity": 0
+          },
+          "LambdaFunctionAssociations": {
+            "Quantity": 0
+          },
+          "FieldLevelEncryptionId": "",
+          "CachePolicyId": "<REQUIRED_IMMUTABLE_CACHE_POLICY_ID>"
+        },
+        {
+          "PathPattern": "datasets/*/releases/*",
+          "TargetOriginId": "ephys-atlas-staging-s3",
+          "TrustedSigners": {
+            "Enabled": false,
+            "Quantity": 0
+          },
+          "TrustedKeyGroups": {
+            "Enabled": false,
+            "Quantity": 0
+          },
+          "ViewerProtocolPolicy": "redirect-to-https",
+          "AllowedMethods": {
+            "Quantity": 2,
+            "Items": [
+              "HEAD",
+              "GET"
+            ],
+            "CachedMethods": {
+              "Quantity": 2,
+              "Items": [
+                "HEAD",
+                "GET"
+              ]
+            }
+          },
+          "SmoothStreaming": false,
+          "Compress": false,
+          "FunctionAssociations": {
+            "Quantity": 0
+          },
+          "LambdaFunctionAssociations": {
+            "Quantity": 0
+          },
+          "FieldLevelEncryptionId": "",
+          "CachePolicyId": "<REQUIRED_IMMUTABLE_CACHE_POLICY_ID>"
+        },
+        {
+          "PathPattern": "atlas/*",
+          "TargetOriginId": "ephys-atlas-staging-s3",
+          "TrustedSigners": {
+            "Enabled": false,
+            "Quantity": 0
+          },
+          "TrustedKeyGroups": {
+            "Enabled": false,
+            "Quantity": 0
+          },
+          "ViewerProtocolPolicy": "redirect-to-https",
+          "AllowedMethods": {
+            "Quantity": 2,
+            "Items": [
+              "HEAD",
+              "GET"
+            ],
+            "CachedMethods": {
+              "Quantity": 2,
+              "Items": [
+                "HEAD",
+                "GET"
+              ]
+            }
+          },
+          "SmoothStreaming": false,
+          "Compress": false,
+          "FunctionAssociations": {
+            "Quantity": 0
+          },
+          "LambdaFunctionAssociations": {
+            "Quantity": 0
+          },
+          "FieldLevelEncryptionId": "",
+          "CachePolicyId": "<REQUIRED_IMMUTABLE_CACHE_POLICY_ID>"
+        }
+      ]
+    },
+    "CustomErrorResponses": {
+      "Quantity": 0
+    },
+    "Comment": "Isolated Ephys Atlas v2 staging; generated CloudFront hostname only",
+    "Logging": {
+      "Enabled": false,
+      "IncludeCookies": false,
+      "Bucket": "",
+      "Prefix": ""
+    },
+    "PriceClass": "PriceClass_100",
+    "Enabled": true,
+    "ViewerCertificate": {
+      "CloudFrontDefaultCertificate": true,
+      "MinimumProtocolVersion": "TLSv1",
+      "CertificateSource": "cloudfront"
+    },
+    "Restrictions": {
+      "GeoRestriction": {
+        "RestrictionType": "none",
+        "Quantity": 0
+      }
+    },
+    "WebACLId": "",
+    "HttpVersion": "http2and3",
+    "IsIPV6Enabled": true,
+    "Staging": false
+  }
+}

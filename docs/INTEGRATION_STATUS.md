@@ -35,8 +35,8 @@ pass; D070 records owner acceptance and waives additional Firefox/Safari review 
 | Dataset | Builder and browser machinery | Current real artifact maturity | Blocker/next action |
 | --- | --- | --- | --- |
 | `ephys_atlas_channels` | Dynamic raw/denoised discovery, explicit `inside` recipe, Allen/Beryl/Cosmos summaries, D050 distributions, provenance, HTTP acceptance. | D054-reviewed, deterministic validated-real-local technical revision `2026_W32-d050-q14-v1`; not paper-facing or published. | Q2 paper vintage; Q8 staging origin. Keep release/suite reproducible. |
-| `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048/D054 presentation, D050 distributions, HTTP acceptance. | D054-reviewed, deterministic validated-real-local technical revision `sha256-9b5e55215b306f26-d050-d048-q14-v1`; not published. | Q8/Q9 publication/default authorization. |
-| `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | D054-reviewed, deterministic validated-real-local technical revision `legacy-v1-1d908bea-d050-q14-linear-full-v1`, rebuilt from all six exact hash-pinned Parquets; not published. | Q8/Q9 publication/default authorization. |
+| `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048/D054 presentation, D050 distributions, HTTP acceptance. | D054-reviewed, deterministic validated-real-local technical revision `sha256-9b5e55215b306f26-d050-d048-q14-v1`; not published. | Q8 staging delivery and clean D074 release build. |
+| `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | D054-reviewed, deterministic validated-real-local technical revision `legacy-v1-1d908bea-d050-q14-linear-full-v1`, rebuilt from all six exact hash-pinned Parquets; not published. | Q8 staging delivery and clean D074 release build. |
 | `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | D054-reviewed, validated-real-local depth-4 deterministic technical revision `2026_W26-candidate-depth4-d050-q14-linear-full-v1`; explicitly non-production. | Q5 confirmation at the Q8 CloudFront origin, then immutable production build. |
 | `local` | Same schema-v1 graph and materializers; public regional and explicit-grid volume `ibl_ephys_atlas` authoring; deterministic validated ZIP packaging; strict bounded two-phase browser import, atomic IndexedDB admission/deletion, inventory, and integrity recovery. | Real regional and 467 MiB/6,807-entry volume archives pass Chromium, Firefox, and native Safari import/reload checks; near-1 GiB and 20,000-entry boundaries pass Chromium/Firefox; adversarial, cancellation, quota, rollback, reload, delete, and recovery regressions are recorded. | Supported capacity remains provisional pending native-Safari quota/RSS and representative end-user-device evidence; publish the Python distribution only after authorization. |
 
@@ -51,7 +51,8 @@ D069 now adds the [main-website AGEA local preview](data/AGEA_LOCAL_PREVIEW.md):
 4,345 original experiments, shared schema-v1 metadata-bundle HTTP/local-validation
 support, fully scrollable virtualized feature search, linked anatomy, and 64 MiB/256
 entry verified caching with quota fallback. Real-data Chromium tests pass;
-registration remains provisional and public release choices remain Q19.
+D074 authorizes initial deployment of this recipe; registration remains
+provisional and final scientific acceptance remains Q19.
 Compact virtual rows, deferred bounded cache admission, recent decoded-source
 reuse, stride-based decoding and retained anatomy-tree rows reduce gene-switch
 work; local before/after evidence is recorded in the preview runbook.
@@ -202,8 +203,10 @@ Retries reuse verified objects and preserve concurrent index changes. No AWS
 mutation calls were made during implementation. The additional S3 curator path
 uses the shared compiler, immutable cumulative edition history, unique public
 catalog generations and a conditional catalog-last write. Pack/site transactions
-reuse immutable verified staging; the production Vite wrapper excludes dev
-data/defaults and binds each build to explicit same-origin dependencies. The
+reuse immutable verified staging; the production Vite wrapper excludes inherited
+dev data/defaults and binds each build to explicit same-origin dependencies.
+Its tracked optional `default_view` config supplies the approved feature and
+2-D startup defaults after validation against the curator input. The
 tested route function is not deployed. D073's static landing at `/` and lazy
 viewer at `/app/` share one mutable `site/index.html` entry and one immutable
 build graph, preserving the existing conditional site-promotion transaction.
@@ -231,11 +234,27 @@ CloudFront for both the S3-hosted compiled Vite viewer and same-origin public
 data, with no Cloudflare Pages deployment. The 2026-09-08 read-only audit confirms
 production distribution `ET6VJW8JWAGVR`, the selected origin path, working
 DNS/TLS and a private bucket with narrowed OAI access. Both environment prefixes
-are empty. Q8 still requires isolated staging, reconciliation of observed OAI
-with the OAC runbook, D073 landing/viewer routing, cache/CORS choices, publisher
-write authorization and the exact first staging artifact set;
+are empty. Q8 still requires isolated staging provisioning, D073 routing/cache
+application, publisher access and real-origin delivery evidence;
 Q9 still requires the frozen paper release set and
 aliases. No remote publication has occurred.
+
+D074 now authorizes the initial deployment, W32 channel/default selection and
+AGEA original-value recipe. The tracked initial curator configuration excludes
+volumes until Q5 real-origin measurements. AGEA has a clean-Linux production
+builder profile with neutral labels and provisional processing/registration
+notes rendered only in Data details. The staging-only benchmark publisher
+preserves candidate IDs and never writes ordinary publication completion,
+dataset indexes or curator defaults. These paths are covered by local tests;
+they are not remote deployment evidence.
+
+Authenticated OAC and dedicated OAI creation attempts were denied and created
+no resources. The dedicated staging OAI variant preserves shared bucket
+ownership and SSE-S3 configuration. The
+[administrator access request](publishing/AWS_DEPLOYMENT_ACCESS_REQUEST.md)
+and [initial clean build runbook](publishing/INITIAL_RELEASE_BUILD.md) identify
+the next operations. Remote deployment is blocked on administrator provisioning,
+not owner approval; no other domain or AWS resource was changed.
 
 D056/D061 accept Project/Dataset/Release/Feature/View navigation, immutable
 scoped project editions, curator-owned catalog promotion, explicit

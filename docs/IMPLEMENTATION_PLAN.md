@@ -28,9 +28,11 @@ remain incomplete. The 2026-09-08 authenticated audit confirms the production
 distribution, DNS/TLS, private bucket and narrowed OAI grant; isolated staging
 and publisher write authorization remain unverified.
 
-Blocker: Q8 for exact CloudFront/OAC/DNS/TLS/header policy, publisher IAM, and
-authorization of the first staging artifact set. Remote mutation requires
-explicit authorization and credentials.
+Blocker: Q8 for AWS administrator provisioning and remaining publisher access.
+D074 authorizes scoped remote changes and the initial dataset set. Actual OAI
+and OAC creation attempts were denied; see the unsent
+[administrator request](publishing/AWS_DEPLOYMENT_ACCESS_REQUEST.md). Preserve
+shared bucket ownership/settings and use the dedicated staging OAI variant.
 
 Next actions:
 
@@ -38,9 +40,8 @@ Next actions:
    coherent site build/publication; the owner approved the landing at `a3a88cd`
    on 2026-09-08. The offline
    [staging change plan](publishing/STAGING_CHANGE_PLAN.md) and scoped AWS
-   templates are prepared. Review exact publisher IAM, isolated staging, the observed OAI
-   versus runbook OAC policy, cache/routing changes and the first staging
-   artifact set. Prepare properly
+   templates are prepared. Obtain the scoped AWS setup in the administrator
+   request, then prepare properly
    identified Linux-built artifacts; the tooling rejects the current preview
    identities and packs lacking canonical build evidence. Commands and recovery
    semantics are in [Local publisher operations](publishing/LOCAL_PUBLISHER.md).
@@ -82,8 +83,9 @@ Never generalize D043 beyond the pinned W26 source. Evidence and procedure:
 Status: reviewed local channel, cluster, and Brain-Wide Map releases are green;
 paper identity and publication remain incomplete.
 
-Blockers: Q2 selects the channel vintage. Q9 selects the public project edition,
-dataset-to-release mapping, defaults, aliases, and freeze process.
+For initial deployment, D074 selects W32 channels and defaults; the exact
+initial release/edition IDs are tracked in `data/deployment/initial-curator.json`.
+Q2/Q9 remain for a separate paper freeze, not initial deployment authorization.
 
 After those decisions:
 
@@ -114,9 +116,10 @@ Run from the release commit on Linux:
 
 ### AGEA — full-catalog single-experiment browsing
 
-Status: active under D067/D069. Source audit, Chromium/Firefox transport evidence,
+Status: active under D067/D069/D074. Source audit, Chromium/Firefox transport evidence,
 shared metadata-bundle machinery and the main-website original-value local
-preview are implemented. No public scientific release is approved.
+preview are implemented. D074 approves initial deployment of the original-value
+recipe, with provisional processing/registration notes only in Data details.
 See [AGEA evidence and continuation](data/AGEA.md).
 
 The [coverage lab](data/AGEA_COVERAGE_LAB.md) is implemented for scientist review
