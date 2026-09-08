@@ -251,8 +251,8 @@ this final origin remains unmeasured before wider promotion. Evidence:
 [initial deployment](publishing/INITIAL_DEPLOYMENT_20260908.md) and
 [live QA](publishing/initial-live-qa-20260908.json).
 
-The subsequent D076 frontend update is live as site build
-`030f9be01b5404dd16f88f4961202acd` from `2b69963`. It restores bounded
+The subsequent D076 frontend update, including immediate SVG loading feedback,
+is live as site build `26c142e513a9ff5ed842ecd9049e4b68` from `dd76aa5`. It restores bounded
 directional volume prefetch, progressively persists all registered SVG packs,
 and marks retained frames as updating during feature loads. Final Chromium and
 Firefox checks pass; see the [prefetch deployment record](publishing/PREFETCH_DEPLOYMENT_20260908.md).

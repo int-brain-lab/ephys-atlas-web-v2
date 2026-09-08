@@ -57,3 +57,13 @@ cache warming does not guarantee a fixed latency for arbitrary cold jumps.
 Raw runners, screenshots, build receipts and initial/final reports remain under
 ignored `artifacts/deployment-prefetch-20260908/`. Native Safari and broader
 promotion QA retain their existing scope in the initial deployment record.
+
+## Immediate SVG feedback follow-up
+
+Commit `dd76aa5` removes the 400 ms retained-slice notice delay and shows
+Loading atlas in empty views. Published site build
+`26c142e513a9ff5ed842ecd9049e4b68` supersedes the build above. `just check`
+passed (153 browser tests); a live Chromium check blocked SVG requests, verified
+visible loading feedback, then released them and verified that busy feedback
+cleared after rendering. Publication left the catalog unchanged. Raw receipts
+and live evidence are in `artifacts/deployment-svg-feedback-20260908/`.
