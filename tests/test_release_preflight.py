@@ -2,13 +2,18 @@ import json
 from pathlib import Path
 
 import pytest
-
-from ephys_atlas_builder.channels import ChannelBuildConfig
-from tools.release_preflight import PreflightError, RepositoryState, check_release
-
+from ephys_atlas_builder.channels import (
+    ChannelBuildConfig,
+    build_channels_release_from_arrays,
+)
 from test_channels import _inputs
-from ephys_atlas_builder.channels import build_channels_release_from_arrays
 
+from tools.release_preflight import (
+    PreflightError,
+    RepositoryState,
+    check_release,
+    check_staging_benchmark_release,
+)
 
 COMMIT = "a" * 40
 
@@ -37,6 +42,16 @@ def _release(tmp_path: Path) -> Path:
     return release
 
 
+def _rename_release(release: Path, release_id: str) -> Path:
+    manifest_path = release / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["release"]["release_id"] = release_id
+    manifest_path.write_text(json.dumps(manifest))
+    renamed = release.with_name(release_id)
+    release.rename(renamed)
+    return renamed
+
+
 def test_accepts_valid_linux_main_release(tmp_path):
     release = _release(tmp_path)
     check_release(
@@ -59,12 +74,38 @@ def test_accepts_valid_linux_main_release(tmp_path):
 def test_rejects_noncanonical_conditions(tmp_path, release_id, repo, host_os, message):
     release = _release(tmp_path)
     if release_id != release.name:
-        manifest_path = release / "manifest.json"
-        manifest = json.loads(manifest_path.read_text())
-        manifest["release"]["release_id"] = release_id
-        manifest_path.write_text(json.dumps(manifest))
-        renamed = release.with_name(release_id)
-        release.rename(renamed)
-        release = renamed
+        release = _rename_release(release, release_id)
     with pytest.raises(PreflightError, match=message):
         check_release(release, repo=repo, host_os=host_os)
+
+
+def test_staging_benchmark_accepts_candidate_with_canonical_build_guards(tmp_path):
+    release = _rename_release(_release(tmp_path), "canonical-candidate-depth4")
+    check_staging_benchmark_release(
+        release,
+        repo=RepositoryState(branch="main", commit=COMMIT, clean=True),
+        host_os="Linux",
+    )
+    with pytest.raises(PreflightError, match="cannot be published"):
+        check_release(
+            release,
+            repo=RepositoryState(branch="main", commit=COMMIT, clean=True),
+            host_os="Linux",
+        )
+
+
+@pytest.mark.parametrize(
+    ("release_id", "repo", "host_os", "message"),
+    [
+        ("canonical-v1", RepositoryState("main", COMMIT, True), "Linux", "candidate identity"),
+        ("local-preview-candidate", RepositoryState("main", COMMIT, True), "Linux", "local preview"),
+        ("canonical-candidate", RepositoryState("main", COMMIT, False), "Linux", "clean tracked"),
+        ("canonical-candidate", RepositoryState("main", COMMIT, True), "Darwin", "must run on Linux"),
+    ],
+)
+def test_staging_benchmark_rejects_noncanonical_conditions(
+    tmp_path, release_id, repo, host_os, message
+):
+    release = _rename_release(_release(tmp_path), release_id)
+    with pytest.raises(PreflightError, match=message):
+        check_staging_benchmark_release(release, repo=repo, host_os=host_os)

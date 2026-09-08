@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
 import json
 import platform
-from pathlib import Path
 import subprocess
+from dataclasses import dataclass
+from pathlib import Path
 
 from ephys_atlas_builder.build_environment import build_environment
 from ephys_atlas_builder.validate import validate_release
@@ -28,7 +28,7 @@ def repository_state(root: Path) -> RepositoryState:
     def git(*arguments: str) -> str:
         return subprocess.run(
             ("git", *arguments), cwd=root, check=True, text=True,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            capture_output=True,
         ).stdout.strip()
 
     return RepositoryState(
@@ -38,13 +38,13 @@ def repository_state(root: Path) -> RepositoryState:
     )
 
 
-def check_release(
+def _release_errors(
     release_dir: Path,
     *,
     repo: RepositoryState,
     host_os: str,
-) -> None:
-    """Validate one release and enforce the canonical-build boundary."""
+    workflow: str,
+) -> tuple[str, list[str]]:
     validate_release(release_dir)
     manifest = json.loads((release_dir / "manifest.json").read_text())
     errors: list[str] = []
@@ -55,27 +55,59 @@ def check_release(
     current_environment = {**build_environment(), "operating_system": host_os.lower()}
 
     if host_os.lower() != "linux":
-        errors.append("production release preflight must run on Linux")
+        errors.append(f"{workflow} preflight must run on Linux")
     if repo.branch != "main":
-        errors.append(f"production release preflight requires main, found {repo.branch!r}")
+        errors.append(f"{workflow} preflight requires main, found {repo.branch!r}")
     if not repo.clean:
-        errors.append("production release preflight requires a clean tracked worktree")
+        errors.append(f"{workflow} preflight requires a clean tracked worktree")
     if release_dir.name != release_id:
         errors.append("release directory name must equal manifest release_id")
     if not release.get("immutable"):
         errors.append("release must be immutable")
-    if any(marker in release_id.lower() for marker in ("candidate", "local-preview", "local-rebuild")):
-        errors.append("candidate and local release identifiers cannot be published")
     if builder.get("commit") != repo.commit:
-        errors.append("builder commit must equal the checked-out production commit")
+        errors.append(f"builder commit must equal the checked-out {workflow} commit")
     if not isinstance(environment, dict):
-        errors.append("builder environment is required for production")
+        errors.append(f"builder environment is required for {workflow}")
     elif environment != current_environment:
         errors.append("release provenance must match the current Linux build environment")
     for source in manifest["provenance"]["sources"]:
         if source.get("release") in {"latest", "current"}:
             errors.append("provenance sources must resolve mutable aliases to immutable IDs")
             break
+    return release_id, errors
+
+
+def check_release(
+    release_dir: Path,
+    *,
+    repo: RepositoryState,
+    host_os: str,
+) -> None:
+    """Validate one release and enforce the canonical production boundary."""
+    release_id, errors = _release_errors(
+        release_dir, repo=repo, host_os=host_os, workflow="production release"
+    )
+    if any(marker in release_id.lower() for marker in ("candidate", "local-preview", "local-rebuild")):
+        errors.append("candidate and local release identifiers cannot be published")
+    if errors:
+        raise PreflightError("; ".join(errors))
+
+
+def check_staging_benchmark_release(
+    release_dir: Path,
+    *,
+    repo: RepositoryState,
+    host_os: str,
+) -> None:
+    """Validate an explicitly non-catalogued staging transport candidate."""
+    release_id, errors = _release_errors(
+        release_dir, repo=repo, host_os=host_os, workflow="staging benchmark"
+    )
+    lowered = release_id.lower()
+    if "candidate" not in lowered:
+        errors.append("staging benchmark release_id must retain its candidate identity")
+    if any(marker in lowered for marker in ("local-preview", "local-rebuild")):
+        errors.append("local preview and rebuild identifiers cannot be staged as benchmarks")
     if errors:
         raise PreflightError("; ".join(errors))
 

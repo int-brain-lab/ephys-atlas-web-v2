@@ -1,15 +1,21 @@
 import hashlib
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 from ibl_ephys_atlas_publish.core import Conflict, ValidationError
 from ibl_ephys_atlas_publish.s3 import (
-    AwsCliStore, Destination, IMMUTABLE_CACHE, checksum, publish_release, release_plan,
+    IMMUTABLE_CACHE,
+    AwsCliStore,
+    Destination,
+    checksum,
+    publish_release,
+    publish_staging_benchmark,
+    release_plan,
 )
 
 
@@ -53,6 +59,19 @@ def release(tmp_path):
     return root, destination, plan
 
 
+@pytest.fixture
+def benchmark_release(tmp_path):
+    root = tmp_path / "r1-candidate-depth4"
+    root.mkdir()
+    (root / "manifest.json").write_text(
+        json.dumps({"dataset_id": "d", "release": {"release_id": root.name}})
+    )
+    (root / "slice.isvg.gz").write_bytes(b"opaque synthetic candidate bytes")
+    destination = Destination("staging")
+    plan = release_plan(root, destination, ["manifest.json", "slice.isvg.gz"], [])
+    return root, destination, plan
+
+
 def test_stage_before_immutable_manifest_and_index_last_with_idempotent_resume(release):
     root, destination, plan = release
     store = FakeS3()
@@ -65,7 +84,7 @@ def test_stage_before_immutable_manifest_and_index_last_with_idempotent_resume(r
     assert public[1].endswith("manifest.json")
     assert public[2].endswith("_publication.json")
     assert not any(key.endswith("catalog.json") for key in store.writes)
-    body, head = store.objects[public[0]]
+    _, head = store.objects[public[0]]
     assert head["ContentType"] == "application/octet-stream"
     assert head["CacheControl"] == IMMUTABLE_CACHE
     assert "ContentEncoding" not in head
@@ -75,6 +94,45 @@ def test_stage_before_immutable_manifest_and_index_last_with_idempotent_resume(r
     index, _ = store.get_json(store.writes[-1])
     assert index["releases"] == [{"release_id": "r1"}]
     assert index["aliases"] == {"latest": "r1"}
+
+
+def test_staging_benchmark_is_direct_only_and_cannot_be_curated(benchmark_release):
+    root, destination, plan = benchmark_release
+    store = FakeS3()
+    result = publish_staging_benchmark(root, destination, plan, store)
+    assert result["publication_scope"] == "staging-benchmark"
+    assert result["dataset_index_changed"] is False
+    assert result["catalog_changed"] is False
+    assert store.get_json(destination.key("datasets/d/index.json")) is None
+    assert store.get_json(destination.key("catalog.json")) is None
+    assert store.get_json(destination.key("datasets/d/releases/r1-candidate-depth4/_publication.json")) is None
+    completion = store.get_json(result["completion_key"])
+    assert completion[0]["publication_scope"] == "staging-benchmark"
+    public = [key for key in store.writes if "/_staging/" not in key]
+    assert public[-2].endswith("/manifest.json")
+    assert public[-1].endswith("/_benchmark_publication.json")
+    count = len(store.writes)
+    publish_staging_benchmark(root, destination, plan, store)
+    assert len(store.writes) == count
+
+
+def test_staging_benchmark_rejects_alias_production_and_non_candidate(benchmark_release):
+    root, destination, _ = benchmark_release
+    store = FakeS3()
+    aliased = release_plan(root, destination, ["manifest.json", "slice.isvg.gz"], ["latest"])
+    with pytest.raises(ValidationError, match="aliases"):
+        publish_staging_benchmark(root, destination, aliased, store)
+    production = Destination("production")
+    production_plan = release_plan(root, production, ["manifest.json", "slice.isvg.gz"], [])
+    with pytest.raises(ValidationError, match="restricted to staging"):
+        publish_staging_benchmark(root, production, production_plan, store)
+    (root / "manifest.json").write_text(json.dumps({"dataset_id": "d", "release": {"release_id": "r1"}}))
+    ordinary = root.with_name("r1")
+    root.rename(ordinary)
+    ordinary_plan = release_plan(ordinary, destination, ["manifest.json", "slice.isvg.gz"], [])
+    with pytest.raises(ValidationError, match="candidate identity"):
+        publish_staging_benchmark(ordinary, destination, ordinary_plan, store)
+    assert store.writes == []
 
 
 @pytest.mark.parametrize("failure", ["_staging/", "releases/r1/slice", "releases/r1/manifest", "_publication", "datasets/d/index"])
@@ -147,7 +205,7 @@ def test_local_change_is_rejected_before_network(release):
 
 
 def test_destination_paths_and_symlinks(release):
-    root, destination, plan = release
+    root, destination, _ = release
     for path in ["../source", "/source", "x/../source", "x//y", "x\\y"]:
         with pytest.raises(ValidationError):
             destination.key(path)
@@ -159,7 +217,7 @@ def test_destination_paths_and_symlinks(release):
 
 
 def test_multipart_sized_object_rejected_during_plan(release, monkeypatch):
-    root, destination, plan = release
+    root, destination, _ = release
     monkeypatch.setattr("ibl_ephys_atlas_publish.s3.MAX_OBJECT_BYTES", 1)
     with pytest.raises(ValidationError, match="multipart"):
         release_plan(root, destination, ["manifest.json"], [])

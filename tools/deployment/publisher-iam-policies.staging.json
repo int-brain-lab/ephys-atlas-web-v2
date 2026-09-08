@@ -5,10 +5,51 @@
     "shared_staging_limit": "Current asset and release transactions use _staging/<transaction-id>/, so those operations cannot receive narrower transaction-write prefixes without a publisher layout change.",
     "required_replacements": [
       "<REQUIRED_EXACT_SITE_DEPENDENCY_PREFIX>",
-      "<REQUIRED_EXACT_SITE_DEPENDENCY_OBJECT_ARN>"
+      "<REQUIRED_EXACT_SITE_DEPENDENCY_OBJECT_ARN>",
+      "<REQUIRED_BENCHMARK_DATASET_ID>",
+      "<REQUIRED_BENCHMARK_RELEASE_ID>",
+      "<REQUIRED_BENCHMARK_TRANSACTION_ID>"
     ]
   },
   "policies": {
+    "staging-benchmark": {
+      "PolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "BucketRegion",
+            "Effect": "Allow",
+            "Action": "s3:GetBucketLocation",
+            "Resource": "arn:aws:s3:::ibl-brain-wide-map-private"
+          },
+          {
+            "Sid": "ListExactBenchmarkAndPrivateTransaction",
+            "Effect": "Allow",
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::ibl-brain-wide-map-private",
+            "Condition": {
+              "StringLike": {
+                "s3:prefix": [
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/datasets/<REQUIRED_BENCHMARK_DATASET_ID>/releases/<REQUIRED_BENCHMARK_RELEASE_ID>/*",
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/_staging/benchmarks/<REQUIRED_BENCHMARK_DATASET_ID>/<REQUIRED_BENCHMARK_RELEASE_ID>.json",
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/_staging/<REQUIRED_BENCHMARK_TRANSACTION_ID>/*"
+                ]
+              }
+            }
+          },
+          {
+            "Sid": "ReadWriteExactBenchmarkAndPrivateTransaction",
+            "Effect": "Allow",
+            "Action": ["s3:GetObject", "s3:PutObject"],
+            "Resource": [
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/datasets/<REQUIRED_BENCHMARK_DATASET_ID>/releases/<REQUIRED_BENCHMARK_RELEASE_ID>/*",
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/_staging/benchmarks/<REQUIRED_BENCHMARK_DATASET_ID>/<REQUIRED_BENCHMARK_RELEASE_ID>.json",
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/_staging/<REQUIRED_BENCHMARK_TRANSACTION_ID>/*"
+            ]
+          }
+        ]
+      }
+    },
     "release": {
       "PolicyDocument": {
         "Version": "2012-10-17",

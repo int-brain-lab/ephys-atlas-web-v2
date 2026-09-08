@@ -48,6 +48,32 @@ delete/cleanup command is provided. CloudFront must not be allowed to read
 The command creates no bucket, distribution, DNS record, or public catalog.
 See [AWS console setup](../docs/publishing/AWS_CONSOLE_SETUP.md) before applying.
 
+### Staging-only transport benchmark
+
+A candidate needed for Q5 can be measured at the staging origin without
+pretending it is a publishable scientific release:
+
+```bash
+uv run --project builder --extra test --locked python -m tools.s3_publish \
+  data/releases/ephys_atlas_volumes/<candidate-release-id> \
+  --environment staging --staging-benchmark
+```
+
+Run that offline plan first and use its exact dataset, release, and transaction
+IDs to fill the `staging-benchmark` policy in
+`tools/deployment/publisher-iam-policies.staging.json`. After authorization,
+append the same `--apply`, `--profile`, and `--confirm-root` arguments shown
+above for ordinary staging publication.
+
+This mode requires `candidate` in the immutable release ID and the same clean
+Linux `main`, exact HEAD/environment, resolved-source, schema, and complete-file
+checks as production preflight. It rejects production destinations and aliases.
+It creates immutable objects below the ordinary staging release prefix for
+direct URL measurement, but writes `_benchmark_publication.json` instead of
+the curator-recognized `_publication.json` and never changes a dataset index or
+catalog. Ordinary publication and curator promotion continue to reject the
+candidate.
+
 ## Properties
 
 - public reads are static files under `STORAGE/public/`

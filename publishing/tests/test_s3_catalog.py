@@ -1,15 +1,20 @@
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 from ibl_ephys_atlas_publish.core import Conflict, ValidationError
-from ibl_ephys_atlas_publish.s3 import Destination, publish_release, release_plan
+from ibl_ephys_atlas_publish.s3 import (
+    Destination,
+    publish_release,
+    publish_staging_benchmark,
+    release_plan,
+)
 from ibl_ephys_atlas_publish.s3_catalog import promote_catalog
-from test_s3 import FakeS3
 from test_catalog import _config
+from test_s3 import FakeS3
 
 
 @pytest.fixture
@@ -31,7 +36,7 @@ def promote(published, config=None):
 
 
 def test_catalog_last_and_history_survives_omission(published):
-    destination, store, releases = published
+    destination, store, _ = published
     first = promote(published)
     assert store.writes[-1] == destination.key("catalog.json")
     omitted = promote(published, _config(edition=False))
@@ -54,7 +59,7 @@ def test_failure_keeps_last_good_catalog_and_retry_recovers(published, failure):
 
 
 def test_stale_writer_cannot_win_after_same_content_is_restored(published):
-    destination, store, releases = published
+    destination, store, _ = published
     first = promote(published)
     stale = store.get_json(destination.key("catalog.json"))
     promote(published, _config(edition=False))
@@ -82,4 +87,31 @@ def test_missing_dependency_or_archived_dataset_never_creates_catalog(published)
     with pytest.raises(ValidationError, match="absent"):
         promote(published)
     assert len(store.writes) == before
+    assert store.get_json(destination.key("catalog.json")) is None
+
+
+def test_staging_benchmark_has_no_curator_completion_record(tmp_path):
+    destination, store = Destination("staging"), FakeS3()
+    ordinary = tmp_path / "r0"
+    ordinary.mkdir()
+    (ordinary / "manifest.json").write_text(
+        json.dumps({"dataset_id": "d", "release": {"release_id": ordinary.name}})
+    )
+    ordinary_plan = release_plan(ordinary, destination, ["manifest.json"], [])
+    publish_release(ordinary, destination, ordinary_plan, store)
+    root = tmp_path / "r1-candidate"
+    root.mkdir()
+    (root / "manifest.json").write_text(
+        json.dumps({"dataset_id": "d", "release": {"release_id": root.name}})
+    )
+    plan = release_plan(root, destination, ["manifest.json"], [])
+    publish_staging_benchmark(root, destination, plan, store)
+    with pytest.raises(ValidationError, match="release is incomplete"):
+        promote_catalog(
+            _config(release_id=root.name),
+            [(root, plan)],
+            destination,
+            store,
+            lambda catalog: None,
+        )
     assert store.get_json(destination.key("catalog.json")) is None

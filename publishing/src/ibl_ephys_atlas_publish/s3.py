@@ -6,12 +6,12 @@ The repository entry point supplies the canonical production preflight.
 from __future__ import annotations
 
 import base64
-from dataclasses import dataclass
 import hashlib
 import json
-from pathlib import Path
 import subprocess
 import tempfile
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Protocol
 
 from .client import file_info
@@ -67,7 +67,7 @@ class AwsCliStore:
             "aws", "--profile", self.profile, "--region", "us-east-1",
             "--no-cli-pager", "--output", "json", "s3api", "list-objects-v2",
             "--bucket", BUCKET, "--prefix", key, "--max-keys", "1", "--no-paginate",
-        ], capture_output=True, text=True)
+        ], capture_output=True, text=True, check=False)
         if result.returncode:
             return False
         value = json.loads(result.stdout)
@@ -85,7 +85,7 @@ class AwsCliStore:
             "aws", "--profile", self.profile, "--region", "us-east-1",
             "--no-cli-pager", "--output", "json", "s3api", operation,
             "--bucket", BUCKET, "--key", key, *arguments,
-        ], capture_output=True, text=True)
+        ], capture_output=True, text=True, check=False)
         if result.returncode:
             # Do not mistake denied credentials, timeouts, or 5xx for absence.
             if operation in {"head-object", "get-object"} and any(
@@ -257,3 +257,69 @@ def publish_release(root: Path, destination: Destination, plan: dict, store: Obj
         _verify_head(head, {**file_info(metadata), "content_type": "application/json"}, MUTABLE_CACHE, index_key)
     return {"dataset_id": dataset, "release_id": release, "transaction_id": plan["transaction_id"],
             "index_key": index_key, "catalog_changed": False}
+
+
+def publish_staging_benchmark(root: Path, destination: Destination, plan: dict,
+                              store: ObjectStore) -> dict:
+    """Publish a validated candidate for direct staging-origin measurement.
+
+    The candidate is deliberately absent from the dataset index and has no
+    ordinary completion record, so curator promotion cannot discover or accept
+    it as a published release.
+    """
+    if destination.environment != "staging":
+        raise ValidationError("benchmark publication is restricted to staging")
+    if plan != release_plan(root, destination, [a["path"] for a in plan["artifacts"]], []):
+        raise ValidationError("benchmark snapshot, aliases or destination differ from plan")
+    dataset, release = plan["dataset_id"], plan["release_id"]
+    lowered = release.lower()
+    if "candidate" not in lowered:
+        raise ValidationError("benchmark release_id must retain its candidate identity")
+    if any(marker in lowered for marker in ("local-preview", "local-rebuild")):
+        raise ValidationError("local preview and rebuild releases are not staging benchmarks")
+    prefix = f"datasets/{dataset}/releases/{release}/"
+    publication = {
+        "publication_scope": "staging-benchmark",
+        "dataset_id": dataset,
+        "release_id": release,
+        "transaction_id": plan["transaction_id"],
+        "artifacts": plan["artifacts"],
+    }
+    with tempfile.TemporaryDirectory(prefix="atlas-s3-benchmark-") as temporary:
+        metadata = Path(temporary) / "publication.json"
+        metadata.write_bytes(json_bytes(publication))
+        descriptor = {**file_info(metadata), "content_type": "application/json"}
+        _create_verified(
+            store,
+            destination.key(f"_staging/benchmarks/{dataset}/{release}.json"),
+            metadata,
+            descriptor,
+            MUTABLE_CACHE,
+        )
+        for artifact in plan["artifacts"]:
+            _create_verified(
+                store,
+                destination.key(f"_staging/{plan['transaction_id']}/{artifact['path']}"),
+                root / artifact["path"],
+                artifact,
+                MUTABLE_CACHE,
+            )
+        for artifact in sorted(plan["artifacts"], key=lambda item: item["path"] == "manifest.json"):
+            _create_verified(
+                store,
+                destination.key(prefix + artifact["path"]),
+                root / artifact["path"],
+                artifact,
+                IMMUTABLE_CACHE,
+            )
+        completion_key = destination.key(prefix + "_benchmark_publication.json")
+        _create_verified(store, completion_key, metadata, descriptor, IMMUTABLE_CACHE)
+    return {
+        "dataset_id": dataset,
+        "release_id": release,
+        "transaction_id": plan["transaction_id"],
+        "completion_key": completion_key,
+        "dataset_index_changed": False,
+        "catalog_changed": False,
+        "publication_scope": "staging-benchmark",
+    }
