@@ -26,7 +26,7 @@ test "$(uname -s)" = Linux
 test "$(git branch --show-current)" = main
 test -z "$(git status --porcelain)"
 atlas_build_commit="$(git rev-parse HEAD)"
-atlas_build_root=artifacts/deployment-20260908
+atlas_build_root="${ATLAS_BUILD_ROOT:-artifacts/deployment-20260908}"
 atlas_release_root="$atlas_build_root/releases"
 atlas_created_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 atlas_ibleatools_commit=9bfa0623a16bc7a989a6b27a589887641beee0a8
@@ -49,7 +49,9 @@ PY
 
 On resuming this same build, load the recorded timestamp and commit rather than
 running the session-creation block again. Require `HEAD` still to match that
-commit. The reviewed cluster manifest records `ibleatools` commit `fffe0c...`,
+commit. For a new build after a code fix, set `ATLAS_BUILD_ROOT` to a new ignored
+directory and retain the prior output as diagnostic evidence.
+The reviewed cluster manifest records `ibleatools` commit `fffe0c...`,
 but both the committed lock and the installed package pin are `9bfa062...`.
 The cluster loader executes installed `ephysatlas.cells` and `ephysatlas.anatomy`;
 the new command therefore records the actual locked code pin. The cluster
@@ -257,6 +259,16 @@ mv "$atlas_build_root/agea-build/releases/agea" "$atlas_release_root/agea"
 The curator deliberately excludes ephys volumes until the real-origin Q5
 measurement establishes their production transport. Do not promote the W26
 candidate by renaming it during this build.
+
+Compare decoded AGEA value and validity bytes against the reviewed local
+release. The existing preview reused gzip transport with OS header byte `0x03`;
+the current writer emits `0xff`. This changes served-byte hashes even when the
+compressed body and decoded scientific bytes are identical. Record both encoded
+and decoded comparisons; never treat a different gzip hash alone as proof of
+changed scientific values. Rebuilt manifests must describe their actual new
+served bytes. Production packaging must also include the alignment-review and
+builder-source files referenced by provenance; validate the complete publication
+graph, not only the release schema.
 
 ## Validation and evidence
 

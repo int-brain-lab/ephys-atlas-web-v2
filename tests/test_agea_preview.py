@@ -11,6 +11,7 @@ import pytest
 from ephys_atlas_builder.schema_v1 import validate_schema_v1_document
 from ephys_atlas_builder.validate import validate_release
 
+from tools import s3_publish
 from tools.agea_preview import build_preview, build_production_release
 from tools.release_preflight import RepositoryState, check_release
 
@@ -158,7 +159,7 @@ def test_refuses_existing_output_and_changed_source(tmp_path: Path) -> None:
 
 
 def test_builds_preflightable_original_release_with_provisional_notes_only_in_provenance(
-    tmp_path: Path,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source, hashes = _source(tmp_path)
     review = tmp_path / "review.json"
@@ -186,11 +187,22 @@ def test_builds_preflightable_original_release_with_provisional_notes_only_in_pr
     assert "Alignment with the anatomical atlas is provisional" in manifest["provenance"]["notes"][2]
     assert "preview" not in json.dumps(catalog).lower()
     assert "status" not in catalog["datasets"][0]["releases"][0]
+    assert (release / review.name).read_bytes() == review.read_bytes()
+    assert (release / "agea_preview.py").read_bytes() == Path("tools/agea_preview.py").read_bytes()
     check_release(
         release,
         repo=RepositoryState(branch="main", commit=commit, clean=True),
         host_os="Linux",
     )
+    monkeypatch.setattr(
+        s3_publish, "repository_state",
+        lambda _root: RepositoryState(branch="main", commit=commit, clean=True),
+    )
+    monkeypatch.setattr(s3_publish.platform, "system", lambda: "Linux")
+    with s3_publish.validated_snapshot(release) as (snapshot, files):
+        assert {"manifest.json", review.name, "agea_preview.py"} <= set(files)
+        assert (snapshot / review.name).read_bytes() == review.read_bytes()
+        assert (snapshot / "agea_preview.py").read_bytes() == Path("tools/agea_preview.py").read_bytes()
 
 
 @pytest.mark.parametrize("release_id", ["agea-local-preview-v1", "agea-candidate-v1"])

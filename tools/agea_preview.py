@@ -370,6 +370,10 @@ def build_release(
         raise ValueError("production AGEA release ID cannot be candidate or local")
     release = output / "releases" / DATASET_ID / release_id
     release.mkdir(parents=True)
+    review_path = release / alignment_review.name
+    script_path = release / Path(__file__).name
+    shutil.copyfile(alignment_review, review_path)
+    shutil.copyfile(Path(__file__), script_path)
     volumes = np.memmap(source_volume, dtype="<f2", mode="r", shape=shape)
     transported = _transport_features(transport)
     features = []
@@ -439,13 +443,13 @@ def build_release(
                 {
                     "role": "selection-freeze",
                     "description": "Owner AGEA alignment review",
-                    "path": alignment_review.name,
+                    "path": review_path.name,
                     "sha256": review_sha,
                 },
                 {
                     "role": "publication-input",
                     "description": "Exact AGEA release-builder script",
-                    "path": "tools/agea_preview.py",
+                    "path": script_path.name,
                     "sha256": script_sha,
                 },
             ],
