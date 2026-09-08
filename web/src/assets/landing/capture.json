@@ -1,5 +1,5 @@
 {
-  "description": "Unretouched Chromium screenshots of the real local app. Not a scientific release or production-default selection.",
+  "description": "Real local app screenshots and rendered regional SVG export. Not a scientific release or production-default selection.",
   "dataset_id": "ephys_atlas_channels",
   "release_id": "2026_W32-d050-q14-v1",
   "feature_id": "rms_ap.denoised",
@@ -25,6 +25,36 @@
       "bytes": 65011,
       "sha256": "e5a5143c1f6b2b27da25a3a265f1d842885067436e173dfbfd78ed7fcf1a695b",
       "viewer_url": "http://127.0.0.1:5173/app/?v=4&dataset=ephys_atlas_channels&release=2026_W32-d050-q14-v1&project=ephys-atlas&edition=local-preview&secondary=brain-3d&max=secondary&explode3d=0.2"
+    },
+    {
+      "path": "slices.svg",
+      "bytes": 646057,
+      "sha256": "e0a8ad7973bc97dc4df7851d60d366161a8fc466dccb66474fa1d165818d2411",
+      "viewer_url": "http://127.0.0.1:5174/app/?v=4&dataset=ephys_atlas_channels&release=2026_W32-d050-q14-v1&project=ephys-atlas&edition=local-preview",
+      "capture_type": "rendered-regional-svg",
+      "planes": [
+        {
+          "axis": "coronal",
+          "view_box": "-0.5 -0.5 1140 800",
+          "path_count": 288,
+          "asset_index": "660",
+          "world_coordinate_um": "-1200"
+        },
+        {
+          "axis": "sagittal",
+          "view_box": "-0.5 -0.5 1320 800",
+          "path_count": 189,
+          "asset_index": "550",
+          "world_coordinate_um": "-239"
+        },
+        {
+          "axis": "horizontal",
+          "view_box": "-0.5 -0.5 1140 1320",
+          "path_count": 416,
+          "asset_index": "401",
+          "world_coordinate_um": "-3678"
+        }
+      ]
     }
   ]
 }

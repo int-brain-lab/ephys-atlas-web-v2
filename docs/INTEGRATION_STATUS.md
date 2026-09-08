@@ -207,8 +207,12 @@ data/defaults and binds each build to explicit same-origin dependencies. The
 tested route function is not deployed. D073's static landing at `/` and lazy
 viewer at `/app/` share one mutable `site/index.html` entry and one immutable
 build graph, preserving the existing conditional site-promotion transaction.
-The landing reuses the app theme and genuine reviewed-local atlas captures;
-visits load no viewer runtime or scientific data. About/credits remain on the
+The landing reuses the app theme, a genuine reviewed-local 3-D capture and a
+standalone SVG export of the viewer's regional slices. The visible caption
+identifies the illustrated feature and vintage; source maturity remains recorded
+with the assets. Visits load no viewer runtime or scientific data. The landing
+credits the International Brain Laboratory, the Allen CCFv3 source and paper,
+and the IBL supporters listed on iblcore.org. About/credits remain on the
 landing, and `/app/#help` opens the existing guide. Responsive, navigation and
 isolated production-build browser tests cover these routes; final design remains
 open to owner review. All publication machinery is locally tested only;

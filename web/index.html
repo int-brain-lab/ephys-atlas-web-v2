@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Explore electrophysiology across the mouse brain. Browse regional features, navigate linked anatomical views, and bring your own data to the IBL Ephys Atlas." />
+    <meta name="description" content="Browse electrophysiology features across mouse brain regions and inspect their distributions alongside the anatomy. Import your own datasets into the IBL Ephys Atlas." />
     <meta name="theme-color" content="#071019" />
     <link rel="icon" href="%BASE_URL%favicon.png" type="image/png" />
     <link rel="stylesheet" href="/src/landing.css" />
@@ -12,7 +12,7 @@
         document.documentElement.dataset.route = 'app';
       }
     </script>
-    <title>IBL Ephys Atlas — Electrophysiology in anatomical context</title>
+    <title>IBL Ephys Atlas: Electrophysiology across the mouse brain</title>
   </head>
   <body class="landing-page">
     <div data-landing>
@@ -32,13 +32,13 @@
       <section class="landing-hero landing-width" aria-labelledby="hero-title">
         <div class="landing-hero__copy">
           <p class="landing-eyebrow"><span aria-hidden="true"></span> International Brain Laboratory</p>
-          <h1 id="hero-title">Electrophysiology,<br />in anatomical<br /><em>context.</em></h1>
-          <p class="landing-lead">Explore how electrical features vary across the mouse brain. Move from brain regions to individual slices, with the data always in view.</p>
+          <h1 id="hero-title">Electrophysiology<br />across the<br /><em>mouse brain.</em></h1>
+          <p class="landing-lead">Browse electrical features across brain regions and inspect their distributions alongside the anatomy.</p>
           <div class="landing-actions">
             <a class="landing-button" href="/app/">Open atlas <span aria-hidden="true">↗</span></a>
             <a class="landing-text-link" href="/app/#help">Read the user guide <span aria-hidden="true">→</span></a>
           </div>
-          <p class="landing-hero__note">Explore in your browser. No account needed.</p>
+          <p class="landing-hero__note">The atlas runs in your browser without an account.</p>
         </div>
         <figure class="landing-hero__visual">
           <div class="landing-hero__image-wrap">
@@ -49,22 +49,29 @@
       </section>
       <section class="landing-explore landing-width" id="explore" aria-labelledby="explore-title">
         <div class="landing-section-heading">
-          <div><p class="landing-eyebrow">Follow the anatomy. Explore the data.</p><h2 id="explore-title">One brain. Connected views.</h2></div>
-          <p>Keep your place as you move between coronal, sagittal, and horizontal slices.</p>
+          <div><p class="landing-eyebrow">Anatomical views</p><h2 id="explore-title">Browse linked brain slices</h2></div>
+          <p>Coronal, sagittal, and horizontal slices follow the same position in the brain.</p>
         </div>
         <figure class="landing-slices">
-          <img src="/src/assets/landing/slices.jpg" width="944" height="525" loading="lazy" alt="Linked coronal, sagittal, and horizontal atlas views showing denoised AP RMS regional values and anatomical boundaries." />
-          <figcaption>Real app captures · AP RMS (denoised), channels 2026 W32 · development preview</figcaption>
+          <img src="/src/assets/landing/slices.svg" width="944" height="525" loading="lazy" alt="Linked coronal, sagittal, and horizontal atlas views showing denoised AP RMS regional values and anatomical boundaries." />
+          <figcaption>AP RMS (denoised) · Ephys Atlas channels · 2026 W32</figcaption>
         </figure>
         <div class="landing-features">
-          <article><span class="landing-feature-index" aria-hidden="true">01 / EXPLORE</span><h3>See patterns across regions.</h3><p>Browse electrophysiology features, find a brain region, and compare regional values in their anatomical context.</p></article>
-          <article><span class="landing-feature-index" aria-hidden="true">02 / INSPECT</span><h3>Get closer to the data.</h3><p>Inspect distributions, navigate linked volume slices, and check the source and release behind each dataset.</p></article>
-          <article><span class="landing-feature-index" aria-hidden="true">03 / BRING YOUR OWN</span><h3>Your data. The same atlas.</h3><p>Import a compatible dataset and explore it with the same tools. Local imports stay in your browser.</p></article>
+          <article><span class="landing-feature-index" aria-hidden="true">REGIONAL FEATURES</span><h3>Compare brain regions</h3><p>Choose an electrophysiology feature, find a brain region, and compare its values with other regions on the atlas.</p></article>
+          <article><span class="landing-feature-index" aria-hidden="true">DATA SOURCES</span><h3>Inspect values and sources</h3><p>View distributions and linked volume slices. Each dataset includes its source and release information.</p></article>
+          <article><span class="landing-feature-index" aria-hidden="true">LOCAL DATA</span><h3>Load your own dataset</h3><p>Import a compatible dataset to use these tools with your own data. Local imports stay in your browser.</p></article>
         </div>
       </section>
       <section class="landing-about landing-width" id="about" aria-labelledby="about-title">
-        <div><p class="landing-eyebrow">Built for scientific exploration</p><h2 id="about-title">A shared view of<br />the mouse brain.</h2></div>
-        <div class="landing-about__body"><p>The IBL Ephys Atlas brings regional summaries, voxel-scale electrophysiology features, and brain-wide analysis results into a shared anatomical framework.</p><p>Developed by <a href="https://iblcore.org/">IBL Core</a>, part of the <a href="https://www.internationalbrainlab.com/">International Brain Laboratory</a>.</p><p class="landing-about__citation">Using these data? Find dataset sources, release information, and provenance in <strong>Data details</strong> in the viewer.</p><a class="landing-text-link" href="/app/">Start exploring <span aria-hidden="true">→</span></a></div>
+        <div><p class="landing-eyebrow">About the project</p><h2 id="about-title">IBL Ephys Atlas</h2></div>
+        <div class="landing-about__body"><p>The IBL Ephys Atlas displays regional electrophysiology summaries, voxel-scale features, and brain-wide analysis results on the mouse brain atlas.</p><p>Developed by the <a href="https://www.internationalbrainlab.com/">International Brain Laboratory</a>.</p><p class="landing-about__citation">For dataset sources, release information, and provenance, open <strong>Data details</strong> in the viewer. Use these records when citing the data.</p><a class="landing-text-link" href="/app/">Open atlas <span aria-hidden="true">→</span></a></div>
+      </section>
+      <section class="landing-credits landing-width" aria-labelledby="credits-title">
+        <h2 id="credits-title">Acknowledgements</h2>
+        <div class="landing-credits__columns">
+          <div><h3>Anatomical atlas</h3><p>The anatomical reference comes from the <a href="https://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/ccf_2017/">Allen Mouse Brain Common Coordinate Framework (CCFv3)</a>, provided by the <a href="https://alleninstitute.org/">Allen Institute</a>.</p><p><a href="https://doi.org/10.1016/j.cell.2020.04.007">Wang et al., 2020 · Cell</a></p></div>
+          <div><h3>IBL support</h3><p>IBL receives support from Simons Foundation International, Simons Foundation, Wellcome, and the National Institutes of Health.</p><p><a href="https://iblcore.org/">Supporters and partners at IBL Core <span aria-hidden="true">↗</span></a></p></div>
+        </div>
       </section>
       </main>
       <footer class="landing-footer landing-width">

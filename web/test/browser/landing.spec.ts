@@ -4,7 +4,7 @@ test('landing routes into the viewer and the viewer title returns home', async (
   await page.setViewportSize({ width: 1680, height: 900 });
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Electrophysiology');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('context.');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('mouse brain.');
   await page.getByRole('link', { name: 'Open atlas' }).first().click();
   await expect(page).toHaveURL(/\/app\/$/);
   await expect(page.locator('.atlas-app')).toBeVisible();

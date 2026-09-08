@@ -38,6 +38,12 @@ test('production build serves a static landing page and lazy viewer from immutab
     await page.goto('/', { waitUntil: 'networkidle' });
     await expect(page.locator('[data-landing]')).toBeVisible();
     await expect(page.locator('.atlas-app')).toHaveCount(0);
+    const slices = page.locator('.landing-slices img');
+    await slices.scrollIntoViewIfNeeded();
+    await expect(slices).toBeVisible();
+    await slices.evaluate(async (element) => {
+      await (element as HTMLImageElement).decode();
+    });
     expect(assetRequests).not.toContain(`/site/builds/test-only/assets/${viewerScript}`);
     expect(assetRequests.filter((pathname) => (
       pathname === '/catalog.json' || pathname.startsWith('/datasets/') || pathname.startsWith('/atlas/')
