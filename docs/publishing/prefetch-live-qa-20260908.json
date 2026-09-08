@@ -1,0 +1,92 @@
+{
+  "origin": "https://ephys-atlas.iblcore.org",
+  "date": "2026-09-08T15:49:44.635Z",
+  "browsers": {
+    "chromium": {
+      "passed": true,
+      "cold_svg_requests": 52,
+      "reload_svg_requests": 0,
+      "volume_ready_ms": 525,
+      "foreground_packs": 3,
+      "background_packs": 3,
+      "initial_pack_indices": {
+        "i1": [
+          33,
+          34
+        ],
+        "i0": [
+          27,
+          28
+        ],
+        "i2": [
+          20,
+          21
+        ]
+      },
+      "switched_feature": "psd delta\nVolume\nRaw, unnormalized psd_delta scalar encoding volume.",
+      "updating_retains_previous_feature": true,
+      "slider_assertion_ms": [
+        72,
+        23,
+        53,
+        37
+      ],
+      "errors": []
+    },
+    "firefox": {
+      "passed": true,
+      "cold_svg_requests": 52,
+      "reload_svg_requests": 0,
+      "volume_ready_ms": 601,
+      "foreground_packs": 3,
+      "background_packs": 3,
+      "initial_pack_indices": {
+        "i1": [
+          33,
+          34
+        ],
+        "i0": [
+          27,
+          28
+        ],
+        "i2": [
+          20,
+          21
+        ]
+      },
+      "switched_feature": "psd delta\nVolume\nRaw, unnormalized psd_delta scalar encoding volume.",
+      "updating_retains_previous_feature": true,
+      "slider_assertion_ms": [
+        132,
+        68,
+        89,
+        49
+      ],
+      "errors": []
+    }
+  },
+  "site_build_id": "030f9be01b5404dd16f88f4961202acd",
+  "source_commit": "2b69963ea82907666de13ca401b39599e35927e9",
+  "publication": {
+    "kind": "site",
+    "identity": "030f9be01b5404dd16f88f4961202acd",
+    "prefix": "site/builds/030f9be01b5404dd16f88f4961202acd/",
+    "transaction_id": "b120462736bcf9b900f256391d1f1446046803f3def10981d67a17e9a84d22be",
+    "catalog_changed": false
+  },
+  "http": {
+    "/": {
+      "status": 200,
+      "sha256": "4d4cea50b4a5fb9aac90963a75554d75dfccfe9dc3baa405c423398710fcef6a",
+      "cache_control": "no-cache",
+      "build_present": true
+    },
+    "/app/": {
+      "status": 200,
+      "sha256": "4d4cea50b4a5fb9aac90963a75554d75dfccfe9dc3baa405c423398710fcef6a",
+      "cache_control": "no-cache",
+      "build_present": true
+    }
+  },
+  "measurement_scope": "Single smoke trial per browser; slider timings include Playwright control/assertion overhead, not input-to-paint percentiles. No scientific artifacts or catalog were changed."
+}

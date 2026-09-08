@@ -239,7 +239,7 @@ only distribution routing/cache fields and exact v2 object prefixes changed.
 An existing private transaction object is denied through CloudFront and public
 objects remain denied through anonymous S3.
 
-The clean-Linux releases and packs identify source commit `62199f5`; the current
+The clean-Linux releases and packs identify source commit `62199f5`; the initial
 site build `9fbcf5935cfe344374f9c0c84c2f35b8` identifies `db87240`. The latter
 bundles hash-verified atlas region metadata and removes automatic speculative
 volume pack requests. Full `just check` and CI pass. Live Chromium workflows
@@ -248,6 +248,12 @@ navigation cancellations and no HTTP or application errors. Native Safari on
 this final origin remains unmeasured before wider promotion. Evidence:
 [initial deployment](publishing/INITIAL_DEPLOYMENT_20260908.md) and
 [live QA](publishing/initial-live-qa-20260908.json).
+
+The subsequent D076 frontend update is live as site build
+`030f9be01b5404dd16f88f4961202acd` from `2b69963`. It restores bounded
+directional volume prefetch, progressively persists all registered SVG packs,
+and marks retained frames as updating during feature loads. Final Chromium and
+Firefox checks pass; see the [prefetch deployment record](publishing/PREFETCH_DEPLOYMENT_20260908.md).
 
 AGEA is included with provisional notes only in Data details. The D075 production volume release is now public in Ephys Atlas edition
 `ibl-review-20260908-v2`. Benchmark bytes remain separate and outside discovery;
