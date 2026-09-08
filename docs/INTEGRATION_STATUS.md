@@ -37,7 +37,8 @@ pass; D070 records owner acceptance and waives additional Firefox/Safari review 
 | `ephys_atlas_channels` | Dynamic raw/denoised discovery, explicit `inside` recipe, Allen/Beryl/Cosmos summaries, D050 distributions, provenance, HTTP acceptance. | Published `2026_W32-ibl-review-20260908-v1` from the reviewed recipe; not the final paper freeze. | Q2 paper vintage remains separate; initial live browsing passed. |
 | `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048/D054 presentation, D050 distributions, HTTP acceptance. | Published `sha256-9b5e55215b306f26-ibl-review-20260908-v1` from the frozen source. | Initial live browsing passed. |
 | `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | Published `legacy-v1-1d908bea-ibl-review-20260908-v1` from all six exact hash-pinned Parquets. | Initial live browsing passed. |
-| `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | Direct-origin benchmark `2026_W26-candidate-depth4-20260908-v1` is public by exact benchmark URL, outside the catalog. | D075 measurement passed; next is the new immutable production release. |
+| `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | Published `2026_W26-ibl-review-20260908-v1` from clean `2be9ec9`, with every non-manifest file identical to the measured candidate. | D075 measurement, publication and real-origin Chromium/Firefox chooser/slider/deep-link checks pass. |
+| `agea` | Full original-expression catalog, shared metadata bundle, explicit missing masks and linked slices. | Published `agea-original-20260908-v1`, all 4,345 experiments; provisional processing/registration notes only in Data details. | Q19 final scientific acceptance remains separate from the D074 initial deployment. |
 | `local` | Same schema-v1 graph and materializers; public regional and explicit-grid volume `ibl_ephys_atlas` authoring; deterministic validated ZIP packaging; strict bounded two-phase browser import, atomic IndexedDB admission/deletion, inventory, and integrity recovery. | Real regional and 467 MiB/6,807-entry volume archives pass Chromium, Firefox, and native Safari import/reload checks; near-1 GiB and 20,000-entry boundaries pass Chromium/Firefox; adversarial, cancellation, quota, rollback, reload, delete, and recovery regressions are recorded. | Supported capacity remains provisional pending native-Safari quota/RSS and representative end-user-device evidence; publish the Python distribution only after authorization. |
 
 Dataset source, recipe, selection, release, and audit ownership is indexed by
@@ -92,7 +93,7 @@ with complete owner-reviewed selections for all 155 feature/representation
 entries, retaining D052 and D048 exactly. Four new immutable D054-bound
 releases pass complete graph validation, byte-identical rebuilds,
 dataset-specific Chromium acceptance, and integrated v4 bundle validation; the reviewed recipes have since been rebuilt and published for the D074 initial
-deployment (volumes await Q5). See
+deployment, including the D075 production volume release. See
 [`data/DISTRIBUTION_AUDIT_EVIDENCE.md`](data/DISTRIBUTION_AUDIT_EVIDENCE.md).
 
 The bounded D057 presentation follow-ups are implemented. Regional standard
@@ -227,7 +228,7 @@ Public reads remain static and unauthenticated.
 D040/D059/D060/D072 select private IBL-owned S3 and the existing CloudFront
 origin `ephys-atlas.iblcore.org`. D074 authorizes initial IBL review and removes
 a separate staging identity as a prerequisite. Distribution `ET6VJW8JWAGVR`
-now serves the live landing/viewer and four scientific datasets. The existing
+now serves the live landing/viewer and five scientific datasets. The existing
 OAI, origin, aliases, certificate, DNS and shared bucket settings are preserved;
 only distribution routing/cache fields and exact v2 object prefixes changed.
 An existing private transaction object is denied through CloudFront and public
@@ -243,9 +244,9 @@ this final origin remains unmeasured before wider promotion. Evidence:
 [initial deployment](publishing/INITIAL_DEPLOYMENT_20260908.md) and
 [live QA](publishing/initial-live-qa-20260908.json).
 
-AGEA is included with provisional notes only in Data details. Ephys volume
-benchmark bytes remain separate from ordinary releases and public discovery;
-D075's completed Q5 measurement permits a new production build and curator promotion.
+AGEA is included with provisional notes only in Data details. The D075 production volume release is now public in Ephys Atlas edition
+`ibl-review-20260908-v2`. Benchmark bytes remain separate and outside discovery;
+the existing v1 edition mapping is retained unchanged.
 Q2/Q9 still govern the later paper freeze; Q19 remains final AGEA scientific
 acceptance. No further administrator intervention is needed for the approved
 initial deployment operations.
@@ -332,11 +333,9 @@ checks are recorded in
 
 ## Remaining launch sequence
 
-1. Finish Q5 real-origin measurements and publish the approved volume release.
-2. Verify the complete initial catalog and final volume viewer at the live origin.
-3. Before wider promotion, complete the remaining general browser matrix,
+1. Before wider promotion, complete the remaining general browser matrix,
    including native Safari and any compound launch-readiness gaps.
-4. Treat Q2/Q9 as a separate paper freeze: select and publish its exact release
+2. Treat Q2/Q9 as a separate paper freeze: select and publish its exact release
    set without changing the already exposed initial edition mappings.
 
 The executable order and stop conditions live in

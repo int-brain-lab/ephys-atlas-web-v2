@@ -1,0 +1,45 @@
+{
+  "release_id": "2026_W26-ibl-review-20260908-v1",
+  "dataset_id": "ephys_atlas_volumes",
+  "build_commit": "2be9ec9d693f0b9e04685a54403daf44b61ada70",
+  "created_at": "2026-09-08T14:45:12Z",
+  "builder": {
+    "command": "ephys-atlas-data build-volumes 2026_W26 --release-id 2026_W26-ibl-review-20260908-v1 --created-at 2026-09-08T14:45:12Z --layout orthogonal_slice_packs --histogram-bins 50 --geometry-selection docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json --distribution-selection distribution-selection.json --pack-depth 4 --ibleatools-commit 9bfa0623a16bc7a989a6b27a589887641beee0a8 --iblatlas-commit 52083adf44825d0622a503705e095699a5957587 --builder-commit 2be9ec9d693f0b9e04685a54403daf44b61ada70",
+    "commit": "2be9ec9d693f0b9e04685a54403daf44b61ada70",
+    "environment": {
+      "machine": "x86_64",
+      "numpy": "2.5.2",
+      "operating_system": "linux",
+      "python": "3.12.3"
+    },
+    "name": "ibl-ephys-atlas-builder",
+    "repository": "rossant/ibl-ephys-atlas-web-v2",
+    "version": "1.0.0"
+  },
+  "files": 6810,
+  "served_bytes": 494885595,
+  "manifest": {
+    "bytes": 24142,
+    "sha256": "16be30752447b3d99411ac982e7ed0e49f2b1d4f6a5d11c3ceeefb11c946fa7e"
+  },
+  "features": 41,
+  "benchmark_non_manifest_files_compared": 6809,
+  "benchmark_non_manifest_identical": true,
+  "numeric_resources_compared": 6683,
+  "numeric_encoded_changes": 0,
+  "numeric_graph_sha256": "a7ba966cbd03f8990669e9f73be0c8ac018d4ef617f71b6cfc0ba614c5d6b7ac",
+  "publication": {
+    "dataset_id": "ephys_atlas_volumes",
+    "release_id": "2026_W26-ibl-review-20260908-v1",
+    "transaction_id": "c915eb24196558713eae74df5758ff2c9c07b3726f7502bd7161c1ef3e6b7f93",
+    "index_key": "aggregates/atlas/ephys-atlas-web-v2/production/datasets/ephys_atlas_volumes/index.json",
+    "catalog_changed": false
+  },
+  "catalog": {
+    "publication_id": "9889b3a083b243a7ab9d61a4309fe719",
+    "bytes": 4058,
+    "sha256": "ef5566f80f77d25e70127da07bcd0de63f7655e4f63008af0d91134d24e5a1ab"
+  },
+  "http_evidence_sha256": "e071ae8f312df94c234af9d09f43c76ac961fa856ed930c5e8168e74b7d0cead",
+  "raw_evidence_directory": "artifacts/deployment-live-20260908/production-volumes"
+}

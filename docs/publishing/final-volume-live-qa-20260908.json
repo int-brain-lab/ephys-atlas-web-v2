@@ -1,0 +1,76 @@
+{
+  "format": "ibl-ephys-atlas-live-volume-qa-v1",
+  "date": "2026-09-08",
+  "target": {
+    "origin": "https://ephys-atlas.iblcore.org",
+    "catalog": {
+      "bytes": 4058,
+      "sha256": "ef5566f80f77d25e70127da07bcd0de63f7655e4f63008af0d91134d24e5a1ab",
+      "publication_id": "9889b3a083b243a7ab9d61a4309fe719"
+    },
+    "volume_release": {
+      "dataset_id": "ephys_atlas_volumes",
+      "release_id": "2026_W26-ibl-review-20260908-v1",
+      "manifest_bytes": 24142,
+      "manifest_sha256": "16be30752447b3d99411ac982e7ed0e49f2b1d4f6a5d11c3ceeefb11c946fa7e"
+    },
+    "benchmark_namespace_requested": false
+  },
+  "raw_evidence": {
+    "final_report": "artifacts/deployment-live-20260908/final-volume-qa/result.json",
+    "final_report_sha256": "ab8f9664672faa0f0e1b55ac5cc81bb6d4a18ab27a7834383948f8a705cbdcc7",
+    "harness_iteration_reports": [
+      {
+        "path": "artifacts/deployment-live-20260908/final-volume-qa/first-run/result.json",
+        "sha256": "97f5b7187b3efefb7d4bfe9fa2c2c03e7943be2e2d834613b2a830fa9566b130",
+        "result": "harness-only cross-origin fetch from about:blank before the app loaded"
+      },
+      {
+        "path": "artifacts/deployment-live-20260908/final-volume-qa/second-run-v1-canonicalization/result.json",
+        "sha256": "b5b121017bd36c107ec12e0820b2cbe6f1d2f1571f48837a51c30833daba729d",
+        "result": "harness-only assumption that a selected default feature remains in the canonical URL"
+      }
+    ],
+    "screenshots": [
+      {
+        "path": "artifacts/deployment-live-20260908/final-volume-qa/screenshots/chromium-volumes.png",
+        "sha256": "c07a668fffca07e323a8fb213bfcd16a7415ad107322d86c04718107089f0603"
+      },
+      {
+        "path": "artifacts/deployment-live-20260908/final-volume-qa/screenshots/chromium-v1-channels-deep-link.png",
+        "sha256": "862c0ca23e0f9723e6c6c2a1e51aac07315fd88cd980ed8770e8a66389b31338"
+      },
+      {
+        "path": "artifacts/deployment-live-20260908/final-volume-qa/screenshots/firefox-volumes.png",
+        "sha256": "b98dcfe8c36acbf853f837fa33f6f461349d7f3ee63f603def14ce9ac15c44cb"
+      },
+      {
+        "path": "artifacts/deployment-live-20260908/final-volume-qa/screenshots/firefox-v1-channels-deep-link.png",
+        "sha256": "d5491dc692c3f7c601a82f0430fac58435b85e6934411932e3666702189c0bef"
+      }
+    ]
+  },
+  "method": {
+    "browsers": ["Chromium headless", "Firefox headless"],
+    "network": "real canonical origin, no route interception",
+    "ready_condition": "selected data and feature loaded, regional rows present, and requested composite view visible",
+    "integrity": "browser fetch of the catalog and immutable volume manifest, with received byte count and SHA-256 compared to catalog descriptors"
+  },
+  "checks": {
+    "default": "channels 2026_W32-ibl-review-20260908-v1 with rms_ap.denoised and Allen",
+    "catalog": "Ephys Atlas v2 exists, is the default edition, and pins ephys_atlas_volumes at 2026_W26-ibl-review-20260908-v1; v1 remains catalogued without volumes",
+    "volume_chooser": "selection resolves to ephys_atlas_volumes / 2026_W26-ibl-review-20260908-v1 / repr=volume; 41 feature options are present",
+    "rendering": "coronal, sagittal, and horizontal composite volume views are visible",
+    "navigation": "native coronal slider 545 then 540 reaches volume indices 109 then 108",
+    "immutable_manifest": "manifest returned JSON, public max-age=31536000 immutable cache policy, 24142 bytes, and the declared SHA-256",
+    "v1_deep_link": "the explicit September 2026 v1 channels URL retains its edition and release and renders rms_ap.denoised; canonicalization omits the redundant default feature query parameter"
+  },
+  "diagnostics": {
+    "chromium": "no console errors, page errors, failed requests, HTTP >=400 responses, expected navigation cancellations, or benchmark requests",
+    "firefox": "no console errors, page errors, failed requests, HTTP >=400 responses, expected navigation cancellations, or benchmark requests"
+  },
+  "limitations": [
+    "This focused post-publication check does not measure performance and does not access the benchmark namespace.",
+    "It does not repeat landing, local-import, AGEA, or optional 3-D coverage recorded in initial-live-qa-20260908.json."
+  ]
+}

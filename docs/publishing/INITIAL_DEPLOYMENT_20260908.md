@@ -1,7 +1,7 @@
 # Initial live deployment — 2026-09-08
 
 Status: frozen evidence for the initial D074 IBL review deployment. The landing
-and viewer are live at `https://ephys-atlas.iblcore.org/` and `/app/`, with four
+and viewer are live at `https://ephys-atlas.iblcore.org/` and `/app/`, with five
 catalogued datasets. This records the deployed site build below; it does not
 declare a final paper freeze or completion of broad launch QA.
 
@@ -81,7 +81,7 @@ The D070 geometry resource retains SHA-256
 966,645 source triangles and 1,140 components. HTTP checks verified pack
 manifest hashes, opaque numeric MIME, immutable caching and Range 206 delivery.
 
-The catalog publication ID is `2633687dfd9349faba52d1c44ad77572`; served
+The initial four-dataset catalog publication ID was `2633687dfd9349faba52d1c44ad77572`; served
 `catalog.json` is 3,202 bytes, SHA-256
 `366ead7f0fc18a3696b537bd1486c0f1aaa4700e540e5f0a81e5c04864f00710`.
 The edition is `ibl-review-20260908-v1`. The configured initial view is Ephys
@@ -113,11 +113,69 @@ and no scientific fetch. The deployment operator visually reviewed desktop,
 timings use explicit reused-context/cache conditions; they are observations,
 not release performance thresholds or Q5 measurements.
 
-Production ephys volumes remain outside the public catalog pending Q5. The
-41-feature W26 depth-four candidate is isolated under
-`datasets/ephys_atlas_volumes/benchmarks/` for direct-origin measurements; it is
-not an ordinary production scientific release. Final broad launch QA, including
-native Safari and remaining performance/failure coverage, is still pending.
+## Production ephys volumes and final catalog
+
+D075 selects depth-four orthogonal slice packs from the
+[real CloudFront benchmark](../../benchmarks/rendering/volume-origin-20260908/README.md).
+The 180 actual-slider trials pass; the 41-feature sweep renders every feature,
+moves within a pack without requests, and crosses a boundary with one request.
+Worst per-feature slider p95 is 90.6 ms under 80 ms/10 Mbps; worst startup p95
+is 2.891 s. Earlier speculative-prefetch and URL-restoration findings remain
+separate frozen diagnostics, not silently removed measurements.
+
+Production release `2026_W26-ibl-review-20260908-v1` was built on clean Linux
+`main` at `2be9ec9d693f0b9e04685a54403daf44b61ada70`, created
+`2026-09-08T14:45:12Z`, with the same scientific package/environment pins above.
+Its 6,810 files total 494,885,595 bytes. The 24,142-byte manifest has SHA-256
+`16be30752447b3d99411ac982e7ed0e49f2b1d4f6a5d11c3ceeefb11c946fa7e`.
+All 6,809 non-manifest files are byte-identical to the tested candidate; the
+6,683 numeric resources also match the reviewed local release. The manifest
+records the new production identity and actual build provenance. Production
+preflight passed before the ordinary release transaction
+`c915eb24196558713eae74df5758ff2c9c07b3726f7502bd7161c1ef3e6b7f93`.
+Publication and complete-catalog verification finished successfully in 396.3 s
+and 249.7 s respectively.
+
+The final public catalog has publication ID `9889b3a083b243a7ab9d61a4309fe719`,
+4,058 bytes and SHA-256
+`ef5566f80f77d25e70127da07bcd0de63f7655e4f63008af0d91134d24e5a1ab`.
+It exposes all five datasets. New Ephys Atlas edition `ibl-review-20260908-v2`
+adds volumes, while the already exposed v1 edition mapping remains unchanged.
+Channels `rms_ap.denoised`, Allen and linked 2-D remain the initial default.
+The existing site reads this mutable catalog; adding volumes did not require
+another site build. The tracked site configuration now pins the final catalog
+for future builds, while the immutable deployed receipt retains its original
+publish-time dependency.
+
+Production HTTPS checks validate the manifest, one descriptor/index and the
+three center packs by exact size/SHA, with immutable caching, opaque gzip,
+Range 206 byte equality and non-HTML missing-resource denial. The browser and
+all data use the same HTTPS origin; no cross-origin CORS allowance is claimed.
+The [compact production release record](production-volume-release-20260908.json)
+pins the build, numeric comparison and publication evidence. Detailed new
+evidence is in ignored `production-volumes/` under the deployment
+artifact root: build session, command, validated inventory, scientific
+comparison, publication receipts, catalog bytes and `production-http.json`.
+A bounded signature scan of 1,128 tracked files and the 18 newly committed files
+found no private-key, AWS-key-ID or classic GitHub-token signatures. This is
+not an exhaustive secret detector; deployment authentication uses the external
+AWS profile. The ignored `secret-signature-audit.json` records its scope.
+
+The new source/configuration commit passes full `just check` and
+[CI run 34240283516](https://github.com/int-brain-lab/ephys-atlas-web-v2/actions/runs/34240283516).
+
+[Final live volume checks](final-volume-live-qa-20260908.json) pass in both
+Chromium and Firefox against the real catalog with no route interception or
+console, page, request or HTTP errors. They verify the unchanged channel
+default, volume chooser/41-feature inventory, three composite panes, native
+slider movement and retained v1 edition links. The operator visually reviewed
+both volume screenshots. Two initial harness assumptions (fetching from
+`about:blank` and requiring a redundant default-feature URL parameter) were
+corrected and their failed reports retained. General native Safari on the final
+origin remains unmeasured before wider promotion. The
+initial IBL review deployment does not claim a final paper freeze or completed
+Q19 scientific acceptance.
+
 
 ## Recovery and retained evidence
 

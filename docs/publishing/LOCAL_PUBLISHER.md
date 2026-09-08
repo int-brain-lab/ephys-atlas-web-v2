@@ -8,13 +8,13 @@ below to required staging setup describe the earlier isolated-staging path.
 
 Status: runbook; direct initial deployment authorized by D074. S3 access and
 CloudFront router publication/invalidation are verified. The v2 distribution's
-routing/cache update is deployed. The four initial scientific releases, both
+routing/cache update is deployed. The five initial scientific releases, both
 anatomy packs and initial catalog were published on 2026-09-08. Their exact
 dependencies and approved default are pinned in
 [`initial-site.json`](../../data/deployment/initial-site.json). The site is live;
 Chromium/Firefox live workflows and delivery fixes have been verified; see
-[initial deployment evidence](INITIAL_DEPLOYMENT_20260908.md). The separate volume benchmark is public
-by exact URL but remains outside the catalog pending Q5. Final paper/scientific
+[initial deployment evidence](INITIAL_DEPLOYMENT_20260908.md). D075 resolves Q5, and the fresh production volume release is catalogued. The
+separate benchmark remains outside ordinary release discovery. Final paper/scientific
 review questions retain their stated scope.
 
 Run these commands from the repository root with the locked builder environment.

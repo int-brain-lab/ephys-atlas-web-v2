@@ -119,10 +119,10 @@ local/CI-buildable only rather than a published site.
 ## Current execution boundary
 
 The initial IBL review website is live at `ephys-atlas.iblcore.org`, with the
-approved regional datasets, AGEA and native 3-D anatomy. D074 keeps this
+approved regional datasets, ephys volumes, AGEA and native 3-D anatomy. D074 keeps this
 deployment separate from Q2 (paper channel vintage), Q9 (paper aliases/defaults)
-and Q19 (final AGEA scientific acceptance). D075 resolves Q5 with the real-origin depth-four volume benchmark; the new
-production release is the next deployment work. Q8's selected origin, access
+and Q19 (final AGEA scientific acceptance). D075 resolves Q5 with the real-origin depth-four volume benchmark, and the
+new production volume release is now catalogued. Q8's selected origin, access
 and routing have been exercised successfully.
 
 D062 fixes the execution environment independently of those choices: Linux is

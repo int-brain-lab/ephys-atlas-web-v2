@@ -9,7 +9,7 @@ is unblocked; never invent an answer from [`OPEN_QUESTIONS.md`](OPEN_QUESTIONS.m
 
 ## Current state
 
-Schema v1, all four scientific builders, the retained five-view 2-D viewer,
+Schema v1, the scientific builders, the retained five-view 2-D viewer,
 optional 3-D context, local ZIP authoring/import, downloads, project-edition
 navigation, distributions, comparison foundations, and the reviewed local data
 bundle are implemented. Linux is now the canonical production environment;
@@ -17,42 +17,10 @@ macOS is a preview host. `just data-refresh-local` verifies whether upstream
 channel/cluster `latest` aliases still match the reviewed releases and stops if
 new scientific review is needed.
 
-The initial IBL review website is live. Finish Q5 volume measurements and
-publication, then record final live acceptance. Q2/Q9 concern a later paper
+The initial IBL review website and all five approved datasets are live. D075
+volume measurements, the fresh production build and catalog promotion passed.
+Chromium and Firefox final volume checks pass. Keep broad-promotion QA explicit. Q2/Q9 concern a later paper
 freeze and do not block the authorized initial deployment.
-
-## M6 — Finish staging and publication machinery
-
-Status: publication machinery and initial direct deployment complete. The
-production router/cache configuration is deployed, four scientific releases
-and both anatomy packs are public, and the approved landing/viewer is live.
-Actual HTTPS byte hashes, MIME, Range, cache and private-prefix denial checks
-passed. No separate staging identity or further administrator request is needed.
-
-Next actions:
-
-1. Finish volume publication and live browser acceptance below.
-2. Preserve the OAI, origin, DNS, certificate and bucket settings during future
-   deployments; use the validated publisher and retain immutable history.
-3. Create a development-bundle descriptor with exact immutable HTTPS sources
-   and prove `just data` from a clean checkout.
-
-Runbook: [S3 deployment](publishing/S3_DEPLOYMENT.md). Acceptance:
-[`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 10, 11, and 13.
-
-## M2 — Confirm and build the production volume release
-
-Status: D075 resolves Q5. The real CloudFront actual-slider matrix passes all
-180 trials and the 41-feature correctness sweep. Depth-four packs are selected.
-
-1. Build the new W26 production release on clean Linux `main` with D075 committed.
-2. Run production preflight and compare every numeric resource with the reviewed
-   source-derived candidate.
-3. Publish the immutable release and promote the new project edition without
-   remapping the exposed v1 edition; verify production catalog/slider/deep links.
-
-Never generalize D043 beyond the pinned W26 source. Evidence and procedure:
-[`data/VOLUME_2026_W26_EVIDENCE.md`](data/VOLUME_2026_W26_EVIDENCE.md).
 
 ## M1/M3/M4 — Freeze the paper dataset set
 
@@ -77,8 +45,9 @@ Dataset authority: [`data/README.md`](data/README.md). Acceptance:
 
 ## M7 — Final release QA
 
-Status: initial live QA in progress; production origin, four initial releases
-and defaults exist. Finish the volume lane before declaring the full set deployed.
+Status: initial IBL review deployment and Chromium/Firefox live checks passed.
+The remaining general native-Safari matrix and compound readiness gaps apply
+before wider promotion; see the [deployment record](publishing/INITIAL_DEPLOYMENT_20260908.md).
 
 Run from the release commit on Linux:
 
@@ -127,6 +96,10 @@ Full-catalog ZIP import remains outside the current archive entry limit.
 ### Other independent work
 
 These remain useful but must not displace the launch path:
+
+- create a new development-bundle descriptor pinning the published immutable
+  HTTPS releases and prove acquisition from a clean checkout; retain the
+  historical local/candidate descriptors unchanged;
 
 - capture representative native-Safari quota/RSS evidence before advertising
   broad local-import capacity; publish `ibl-ephys-atlas` only with authorization;
