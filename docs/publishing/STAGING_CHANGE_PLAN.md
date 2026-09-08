@@ -1,5 +1,11 @@
 # Staging infrastructure change plan
 
+Direct first-deployment update (D074, 2026-09-08): a separate staging identity
+and distribution are optional. The active path uses the existing atlas origin;
+see [the reduced access request](AWS_DEPLOYMENT_ACCESS_REQUEST.md). References
+below to required staging setup describe the earlier isolated-staging path.
+
+
 Status: D074 authorizes the scoped deployment after validation. This remains an
 offline operator proposal because the authenticated user was denied both OAC
 and dedicated staging OAI creation; those attempts created no AWS resource.

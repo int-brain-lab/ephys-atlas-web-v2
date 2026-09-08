@@ -50,11 +50,11 @@ and limitations are in
 
 Blocks: final browser transport and the immutable production volume release.
 
-Staging preparation on 2026-09-08 identified an additional operational gap:
-the current dataset publisher applies production preflight even for the staging
-environment and rejects candidate IDs. The required benchmark therefore needs
-an explicitly reviewed staging-only candidate delivery path before upload.
-Do not remove the production guard or rename the candidate to bypass it.
+The initial staging preparation identified an operational gap, now resolved
+by the explicit staging-only benchmark publisher. For direct first deployment,
+non-catalogued benchmark delivery at the existing origin still needs a tested
+implementation. Ordinary dataset publication still rejects candidate IDs.
+Do not remove that production guard or rename the candidate to bypass it.
 
 ## Q8 — Production public origin and storage
 
@@ -101,24 +101,21 @@ from the OAC setup in the runbook and is not an approved migration decision.
 See
 [`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md).
 
-Resolution still needed: isolated staging distribution/origin/hostname and
-access policy; reconcile observed production OAI with the OAC runbook; implement
-D073's landing/viewer routing and reviewed cache/CORS/MIME/Range policy; minimum
-publisher IAM
-policy, real-origin validation of the offline-tested S3 release/catalog/pack/site
-machinery, and first artifact set authorized for
-staging. A separate data hostname is no longer required for the initial
-same-origin topology, though a later decision may introduce one.
+D074's direct first-deployment amendment removes isolated staging as a
+prerequisite. Use the existing production OAI/distribution and preserve shared
+bucket settings. The approved artifact set and initial defaults are fixed;
+remaining work is scoped routing/cache setup, actual publisher authorization,
+remote delivery validation and Q5 benchmarking.
 
-Blocks: production-origin QA, immutable asset/release deployment, Q5
-confirmation, and final deployment documentation.
+The direct production-router creation attempt on 2026-09-08 was denied for
+`cloudfront:CreateFunction`; it created no resource. `GetDistribution` supplies
+the current configuration and ETag despite the separate
+`GetDistributionConfig` denial. Upload and distribution-update permissions
+remain unverified. See the reduced
+[administrator request](publishing/AWS_DEPLOYMENT_ACCESS_REQUEST.md).
 
-D074 authorizes scoped staging/production changes and uploads after validation;
-owner authorization is no longer a blocker. The 2026-09-08 apply attempt found
-`iblmember` lacks `cloudfront:CreateOriginAccessControl` and
-`cloudfront:GetDistributionConfig`. No resource was created by that attempt.
-The shared bucket has no explicit ownership controls; do not change bucket-wide
-ownership to provision staging. Resolve delivery within the scoped policy.
+Blocks: production-origin QA, initial artifact deployment and Q5 confirmation.
+Owner authorization is already recorded; no separate staging identity is needed.
 
 ## Q9 — Paper-facing release aliases and defaults
 

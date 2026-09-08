@@ -1717,3 +1717,31 @@ bucket-wide ownership for OAC is outside authorization. Keep default SSE-S3 and
 upload under the bucket account; verify OAI delivery on actual staged objects.
 The OAC template remains an alternative for a future separately approved
 ownership configuration, not a prerequisite for this deployment.
+
+
+### Direct first-deployment amendment — 2026-09-08
+
+After discussing whether a separate staging identity is necessary, the owner
+accepted proceeding with the existing, unpromoted atlas website as the first
+remote validation origin. A separate staging distribution/OAI is optional and
+is no longer a prerequisite. Reuse production distribution `ET6VJW8JWAGVR`,
+OAI `E359S50BKNNGWZ`, and the exact existing production public prefixes; keep
+DNS, ACM, bucket policy and bucket-wide settings unchanged. The earlier dedicated
+staging proposal remains available for a later isolated environment.
+
+Publish the approved regional/AGEA releases and packs through the existing
+validated transactions, build the site against the published dependency hashes,
+and verify actual HTTPS delivery and browser behavior before wider promotion.
+Q5 still requires real-origin volume measurements before catalog inclusion.
+The implemented benchmark publisher is staging-only: this amendment does not
+permit uploading candidates as ordinary production releases or bypassing its
+guards. A separately tested, non-catalogued benchmark delivery path at the
+existing origin remains implementation work if this direct path is used for Q5.
+
+A direct production router creation attempt was denied for
+`cloudfront:CreateFunction` on
+`arn:aws:cloudfront::842577843587:function/ephys-atlas-web-v2-production-router`.
+No function was created and no distribution or S3 object was changed. This
+proves a routing setup permission gap, not denial of all production writes.
+See the reduced administrator request in
+`docs/publishing/AWS_DEPLOYMENT_ACCESS_REQUEST.md`.

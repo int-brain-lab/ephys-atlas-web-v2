@@ -1,5 +1,11 @@
 # S3 deployment access and preflight
 
+Direct first-deployment update (D074, 2026-09-08): a separate staging identity
+and distribution are optional. The active path uses the existing atlas origin;
+see [the reduced access request](AWS_DEPLOYMENT_ACCESS_REQUEST.md). References
+below to required staging setup describe the earlier isolated-staging path.
+
+
 Status: runbook for the authorized S3 bucket, D059-selected environment roots,
 and D060-selected local-publisher/CloudFront topology. This document records
 access evidence and safe operator commands; it does not authorize publication

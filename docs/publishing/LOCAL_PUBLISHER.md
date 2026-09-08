@@ -1,5 +1,11 @@
 # Local publisher operations
 
+Direct first-deployment update (D074, 2026-09-08): a separate staging identity
+and distribution are optional. The active path uses the existing atlas origin;
+see [the reduced access request](AWS_DEPLOYMENT_ACCESS_REQUEST.md). References
+below to required staging setup describe the earlier isolated-staging path.
+
+
 Status: runbook; offline-tested implementation. Repository publication commands
 have made no remote upload or site deployment. The separate 2026-09-08 audit
 observed existing production DNS/CloudFront setup. D074 authorizes the scoped

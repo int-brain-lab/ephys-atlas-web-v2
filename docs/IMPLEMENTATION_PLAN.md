@@ -28,47 +28,44 @@ remain incomplete. The 2026-09-08 authenticated audit confirms the production
 distribution, DNS/TLS, private bucket and narrowed OAI grant; isolated staging
 and publisher write authorization remain unverified.
 
-Blocker: Q8 for AWS administrator provisioning and remaining publisher access.
-D074 authorizes scoped remote changes and the initial dataset set. Actual OAI
-and OAC creation attempts were denied; see the unsent
-[administrator request](publishing/AWS_DEPLOYMENT_ACCESS_REQUEST.md). Preserve
-shared bucket ownership/settings and use the dedicated staging OAI variant.
+Blocker: Q8 for existing-site routing setup and unverified publisher access.
+D074's direct first-deployment amendment removes separate staging infrastructure
+as a prerequisite. Actual creation of the production router was denied; see the
+reduced, unsent [administrator request](publishing/AWS_DEPLOYMENT_ACCESS_REQUEST.md).
 
 Next actions:
 
-1. D073's local landing at `/` and viewer at `/app/` are implemented as one
-   coherent site build/publication; the owner approved the landing at `a3a88cd`
-   on 2026-09-08. The offline
-   [staging change plan](publishing/STAGING_CHANGE_PLAN.md) and scoped AWS
-   templates are prepared. Obtain the scoped AWS setup in the administrator
-   request, then prepare properly
-   identified Linux-built artifacts; the tooling rejects the current preview
-   identities and packs lacking canonical build evidence. Commands and recovery
-   semantics are in [Local publisher operations](publishing/LOCAL_PUBLISHER.md).
-2. Provision the isolated staging distribution and origin path selected by Q8.
-3. Publish one authorized Linux-built immutable artifact set, promote mutable
-   indexes last, and record served-byte SHA-256, MIME, CORS, Range, and cache
-   evidence.
-4. Create a new development-bundle descriptor with exact immutable HTTPS
-   sources and prove `just data` from a clean checkout.
-5. Only after staging evidence is accepted, finish the already-provisioned
-   production boundary's routing/cache configuration and deploy the site under
-   `site/`.
+1. Obtain the production router and scoped operator access for the existing
+   distribution. Preserve the existing OAI, origin, DNS, certificate and bucket
+   settings; no staging identity or distribution is required.
+2. Rebuild/preflight the approved initial releases and packs on clean Linux
+   `main` at the publication commit. The complete earlier build and eight offline
+   publication plans passed at `9e8d116`; later commits require fresh provenance.
+3. Publish approved immutable data, promote the catalog, and build/publish the
+   landing/viewer against actual dependency hashes. Apply reviewed routing/cache
+   settings to the existing atlas distribution with fresh ETag and rollback evidence.
+4. Record actual served-byte SHA-256, MIME, Range, cache, private-prefix denial
+   and desktop/mobile browser evidence before wider promotion.
+5. Create a development-bundle descriptor with exact immutable HTTPS sources
+   and prove `just data` from a clean checkout.
 
 Runbook: [S3 deployment](publishing/S3_DEPLOYMENT.md). Acceptance:
 [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 10, 11, and 13.
 
 ## M2 — Confirm and build the production volume release
 
-Status: blocked by Q5, which depends on the Q8 staging origin. D043 already
+Status: blocked by Q5, which depends on working Q8 CloudFront delivery. D043 already
 fixes W26 geometry and validity; local evidence favors depth-four orthogonal
 slice packs.
 
-After staging exists:
+For the direct first-deployment path, first implement and test a non-catalogued
+benchmark delivery mode at the existing origin. Preserve ordinary production
+release guards; the current benchmark mode is staging-only.
 
-1. Review and implement an isolated staging-only candidate publication path:
-   the current publisher applies production preflight in staging and rejects
-   candidate IDs. Preserve those IDs and keep candidates out of production and
+The earlier isolated-staging alternative remains:
+
+1. Use the implemented staging-only candidate publication path:
+   preserve candidate IDs and keep candidates out of production and
    curator defaults. Then repeat depth-four measurements at the real origin, recording requests,
    bytes, decode/interaction latency, and memory.
 2. Resolve Q5 from that evidence.
