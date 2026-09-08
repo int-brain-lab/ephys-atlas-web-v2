@@ -1,0 +1,22 @@
+{
+  "CachePolicyConfig": {
+    "Name": "ephys-atlas-web-v2-staging-mutable",
+    "Comment": "TTL-zero policy for entry HTML, catalog and dataset indexes",
+    "DefaultTTL": 0,
+    "MaxTTL": 0,
+    "MinTTL": 0,
+    "ParametersInCacheKeyAndForwardedToOrigin": {
+      "EnableAcceptEncodingGzip": false,
+      "EnableAcceptEncodingBrotli": false,
+      "HeadersConfig": {
+        "HeaderBehavior": "none"
+      },
+      "CookiesConfig": {
+        "CookieBehavior": "none"
+      },
+      "QueryStringsConfig": {
+        "QueryStringBehavior": "none"
+      }
+    }
+  }
+}

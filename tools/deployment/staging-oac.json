@@ -1,0 +1,9 @@
+{
+  "OriginAccessControlConfig": {
+    "Name": "ephys-atlas-web-v2-staging-s3",
+    "Description": "Isolated read-only origin access for the Ephys Atlas v2 staging prefix",
+    "SigningProtocol": "sigv4",
+    "SigningBehavior": "always",
+    "OriginAccessControlOriginType": "s3"
+  }
+}

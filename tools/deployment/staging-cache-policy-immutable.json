@@ -1,0 +1,22 @@
+{
+  "CachePolicyConfig": {
+    "Name": "ephys-atlas-web-v2-staging-immutable",
+    "Comment": "One-year cache with CDN compression disabled so stored scientific bytes remain opaque",
+    "DefaultTTL": 31536000,
+    "MaxTTL": 31536000,
+    "MinTTL": 0,
+    "ParametersInCacheKeyAndForwardedToOrigin": {
+      "EnableAcceptEncodingGzip": false,
+      "EnableAcceptEncodingBrotli": false,
+      "HeadersConfig": {
+        "HeaderBehavior": "none"
+      },
+      "CookiesConfig": {
+        "CookieBehavior": "none"
+      },
+      "QueryStringsConfig": {
+        "QueryStringBehavior": "none"
+      }
+    }
+  }
+}

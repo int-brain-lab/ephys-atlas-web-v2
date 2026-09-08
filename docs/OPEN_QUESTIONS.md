@@ -47,6 +47,12 @@ and limitations are in
 
 Blocks: final browser transport and the immutable production volume release.
 
+Staging preparation on 2026-09-08 identified an additional operational gap:
+the current dataset publisher applies production preflight even for the staging
+environment and rejects candidate IDs. The required benchmark therefore needs
+an explicitly reviewed staging-only candidate delivery path before upload.
+Do not remove the production guard or rename the candidate to bypass it.
+
 ## Q8 — Production public origin and storage
 
 Status: **DECISION; partially resolved by D040, D059, D060, and D072**.
@@ -81,14 +87,21 @@ on 2026-09-02 for the private `us-east-1` bucket
 `ibl-brain-wide-map-private` below `aggregates/atlas/`. Anonymous listing is
 denied. No remote object was mutated. The 2026-09-02 DNS check concerned the
 iblcore.org hostname. D072 records the current Cloudflare zone/DNS-read evidence.
-The 2026-09-07 AWS audit attempt found an expired `ibl-atlas` login; it could not
-verify current identity, permissions or infrastructure until reauthentication.
+After reauthentication, the 2026-09-08 read-only audit confirmed production
+distribution `ET6VJW8JWAGVR` (`d2is8oq6heobqy.cloudfront.net`) with the exact
+production origin path, active DNS/TLS and HTTP-to-HTTPS redirection. The bucket
+blocks public access; OAI `E359S50BKNNGWZ` may read only production `site/*`,
+`atlas/*`, `datasets/*`, `catalog.json` and an extra root `index.html`.
+Both environment prefixes were empty. Read access is verified; publisher write
+access and isolated staging delivery remain unverified. Observed OAI differs
+from the OAC setup in the runbook and is not an approved migration decision.
 See
 [`docs/publishing/S3_DEPLOYMENT.md`](publishing/S3_DEPLOYMENT.md).
 
-Resolution still needed: the exact production and staging CloudFront
-distribution/origin-path configuration, isolated staging hostname, DNS and
-ACM/TLS provisioning, cache/CORS/MIME/Range policy, minimum publisher IAM
+Resolution still needed: isolated staging distribution/origin/hostname and
+access policy; reconcile observed production OAI with the OAC runbook; implement
+D073's landing/viewer routing and reviewed cache/CORS/MIME/Range policy; minimum
+publisher IAM
 policy, real-origin validation of the offline-tested S3 release/catalog/pack/site
 machinery, and first artifact set authorized for
 staging. A separate data hostname is no longer required for the initial

@@ -1,0 +1,26 @@
+{
+  "_template": {
+    "status": "offline-proposal-not-cli-ready",
+    "required_replacements": ["<REQUIRED_STAGING_DISTRIBUTION_ID>"],
+    "merge_rule": "Merge Statement into the reviewed existing bucket policy; never replace the complete policy."
+  },
+  "Statement": {
+    "Sid": "AtlasStagingCloudFrontRead",
+    "Effect": "Allow",
+    "Principal": {
+      "Service": "cloudfront.amazonaws.com"
+    },
+    "Action": "s3:GetObject",
+    "Resource": [
+      "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/catalog.json",
+      "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/atlas/*",
+      "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/datasets/*",
+      "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/site/*"
+    ],
+    "Condition": {
+      "StringEquals": {
+        "AWS:SourceArn": "arn:aws:cloudfront::842577843587:distribution/<REQUIRED_STAGING_DISTRIBUTION_ID>"
+      }
+    }
+  }
+}

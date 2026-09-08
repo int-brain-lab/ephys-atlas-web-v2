@@ -1,0 +1,211 @@
+{
+  "_template": {
+    "status": "offline-proposal-not-cli-ready",
+    "usage": "Select one named PolicyDocument for one temporary publisher role/session. Do not attach this wrapper as a policy.",
+    "shared_staging_limit": "Current asset and release transactions use _staging/<transaction-id>/, so those operations cannot receive narrower transaction-write prefixes without a publisher layout change.",
+    "required_replacements": [
+      "<REQUIRED_EXACT_SITE_DEPENDENCY_PREFIX>",
+      "<REQUIRED_EXACT_SITE_DEPENDENCY_OBJECT_ARN>"
+    ]
+  },
+  "policies": {
+    "release": {
+      "PolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "BucketRegion",
+            "Effect": "Allow",
+            "Action": "s3:GetBucketLocation",
+            "Resource": "arn:aws:s3:::ibl-brain-wide-map-private"
+          },
+          {
+            "Sid": "ListReleaseAndPrivateTransactions",
+            "Effect": "Allow",
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::ibl-brain-wide-map-private",
+            "Condition": {
+              "StringLike": {
+                "s3:prefix": [
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/datasets/*",
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/_staging/*"
+                ]
+              }
+            }
+          },
+          {
+            "Sid": "ReadWriteReleaseAndPrivateTransactions",
+            "Effect": "Allow",
+            "Action": ["s3:GetObject", "s3:PutObject"],
+            "Resource": [
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/datasets/*",
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/_staging/*"
+            ]
+          }
+        ]
+      }
+    },
+    "projection": {
+      "PolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "BucketRegion",
+            "Effect": "Allow",
+            "Action": "s3:GetBucketLocation",
+            "Resource": "arn:aws:s3:::ibl-brain-wide-map-private"
+          },
+          {
+            "Sid": "ListProjectionAndPrivateTransactions",
+            "Effect": "Allow",
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::ibl-brain-wide-map-private",
+            "Condition": {
+              "StringLike": {
+                "s3:prefix": [
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/atlas/projections/*",
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/_staging/*"
+                ]
+              }
+            }
+          },
+          {
+            "Sid": "ReadWriteProjectionAndPrivateTransactions",
+            "Effect": "Allow",
+            "Action": ["s3:GetObject", "s3:PutObject"],
+            "Resource": [
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/atlas/projections/*",
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/_staging/*"
+            ]
+          }
+        ]
+      }
+    },
+    "mesh": {
+      "PolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "BucketRegion",
+            "Effect": "Allow",
+            "Action": "s3:GetBucketLocation",
+            "Resource": "arn:aws:s3:::ibl-brain-wide-map-private"
+          },
+          {
+            "Sid": "ListMeshAndPrivateTransactions",
+            "Effect": "Allow",
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::ibl-brain-wide-map-private",
+            "Condition": {
+              "StringLike": {
+                "s3:prefix": [
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/atlas/meshes/*",
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/_staging/*"
+                ]
+              }
+            }
+          },
+          {
+            "Sid": "ReadWriteMeshAndPrivateTransactions",
+            "Effect": "Allow",
+            "Action": ["s3:GetObject", "s3:PutObject"],
+            "Resource": [
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/atlas/meshes/*",
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/_staging/*"
+            ]
+          }
+        ]
+      }
+    },
+    "site": {
+      "PolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "BucketRegion",
+            "Effect": "Allow",
+            "Action": "s3:GetBucketLocation",
+            "Resource": "arn:aws:s3:::ibl-brain-wide-map-private"
+          },
+          {
+            "Sid": "ListSitePrivateTransactionsAndExactDependencies",
+            "Effect": "Allow",
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::ibl-brain-wide-map-private",
+            "Condition": {
+              "StringLike": {
+                "s3:prefix": [
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/site/*",
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/_staging/*",
+                  "<REQUIRED_EXACT_SITE_DEPENDENCY_PREFIX>"
+                ]
+              }
+            }
+          },
+          {
+            "Sid": "ReadWriteSiteAndPrivateTransactions",
+            "Effect": "Allow",
+            "Action": ["s3:GetObject", "s3:PutObject"],
+            "Resource": [
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/site/*",
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/_staging/*"
+            ]
+          },
+          {
+            "Sid": "ReadExactSiteDependencies",
+            "Effect": "Allow",
+            "Action": "s3:GetObject",
+            "Resource": ["<REQUIRED_EXACT_SITE_DEPENDENCY_OBJECT_ARN>"]
+          }
+        ]
+      }
+    },
+    "curator": {
+      "PolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "BucketRegion",
+            "Effect": "Allow",
+            "Action": "s3:GetBucketLocation",
+            "Resource": "arn:aws:s3:::ibl-brain-wide-map-private"
+          },
+          {
+            "Sid": "ListCatalogHistoryAndPublishedDatasets",
+            "Effect": "Allow",
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::ibl-brain-wide-map-private",
+            "Condition": {
+              "StringLike": {
+                "s3:prefix": [
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/catalog.json",
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/datasets/*",
+                  "aggregates/atlas/ephys-atlas-web-v2/staging/_staging/catalog-history/*"
+                ]
+              }
+            }
+          },
+          {
+            "Sid": "ReadPublishedInventoryAndCatalogState",
+            "Effect": "Allow",
+            "Action": "s3:GetObject",
+            "Resource": [
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/catalog.json",
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/datasets/*",
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/_staging/catalog-history/*"
+            ]
+          },
+          {
+            "Sid": "WriteCatalogAndImmutableHistory",
+            "Effect": "Allow",
+            "Action": "s3:PutObject",
+            "Resource": [
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/catalog.json",
+              "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/_staging/catalog-history/*"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

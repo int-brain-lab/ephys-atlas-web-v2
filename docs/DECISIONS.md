@@ -81,6 +81,7 @@ only part of the body; the index states what remains effective.
 | D070 | Accept native 3-D anatomy and OIT | accepted | 2026-09-07 | closes Q18; native default, exact reviewed movements/boundary; D042 rollback; additional 3-D Firefox/Safari review waived |
 | D071 | International Brain Laboratory production hostname | superseded | 2026-09-07 | D072 restores ephys-atlas.iblcore.org |
 | D072 | Confirm iblcore.org with Cloudflare DNS | accepted | 2026-09-07 | production hostname ephys-atlas.iblcore.org; Cloudflare DNS, existing AWS delivery model retained |
+| D073 | Landing page and viewer routes | accepted | 2026-09-08 | lightweight themed landing at `/`, viewer at `/app/`; integrated about/credits and existing user guide; no separate help/about/docs launch pages |
 
 ## D001 — Separate v2
 
@@ -1651,3 +1652,24 @@ topology. This authorizes hostname documentation, a read-only AWS audit and
 local publishing machinery, not infrastructure creation or data publication.
 Staging may use the distribution-generated hostname until a custom name is
 selected. Q2/Q5/Q9/Q19 scientific choices remain unchanged.
+
+## D073 — Landing page and viewer routes
+
+The owner selects a lightweight public landing page at `/` and the full atlas
+viewer at `/app/`. The landing shares the application's theme and uses actual
+reviewed atlas captures, a short introduction and a prominent Open atlas link.
+It must not load the viewer runtime or scientific data until the visitor opens
+the app. Captures represent their recorded local source and must not imply a
+published scientific release or invent anatomical geometry.
+
+Keep About, credits, citation guidance and source links on the landing page.
+Link to the existing user guide rather than introducing standalone `/about/`,
+`/help/` or `/docs/` pages for this first version. Preserve query-persisted view
+state under `/app/`, responsive behavior and accessible navigation.
+
+Both routes remain on D060's one CloudFront/private-S3 origin. Implement and
+test local routing, build and publication support before changing CloudFront.
+Missing scientific resources remain errors; there is no arbitrary HTML fallback.
+This authorizes local design and staging preparation, not infrastructure changes
+or public uploads. The first visual design remains open to owner iteration;
+Q2/Q5/Q8/Q9/Q19 release and deployment gates remain in force.

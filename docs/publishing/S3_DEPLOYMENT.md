@@ -7,6 +7,8 @@ of a particular release. Remaining deployment details and scientific release
 choices are governed by Q8 and Q9. The console/DNS walkthrough is
 [AWS console setup](AWS_CONSOLE_SETUP.md).
 Implemented commands and recovery semantics: [Local publisher operations](LOCAL_PUBLISHER.md).
+The concrete offline templates and ordered proposal are in
+[Staging infrastructure change plan](STAGING_CHANGE_PLAN.md).
 
 ## Canonical build preflight
 
@@ -39,6 +41,48 @@ before opening a remote transaction; see [commands and limits](../../publishing/
 - publication: operator-invoked local repository command; no always-on
   publishing server and no Cloudflare Pages deployment initially
 
+## Read-only production audit (2026-09-08)
+
+The renewed `ibl-atlas` session identifies
+`arn:aws:iam::842577843587:user/iblmember`. A read-only audit confirmed this
+production state:
+
+- CloudFront distribution `ET6VJW8JWAGVR` is deployed at
+  `d2is8oq6heobqy.cloudfront.net`, with alias
+  `ephys-atlas.iblcore.org`, HTTP-to-HTTPS redirect, TLS policy
+  `TLSv1.2_2021`, HTTP/2 and HTTP/3, and the selected production origin path;
+- the origin is the S3 REST endpoint and uses legacy OAI
+  `E359S50BKNNGWZ`, not the OAC selected by D060 and this runbook;
+- the bucket policy grants that OAI `s3:GetObject` only for production
+  `site/*`, `atlas/*`, `datasets/*`, `catalog.json`, and an obsolete root
+  `index.html`; it does not grant the staging root or private `_staging/*`;
+- all four S3 Block Public Access settings are enabled and the bucket default
+  encryption is SSE-S3 (`AES256`);
+- both selected environment roots currently contain zero objects;
+- the website and ACM-validation CNAMEs resolve, and the live endpoint presents
+  HTTPS through CloudFront. `/`, `/app/`, and `/catalog.json` currently return
+  `403` because no objects have been published and no route function is
+  associated;
+- the distribution has no ordered cache behaviors, response-headers policy, or
+  function association. Its sole behavior disables compression and uses TTLs
+  0/3600/86400 seconds; its default root object is `index.html`.
+
+The audit directly proves `cloudfront:GetDistribution` for the production ID,
+exact-prefix S3 listing, bucket-policy and public-access-block inspection. The
+identity cannot enumerate distributions or inspect IAM policy attachments,
+the OAI object, or the ACM certificate through AWS APIs. These read-only
+denials do not imply that the corresponding resources are absent. No staging
+distribution ID has been supplied, and no staging CloudFront principal is
+present in the bucket policy, so isolated staging delivery is not currently
+usable from the evidence available here.
+
+The existing OAI keeps the bucket private and is sufficient for read-only S3
+delivery, but it differs from the accepted OAC design. Treat an OAI-to-OAC
+migration as a separately reviewed infrastructure change: create/attach the
+OAC first, merge the distribution-ARN-scoped bucket grant, verify delivery,
+and only then remove the OAI grant. Do not widen the current policy during the
+migration.
+
 On 2026-09-02, an authorized IAM user authenticated from the repository host
 with temporary console-derived credentials. The following checks succeeded:
 
@@ -48,11 +92,10 @@ with temporary console-derived credentials. The following checks succeeded:
   `If-None-Match: *`, which returned `412 PreconditionFailed` as expected;
 - a second `HeadObject` confirming unchanged size, ETag, and modification time.
 
-Anonymous listing returned `403 AccessDenied`. The inspected object used
-SSE-S3 (`AES256`); that observation does not establish the bucket's default
-encryption policy. No object was created, replaced, or deleted. Delete access,
-bucket administration, multipart recovery permissions, CORS, cache policy,
-CloudFront behavior, and public reads were not verified.
+Anonymous listing returned `403 AccessDenied`. No object was created, replaced,
+or deleted. The 2026-09-08 audit above supersedes the earlier uncertainty about
+default encryption and production CloudFront behavior. Publisher write access
+to the exact D059 environment roots has still not been exercised.
 
 `aggregates/atlas/` already contains canonical/source aggregate products. It is
 not itself a web-release root. Upload browser artifacts only below the exact
@@ -79,14 +122,14 @@ Minimum practical S3 permissions for a selected deployment root are:
 
 - `s3:GetBucketLocation` on the bucket;
 - `s3:ListBucket` restricted by `s3:prefix` to the selected root;
-- `s3:GetObject` and `s3:PutObject` on objects below that root;
-- `s3:AbortMultipartUpload` and `s3:ListMultipartUploadParts` below that root
-  for recoverable large uploads.
+- `s3:GetObject` and `s3:PutObject` on objects below that root.
 
 Do not add `s3:DeleteObject`, ACL, bucket-configuration, or wildcard `s3:*`
 permissions unless a separately reviewed operation requires them. If the
-selected destination uses a customer-managed KMS key, scope the required KMS
-permissions to that exact key; the current evidence does not select one.
+implementation later adds multipart uploads, add its exact multipart actions at
+that time. Current commands use single-object conditional PUT and reject
+objects above 5 GB. The selected bucket default uses SSE-S3, so these commands
+do not need KMS permissions.
 
 ## Read-only access check
 
@@ -151,16 +194,36 @@ CloudFront custom-domain certificate belongs in ACM `us-east-1`.
 
 ## Deployment stop conditions
 
-Before the first upload, Q8 must record:
+Before the first repository-managed upload, Q8 must record or confirm:
 
-1. exact staging and production CloudFront distributions, origin paths, OAC,
-   and root-scoped bucket policy;
-2. staging hostname plus production DNS and ACM/TLS arrangement;
+1. the exact new staging CloudFront distribution, origin path, OAC and
+   root-scoped bucket policy, plus the observed production distribution and its
+   separately reviewed intended changes;
+2. the staging generated hostname plus the observed production DNS and ACM/TLS
+   arrangement;
 3. MIME, CORS, Range, cache, and opaque `.isvg.gz` metadata rules;
 4. minimum local-publisher IAM policy and credential/profile handling;
 5. the immutable-release promotion and curator-owned conditional
    catalog/alias update procedure, including immutable edition-history state;
 6. the first exact artifact set authorized for staging.
+
+Current local artifact inventory is useful build input, not a publishable first
+set. The active development bundle contains four reviewed local scientific
+releases, the production-intent projection pack, the D070 mesh and the AGEA
+preview. The scientific releases were built at an older commit and lack the
+current exact Linux/HEAD provenance; the volume ID is explicitly a candidate;
+the projection pack likewise lacks current Linux/HEAD build evidence. Q2, Q5
+and Q9 prevent treating those bytes as the paper release/default set, and there
+is no tracked curator or site dependency configuration. Rebuild only the
+explicitly authorized staging set on clean Linux `main`; never relabel these
+local artifacts.
+
+There is also a tooling stop condition for Q5 measurement: the current S3
+release publisher applies the production preflight in both environments, and
+that preflight rejects `candidate` IDs. A staging-only, scientifically labelled
+benchmark path must be reviewed and implemented before the depth-four candidate
+can be measured at the real origin. Do not evade this check by renaming the
+existing candidate.
 
 Do not use `aws s3 sync --delete`. Do not overwrite an immutable release key.
 Validate the complete local schema-v1 or pack graph, byte sizes, and SHA-256

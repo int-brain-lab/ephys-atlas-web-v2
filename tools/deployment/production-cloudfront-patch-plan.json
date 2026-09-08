@@ -1,0 +1,44 @@
+{
+  "status": "offline-review-plan-not-api-input",
+  "distribution_id": "ET6VJW8JWAGVR",
+  "observed_2026_09_08": {
+    "domain_name": "d2is8oq6heobqy.cloudfront.net",
+    "origin_path": "/aggregates/atlas/ephys-atlas-web-v2/production",
+    "origin_access_identity": "origin-access-identity/cloudfront/E359S50BKNNGWZ",
+    "ordered_cache_behaviors": [],
+    "function_associations": [],
+    "default_root_object": "index.html",
+    "ttl_seconds": {"minimum": 0, "default": 3600, "maximum": 86400},
+    "compress": false
+  },
+  "proposed_after_staging_acceptance": {
+    "retain_origin_and_origin_path": true,
+    "retain_oai_without_migration": true,
+    "remove_default_root_object": true,
+    "default_behavior": {
+      "cache_policy_id": "<REQUIRED_PRODUCTION_MUTABLE_CACHE_POLICY_ID>",
+      "compress": false,
+      "function_association": {
+        "event_type": "viewer-request",
+        "function_arn": "<REQUIRED_PUBLISHED_PRODUCTION_SITE_ROUTER_FUNCTION_ARN>"
+      },
+      "incoming_routes_using_this_behavior": ["/", "/app", "/app/"]
+    },
+    "ordered_cache_behaviors_in_order": [
+      {"path_pattern": "catalog.json", "cache_policy_id": "<REQUIRED_PRODUCTION_MUTABLE_CACHE_POLICY_ID>", "compress": false},
+      {"path_pattern": "datasets/*/index.json", "cache_policy_id": "<REQUIRED_PRODUCTION_MUTABLE_CACHE_POLICY_ID>", "compress": false},
+      {"path_pattern": "site/index.html", "cache_policy_id": "<REQUIRED_PRODUCTION_MUTABLE_CACHE_POLICY_ID>", "compress": false},
+      {"path_pattern": "site/builds/*", "cache_policy_id": "<REQUIRED_PRODUCTION_IMMUTABLE_CACHE_POLICY_ID>", "compress": false},
+      {"path_pattern": "datasets/*/releases/*", "cache_policy_id": "<REQUIRED_PRODUCTION_IMMUTABLE_CACHE_POLICY_ID>", "compress": false},
+      {"path_pattern": "atlas/*", "cache_policy_id": "<REQUIRED_PRODUCTION_IMMUTABLE_CACHE_POLICY_ID>", "compress": false}
+    ],
+    "custom_error_responses": [],
+    "query_policy": "Do not include or forward query strings; browser-visible query state remains in the URL.",
+    "bucket_policy_follow_up": "After route delivery is verified, remove only the obsolete production root index.html OAI resource; retain the existing public-prefix OAI resources."
+  },
+  "excluded": [
+    "No OAI-to-OAC migration is proposed in this patch.",
+    "No origin, alias, certificate, DNS or public-prefix expansion is proposed.",
+    "No 403/404 response is rewritten to HTML."
+  ]
+}
