@@ -20,14 +20,18 @@ test('landing user-guide links open the existing guide in the viewer', async ({ 
   await expect(page.getByRole('dialog', { name: 'Help & getting started' })).toBeVisible();
 });
 
-for (const width of [320, 390]) {
-  test(`landing keeps its primary action usable at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 844 });
-    await page.goto('/');
-    await expect(page.getByRole('link', { name: 'Open atlas' }).first()).toBeVisible();
-    await expect(page.locator('.landing-hero__visual')).toBeVisible();
-    expect(await page.locator('body').evaluate((node) => node.scrollWidth)).toBe(width);
-  });
+for (const width of [320, 360, 390]) {
+  for (const font of ['system', 'DejaVu Sans']) {
+    test(`landing keeps its primary action usable at ${width}px with ${font}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto('/');
+      // The Ubuntu CI fallback has wider glyphs than the local system font.
+      if (font !== 'system') await page.addStyleTag({ content: `.landing-page { font-family: "${font}", sans-serif; }` });
+      await expect(page.getByRole('link', { name: 'Open atlas' }).first()).toBeVisible();
+      await expect(page.locator('.landing-hero__visual')).toBeVisible();
+      expect(await page.locator('body').evaluate((node) => node.scrollWidth)).toBe(width);
+    });
+  }
 }
 
 test('viewer startup reports loading, then reveals either the ready app or its catalog failure', async ({ page }) => {

@@ -468,6 +468,8 @@ test('long feature menus scroll without option descriptions overlapping', async 
 
 test('large feature catalogs stay bounded while search covers every feature field', async ({ page }) => {
   await page.goto('/app/');
+  // The viewer and its CSS load lazily after the landing entry document.
+  await expect(page.locator('.atlas-app')).toBeVisible();
   await page.evaluate(async () => {
     const { ContextMenu } = await import('/src/ui/context-menu.ts');
     const host = document.createElement('dl');
