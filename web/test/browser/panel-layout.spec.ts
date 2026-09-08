@@ -51,6 +51,14 @@ test('both desktop panels collapse, restore, and persist outside the share URL',
   const app = page.locator('.atlas-app');
   const workspace = page.locator('.workspace');
   const initialWorkspaceWidth = (await workspace.boundingBox())!.width;
+  await expect.poll(() => {
+    const url = new URL(page.url());
+    return {
+      version: url.searchParams.get('v'),
+      dataset: url.searchParams.get('dataset'),
+      release: url.searchParams.get('release'),
+    };
+  }).toEqual({ version: '4', dataset: 'golden_fixture', release: 'golden-v1' });
   const initialUrl = page.url();
 
   await page.getByRole('button', { name: 'Hide Brain regions' }).click();
