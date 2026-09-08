@@ -88,7 +88,8 @@ test('3-D picking returns signed IDs and a camera drag does not select', async (
 });
 
 test('a failed upgrade retains the default LOD and destruction releases viewport ownership', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
   const result = await page.evaluate(async () => {
     const { RetainedBrainScene3DViewportFactory } = await import('/src/rendering/3d/brain-scene-viewport.ts');
     const host = document.createElement('div');

@@ -32,7 +32,7 @@ test.beforeEach(async ({ page }) => {
 test('serves the complete approved catalog dynamically', async ({ page }) => {
   const features = await loadFeatures();
   expect(features).toHaveLength(14);
-  await page.goto('/');
+  await page.goto('/app/');
 
   await page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Data details' }).click();
   const release = page.getByRole('dialog', { name: 'Data details' });
@@ -64,7 +64,7 @@ test('serves the complete approved catalog dynamically', async ({ page }) => {
 });
 
 test('switches every approved parcellation without cluster-specific UI', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   const representation = page.locator('[data-context-field="representation"]');
   for (const parcellation of ['Allen', 'Beryl', 'Cosmos']) {
     await representation.locator('.context-menu__trigger').click();
@@ -78,7 +78,7 @@ test('switches every approved parcellation without cluster-specific UI', async (
 });
 
 test('exposes approved units, explanations, and conservative scale defaults', async ({ page }) => {
-  await page.goto('/?v=4&feature=firing_rate');
+  await page.goto('/app/?v=4&feature=firing_rate');
   const distribution = page.locator('.distribution-chart');
   const compactDistribution = page.locator('.color-legend__bar');
   await expect(distribution).toHaveAttribute('data-axis-scale', 'log');
@@ -102,7 +102,7 @@ test('exposes approved units, explanations, and conservative scale defaults', as
   await expect(compactDistribution).toHaveAttribute('data-axis-scale', 'log');
   await expect(page.locator('.color-legend__unit')).toHaveText('Hz');
 
-  await page.goto('/?v=4&feature=noise_cutoff');
+  await page.goto('/app/?v=4&feature=noise_cutoff');
   await expect(page.locator('.distribution-chart')).toHaveAttribute('data-axis-scale', 'symlog');
   await expect(page.locator('.distribution-chart')).toHaveAttribute('data-distribution-domain', 'focused');
   await expect(compactDistribution).toHaveAttribute('data-axis-scale', 'symlog');

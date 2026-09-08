@@ -54,7 +54,7 @@ test('real slice packs meet the request/cache path in Chromium', async ({ page, 
     requests.push({ path: relative, bytes: body.byteLength });
     await route.fulfill({ status: 200, contentType: 'application/gzip', headers: { 'cache-control': 'no-store' }, body });
   });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const layouts = [];
   let userAgent = '';

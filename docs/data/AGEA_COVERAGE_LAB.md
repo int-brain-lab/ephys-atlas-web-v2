@@ -4,7 +4,7 @@ Status: runbook for the local exploratory UX lab requested on 2026-09-06.
 
 The lab investigates Q19 using the original hash-pinned IBL volumes and their
 supplied 200 µm anatomical labels. It is available only in Vite development mode
-at `/?lab=agea-coverage`. It is not an AGEA scientific release, a production
+at `/app/?lab=agea-coverage`. It is not an AGEA scientific release, a production
 dataset reader, or a new application renderer boundary. Q19 remains open.
 
 ## Run locally
@@ -20,7 +20,7 @@ AGEA_LAB_DIR=../artifacts/agea-browser-benchmark npm --prefix web run dev -- \
   --host 127.0.0.1 --port 4190
 ```
 
-Open `http://127.0.0.1:4190/?lab=agea-coverage`. The environment variable is
+Open `http://127.0.0.1:4190/app/?lab=agea-coverage`. The environment variable is
 resolved from Vite's `web/` working directory. No data is copied under
 `web/public/`, and no source files are fetched automatically when opening the
 lab. Missing configuration produces an explicit error. The configured server
@@ -37,7 +37,7 @@ with missing values at that position.
 
 ## Review alignment
 
-Open `/?lab=agea-coverage&mode=alignment` after re-running preparation. This mode
+Open `/app/?lab=agea-coverage&mode=alignment` after re-running preparation. This mode
 uses the application's retained projection viewport factory and the pinned
 website projection pack, not a separate anatomy renderer. Preparation adds the
 verified float32 `image.npy` transport and fixed-transform evidence. It checks

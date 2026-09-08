@@ -6,7 +6,7 @@ test('volume summary and exact valid-voxel distribution reuse the loaded summary
   page.on('request', (request) => {
     if (request.url().endsWith('/features/rms_ap/volume/summary.json')) summaryRequests.push(request.url());
   });
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&secondary=summary&selected=-362&cursor=25,25,25&scale=linear&dist=full');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&secondary=summary&selected=-362&cursor=25,25,25&scale=linear&dist=full');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
 
   const summary = page.locator('.secondary-view__summary');
@@ -40,11 +40,11 @@ test('volume summary and exact valid-voxel distribution reuse the loaded summary
 });
 
 test('volume layer settings only appear for volume representations', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.locator('.volume-layer-settings')).toBeHidden();
 
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25&scale=linear&dist=full');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25&scale=linear&dist=full');
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.locator('.volume-layer-settings')).toBeVisible();
   await expect(page.getByRole('slider', { name: 'Volume opacity' })).toBeVisible();
@@ -52,7 +52,7 @@ test('volume layer settings only appear for volume representations', async ({ pa
 });
 
 test('volume features expose and download their immutable declared artifacts', async ({ page }) => {
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
 
   const actions = page.locator('.app-header__desktop-actions');
@@ -78,7 +78,7 @@ test('volume artifact integrity failures remain explicit and do not download cor
     contentType: 'text/csv',
     body: 'x'.repeat(45),
   }));
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
   const actions = page.locator('.app-header__desktop-actions');
   await actions.getByRole('button', { name: 'Download' }).click();
   const downloads = page.getByRole('dialog', { name: 'Download feature data' });
@@ -89,7 +89,7 @@ test('volume artifact integrity failures remain explicit and do not download cor
 
 test('schema-v1 chunks3d volume renders all three orthogonal golden slices', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=1,0,2');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&cursor=1,0,2');
 
   await expect.poll(() => new URL(page.url()).searchParams.get('repr')).toBe('volume');
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
@@ -150,7 +150,7 @@ test('an out-of-grid world cursor fails explicitly without fetching a clamped ed
   page.on('request', (request) => {
     if (request.url().includes('/volume/chunks/')) chunkRequests.push(request.url());
   });
-  await page.goto('/?v=4&feature=rms_ap&repr=volume');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume');
 
   for (const axis of ['coronal', 'sagittal', 'horizontal'] as const) {
     const frame = page.locator(`[data-view="${axis}"]`);
@@ -166,10 +166,10 @@ test('an out-of-grid world cursor fails explicitly without fetching a clamped ed
 
 test('switching regional to volume preserves each retained layer stack', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
   await page.evaluate(() => {
-    history.replaceState({}, '', '/?v=4&cursor=25,25,25');
+    history.replaceState({}, '', '/app/?v=4&cursor=25,25,25');
     dispatchEvent(new PopStateEvent('popstate'));
   });
   await page.evaluate(() => {
@@ -203,7 +203,7 @@ test('URL-persisted layer controls repaint retained layers without volume reques
   page.on('request', (request) => {
     if (request.url().includes('/volume/chunks/')) chunks.push(request.url());
   });
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25&opacity=0.4&outlines=0');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25&opacity=0.4&outlines=0');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
   await expect(page.locator('.projection-viewport__scalar').first()).toHaveCSS('opacity', '0.4');
   await expect(page.locator('.projection-viewport').first()).toHaveAttribute('data-anatomy-outlines', 'false');
@@ -227,7 +227,7 @@ test('URL-persisted layer controls repaint retained layers without volume reques
 });
 
 test('reduced-parcellation volume selection keeps the target vivid under a neutral veil', async ({ page }) => {
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&parcel=cosmos&cursor=25,25,25');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&parcel=cosmos&cursor=25,25,25');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
   const projection = page.locator('[data-view="coronal"] .projection-viewport');
   const source = projection.locator('path[data-cosmos-id]').first();
@@ -261,7 +261,7 @@ test('volume navigation keeps composites visible and repaints only a changed sca
       return original.apply(this, args);
     };
   });
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25&scale=linear&dist=full');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25&scale=linear&dist=full');
   const frame = page.locator('[data-view="coronal"]');
   await expect(frame.locator('[data-slice-asset="schema-volume-v1"]')).toBeAttached();
   await expect(frame).toHaveAttribute('data-state', 'ready');

@@ -4,7 +4,7 @@ test('real AGEA coverage, masking, aggregate inspection and URL restoration', as
   await page.setViewportSize({ width: 1500, height: 1050 });
   const volumes: string[] = [];
   page.on('request', request => { if (request.url().includes('/volumes/')) volumes.push(request.url()); });
-  await page.goto('/?lab=agea-coverage');
+  await page.goto('/app/?lab=agea-coverage');
   await expect(page.getByRole('heading', { name: 'AGEA coverage lab' })).toBeVisible();
   await expect(page.getByRole('status')).toContainText('Ready');
   await expect(page.locator('.agea-results button')).toHaveCount(30);
@@ -45,7 +45,7 @@ test('real AGEA coverage, masking, aggregate inspection and URL restoration', as
 });
 
 test('failed or superseded gene requests never leave stale expression visible', async ({ page }) => {
-  await page.goto('/?lab=agea-coverage');
+  await page.goto('/app/?lab=agea-coverage');
   await expect(page.getByRole('status')).toContainText('Ready');
   await page.route('**/volumes/*.bin.gz', route => route.fulfill({ body: Buffer.from('corrupt'), status: 200 }));
   await page.getByLabel('Search gene or experiment').fill('Slc17a7');

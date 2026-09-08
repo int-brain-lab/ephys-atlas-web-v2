@@ -7,7 +7,7 @@ test('real native pack opens and switches to D042 without losing explode', async
   page.on('response', async (response) => {
     if (response.url().includes('/__local-assets/mesh/') && response.url().endsWith('/manifest.json')) manifests.push(await response.json());
   });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('#scene')).toHaveAttribute('data-scene3d-state', 'ready');
   await expect(page.locator('#variant')).toHaveValue('native');
   await expect(page.locator('#status')).toContainText('native-full');
@@ -33,7 +33,7 @@ test('real native pack opens and switches to D042 without losing explode', async
 });
 
 test('all twelve real movement exceptions can be focused and compared', async ({ page }) => {
-  await page.goto('/?variant=native');
+  await page.goto('/app/?variant=native');
   const scene = page.locator('#scene');
   await expect(scene).toHaveAttribute('data-scene3d-state', 'ready');
   await page.locator('#show-context').uncheck();
@@ -68,7 +68,7 @@ test('real native transparent context stays retained while rotating and explodin
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
-  await page.goto('/?variant=native');
+  await page.goto('/app/?variant=native');
   const scene = page.locator('#scene');
   await expect(scene).toHaveAttribute('data-scene3d-state','ready');
   await page.locator('#review-component').selectOption('0');

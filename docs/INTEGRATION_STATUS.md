@@ -204,7 +204,14 @@ uses the shared compiler, immutable cumulative edition history, unique public
 catalog generations and a conditional catalog-last write. Pack/site transactions
 reuse immutable verified staging; the production Vite wrapper excludes dev
 data/defaults and binds each build to explicit same-origin dependencies. The
-tested root routing function is not deployed. All are locally tested only;
+tested route function is not deployed. D073's static landing at `/` and lazy
+viewer at `/app/` share one mutable `site/index.html` entry and one immutable
+build graph, preserving the existing conditional site-promotion transaction.
+The landing reuses the app theme and genuine reviewed-local atlas captures;
+visits load no viewer runtime or scientific data. About/credits remain on the
+landing, and `/app/#help` opens the existing guide. Responsive, navigation and
+isolated production-build browser tests cover these routes; final design remains
+open to owner review. All publication machinery is locally tested only;
 multipart objects above 5 GB remain unimplemented. See
 [Local publisher operations](publishing/LOCAL_PUBLISHER.md).
 Public reads remain static and unauthenticated.
@@ -216,10 +223,12 @@ private candidate `us-east-1` location recorded in
 isolated staging and production roots there; D072 selects
 `ephys-atlas.iblcore.org` as the production viewer domain. D060 selects
 CloudFront for both the S3-hosted compiled Vite viewer and same-origin public
-data, with no Cloudflare Pages deployment. Q8 still requires the exact
-distribution/origin configuration, isolated staging hostname, DNS/ACM,
-cache/CORS choices, publisher IAM policy, and first staging
-artifact authorization. The current AWS audit is blocked by an expired login;
+data, with no Cloudflare Pages deployment. The 2026-09-08 read-only audit confirms
+production distribution `ET6VJW8JWAGVR`, the selected origin path, working
+DNS/TLS and a private bucket with narrowed OAI access. Both environment prefixes
+are empty. Q8 still requires isolated staging, reconciliation of observed OAI
+with the OAC runbook, D073 landing/viewer routing, cache/CORS choices, publisher
+write authorization and the exact first staging artifact set;
 Q9 still requires the frozen paper release set and
 aliases. No remote publication has occurred.
 

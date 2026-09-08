@@ -5,7 +5,7 @@ import { copyFile, mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promise
 import os from 'node:os';
 import path from 'node:path';
 
-test('production build uses immutable asset URLs and no copied development corpus', async ({ page }) => {
+test('production build serves a static landing page and lazy viewer from immutable asset URLs', async ({ page }) => {
   test.setTimeout(90_000);
   const temporary = await mkdtemp(path.join(os.tmpdir(), 'atlas-production-site-test-'));
   const output = path.join(temporary, 'site');
@@ -19,17 +19,32 @@ test('production build uses immutable asset URLs and no copied development corpu
         VITE_PROJECTION_PACK_URL:'/atlas/projections/ibl-static-registered-v1/manifest.json'},
     });
     expect((await readdir(output)).sort()).toEqual(['assets', 'index.html']);
+    const viewerScript = (await readdir(path.join(output, 'assets'))).find((file) => /^main-[A-Za-z0-9_-]+\.js$/.test(file));
+    expect(viewerScript).toBeDefined();
     await mkdir(path.join(output, 'brand'));
     await copyFile('public/brand/ibl-core-logo.svg', path.join(output, 'brand/ibl-core-logo.svg'));
     await copyFile('public/favicon.png', path.join(output, 'favicon.png'));
     await page.route('**/site/builds/test-only/**', async route => {
       const relative = new URL(route.request().url()).pathname.slice('/site/builds/test-only/'.length);
-      const mime = relative.endsWith('.js') ? 'text/javascript' : relative.endsWith('.css') ? 'text/css' : relative.endsWith('.svg') ? 'image/svg+xml' : 'image/png';
+      const mime = relative.endsWith('.js') ? 'text/javascript' : relative.endsWith('.css') ? 'text/css'
+        : relative.endsWith('.svg') ? 'image/svg+xml' : relative.endsWith('.jpg') ? 'image/jpeg' : 'image/png';
       await route.fulfill({body:await readFile(path.join(output, relative)), contentType:mime});
     });
-    await page.route('http://127.0.0.1:4173/', async route => route.fulfill({body:await readFile(path.join(output,'index.html')), contentType:'text/html'}));
-    await page.goto('/');
+    await page.route(/http:\/\/127\.0\.0\.1:4173\/(?:app\/?)?$/, async route => route.fulfill({
+      body: await readFile(path.join(output, 'index.html')), contentType: 'text/html',
+    }));
+    const assetRequests: string[] = [];
+    page.on('request', (request) => assetRequests.push(new URL(request.url()).pathname));
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await expect(page.locator('[data-landing]')).toBeVisible();
+    await expect(page.locator('.atlas-app')).toHaveCount(0);
+    expect(assetRequests).not.toContain(`/site/builds/test-only/assets/${viewerScript}`);
+    expect(assetRequests.filter((pathname) => (
+      pathname === '/catalog.json' || pathname.startsWith('/datasets/') || pathname.startsWith('/atlas/')
+    ))).toEqual([]);
+    await page.goto('/app/');
     await expect(page.locator('[data-view="coronal"] .view-frame__brain-svg')).toBeVisible();
+    expect(assetRequests).toContain(`/site/builds/test-only/assets/${viewerScript}`);
     await expect(page.locator('[data-view="coronal"] path[data-allen-id]').first()).toBeVisible();
     await expect(page.locator('img[src="/site/builds/test-only/brand/ibl-core-logo.svg"]')).toBeVisible();
     expect(errors).toEqual([]);

@@ -1,0 +1,30 @@
+{
+  "description": "Unretouched Chromium screenshots of the real local app. Not a scientific release or production-default selection.",
+  "dataset_id": "ephys_atlas_channels",
+  "release_id": "2026_W32-d050-q14-v1",
+  "feature_id": "rms_ap.denoised",
+  "anatomy_pack_id": "ibl-native-d070-b5f5abc7d0bb3575",
+  "bundle": "data/development-bundle-v5.json",
+  "browser": "151.0.7922.34",
+  "platform": "linux",
+  "captures": [
+    {
+      "path": "viewer.jpg",
+      "bytes": 216990,
+      "sha256": "1ecf14a6e82389a2813de8bd4d09a40d703cdbebc637ce7a0d94efd15539dd0d",
+      "viewer_url": "http://127.0.0.1:5173/app/?v=4&dataset=ephys_atlas_channels&release=2026_W32-d050-q14-v1&project=ephys-atlas&edition=local-preview"
+    },
+    {
+      "path": "slices.jpg",
+      "bytes": 79974,
+      "sha256": "767a2f8f84751847d54ba4839b736d6e3c7039eac61ff38f28d176585aecd889",
+      "viewer_url": "http://127.0.0.1:5173/app/?v=4&dataset=ephys_atlas_channels&release=2026_W32-d050-q14-v1&project=ephys-atlas&edition=local-preview"
+    },
+    {
+      "path": "anatomy.jpg",
+      "bytes": 65011,
+      "sha256": "e5a5143c1f6b2b27da25a3a265f1d842885067436e173dfbfd78ed7fcf1a695b",
+      "viewer_url": "http://127.0.0.1:5173/app/?v=4&dataset=ephys_atlas_channels&release=2026_W32-d050-q14-v1&project=ephys-atlas&edition=local-preview&secondary=brain-3d&max=secondary&explode3d=0.2"
+    }
+  ]
+}

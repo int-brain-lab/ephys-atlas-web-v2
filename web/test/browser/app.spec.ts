@@ -12,9 +12,10 @@ const reviewViewports = [
 for (const viewport of reviewViewports) {
   test(`phase 4 anatomical frames: ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.goto('/');
+    await page.goto('/app/');
 
     const app = page.locator('.atlas-app');
+    await expect(app).toBeVisible();
     await expect(app).toHaveAttribute('data-layout', viewport.layout);
     await expect(page.locator('body')).toHaveJSProperty('scrollWidth', viewport.width);
     await expect(page.locator('body')).toHaveJSProperty('scrollHeight', viewport.height);
@@ -93,7 +94,7 @@ for (const viewport of reviewViewports) {
 
 test('intermediate header actions do not cover the representation menu', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const representation = page.locator('[data-context-field="representation"]');
   await representation.locator('.context-menu__trigger').click();
@@ -104,9 +105,10 @@ test('intermediate header actions do not cover the representation menu', async (
 
 test('slice control updates calibrated coordinate and renderer request', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const slider = page.getByLabel('coronal slice');
+  await expect(page.locator('[data-view="coronal"]')).toHaveAttribute('data-state', 'ready');
   await slider.fill('87');
   await expect(page.locator('[data-view="coronal"] .view-frame__coordinate')).toHaveText('AP -1.60 mm');
   await expect(slider).toHaveAttribute('aria-valuetext', 'AP -1.60 mm');
@@ -117,7 +119,7 @@ test('slice control updates calibrated coordinate and renderer request', async (
 
 test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('[data-view="coronal"]')).toHaveAttribute('data-state', 'ready');
 
   await page.locator('[data-view="coronal"] .view-frame__brain-svg').dispatchEvent('wheel', { deltaY: 100 });
@@ -129,7 +131,7 @@ test('mouse wheel over an SVG steps its scientific slice', async ({ page }) => {
 
 test('small pixel wheel deltas accumulate sensitively for smooth macOS scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('[data-view="coronal"]')).toHaveAttribute('data-state', 'ready');
 
   await page.locator('[data-view="coronal"] .view-frame__brain-svg').evaluate((node) => {
@@ -146,7 +148,7 @@ test('initial anatomy display fetches only the three visible packs', async ({ pa
       packRequests.push(new URL(request.url()).pathname);
     }
   });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
   await page.waitForTimeout(250);
 
@@ -158,7 +160,7 @@ test('initial anatomy display fetches only the three visible packs', async ({ pa
 });
 
 test('a wheel burst is coalesced and only updates linked guides in other projections', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
   await expect(page.locator('.view-frame[data-state="ready"]')).toHaveCount(3);
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
@@ -190,7 +192,7 @@ test('an existing anatomy slice stays visible while an adjacent pack loads', asy
     await packGate;
     await route.continue();
   });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const frame = page.locator('[data-view="coronal"]');
   const target = frame.locator('[data-slice-asset="projection-pack-v1"]');
@@ -211,11 +213,12 @@ test('an existing anatomy slice stays visible while an adjacent pack loads', asy
 
 test('linked guides project one slice coordinate into both other views', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const slider = page.getByLabel('coronal slice');
   const sagittalGuide = page.locator('[data-view="sagittal"] .slice-guide[data-source-axis="coronal"]');
   const horizontalGuide = page.locator('[data-view="horizontal"] .slice-guide[data-source-axis="coronal"]');
+  await expect(page.locator('[data-view="coronal"]')).toHaveAttribute('data-state', 'ready');
 
   await slider.fill('0');
   await expect(sagittalGuide).toHaveAttribute('x1', '1315');
@@ -228,7 +231,7 @@ test('linked guides project one slice coordinate into both other views', async (
 
 test('unsupported historical URLs reset explicitly to the current canonical state', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=2&slices=264,220,160&parcel=beryl');
+  await page.goto('/app/?v=2&slices=264,220,160&parcel=beryl');
 
   await expect(page.getByLabel('coronal slice')).toHaveValue('82');
   await expect(page.getByLabel('sagittal slice')).toHaveValue('68');
@@ -244,7 +247,7 @@ test('unsupported historical URLs reset explicitly to the current canonical stat
 
 test('native bilateral anatomy exposes every scientific range endpoint', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=4&cursor=5651,5400,-7658');
+  await page.goto('/app/?v=4&cursor=5651,5400,-7658');
 
   await expect(page.getByLabel('coronal slice')).toHaveValue('0');
   await expect(page.getByLabel('sagittal slice')).toHaveValue('141');
@@ -256,7 +259,7 @@ test('native bilateral anatomy exposes every scientific range endpoint', async (
 
 test('schema v1 regional fixture drives values, coloring, selection and histogram comparison', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=4&scale=linear&dist=full');
+  await page.goto('/app/?v=4&scale=linear&dist=full');
 
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   await expect(page.locator('.region-row')).toHaveCount(874);
@@ -396,7 +399,7 @@ test('schema v1 regional fixture drives values, coloring, selection and histogra
 
 test('selected-region comparison becomes a dismissible phone bottom sheet', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/?v=4&selected=-362');
+  await page.goto('/app/?v=4&selected=-362');
 
   await page.getByRole('button', { name: 'Open comparison for 1 selected region' }).click();
   const dialog = page.getByRole('dialog', { name: 'Compare selected regions' });
@@ -419,7 +422,7 @@ test('selected-region comparison becomes a dismissible phone bottom sheet', asyn
 
 test('Allen anatomy mode shows actual regions and dark-theme ontology colors', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
 
   await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByLabel('Region color mode').selectOption('anatomy');
@@ -433,7 +436,7 @@ test('Allen anatomy mode shows actual regions and dark-theme ontology colors', a
 
 test('long feature menus scroll without option descriptions overlapping', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
 
   const feature = page.locator('[data-context-field="feature"]');
@@ -463,7 +466,7 @@ test('long feature menus scroll without option descriptions overlapping', async 
 });
 
 test('large feature catalogs stay bounded while search covers every feature field', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await page.evaluate(async () => {
     const { ContextMenu } = await import('/src/ui/context-menu.ts');
     const host = document.createElement('dl');
@@ -549,7 +552,7 @@ test('context menus explain release loading and failure instead of becoming iner
     await manifestGate;
     await route.fulfill({ status: 503, body: 'release unavailable' });
   });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const feature = page.locator('[data-context-field="feature"]');
   const featureTrigger = feature.locator('.context-menu__trigger');
@@ -570,7 +573,7 @@ test('context menus explain release loading and failure instead of becoming iner
 
 test('scientific context menus and color controls are driven by the loaded release', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const dataset = page.locator('[data-context-field="data"]');
   const datasetTrigger = dataset.locator('.context-menu__trigger');
@@ -757,7 +760,7 @@ test('scientific context menus and color controls are driven by the loaded relea
 });
 
 test('Auto colormap follows synthetic representation preferences while explicit palettes persist', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   const settingsButton = page.getByRole('button', { name: 'Settings', exact: true });
   const closeSettingsButton = page.getByRole('button', { name: 'Close Visualization settings' });
   await settingsButton.click();
@@ -797,7 +800,7 @@ test('Auto colormap follows synthetic representation preferences while explicit 
 });
 
 test('Coolwarm needs a release-owned center and centers the synthetic regional legend', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   const settingsButton = page.getByRole('button', { name: 'Settings', exact: true });
   const closeSettingsButton = page.getByRole('button', { name: 'Close Visualization settings' });
   await settingsButton.click();
@@ -821,7 +824,7 @@ test('Coolwarm needs a release-owned center and centers the synthetic regional l
 
 test('scientific context picker becomes a bounded phone sheet', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const feature = page.locator('[data-context-field="feature"]');
   await feature.locator('.context-menu__trigger').click();
@@ -844,7 +847,7 @@ test('scientific context picker becomes a bounded phone sheet', async ({ page })
 
 test('color range remains directly editable in the phone settings drawer', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/app/');
   await page.getByRole('button', { name: 'Settings' }).click();
 
   const settings = page.getByRole('complementary', { name: 'Visualization settings' });
@@ -877,7 +880,7 @@ test('share, download and info expose the immutable scientific context', async (
     });
   });
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=4&feature=rms_ap&stat=median');
+  await page.goto('/app/?v=4&feature=rms_ap&stat=median');
   const actions = page.locator('.app-header__desktop-actions');
 
   await actions.getByRole('button', { name: 'Share' }).click();
@@ -911,7 +914,7 @@ test('share, download and info expose the immutable scientific context', async (
 
 test('renderer region selection flows back into shared URL state', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   const path = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
   await path.dispatchEvent('pointerup');
@@ -934,7 +937,7 @@ test('renderer region selection flows back into shared URL state', async ({ page
 
 test('region hover is linked across all anatomical projections', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=4&scale=linear&dist=full');
+  await page.goto('/app/?v=4&scale=linear&dist=full');
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
 
   const source = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
@@ -968,7 +971,7 @@ test('region hover is linked across all anatomical projections', async ({ page }
 
 test('slice hover tooltip shows current regional value and stays inside its viewport', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
 
@@ -1008,7 +1011,7 @@ test('slice hover tooltip shows current regional value and stays inside its view
 
 test('region-list hover previews the region in all anatomical projections', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
 
   await page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ }).hover();
@@ -1028,7 +1031,7 @@ test('region-list hover previews the region in all anatomical projections', asyn
 
 test('parcellation changes clear stale region hover', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
 
   await page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first().dispatchEvent('pointermove');
@@ -1047,7 +1050,7 @@ test('parcellation changes clear stale region hover', async ({ page }) => {
 
 test('regional tree reapplies hover styling after its rows rerender', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
 
   const row = page.locator('.region-row[data-region-id="-362"]');
@@ -1067,7 +1070,7 @@ test('regional tree reapplies hover styling after its rows rerender', async ({ p
 
 test('region search filters loaded metadata rather than prototype rows', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   const search = page.getByLabel('Search brain regions');
   await search.fill('mediodorsal nucleus of thalamus');
@@ -1079,7 +1082,7 @@ test('region search filters loaded metadata rather than prototype rows', async (
 
 test('view maximize is reversible with Escape', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const frame = page.locator('[data-view="coronal"]');
   await page.getByRole('button', { name: 'Maximize coronal view' }).click();
@@ -1102,7 +1105,7 @@ test('view maximize is reversible with Escape', async ({ page }) => {
 
 test('compact workspace selection hydrates and persists independently', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
-  await page.goto('/?v=4&compact=secondary');
+  await page.goto('/app/?v=4&compact=secondary');
   await expect(page.locator('.context-strip')).toBeVisible();
   await expect(page.locator('.slice-strip')).not.toBeVisible();
   await expect(page.getByRole('button', { name: 'Context' })).toHaveAttribute('aria-pressed', 'true');
@@ -1116,14 +1119,14 @@ test('compact workspace selection hydrates and persists independently', async ({
 test('projection pack failure is an explicit view-frame error state', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.route('**/registered/coronal/*.isvg.gz', (route) => route.fulfill({ status: 503, body: 'offline' }));
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('[data-view="coronal"]')).toHaveAttribute('data-state', 'error');
   await expect(page.locator('[data-view="coronal"] .view-frame__status')).toHaveText('Unavailable');
 });
 
 test('drawers still close on Escape and composition changes', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
-  await page.goto('/');
+  await page.goto('/app/');
   const settings = page.getByRole('complementary', { name: 'Visualization settings' });
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(settings).toHaveAttribute('data-open', 'true');

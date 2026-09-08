@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('local catalog exposes the complete preserved Beryl release', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
 
   await expect(page.locator('[data-context-field="data"] .context-field__value')).toHaveText(
     'Brain-Wide Map / Preserved legacy results',
@@ -64,7 +64,7 @@ test('local catalog exposes the complete preserved Beryl release', async ({ page
 });
 
 test('legacy significance values and provenance survive the HTTP browser path', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
 
   await expect.poll(() => page.locator('.region-row[data-missing="false"]').count()).toBe(201);
   await expect(page.locator('.distribution-chart__global')).toHaveAttribute('data-total', '201');
@@ -90,7 +90,7 @@ test('legacy significance values and provenance survive the HTTP browser path', 
 });
 
 test('feature switching and download retain immutable BWM context', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
 
   const feature = page.locator('[data-context-field="feature"]');
   await feature.locator('.context-menu__trigger').click();

@@ -22,7 +22,7 @@ test('full real catalog loads through one metadata bundle and the existing atlas
   const requests: string[] = []; const errors: string[] = [];
   page.on('request', request => { if (request.url().includes('/__real-data/')) requests.push(request.url()); });
   page.on('pageerror', error => errors.push(error.message));
-  const started = Date.now(); await page.goto('/'); await ready(page, first);
+  const started = Date.now(); await page.goto('/app/'); await ready(page, first);
   const startupMs = Date.now() - started;
   expect(manifest.features).toHaveLength(4345);
   expect(requests.filter(url => url.endsWith('/metadata-bundle.json.gz'))).toHaveLength(1);
@@ -66,7 +66,7 @@ test('full real catalog loads through one metadata bundle and the existing atlas
 });
 
 test('failed expression selection clears stale volume and remains recoverable', async ({ page }) => {
-  await page.goto('/'); await ready(page, first);
+  await page.goto('/app/'); await ready(page, first);
   await page.route('**/features/experiment-*/volume/chunks/*.f16.gz', route => route.fulfill({ body: Buffer.from('corrupt') }));
   const id = await choose(page, 'Slc17a7');
   await expect(page.locator(`[data-volume-feature="${first}"]`)).toHaveCount(0);
@@ -78,7 +78,7 @@ test('failed expression selection clears stale volume and remains recoverable', 
 
 test('cache quota failures do not prevent real expression browsing', async ({ page }) => {
   await page.addInitScript(() => { Cache.prototype.put = async () => { throw new DOMException('Test quota', 'QuotaExceededError'); }; });
-  await page.goto('/'); await ready(page, first);
+  await page.goto('/app/'); await ready(page, first);
   const id = await choose(page, 'Slc17a7'); await ready(page, id);
 });
 
@@ -93,7 +93,7 @@ test('revisiting a recent gene reuses decoded data without another fetch or deco
   });
   const requests: string[] = [];
   page.on('request', request => { if (request.url().includes('/__real-data/')) requests.push(request.url()); });
-  await page.goto('/'); await ready(page, first);
+  await page.goto('/app/'); await ready(page, first);
   await page.locator('.region-row').first().evaluate(node => { node.setAttribute('data-retained-test', 'true'); });
   const id = await choose(page, 'Slc17a7'); await ready(page, id);
   await expect(page.locator('.region-row').first()).toHaveAttribute('data-retained-test', 'true');

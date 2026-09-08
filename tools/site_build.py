@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
@@ -16,6 +17,19 @@ from tools.s3_assets import canonical_host
 from tools.s3_publish import REPOSITORY
 from ibl_ephys_atlas_publish.client import file_info
 from ibl_ephys_atlas_publish.s3 import IMMUTABLE_CACHE, MUTABLE_CACHE, json_bytes
+
+
+class SiteResources(HTMLParser):
+    """Separate navigation links from resources the entry document loads."""
+
+    def __init__(self):
+        super().__init__()
+        self.urls: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]):
+        for name, value in attrs:
+            if name in {"src", "href"} and not (tag == "a" and name == "href"):
+                self.urls.append(value or "")
 
 
 def dependencies(config: dict) -> list[dict]:
@@ -66,11 +80,13 @@ def validate_site(root: Path, repo) -> dict:
     base = f"/site/builds/{identity}/"
     if base + "assets/" not in html or base + "favicon.png" not in html:
         raise ValueError("site HTML does not reference its immutable build")
-    for url in re.findall(r'(?:src|href)="([^"]+)"', html):
+    resources = SiteResources()
+    resources.feed(html)
+    for url in resources.urls:
         if not url.startswith(base) or url[len(base):] not in actual:
             raise ValueError("site HTML references a missing or non-build asset")
     for path in actual:
-        if not (path == "index.html" or path == "favicon.png" or path == "brand/ibl-core-logo.svg" or re.fullmatch(r"assets/[A-Za-z0-9_.-]+\.(js|css|woff2|png|svg)", path)):
+        if not (path == "index.html" or path == "favicon.png" or path == "brand/ibl-core-logo.svg" or re.fullmatch(r"assets/[A-Za-z0-9_.-]+\.(js|css|woff2|png|jpg|svg)", path)):
             raise ValueError(f"unexpected site file: {path}")
     return receipt
 

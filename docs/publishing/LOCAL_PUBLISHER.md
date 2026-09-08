@@ -1,8 +1,9 @@
 # Local publisher operations
 
-Status: runbook; offline-tested implementation. No remote upload, DNS write,
-distribution creation or site deployment has occurred. Q8 still gates remote
-use; Q2/Q5/Q9/Q19 govern scientific content and defaults.
+Status: runbook; offline-tested implementation. Repository publication commands
+have made no remote upload or site deployment. The separate 2026-09-08 audit
+observed existing production DNS/CloudFront setup; Q8 still gates changes and
+remote publisher use. Q2/Q5/Q9/Q19 govern scientific content and defaults.
 
 Run these commands from the repository root with the locked builder environment.
 All publication commands default to offline validation/planning. `--apply`
@@ -130,11 +131,12 @@ before network access because multipart is not implemented.
 
 [AWS console setup](AWS_CONSOLE_SETUP.md) defines the remaining infrastructure
 work. `tools/deployment/site-router.js` is the tested CloudFront viewer-request
-function: only `/` becomes `/site/index.html`; URL queries and data errors are
-preserved. It is not deployed. The default/root and direct site entry behaviors
-must not cache stale HTML; immutable build/pack/release behaviors can cache for
-one year. Production routing does not need legacy `/assets` or `/brand`
-rewrites because the build embeds its immutable base.
+function: `/`, `/app`, and `/app/` become `/site/index.html`; that entry keeps
+the landing static at `/` and bootstraps the viewer at `/app/`. URL queries and
+data errors are preserved. It is not deployed. The incoming public routes and
+direct site entry must not cache stale HTML; immutable build/pack/release
+behaviors can cache for one year. Production routing does not need legacy
+`/assets` or `/brand` rewrites because the build embeds its immutable base.
 
 Separate permissions by operation: releases write `datasets/*`; pack publication
 writes `atlas/projections/*` or `atlas/meshes/*`; sites write `site/*`; curator

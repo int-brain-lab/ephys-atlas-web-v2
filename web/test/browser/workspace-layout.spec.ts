@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 
 test('desktop workspace keeps projections compact enough for feature context', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
 
   const projections = await page.locator('.slice-strip').boundingBox();
   const context = await page.locator('.context-strip').boundingBox();
@@ -16,7 +17,8 @@ test('desktop workspace keeps projections compact enough for feature context', a
 
 test('tall desktop workspace gives excess height to feature context', async ({ page }) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto('/');
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
 
   const projections = await page.locator('.slice-strip').boundingBox();
   const context = await page.locator('.context-strip').boundingBox();
@@ -29,7 +31,8 @@ test('tall desktop workspace gives excess height to feature context', async ({ p
 
 test('low browser zoom keeps feature context from overwhelming projections', async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1600 });
-  await page.goto('/');
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
 
   const projections = await page.locator('.slice-strip').boundingBox();
   const context = await page.locator('.context-strip').boundingBox();
@@ -41,7 +44,7 @@ test('low browser zoom keeps feature context from overwhelming projections', asy
 
 test('feature summary balances description space with compact statistics', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await page.getByRole('tab', { name: 'Summary' }).click();
 
   const description = page.locator('.feature-summary__description');

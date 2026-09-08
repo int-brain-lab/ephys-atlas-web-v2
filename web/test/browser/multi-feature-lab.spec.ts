@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('development lab exposes bounded Focus, Gallery, and Profile compositions', async ({ page }) => {
-  await page.goto('/?lab=multi-feature');
+  await page.goto('/app/?lab=multi-feature');
   await expect(page.getByRole('heading', { name: 'Multi-feature comparison UX lab' })).toBeVisible();
   await expect(page.getByText('Synthetic demonstration data', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Synthetic scenario')).toHaveValue('regional-5');
@@ -23,7 +23,7 @@ test('development lab exposes bounded Focus, Gallery, and Profile compositions',
 });
 
 test('lab makes partial failure, missingness, zero variance, and compatibility visible', async ({ page }) => {
-  await page.goto('/?lab=multi-feature');
+  await page.goto('/app/?lab=multi-feature');
   await page.getByLabel('Synthetic scenario').selectOption('edge-cases');
   const counts = page.locator('.comparison-lab__counts');
   await expect(counts).toContainText('Compatible7');
@@ -36,7 +36,7 @@ test('lab makes partial failure, missingness, zero variance, and compatibility v
 });
 
 test('changing scenarios while a slow request is active rejects stale results', async ({ page }) => {
-  await page.goto('/?lab=multi-feature');
+  await page.goto('/app/?lab=multi-feature');
   await page.getByLabel('Synthetic scenario').selectOption('edge-cases');
   await expect(page.getByRole('heading', { name: 'Slow response 0002' })).toBeVisible();
   await page.getByLabel('Synthetic scenario').selectOption('regional-5');
@@ -48,7 +48,7 @@ test('changing scenarios while a slow request is active rejects stale results', 
 
 test('lab remains usable at a narrow phone viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/?lab=multi-feature');
+  await page.goto('/app/?lab=multi-feature');
   await expect(page.getByLabel('Lab controls')).toBeVisible();
   await expect(page.getByLabel('Virtualized feature gallery')).toBeVisible();
   await expect(page.locator('.comparison-lab__card[data-status="ready"]')).toHaveCount(5);

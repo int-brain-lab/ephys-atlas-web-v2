@@ -21,6 +21,14 @@ DNS provider/contact and the selected credential profile in the deployment
 record. Never record secrets. Create staging first; repeat for production only
 after its browser/integrity evidence is accepted.
 
+The 2026-09-08 read-only audit found that production already exists as
+CloudFront distribution `ET6VJW8JWAGVR` at
+`d2is8oq6heobqy.cloudfront.net`, using production origin path
+`/aggregates/atlas/ephys-atlas-web-v2/production`. It uses legacy OAI
+`E359S50BKNNGWZ`; no staging ID is known and the current bucket policy has no
+staging CloudFront grant. See the detailed evidence and remaining differences
+in [S3 deployment](S3_DEPLOYMENT.md#read-only-production-audit-2026-09-08).
+
 ## 2. Request the HTTPS certificate
 
 In **Certificate Manager**, select **US East (N. Virginia), us-east-1**. Choose
@@ -75,7 +83,9 @@ S3 bucket as origin. For staging, use origin path
 
 Use a separate production distribution with the production origin path and
 D072 hostname. Never add the staging origin to production as a fallback.
-OAC and the bucket policy, not the origin path alone, enforce isolation.
+OAC and the bucket policy, not the origin path alone, enforce isolation. The
+observed production distribution currently uses OAI; migrate it only as a
+separate reviewed change after staging proves the OAC policy and recovery path.
 See [AWS S3 origin access control](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html).
 
 ### Bucket policy: merge narrow statements, not the generated bucket-wide grant
@@ -94,6 +104,7 @@ not widen this to `staging/*` just to make an error disappear.
   "Action": "s3:GetObject",
   "Resource": [
     "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/catalog.json",
+    "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/atlas/*",
     "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/datasets/*",
     "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/staging/site/*"
   ],
@@ -113,14 +124,15 @@ change encryption.
 ## 5. Configure routing and cache behavior
 
 The site build is stored below `site/`; datasets stay below `datasets/` and the
-catalog at `catalog.json`. Use the tested narrow viewer-request rewrite:
-`/` → `/site/index.html`. Preserve query
+catalog at `catalog.json`. Use the tested narrow viewer-request rewrites:
+`/`, `/app`, and `/app/` → `/site/index.html`. The entry document chooses the
+static landing page for `/` and loads the viewer for `/app/`. Preserve query
 strings (the atlas uses URL query state), but do not forward them to S3 or
 include them in the cache key. Do not rewrite arbitrary missing paths to HTML.
 Other runtime asset URLs must be supplied by the reviewed build/catalog and
 validated pack paths. The production build embeds immutable
-`/site/builds/<build-id>/` asset URLs, so only the `/` entry rewrite is needed;
-root asset rewrites are unnecessary. The tested function is
+`/site/builds/<build-id>/` asset URLs, so root asset rewrites are unnecessary.
+The tested function is
 `tools/deployment/site-router.js`; it is not deployed. See
 [Local publisher operations](LOCAL_PUBLISHER.md).
 
@@ -131,7 +143,7 @@ direct `/site/` path that is retained.
 
 | Objects | Cache/header policy |
 | --- | --- |
-| `/`, entry HTML, catalog, dataset indexes | `Cache-Control: no-cache`; CloudFront minimum TTL 0, initially CachingDisabled |
+| `/`, `/app`, `/app/`, entry HTML, catalog, dataset indexes | `Cache-Control: no-cache`; CloudFront minimum TTL 0, initially CachingDisabled |
 | Content-hashed JS/CSS and immutable release/pack objects | `public,max-age=31536000,immutable`; never overwrite |
 | Favicon/brand inside immutable build directories | Immutable with that build; never overwrite |
 | `.isvg.gz` and other encoded numeric payloads | Opaque bytes, `application/octet-stream`, **no Content-Encoding**, no CDN recompression |
@@ -196,3 +208,10 @@ and source prefixes. Only then complete curator catalog/edition promotion and
 site deployment, freeze a reproducible HTTPS development bundle, and repeat
 the accepted setup for production. Provisioning DNS/TLS alone does not make
 the atlas launch-ready.
+
+The current production distribution needs the route-function association and
+ordered mutable/immutable cache behaviors before a site upload. Its observed
+one-day maximum TTL is too short for immutable assets, while its one-hour
+default TTL can cache the mutable entry/catalog too long. Remove the obsolete
+root `index.html` bucket grant after the route cutover is verified. Keep the
+default error behavior: never turn S3 403/404 responses into the site entry.

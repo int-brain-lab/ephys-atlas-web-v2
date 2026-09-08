@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('scale and analytical domain are release-aware, synchronized, and canonicalized', async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 900 });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const scale = page.locator('select[aria-label="Value scale"]');
   const domain = page.locator('select[aria-label="Distribution domain"]');
@@ -24,7 +24,7 @@ test('scale and analytical domain are release-aware, synchronized, and canonical
   await expect(chart).toHaveAttribute('data-distribution-domain', 'full');
   await expect.poll(() => new URL(page.url()).searchParams.get('dist')).toBe('full');
 
-  await page.goto('/?v=4&histScale=log&scale=log&dist=unknown');
+  await page.goto('/app/?v=4&histScale=log&scale=log&dist=unknown');
   await expect(page.locator('select[aria-label="Value scale"]')).toHaveValue('linear');
   await expect.poll(() => new URL(page.url()).searchParams.get('scale')).toBe('linear');
   await expect.poll(() => new URL(page.url()).searchParams.get('histScale')).toBeNull();
@@ -32,7 +32,7 @@ test('scale and analytical domain are release-aware, synchronized, and canonical
 });
 
 test('Focused uses whole-population probabilities and gives the compact range the same viewport', async ({ page }) => {
-  await page.goto('/?v=4&selected=-477,-803&scale=symlog&dist=focused');
+  await page.goto('/app/?v=4&selected=-477,-803&scale=symlog&dist=focused');
   const chart = page.locator('.distribution-chart');
   await expect(chart.locator('.distribution-chart__tails')).toHaveAttribute('data-visible', 'true');
   await expect(chart.locator('.distribution-chart__tails')).toContainText('Below');
@@ -77,7 +77,7 @@ test('Focused uses whole-population probabilities and gives the compact range th
 });
 
 test('nonpositive manual Log range reconciles before volume rendering and preserves the range', async ({ page }) => {
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25&scale=log&dist=focused&range=-2,8');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25&scale=log&dist=focused&range=-2,8');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
   await expect(page.locator('.distribution-chart')).toHaveAttribute('data-axis-scale', 'linear');
   await expect.poll(() => new URL(page.url()).searchParams.get('scale')).toBe('linear');
@@ -86,7 +86,7 @@ test('nonpositive manual Log range reconciles before volume rendering and preser
 });
 
 test('volume exposes release-declared scales and remains global valid-voxel-only', async ({ page }) => {
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&scale=symlog&dist=focused&cursor=25,25,25');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&scale=symlog&dist=focused&cursor=25,25,25');
   const chart = page.locator('.distribution-chart');
   await expect(chart).toHaveAttribute('data-axis-scale', 'symlog');
   await expect(chart).toHaveAttribute('data-distribution-domain', 'focused');

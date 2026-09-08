@@ -37,7 +37,7 @@ test.describe('opt-in local ZIP import capacity evidence', () => {
     test(`${item.id} remains deterministic and recoverable`, async ({ page, browserName }) => {
       const pathname = archivePath(path.resolve(configuredCorpus), item);
       await verifyArchive(pathname, item);
-      await page.goto('/');
+      await page.goto('/app/');
       expect(await indexedDbCounts(page)).toEqual({ manifests: 0, resources: 0 });
 
       const evidence: {

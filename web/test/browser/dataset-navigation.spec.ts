@@ -6,6 +6,7 @@ const field = (page: Page, name: string) => page.locator(`[data-context-field="$
 const param = (page: Page, name: string) => new URL(page.url()).searchParams.get(name);
 
 async function openDetails(page: Page) {
+  await expect(page.locator('.atlas-app')).toBeVisible();
   if (await page.locator('.app-header__overflow').isVisible()) {
     await page.locator('.app-header__overflow-trigger').click();
     await page.locator('.app-header__overflow-menu').getByRole('button', { name: 'Data details' }).click();
@@ -59,7 +60,7 @@ for (const width of [1680, 1024, 390]) {
   test(`Data selects datasets atomically with grouped project identity at ${width}px`, async ({ page }) => {
     await groupedCatalog(page);
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/');
+    await page.goto('/app/');
     await expect(field(page, 'feature')).toContainText('AP RMS');
     const data = field(page, 'data');
     await expect(field(page, 'release')).toHaveCount(0);
@@ -113,7 +114,7 @@ for (const width of [1680, 1024, 390]) {
 }
 
 test('single version lives in Data details without a mode or version picker', async ({ page }) => {
-  await page.goto('/?v=4&project=synthetic-development&edition=synthetic-current&dataset=golden_fixture&release=golden-v1');
+  await page.goto('/app/?v=4&project=synthetic-development&edition=synthetic-current&dataset=golden_fixture&release=golden-v1');
   await expect(field(page, 'feature')).toContainText('AP RMS');
   await expect(field(page, 'release')).toHaveCount(0);
   const url = page.url();
@@ -130,7 +131,7 @@ test('single version lives in Data details without a mode or version picker', as
 
 test('current version is a no-op and overrides preserve exact history', async ({ page }) => {
   await groupedCatalog(page);
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(field(page, 'feature')).toContainText('AP RMS');
   await expect(field(page, 'data')).toContainText('Development data');
   const initial = page.url();
@@ -152,7 +153,7 @@ test('current version is a no-op and overrides preserve exact history', async ({
 
 test('exact links can restore the current dataset default without claiming a snapshot', async ({ page }) => {
   await groupedCatalog(page);
-  await page.goto('/?v=4&project=ephys&context=custom&dataset=clusters&release=new');
+  await page.goto('/app/?v=4&project=ephys&context=custom&dataset=clusters&release=new');
   await expect(field(page, 'feature')).toContainText('AP RMS');
   const details = await openDetails(page);
   await details.getByRole('button', { name: 'Use default version' }).click();
@@ -164,7 +165,7 @@ test('exact links can restore the current dataset default without claiming a sna
 test('failed version keeps Data details available for recovery', async ({ page }) => {
   await groupedCatalog(page);
   await page.route('**/manifest.json?identity=channels-new', (route) => route.fulfill({ status: 503, body: 'unavailable' }));
-  await page.goto('/?v=4&project=ephys&context=custom&dataset=channels&release=new');
+  await page.goto('/app/?v=4&project=ephys&context=custom&dataset=channels&release=new');
   const details = await openDetails(page);
   await expect(details.getByRole('status')).toContainText('Data unavailable');
   await expect(details.getByRole('region', { name: 'Data version' })).toContainText('new');
@@ -176,7 +177,7 @@ test('failed version keeps Data details available for recovery', async ({ page }
 test('phone version picker supports keyboard choice and Escape', async ({ page }) => {
   await groupedCatalog(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(field(page, 'feature')).toContainText('AP RMS');
   const details = await openDetails(page);
   await details.getByText('Change version…', { exact: true }).press('Enter');
@@ -193,7 +194,7 @@ test('phone version picker supports keyboard choice and Escape', async ({ page }
 for (const width of [390, 759, 760, 1099, 1100, 1480]) {
   test(`menus are bounded and keyboard reversible at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
-    await page.goto('/');
+    await page.goto('/app/');
     await expect(field(page, 'feature')).toContainText('AP RMS');
     const initialUrl = page.url();
     for (const name of ['data', 'feature', 'representation']) {
@@ -234,7 +235,7 @@ test('Data announces catalog loading and failure and retries', async ({ page }) 
     await route.fulfill({ status: 503, body: 'catalog unavailable' });
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/app/');
   const data = field(page, 'data');
   const trigger = data.locator('.context-menu__trigger');
   await expect(trigger).toHaveAttribute('aria-busy', 'true');
@@ -251,7 +252,7 @@ test('Data announces catalog loading and failure and retries', async ({ page }) 
 test('invalid edition URL preserves its exact request and offers explicit recovery', async ({ page }) => {
   let requests = 0;
   page.on('request', (request) => { if (new URL(request.url()).pathname.endsWith('/golden_fixture/golden-v1/manifest.json')) requests++; });
-  await page.goto('/?v=4&project=synthetic-development&edition=synthetic-current&dataset=golden_fixture&release=missing');
+  await page.goto('/app/?v=4&project=synthetic-development&edition=synthetic-current&dataset=golden_fixture&release=missing');
   const release = field(page, 'data');
   await expect(release).toContainText('Navigation unavailable · open to recover');
   await expect.poll(() => param(page, 'release')).toBe('missing');
@@ -271,7 +272,7 @@ test('invalid edition URL preserves its exact request and offers explicit recove
 });
 
 test('unknown project exposes only catalog-default recovery', async ({ page }) => {
-  await page.goto('/?v=4&project=unknown-project&context=custom&dataset=golden_fixture&release=golden-v1');
+  await page.goto('/app/?v=4&project=unknown-project&context=custom&dataset=golden_fixture&release=golden-v1');
   await field(page, 'data').locator('.context-menu__trigger').click();
   const recovery = field(page, 'data').getByRole('group', { name: 'Navigation recovery' });
   await expect(recovery.getByRole('option')).toHaveCount(1);
@@ -281,7 +282,7 @@ test('unknown project exposes only catalog-default recovery', async ({ page }) =
 
 test('keyboard opening More actions and Data keeps one menu open', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/app/');
   const feature = field(page, 'feature');
   await feature.locator('.context-menu__trigger').press('ArrowDown');
   const more = page.getByText('⋯', { exact: true });

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('browser history checkpoints context changes but not slice refinements', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const context = page.locator('[data-context-field="representation"]');
   const trigger = context.locator('.context-menu__trigger');

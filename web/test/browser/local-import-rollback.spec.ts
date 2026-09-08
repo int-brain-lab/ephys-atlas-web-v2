@@ -40,7 +40,7 @@ test('quota failure after queued resource writes rolls back both stores and rema
       return originalPut.apply(this, args);
     };
   });
-  await page.goto('/');
+  await page.goto('/app/');
   await openImport(page);
   await page.locator('.local-import__input').setInputFiles(archive);
   const dialog = page.getByRole('dialog', { name: 'Import local dataset' });

@@ -113,7 +113,7 @@ test('worst-case W26 features under simulated delivery profiles', async ({ page,
       body: await readFile(descriptor.file),
     });
   });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const profiles = [
     { id: 'local', latencyMs: 0, bitsPerSecond: Number.POSITIVE_INFINITY },

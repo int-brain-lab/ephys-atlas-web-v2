@@ -13,7 +13,7 @@ from .s3 import (Destination, ObjectStore, MAX_OBJECT_BYTES, IMMUTABLE_CACHE,
 
 PREFIXES = {"projection": "atlas/projections", "mesh": "atlas/meshes", "site": "site/builds"}
 SITE_TYPES = {".html": "text/html", ".js": "text/javascript", ".css": "text/css",
-              ".svg": "image/svg+xml", ".png": "image/png", ".woff2": "font/woff2"}
+              ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".woff2": "font/woff2"}
 
 
 def asset_plan(root: Path, destination: Destination, kind: str, identity: str,

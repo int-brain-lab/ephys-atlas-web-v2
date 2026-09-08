@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 1680, height: 900 });
-  await page.goto('/');
+  await page.goto('/app/');
 });
 
 test('desktop panels resize within bounds and reset to their responsive defaults', async ({ page }) => {

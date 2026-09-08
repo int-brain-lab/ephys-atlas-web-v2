@@ -24,7 +24,9 @@ The launch path is constrained by Q8, then Q5, Q2, and Q9.
 Status: active; release preflight, S3 dataset-release and curator catalog/edition
 transactions, validated pack/site publication and the isolated site build are
 implemented with offline tests. Remote infrastructure and staging evidence
-remain incomplete. The AWS audit requires renewed `ibl-atlas` authentication.
+remain incomplete. The 2026-09-08 authenticated audit confirms the production
+distribution, DNS/TLS, private bucket and narrowed OAI grant; isolated staging
+and publisher write authorization remain unverified.
 
 Blocker: Q8 for exact CloudFront/OAC/DNS/TLS/header policy, publisher IAM, and
 authorization of the first staging artifact set. Remote mutation requires
@@ -32,8 +34,12 @@ explicit authorization and credentials.
 
 Next actions:
 
-1. Finish the read-only AWS audit after login renewal and review exact IAM,
-   OAC/origin/cache policy and the first staging artifact set. Prepare properly
+1. Review and iterate on D073's implemented local landing at `/` and viewer at
+   `/app/`, with one coherent site build/publication. The offline
+   [staging change plan](publishing/STAGING_CHANGE_PLAN.md) and scoped AWS
+   templates are prepared. Review exact publisher IAM, isolated staging, the observed OAI
+   versus runbook OAC policy, cache/routing changes and the first staging
+   artifact set. Prepare properly
    identified Linux-built artifacts; the tooling rejects the current preview
    identities and packs lacking canonical build evidence. Commands and recovery
    semantics are in [Local publisher operations](publishing/LOCAL_PUBLISHER.md).
@@ -43,8 +49,9 @@ Next actions:
    evidence.
 4. Create a new development-bundle descriptor with exact immutable HTTPS
    sources and prove `just data` from a clean checkout.
-5. Only after staging evidence is accepted, provision the equivalent
-   production boundary and deploy the Vite site under `site/`.
+5. Only after staging evidence is accepted, finish the already-provisioned
+   production boundary's routing/cache configuration and deploy the site under
+   `site/`.
 
 Runbook: [S3 deployment](publishing/S3_DEPLOYMENT.md). Acceptance:
 [`LAUNCH_SPEC.md`](LAUNCH_SPEC.md) sections 10, 11, and 13.
@@ -57,7 +64,10 @@ slice packs.
 
 After staging exists:
 
-1. Repeat depth-four measurements at the real origin, recording requests,
+1. Review and implement an isolated staging-only candidate publication path:
+   the current publisher applies production preflight in staging and rejects
+   candidate IDs. Preserve those IDs and keep candidates out of production and
+   curator defaults. Then repeat depth-four measurements at the real origin, recording requests,
    bytes, decode/interaction latency, and memory.
 2. Resolve Q5 from that evidence.
 3. Build a new immutable W26 release on clean Linux `main`, run production

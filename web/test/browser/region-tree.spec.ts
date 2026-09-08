@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('region sidebar renders parent-closed Allen hierarchies at their real depth', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=4&colors=anatomy');
+  await page.goto('/app/?v=4&colors=anatomy');
 
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   await expect(page.locator('.region-row')).toHaveCount(874);
@@ -46,7 +46,7 @@ test('region sidebar renders parent-closed Allen hierarchies at their real depth
 
 test('regional values use a shared labeled domain track and accessible exact values', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=4&colors=anatomy');
+  await page.goto('/app/?v=4&colors=anatomy');
 
   await expect(page.locator('.region-statistic-domain')).toContainText('Mean:');
   await expect(page.locator('.region-statistic-domain')).toContainText('dB rel. V');
@@ -61,7 +61,7 @@ test('regional values use a shared labeled domain track and accessible exact val
 
 test('reduced mappings expose real Allen ancestors as non-selectable containers', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=4&colors=anatomy&parcel=beryl');
+  await page.goto('/app/?v=4&colors=anatomy&parcel=beryl');
 
   await expect(page.locator('.region-row')).toHaveCount(391);
   const berylContainer = page.locator('.region-row[data-region-id="-500"]');
@@ -72,7 +72,7 @@ test('reduced mappings expose real Allen ancestors as non-selectable containers'
   await expect(berylRegion).toHaveAttribute('data-mapping-member', 'true');
   await expect(berylRegion).toHaveAttribute('data-parent-id', '-500');
 
-  await page.goto('/?v=4&colors=anatomy&parcel=cosmos');
+  await page.goto('/app/?v=4&colors=anatomy&parcel=cosmos');
   await expect(page.locator('.region-row')).toHaveCount(15);
   await expect(page.locator('.region-row[data-region-id="-695"]')).toHaveAttribute('data-mapping-member', 'false');
   await expect(page.locator('.region-row[data-region-id="-315"]')).toHaveAttribute('data-parent-id', '-695');
@@ -81,7 +81,7 @@ test('reduced mappings expose real Allen ancestors as non-selectable containers'
 
 test('ontology branches disclose accessibly and missing feature values stay visually blank', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const root = page.locator('.region-row[data-region-id="-567"]');
   const rootButton = root.locator('.region-row__button');
@@ -108,7 +108,7 @@ test('ontology branches disclose accessibly and missing feature values stay visu
 
 test('collapsing a branch smoothly moves the following rows into place', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
 
@@ -133,7 +133,7 @@ test('collapsing a branch smoothly moves the following rows into place', async (
 
 test('tree-wide controls collapse and expand every ontology branch', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const collapseAll = page.getByRole('button', { name: 'Collapse all regions' });
   const expandAll = page.getByRole('button', { name: 'Expand all regions' });
@@ -159,7 +159,7 @@ test('tree-wide controls collapse and expand every ontology branch', async ({ pa
 
 test('multi-region selection keeps first-selection order and identity colors', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
 
   await page.getByRole('button', { name: 'FRP1, Frontal pole layer 1 (left)' }).click();
@@ -178,7 +178,7 @@ test('multi-region selection keeps first-selection order and identity colors', a
 
 test('value ordering switches to a flat ranking and restores the anatomical tree', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
 
   const frontalPole = page.locator('.region-row[data-region-id="-184"]');

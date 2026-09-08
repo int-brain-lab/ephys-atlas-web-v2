@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('Top and Swanson share regional presentation, interaction, URL state, and maximize behavior', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=4&secondary=top');
+  await page.goto('/app/?v=4&secondary=top');
 
   const secondary = page.locator('.secondary-view');
   const top = page.locator('[data-secondary-panel="top"]');
@@ -50,7 +50,7 @@ test('Top and Swanson share regional presentation, interaction, URL state, and m
 
 test('static projections occupy the responsive secondary workspace without becoming slice views', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
-  await page.goto('/?v=4&secondary=top&compact=secondary');
+  await page.goto('/app/?v=4&secondary=top&compact=secondary');
 
   await expect(page.locator('.context-strip')).toBeVisible();
   await expect(page.locator('.slice-strip')).toBeHidden();
@@ -62,7 +62,7 @@ test('static projections occupy the responsive secondary workspace without becom
 
 test('volume features remain explicitly anatomy-only on affine-free static maps', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&secondary=top&compact=secondary&cursor=25,25,25');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&secondary=top&compact=secondary&cursor=25,25,25');
 
   const top = page.locator('[data-secondary-panel="top"]');
   await expect(top.locator('path')).toHaveCount(114);
@@ -77,7 +77,7 @@ test('volume features remain explicitly anatomy-only on affine-free static maps'
 
 test('static-map failures stay isolated from the registered projection frames', async ({ page }) => {
   await page.route('**/static/top.isvg.gz', (route) => route.fulfill({ status: 503, body: 'offline' }));
-  await page.goto('/?v=4&secondary=top');
+  await page.goto('/app/?v=4&secondary=top');
 
   await expect(page.locator('[data-secondary-panel="top"] .secondary-projection__notice')).toHaveText(
     'Static projection unavailable',

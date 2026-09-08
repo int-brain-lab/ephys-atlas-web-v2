@@ -52,3 +52,13 @@ def test_site_missing_external_dependency_fails_before_writes(tmp_path):
     with pytest.raises(ValidationError, match="dependency"):
         publish_assets(tmp_path, destination, plan, store)
     assert store.writes == []
+
+
+def test_site_images_are_immutable_and_have_their_browser_content_type(tmp_path):
+    (tmp_path / "index.html").write_text("<html></html>")
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "hero.jpg").write_bytes(b"test-only")
+    destination = Destination("staging")
+    plan = asset_plan(tmp_path, destination, "site", "test", ["index.html", "assets/hero.jpg"])
+    image = next(item for item in plan["artifacts"] if item["path"] == "assets/hero.jpg")
+    assert image["content_type"] == "image/jpeg"

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('header uses the official IBL Core negative lockup and palette', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const logo = page.getByAltText('IBL Core');
   await expect(logo).toBeVisible();
@@ -44,7 +44,7 @@ test('header uses the official IBL Core negative lockup and palette', async ({ p
 });
 
 test('document uses the Ephys Atlas product favicon', async ({ page, request }) => {
-  await page.goto('/');
+  await page.goto('/app/');
 
   const favicon = page.locator('link[rel="icon"]');
   await expect(favicon).toHaveAttribute('href', '/favicon.png');

@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 test('global shortcuts search and report manifest feature catalogue boundaries', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
 
   const featureField = page.locator('[data-context-field="feature"]');
   const featureTrigger = featureField.locator('.context-menu__trigger');
@@ -24,7 +25,7 @@ test('global shortcuts search and report manifest feature catalogue boundaries',
 });
 
 test('shortcuts stay out of text entry and expose the task-first help guide', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
 
   const featureField = page.locator('[data-context-field="feature"]');
   const regionSearch = page.getByLabel('Search brain regions');
@@ -102,7 +103,7 @@ test('shortcuts stay out of text entry and expose the task-first help guide', as
 
 test('help guide stays readable within a phone viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/');
+  await page.goto('/app/');
   await page.locator('.app-header__overflow-trigger').click();
   await page.locator('.app-header__overflow-menu').getByRole('button', { name: 'Help' }).click();
 
@@ -120,7 +121,8 @@ test('help guide stays readable within a phone viewport', async ({ page }) => {
 
 test('help title stays above the Markdown guide while scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 500 });
-  await page.goto('/');
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
   await page.keyboard.press('?');
 
   const guide = page.getByRole('dialog', { name: 'Help & getting started' });
@@ -147,7 +149,7 @@ test('help title stays above the Markdown guide while scrolling', async ({ page 
 });
 
 test('help guidance follows the active representation', async ({ page }) => {
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
   await page.getByRole('button', { name: 'Help' }).first().click();
 
   const guide = page.getByRole('dialog', { name: 'Help & getting started' });

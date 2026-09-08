@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('retained viewport shares region identity, guides, presentation, and interaction', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await page.evaluate(async () => {
     const { RetainedProjectionViewportFactory } = await import('/src/rendering/retained-projection-viewport.ts');
     const { resolveRegionalPresentation } = await import('/src/application/regional-presentation.ts');
@@ -104,7 +104,8 @@ test('retained viewport shares region identity, guides, presentation, and intera
 });
 
 test('retained viewport keeps its DOM and prepared SVG layers across navigation', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
   const result = await page.evaluate(async () => {
     const { RetainedProjectionViewportFactory } = await import('/src/rendering/retained-projection-viewport.ts');
     const target = document.createElement('div');
@@ -149,7 +150,8 @@ test('retained viewport keeps its DOM and prepared SVG layers across navigation'
 });
 
 test('retained viewport runs one geometry request and commits only the latest pending slice', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
   const result = await page.evaluate(async () => {
     const { RetainedProjectionViewportFactory } = await import('/src/rendering/retained-projection-viewport.ts');
     const target = document.createElement('div');
@@ -194,7 +196,8 @@ test('retained viewport runs one geometry request and commits only the latest pe
 });
 
 test('retained viewport aborts obsolete geometry before loading the latest slice', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
   const result = await page.evaluate(async () => {
     const { RetainedProjectionViewportFactory } = await import('/src/rendering/retained-projection-viewport.ts');
     const target = document.createElement('div');

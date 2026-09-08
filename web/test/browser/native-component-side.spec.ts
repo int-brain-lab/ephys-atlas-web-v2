@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('intact crossing surfaces keep their original side colours and picks after movement', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
   const points = await page.evaluate(async () => {
     const { RetainedBrainScene3DViewportFactory } = await import('/src/rendering/3d/brain-scene-viewport.ts');

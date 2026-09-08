@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { resolve } from 'node:path';
 
-const regionalRoute = '/?v=4&dataset=golden_fixture&release=golden-v1&project=synthetic-development&context=custom&selected=-477,-803&scale=symlog&dist=focused';
+const regionalRoute = '/app/?v=4&dataset=golden_fixture&release=golden-v1&project=synthetic-development&context=custom&selected=-477,-803&scale=symlog&dist=focused';
 const archive = resolve(process.cwd(), '../fixtures/golden-v1.ibl-ephys-atlas.zip');
 const canonicalPixelPlatform = process.platform === 'linux';
 

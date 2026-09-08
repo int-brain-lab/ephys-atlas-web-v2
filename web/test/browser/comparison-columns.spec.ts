@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('selected-region comparison omits the interquartile-range column', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first().dispatchEvent('pointerup');
 
   const table = page.locator('.regional-comparison__table');

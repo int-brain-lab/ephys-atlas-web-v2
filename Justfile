@@ -45,7 +45,7 @@ production-release-preflight +releases:
 
 # Open the development-only synthetic multi-feature comparison workbench.
 comparison-ux-lab:
-    cd web && npm run dev -- --open '/?lab=multi-feature'
+    cd web && npm run dev -- --open '/app/?lab=multi-feature'
 
 # Builder/schema tests.
 test-builder:
@@ -201,11 +201,11 @@ mesh-pack-validate path:
     {{uv-test}} python -m tools.mesh_pack.validate {{path}}
 
 # Validate the locally served D042 pack in Chromium and write ignored evidence.
-validate-3d-local url="http://127.0.0.1:5173/" output="../artifacts/mesh-d042-browser-evidence":
+validate-3d-local url="http://127.0.0.1:5173/app/" output="../artifacts/mesh-d042-browser-evidence":
     cd web && node scripts/validate-local-d042.mjs {{url}} {{output}}
 
 # Validate every dataset and context view exposed by `just dev`.
-validate-local-full url="http://localhost:5173/" output="../artifacts/local-full-browser-evidence":
+validate-local-full url="http://localhost:5173/app/" output="../artifacts/local-full-browser-evidence":
     {{uv-test}} python -m tools.development_bundle run --cwd web data/development-bundle-v5.json -- node scripts/validate-local-full.mjs {{url}} {{output}}
 
 # Generate the ignored, fully offline anatomy comparison lab.

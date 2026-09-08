@@ -8,6 +8,23 @@ import { LazyBrainScene3DViewportFactory } from './rendering/3d/lazy-brain-scene
 const root = document.querySelector<HTMLElement>('#app');
 if (!root) throw new Error('Missing #app root element');
 
+function revealApplication(): void {
+  root!.hidden = false;
+  const status = document.querySelector<HTMLElement>('#app-bootstrap-status');
+  if (status) status.hidden = true;
+}
+
+function showStartupFailure(error: unknown): void {
+  root!.hidden = true;
+  const status = document.querySelector<HTMLElement>('#app-bootstrap-status');
+  if (status) {
+    status.hidden = false;
+    status.textContent = 'Unable to load the atlas. Reload the page and try again.';
+    status.setAttribute('role', 'alert');
+  }
+  console.error('Unable to start atlas', error);
+}
+
 const defaultProjectionPackUrl =
   '/atlas/projections/ibl-static-registered-v1/manifest.json';
 const projectionPackUrl = import.meta.env.VITE_PROJECTION_PACK_URL as string | undefined;
@@ -54,19 +71,23 @@ function start(): void {
     ...(catalogUrl ? { catalogUrl } : {}),
     ...(developmentDefaultView ? { defaultView: developmentDefaultView } : {}),
   });
-  void app.start();
+  if (window.location.hash === '#help') app.openHelpGuide();
+  revealApplication();
+  void app.start().catch(showStartupFailure);
 }
 
 if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('lab') === 'agea-coverage') {
   void import('./labs/agea-coverage-lab.js').then(({ startAgeaCoverageLab }) => {
     const dispose = startAgeaCoverageLab(root);
     import.meta.hot?.dispose(dispose);
-  });
+    revealApplication();
+  }).catch(showStartupFailure);
 } else if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('lab') === 'multi-feature') {
   void import('./labs/multi-feature-lab.js').then(({ startMultiFeatureLab }) => {
     const dispose = startMultiFeatureLab(root);
     import.meta.hot?.dispose(dispose);
-  });
+    revealApplication();
+  }).catch(showStartupFailure);
 } else {
   start();
 }

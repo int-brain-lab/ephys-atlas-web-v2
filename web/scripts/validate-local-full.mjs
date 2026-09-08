@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from '@playwright/test';
 
-const baseUrl = process.argv[2] ?? 'http://localhost:5173/';
+const baseUrl = process.argv[2] ?? 'http://localhost:5173/app/';
 const outputDir = path.resolve(process.argv[3] ?? '../artifacts/local-full-browser-evidence');
 const expectedReleaseList = process.env.EPHYS_ATLAS_EXPECTED_RELEASES;
 if (!expectedReleaseList) throw new Error('EPHYS_ATLAS_EXPECTED_RELEASES must come from the validated bundle launcher');
@@ -29,7 +29,7 @@ try {
   });
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
-  await page.goto(new URL(`/?v=4&secondary=${expectedMesh ? 'brain-3d' : 'summary'}`, baseUrl).toString(), { waitUntil: 'domcontentloaded' });
+  await page.goto(new URL(`/app/?v=4&secondary=${expectedMesh ? 'brain-3d' : 'summary'}`, baseUrl).toString(), { waitUntil: 'domcontentloaded' });
 
   const catalog = await page.evaluate(async () => await (await fetch('/__real-data/catalog.json')).json());
   const identities = catalog.datasets.flatMap((dataset) => dataset.releases.map((release) => [

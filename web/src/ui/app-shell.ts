@@ -594,9 +594,13 @@ export class AppShell {
     logoLink.append(logo);
     const brandText = element('div', 'app-header__brand-text');
     const title = heading('Ephys Atlas', 1);
+    const home = element('a', 'app-header__home-link');
+    home.href = '/';
+    home.setAttribute('aria-label', 'Ephys Atlas home');
+    home.append(title);
     const version = element('span', 'app-header__version');
     version.textContent = 'v2';
-    brandText.append(title, version);
+    brandText.append(home, version);
     brand.append(logoLink, brandText);
 
     const context = element('dl', 'app-header__context');
@@ -1282,6 +1286,10 @@ export class AppShell {
     this.closeDrawers();
     if (this.overflowActions) this.overflowActions.open = false;
     if (!this.helpDialog.open) this.helpDialog.showModal();
+  }
+
+  openHelpGuide(): void {
+    this.openHelpDialog();
   }
 
   private startHelpTour(): void {

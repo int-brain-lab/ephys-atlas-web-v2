@@ -13,7 +13,7 @@ for (const supported of [true, false]) test(supported
       return name === 'EXT_color_buffer_float' ? null : original.call(this, name);
     };
   });
-  await page.goto('/');
+  await page.goto('/app/');
   await page.evaluate(async () => {
     const { RetainedBrainScene3DViewportFactory } = await import('/src/rendering/3d/brain-scene-viewport.ts');
     const host = document.createElement('div'); host.id = 'oit-test';

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 test('fixed alignment review, linked navigation, notes and restoration', async ({ page }) => {
   await page.setViewportSize({ width: 1500, height: 1050 });
-  await page.goto('/?lab=agea-coverage&mode=alignment');
+  await page.goto('/app/?lab=agea-coverage&mode=alignment');
   const status = page.locator('.alignment-status');
   await expect(status).toContainText('Alignment ready');
   await expect(page.locator('.alignment-viewport[data-volume-index]')).toHaveCount(3);
@@ -63,14 +63,14 @@ test('fixed alignment review, linked navigation, notes and restoration', async (
 
 test('corrupt reference image is rejected before alignment rendering', async ({ page }) => {
   await page.route('**/lab-anatomy-image.f32.gz', route => route.fulfill({ body: Buffer.from('corrupt') }));
-  await page.goto('/?lab=agea-coverage&mode=alignment');
+  await page.goto('/app/?lab=agea-coverage&mode=alignment');
   await expect(page.locator('.alignment-status')).toContainText('Alignment unavailable');
   await expect(page.locator('.alignment-viewport[data-volume-index]')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Looks consistent', exact: true })).toBeDisabled();
 });
 
 test('guided pass records each location without advancing past the last', async ({ page }) => {
-  await page.goto('/?lab=agea-coverage&mode=alignment');
+  await page.goto('/app/?lab=agea-coverage&mode=alignment');
   for (let index = 0; index < 5; index++) {
     await expect(page.locator('.alignment-status')).toContainText('Alignment ready');
     await expect(page.getByLabel('Review location')).toHaveValue(String(index));

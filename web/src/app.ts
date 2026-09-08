@@ -187,6 +187,10 @@ export class AtlasApp {
     await this.session.loadDataset(requireExactDataset(this.store.getState().view.dataset));
   }
 
+  openHelpGuide(): void {
+    this.shell.openHelpGuide();
+  }
+
   private activateApplication(): void {
     if (this.stopApplicationStore) return;
     this.stopApplicationStore = this.store.subscribe((state, action) => {

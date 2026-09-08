@@ -13,7 +13,7 @@ test('approved Native is lazy, retained, URL-linked anatomy in the real full web
   page.on('response', async (response) => {
     if(response.url().includes('/__local-assets/mesh/') && response.url().endsWith('/manifest.json')) manifest=await response.json();
   });
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.getByRole('tab',{name:'3-D',exact:true})).toBeVisible();
   expect(requests).toEqual([]);
   const catalog=await page.evaluate(async () => (await fetch('/__real-data/catalog.json')).json());

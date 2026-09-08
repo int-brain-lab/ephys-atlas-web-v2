@@ -11,7 +11,8 @@ test('module worker decodes the verified tiny native-component mesh pack', async
     contentType: 'application/vnd.ibl.eam3',
     body: encoded,
   }));
-  await page.goto('/');
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
   const result = await page.evaluate(async ({ resource, decoder }) => {
     const { MeshPackRuntime } = await import('/src/rendering/3d/mesh-pack-runtime.ts');
     const response = await fetch('/__mesh_fixture');

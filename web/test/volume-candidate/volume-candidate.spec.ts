@@ -88,7 +88,7 @@ test('loads all 41 dynamic features with D043-linked indices and cache reuse', a
   page.on('request', (request) => {
     if (request.url().includes('/volume/packs/')) packRequests.push(request.url());
   });
-  await page.goto(`/?v=4&repr=volume&feature=${featureIds[0]}&cursor=0,0,0`);
+  await page.goto(`/app/?v=4&repr=volume&feature=${featureIds[0]}&cursor=0,0,0`);
   for (const featureId of featureIds) await selectFeature(page, featureId);
 
   await expect(page.locator('[data-view="coronal"] .view-frame__renderer')).toHaveAttribute('data-volume-index', '108');
@@ -112,7 +112,7 @@ test('changes the anatomy parcellation without reloading or altering the volume'
   page.on('request', (request) => {
     if (request.url().includes('/features/rms_lf/')) featureRequests.push(request.url());
   });
-  await page.goto('/?v=4&repr=volume&feature=rms_lf&cursor=0,0,0');
+  await page.goto('/app/?v=4&repr=volume&feature=rms_lf&cursor=0,0,0');
   await expect(page.locator('[data-volume-feature="rms_lf"]')).toHaveCount(3);
   const volumeIndices = await page.locator('[data-volume-index]').evaluateAll((nodes) => (
     nodes.map((node) => node.getAttribute('data-volume-index'))
@@ -142,7 +142,7 @@ test('rapid feature switching cancels stale presentation and keeps the latest fe
     await new Promise((resolve) => setTimeout(resolve, 100));
     await route.continue();
   });
-  await page.goto('/?v=4&repr=volume&feature=rms_lf&cursor=0,0,0');
+  await page.goto('/app/?v=4&repr=volume&feature=rms_lf&cursor=0,0,0');
   await selectFeature(page, 'polarity');
   await expect(page.locator('[data-volume-feature="polarity"]')).toHaveCount(3);
   await expect(page.locator('[data-volume-feature="rms_lf"]')).toHaveCount(0);
@@ -164,7 +164,7 @@ test('rapid same-plane navigation keeps the previous composite and performs one 
     await route.continue();
   });
 
-  await page.goto('/?v=4&repr=volume&feature=rms_lf&cursor=-2500,-1200,-3700');
+  await page.goto('/app/?v=4&repr=volume&feature=rms_lf&cursor=-2500,-1200,-3700');
   const frame = page.locator('[data-view="coronal"]');
   const renderer = frame.locator('.view-frame__renderer');
   await expect(renderer).toHaveAttribute('data-volume-index', '132');
@@ -204,7 +204,7 @@ test('rapid same-plane navigation keeps the previous composite and performs one 
 });
 
 test('outside voxels inspect explicitly and corrupt immutable bytes fail integrity', async ({ page }) => {
-  await page.goto('/?v=4&repr=volume&feature=rms_ap&cursor=0,0,0');
+  await page.goto('/app/?v=4&repr=volume&feature=rms_ap&cursor=0,0,0');
   await expect(page.locator('[data-volume-feature="rms_ap"]')).toHaveCount(3);
   const frame = page.locator('[data-view="coronal"]');
   await expect(frame.locator('.projection-viewport')).toHaveAttribute('data-mode', 'composite');

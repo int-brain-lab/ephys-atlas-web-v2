@@ -79,7 +79,7 @@ row 1014; look up by ID, do not hardcode row identity).
 Local diagnostic figure `artifacts/agea-858-order-hypotheses.png` compares C/F
 interpretations. Other ignored screenshots and the running preview are not
 durable deliverables; regenerate report figures through a committed script.
-The lab runs at `/?lab=agea-coverage` using the runbook's explicit data directory.
+The lab runs at `/app/?lab=agea-coverage` using the runbook's explicit data directory.
 
 ## Investigation sequence
 

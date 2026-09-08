@@ -41,7 +41,10 @@ def test_site_receipt_and_inventory_are_verified(tmp_path):
     receipt = {"commit": repo.commit, "environment": build_environment(), "node": "v22.17.1", "config": config()}
     identity = hashlib.sha256(json_bytes(receipt)).hexdigest()[:32]
     receipt.update(format="atlas-site-build-v1", build_id=identity, dependencies=site_build.dependencies(config()))
-    (tmp_path / "index.html").write_text(f'<script src="/site/builds/{identity}/assets/main.js"></script><link href="/site/builds/{identity}/favicon.png">')
+    (tmp_path / "index.html").write_text(
+        f'<script src="/site/builds/{identity}/assets/main.js"></script>'
+        f'<link href="/site/builds/{identity}/favicon.png"><a href="/app/">Open atlas</a>'
+    )
     (tmp_path / "favicon.png").write_bytes(b"test")
     (tmp_path / "assets").mkdir()
     (tmp_path / "assets/main.js").write_text("// test-only")
@@ -51,6 +54,32 @@ def test_site_receipt_and_inventory_are_verified(tmp_path):
     (tmp_path / "secret.txt").write_text("must not upload")
     with pytest.raises(ValueError, match="inventory"):
         site_build.validate_site(tmp_path, repo)
+
+
+@pytest.mark.parametrize("extra_resource", [
+    "", '<img src="https://example.com/hero.jpg">',
+    "<iframe src='/outside.html'></iframe>",
+])
+def test_site_receipt_checks_landing_resources_but_allows_navigation(tmp_path, extra_resource):
+    repo = RepositoryState("main", "a"*40, True)
+    receipt = {"commit": repo.commit, "environment": build_environment(), "node": "v22.17.1", "config": config()}
+    identity = hashlib.sha256(json_bytes(receipt)).hexdigest()[:32]
+    receipt.update(format="atlas-site-build-v1", build_id=identity, dependencies=site_build.dependencies(config()))
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "index.html").write_text(
+        f'<img src="/site/builds/{identity}/assets/hero.jpg"><link href="/site/builds/{identity}/favicon.png">'
+        '<a href="/app/">Open atlas</a><a href="https://iblcore.org/">IBL Core</a>'
+        + extra_resource
+    )
+    (tmp_path / "assets" / "hero.jpg").write_bytes(b"test-only")
+    (tmp_path / "favicon.png").write_bytes(b"test-only")
+    receipt["files"] = {p.relative_to(tmp_path).as_posix(): file_info(p) for p in tmp_path.rglob("*") if p.is_file()}
+    (tmp_path / "_site.json").write_bytes(json_bytes(receipt))
+    if extra_resource:
+        with pytest.raises(ValueError, match="missing or non-build asset"):
+            site_build.validate_site(tmp_path, repo)
+    else:
+        assert site_build.validate_site(tmp_path, repo)["build_id"] == identity
 
 
 def test_synthetic_mesh_cannot_pass_publication_preflight(monkeypatch):

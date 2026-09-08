@@ -2,9 +2,9 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from '@playwright/test';
 
-const baseUrl = process.argv[2] ?? 'http://127.0.0.1:5173/';
+const baseUrl = process.argv[2] ?? 'http://127.0.0.1:5173/app/';
 const outputDir = path.resolve(process.argv[3] ?? '../artifacts/mesh-d042-browser-evidence');
-const url = new URL('/?v=4&parcel=beryl&secondary=brain-3d', baseUrl).toString();
+const url = new URL('/app/?v=4&parcel=beryl&secondary=brain-3d', baseUrl).toString();
 const meshRequests = [];
 const browserErrors = [];
 const browser = await chromium.launch();

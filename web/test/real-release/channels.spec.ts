@@ -15,7 +15,7 @@ test.beforeEach(async ({ page }) => {
 
 test('wide header keeps long feature and representation context legible', async ({ page }) => {
   await page.setViewportSize({ width: 1680, height: 900 });
-  await page.goto('/?v=4&feature=aperiodic_exponent.denoised');
+  await page.goto('/app/?v=4&feature=aperiodic_exponent.denoised');
   await page.evaluate(async () => document.fonts.ready);
 
   const feature = page.locator('[data-context-field="feature"] .context-field__value');
@@ -33,7 +33,7 @@ test('wide header keeps long feature and representation context legible', async 
 });
 
 test('uses the immutable release and approved denoised feature as development defaults', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
 
   await page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Data details' }).click();
   const release = page.getByRole('dialog', { name: 'Data details' });
@@ -68,7 +68,7 @@ test('uses the immutable release and approved denoised feature as development de
 
 test('loads real float64 alpha values and all launch parcellations', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/');
+  await page.goto('/app/');
 
   const feature = page.locator('[data-context-field="feature"]');
   await feature.locator('.context-menu__trigger').click();
@@ -105,7 +105,7 @@ test('loads real float64 alpha values and all launch parcellations', async ({ pa
 });
 
 test('uses the approved peak_val.raw focused distribution and preserves explicit alternatives', async ({ page }) => {
-  await page.goto('/?v=4&feature=peak_val.raw');
+  await page.goto('/app/?v=4&feature=peak_val.raw');
 
   const scale = page.locator('select[aria-label="Value scale"]');
   const domain = page.locator('select[aria-label="Distribution domain"]');
@@ -151,7 +151,7 @@ test('uses the approved peak_val.raw focused distribution and preserves explicit
 });
 
 test('exposes the complete Q14 channel choices without adding controls to discrete labels', async ({ page }) => {
-  await page.goto('/?v=4&feature=alpha_mean.raw');
+  await page.goto('/app/?v=4&feature=alpha_mean.raw');
   const scale = page.locator('select[aria-label="Value scale"]');
   const domain = page.locator('select[aria-label="Distribution domain"]');
   const chart = page.locator('.distribution-chart');
@@ -160,13 +160,13 @@ test('exposes the complete Q14 channel choices without adding controls to discre
   await expect(domain.locator('option:checked')).toHaveText('Auto (Focused)');
   await expect(chart).toHaveAttribute('data-distribution-domain', 'focused');
 
-  await page.goto('/?v=4&feature=cor_ratio.raw');
+  await page.goto('/app/?v=4&feature=cor_ratio.raw');
   await expect(scale.locator('option[value="symlog"]')).toBeEnabled();
   await expect(domain.locator('option[value="focused"]')).toBeEnabled();
   await expect(scale.locator('option:checked')).toHaveText('Auto (Linear)');
   await expect(domain.locator('option:checked')).toHaveText('Auto (Full)');
 
-  await page.goto('/?v=4&feature=channel_labels.raw');
+  await page.goto('/app/?v=4&feature=channel_labels.raw');
   await expect(scale.locator('option:checked')).toHaveText('Auto (Linear)');
   await expect(scale.locator('option[value="log"]')).toBeDisabled();
   await expect(scale.locator('option[value="symlog"]')).toBeDisabled();

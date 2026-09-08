@@ -6,7 +6,7 @@ test('3-D context lazily loads its injected immutable fixture and persists respo
     if (request.url().includes('/__mesh-pack-fixture/')) meshRequests.push(request.url());
   });
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=4&explode3d=0.4&camera3d=0,-5,3,0,0,0,0,0,1');
+  await page.goto('/app/?v=4&explode3d=0.4&camera3d=0,-5,3,0,0,0,0,0,1');
   expect(meshRequests).toEqual([]);
 
   const tab = page.getByRole('tab', { name: '3-D' });
@@ -72,7 +72,7 @@ test('3-D context lazily loads its injected immutable fixture and persists respo
 
 test('3-D shares presentation and selection without rebuilding geometry', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/?v=4&parcel=cosmos&secondary=brain-3d');
+  await page.goto('/app/?v=4&parcel=cosmos&secondary=brain-3d');
   const host = page.locator('[data-scene3d-host="connected"]');
   await expect(host).toHaveAttribute('data-scene3d-state', 'ready');
   const uploads = await host.getAttribute('data-geometry-uploads');
@@ -110,13 +110,14 @@ test('3-D shares presentation and selection without rebuilding geometry', async 
 });
 
 test('volume mode keeps integrated 3-D anatomy-only and scene failure isolated', async ({ page }) => {
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&secondary=brain-3d');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&secondary=brain-3d');
   const panel = page.locator('[data-secondary-panel="brain-3d"]');
   await expect(panel.locator('[data-scene3d-host="connected"]')).toHaveAttribute('data-scene3d-state', 'ready');
   await expect(panel.locator('.secondary-view__scene3d-notice')).toContainText('anatomy only');
   await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
 
-  await page.goto('/');
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
   const result = await page.evaluate(async () => {
     const { AtlasApp } = await import('/src/app.ts');
     const nullRoot = document.createElement('div');
@@ -153,7 +154,7 @@ test('volume mode keeps integrated 3-D anatomy-only and scene failure isolated',
 for (const resource of ['manifest.json', 'default.eam3.gz']) {
   test(`3-D ${resource} failure stays isolated from the 2-D workspace`, async ({ page }) => {
     await page.route(`**/__mesh-pack-fixture/${resource}`, (route) => route.fulfill({ status: 503, body: 'offline' }));
-    await page.goto('/?v=4&secondary=brain-3d');
+    await page.goto('/app/?v=4&secondary=brain-3d');
     const panel = page.locator('[data-secondary-panel="brain-3d"]');
     await expect(panel.locator('[data-scene3d-host="connected"]')).toHaveAttribute('data-scene3d-state', 'error');
     await expect(panel.locator('.secondary-view__scene3d-notice')).toHaveText('3-D anatomy unavailable.');

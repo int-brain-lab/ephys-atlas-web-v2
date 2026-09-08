@@ -22,7 +22,7 @@ function timing(values: number[]): { p50_ms: number; p95_ms: number; samples_ms:
 }
 
 test('retained projection viewport meets registered navigation timing gates', async ({ page, browserName }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
   const measurements = await page.evaluate(async ({ cases, manifestUrl, trials }) => {
     const [{ ProjectionPackSource }, { RetainedProjectionViewportFactory }] = await Promise.all([

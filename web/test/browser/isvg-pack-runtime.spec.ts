@@ -41,7 +41,7 @@ function indexedPack(): Fixture {
 }
 
 async function loadRuntime(page: import('@playwright/test').Page, fixture: Fixture) {
-  await page.goto('/');
+  await page.goto('/app/');
   return page.evaluate(async ({ compressed, uncompressedBytes }) => {
     const { createIsvgPackRuntime } = await import('/src/rendering/isvg-pack-runtime.ts');
     const runtime = createIsvgPackRuntime({ maxDecodedBytes: 1024 * 1024 });
@@ -62,7 +62,8 @@ test('real module worker returns only requested indexed SVG fragments and retain
 
 test('worker validation rejects identity and decoded-size mismatches without retaining bad packs', async ({ page }) => {
   const fixture = indexedPack();
-  await page.goto('/');
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
   const result = await page.evaluate(async ({ compressed, uncompressedBytes }) => {
     const { createIsvgPackRuntime } = await import('/src/rendering/isvg-pack-runtime.ts');
     const runtime = createIsvgPackRuntime({ maxDecodedBytes: 1 });
@@ -83,7 +84,8 @@ test('worker validation rejects identity and decoded-size mismatches without ret
 
 test('eviction removes a resident pack and disposal rejects pending/future requests', async ({ page }) => {
   const fixture = indexedPack();
-  await page.goto('/');
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
   const result = await page.evaluate(async ({ compressed, uncompressedBytes }) => {
     const { createIsvgPackRuntime } = await import('/src/rendering/isvg-pack-runtime.ts');
     const runtime = createIsvgPackRuntime();

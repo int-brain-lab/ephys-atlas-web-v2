@@ -11,7 +11,8 @@ Vite and plain DOM code; scientific builders and publishing tools are Python.
 The product is pre-launch. Current real artifacts are validated locally, not
 published production releases. The channel snapshot is not the unresolved Q2
 paper selection, the W26 volume is still a Q5 transport candidate, and no
-production origin or paper default has been selected.
+paper default has been selected. The production hostname and private S3 origin
+are provisioned; staging delivery and release publication remain incomplete.
 
 ## Quick start
 
@@ -25,7 +26,8 @@ just dev
 ```
 
 When the ignored local artifacts are staged, open <http://localhost:5173/>
-after Vite starts. `just data` synchronizes every descriptor artifact against
+for the landing page or <http://localhost:5173/app/> for the viewer after Vite
+starts. `just data` synchronizes every descriptor artifact against
 the pinned [`development-bundle-v5.json`](data/development-bundle-v5.json),
 then runs full validation of root hashes, immutable identities, and complete
 file graphs. Already-valid artifacts are reused without a network request. A

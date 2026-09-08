@@ -20,7 +20,7 @@ async function expectInsideViewport(page: Page, selector: string): Promise<void>
 }
 
 test('regional essentials tour uses real controls without changing view state', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app/');
   await expect.poll(() => new URL(page.url()).searchParams.get('release')).toBe('golden-v1');
   const urlBefore = page.url();
   await openTour(page);
@@ -57,7 +57,7 @@ test('regional essentials tour uses real controls without changing view state', 
 });
 
 test('volume tour uses voxel-specific Markdown guidance', async ({ page }) => {
-  await page.goto('/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
   await openTour(page);
   const card = page.locator('.help-tour__card');
 
@@ -75,7 +75,7 @@ test('volume tour uses voxel-specific Markdown guidance', async ({ page }) => {
 
 test('phone tour targets visible responsive controls and remains in the viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 700 });
-  await page.goto('/');
+  await page.goto('/app/');
   await page.locator('.app-header__overflow-trigger').click();
   const help = page.getByRole('dialog', { name: 'Help & getting started' });
   await page.locator('.app-header__overflow-menu').getByRole('button', { name: 'Help' }).click();
