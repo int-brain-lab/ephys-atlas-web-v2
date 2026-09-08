@@ -8,8 +8,12 @@ below to required staging setup describe the earlier isolated-staging path.
 
 Status: runbook; direct initial deployment authorized by D074. S3 access and
 CloudFront router publication/invalidation are verified. The v2 distribution's
-routing/cache update was accepted on 2026-09-08; scientific/site publication
-and live delivery acceptance are the current work. Q5 and final paper/scientific
+routing/cache update is deployed. The four initial scientific releases, both
+anatomy packs and initial catalog were published on 2026-09-08. Their exact
+dependencies and approved default are pinned in
+[`initial-site.json`](../../data/deployment/initial-site.json); site publication
+and live browser acceptance are next. The separate volume benchmark is public
+by exact URL but remains outside the catalog pending Q5. Final paper/scientific
 review questions retain their stated scope.
 
 Run these commands from the repository root with the locked builder environment.
@@ -18,7 +22,9 @@ releases, add `--transport sdk` and run the builder environment with
 `--extra scientific --extra test --locked`. The SDK reuses authenticated
 connections with up to 16 independent object operations per phase; CLI remains
 the default serial transport. Both implement the same checksum/conditional-write
-protocol. Reservations, phase boundaries, entry manifests, completion records
+protocol. The SDK session and S3 client both use `us-east-1`, including nested
+login credential refresh; a profile-level region is not required.
+Reservations, phase boundaries, entry manifests, completion records
 and mutable index/catalog/site commits remain ordered. Failed parallel phases
 finish in-flight work and stop before exposing the next entry/commit. `--apply`
 requires an explicit temporary-credential profile and the exact environment

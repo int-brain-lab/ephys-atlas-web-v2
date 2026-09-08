@@ -31,7 +31,7 @@ class AwsSdkStore:
         self.profile = profile
         self.max_workers = max_workers
         try:
-            self._client = boto3.Session(profile_name=profile).client(
+            self._client = boto3.Session(profile_name=profile, region_name="us-east-1").client(
                 "s3", region_name="us-east-1",
                 config=Config(max_pool_connections=max_workers,
                               retries={"mode": "standard", "total_max_attempts": 3}),

@@ -24,8 +24,8 @@ def sdk(monkeypatch):
     calls = []
 
     class Session:
-        def __init__(self, *, profile_name):
-            calls.append(("profile", profile_name))
+        def __init__(self, *, profile_name, region_name):
+            calls.append(("profile", profile_name, region_name))
 
         def client(self, service, **kwargs):
             calls.append((service, kwargs))
@@ -56,7 +56,7 @@ def test_profile_region_and_single_client_reuse(sdk):
     for _ in range(2):
         stubber.add_response("head_object", {"ContentLength": 12}, read_params(key))
         assert store.head(key)["ContentLength"] == 12
-    assert calls[0] == ("profile", "ibl-atlas")
+    assert calls[0] == ("profile", "ibl-atlas", "us-east-1")
     assert len(calls) == 2
     assert calls[1][0] == "s3"
     assert calls[1][1]["region_name"] == "us-east-1"
@@ -230,3 +230,43 @@ def test_existing_publisher_verifies_uploaded_bytes_and_serving_metadata(sdk, tm
             _create_verified(store, key, path, artifact, IMMUTABLE_CACHE)
     else:
         _create_verified(store, key, path, artifact, IMMUTABLE_CACHE)
+
+
+def test_session_region_reaches_nested_login_refresh_client(monkeypatch, tmp_path):
+    # The login provider creates signin through the underlying Session, without
+    # a per-client region. Cached credentials can hide this until refresh time.
+    from botocore import UNSIGNED
+    from botocore.config import Config
+    from botocore.httpsession import URLLib3Session
+
+    config = tmp_path / "aws-config"
+    config.write_text("[profile ibl-atlas]\n")
+    monkeypatch.setenv("AWS_CONFIG_FILE", str(config))
+    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(tmp_path / "absent-credentials"))
+    monkeypatch.delenv("AWS_REGION", raising=False)
+    monkeypatch.delenv("AWS_DEFAULT_REGION", raising=False)
+    monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
+
+    def unexpected_network(*args, **kwargs):
+        raise AssertionError("region propagation must not contact AWS")
+    monkeypatch.setattr(URLLib3Session, "send", unexpected_network)
+    real_session = boto3.Session
+    sessions = []
+
+    def isolated_session(**kwargs):
+        session = real_session(aws_access_key_id="testing", aws_secret_access_key="testing", **kwargs)
+        sessions.append(session)
+        return session
+
+    monkeypatch.setattr(boto3, "Session", isolated_session)
+    store = AwsSdkStore(Destination("production"), "ibl-atlas")
+    try:
+        assert store._client.meta.region_name == "us-east-1"
+        # This is the same client factory and call made by LoginCredentialFetcher.
+        signin = sessions[0]._session.create_client("signin", config=Config(signature_version=UNSIGNED))
+        try:
+            assert signin.meta.region_name == "us-east-1"
+        finally:
+            signin.close()
+    finally:
+        store.close()
