@@ -88,3 +88,27 @@ test because startup directional prefetch could finish its fixed-delay 503
 before navigation reused the request. The test now gates that response until
 the delayed progress state is observed. It passed ten concurrent repetitions
 and the full `just check`, including all 155 browser tests.
+
+## Projection loading activity follow-up — 2026-09-09
+
+Commit `1b6a340` is live as immutable site build
+`e90abd0d628c87aa01471c7bd7ea60bd`. Production site transaction
+`f34795960eb993ef4379c4f80cf4d993cf48da1a075df502a130db36dc3c5534`
+left the catalog and scientific artifacts unchanged.
+
+The foreground slice spinner is now a higher-contrast 16 px ring in the
+existing fixed header slot. Interaction-triggered directional SVG and volume
+lookahead show a separate `Preparing slices` pill inside only the projection
+doing the background work; startup warming stays silent. Completion,
+cancellation and viewport suspension clear the projection-local activity.
+
+The final source passed `just check` with 554 builder tests (one skip), 126
+publisher tests, 435 web unit tests, 21 rendering tests, 156 browser tests and
+four canonical screenshot checks. CI run
+[`34360837671`](https://github.com/int-brain-lab/ephys-atlas-web-v2/actions/runs/34360837671)
+passed. Live Chromium checks blocked the relevant production SVG request and
+verified the projection-local pill, the 16 px/3 px foreground spinner, zero
+coordinate displacement and cleanup after each request. Both `/` and `/app/`
+served the new build with HTTP 200 and `Cache-Control: no-cache`; the browser
+reported no page or HTTP errors. Raw receipts, screenshots and smoke reports
+are retained under ignored `artifacts/deployment-loading-activity-20260909/`.
