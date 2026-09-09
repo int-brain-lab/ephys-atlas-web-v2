@@ -261,8 +261,10 @@ test('fast same-pack slice movement never shows delayed progress', async ({ page
 });
 
 test('an unreliable adjacent-pack request clears progress and retains the previous slice', async ({ page }) => {
+  let failPack: () => void = () => {};
+  const packGate = new Promise<void>((resolve) => { failPack = resolve; });
   await page.route('**/registered/coronal/11.isvg.gz', async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await packGate;
     await route.fulfill({ status: 503, body: 'temporarily unavailable' });
   });
   await page.goto('/app/');
@@ -272,6 +274,7 @@ test('an unreliable adjacent-pack request clears progress and retains the previo
   await expect(target).toHaveAttribute('data-asset-index', '660');
   await page.getByLabel('coronal slice').fill('88');
   await expect(frame).toHaveAttribute('data-slice-progress', 'true');
+  failPack();
   await expect(frame).toHaveAttribute('aria-busy', 'false');
   await expect(frame).not.toHaveAttribute('data-slice-progress', 'true');
   await expect(target).toHaveAttribute('data-asset-index', '660');

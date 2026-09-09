@@ -67,3 +67,24 @@ passed (153 browser tests); a live Chromium check blocked SVG requests, verified
 visible loading feedback, then released them and verified that busy feedback
 cleared after rendering. Publication left the catalog unchanged. Raw receipts
 and live evidence are in `artifacts/deployment-svg-feedback-20260908/`.
+
+## Direction-aware SVG prefetch follow-up — 2026-09-09
+
+Commit `7055d68` is live at <https://ephys-atlas.iblcore.org> as immutable site
+build `248e8ab01b842f32e76867df634d8e1b`. The scoped production site transaction
+`0c8b27430383c862496ec59fcfab37ca239f75f77985c5cadd8c5e8a756e44b1`
+left the catalog and scientific artifacts unchanged.
+
+The update prefetches the next whole SVG pack in the committed navigation
+direction and lets user-directed work preempt generic cache warming. Interrupted
+warming remains resumable. A live Chromium smoke test crossed the coronal pack
+boundary from asset index 660 to 708 with no page or HTTP errors. Both `/` and
+`/app/` returned HTTP 200, `Cache-Control: no-cache`, and references to the new
+immutable build. Raw build, publication, HTTP, and smoke evidence is retained
+under ignored `artifacts/deployment-directional-prefetch-20260909/`.
+
+The first CI run exposed a timing race in the synthetic adjacent-pack failure
+test because startup directional prefetch could finish its fixed-delay 503
+before navigation reused the request. The test now gates that response until
+the delayed progress state is observed. It passed ten concurrent repetitions
+and the full `just check`, including all 155 browser tests.
