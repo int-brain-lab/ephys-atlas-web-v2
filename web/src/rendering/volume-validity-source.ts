@@ -54,6 +54,17 @@ export class VolumeValiditySliceSource implements VolumeSliceSource {
     else await this.source.prefetchAdjacent?.(axis, index + direction, 0, signal);
   }
 
+  async prefetchNextPacks(
+    axis: VolumeSlice['axis'],
+    index: number,
+    direction: -1 | 1,
+    count: number,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    if (this.source.prefetchNextPacks) await this.source.prefetchNextPacks(axis, index, direction, count, signal);
+    else await this.prefetchNextPack(axis, index, direction, signal);
+  }
+
   dispose(): void {
     this.maskPromise = null;
     this.source.dispose?.();

@@ -197,13 +197,39 @@ The current 3-D chunk prototype uses:
 The slice-pack source uses a bounded decoded LRU, reuses all slices in the
 current pack, and deduplicates in-flight requests. Its standalone default is
 48 MiB; the retained factory supplies the shared 96 MiB volume budget after
-reserving validity-mask space. D076 enables bounded directional prefetch after a visible render: slice-pack
-sources warm the next declared pack, while chunk sources can warm an adjacent
-plane. Feature/target changes cancel obsolete work. Foreground slice requests
-and background warmup are measured separately; the three foreground planes do
-not wait for background completion. D075's frozen trace describes the earlier
+reserving validity-mask space. D076 enables bounded directional prefetch after
+the first visible movement: slice-pack sources load the immediate next pack,
+then three additional packs in that direction, while chunk sources can warm an
+adjacent plane. Repeated movement within the same pack shares that work instead
+of aborting and restarting it. Feature, target, and direction changes cancel
+obsolete work. Foreground slice requests and background warmup are measured
+separately; the three initial foreground planes do not wait for or start
+background volume work. D075's frozen trace describes the earlier
 foreground-only runtime and continues to justify the production depth-four
 layout without changing scientific geometry.
+
+The production W26 grid contains 9,630,720 voxels. One float16 orientation is
+19,261,440 bytes decoded; the three stored orientations are 57,784,320 bytes
+and expand to about 110 MiB when the browser converts them to float32. Across
+the 41 production features, all three compressed orientation sets range from
+6.1 MB to 15.7 MB per feature. Eagerly decoding every orientation would exceed
+the shared 96 MiB cache and could spend several seconds saturating a constrained
+connection. A second whole-volume artifact is therefore not part of the
+runtime: it would preserve the small-pack startup path only by duplicating
+storage, integrity metadata, cache admission, and decoding behavior.
+
+The 2026-09-09 interaction audit used isolated Chromium contexts at 80 ms
+latency and 10 Mbps, with 40 native slider inputs at 40 ms intervals. The
+deployed one-pack scheduler repeatedly restarted the same transfer: across
+three trials it committed 38 observed frames and had a 202.1 ms median maximum
+commit gap. The four-pack candidate completed all 40 observed frames without a
+prefetch abort and reduced that median maximum gap to 94.5 ms. Median final
+commit time was effectively unchanged (2.427 s versus 2.437 s), so the gain is
+steadier visual progress rather than a faster gesture endpoint. The comparison
+used the live production site for the baseline and the byte-equivalent local
+W26 release for the candidate; it is a controlled scheduler comparison, not a
+new CDN population study. Raw results are retained under ignored
+`artifacts/volume-prefetch-20260909/`.
 
 Both schema layouts terminate at the same canonical
 `VolumeSliceSource`; the real HTTP/browser benchmark still determines which

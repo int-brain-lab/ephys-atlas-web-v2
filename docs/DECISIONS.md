@@ -1846,9 +1846,13 @@ orientations. Cache verified compressed bytes with the existing bounded Cache
 API policy; persistence remains subject to browser storage availability and
 eviction. Foreground navigation takes priority over queued background work.
 
-Volume prefetch remains bounded to the current feature and the next pack in the
-direction of travel, using its declared layout. Cancel obsolete work when the
-feature, dataset or target changes; never warm whole feature volumes implicitly.
+Volume prefetch remains bounded to the current feature and direction of travel,
+using its declared layout. After the first actual slice movement, load the
+immediate next pack before a three-pack directional lookahead. Do not start
+volume background transfers during initial feature rendering. Repeated input
+within one pack must share active work rather than cancel and restart it. Cancel
+obsolete work when the feature, dataset, target or direction changes; never
+warm whole feature volumes implicitly.
 Retain the previous image with an immediate Updating notice while a feature
 loads, then clear the notice only when its replacement renders. Failed loads
 must clear busy feedback and disclose the failure.
@@ -1861,8 +1865,8 @@ or fails, while failures continue to preserve usable prior pixels and disclose
 the error.
 
 D075's three-pack startup requirement counts the three visible foreground
-planes. Background prefetch is measured separately; it is not a fourth required
-startup request or a reason to reject useful warming. D075's frozen measurements
+planes. Background prefetch begins with interaction and is measured separately;
+it is not a fourth required startup request or a reason to reject useful warming. D075's frozen measurements
 remain evidence for its original runtime, not measurements of this new policy.
 The depth-four scientific release, source values and geometry remain unchanged.
 

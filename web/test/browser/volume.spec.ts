@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
-test('visible volume planes finish without background chunks, then navigation reuses prefetch', async ({ page }) => {
+test('visible volume planes avoid startup prefetch, then navigation loads and reuses the next chunk', async ({ page }) => {
   const chunks: string[] = [];
   page.on('request', (request) => {
     if (request.url().includes('/features/rms_ap/volume/chunks/')) {
@@ -23,8 +23,6 @@ test('visible volume planes finish without background chunks, then navigation re
     '1.0.0.f32', '1.0.1.f32', '1.1.0.f32',
   ]);
   releaseBackground();
-  await page.waitForLoadState('networkidle');
-  expect(chunks).toHaveLength(8);
   const navigate = (cursor: string) => page.evaluate((value) => {
     const url = new URL(location.href);
     url.searchParams.set('cursor', value);

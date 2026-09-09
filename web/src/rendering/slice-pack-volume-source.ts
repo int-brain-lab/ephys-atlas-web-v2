@@ -174,13 +174,27 @@ export class SchemaSlicePackVolumeSource implements VolumeSliceSource {
   }
 
   async prefetchNextPack(axis: SliceAxis, index: number, direction: -1 | 1, signal?: AbortSignal): Promise<void> {
+    await this.prefetchNextPacks(axis, index, direction, 1, signal);
+  }
+
+  async prefetchNextPacks(
+    axis: SliceAxis,
+    index: number,
+    direction: -1 | 1,
+    count: number,
+    signal?: AbortSignal,
+  ): Promise<void> {
     if (this.disposed) return;
+    if (!Number.isInteger(count) || count <= 0) throw new RangeError('prefetch pack count must be a positive integer');
     const dimension = axisDimension(this.feature, axis);
-    const count = this.feature.descriptor.grid.shape[dimension]!;
+    const sliceCount = this.feature.descriptor.grid.shape[dimension]!;
     const currentPack = Math.floor(index / this.resource.packDepth);
-    const nextPack = currentPack + direction;
-    if (nextPack < 0 || nextPack * this.resource.packDepth >= count) return;
-    await this.loadPack(axis, nextPack, signal).then(() => undefined);
+    const packIndices = Array.from({ length: count }, (_, offset) => currentPack + direction * (offset + 1))
+      .filter((packIndex) => packIndex >= 0 && packIndex * this.resource.packDepth < sliceCount);
+    const [nextPack, ...lookahead] = packIndices;
+    if (nextPack === undefined) return;
+    await this.loadPack(axis, nextPack, signal);
+    await Promise.all(lookahead.map((packIndex) => this.loadPack(axis, packIndex, signal)));
   }
 
   dispose(): void {

@@ -36,6 +36,7 @@ export interface VolumeSliceSource {
   loadSlice(axis: SliceAxis, index: number, signal?: AbortSignal): Promise<VolumeSlice>;
   prefetchAdjacent?(axis: SliceAxis, index: number, radius?: number, signal?: AbortSignal): Promise<void>;
   prefetchNextPack?(axis: SliceAxis, index: number, direction: -1 | 1, signal?: AbortSignal): Promise<void>;
+  prefetchNextPacks?(axis: SliceAxis, index: number, direction: -1 | 1, count: number, signal?: AbortSignal): Promise<void>;
   dispose?(): void;
 }
 

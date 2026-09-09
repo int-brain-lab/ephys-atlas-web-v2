@@ -30,6 +30,7 @@ import {
   inspectVolumePlanePoint,
   volumeValueIsVisible,
 } from './volume-inspection.js';
+
 import type {
   ProjectionInteractionSink,
   ProjectionPresentation,
@@ -39,6 +40,8 @@ import type {
   RegionHit,
   StaticProjectionViewport,
 } from './projection-viewport.js';
+
+const VOLUME_PREFETCH_LOOKAHEAD_PACKS = 4;
 
 interface PendingRender {
   readonly model: ProjectionRenderModel;
@@ -215,8 +218,9 @@ class RetainedProjectionViewport implements ProjectionViewport {
   private inFlight = false;
   private activeRenderAbort: AbortController | null = null;
   private activeVolumeTarget: VolumeRenderTarget | null = null;
-  private volumePrefetchAbort: AbortController | null = null;
-  private volumePrefetchTimer: number | null = null;
+  private readonly volumePrefetchAborts = new Set<AbortController>();
+  private readonly volumePrefetchKeys = new Set<string>();
+  private volumePrefetchDirection: { feature: VolumeFeaturePayload; axis: SliceAxis; direction: -1 | 1 } | null = null;
   private frame: RegionalSliceFrame | null = null;
   private volumeFeature: VolumeFeaturePayload | null = null;
   private renderedFeature: ProjectionRenderModel['feature'] = null;
@@ -246,6 +250,10 @@ class RetainedProjectionViewport implements ProjectionViewport {
     const nextVolumeTarget = this.volumeRenderTarget(model);
     if (!this.sameVolumeTarget(this.activeVolumeTarget, nextVolumeTarget)) {
       this.activeRenderAbort?.abort();
+    }
+    if (nextVolumeTarget?.index === null
+      || !nextVolumeTarget
+      || (this.volumeFeature !== null && nextVolumeTarget.feature !== this.volumeFeature)) {
       this.cancelVolumePrefetch();
     }
     this.requestedIndex = model.sliceIndex;
@@ -505,45 +513,56 @@ class RetainedProjectionViewport implements ProjectionViewport {
     this.target.dataset.worldCoordinateUm = String(anatomySlice.worldCoordinateUm);
     this.renderedRequestedIndex = model.sliceIndex;
     void this.source.prefetchProgressively?.(model.axis, model.sliceIndex).catch(() => undefined);
-    if (!reusesVolume) {
-      const direction: -1 | 1 = previousVolumeIndex !== null && volumeIndex < previousVolumeIndex ? -1 : 1;
+    if (!reusesVolume && previousVolumeIndex !== null) {
+      const direction: -1 | 1 = volumeIndex < previousVolumeIndex ? -1 : 1;
       this.scheduleVolumePrefetch(feature, model.axis, volumeIndex, direction);
     }
   }
 
-  /** Start one adjacent slice in the direction of travel after the visible slice commits. */
+  /** Buffer several packs in the direction of travel after a visible movement commits. */
   private scheduleVolumePrefetch(
     feature: VolumeFeaturePayload,
     axis: SliceAxis,
     index: number,
     direction: -1 | 1,
   ): void {
-    this.cancelVolumePrefetch();
+    const active = this.volumePrefetchDirection;
+    if (active && (active.feature !== feature || active.axis !== axis || active.direction !== direction)) {
+      this.cancelVolumePrefetch();
+    }
+    const packDepth = feature.descriptor.layout === 'orthogonal_slice_packs'
+      ? Number(feature.descriptor.resource.pack_depth)
+      : 1;
+    const key = `${axis}/${Math.floor(index / packDepth)}/${direction}`;
+    if (this.volumePrefetchKeys.has(key)) return;
     const controller = new AbortController();
-    this.volumePrefetchAbort = controller;
-    this.volumePrefetchTimer = window.setTimeout(() => {
-      this.volumePrefetchTimer = null;
-      const source = this.volumeSource(feature);
-      const request = source.prefetchNextPack
+    this.volumePrefetchDirection = { feature, axis, direction };
+    this.volumePrefetchAborts.add(controller);
+    this.volumePrefetchKeys.add(key);
+    const source = this.volumeSource(feature);
+    const request = source.prefetchNextPacks
+      ? source.prefetchNextPacks(axis, index, direction, VOLUME_PREFETCH_LOOKAHEAD_PACKS, controller.signal)
+      : source.prefetchNextPack
         ? source.prefetchNextPack(axis, index, direction, controller.signal)
         : source.prefetchAdjacent?.(axis, index + direction, 0, controller.signal);
-      if (!request) {
-        if (this.volumePrefetchAbort === controller) this.volumePrefetchAbort = null;
-        return;
-      }
-      void request.catch(() => undefined).finally(() => {
-          if (this.volumePrefetchAbort === controller) this.volumePrefetchAbort = null;
-        });
-    }, 0);
+    if (!request) {
+      this.volumePrefetchAborts.delete(controller);
+      this.volumePrefetchKeys.delete(key);
+      if (this.volumePrefetchAborts.size === 0) this.volumePrefetchDirection = null;
+      return;
+    }
+    void request.catch(() => undefined).finally(() => {
+      this.volumePrefetchAborts.delete(controller);
+      this.volumePrefetchKeys.delete(key);
+      if (this.volumePrefetchAborts.size === 0) this.volumePrefetchDirection = null;
+    });
   }
 
   private cancelVolumePrefetch(): void {
-    if (this.volumePrefetchTimer !== null) {
-      window.clearTimeout(this.volumePrefetchTimer);
-      this.volumePrefetchTimer = null;
-    }
-    this.volumePrefetchAbort?.abort();
-    this.volumePrefetchAbort = null;
+    for (const controller of this.volumePrefetchAborts) controller.abort();
+    this.volumePrefetchAborts.clear();
+    this.volumePrefetchKeys.clear();
+    this.volumePrefetchDirection = null;
   }
 
   private placeVolume(placement: RegisteredVolumeCanvasPlacement): void {
