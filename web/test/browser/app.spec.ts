@@ -211,18 +211,60 @@ test('an existing anatomy slice stays visible while an adjacent pack loads', asy
 
   const frame = page.locator('[data-view="coronal"]');
   const target = frame.locator('[data-slice-asset="projection-pack-v1"]');
+  const coordinate = frame.locator('.view-frame__coordinate');
   await expect(target).toHaveAttribute('data-asset-index', '660');
+  const coordinateX = (await coordinate.boundingBox())!.x;
   await page.getByLabel('coronal slice').fill('88');
   await expect(page.getByLabel('coronal slice')).toHaveValue('88');
   await expect(target).toHaveAttribute('data-asset-index', '660');
   await expect(frame).toHaveAttribute('data-state', 'ready');
   await expect(frame.locator('.view-frame__state-message')).toHaveCSS('opacity', '0');
+  await expect(frame.locator('.view-frame__status')).toHaveText('');
 
-  await expect(frame.locator('.view-frame__status')).toHaveText('Loading slice…');
+  await expect(frame).toHaveAttribute('data-slice-progress', 'true');
+  expect((await coordinate.boundingBox())!.x).toBeCloseTo(coordinateX, 1);
 
   releasePack();
   await expect(target).toHaveAttribute('data-asset-index', '708');
+  await expect(frame).not.toHaveAttribute('data-slice-progress', 'true');
   await expect(frame.locator('.view-frame__status')).toHaveText('');
+});
+
+test('fast same-pack slice movement never shows delayed progress', async ({ page }) => {
+  await page.goto('/app/');
+  const frame = page.locator('[data-view="coronal"]');
+  await expect(frame).toHaveAttribute('data-state', 'ready');
+  await frame.evaluate((node) => {
+    const changes: string[] = [];
+    (window as Window & { __sliceProgressChanges?: string[] }).__sliceProgressChanges = changes;
+    new MutationObserver(() => changes.push(node.getAttribute('data-slice-progress') ?? 'cleared'))
+      .observe(node, { attributes: true, attributeFilter: ['data-slice-progress'] });
+  });
+
+  await page.getByLabel('coronal slice').fill('83');
+  await expect(frame.locator('[data-slice-asset="projection-pack-v1"]')).toHaveAttribute('data-asset-index', '668');
+  await page.waitForTimeout(200);
+  expect(await page.evaluate(() => (
+    (window as Window & { __sliceProgressChanges?: string[] }).__sliceProgressChanges
+  ))).toEqual([]);
+});
+
+test('an unreliable adjacent-pack request clears progress and retains the previous slice', async ({ page }) => {
+  await page.route('**/registered/coronal/11.isvg.gz', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await route.fulfill({ status: 503, body: 'temporarily unavailable' });
+  });
+  await page.goto('/app/');
+
+  const frame = page.locator('[data-view="coronal"]');
+  const target = frame.locator('[data-slice-asset="projection-pack-v1"]');
+  await expect(target).toHaveAttribute('data-asset-index', '660');
+  await page.getByLabel('coronal slice').fill('88');
+  await expect(frame).toHaveAttribute('data-slice-progress', 'true');
+  await expect(frame).toHaveAttribute('aria-busy', 'false');
+  await expect(frame).not.toHaveAttribute('data-slice-progress', 'true');
+  await expect(target).toHaveAttribute('data-asset-index', '660');
+  await expect(frame.locator('.projection-viewport__error')).toContainText('HTTP 503');
 });
 
 test('linked guides project one slice coordinate into both other views', async ({ page }) => {

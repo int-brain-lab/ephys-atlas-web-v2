@@ -133,6 +133,7 @@ interface ViewFrameNodes {
   renderKey: string;
   geometryKey: string;
   renderToken: number;
+  sliceProgressTimer: number | null;
 }
 
 interface ProjectionTooltipNodes {
@@ -154,6 +155,7 @@ interface StaticFrameNodes extends ProjectionTooltipNodes {
 const LOCAL_IMPORT_OPTION_ID = '__import_local_dataset__';
 const LOCAL_MANAGE_OPTION_ID = '__manage_local_datasets__';
 const LOCAL_DELETE_OPTION_ID = '__delete_local_dataset__';
+const SLICE_PROGRESS_DELAY_MS = 150;
 
 const ACTION_ICONS: Record<HeaderAction, string> = {
   share: '↗',
@@ -569,6 +571,7 @@ export class AppShell {
     this.contextMenus.forEach((menu) => menu.destroy());
     this.dataChooser.destroy();
     for (const nodes of this.viewFrames.values()) {
+      this.clearSliceProgress(nodes);
     }
     this.viewportFactory.destroy();
     this.scene3dFactory?.destroy();
@@ -2353,7 +2356,7 @@ export class AppShell {
     this.viewFrames.set(axis, {
       frame, target, viewport: projectionViewport, coordinate, slider, status, maximize,
       tooltip, tooltipIdentity, tooltipValue, tooltipMeta,
-      renderKey: '', geometryKey: '', renderToken: 0,
+      renderKey: '', geometryKey: '', renderToken: 0, sliceProgressTimer: null,
     });
     return frame;
   }
@@ -2575,6 +2578,7 @@ export class AppShell {
     nodes.slider.setAttribute('aria-valuetext', coordinate);
 
     if (model.featureLoading) {
+      this.clearSliceProgress(nodes);
       if (nodes.frame.dataset.updating !== 'feature') {
         nodes.renderToken += 1;
         nodes.renderKey = '';
@@ -2612,13 +2616,22 @@ export class AppShell {
       || retainedSliceAsset === 'schema-volume-v1';
     const stateMessage = nodes.frame.querySelector<HTMLElement>('.view-frame__state-message');
     if (geometryChanged) {
+      this.clearSliceProgress(nodes);
       this.hideRegionTooltip(axis);
       nodes.frame.dataset.state = retainsRenderedFrame ? 'ready' : 'loading';
       nodes.status.removeAttribute('aria-label');
       nodes.frame.dataset.updating = featureWasLoading ? 'feature' : 'slice';
       nodes.frame.setAttribute('aria-busy', 'true');
       nodes.status.textContent = !retainsRenderedFrame ? 'Loading atlas…'
-        : featureWasLoading ? 'Updating…' : 'Loading slice…';
+        : featureWasLoading ? 'Updating…' : '';
+      if (retainsRenderedFrame && !featureWasLoading) {
+        nodes.sliceProgressTimer = window.setTimeout(() => {
+          nodes.sliceProgressTimer = null;
+          if (nodes.renderToken !== token || nodes.frame.dataset.updating !== 'slice') return;
+          nodes.frame.dataset.sliceProgress = 'true';
+          nodes.status.setAttribute('aria-label', 'Loading slice');
+        }, SLICE_PROGRESS_DELAY_MS);
+      }
       if (stateMessage) {
         stateMessage.textContent = retainsRenderedFrame
           ? ''
@@ -2638,6 +2651,7 @@ export class AppShell {
 
     Promise.resolve(pending).then(() => {
       if (nodes.renderToken !== token) return;
+      this.clearSliceProgress(nodes);
       delete nodes.frame.dataset.updating;
       nodes.frame.setAttribute('aria-busy', 'false');
       nodes.frame.dataset.state = 'ready';
@@ -2645,6 +2659,7 @@ export class AppShell {
       nodes.status.setAttribute('aria-label', view.representation === 'volume' ? 'Scientific volume ready' : 'Registered anatomy ready');
     }).catch((error: unknown) => {
       if (nodes.renderToken !== token) return;
+      this.clearSliceProgress(nodes);
       delete nodes.frame.dataset.updating;
       nodes.frame.setAttribute('aria-busy', 'false');
       const preservedSliceAsset = nodes.target.dataset.sliceAsset;
@@ -2667,6 +2682,15 @@ export class AppShell {
       }
       this.callbacks.reportError(error);
     });
+  }
+
+  private clearSliceProgress(nodes: ViewFrameNodes): void {
+    if (nodes.sliceProgressTimer !== null) {
+      window.clearTimeout(nodes.sliceProgressTimer);
+      nodes.sliceProgressTimer = null;
+    }
+    delete nodes.frame.dataset.sliceProgress;
+    if (nodes.status.getAttribute('aria-label') === 'Loading slice') nodes.status.removeAttribute('aria-label');
   }
 
   private toggleMaximizedView(axis: WorkspaceViewId): void {

@@ -52,6 +52,18 @@
   background: #c98383;
 }
 
+.view-frame[data-slice-progress='true'] .view-frame__status::before {
+  border: 1px solid rgb(var(--color-accent-rgb) / 30%);
+  border-top-color: var(--color-accent);
+  background: transparent;
+  box-shadow: none;
+  animation: view-frame-slice-progress 0.75s linear infinite;
+}
+
+@keyframes view-frame-slice-progress {
+  to { transform: rotate(1turn); }
+}
+
 .view-frame__maximize {
   width: 1.75rem;
   min-height: 1.75rem;

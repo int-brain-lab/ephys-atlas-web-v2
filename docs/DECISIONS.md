@@ -1853,6 +1853,13 @@ Retain the previous image with an immediate Updating notice while a feature
 loads, then clear the notice only when its replacement renders. Failed loads
 must clear busy feedback and disclose the failure.
 
+Ordinary slice movement keeps its requested coordinate and retained image
+stable without transient loading text. Loads that remain pending for 150 ms
+show a spinner in the header's existing fixed activity slot; faster cached
+movement stays visually quiet. The spinner clears when the replacement commits
+or fails, while failures continue to preserve usable prior pixels and disclose
+the error.
+
 D075's three-pack startup requirement counts the three visible foreground
 planes. Background prefetch is measured separately; it is not a fourth required
 startup request or a reason to reject useful warming. D075's frozen measurements
