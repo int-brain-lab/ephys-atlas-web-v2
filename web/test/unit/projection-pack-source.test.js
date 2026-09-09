@@ -16,12 +16,12 @@ function fakeRuntime() {
   };
 }
 
-function fileFetcher(calls, gate) {
+function fileFetcher(calls, gate, gatedPack = 6) {
   return async (input, init) => {
     const url = new URL(typeof input === 'string' ? input : input.url);
     const relative = url.pathname.replace('/atlas/projections/ibl-static-registered-v1/', '');
     calls.push(relative);
-    if (gate && relative.endsWith('/6.isvg.gz')) {
+    if (gate && relative.endsWith(`/${gatedPack}.isvg.gz`)) {
       await Promise.race([
         gate,
         new Promise((_, reject) => init?.signal?.addEventListener('abort', () => reject(init.signal.reason), { once: true })),
@@ -57,6 +57,70 @@ test('repeated progressive warmup does not redownload packs', async () => {
   const firstCount = calls.filter((entry) => entry.endsWith('.isvg.gz')).length;
   await source.prefetchProgressively('horizontal', 401);
   assert.equal(calls.filter((entry) => entry.endsWith('.isvg.gz')).length, firstCount);
+  source.dispose();
+});
+
+test('directional prefetch decodes the next whole pack before the visible pack boundary', async () => {
+  const calls = [];
+  const source = new ProjectionPackSource({
+    manifestUrl,
+    fetchImpl: fileFetcher(calls),
+    runtime: fakeRuntime(),
+  });
+  await source.loadSlice('horizontal', 401);
+  calls.length = 0;
+  await source.prefetchNeighbor('horizontal', 409, 1);
+  assert.deepEqual(calls.filter((entry) => entry.endsWith('.isvg.gz')), [
+    'registered/horizontal/7.isvg.gz',
+  ]);
+  source.dispose();
+});
+
+test('directional prefetch preempts an active opposite-side background fetch', async () => {
+  const calls = [];
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const source = new ProjectionPackSource({
+    manifestUrl,
+    fetchImpl: fileFetcher(calls, gate, 5),
+    runtime: fakeRuntime(),
+  });
+  await source.loadSlice('horizontal', 401);
+  calls.length = 0;
+  const warming = source.prefetchProgressively('horizontal', 401);
+  while (!calls.includes('registered/horizontal/5.isvg.gz')) await new Promise((resolve) => setImmediate(resolve));
+  await source.prefetchNeighbor('horizontal', 409, 1);
+  assert.deepEqual(calls.filter((entry) => entry.endsWith('.isvg.gz')), [
+    'registered/horizontal/5.isvg.gz',
+    'registered/horizontal/7.isvg.gz',
+  ]);
+  release();
+  await warming;
+  assert.equal(new Set(calls.filter((entry) => entry.endsWith('.isvg.gz'))).size, 12);
+  source.dispose();
+});
+
+test('a failed directional prefetch leaves the pack retryable by foreground navigation', async () => {
+  const calls = [];
+  const read = fileFetcher(calls);
+  let failNextPack = true;
+  const source = new ProjectionPackSource({
+    manifestUrl,
+    fetchImpl: async (input, init) => {
+      const url = new URL(typeof input === 'string' ? input : input.url);
+      if (failNextPack && url.pathname.endsWith('/7.isvg.gz')) {
+        failNextPack = false;
+        calls.push('registered/horizontal/7.isvg.gz');
+        return new Response('temporarily unavailable', { status: 503 });
+      }
+      return read(input, init);
+    },
+    runtime: fakeRuntime(),
+  });
+  await source.loadSlice('horizontal', 401);
+  await assert.rejects(source.prefetchNeighbor('horizontal', 409, 1), /HTTP 503/);
+  await source.loadSlice('horizontal', 449);
+  assert.equal(calls.filter((entry) => entry === 'registered/horizontal/7.isvg.gz').length, 2);
   source.dispose();
 });
 

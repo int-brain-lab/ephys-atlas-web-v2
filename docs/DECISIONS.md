@@ -1865,3 +1865,10 @@ planes. Background prefetch is measured separately; it is not a fourth required
 startup request or a reason to reject useful warming. D075's frozen measurements
 remain evidence for its original runtime, not measurements of this new policy.
 The depth-four scientific release, source values and geometry remain unchanged.
+
+The 2026-09-09 navigation audit refines foreground priority within this policy.
+After movement commits inside a resident SVG pack, directional prefetch decodes
+the next whole pack instead of re-requesting the next slice from the current
+pack. It preempts an active generic background transfer and lets progressive
+warming resume afterward. This prevents an opposite-side cache fill from
+sharing constrained bandwidth with the pack the user is approaching.

@@ -106,10 +106,10 @@ animation-frame gap was 17.6 ms. Compared with the JSON worker path's 17–21.1
 ms median cold commits, returning one fragment removes the whole-pack clone and
 cuts median cache-miss commit time to 9.3–10.6 ms.
 
-The next production measurement is against the deployed origin with network
-throttling and a visible wheel-burst scenario. That evidence should select any
-prefetch-distance change; the current policy remains one adjacent pack during
-idle time.
+The next production measurement was against the deployed origin with network
+throttling and a visible wheel-burst scenario. At the time of this sparse-pack
+measurement, the policy remained one adjacent pack during idle time; D076 later
+added progressive encoded-byte warming.
 
 ## Projection-pack-v1 retained-viewport rebaseline
 
@@ -158,3 +158,27 @@ bytes decoded (808 paths). Both static fragments load independently and only
 when their secondary tab is first opened. The final production build is
 243.99 kB JavaScript (68.69 kB gzip), 65.08 kB CSS (11.86 kB gzip), and a
 3.77 kB indexed-SVG worker, excluding scientific assets.
+
+## Direction-aware prefetch audit
+
+On 2026-09-09, a visible headed-Chromium run used a cold isolated browser
+context, 150 ms request latency and 200,000 bytes/s download throughput. Eight
+coronal inputs 40 ms apart moved from display ordinal 82 through the next pack
+boundary. Within the resident pack, SVG commits took 5–12 ms. The previous
+policy requested the forward pack only at the boundary while a generic
+opposite-side background fetch was active; the final requested slice committed
+2,758 ms after the sequence began.
+
+Directional prefetch now resolves the next complete pack as soon as a movement
+inside the resident pack commits. It preempts an active generic background
+fetch, which resumes through the progressive queue later. In the same controlled
+scenario, the forward pack started 29 ms after interaction and the final slice
+committed at 1,985 ms, a 28% reduction for this deliberately constrained cold
+boundary crossing. A failed speculative request remains retryable by foreground
+navigation.
+
+The ordinary five-trial local benchmark remained frame-safe after the change:
+there were no tasks above 50 ms, the maximum animation-frame gap was 16.8 ms,
+same-pack median commit times were 2.0–9.1 ms, and retained revisits were
+0.9–2.4 ms. The throttled comparison is one controlled paired scenario rather
+than a general network-latency guarantee.

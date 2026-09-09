@@ -110,6 +110,7 @@ test('retained viewport keeps its DOM and prepared SVG layers across navigation'
     const { RetainedProjectionViewportFactory } = await import('/src/rendering/retained-projection-viewport.ts');
     const target = document.createElement('div');
     document.body.append(target);
+    const prefetched: Array<{ index: number; direction: -1 | 1 }> = [];
     const source = {
       async getDisplaySliceInventories() { throw new Error('not used'); },
       async loadSlice(axis: 'coronal' | 'sagittal' | 'horizontal', sliceIndex: number) {
@@ -122,7 +123,9 @@ test('retained viewport keeps its DOM and prepared SVG layers across navigation'
         };
       },
       async guidesForWorld() { return []; },
-      async prefetchNeighbor() {},
+      async prefetchNeighbor(_axis: 'coronal' | 'sagittal' | 'horizontal', index: number, direction: -1 | 1) {
+        prefetched.push({ index, direction });
+      },
       dispose() {},
     };
     const factory = new RetainedProjectionViewportFactory({ source });
@@ -144,9 +147,15 @@ test('retained viewport keeps its DOM and prepared SVG layers across navigation'
       stableRoot: root === target.firstElementChild,
       stableSvg: svg === target.querySelector('svg'),
       reusedPath: firstPath === target.querySelector('path'),
+      prefetched,
     };
   });
-  expect(result).toEqual({ stableRoot: true, stableSvg: true, reusedPath: true });
+  expect(result).toEqual({
+    stableRoot: true,
+    stableSvg: true,
+    reusedPath: true,
+    prefetched: [{ index: 5, direction: 1 }, { index: 4, direction: -1 }],
+  });
 });
 
 test('retained viewport runs one geometry request and commits only the latest pending slice', async ({ page }) => {

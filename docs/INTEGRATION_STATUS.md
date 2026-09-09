@@ -107,9 +107,9 @@ fill proportions. Q16 continues to retain every real-feature palette and
 center selection; the implementation changes only synthetic fixtures.
 
 D076 adds progressive nearby-first encoded SVG cache warming after visible
-rendering, bounded directional active-volume prefetch, and per-view updating
+rendering, next-pack decoded SVG prefetch in the observed direction, bounded directional active-volume prefetch, and per-view updating
 feedback that retains the previous pixels until replacement rendering completes.
-Foreground and background request budgets are assessed separately. Empty views show Loading atlas immediately, and
+User-directed SVG prefetch preempts an active generic cache-fill transfer, which resumes afterward. Foreground and background request budgets are assessed separately. Empty views show Loading atlas immediately, and
 uncached slice navigation shows Loading slice without a delay; background
 prefetch never holds the visible view busy.
 

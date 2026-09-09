@@ -82,7 +82,7 @@ interface IndexedPack {
 interface QueuedFetch {
   readonly packId: string;
   priority: number;
-  readonly run: () => Promise<void>;
+  readonly run: (signal: AbortSignal) => Promise<void>;
   readonly resolve: () => void;
   readonly reject: (error: unknown) => void;
 }
@@ -132,6 +132,7 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
   private readonly queuedFetches: QueuedFetch[] = [];
   private readonly backgroundAbort = new AbortController();
   private fetchInProgress = false;
+  private activeBackgroundAbort: AbortController | null = null;
   private foregroundActive = 0;
   private backgroundTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -219,7 +220,7 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
       const index = await this.loadIndex(axis, projection);
       const entry = index.resources.find((candidate) => candidate.slice_indices.includes(resolved.nativeIndex));
       if (!entry) throw new Error(`${axis} display slice ${resolved.nativeIndex} is absent from its resource index`);
-      await this.ensurePack(axis, projection, entry, signal);
+      await this.ensurePack(axis, projection, entry, signal, true);
       let fragment = await this.runtime.get(entry.pack_id, resolved.nativeIndex);
       if (!fragment) {
         this.loadedPacks.delete(entry.pack_id);
@@ -260,14 +261,20 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
   }
 
   async prefetchNeighbor(axis: SliceAxis, nativeIndex: number, direction: -1 | 1): Promise<void> {
-    const manifest = await this.loadManifest();
-    const projection = this.projection(manifest, axis);
-    const resolved = nearestDisplaySlice(projection.display_slices, nativeIndex);
-    const nextSlice = projection.display_slices[resolved.ordinal + direction];
-    if (nextSlice === undefined) return;
-    const index = await this.loadIndex(axis, projection);
-    const entry = index.resources.find((candidate) => candidate.slice_indices.includes(nextSlice));
-    if (entry) await this.ensurePack(axis, projection, entry);
+    this.foregroundActive += 1;
+    try {
+      const manifest = await this.loadManifest();
+      const projection = this.projection(manifest, axis);
+      const resolved = nearestDisplaySlice(projection.display_slices, nativeIndex);
+      const index = await this.loadIndex(axis, projection);
+      const current = index.resources.findIndex((candidate) => candidate.slice_indices.includes(resolved.nativeIndex));
+      if (current < 0) throw new Error(`${axis} display slice ${resolved.nativeIndex} is absent from its resource index`);
+      const entry = index.resources[current + direction];
+      if (entry) await this.ensurePack(axis, projection, entry, undefined, true);
+    } finally {
+      this.foregroundActive -= 1;
+      this.scheduleBackgroundDrain();
+    }
   }
 
   async prefetchProgressively(axis: SliceAxis, nativeIndex: number): Promise<void> {
@@ -292,6 +299,7 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
 
   dispose(): void {
     this.backgroundAbort.abort();
+    this.activeBackgroundAbort?.abort();
     if (this.backgroundTimer !== null) clearTimeout(this.backgroundTimer);
     this.runtime.dispose();
     this.indexPromises.clear();
@@ -363,9 +371,11 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
     projection: RegisteredProjectionV1,
     entry: IndexedPack,
     signal?: AbortSignal,
+    preemptBackground = false,
   ): Promise<void> {
     let pending = this.loadedPacks.get(entry.pack_id);
     if (!pending) {
+      if (preemptBackground) this.activeBackgroundAbort?.abort();
       pending = this.fetchPack(axis, projection, entry, signal);
       this.loadedPacks.set(entry.pack_id, pending);
       void pending.catch(() => this.loadedPacks.delete(entry.pack_id));
@@ -381,11 +391,12 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
     if (loaded) return loaded;
     const existing = this.prefetchedPacks.get(entry.pack_id);
     if (existing) return existing;
-    const pending = this.enqueue(entry.pack_id, priority, async () => {
+    const pending = this.enqueue(entry.pack_id, priority, async (signal) => {
+      if (this.loadedPacks.has(entry.pack_id)) return;
       await this.fetcher.fetch(new URL(entry.resource.path, this.manifestUrl).toString(), {
         immutable: true,
         integrity: entry.resource,
-        signal: this.backgroundAbort.signal,
+        signal,
       });
     });
     this.prefetchedPacks.set(entry.pack_id, pending);
@@ -393,7 +404,7 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
     return pending;
   }
 
-  private enqueue(packId: string, priority: number, run: () => Promise<void>): Promise<void> {
+  private enqueue(packId: string, priority: number, run: (signal: AbortSignal) => Promise<void>): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.queuedFetches.push({ packId, priority, run, resolve, reject });
       this.scheduleBackgroundDrain();
@@ -422,7 +433,20 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
     const next = this.queuedFetches.shift();
     if (!next) return;
     this.fetchInProgress = true;
-    void next.run().then(next.resolve, next.reject).finally(() => {
+    const controller = new AbortController();
+    this.activeBackgroundAbort = controller;
+    const abort = () => controller.abort(this.backgroundAbort.signal.reason);
+    this.backgroundAbort.signal.addEventListener('abort', abort, { once: true });
+    void next.run(controller.signal).then(next.resolve, (error) => {
+      if (controller.signal.aborted && !this.backgroundAbort.signal.aborted) {
+        this.queuedFetches.push(next);
+        this.queuedFetches.sort((left, right) => left.priority - right.priority || left.packId.localeCompare(right.packId));
+      } else {
+        next.reject(error);
+      }
+    }).finally(() => {
+      this.backgroundAbort.signal.removeEventListener('abort', abort);
+      if (this.activeBackgroundAbort === controller) this.activeBackgroundAbort = null;
       this.fetchInProgress = false;
       this.scheduleBackgroundDrain();
     });
