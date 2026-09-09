@@ -222,6 +222,17 @@ test('an existing anatomy slice stays visible while an adjacent pack loads', asy
   await expect(frame.locator('.view-frame__status')).toHaveText('');
 
   await expect(frame).toHaveAttribute('data-slice-progress', 'true');
+  const progressAppearance = await frame.locator('.view-frame__status').evaluate((node) => {
+    const style = getComputedStyle(node, '::before');
+    return {
+      width: Number.parseFloat(style.width),
+      borderWidth: Number.parseFloat(style.borderTopWidth),
+      animationName: style.animationName,
+    };
+  });
+  expect(progressAppearance.width).toBeGreaterThanOrEqual(10);
+  expect(progressAppearance.borderWidth).toBe(2);
+  expect(progressAppearance.animationName).toBe('view-frame-slice-progress');
   expect((await coordinate.boundingBox())!.x).toBeCloseTo(coordinateX, 1);
 
   releasePack();
