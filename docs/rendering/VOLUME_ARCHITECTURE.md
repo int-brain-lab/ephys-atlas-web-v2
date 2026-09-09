@@ -204,7 +204,10 @@ adjacent plane. Repeated movement within the same pack shares that work instead
 of aborting and restarting it. Feature, target, and direction changes cancel
 obsolete work. Foreground slice requests and background warmup are measured
 separately; the three initial foreground planes do not wait for or start
-background volume work. D075's frozen trace describes the earlier
+background volume work. While an interaction-triggered directional SVG or
+volume warmup request is active, the affected projection displays an overlaid
+`Preparing slices` activity pill; cancellation or completion removes it
+without shifting the projection header. D075's frozen trace describes the earlier
 foreground-only runtime and continues to justify the production depth-four
 layout without changing scientific geometry.
 

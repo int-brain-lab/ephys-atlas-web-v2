@@ -16,24 +16,38 @@ test('visible volume planes avoid startup prefetch, then navigation loads and re
   });
   await page.goto('/app/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
+  await expect(page.locator('.projection-viewport__background-activity:visible')).toHaveCount(0);
   // The seven visible chunks render while the optional far corner is blocked.
   // Background traffic is measured separately from the foreground requirement.
   expect(chunks.filter((chunk) => chunk !== '1.1.1.f32').sort()).toEqual([
     '0.0.0.f32', '0.0.1.f32', '0.1.0.f32', '0.1.1.f32',
     '1.0.0.f32', '1.0.1.f32', '1.1.0.f32',
   ]);
-  releaseBackground();
   const navigate = (cursor: string) => page.evaluate((value) => {
     const url = new URL(location.href);
     url.searchParams.set('cursor', value);
     history.replaceState({}, '', url);
     dispatchEvent(new PopStateEvent('popstate'));
   }, cursor);
+  const coronalSlider = page.getByLabel('coronal slice');
+  const initialCoronalSlice = Number(await coronalSlider.inputValue());
+  await coronalSlider.fill(String(initialCoronalSlice - 5));
+  const coronalActivity = page.locator('[data-view="coronal"] .projection-viewport__background-activity');
+  await expect(page.locator('[data-view="coronal"] .view-frame__renderer')).toHaveAttribute('data-volume-index', '3');
+  await expect(coronalActivity).toBeVisible();
+  await expect(coronalActivity).toHaveText('Preparing slices');
+  await expect(page.locator('[data-view="coronal"] .projection-viewport')).toHaveAttribute('data-background-loading', 'true');
+  await expect(page.locator('[data-view="sagittal"] .projection-viewport__background-activity')).toBeHidden();
+  await expect(page.locator('[data-view="horizontal"] .projection-viewport__background-activity')).toBeHidden();
+  releaseBackground();
+  await expect(coronalActivity).toBeHidden();
+  await expect(page.locator('[data-view="coronal"] .projection-viewport')).not.toHaveAttribute('data-background-loading', 'true');
+  expect(chunks).toHaveLength(8);
+  expect(chunks.at(-1)).toBe('1.1.1.f32');
   await navigate('25,100,25');
   await expect(page.locator('[data-view="coronal"] .view-frame__renderer')).toHaveAttribute('data-volume-index', '4');
   await page.waitForLoadState('networkidle');
   expect(chunks).toHaveLength(8);
-  expect(chunks.at(-1)).toBe('1.1.1.f32');
   await navigate('25,25,25');
   await expect(page.locator('[data-view="coronal"] .view-frame__renderer')).toHaveAttribute('data-volume-index', '1');
   await page.waitForLoadState('networkidle');

@@ -230,8 +230,8 @@ test('an existing anatomy slice stays visible while an adjacent pack loads', asy
       animationName: style.animationName,
     };
   });
-  expect(progressAppearance.width).toBeGreaterThanOrEqual(10);
-  expect(progressAppearance.borderWidth).toBe(2);
+  expect(progressAppearance.width).toBeGreaterThanOrEqual(16);
+  expect(progressAppearance.borderWidth).toBe(3);
   expect(progressAppearance.animationName).toBe('view-frame-slice-progress');
   expect((await coordinate.boundingBox())!.x).toBeCloseTo(coordinateX, 1);
 
@@ -258,6 +258,28 @@ test('fast same-pack slice movement never shows delayed progress', async ({ page
   expect(await page.evaluate(() => (
     (window as Window & { __sliceProgressChanges?: string[] }).__sliceProgressChanges
   ))).toEqual([]);
+});
+
+test('directional SVG warming reports background activity only in the interacted projection', async ({ page }) => {
+  let releasePack: () => void = () => {};
+  const packGate = new Promise<void>((resolve) => { releasePack = resolve; });
+  await page.route('**/registered/coronal/11.isvg.gz', async (route) => {
+    await packGate;
+    await route.continue();
+  });
+  await page.goto('/app/');
+  await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
+
+  await page.getByLabel('coronal slice').fill('83');
+  await expect(page.locator('[data-view="coronal"] [data-slice-asset="projection-pack-v1"]')).toHaveAttribute('data-asset-index', '668');
+  const coronalActivity = page.locator('[data-view="coronal"] .projection-viewport__background-activity');
+  await expect(coronalActivity).toBeVisible();
+  await expect(coronalActivity).toHaveText('Preparing slices');
+  await expect(page.locator('[data-view="sagittal"] .projection-viewport__background-activity')).toBeHidden();
+  await expect(page.locator('[data-view="horizontal"] .projection-viewport__background-activity')).toBeHidden();
+
+  releasePack();
+  await expect(coronalActivity).toBeHidden();
 });
 
 test('an unreliable adjacent-pack request clears progress and retains the previous slice', async ({ page }) => {

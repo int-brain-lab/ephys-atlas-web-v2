@@ -1862,7 +1862,11 @@ stable without transient loading text. Loads that remain pending for 150 ms
 show a spinner in the header's existing fixed activity slot; faster cached
 movement stays visually quiet. The spinner clears when the replacement commits
 or fails, while failures continue to preserve usable prior pixels and disclose
-the error.
+the error. The foreground spinner uses a high-contrast one-rem ring in that
+fixed slot. Directional SVG and volume lookahead requests that continue after a
+visible movement commits show a separate `Preparing slices` pill over only the
+projection doing the work; it does not alter the coordinate or header layout
+and clears when that projection's background request settles or is cancelled.
 
 D075's three-pack startup requirement counts the three visible foreground
 planes. Background prefetch begins with interaction and is measured separately;

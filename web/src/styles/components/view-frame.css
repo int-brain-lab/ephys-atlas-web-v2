@@ -37,12 +37,13 @@
 .view-frame__status::before {
   content: '';
   display: inline-block;
-  width: 0.72rem;
+  box-sizing: border-box;
+  width: 1rem;
   aspect-ratio: 1;
-  margin-right: 0.24rem;
+  margin-right: 0.3rem;
   border-radius: 50%;
   background: radial-gradient(circle, var(--color-text-muted) 0 0.19rem, transparent 0.2rem);
-  vertical-align: 0.02rem;
+  vertical-align: -0.2rem;
 }
 
 .view-frame[data-state='ready'] .view-frame__status::before {
@@ -54,10 +55,11 @@
 }
 
 .view-frame[data-slice-progress='true'] .view-frame__status::before {
-  border: 2px solid rgb(var(--color-accent-rgb) / 24%);
+  border: 3px solid rgb(var(--color-accent-rgb) / 42%);
   border-top-color: var(--color-accent);
   background: transparent;
-  animation: view-frame-slice-progress 0.75s linear infinite;
+  box-shadow: 0 0 0.5rem rgb(var(--color-accent-rgb) / 24%);
+  animation: view-frame-slice-progress 0.65s linear infinite;
 }
 
 @keyframes view-frame-slice-progress {
@@ -138,6 +140,48 @@
   background: rgb(7 16 25 / 90%);
   font-size: 0.66rem;
   text-align: center;
+}
+
+.projection-viewport__background-activity {
+  position: absolute;
+  z-index: 3;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  padding: 0.3rem 0.48rem;
+  border: 1px solid rgb(var(--color-accent-rgb) / 45%);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  background: rgb(7 16 25 / 88%);
+  box-shadow: 0 0.25rem 0.8rem rgb(0 0 0 / 28%);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+
+.projection-viewport__background-activity::before {
+  content: '';
+  box-sizing: border-box;
+  width: 0.66rem;
+  aspect-ratio: 1;
+  border: 2px solid rgb(var(--color-accent-rgb) / 38%);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: view-frame-slice-progress 0.8s linear infinite;
+}
+
+.projection-viewport__background-activity[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-frame[data-slice-progress='true'] .view-frame__status::before,
+  .projection-viewport__background-activity::before {
+    animation-duration: 1.8s;
+  }
 }
 
 .view-frame__brain-svg {

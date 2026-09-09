@@ -64,6 +64,7 @@ interface RetainedMount {
   readonly volume: CanvasVolumeSliceRenderer;
   readonly svg: SVGSVGElement;
   readonly regional: SvgSliceRenderer;
+  readonly backgroundActivity: HTMLDivElement;
   readonly error: HTMLDivElement;
 }
 
@@ -220,6 +221,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
   private activeVolumeTarget: VolumeRenderTarget | null = null;
   private readonly volumePrefetchAborts = new Set<AbortController>();
   private readonly volumePrefetchKeys = new Set<string>();
+  private readonly backgroundRequests = new Set<Promise<void>>();
   private volumePrefetchDirection: { feature: VolumeFeaturePayload; axis: SliceAxis; direction: -1 | 1 } | null = null;
   private frame: RegionalSliceFrame | null = null;
   private volumeFeature: VolumeFeaturePayload | null = null;
@@ -308,6 +310,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
     this.renderToken += 1;
     this.activeRenderAbort?.abort();
     this.cancelVolumePrefetch();
+    this.clearBackgroundActivity();
     this.activeRenderAbort = null;
     this.activeVolumeTarget = null;
     this.pending?.resolve();
@@ -333,6 +336,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
     this.renderToken += 1;
     this.activeRenderAbort?.abort();
     this.cancelVolumePrefetch();
+    this.clearBackgroundActivity();
     this.activeVolumeTarget = null;
     this.pending?.resolve();
     this.pending = null;
@@ -435,7 +439,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
     void this.source.prefetchProgressively?.(model.axis, model.sliceIndex).catch(() => undefined);
     if (previous !== null && previous !== model.sliceIndex) {
       const direction = model.sliceIndex > previous ? 1 : -1;
-      void this.source.prefetchNeighbor(model.axis, model.sliceIndex, direction).catch(() => undefined);
+      this.trackBackgroundRequest(this.source.prefetchNeighbor(model.axis, model.sliceIndex, direction));
     }
   }
 
@@ -548,13 +552,18 @@ class RetainedProjectionViewport implements ProjectionViewport {
     if (!request) {
       this.volumePrefetchAborts.delete(controller);
       this.volumePrefetchKeys.delete(key);
-      if (this.volumePrefetchAborts.size === 0) this.volumePrefetchDirection = null;
+      if (this.volumePrefetchAborts.size === 0) {
+        this.volumePrefetchDirection = null;
+      }
       return;
     }
+    this.trackBackgroundRequest(request);
     void request.catch(() => undefined).finally(() => {
       this.volumePrefetchAborts.delete(controller);
       this.volumePrefetchKeys.delete(key);
-      if (this.volumePrefetchAborts.size === 0) this.volumePrefetchDirection = null;
+      if (this.volumePrefetchAborts.size === 0) {
+        this.volumePrefetchDirection = null;
+      }
     });
   }
 
@@ -563,6 +572,27 @@ class RetainedProjectionViewport implements ProjectionViewport {
     this.volumePrefetchAborts.clear();
     this.volumePrefetchKeys.clear();
     this.volumePrefetchDirection = null;
+  }
+
+  private trackBackgroundRequest(request: Promise<void>): void {
+    this.backgroundRequests.add(request);
+    this.syncBackgroundActivity();
+    void request.catch(() => undefined).finally(() => {
+      this.backgroundRequests.delete(request);
+      this.syncBackgroundActivity();
+    });
+  }
+
+  private clearBackgroundActivity(): void {
+    this.backgroundRequests.clear();
+    this.syncBackgroundActivity();
+  }
+
+  private syncBackgroundActivity(): void {
+    const active = this.backgroundRequests.size > 0;
+    this.mount.backgroundActivity.hidden = !active;
+    if (active) this.mount.root.dataset.backgroundLoading = 'true';
+    else delete this.mount.root.dataset.backgroundLoading;
   }
 
   private placeVolume(placement: RegisteredVolumeCanvasPlacement): void {
@@ -687,11 +717,17 @@ class RetainedProjectionViewport implements ProjectionViewport {
     guideLayer.classList.add('view-frame__guide-layer');
     guideLayer.setAttribute('aria-hidden', 'true');
     svg.append(figureLayer, guideLayer);
+    const backgroundActivity = document.createElement('div');
+    backgroundActivity.className = 'projection-viewport__background-activity';
+    backgroundActivity.setAttribute('role', 'status');
+    backgroundActivity.setAttribute('aria-live', 'polite');
+    backgroundActivity.textContent = 'Preparing slices';
+    backgroundActivity.hidden = true;
     const error = document.createElement('div');
     error.className = 'projection-viewport__error';
     error.setAttribute('role', 'status');
     error.hidden = true;
-    root.append(scalar, svg, error);
+    root.append(scalar, svg, backgroundActivity, error);
     return {
       root,
       scalar,
@@ -706,6 +742,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
           onSliceStep: (axis, delta) => this.interactionSink()?.stepSlice(axis, delta),
         },
       ),
+      backgroundActivity,
       error,
     };
   }
