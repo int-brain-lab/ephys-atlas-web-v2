@@ -53,6 +53,8 @@ const DEFAULT_PRESENTATION: RegionalPresentation = {
   visibleRegionIds: new Set(), selectedRegionIds: new Set(), highlightedRegionId: null, featureSide: null,
 };
 
+const HOVER_PICK_DELAY_MS = 75;
+
 export class RetainedBrainScene3DViewportFactory implements BrainScene3DViewportFactory {
   private sink: BrainScene3DInteractionSink = {};
   private readonly viewports = new Set<RetainedBrainScene3DViewport>();
@@ -99,6 +101,9 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
   private geometryUploads = 0;
   private pointerPress: { id: number; x: number; y: number } | null = null;
   private hovered: number | null = null;
+  private cameraInteractionActive = false;
+  private hoverPickTimer: number | null = null;
+  private pendingHoverEvent: PointerEvent | null = null;
   private transparency: WeightedTransparency | null = null;
   private hasTranslucency = false;
   private renderFailed = false;
@@ -112,11 +117,17 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     host.replaceChildren(this.canvas);
     host.dataset.scene3dState = 'loading';
     host.dataset.geometryUploads = '0';
+    host.dataset.pickCount = '0';
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, powerPreference: 'high-performance' });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.scene.background = new THREE.Color('#09141e');
     this.camera.up.set(0, 0, 1);
     this.controls = new StableArcballControls(this.camera, this.canvas, (phase) => {
+      if (phase === 'start') {
+        this.cameraInteractionActive = true;
+        this.clearPendingHoverPick();
+      }
+      if (phase === 'end') this.cameraInteractionActive = false;
       this.scheduleRender();
       this.sink().cameraChanged?.(this.cameraPose(), phase);
     });
@@ -153,7 +164,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
   }
 
   activate(): void { this.assertActiveObject(); this.active = true; this.host.dataset.active = 'true'; this.controls.enabled = true; this.scheduleRender(); }
-  deactivate(): void { this.active = false; this.host.dataset.active = 'false'; this.controls.enabled = false; if (this.frame !== null) cancelAnimationFrame(this.frame); this.frame = null; }
+  deactivate(): void { this.active = false; this.host.dataset.active = 'false'; this.controls.enabled = false; this.cameraInteractionActive = false; this.pointerPress = null; this.clearPendingHoverPick(); if (this.frame !== null) cancelAnimationFrame(this.frame); this.frame = null; }
 
   destroy(): void {
     if (this.destroyed) return;
@@ -330,6 +341,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
 
   private pick(event: PointerEvent): number | null {
     if (!this.manifest) return null;
+    this.host.dataset.pickCount = String(Number(this.host.dataset.pickCount ?? 0) + 1);
     const bounds = this.canvas.getBoundingClientRect();
     this.pointer.set(2 * (event.clientX - bounds.left) / Math.max(1, bounds.width) - 1, 1 - 2 * (event.clientY - bounds.top) / Math.max(1, bounds.height));
     this.raycaster.setFromCamera(this.pointer, this.camera);
@@ -356,18 +368,50 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     return null;
   }
 
-  private readonly onPointerDown = (event: PointerEvent): void => { if (event.button === 0) this.pointerPress = { id: event.pointerId, x: event.clientX, y: event.clientY }; };
-  private readonly onPointerMove = (event: PointerEvent): void => {
-    const next = this.pick(event);
+  private clearPendingHoverPick(): void {
+    if (this.hoverPickTimer !== null) window.clearTimeout(this.hoverPickTimer);
+    this.hoverPickTimer = null;
+    this.pendingHoverEvent = null;
+  }
+
+  private updateHovered(next: number | null, event: PointerEvent): void {
     if (next === this.hovered) return;
     this.hovered = next;
     this.sink().regionPointer?.({ type: next === null ? 'leave' : 'hover', regionId: next, originalEvent: event });
+  }
+
+  private scheduleHoverPick(event: PointerEvent): void {
+    this.clearPendingHoverPick();
+    this.pendingHoverEvent = event;
+    this.hoverPickTimer = window.setTimeout(() => {
+      this.hoverPickTimer = null;
+      const pending = this.pendingHoverEvent;
+      this.pendingHoverEvent = null;
+      if (!pending || !this.active || this.destroyed || this.cameraInteractionActive) return;
+      this.updateHovered(this.pick(pending), pending);
+    }, HOVER_PICK_DELAY_MS);
+  }
+
+  private readonly onPointerDown = (event: PointerEvent): void => {
+    if (![0, 1, 2].includes(event.button)) return;
+    this.clearPendingHoverPick();
+    this.updateHovered(null, event);
+    if (event.button !== 0) return;
+    this.pointerPress = { id: event.pointerId, x: event.clientX, y: event.clientY };
   };
-  private readonly onPointerLeave = (event: PointerEvent): void => { this.hovered = null; this.sink().regionPointer?.({ type: 'leave', regionId: null, originalEvent: event }); };
+  private readonly onPointerMove = (event: PointerEvent): void => {
+    if (this.cameraInteractionActive) return;
+    this.scheduleHoverPick(event);
+  };
+  private readonly onPointerLeave = (event: PointerEvent): void => {
+    this.clearPendingHoverPick();
+    this.updateHovered(null, event);
+  };
   private readonly onPointerUp = (event: PointerEvent): void => {
     const press = this.pointerPress;
     this.pointerPress = null;
     if (!press || press.id !== event.pointerId || Math.hypot(event.clientX - press.x, event.clientY - press.y) > 4) return;
+    this.clearPendingHoverPick();
     const id = this.pick(event);
     if (id !== null) this.sink().regionPointer?.({ type: 'select', regionId: id, originalEvent: event });
   };

@@ -67,9 +67,22 @@ test('3-D picking returns signed IDs and a camera drag does not select', async (
   expect(box).not.toBeNull();
 
   await page.mouse.move(box!.x + box!.width * .5, box!.y + box!.height * .5);
+  await expect.poll(async () => Number(await scene.getAttribute('data-pick-count'))).toBeGreaterThan(0);
+  const picksBeforeBurst = Number(await scene.getAttribute('data-pick-count'));
+  await canvas.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    for (let step = 0; step < 12; step += 1) element.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true,
+      clientX: bounds.left + bounds.width * (.3 + step * .02),
+      clientY: bounds.top + bounds.height * .45,
+    }));
+  });
+  await expect.poll(async () => Number(await scene.getAttribute('data-pick-count'))).toBe(picksBeforeBurst + 1);
+  const picksBeforeDrag = Number(await scene.getAttribute('data-pick-count'));
   await page.mouse.down();
   await page.mouse.move(box!.x + box!.width * .7, box!.y + box!.height * .55, { steps: 5 });
   await page.mouse.up();
+  expect(Number(await scene.getAttribute('data-pick-count'))).toBe(picksBeforeDrag);
   await expect(page.locator('#diagnostics')).toHaveText('');
   await canvas.dblclick({ position: { x: box!.width / 2, y: box!.height / 2 } });
 
