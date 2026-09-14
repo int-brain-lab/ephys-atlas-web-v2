@@ -6,6 +6,7 @@ import { gunzipSync } from 'node:zlib';
 
 import { decodeMeshLod } from '../../.test-dist/rendering/3d/mesh-pack-codec.js';
 import { meshPresentationAtMl } from '../../.test-dist/rendering/3d/mesh-presentation-boundary.js';
+import { parseAtlasRegionCatalog } from '../../.test-dist/data/atlas-regions.js';
 
 const root = process.env.IBL_ATLAS_ASSET_SET_ROOT;
 const lockPath = process.env.IBL_ATLAS_ASSET_SET_LOCK;
@@ -66,4 +67,26 @@ test('real D070 mesh matches the shared renderer-neutral presentation fingerprin
     await sha256(int32LittleEndian(facePresentations)),
     lock.expectations.face_presentations_sha256,
   );
+});
+
+test('real D070 regions match the shared renderer-neutral catalog contract', { skip: !root || !lockPath }, async () => {
+  const lock = JSON.parse(await readFile(lockPath, 'utf8'));
+  const encoded = await readFile(path.join(root, 'regions.json'));
+  assert.equal(encoded.byteLength, lock.region_catalog.bytes);
+  assert.equal(await sha256(encoded), lock.region_catalog.sha256);
+  const catalog = parseAtlasRegionCatalog(JSON.parse(encoded));
+
+  assert.equal(catalog.referenceSpaceId, lock.reference_space_id);
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(catalog.physical).map(([mapping, rows]) => [mapping, rows.length])),
+    { allen: 2195, beryl: 787, cosmos: 35 },
+  );
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(catalog.left).map(([mapping, rows]) => [mapping, rows.length])),
+    { allen: 1098, beryl: 394, cosmos: 18 },
+  );
+  const sentinel = catalog.left.allen.find((region) => region.atlasId === -10);
+  assert.ok(sentinel);
+  assert.equal(sentinel.index, 2162);
+  assert.deepEqual(sentinel.mappedAtlasIds, { allen: -10, beryl: -294, cosmos: -313 });
 });

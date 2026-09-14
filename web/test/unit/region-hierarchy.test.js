@@ -14,34 +14,56 @@ function row(atlasId, acronym, parentId, depth, mappingMember = true, colorHex =
     atlas_id: atlasId,
     color_hex: colorHex,
     depth,
-    idx: Math.abs(atlasId),
+    idx: 0,
+    mapped_atlas_ids: { allen: atlasId, beryl: atlasId, cosmos: atlasId },
     mapping_member: mappingMember,
     name: acronym,
     parent_id: parentId,
   };
 }
 
-function document(rows) {
+function document(leftRows) {
+  const voidRow = row(0, 'void', null, 0);
+  const rightRows = leftRows.map((source) => ({
+    ...source,
+    atlas_id: Math.abs(source.atlas_id),
+    parent_id: source.parent_id === null ? null : Math.abs(source.parent_id),
+    mapped_atlas_ids: Object.fromEntries(
+      Object.entries(source.mapped_atlas_ids).map(([mapping, id]) => [mapping, Math.abs(id)]),
+    ),
+  }));
+  const rows = [voidRow, ...rightRows, ...leftRows].map((source, idx) => ({ ...source, idx }));
   return {
     atlas: 'Allen Mouse CCF 2017',
     format: 'ibl-atlas-regions-v1',
     hemisphere_encoding: 'signed atlas IDs; negative is left',
     reference_space_id: 'allen-ccf-2017',
     schema_version: '1.0',
-    mappings: { allen: rows, beryl: rows, cosmos: rows },
+    provenance: {
+      iblatlas_commit: '1'.repeat(40),
+      legacy_svg_crosswalk_sha256: '2'.repeat(64),
+      legacy_svg_crosswalk_url: 'https://example.test/regions.json',
+    },
+    mappings: {
+      allen: structuredClone(rows),
+      beryl: structuredClone(rows),
+      cosmos: structuredClone(rows),
+    },
   };
 }
 
 test('catalog hierarchy follows parent IDs at arbitrary depth and retains ontology identity', () => {
   const rows = [
-    row(-30, 'leaf', -20, 99, true, '#abcdef'),
-    row(-10, 'root', null, 99, false),
-    row(-20, 'branch', -10, 99, false),
+    row(-30, 'leaf', -20, 2, true, '#abcdef'),
+    row(-10, 'root', null, 0, false),
+    row(-20, 'branch', -10, 1, false),
   ];
   const catalog = parseAtlasRegionCatalog(document(rows));
   assert.equal(catalog.referenceSpaceId, 'allen-ccf-2017');
-  assert.equal(catalog.view, 'left');
-  const hierarchy = buildRegionHierarchy(catalog.mappings.allen);
+  assert.deepEqual(catalog.physical.allen.map((region) => region.atlasId), [0, 30, 10, 20, -30, -10, -20]);
+  assert.deepEqual(catalog.left.allen.map((region) => region.atlasId), [0, -30, -10, -20]);
+  assert.deepEqual(catalog.logical.allen.map((region) => region.atlasId), [0, 30, 10, 20]);
+  const hierarchy = buildRegionHierarchy(catalog.left.allen.filter((region) => region.atlasId < 0));
 
   assert.deepEqual(hierarchy.map(({ region, depth, hasChildren }) => [region.id, depth, hasChildren]), [
     ['-10', 0, true],
@@ -61,7 +83,7 @@ test('grey-matter projection promotes CH, BS, and CB while retaining the full ca
     row(-343, 'BS', -8, 2),
     row(-512, 'CB', -8, 2),
     row(-1009, 'fiber tracts', -997, 1),
-  ])).mappings.allen;
+  ])).left.allen;
 
   const hierarchy = buildGreyMatterHierarchy(regions);
   assert.deepEqual(hierarchy.map(({ region, depth }) => [region.id, region.parentId, depth]), [
@@ -70,12 +92,26 @@ test('grey-matter projection promotes CH, BS, and CB while retaining the full ca
     ['-343', null, 0],
     ['-512', null, 0],
   ]);
-  assert.equal(regions.length, 7);
+  assert.equal(regions.length, 8);
 });
 
 test('catalog rejects missing ontology parents', () => {
   const rows = [row(-10, 'orphan', -999, 1)];
-  assert.throws(() => parseAtlasRegionCatalog(document(rows)), /missing parent -999/);
+  assert.throws(() => parseAtlasRegionCatalog(document(rows)), /missing parent (999|-999)/);
+});
+
+test('catalog rejects physical rows that violate the shared contract', () => {
+  const missingVoid = document([row(-10, 'root', null, 0)]);
+  for (const mapping of ['allen', 'beryl', 'cosmos']) missingVoid.mappings[mapping].shift();
+  assert.throws(() => parseAtlasRegionCatalog(missingVoid), /void row/);
+
+  const badIndex = document([row(-10, 'root', null, 0)]);
+  badIndex.mappings.allen[2].idx = badIndex.mappings.allen[1].idx;
+  assert.throws(() => parseAtlasRegionCatalog(badIndex), /duplicate index/);
+
+  const badMapping = document([row(-10, 'root', null, 0)]);
+  delete badMapping.mappings.allen[2].mapped_atlas_ids.cosmos;
+  assert.throws(() => parseAtlasRegionCatalog(badMapping), /unsupported fields/);
 });
 
 test('hierarchy rejects cycles even when every parent ID exists', () => {
@@ -96,7 +132,7 @@ test('catalog loading bypasses incompatible cached hierarchy metadata', async ()
   await loadAtlasRegionCatalog(undefined, fetchImpl);
 
   assert.equal(request.input, ALLEN_ATLAS_REGIONS_URL);
-  assert.match(request.input, /[?&]v=4$/);
+  assert.match(request.input, /[?&]v=5$/);
   assert.equal(request.init.cache, 'no-cache');
 });
 
@@ -111,7 +147,7 @@ test('immutable site atlas metadata is verified before parsing', async () => {
   }, integrity);
   assert.equal(request.input, 'http://localhost/site/builds/test-only/atlas/allen-ccf-2017/regions.json');
   assert.equal(request.init.cache, undefined);
-  assert.equal(catalog.mappings.allen[0].acronym, 'root');
+  assert.equal(catalog.left.allen[1].acronym, 'root');
 
   await assert.rejects(
     loadAtlasRegionCatalog('/site/builds/test-only/atlas/allen-ccf-2017/regions.json', async () => new Response(body), { ...integrity, sha256: '0'.repeat(64) }),

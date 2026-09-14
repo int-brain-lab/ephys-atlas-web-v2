@@ -237,7 +237,7 @@ export class AtlasApp {
     const data = { ...snapshot, feature: featureMatches ? snapshot.feature : null };
     const featureLoading = state.runtime.datasetStatus !== 'error'
       && (!manifestMatches || (!!state.view.featureId && !featureMatches));
-    const anatomyRegions = this.atlasRegions?.mappings[state.view.parcellation] ?? data.regions;
+    const anatomyRegions = this.atlasRegions?.left[state.view.parcellation] ?? data.regions;
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
     const representationDisplay = data.feature
       ? descriptor?.display?.[data.feature.representation]
@@ -580,7 +580,7 @@ export class AtlasApp {
       this.shell.hideRegionTooltip();
       return;
     }
-    const regions = this.atlasRegions?.mappings[state.view.parcellation] ?? data.regions;
+    const regions = this.atlasRegions?.left[state.view.parcellation] ?? data.regions;
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
     const model = buildRegionTooltipModel(inspection, regions, data.feature, descriptor, state.view.coloring);
     if (model) this.shell.showRegionTooltip(inspection, model);
@@ -610,7 +610,7 @@ export class AtlasApp {
       this.shell.hideRegionTooltip(inspection.projectionId);
       return;
     }
-    const regions = this.atlasRegions?.mappings[inspection.parcellation] ?? data.regions;
+    const regions = this.atlasRegions?.left[inspection.parcellation] ?? data.regions;
     const region = inspection.regionId ? regions.find(({ id }) => id === inspection.regionId) : undefined;
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
     const coordinate = (value: number, axis: string) => `${axis} ${value >= 0 ? '+' : ''}${(value / 1000).toFixed(2)}`;
@@ -779,7 +779,7 @@ export class AtlasApp {
     const { manifest, feature, regions: featureRegions } = this.session.snapshot();
     if (!manifest || feature?.representation !== 'regional' || state.selection.length === 0) return;
     const descriptor = manifest.features.find((item) => item.id === feature.featureId);
-    const regions = this.atlasRegions?.mappings[state.parcellation] ?? featureRegions;
+    const regions = this.atlasRegions?.left[state.parcellation] ?? featureRegions;
     const presentationScale = resolvePresentationScale(
       feature,
       state.coloring,

@@ -1,7 +1,13 @@
 # Allen region metadata and colors
 
-The browser-owned Allen anatomy identity asset is
+The web repository remains the authoritative producer of the Allen anatomy
+identity asset at
 `web/public/atlas/allen-ccf-2017/regions.json`.
+
+Its renderer-neutral serialized contract and strict independent Python reader
+are owned by `ibl-atlas-assets`. The browser now consumes that same contract
+through a small TypeScript adapter; this does not move application state, UI,
+fetching, caching, or rendering out of this repository.
 
 It is separate from scientific feature arrays and from SVG geometry. The asset
 joins the exact BrainRegions row indices used by the pinned curated v1 SVGs to
@@ -63,9 +69,14 @@ display colors. Chromatic Allen colors are unchanged. This presentation-only
 mapping avoids large white regions dominating the view without changing atlas
 identity or scientific feature colors.
 
-The browser orders rows from `parent_id`, derives hierarchy depth rather than
-trusting display metadata, and supports the full Allen depth instead of
-clamping all descendants below `grey` to one indentation level.
+The adapter validates the full signed physical inventory, source indexes,
+mapping targets, parent/depth relationships, hemisphere closure, provenance,
+and exact Allen/Beryl/Cosmos mapping set before exposing the same three views
+as `ibl-atlas-assets`: physical, canonical left (including void), and logical
+hemisphere-independent/right (including void). The application explicitly uses
+the left view. Its grey-matter UI projection continues to order nodes from
+stable parent IDs and supports the full Allen depth instead of clamping all
+descendants below `grey` to one indentation level.
 
 The same regional presentation contract supplies colors to all five views in
 the active projection pack. The viewport owns neither color-mode state nor

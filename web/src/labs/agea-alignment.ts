@@ -128,7 +128,7 @@ export class AlignmentReview {
     if (this.disposed) return;
     if (registrations.some(r => r.referenceSpaceId !== alignment.candidate_reference_space_id)) throw new Error('Website reference space differs from the pinned review candidate');
     this.grid = alignmentGrid(this.manifest, alignment.candidate_reference_space_id);
-    this.regions = catalog.mappings.allen;
+    this.regions = catalog.left.allen;
     this.imageFeature = await alignmentFeature(Float32Array.from(image), this.grid, 'agea-anatomical-reference', false);
     if (this.disposed) return;
     this.factory = new RetainedProjectionViewportFactory({ source: this.source, maxVolumeDecodedBytes: 8 * 1024 * 1024 });

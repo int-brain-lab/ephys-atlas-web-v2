@@ -36,8 +36,9 @@ copying the 14 MB geometry into another Git repository. Its independent Python
 reader verifies the complete graph, catalog membership, reference space, and
 per-vertex/per-triangle presentation fingerprints.
 
-The opt-in Node parity test executes the web decoder and original-ML boundary
-logic against the same materialized bytes and lock:
+The opt-in Node parity tests execute the web decoder, original-ML boundary
+logic, and strict region-catalog adapter against the same materialized bytes
+and lock:
 
 ```sh
 IBL_ATLAS_ASSET_SET_ROOT=../ibl-atlas-assets/build/d070-published \
@@ -45,10 +46,11 @@ IBL_ATLAS_ASSET_SET_LOCK=../ibl-atlas-assets/src/ibl_atlas_assets/asset_sets/d07
 npm --prefix web run test:unit
 ```
 
-The real parity test skips in ordinary checkouts that do not explicitly supply
+The real parity tests skip in ordinary checkouts that do not explicitly supply
 those two paths. Synthetic contract coverage remains part of every `just check`.
 The real run matches 486,674 vertex and 966,645 face presentation identities
-byte-for-byte across Python and TypeScript.
+byte-for-byte across Python and TypeScript, and materializes the same complete
+physical/left/logical Allen, Beryl, and Cosmos region views.
 
 `just dev` uses this pack in the normal website. Main-website Chromium tests
 verify lazy loading, shared selection/OIT, URL explode restoration, one retained
