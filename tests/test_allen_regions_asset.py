@@ -11,6 +11,7 @@ def test_pinned_allen_region_asset_has_complete_identity_and_color_contract():
     document = json.loads(raw)
     assert document["format"] == "ibl-atlas-regions-v1"
     assert document["atlas"] == "Allen Mouse CCF 2017"
+    assert document["reference_space_id"] == "allen-ccf-2017"
     assert document["provenance"] == {
         "iblatlas_commit": "52083adf44825d0622a503705e095699a5957587",
         "legacy_svg_crosswalk_sha256": "9fca5fe4feeb368c715853c25a97667cb199d5a7ce160385771833ba61cedfc8",
@@ -52,7 +53,7 @@ def test_pinned_allen_region_asset_has_complete_identity_and_color_contract():
         assert all(isinstance(row["mapping_member"], bool) for row in rows)
     assert (
         hashlib.sha256(raw).hexdigest()
-        == "aa5615bdf76493a815ad20bd77441998415b13272bc58101cd8da674848ed3ad"
+        == "0b4e18949950ddd99ed98ea06c80bc469c5e1c0fb2379dcf1afa02cc66ebd8a4"
     )
 
 

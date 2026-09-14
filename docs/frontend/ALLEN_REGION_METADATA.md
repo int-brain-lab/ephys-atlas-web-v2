@@ -19,11 +19,13 @@ the ontology fields supplied by the pinned `iblatlas` source:
 ## Provenance and identity
 
 - atlas: Allen Mouse CCF 2017;
+- reference space: `allen-ccf-2017` (explicit in the catalog so independent
+  consumers never infer its coordinate identity);
 - `iblatlas` commit: `52083adf44825d0622a503705e095699a5957587`;
 - legacy deployed region-crosswalk SHA-256:
   `9fca5fe4feeb368c715853c25a97667cb199d5a7ce160385771833ba61cedfc8`;
 - emitted asset SHA-256:
-  `aa5615bdf76493a815ad20bd77441998415b13272bc58101cd8da674848ed3ad`;
+  `0b4e18949950ddd99ed98ea06c80bc469c5e1c0fb2379dcf1afa02cc66ebd8a4`;
 - emitted rows: 2,195 Allen, 787 Beryl, and 35 Cosmos before the browser
   selects the canonical negative-ID left hemisphere;
 - browser-visible left trees: 1,097 Allen nodes; 393 Beryl nodes (306 mapping

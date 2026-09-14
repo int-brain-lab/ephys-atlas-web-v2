@@ -25,6 +25,8 @@ function document(rows) {
   return {
     atlas: 'Allen Mouse CCF 2017',
     format: 'ibl-atlas-regions-v1',
+    hemisphere_encoding: 'signed atlas IDs; negative is left',
+    reference_space_id: 'allen-ccf-2017',
     schema_version: '1.0',
     mappings: { allen: rows, beryl: rows, cosmos: rows },
   };
@@ -37,6 +39,8 @@ test('catalog hierarchy follows parent IDs at arbitrary depth and retains ontolo
     row(-20, 'branch', -10, 99, false),
   ];
   const catalog = parseAtlasRegionCatalog(document(rows));
+  assert.equal(catalog.referenceSpaceId, 'allen-ccf-2017');
+  assert.equal(catalog.view, 'left');
   const hierarchy = buildRegionHierarchy(catalog.mappings.allen);
 
   assert.deepEqual(hierarchy.map(({ region, depth, hasChildren }) => [region.id, depth, hasChildren]), [
@@ -92,7 +96,7 @@ test('catalog loading bypasses incompatible cached hierarchy metadata', async ()
   await loadAtlasRegionCatalog(undefined, fetchImpl);
 
   assert.equal(request.input, ALLEN_ATLAS_REGIONS_URL);
-  assert.match(request.input, /[?&]v=3$/);
+  assert.match(request.input, /[?&]v=4$/);
   assert.equal(request.init.cache, 'no-cache');
 });
 

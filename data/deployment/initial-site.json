@@ -24,7 +24,7 @@
   },
   "atlas_regions": {
     "path": "atlas/allen-ccf-2017/regions.json",
-    "bytes": 657517,
-    "sha256": "aa5615bdf76493a815ad20bd77441998415b13272bc58101cd8da674848ed3ad"
+    "bytes": 657555,
+    "sha256": "0b4e18949950ddd99ed98ea06c80bc469c5e1c0fb2379dcf1afa02cc66ebd8a4"
   }
 }

@@ -18,8 +18,8 @@ test('production build serves a static landing page and lazy viewer from immutab
         VITE_DATASET_CATALOG_URL:'/__real-data/catalog.json',
         VITE_PROJECTION_PACK_URL:'/atlas/projections/ibl-static-registered-v1/manifest.json',
         VITE_ATLAS_REGIONS_URL:'/site/builds/test-only/atlas/allen-ccf-2017/regions.json',
-        VITE_ATLAS_REGIONS_BYTES:'657517',
-        VITE_ATLAS_REGIONS_SHA256:'aa5615bdf76493a815ad20bd77441998415b13272bc58101cd8da674848ed3ad',
+        VITE_ATLAS_REGIONS_BYTES:'657555',
+        VITE_ATLAS_REGIONS_SHA256:'0b4e18949950ddd99ed98ea06c80bc469c5e1c0fb2379dcf1afa02cc66ebd8a4',
         VITE_DEFAULT_DATASET_ID:'golden_fixture', VITE_DEFAULT_RELEASE_ID:'golden-v1',
         VITE_DEFAULT_FEATURE_ID:'rms_ap', VITE_DEFAULT_PARCELLATION_ID:'allen'},
     });

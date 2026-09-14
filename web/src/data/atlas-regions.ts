@@ -4,10 +4,12 @@ import { ResourceFetcher, type ResourceIntegrity } from './cache.js';
 
 // Version the stable public path so browsers cannot reuse an older catalog
 // whose schema predates parent-closed hierarchy metadata.
-export const ALLEN_ATLAS_REGIONS_URL = '/atlas/allen-ccf-2017/regions.json?v=3';
+export const ALLEN_ATLAS_REGIONS_URL = '/atlas/allen-ccf-2017/regions.json?v=4';
 
 export interface AtlasRegionCatalog {
   atlas: string;
+  referenceSpaceId: 'allen-ccf-2017';
+  view: 'left';
   mappings: Readonly<Record<ParcellationId, readonly RegionMetadata[]>>;
 }
 
@@ -35,6 +37,12 @@ export function parseAtlasRegionCatalog(value: unknown): AtlasRegionCatalog {
   const root = record(value, 'atlas regions');
   if (root.format !== 'ibl-atlas-regions-v1' || root.schema_version !== '1.0') {
     throw new Error('atlas regions format is unsupported');
+  }
+  if (root.reference_space_id !== 'allen-ccf-2017') {
+    throw new Error('atlas regions reference space is unsupported');
+  }
+  if (root.hemisphere_encoding !== 'signed atlas IDs; negative is left') {
+    throw new Error('atlas regions hemisphere encoding is unsupported');
   }
   const rawMappings = record(root.mappings, 'atlas regions mappings');
   const mappings = {} as Record<ParcellationId, readonly RegionMetadata[]>;
@@ -73,7 +81,12 @@ export function parseAtlasRegionCatalog(value: unknown): AtlasRegionCatalog {
     }
     mappings[mapping] = rows;
   }
-  return { atlas: string(root.atlas, 'atlas regions atlas'), mappings };
+  return {
+    atlas: string(root.atlas, 'atlas regions atlas'),
+    referenceSpaceId: 'allen-ccf-2017',
+    view: 'left',
+    mappings,
+  };
 }
 
 export async function loadAtlasRegionCatalog(

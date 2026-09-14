@@ -117,6 +117,7 @@ def build_document(regions: Any, legacy: dict[str, Any]) -> dict[str, Any]:
         "atlas": "Allen Mouse CCF 2017",
         "format": "ibl-atlas-regions-v1",
         "hemisphere_encoding": "signed atlas IDs; negative is left",
+        "reference_space_id": "allen-ccf-2017",
         "mappings": mappings,
         "provenance": {
             "iblatlas_commit": IBLATLAS_COMMIT,
