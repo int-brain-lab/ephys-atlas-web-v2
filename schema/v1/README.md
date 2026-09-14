@@ -52,6 +52,13 @@ packs are marked `test-only`. D070 selects approved native GLB-derived geometry;
 D042 remains the cut/cap rollback baseline. Immutable deployment must retain
 exact-source provenance, inventory/topology, integrity, and browser evidence.
 
+Decoded EAM3 positions are already compiled into the manifest's declared
+`world_axes` and micrometre units. `coordinate_system.source_to_world_um`
+records the offline source-to-compiled transform for provenance and rebuild
+validation; a consumer must not apply it again to decoded positions. Original
+world ML used by bilateral presentation is therefore the decoded position's ML
+coordinate before any renderer-owned explode or display transform.
+
 The shared valid/invalid corpus under `tests/contract-fixtures/v1/` is executed
 by both Python and TypeScript validators and covers every top-level schema plus
 the common binary/resource semantics.

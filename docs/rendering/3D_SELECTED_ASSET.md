@@ -27,6 +27,29 @@ with builder `native-selected-v1`. Two builds matched every byte.
 - Purpose `production` means approved real geometry in the schema; artifact
   maturity is still **validated-real-local**, not public deployment.
 
+### Cross-repository consumer lock
+
+`ibl-atlas-assets` commit `25845bb3de79d721309989585355ea89a2a4dab3`
+ships the immutable asset-set lock `allen-ccf-2017-d070-20260908`. It pins the
+published D070 graph and this repository's exact full region catalog without
+copying the 14 MB geometry into another Git repository. Its independent Python
+reader verifies the complete graph, catalog membership, reference space, and
+per-vertex/per-triangle presentation fingerprints.
+
+The opt-in Node parity test executes the web decoder and original-ML boundary
+logic against the same materialized bytes and lock:
+
+```sh
+IBL_ATLAS_ASSET_SET_ROOT=../ibl-atlas-assets/build/d070-published \
+IBL_ATLAS_ASSET_SET_LOCK=../ibl-atlas-assets/src/ibl_atlas_assets/asset_sets/d070.json \
+npm --prefix web run test:unit
+```
+
+The real parity test skips in ordinary checkouts that do not explicitly supply
+those two paths. Synthetic contract coverage remains part of every `just check`.
+The real run matches 486,674 vertex and 966,645 face presentation identities
+byte-for-byte across Python and TypeScript.
+
 `just dev` uses this pack in the normal website. Main-website Chromium tests
 verify lazy loading, shared selection/OIT, URL explode restoration, one retained
 geometry upload, and all five datasets. Additional browser review is waived by D070.
