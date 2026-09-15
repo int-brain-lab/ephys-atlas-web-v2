@@ -10,6 +10,7 @@ const HISTORICAL_TITLES: Readonly<Record<string, DatasetPresentation>> = {
   'IBL Ephys Atlas — Cluster Features': { title: 'Ephys Atlas clusters' },
   'IBL Ephys Atlas encoding volumes': { title: 'Ephys Atlas encoding volumes' },
   'IBL Encoding Volumes': { title: 'Ephys Atlas encoding volumes' },
+  'Allen Gene Expression Atlas': { title: 'AGEA' },
   'IBL Brain-Wide Map legacy website snapshot': {
     title: 'Brain-Wide Map',
     badge: 'Legacy snapshot',
@@ -22,6 +23,12 @@ const HISTORICAL_TITLES: Readonly<Record<string, DatasetPresentation>> = {
  */
 export function presentDatasetTitle(title: string): DatasetPresentation {
   return HISTORICAL_TITLES[title] ?? { title };
+}
+
+/** Preserve the stable AGEA project identity while presenting its broader category. */
+export function presentProjectTitle(projectId: string | undefined, title: string | undefined): string | undefined {
+  if (projectId === 'agea' && title === 'AGEA') return 'Anatomy';
+  return title;
 }
 
 /** Exact reviewed titles only; arbitrary publisher labels are never stripped. */

@@ -70,7 +70,7 @@ html[data-route="app"] [data-landing] { display: none; }
 .landing-slices { overflow: hidden; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-view); }
 .landing-slices img { width: 100%; aspect-ratio: 2.7; object-fit: cover; object-position: center 46%; }
 .landing-slices figcaption { padding: 12px 18px; border-top: 1px solid var(--color-border); color: var(--color-text-secondary); font-size: 10px; letter-spacing: .015em; }
-.landing-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 40px; }
+.landing-features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px; margin-top: 40px; }
 .landing-feature-index { color: #59bfdc; font-size: 10px; letter-spacing: .12em; }
 .landing-features h3 { font-size: 18px; letter-spacing: -.025em; font-weight: 550; margin-top: 13px; }
 .landing-features p { margin-top: 12px; color: var(--color-text-secondary); font-size: 13px; line-height: 1.85; max-width: 350px; }
@@ -98,7 +98,7 @@ html[data-route="app"] [data-landing] { display: none; }
   .landing-lead { font-size: 14px; max-width: 360px; }
   .landing-hero__visual { margin-left: -15px !important; }
   .landing-actions { gap: 18px; }
-  .landing-features { gap: 25px; }
+  .landing-features { grid-template-columns: repeat(2, 1fr); gap: 32px 40px; }
 }
 @media (max-width: 760px) {
   .landing-width { width: calc(100% - 40px); }

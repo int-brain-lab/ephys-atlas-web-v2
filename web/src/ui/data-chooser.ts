@@ -1,6 +1,6 @@
 import { resolveDatasetNavigation, selectNavigationDataset, selectNavigationProject, type ResolvedDatasetNavigation } from '../application/dataset-navigation.js';
 import { ContextMenu, type ContextMenuOption } from './context-menu.js';
-import { presentDatasetInProject } from './dataset-presentation.js';
+import { presentDatasetInProject, presentProjectTitle } from './dataset-presentation.js';
 import type { DatasetCatalog } from '../data/contracts.js';
 import type { DatasetNavigationContext, ExactDatasetRef } from '../domain/types.js';
 
@@ -61,11 +61,12 @@ export class DataChooser {
     const currentDataset = catalog?.datasets.find(({ id }) => id === dataset.datasetId);
     const projectId = navigation.kind === 'local' ? undefined : navigation.projectId;
     const project = catalog?.projects.find(({ id }) => id === projectId);
-    const title = currentDataset ? presentDatasetInProject(currentDataset.title, project?.title) : dataset.datasetId;
+    const projectTitle = presentProjectTitle(project?.id, project?.title);
+    const title = currentDataset ? presentDatasetInProject(currentDataset.title, projectTitle) : dataset.datasetId;
     const release = currentDataset?.releases.find(({ id }) => id === dataset.releaseId);
     const status = release?.status === 'development' ? 'Development data'
       : release?.status === 'legacy' ? 'Preserved legacy data' : '';
-    this.menu.setDisplay(`${navigation.kind === 'local' ? 'My data' : project?.title ?? 'Data'} / ${title}`,
+    this.menu.setDisplay(`${navigation.kind === 'local' ? 'My data' : projectTitle ?? 'Data'} / ${title}`,
       recovery ? 'Navigation unavailable · open to recover' : navigation.kind === 'local' ? 'Stored only in this browser' : status);
     const options: ContextMenuOption[] = [];
     this.selections.clear();
@@ -76,6 +77,7 @@ export class DataChooser {
     };
     if (catalog) {
       for (const group of catalog.projects) {
+        const groupTitle = presentProjectTitle(group.id, group.title) ?? group.title;
         for (const id of group.datasetIds) {
           const entry = catalog.datasets.find((item) => item.id === id && item.source === 'published');
           if (!entry) continue;
@@ -86,8 +88,8 @@ export class DataChooser {
             ? resolveDatasetNavigation(catalog, dataset.datasetId, dataset.releaseId ?? undefined, navigation)
             : initial;
           const resolved = current.dataset.id === id ? current : selectNavigationDataset(catalog, current, id);
-          addSelection(id, resolved, { id, label: presentDatasetInProject(entry.title, group.title),
-            group: group.title, ...(entry.description ? { detail: entry.description } : {}) });
+          addSelection(id, resolved, { id, label: presentDatasetInProject(entry.title, groupTitle),
+            group: groupTitle, ...(entry.description ? { detail: entry.description } : {}) });
         }
       }
       for (const entry of catalog.datasets.filter(({ source }) => source === 'local')) {

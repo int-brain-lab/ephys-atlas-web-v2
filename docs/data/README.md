@@ -22,9 +22,13 @@ choices; evidence reports retain hashes, measurements, and reproduction facts.
 
 ## Document roles
 
-AGEA is active independent work under D067. [AGEA evidence and continuation](AGEA.md)
+AGEA is the first dataset in the user-facing **Anatomy** category, which is
+separate from IBL-produced Ephys Atlas and Brain-Wide Map datasets and can later
+include other anatomy sources such as MERFISH. AGEA remains active independent
+work under D067. [AGEA evidence and continuation](AGEA.md)
 owns the source audit, transport benchmark and pending implementation sequence;
-Q19 retains scientific release choices. It has no production recipe or release.
+Q19 retains final scientific acceptance choices. D074 authorizes the current
+provisional initial-deployment release without closing Q19.
 
 | Document | Role | Status |
 | --- | --- | --- |

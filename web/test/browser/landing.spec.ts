@@ -20,6 +20,19 @@ test('landing user-guide links open the existing guide in the viewer', async ({ 
   await expect(page.getByRole('dialog', { name: 'Help & getting started' })).toBeVisible();
 });
 
+test('landing distinguishes the available scientific data families and local imports', async ({ page }) => {
+  await page.goto('/');
+  const dataFamilies = page.locator('.landing-features');
+  await expect(dataFamilies).toContainText('Task-independent ephys features');
+  await expect(dataFamilies).toContainText('raw AP, LFP, and spike waveforms');
+  await expect(dataFamilies).toContainText(/Brain-Wide Map/i);
+  await expect(dataFamilies).toContainText('Responses to task events');
+  await expect(dataFamilies).toContainText('AGEA gene-expression volumes from the Allen Institute');
+  await expect(dataFamilies).toContainText('MERFISH');
+  await expect(dataFamilies).toContainText('Upload your own data');
+  await expect(dataFamilies).toContainText('stays in your browser');
+});
+
 for (const width of [320, 360, 390]) {
   for (const font of ['system', 'DejaVu Sans']) {
     test(`landing keeps its primary action usable at ${width}px with ${font}`, async ({ page }) => {
