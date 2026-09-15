@@ -16,10 +16,18 @@ runtime. The first two-consumer evidence now covers:
 - projection-native scalar intensity blocks with bounded section decoding and explicit grid
   registration.
 
-`ibl-datoviz` consumes the latter two contracts through a deterministic linked synthetic fixture.
+`ibl-datoviz` consumes the latter two contracts through a deterministic linked synthetic fixture
+and a local real-asset parity run. `ibl-atlas-assets` verified this repository's complete
+`allen-ccfv3-10um-bilateral-exact-599b5e0bbab1` anatomy-v2 graph in place: 3,260 slices across 205
+resources, including every encoded and decoded hash, in about two seconds and 78 MB peak RSS. No
+asset was copied and no website reference changed.
+
 That integration caught a meaningful convention boundary: the extracted registered projection
-shape is `[u, v]`, while a raster image is `[row=v, column=u]`. All three projection affines now
-have an end-to-end consumer test instead of being accepted from shape equality alone.
+shape is `[u, v]`, while a raster image is `[row=v, column=u]`; additionally, the sagittal plane's
+AP direction is reversed relative to the scalar volume array. All three projection affines now
+have an end-to-end consumer test instead of being accepted from shape equality alone. A real
+offscreen native render combines these exact annotation paths with lazy official 10-um template
+slices while retaining the existing 50-um dense 3-D volume.
 
 ## Ownership
 
@@ -44,21 +52,17 @@ display-plane sampling, and transport encoding remain separate choices.
 
 ## Next extraction gate
 
-Do not redirect the website merely because synthetic readers pass. The next coherent task is a
-real-asset parity run:
+Do not redirect the website merely because a second reader verifies the current graph. The local
+reader/integration gate is now green; the next coherent task is immutable publication parity:
 
-1. identify the exact current parent annotation/LUT and generated anatomy/projection pack commits,
-   manifests, sizes, hashes, terms, and citations;
-2. materialize those immutable bytes outside Git and read them with `ibl-atlas-assets`;
-3. compare the complete projection inventory, reference/grid identities, affine sentinels, signed
-   region identities, fill rules, path order, and decoded path data with this repository's
-   validators;
-4. reproduce the assets with a clean pinned builder and require byte identity where the encoding is
+1. record the exact parent annotation/LUT and generated anatomy/projection pack commits, terms, and
+   citations in a shared immutable asset-set entry;
+2. reproduce the assets with a clean pinned builder and require byte identity where the encoding is
    intended to remain unchanged, otherwise record explicit semantic fingerprints and a versioned
    format change;
-5. benchmark the shared published origin and verify immutable URL, served-byte, SHA-256, CORS, and
+3. benchmark the shared published origin and verify immutable URL, served-byte, SHA-256, CORS, and
    opaque-gzip behavior; and
-6. only after those gates pass, change one website asset reference to the shared immutable origin,
+4. only after those gates pass, change one website asset reference to the shared immutable origin,
    prove unchanged pixels/interaction/performance, and delete the former local producer copy in a
    later commit.
 
