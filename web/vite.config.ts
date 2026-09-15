@@ -52,7 +52,14 @@ export default defineConfig(async () => {
       },
     },
   } : {};
-  if (!releasePath) return { ...remoteDataServer, define: { ...projectionDefine, ...meshDefine }, plugins };
+  const remoteDataDefine = remoteDataOrigin ? {
+    'import.meta.env.VITE_DATASET_CATALOG_URL': JSON.stringify('/__remote-data/catalog.json'),
+  } : {};
+  if (!releasePath) return {
+    ...remoteDataServer,
+    define: { ...projectionDefine, ...meshDefine, ...remoteDataDefine },
+    plugins,
+  };
   const release = await loadRealDevelopmentRelease(
     releasePath,
     process.env.EPHYS_ATLAS_REAL_FEATURE ?? 'rms_ap.denoised',
@@ -70,6 +77,7 @@ export default defineConfig(async () => {
     define: {
       ...projectionDefine,
       ...meshDefine,
+      ...remoteDataDefine,
       'import.meta.env.VITE_DEFAULT_DATASET_ID': JSON.stringify(release.datasetId),
       'import.meta.env.VITE_DEFAULT_RELEASE_ID': JSON.stringify(release.releaseId),
       'import.meta.env.VITE_DEFAULT_FEATURE_ID': JSON.stringify(release.featureId),

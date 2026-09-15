@@ -50,5 +50,17 @@ development descriptor before `just dev` derives its catalog and asset paths.
 Missing required and optional corpus entries are disclosed explicitly; no
 synthetic or older-release fallback is configured.
 
+To inspect the currently deployed catalog through the local application without
+cross-origin requests, point the development proxy at its public data origin:
+
+```bash
+EPHYS_ATLAS_REMOTE_DATA_ORIGIN=https://ephys-atlas.iblcore.org just dev
+```
+
+This selects `/__remote-data/catalog.json` automatically. Catalog-relative
+manifests and release resources remain under the same proxy prefix. This is a
+development preview of deployed immutable data; it does not build, relabel or
+publish a release.
+
 Current implementation status and next work are recorded in
 `docs/INTEGRATION_STATUS.md` and `docs/IMPLEMENTATION_PLAN.md`.
