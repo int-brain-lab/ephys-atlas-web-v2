@@ -25,6 +25,12 @@ export function presentDatasetTitle(title: string): DatasetPresentation {
   return HISTORICAL_TITLES[title] ?? { title };
 }
 
+/** Preserve the stable AGEA project identity while presenting its broader category. */
+export function presentProjectTitle(projectId: string | undefined, title: string | undefined): string | undefined {
+  if (projectId === 'agea' && title === 'AGEA') return 'Anatomy';
+  return title;
+}
+
 /** Exact reviewed titles only; arbitrary publisher labels are never stripped. */
 export function presentDatasetInProject(title: string, projectTitle?: string): string {
   const presented = presentDatasetTitle(title).title;

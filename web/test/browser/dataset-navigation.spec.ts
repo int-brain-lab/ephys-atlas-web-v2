@@ -51,7 +51,7 @@ async function groupedCatalog(page: Page): Promise<void> {
       default_edition: 'coordinated', editions: [edition('coordinated', ['channels', 'clusters'])] },
     { project_id: 'bwm', title: 'Brain-Wide Map', dataset_ids: ['results'], default_dataset: 'results',
       default_edition: 'legacy', editions: [edition('legacy', ['results'])] },
-    { project_id: 'agea', title: 'Anatomy', dataset_ids: ['agea'], default_dataset: 'agea',
+    { project_id: 'agea', title: 'AGEA', dataset_ids: ['agea'], default_dataset: 'agea',
       default_edition: 'anatomy-current', editions: [edition('anatomy-current', ['agea'])] },
   ], datasets: [dataset('clusters', 'Ephys Atlas clusters'), dataset('channels', 'Ephys Atlas channels'),
     dataset('extra', 'Additional synthetic data'), dataset('results', 'Brain-Wide Map'), dataset('agea', 'AGEA')] };

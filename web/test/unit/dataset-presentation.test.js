@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { presentDatasetTitle } from '../../.test-dist/ui/dataset-presentation.js';
+import { presentDatasetTitle, presentProjectTitle } from '../../.test-dist/ui/dataset-presentation.js';
 
 test('historical immutable release titles use concise dataset presentation', () => {
   assert.deepEqual(presentDatasetTitle('IBL Ephys Atlas channel features'), {
@@ -24,4 +24,10 @@ test('publisher-defined dataset titles pass through unchanged', () => {
   assert.deepEqual(presentDatasetTitle('Smith Lab Regional Coefficients'), {
     title: 'Smith Lab Regional Coefficients',
   });
+});
+
+test('the existing AGEA project identity is presented as the Anatomy category', () => {
+  assert.equal(presentProjectTitle('agea', 'AGEA'), 'Anatomy');
+  assert.equal(presentProjectTitle('agea', 'Anatomy'), 'Anatomy');
+  assert.equal(presentProjectTitle('publisher-project', 'AGEA'), 'AGEA');
 });

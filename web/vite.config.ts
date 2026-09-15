@@ -16,6 +16,7 @@ export default defineConfig(async () => {
     return { publicDir: false, envDir: false, plugins: [helpMarkdownPlugin()] };
   }
   const releasePath = process.env.EPHYS_ATLAS_REAL_RELEASE;
+  const remoteDataOrigin = process.env.EPHYS_ATLAS_REMOTE_DATA_ORIGIN;
   const additionalReleasePaths = (process.env.EPHYS_ATLAS_ADDITIONAL_RELEASES ?? '')
     .split(',').map((value) => value.trim()).filter(Boolean);
   const projectionPackPath = process.env.EPHYS_ATLAS_PROJECTION_PACK;
@@ -40,7 +41,18 @@ export default defineConfig(async () => {
     'import.meta.env.VITE_BRAIN_MESH_MANIFEST_BYTES': JSON.stringify(meshPack.manifestBytes),
     'import.meta.env.VITE_BRAIN_MESH_MANIFEST_SHA256': JSON.stringify(meshPack.manifestSha256),
   } : {};
-  if (!releasePath) return { define: { ...projectionDefine, ...meshDefine }, plugins };
+  const remoteDataServer = remoteDataOrigin ? {
+    server: {
+      proxy: {
+        '/__remote-data': {
+          target: remoteDataOrigin,
+          changeOrigin: true,
+          rewrite: (requestPath: string) => requestPath.replace(/^\/__remote-data/, ''),
+        },
+      },
+    },
+  } : {};
+  if (!releasePath) return { ...remoteDataServer, define: { ...projectionDefine, ...meshDefine }, plugins };
   const release = await loadRealDevelopmentRelease(
     releasePath,
     process.env.EPHYS_ATLAS_REAL_FEATURE ?? 'rms_ap.denoised',
@@ -54,6 +66,7 @@ export default defineConfig(async () => {
     return loadRealDevelopmentRelease(additionalPath, featureId);
   }));
   return {
+    ...remoteDataServer,
     define: {
       ...projectionDefine,
       ...meshDefine,
