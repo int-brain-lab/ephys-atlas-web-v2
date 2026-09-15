@@ -17,6 +17,7 @@ test('current local release titles keep the dataset family prominent', () => {
   assert.equal(presentDatasetTitle('IBL Ephys Atlas — Channel Features').title, 'Ephys Atlas channels');
   assert.equal(presentDatasetTitle('IBL Ephys Atlas — Cluster Features').title, 'Ephys Atlas clusters');
   assert.equal(presentDatasetTitle('IBL Encoding Volumes').title, 'Ephys Atlas encoding volumes');
+  assert.equal(presentDatasetTitle('Allen Gene Expression Atlas').title, 'AGEA');
 });
 
 test('publisher-defined dataset titles pass through unchanged', () => {

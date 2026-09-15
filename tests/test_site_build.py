@@ -43,6 +43,13 @@ def config_with_default():
     return value
 
 
+def test_initial_curator_groups_agea_under_anatomy():
+    curator = json.loads(Path("data/deployment/initial-curator.json").read_text())
+    agea = next(project for project in curator["projects"] if project["project_id"] == "agea")
+    assert agea["title"] == "Anatomy"
+    assert agea["dataset_ids"] == ["agea"]
+
+
 def test_production_environment_cannot_inherit_preview_defaults(monkeypatch):
     monkeypatch.setenv("EPHYS_ATLAS_REAL_RELEASE", "/private/preview")
     monkeypatch.setenv("VITE_DEFAULT_RELEASE_ID", "preview")

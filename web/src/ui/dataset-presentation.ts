@@ -10,6 +10,7 @@ const HISTORICAL_TITLES: Readonly<Record<string, DatasetPresentation>> = {
   'IBL Ephys Atlas — Cluster Features': { title: 'Ephys Atlas clusters' },
   'IBL Ephys Atlas encoding volumes': { title: 'Ephys Atlas encoding volumes' },
   'IBL Encoding Volumes': { title: 'Ephys Atlas encoding volumes' },
+  'Allen Gene Expression Atlas': { title: 'AGEA' },
   'IBL Brain-Wide Map legacy website snapshot': {
     title: 'Brain-Wide Map',
     badge: 'Legacy snapshot',

@@ -51,10 +51,23 @@ async function groupedCatalog(page: Page): Promise<void> {
       default_edition: 'coordinated', editions: [edition('coordinated', ['channels', 'clusters'])] },
     { project_id: 'bwm', title: 'Brain-Wide Map', dataset_ids: ['results'], default_dataset: 'results',
       default_edition: 'legacy', editions: [edition('legacy', ['results'])] },
+    { project_id: 'agea', title: 'Anatomy', dataset_ids: ['agea'], default_dataset: 'agea',
+      default_edition: 'anatomy-current', editions: [edition('anatomy-current', ['agea'])] },
   ], datasets: [dataset('clusters', 'Ephys Atlas clusters'), dataset('channels', 'Ephys Atlas channels'),
-    dataset('extra', 'Additional synthetic data'), dataset('results', 'Brain-Wide Map')] };
+    dataset('extra', 'Additional synthetic data'), dataset('results', 'Brain-Wide Map'), dataset('agea', 'AGEA')] };
   await page.route('**/__real-data/catalog.json', (route) => route.fulfill({ json: catalog }));
 }
+
+test('AGEA is presented under the Anatomy data category', async ({ page }) => {
+  await groupedCatalog(page);
+  await page.goto('/app/');
+  const data = field(page, 'data');
+  await data.getByRole('button', { name: /^Data:/ }).click();
+  const anatomy = data.getByRole('group', { name: 'Anatomy', exact: true });
+  await expect(anatomy.getByRole('option')).toHaveText(['AGEASynthetic navigation fixture']);
+  await anatomy.getByRole('option', { name: /^AGEA/ }).click();
+  await expect(data).toContainText('Anatomy / AGEA');
+});
 
 for (const width of [1680, 1024, 390]) {
   test(`Data selects datasets atomically with grouped project identity at ${width}px`, async ({ page }) => {
