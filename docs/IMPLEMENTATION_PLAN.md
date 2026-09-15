@@ -68,6 +68,12 @@ preview are implemented. D074 approves initial deployment of the original-value
 recipe, with provisional processing/registration notes only in Data details.
 See [AGEA evidence and continuation](data/AGEA.md).
 
+The proposed [selected-region distribution plan](data/AGEA_SELECTED_REGION_DISTRIBUTIONS.md)
+keeps the valid-voxel global histogram invariant and adds optional region curves
+through a shared, provenance-bound membership grid. A lab prototype may proceed
+with synthetic or existing exploratory labels; a real release remains gated on
+Q19's label, registration, hemisphere, hierarchy and unlabelled-voxel policy.
+
 The [coverage lab](data/AGEA_COVERAGE_LAB.md) is implemented for scientist review
 of the original-volume/coarse-label mismatch. Use its mask comparison and
 aggregate coverage before selecting Q19's population/validity policy.

@@ -152,6 +152,11 @@ Resolution needed:
   measured zero values;
 - accept the source-derived affine/reference-space evidence against the native
   anatomy, including the expected coarse-grid boundary behavior;
+- for region-conditioned distributions, select the authoritative membership
+  grid, hemisphere folding or side-aware semantics, exact-label versus
+  descendant-inclusive hierarchy behavior, and treatment of label-zero and
+  navigation-only regions; see the
+  [proposed implementation plan](data/AGEA_SELECTED_REGION_DISTRIBUTIONS.md);
 - approve expression semantics, display distributions and source release label.
 
 The benchmark's finite/nonnegative statistics are explicitly a sizing

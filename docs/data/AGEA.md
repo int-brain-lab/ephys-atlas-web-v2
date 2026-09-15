@@ -192,6 +192,12 @@ The D069 local integration implements the metadata acceleration, bounded picker,
 source-preserving preview builder and cache-capacity machinery above. Exact
 current scope, commands and measurements are in [the preview runbook](AGEA_LOCAL_PREVIEW.md).
 
+The proposed [selected-region distribution plan](AGEA_SELECTED_REGION_DISTRIBUTIONS.md)
+would reuse a reviewed, release-scoped membership grid to add selected-region
+curves while preserving the all-valid-voxel global distribution. The existing
+coverage-lab label volume makes an exploratory prototype bounded; Q19 still
+blocks a production membership policy and release.
+
 Next: owner review of the integrated original-expression view; resolve remaining
 Q19 public-release registration/identity/display choices; measure peak memory
 and constrained/final-origin delivery. The full-catalog ZIP currently exceeds
