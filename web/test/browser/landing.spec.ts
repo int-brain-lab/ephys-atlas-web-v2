@@ -24,7 +24,7 @@ test('landing distinguishes the available scientific data families and local imp
   await page.goto('/');
   const dataFamilies = page.locator('.landing-features');
   await expect(dataFamilies).toContainText('Task-independent ephys features');
-  await expect(dataFamilies).toContainText('raw AP, LFP, and spike waveforms');
+  await expect(dataFamilies).toContainText('channel, cluster, and voxel scales');
   await expect(dataFamilies).toContainText(/Brain-Wide Map/i);
   await expect(dataFamilies).toContainText('Responses to task events');
   await expect(dataFamilies).toContainText('AGEA gene-expression volumes from the Allen Institute');

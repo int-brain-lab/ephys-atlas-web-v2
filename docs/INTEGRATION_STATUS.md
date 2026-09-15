@@ -220,7 +220,8 @@ viewer at `/app/` share one mutable `site/index.html` entry and one immutable
 build graph, preserving the existing conditional site-promotion transaction.
 The landing reuses the app theme, a genuine reviewed-local 3-D capture and a
 standalone SVG export of the viewer's regional slices. It distinguishes
-task-independent Ephys Atlas waveform features, Brain-Wide Map task-event
+task-independent Ephys Atlas measurements at channel, cluster and voxel scales,
+Brain-Wide Map task-event
 responses, the externally sourced Anatomy category containing AGEA, and
 browser-local imports. The visible caption
 identifies the illustrated feature and vintage; source maturity remains recorded

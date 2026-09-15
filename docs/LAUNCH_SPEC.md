@@ -28,7 +28,8 @@ Supported parcellations for applicable regional data are Allen, Beryl, and Cosmo
 D073 places a lightweight landing page at `/` and the full viewer at `/app/`.
 The landing uses the application's theme and real atlas imagery, with an Open
 atlas action, an existing user-guide link, and integrated about/credits/citation
-content. It distinguishes task-independent Ephys Atlas waveform features,
+content. It distinguishes task-independent Ephys Atlas measurements summarized
+at channel, cluster and voxel scales,
 Brain-Wide Map responses to task events, externally sourced Anatomy datasets
 including AGEA, and browser-local user imports. Separate help, about and documentation pages are not required for the
 first version. Landing visits must not initialize the viewer or fetch scientific
