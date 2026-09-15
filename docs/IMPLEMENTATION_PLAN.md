@@ -101,6 +101,10 @@ These remain useful but must not displace the launch path:
   HTTPS releases and prove acquisition from a clean checkout; retain the
   historical local/candidate descriptors unchanged;
 
+- run the [shared atlas real-asset parity gate](rendering/SHARED_ATLAS_ASSET_EXTRACTION.md) before
+  redirecting any projection bytes to `ibl-atlas-assets`; preserve the website's native 10-um
+  cursor, sparse 80-um display inventory, current defaults, and pixels during extraction;
+
 - capture representative native-Safari quota/RSS evidence before advertising
   broad local-import capacity; publish `ibl-ephys-atlas` only with authorization;
 - run scientist review of the implemented multi-feature Focus/Gallery/Profile
