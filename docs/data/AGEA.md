@@ -55,8 +55,36 @@ Its archive hash and complete MetaImage header are retained in source evidence.
 The [processing script](https://github.com/int-brain-lab/iblatlas/blob/52083adf44825d0622a503705e095699a5957587/iblatlas/genomics/gene_expression_scrapping/06-denoise-impute.py)
 documents PPCA, bilateral averaging and curtaining correction; its upload
 comment identifies `ppca_dual_curtain.bin` as the processed product. The processed
-binary has not been acquired or audited here. Q19 must select and hash it if
-that variant is wanted. Do not recreate denoising during web packaging.
+binary is now pinned and audited in
+[`AGEA_PROCESSED_SOURCE_AUDIT.json`](AGEA_PROCESSED_SOURCE_AUDIT.json). Its
+1,384,542,940 bytes have SHA-256
+`2c3cabd41a422a449f9ced791ccfc5e0f3b3ff8db328ff970086685aec96d41e`.
+Do not recreate denoising during web packaging.
+
+## Processed-source audit
+
+The processed source retains the original catalog order, shape and float16
+encoding. All 4,345 experiments are exactly symmetric under ML-axis reversal,
+confirming the published bilateral-averaging step. Across nonzero coarse-label
+anatomy, all 273,556,855 experiment-voxels are finite. The values include
+1,063,989 negatives, 17,150 exact `-1` values and 114,375 zeros. These are
+post-processing outputs rather than the original missing-value encoding.
+
+The upstream PPCA implementation reconstructs the complete `label.npy != 0`
+domain, then bilateral averaging and per-coronal-slice scaling change it again.
+The processed validity population is therefore the nonzero-label domain; value
+sign and exact `-1` equality cannot classify missingness. Outside that domain,
+the processed binary contains negative, zero and positive values because the
+later transforms also touch the retained original outside values. Those values
+have no coherent missing-sentinel semantics and must remain outside.
+
+Relative to the original source inside nonzero labels, 22,997,008 missing
+experiment-voxels are reconstructed. Of 250,559,847 originally measured
+experiment-voxels, 250,166,799 (99.8431%) change, with mean absolute difference
+0.88294 expression-energy units. The processed product is therefore a distinct
+scientific input, not a missing-value patch. The audit preserves representative
+Ndufa10, Grik2, Ptpru and duplicate-Slc17a7 comparisons. It does not select a
+release or resolve the unchanged provisional registration.
 
 ## Geometry and validity evidence
 
@@ -173,12 +201,18 @@ for name in gene-expression.bin gene-expression.pqt label.npy image.npy; do
   curl --fail --location "https://ibl-brain-wide-map-public.s3.amazonaws.com/atlas/agea/$name" \
     --output "artifacts/agea-metadata-sizing/$name"
 done
+curl --fail --location \
+  https://ibl-brain-wide-map-public.s3.amazonaws.com/atlas/agea/gene-expression-processed.bin \
+  --output artifacts/agea-metadata-sizing/gene-expression-processed.bin
 curl --fail --location https://api.brain-map.org/grid_data/download/74658173 \
   --output artifacts/agea-metadata-sizing/allen-74658173.zip
 uv run --project builder --extra test --locked python -m tools.agea_benchmark \
   --source artifacts/agea-metadata-sizing --output artifacts/agea-browser-benchmark
 AGEA_BENCHMARK_DIR=artifacts/agea-browser-benchmark npx --prefix web playwright test \
   --config web/playwright.agea-benchmark.config.ts
+uv run --project builder --extra test --locked python -m tools.agea_processed_audit \
+  --source artifacts/agea-metadata-sizing \
+  --output docs/data/AGEA_PROCESSED_SOURCE_AUDIT.json
 ```
 
 The audit fails before decode if any pinned IBL input differs. Optional Allen

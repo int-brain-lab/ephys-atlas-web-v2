@@ -28,7 +28,8 @@ Q19 retains scientific release choices. It has no production recipe or release.
 
 | Document | Role | Status |
 | --- | --- | --- |
-| [`AGEA.md`](AGEA.md) | source evidence and implementation continuation | active |
+| [`AGEA.md`](AGEA.md) | original and processed source evidence and implementation continuation | active |
+| [`AGEA_PROCESSED_SOURCE_AUDIT.json`](AGEA_PROCESSED_SOURCE_AUDIT.json) | full-catalog processed-source identity and value-domain evidence | frozen evidence |
 | [`AGEA_COVERAGE_LAB.md`](AGEA_COVERAGE_LAB.md) | exploratory coverage and masking UX | runbook |
 | [`AGEA_STRIPE_REPORT.md`](AGEA_STRIPE_REPORT.md) | missing-slab/intensity review evidence and reproduction | runbook |
 | [`CHANNELS_RECIPE.md`](CHANNELS_RECIPE.md) | scientific recipe | accepted |

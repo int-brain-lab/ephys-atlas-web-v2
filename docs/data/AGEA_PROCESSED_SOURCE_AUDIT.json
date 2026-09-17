@@ -1,0 +1,236 @@
+{
+  "format": "agea-processed-source-audit-v1",
+  "scientific_release": false,
+  "source": {
+    "path": "gene-expression-processed.bin",
+    "bytes": 1384542940,
+    "sha256": "2c3cabd41a422a449f9ced791ccfc5e0f3b3ff8db328ff970086685aec96d41e",
+    "last_modified": "2025-03-18T14:03:46Z",
+    "catalog_experiments": 4345,
+    "shape": [
+      4345,
+      58,
+      41,
+      67
+    ],
+    "dtype": "little-endian float16"
+  },
+  "upstream_processing": {
+    "repository": "int-brain-lab/iblatlas",
+    "commit": "52083adf44825d0622a503705e095699a5957587",
+    "script": "iblatlas/genomics/gene_expression_scrapping/06-denoise-impute.py",
+    "script_sha256": "d7ce788b67a74af33e098dc734d53374892b79e91757198582e0803d1478d23c",
+    "published_intermediate": "ppca_dual_curtain.bin",
+    "steps": [
+      "50-component PPCA reconstruction on nonzero-label voxels",
+      "ML-reflected bilateral nanmean",
+      "per-experiment coronal slice weighting within [0.5, 2] using Cosmos-region medians"
+    ]
+  },
+  "anatomical_domain": {
+    "rule": "label.npy != 0",
+    "voxels_per_experiment": 62959,
+    "outside_voxels_per_experiment": 96367,
+    "basis": "the upstream PPCA reconstruction is assigned only to nonzero-label voxels"
+  },
+  "processed_counts": {
+    "inside_label": {
+      "voxels": 273556855,
+      "finite": 273556855,
+      "nonfinite": 0,
+      "negative": 1063989,
+      "minus_one": 17150,
+      "zero": 114375,
+      "positive": 272378491,
+      "min": -2.0,
+      "max": 162.0
+    },
+    "outside_label": {
+      "voxels": 418714615,
+      "finite": 418714615,
+      "nonfinite": 0,
+      "negative": 235862275,
+      "minus_one": 1117988,
+      "zero": 40375675,
+      "positive": 142476665,
+      "min": -2.0,
+      "max": 208.875
+    }
+  },
+  "bilateral_symmetry": {
+    "symmetric_experiments": 4345,
+    "experiment_count": 4345,
+    "voxel_mismatches_against_ml_flip": 0
+  },
+  "comparison_to_original_inside_label": {
+    "original_missing": 22997008,
+    "original_measured": 250559847,
+    "changed_original_measurements": 250166799,
+    "changed_fraction": 0.9984313208811945,
+    "mean_absolute_difference": 0.882938794275464,
+    "maximum_absolute_difference": 91.078125
+  },
+  "samples": {
+    "74658173": {
+      "index": 0,
+      "gene": "Ndufa10",
+      "original_missing_inside": 3599,
+      "original_measured_inside": 59360,
+      "changed_original_measurements": 59261,
+      "measured_inside_mean_absolute_difference": 1.4434302085312711,
+      "processed_inside": {
+        "voxels": 62959,
+        "finite": 62959,
+        "nonfinite": 0,
+        "negative": 0,
+        "minus_one": 0,
+        "zero": 0,
+        "positive": 62959,
+        "min": 0.00010854005813598633,
+        "max": 34.5
+      },
+      "processed_outside": {
+        "voxels": 96367,
+        "finite": 96367,
+        "nonfinite": 0,
+        "negative": 55778,
+        "minus_one": 0,
+        "zero": 6232,
+        "positive": 34357,
+        "min": -1.3310546875,
+        "max": 20.8125
+      },
+      "processed_exact_bilateral_symmetry": true
+    },
+    "71247618": {
+      "index": 1,
+      "gene": "Grik2",
+      "original_missing_inside": 4969,
+      "original_measured_inside": 57990,
+      "changed_original_measurements": 57912,
+      "measured_inside_mean_absolute_difference": 1.7350841146601668,
+      "processed_inside": {
+        "voxels": 62959,
+        "finite": 62959,
+        "nonfinite": 0,
+        "negative": 344,
+        "minus_one": 0,
+        "zero": 0,
+        "positive": 62615,
+        "min": -1.6025390625,
+        "max": 52.84375
+      },
+      "processed_outside": {
+        "voxels": 96367,
+        "finite": 96367,
+        "nonfinite": 0,
+        "negative": 52608,
+        "minus_one": 0,
+        "zero": 6142,
+        "positive": 37617,
+        "min": -1.6025390625,
+        "max": 41.3125
+      },
+      "processed_exact_bilateral_symmetry": true
+    },
+    "75081210": {
+      "index": 658,
+      "gene": "Slc17a7",
+      "original_missing_inside": 2454,
+      "original_measured_inside": 60505,
+      "changed_original_measurements": 60442,
+      "measured_inside_mean_absolute_difference": 4.093523407975423,
+      "processed_inside": {
+        "voxels": 62959,
+        "finite": 62959,
+        "nonfinite": 0,
+        "negative": 25,
+        "minus_one": 0,
+        "zero": 10,
+        "positive": 62924,
+        "min": -2.0,
+        "max": 89.25
+      },
+      "processed_outside": {
+        "voxels": 96367,
+        "finite": 96367,
+        "nonfinite": 0,
+        "negative": 56807,
+        "minus_one": 0,
+        "zero": 9066,
+        "positive": 30494,
+        "min": -2.0,
+        "max": 59.9375
+      },
+      "processed_exact_bilateral_symmetry": true
+    },
+    "858": {
+      "index": 1014,
+      "gene": "Ptpru",
+      "original_missing_inside": 6066,
+      "original_measured_inside": 56893,
+      "changed_original_measurements": 56867,
+      "measured_inside_mean_absolute_difference": 0.4654822194117178,
+      "processed_inside": {
+        "voxels": 62959,
+        "finite": 62959,
+        "nonfinite": 0,
+        "negative": 82,
+        "minus_one": 0,
+        "zero": 0,
+        "positive": 62877,
+        "min": -1.947265625,
+        "max": 15.2734375
+      },
+      "processed_outside": {
+        "voxels": 96367,
+        "finite": 96367,
+        "nonfinite": 0,
+        "negative": 30236,
+        "minus_one": 0,
+        "zero": 4190,
+        "positive": 61941,
+        "min": -2.0,
+        "max": 10.1328125
+      },
+      "processed_exact_bilateral_symmetry": true
+    },
+    "70436317": {
+      "index": 2368,
+      "gene": "Slc17a7",
+      "original_missing_inside": 3726,
+      "original_measured_inside": 59233,
+      "changed_original_measurements": 59181,
+      "measured_inside_mean_absolute_difference": 3.0481537575992066,
+      "processed_inside": {
+        "voxels": 62959,
+        "finite": 62959,
+        "nonfinite": 0,
+        "negative": 34,
+        "minus_one": 0,
+        "zero": 0,
+        "positive": 62925,
+        "min": -1.69921875,
+        "max": 76.0625
+      },
+      "processed_outside": {
+        "voxels": 96367,
+        "finite": 96367,
+        "nonfinite": 0,
+        "negative": 56136,
+        "minus_one": 0,
+        "zero": 5848,
+        "positive": 34383,
+        "min": -1.84765625,
+        "max": 59.21875
+      },
+      "processed_exact_bilateral_symmetry": true
+    }
+  },
+  "interpretation": {
+    "audit_selects_release_input": false,
+    "outside_values_have_no_missing-sentinel_semantics": true,
+    "negative_inside_values_are_retained_processing_output": true,
+    "registration_status": "unchanged and provisional"
+  }
+}
