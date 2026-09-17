@@ -71,6 +71,9 @@ See [AGEA evidence](data/AGEA.md) and the
 
 The [coverage lab](data/AGEA_COVERAGE_LAB.md) remains original-source evidence.
 D077 now fixes the processed validity policy independently.
+The earlier [selected-region distribution plan](data/AGEA_SELECTED_REGION_DISTRIBUTIONS.md)
+is retained as a superseded planning record; D078, its hash-bound selection and
+the candidate review are the authority for the implemented outcome.
 
 The same lab now includes fixed-transform alignment review against the actual
 website projection pack: linked native planes, CCF-derived reference image or

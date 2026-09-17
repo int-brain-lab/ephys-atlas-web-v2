@@ -44,6 +44,11 @@ function developmentProject(datasetId: string): DevelopmentProject {
     title: 'Brain-Wide Map',
     description: 'Brain-wide activity maps and preserved legacy results.',
   };
+  if (datasetId === 'agea') return {
+    id: 'agea',
+    title: 'Anatomy',
+    description: 'Anatomical datasets from external scientific sources.',
+  };
   return {
     id: 'local-development',
     title: 'Other local previews',

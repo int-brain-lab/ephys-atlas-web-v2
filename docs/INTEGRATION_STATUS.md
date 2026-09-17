@@ -229,7 +229,11 @@ tested route function is deployed on the existing v2 distribution. D073's static
 viewer at `/app/` share one mutable `site/index.html` entry and one immutable
 build graph, preserving the existing conditional site-promotion transaction.
 The landing reuses the app theme, a genuine reviewed-local 3-D capture and a
-standalone SVG export of the viewer's regional slices. The visible caption
+standalone SVG export of the viewer's regional slices. It distinguishes
+task-independent Ephys Atlas measurements at channel, cluster and voxel scales,
+Brain-Wide Map task-event
+responses, the externally sourced Anatomy category containing AGEA, and
+browser-local imports. The visible caption
 identifies the illustrated feature and vintage; source maturity remains recorded
 with the assets. Visits load no viewer runtime or scientific data. The landing
 credits the International Brain Laboratory, the Allen CCFv3 source and paper,

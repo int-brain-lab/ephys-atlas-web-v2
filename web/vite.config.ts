@@ -20,6 +20,7 @@ export default defineConfig(async () => {
   if (defaultRepresentation && defaultRepresentation !== 'regional' && defaultRepresentation !== 'volume') {
     throw new Error('EPHYS_ATLAS_REAL_REPRESENTATION must be regional or volume');
   }
+  const remoteDataOrigin = process.env.EPHYS_ATLAS_REMOTE_DATA_ORIGIN;
   const additionalReleasePaths = (process.env.EPHYS_ATLAS_ADDITIONAL_RELEASES ?? '')
     .split(',').map((value) => value.trim()).filter(Boolean);
   const projectionPackPath = process.env.EPHYS_ATLAS_PROJECTION_PACK;
@@ -44,7 +45,25 @@ export default defineConfig(async () => {
     'import.meta.env.VITE_BRAIN_MESH_MANIFEST_BYTES': JSON.stringify(meshPack.manifestBytes),
     'import.meta.env.VITE_BRAIN_MESH_MANIFEST_SHA256': JSON.stringify(meshPack.manifestSha256),
   } : {};
-  if (!releasePath) return { define: { ...projectionDefine, ...meshDefine }, plugins };
+  const remoteDataServer = remoteDataOrigin ? {
+    server: {
+      proxy: {
+        '/__remote-data': {
+          target: remoteDataOrigin,
+          changeOrigin: true,
+          rewrite: (requestPath: string) => requestPath.replace(/^\/__remote-data/, ''),
+        },
+      },
+    },
+  } : {};
+  const remoteDataDefine = remoteDataOrigin ? {
+    'import.meta.env.VITE_DATASET_CATALOG_URL': JSON.stringify('/__remote-data/catalog.json'),
+  } : {};
+  if (!releasePath) return {
+    ...remoteDataServer,
+    define: { ...projectionDefine, ...meshDefine, ...remoteDataDefine },
+    plugins,
+  };
   const release = await loadRealDevelopmentRelease(
     releasePath,
     process.env.EPHYS_ATLAS_REAL_FEATURE ?? 'rms_ap.denoised',
@@ -58,9 +77,11 @@ export default defineConfig(async () => {
     return loadRealDevelopmentRelease(additionalPath, featureId);
   }));
   return {
+    ...remoteDataServer,
     define: {
       ...projectionDefine,
       ...meshDefine,
+      ...remoteDataDefine,
       'import.meta.env.VITE_DEFAULT_DATASET_ID': JSON.stringify(release.datasetId),
       'import.meta.env.VITE_DEFAULT_PROJECT_ID': JSON.stringify(release.projectId),
       'import.meta.env.VITE_DEFAULT_RELEASE_ID': JSON.stringify(release.releaseId),

@@ -236,10 +236,14 @@ validity, presentation and release recipe. D078 accepts the source-native label
 registration for descriptive regional aggregation and requires signed physical
 Allen/Beryl/Cosmos companions in the next candidate. The existing complete
 candidate and browser evidence are in [the processed review](AGEA_PROCESSED_REVIEW.md).
-Next: build and review that successor, then obtain publication authorization;
-afterward rebuild on clean Linux `main`, run production preflight and measure
-constrained/final-origin delivery before catalog promotion. The full-catalog ZIP currently exceeds the
-existing 20,000-entry local-import limit; do not advertise that archive as
+The earlier [selected-region distribution plan](AGEA_SELECTED_REGION_DISTRIBUTIONS.md)
+is retained as a superseded planning record. The complete D078 successor and
+browser evidence are in the
+[regional-distribution review](VOLUME_REGIONAL_DISTRIBUTION_REVIEW.md).
+Next: obtain publication authorization; afterward rebuild on clean Linux
+`main`, run production preflight and measure constrained/final-origin delivery
+before catalog promotion. The full-catalog ZIP currently exceeds the existing
+20,000-entry local-import limit; do not advertise that archive as
 supported or weaken the limit without a separate measured packaging task.
 
 The measured bundle and experiment sizes support the chosen one-bundle,

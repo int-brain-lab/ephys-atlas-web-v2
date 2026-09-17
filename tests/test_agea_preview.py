@@ -11,7 +11,7 @@ import pytest
 from ephys_atlas_builder.schema_v1 import validate_schema_v1_document
 from ephys_atlas_builder.validate import validate_release
 
-from tools import s3_publish
+from tools import agea_preview, s3_publish
 from tools.agea_preview import (
     build_preview,
     build_processed_release,
@@ -198,6 +198,8 @@ def test_refuses_existing_output_and_changed_source(tmp_path: Path) -> None:
 def test_builds_preflightable_original_release_with_provisional_notes_only_in_provenance(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    linux_environment = {**agea_preview.build_environment(), "operating_system": "linux"}
+    monkeypatch.setattr(agea_preview, "build_environment", lambda: linux_environment)
     source, hashes = _source(tmp_path)
     review = tmp_path / "review.json"
     review.write_text('{"alignment_accepted":false}\n')

@@ -22,7 +22,9 @@ choices; evidence reports retain hashes, measurements, and reproduction facts.
 
 ## Document roles
 
-AGEA is active independent work under D067/D077/D078. [AGEA evidence](AGEA.md), the
+AGEA is the first dataset in the user-facing **Anatomy** category, separate
+from IBL-produced Ephys Atlas and Brain-Wide Map datasets. It is active
+independent work under D067/D077/D078. [AGEA evidence](AGEA.md), the
 hash-bound [processed selection](AGEA_PROCESSED_SELECTION.json) and the
 [candidate review](AGEA_PROCESSED_REVIEW.md) own its source, recipe and local
 release evidence. The [regional-distribution selection](VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json)
@@ -36,6 +38,7 @@ owns mapping and laterality; Q19 retains publication promotion only.
 | [`VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json`](VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json) | D078 volume mapping, registration, laterality and regional-distribution selection | accepted |
 | [`VOLUME_REGIONAL_DISTRIBUTION_REVIEW.md`](VOLUME_REGIONAL_DISTRIBUTION_REVIEW.md) | complete AGEA/W26 regional-companion builds, validation and real-browser evidence | active |
 | [`AGEA_PROCESSED_REVIEW.md`](AGEA_PROCESSED_REVIEW.md) | complete candidate build, visual comparison and browser evidence | active |
+| [`AGEA_SELECTED_REGION_DISTRIBUTIONS.md`](AGEA_SELECTED_REGION_DISTRIBUTIONS.md) | pre-D078 selected-region distribution implementation plan | superseded |
 | [`AGEA_COVERAGE_LAB.md`](AGEA_COVERAGE_LAB.md) | exploratory coverage and masking UX | runbook |
 | [`AGEA_STRIPE_REPORT.md`](AGEA_STRIPE_REPORT.md) | missing-slab/intensity review evidence and reproduction | runbook |
 | [`CHANNELS_RECIPE.md`](CHANNELS_RECIPE.md) | scientific recipe | accepted |
