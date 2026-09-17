@@ -93,6 +93,17 @@ def _processed_hashes(source: Path, original_hashes: dict[str, str]) -> dict[str
     }
 
 
+def _regional_selection(source: Path, path: Path) -> Path:
+    document = json.loads(
+        Path("docs/data/VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json").read_text()
+    )
+    document["agea"]["label_resource_sha256"] = _sha(source / "label.npy")
+    for name in ("allen", "beryl", "cosmos"):
+        document["agea"]["mapping_audit"][f"{name}_lr_physical_rows"] = 1
+    path.write_text(json.dumps(document, indent=2) + "\n")
+    return path
+
+
 def test_builds_complete_local_preview_without_changing_source_semantics(
     tmp_path: Path,
 ) -> None:
@@ -249,6 +260,7 @@ def test_builds_processed_release_with_label_domain_and_signed_values(
         builder_commit="b" * 40,
         release_id="agea-processed-20260917-v1",
         selection=Path("docs/data/AGEA_PROCESSED_SELECTION.json"),
+        regional_selection=_regional_selection(source, tmp_path / "regional.json"),
     )
     validate_release(release)
     manifest = json.loads((release / "manifest.json").read_text())
@@ -291,6 +303,17 @@ def test_builds_processed_release_with_label_domain_and_signed_values(
         summary["missing_voxel_count"],
         summary["valid_statistics"]["min"],
     ) == (4, 4, 0, -1.0)
+    assert [item["parcellation_id"] for item in summary["regional_distributions"]] == [
+        "allen",
+        "beryl",
+        "cosmos",
+    ]
+    assert [item["id"] for item in manifest["parcellations"]] == [
+        "allen",
+        "beryl",
+        "cosmos",
+    ]
+    assert recipe["registration_status"] == "accepted-for-descriptive-regional-aggregation"
     chunk = gzip.decompress((feature_root / "volume/chunks/0.0.0.f16.gz").read_bytes())
     assert chunk == (source / "gene-expression-processed.bin").read_bytes()[:16]
 

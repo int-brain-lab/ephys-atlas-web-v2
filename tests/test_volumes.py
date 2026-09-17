@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import nrrd
 import pytest
 from ephys_atlas_builder.io import sha256_file, write_json
 from ephys_atlas_builder.validate import validate_release
@@ -89,6 +90,22 @@ def _distribution_selection(
         },
     )
     return path
+
+
+def _regional_inputs(tmp_path: Path, grid_shape: tuple[int, int, int]) -> tuple[Path, Path]:
+    annotation_path = tmp_path / "annotation_50.nrrd"
+    source_shape = (grid_shape[1], grid_shape[2], grid_shape[0])
+    nrrd.write(str(annotation_path), np.full(source_shape, 8, dtype="<u4"), index_order="F")
+    selection = json.loads(
+        (ROOT / "docs/data/VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json").read_text()
+    )
+    selection["ephys_volumes"]["annotation_sha256"] = sha256_file(annotation_path)
+    selection["ephys_volumes"]["hemisphere_split_index"] = 1
+    for name, count in zip(("allen", "beryl", "cosmos"), (2, 1, 1)):
+        selection["ephys_volumes"]["mapping_audit"][f"{name}_lr_physical_rows"] = count
+    selection_path = tmp_path / "regional-selection.json"
+    write_json(selection_path, selection)
+    return selection_path, annotation_path
 
 
 @pytest.mark.parametrize(
@@ -291,6 +308,7 @@ def test_snapshot_recipe_verifies_source_identity_and_discovers_features(tmp_pat
             ],
         },
     )
+    regional_selection, regional_annotation = _regional_inputs(tmp_path, first.shape)
     config = _config(
         source_release_id="synthetic-volume-v1",
         features=("polarity",),
@@ -302,6 +320,8 @@ def test_snapshot_recipe_verifies_source_identity_and_discovers_features(tmp_pat
             source_release_id="synthetic-volume-v1",
             features=("polarity",),
         ),
+        regional_distribution_selection=regional_selection,
+        regional_annotation=regional_annotation,
     )
     release = build_volumes_from_snapshot(source, tmp_path / "release", config)
     validate_release(release, ROOT / "schema" / "v1")
@@ -316,6 +336,17 @@ def test_snapshot_recipe_verifies_source_identity_and_discovers_features(tmp_pat
         source / "source.json"
     ).read_bytes()
     assert (release / "distribution-selection.json").is_file()
+    assert (release / "regional-distribution-selection.json").is_file()
+    assert [item["id"] for item in manifest["parcellations"]] == [
+        "allen",
+        "beryl",
+        "cosmos",
+    ]
+    summary = json.loads((release / "features/polarity/volume/summary.json").read_text())
+    assert all(
+        item["unassigned_valid_voxel_count"] == 0
+        for item in summary["regional_distributions"]
+    )
 
 
 def test_snapshot_recipe_loads_and_pins_machine_readable_geometry(tmp_path):

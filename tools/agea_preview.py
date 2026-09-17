@@ -29,6 +29,14 @@ from ephys_atlas_builder.regional_release import (
 from ephys_atlas_builder.statistics import describe
 from ephys_atlas_builder.validate import validate_release
 from ephys_atlas_builder.volume import write_chunked_volume
+from ephys_atlas_builder.volume_regional import (
+    PhysicalParcellation,
+    build_physical_parcellations,
+    load_regional_selection,
+    validate_parcellation_row_counts,
+    write_physical_parcellations,
+    write_volume_regional_distributions,
+)
 from iblatlas.genomics import agea
 
 from tools.agea_benchmark import SHAPE, SOURCE_HASHES, verify
@@ -39,6 +47,7 @@ SOURCE_URI = "https://ibl-brain-wide-map-public.s3.amazonaws.com/atlas/agea/"
 IBLATLAS_COMMIT = "52083adf44825d0622a503705e095699a5957587"
 GRID_ID = "agea-original-200um-loader-grid"
 PROCESSED_SELECTION = Path("docs/data/AGEA_PROCESSED_SELECTION.json")
+REGIONAL_SELECTION = Path("docs/data/VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json")
 PROCESSED_SOURCE_HASHES = {
     PROCESSED_NAME: PROCESSED_SHA256,
     **{name: digest for name, digest in SOURCE_HASHES.items() if name != "gene-expression.bin"},
@@ -160,7 +169,7 @@ PROCESSED = ReleaseProfile(
     notes=(
         "The exact upstream processed float16 product is packaged unchanged; web packaging does not rerun PPCA, bilateral averaging, or curtaining correction.",
         "Only label.npy != 0 is valid. All finite processed values in that domain, including negative, exact -1, and zero values, are retained; label-zero voxels are outside.",
-        "Alignment with the anatomical atlas remains provisional. Processing preserves the source grid and loader affine and does not independently validate registration.",
+        "D078 accepts the source-native label volume for descriptive regional aggregation. Publication promotion remains separately unapproved.",
     ),
 )
 
@@ -252,6 +261,7 @@ def _write_feature(
     transport_item: dict | None,
     profile: ReleaseProfile,
     labels: np.ndarray,
+    regional_parcellations: dict[str, PhysicalParcellation] | None = None,
 ) -> dict:
     feature_root = release / "features" / feature_id
     if transport_item is None:
@@ -343,9 +353,17 @@ def _write_feature(
     }
     display = linear_full_display()
     if valid_values.size:
-        summary["distribution"] = {
-            "binnings": build_global_distribution_binnings(valid_values, 64, display)
-        }
+        binnings = build_global_distribution_binnings(valid_values, 64, display)
+        summary["distribution"] = {"binnings": binnings}
+        if regional_parcellations is not None:
+            summary["regional_distributions"] = write_volume_regional_distributions(
+                feature_root / "volume",
+                values,
+                valid,
+                binnings,
+                regional_parcellations,
+                require_complete_assignment=True,
+            )
     summary_path = feature_root / "volume/summary.json"
     write_json(summary_path, summary)
     mask = np.zeros(values.shape, dtype="u1")
@@ -416,6 +434,7 @@ def build_release(
     builder_commit: str | None = None,
     release_id: str | None = None,
     selection: Path | None = None,
+    regional_selection: Path | None = None,
 ) -> Path:
     if output.exists():
         raise ValueError(f"output already exists: {output}")
@@ -460,10 +479,37 @@ def build_release(
     selection_sha = sha256_file(selection) if selection is not None else None
     if selection is not None:
         shutil.copyfile(selection, selection_path)
+    regional_selection_record = (
+        load_regional_selection(regional_selection)
+        if regional_selection is not None
+        else None
+    )
+    regional_selection_path = (
+        release / regional_selection.name if regional_selection is not None else None
+    )
+    if regional_selection is not None:
+        shutil.copyfile(regional_selection, regional_selection_path)
     volumes = np.memmap(source_volume, dtype="<f2", mode="r", shape=shape)
     labels = np.load(source / "label.npy")
     if labels.shape != shape[1:]:
         raise ValueError("AGEA label shape does not match expression volumes")
+    regional_parcellations = None
+    parcellation_entries = []
+    if regional_selection_record is not None:
+        if sha256_file(source / "label.npy") != regional_selection_record.agea_label_sha256:
+            raise ValueError("AGEA label.npy SHA-256 differs from the D078 selection")
+        regional_parcellations = build_physical_parcellations(
+            labels,
+            semantics="brainregions-index",
+        )
+        validate_parcellation_row_counts(
+            regional_parcellations,
+            regional_selection_record.agea_expected_rows,
+        )
+        parcellation_entries = write_physical_parcellations(
+            release,
+            regional_parcellations,
+        )
     transported = _transport_features(transport)
     if transport is not None and profile.source_variant != "original":
         raise ValueError("original-value transport cannot be reused for processed AGEA")
@@ -500,12 +546,16 @@ def build_release(
                 item,
                 profile,
                 labels,
+                regional_parcellations,
             )
         )
     json_paths = [entry["descriptor"]["resource"]["path"] for entry in features]
     json_paths += [
         f"features/{entry['id']}/volume/resource-index.json" for entry in features
     ] + [f"features/{entry['id']}/volume/summary.json" for entry in features]
+    json_paths += [
+        item["metadata"]["resource"]["path"] for item in parcellation_entries
+    ]
     manifest = {
         "schema_version": "1.0",
         "dataset_id": DATASET_ID,
@@ -558,10 +608,23 @@ def build_release(
                     if selection_path is not None
                     else []
                 ),
+                *(
+                    [
+                        {
+                            "role": "selection-freeze",
+                            "description": "Owner-approved D078 regional volume-distribution selection",
+                            "path": regional_selection_path.name,
+                            "sha256": regional_selection_record.sha256,
+                        }
+                    ]
+                    if regional_selection_path is not None
+                    and regional_selection_record is not None
+                    else []
+                ),
             ],
             "builder": {
                 "name": profile.builder_name,
-                "version": "1.0.0",
+                "version": "1.1.0" if regional_selection_record is not None else "1.0.0",
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 "commit": commit,
                 "command": profile.builder_command,
@@ -579,7 +642,11 @@ def build_release(
                 "grid_shape": list(shape[1:]),
                 "index_to_world_um": list(matrix),
                 "reference_space_id": "allen-ccf-2017",
-                "registration_status": "provisional",
+                "registration_status": (
+                    "accepted-for-descriptive-regional-aggregation"
+                    if regional_selection_record is not None
+                    else "provisional"
+                ),
                 "validity": (
                     {
                         "valid": "all measured values >= 0, including zero and label 0",
@@ -597,10 +664,21 @@ def build_release(
                 "normalization": "none",
                 "layout": "chunks3d-one-chunk-per-experiment",
                 "histogram": "Linear/Full, 64 bins",
+                **(
+                    {
+                        "regional_distribution_selection_sha256": regional_selection_record.sha256,
+                        "regional_decision": "D078",
+                        "regional_parcellations": ["allen", "beryl", "cosmos"],
+                        "regional_hemisphere_encoding": "signed-atlas-ids-negative-left",
+                        "regional_interpretation": "upstream values were bilaterally averaged; left/right rows are spatial partitions, not independent biological measurements",
+                    }
+                    if regional_selection_record is not None
+                    else {}
+                ),
             },
             "notes": list(profile.notes),
         },
-        "parcellations": [],
+        "parcellations": parcellation_entries,
         "features": features,
         "artifacts": [],
     }
@@ -709,6 +787,7 @@ def build_processed_release(
     builder_commit: str | None = None,
     release_id: str | None = None,
     selection: Path = PROCESSED_SELECTION,
+    regional_selection: Path = REGIONAL_SELECTION,
 ) -> Path:
     """Build D077's processed-value release; deployment maturity is external."""
     return build_release(
@@ -716,6 +795,7 @@ def build_processed_release(
         alignment_review=alignment_review, shape=shape,
         source_hashes=source_hashes, affine=affine, builder_commit=builder_commit,
         release_id=release_id, selection=selection,
+        regional_selection=regional_selection,
     )
 
 

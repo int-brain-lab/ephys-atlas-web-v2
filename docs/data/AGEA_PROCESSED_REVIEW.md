@@ -2,8 +2,10 @@
 
 Status: active candidate evidence.
 
-Artifact maturity: validated-real-local candidate evidence, 2026-09-17. Not
-staged or published. Registration remains provisional.
+Artifact maturity: validated-real-local D077 candidate evidence, 2026-09-17.
+Not staged or published. D078 subsequently accepted source-native labels for
+descriptive regional aggregation; a companion-bearing successor remains to be
+built and reviewed.
 
 ## Candidate
 

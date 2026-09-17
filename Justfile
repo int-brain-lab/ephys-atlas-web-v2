@@ -278,9 +278,9 @@ data-build-channels source_release output_release feature_mode population distri
 data-build-clusters source_release output_release catalog_selection distribution_selection created_at ibleatools_commit iblatlas_commit builder_commit:
     {{uv-scientific}} ephys-atlas-data build-clusters {{source_release}} --release-id {{output_release}} --project ibl_neuropixel_brainwide_01 --population all --catalog-selection {{catalog_selection}} --distribution-selection {{distribution_selection}} --created-at {{created_at}} --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
 
-# Build an explicitly local W26 slice-pack candidate from the committed D043 selection.
-data-build-volumes-candidate source_release release_id distribution_selection created_at pack_depth ibleatools_commit iblatlas_commit builder_commit:
-    {{uv-scientific}} ephys-atlas-data build-volumes {{source_release}} --release-id {{release_id}} --created-at {{created_at}} --geometry-selection docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json --distribution-selection {{distribution_selection}} --layout orthogonal_slice_packs --pack-depth {{pack_depth}} --candidate --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
+# Build an explicitly local W26 slice-pack candidate with D043/D050/D078 selections.
+data-build-volumes-candidate source_release release_id distribution_selection regional_annotation created_at pack_depth ibleatools_commit iblatlas_commit builder_commit:
+    {{uv-scientific}} ephys-atlas-data build-volumes {{source_release}} --release-id {{release_id}} --created-at {{created_at}} --geometry-selection docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json --distribution-selection '{{distribution_selection}}' --regional-distribution-selection docs/data/VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json --regional-annotation '{{regional_annotation}}' --layout orthogonal_slice_packs --pack-depth {{pack_depth}} --candidate --ibleatools-commit {{ibleatools_commit}} --iblatlas-commit {{iblatlas_commit}} --builder-commit {{builder_commit}}
 
 # Preserve the exact D038 source as a new release with reviewed D050 presentation.
 data-build-brainwide-map source_release output_release distribution_selection created_at builder_commit source_dir="data/source/brainwide_map/legacy-v1-1d908bea":

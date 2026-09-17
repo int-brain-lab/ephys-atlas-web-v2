@@ -28,6 +28,15 @@ from .regional_release import (
 )
 from .statistics import describe
 from .volume import write_chunked_volume, write_slice_packed_volume
+from .volume_regional import (
+    PhysicalParcellation,
+    build_physical_parcellations,
+    load_lateralized_volume_annotation,
+    load_regional_selection,
+    validate_parcellation_row_counts,
+    write_physical_parcellations,
+    write_volume_regional_distributions,
+)
 
 DATASET_ID = "ephys_atlas_volumes"
 _COMMIT_RE = re.compile(r"^[0-9a-f]{7,40}$")
@@ -57,6 +66,8 @@ class VolumeBuildConfig:
     builder_commit: str | None = None
     geometry_selection: Path | None = None
     distribution_selection: Path | None = None
+    regional_distribution_selection: Path | None = None
+    regional_annotation: Path | None = None
     candidate: bool = False
 
     def validate(self) -> None:
@@ -287,6 +298,8 @@ def _write_volume_feature(
     values: np.ndarray,
     config: VolumeBuildConfig,
     grid: dict,
+    regional_parcellations: Mapping[str, PhysicalParcellation] | None = None,
+    require_complete_regional_assignment: bool = False,
 ) -> dict:
     volume = np.asarray(values)
     if volume.ndim != 3 or tuple(volume.shape) != tuple(grid["shape"]):
@@ -353,11 +366,19 @@ def _write_volume_feature(
         },
     }
     if valid_values.size:
-        summary["distribution"] = {
-            "binnings": build_global_distribution_binnings(
-                valid_values, config.histogram_bins, display
+        binnings = build_global_distribution_binnings(
+            valid_values, config.histogram_bins, display
+        )
+        summary["distribution"] = {"binnings": binnings}
+        if regional_parcellations is not None:
+            summary["regional_distributions"] = write_volume_regional_distributions(
+                feature_root / "volume",
+                volume,
+                valid,
+                binnings,
+                regional_parcellations,
+                require_complete_assignment=require_complete_regional_assignment,
             )
-        }
     summary_path = feature_root / "volume" / "summary.json"
     write_json(summary_path, summary)
 
@@ -420,10 +441,19 @@ def build_volumes_release_from_arrays(
     config: VolumeBuildConfig,
     feature_values: Mapping[str, np.ndarray],
     provenance_sources: Sequence[dict],
+    *,
+    regional_parcellations: Mapping[str, PhysicalParcellation] | None = None,
+    require_complete_regional_assignment: bool = False,
 ) -> Path:
     config.validate()
     if not feature_values:
         raise ValueError("at least one feature is required")
+    if (regional_parcellations is None) != (
+        config.regional_distribution_selection is None
+    ):
+        raise ValueError(
+            "regional parcellations and the D078 selection must be supplied together"
+        )
     selected = tuple(config.features or feature_values)
     missing = sorted(set(selected) - set(feature_values))
     if missing:
@@ -450,9 +480,20 @@ def build_volumes_release_from_arrays(
     if release_dir.exists() and any(release_dir.iterdir()):
         raise ValueError(f"release directory is not empty: {release_dir}")
     release_dir.mkdir(parents=True, exist_ok=True)
+    parcellation_entries = (
+        write_physical_parcellations(release_dir, regional_parcellations)
+        if regional_parcellations is not None
+        else []
+    )
     feature_entries = [
         _write_volume_feature(
-            release_dir, feature, feature_values[feature], config, grid
+            release_dir,
+            feature,
+            feature_values[feature],
+            config,
+            grid,
+            regional_parcellations,
+            require_complete_regional_assignment,
         )
         for feature in selected
     ]
@@ -480,6 +521,12 @@ def build_volumes_release_from_arrays(
         command.extend(
             ("--distribution-selection", "distribution-selection.json")
         )
+    if config.regional_distribution_selection:
+        command.extend(
+            ("--regional-distribution-selection", "regional-distribution-selection.json")
+        )
+    if config.regional_annotation:
+        command.extend(("--regional-annotation", str(config.regional_annotation)))
     if config.layout == "orthogonal_slice_packs":
         command.extend(("--pack-depth", str(config.pack_depth)))
     else:
@@ -544,7 +591,11 @@ def build_volumes_release_from_arrays(
             ],
             "builder": {
                 "name": "ibl-ephys-atlas-builder",
-                "version": "1.0.0",
+                "version": (
+                    "1.1.0"
+                    if config.regional_distribution_selection is not None
+                    else "1.0.0"
+                ),
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 **({"commit": config.builder_commit} if config.builder_commit else {}),
                 "command": shlex.join(command),
@@ -571,6 +622,18 @@ def build_volumes_release_from_arrays(
                     if config.distribution_selection is not None
                     else {}
                 ),
+                **(
+                    {
+                        "regional_distribution_selection_sha256": sha256_file(
+                            config.regional_distribution_selection
+                        ),
+                        "regional_decision": "D078",
+                        "regional_parcellations": ["allen", "beryl", "cosmos"],
+                        "regional_hemisphere_encoding": "signed-atlas-ids-negative-left",
+                    }
+                    if config.regional_distribution_selection is not None
+                    else {}
+                ),
                 "transport": transport,
             },
             "notes": [
@@ -583,7 +646,7 @@ def build_volumes_release_from_arrays(
                 ),
             ],
         },
-        "parcellations": [],
+        "parcellations": parcellation_entries,
         "features": feature_entries,
         "artifacts": [],
     }
@@ -601,6 +664,12 @@ def build_volumes_from_snapshot(
     if config.distribution_selection is None:
         raise ValueError(
             "snapshot builds require an approved D050 distribution selection"
+        )
+    if (config.regional_distribution_selection is None) != (
+        config.regional_annotation is None
+    ):
+        raise ValueError(
+            "regional volume distributions require both the D078 selection and annotation"
         )
     distribution_selection = load_distribution_selection(
         config.distribution_selection,
@@ -720,6 +789,28 @@ def build_volumes_from_snapshot(
     )
     config = replace(config, feature_display=feature_display)
 
+    regional_selection = (
+        load_regional_selection(config.regional_distribution_selection)
+        if config.regional_distribution_selection is not None
+        else None
+    )
+    regional_parcellations = None
+    if regional_selection is not None:
+        assert config.regional_annotation is not None
+        annotation = load_lateralized_volume_annotation(
+            config.regional_annotation,
+            regional_selection,
+            grid_shape,
+        )
+        regional_parcellations = build_physical_parcellations(
+            annotation,
+            semantics="allen-atlas-id",
+        )
+        validate_parcellation_row_counts(
+            regional_parcellations,
+            regional_selection.volume_expected_rows,
+        )
+
     canonical = source.get("canonical_source") or {}
     provenance_sources = [
         {
@@ -749,6 +840,24 @@ def build_volumes_from_snapshot(
             else []
         ),
         selection_provenance(distribution_selection),
+        *(
+            [
+                {
+                    "role": "atlas-geometry",
+                    "description": "Pinned Allen CCF 2017 50 um annotation used for D078 regional aggregation",
+                    "path": config.regional_annotation.name,
+                    "sha256": regional_selection.volume_annotation_sha256,
+                },
+                {
+                    "role": "selection-freeze",
+                    "description": "Owner-approved D078 regional volume-distribution selection",
+                    "path": "regional-distribution-selection.json",
+                    "sha256": regional_selection.sha256,
+                },
+            ]
+            if regional_selection is not None
+            else []
+        ),
     ]
     with tempfile.TemporaryDirectory(prefix="ephys-atlas-volume-") as temporary:
         extracted: dict[str, np.ndarray] = {}
@@ -766,6 +875,12 @@ def build_volumes_from_snapshot(
             config,
             extracted,
             provenance_sources,
+            regional_parcellations=regional_parcellations,
+            require_complete_regional_assignment=(
+                regional_selection.require_volume_complete_assignment
+                if regional_selection is not None
+                else False
+            ),
         )
     shutil.copyfile(source_json, result / "source.json")
     if selection:
@@ -773,4 +888,9 @@ def build_volumes_from_snapshot(
     shutil.copyfile(
         distribution_selection.path, result / "distribution-selection.json"
     )
+    if regional_selection is not None:
+        shutil.copyfile(
+            regional_selection.path,
+            result / "regional-distribution-selection.json",
+        )
     return result

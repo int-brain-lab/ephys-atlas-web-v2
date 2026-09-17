@@ -207,10 +207,14 @@ Build and re-run the complete candidates/acceptance with:
 
 ```bash
 just data-build-volumes-candidate 2026_W26 2026_W26-candidate-depth4 \
+  docs/data/VOLUME_2026_W26_DISTRIBUTION_SELECTION.json \
+  /path/to/allen-ccf-2017-50um-source/annotation_50.nrrd \
   2026-08-24T12:00:00Z 4 \
   9bfa0623a16bc7a989a6b27a589887641beee0a8 \
   52083adf44825d0622a503705e095699a5957587 d43fda3
 just data-build-volumes-candidate 2026_W26 2026_W26-candidate-depth8 \
+  docs/data/VOLUME_2026_W26_DISTRIBUTION_SELECTION.json \
+  /path/to/allen-ccf-2017-50um-source/annotation_50.nrrd \
   2026-08-24T12:00:00Z 8 \
   9bfa0623a16bc7a989a6b27a589887641beee0a8 \
   52083adf44825d0622a503705e095699a5957587 d43fda3

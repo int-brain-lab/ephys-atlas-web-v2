@@ -917,6 +917,7 @@ dependencies = [
     { name = "jsonschema" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "pynrrd" },
     { name = "referencing" },
 ]
 
@@ -953,6 +954,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.26" },
     { name = "pandas", marker = "extra == 'test'", specifier = ">=3,<4" },
     { name = "pyarrow", marker = "extra == 'test'", specifier = ">=25,<26" },
+    { name = "pynrrd", specifier = ">=1.1,<2" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8" },
     { name = "referencing", specifier = ">=0.32" },
     { name = "scikit-image", marker = "extra == 'anatomy'", specifier = ">=0.26,<0.27" },

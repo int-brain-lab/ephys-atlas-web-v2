@@ -89,8 +89,11 @@ Screening flags are not confirmed defects; no production QC choice is implied.
 
 The processed candidate reuses the main website's 4,345-experiment picker,
 linked slices, shared metadata acceleration and bounded/quota-safe caching.
-Next: implement D078's exact Allen/Beryl/Cosmos volume-region companions and
-build new AGEA and W26-volume successors. Only with later publication
+Schema v1 and the deterministic AGEA/W26 builders now implement D078's exact
+signed Allen/Beryl/Cosmos companion matrices with source-hash, row-count and
+population-conservation gates. Next: implement lazy browser materialization and
+the region/hemisphere controls, then build new AGEA and W26-volume successors.
+Only with later publication
 authorization may AGEA be rebuilt on clean Linux `main`, preflighted against the
 real origin and promoted in the catalog. Full-catalog ZIP import remains
 outside the current archive entry limit.

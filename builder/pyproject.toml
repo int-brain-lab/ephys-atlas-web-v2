@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.26",
+    "pynrrd>=1.1,<2",
     "iblatlas>=1.2,<2",
     "jsonschema>=4.20",
     "referencing>=0.32",

@@ -49,7 +49,25 @@
   },
   "ephys_volumes": {
     "annotation_sha256": "84e7cecea1b03af16e923c3639602b8324929f833425ba03582bf56f962ea0d4",
+    "annotation_source_axes": [
+      "ap",
+      "dv",
+      "ml"
+    ],
+    "annotation_transpose_to_grid": [
+      2,
+      0,
+      1
+    ],
+    "hemisphere_axis": "ml",
+    "hemisphere_split_index": 114,
+    "left_index_rule": "ml_index < hemisphere_split_index",
     "grid": "allen-ccf-2017-50um",
+    "mapping_audit": {
+      "allen_lr_physical_rows": 1339,
+      "beryl_lr_physical_rows": 613,
+      "cosmos_lr_physical_rows": 21
+    },
     "require_every_valid_voxel_assigned": true,
     "preserve_physical_laterality": true
   }

@@ -160,6 +160,18 @@ def main(argv: list[str] | None = None) -> int:
         help="scientific-owner-approved D050 scalar distribution selection JSON",
     )
     p.add_argument(
+        "--regional-distribution-selection",
+        type=Path,
+        required=True,
+        help="scientific-owner-approved D078 regional volume-distribution selection JSON",
+    )
+    p.add_argument(
+        "--regional-annotation",
+        type=Path,
+        required=True,
+        help="exact hash-pinned Allen 50 um annotation NRRD selected by D078",
+    )
+    p.add_argument(
         "--layout", choices=("chunks3d", "orthogonal_slice_packs"), required=True
     )
     p.add_argument("--pack-depth", type=int)
@@ -473,6 +485,8 @@ def main(argv: list[str] | None = None) -> int:
                     builder_commit=args.builder_commit,
                     geometry_selection=args.geometry_selection,
                     distribution_selection=args.distribution_selection,
+                    regional_distribution_selection=args.regional_distribution_selection,
+                    regional_annotation=args.regional_annotation,
                 ),
                 load_volume_geometry_selection(args.geometry_selection),
             )

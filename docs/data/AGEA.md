@@ -2,8 +2,9 @@
 
 Status: active evidence and continuation reference for D067/D077.
 
-Artifact maturity: published original release plus validated-real-local,
-registration-provisional processed candidate under D077.
+Artifact maturity: published original release plus validated-real-local D077
+processed candidate; D078 regional successor machinery is implemented but its
+new candidate is not staged or published.
 The [main-website integration](AGEA_LOCAL_PREVIEW.md) now includes the full
 catalog, shared schema-v1 metadata bundle, bounded searchable feature picker,
 original expression with linked anatomy, and bounded persistent caching.
@@ -23,9 +24,10 @@ projection evidence. It informs scientist review without resolving Q19.
 ## Scope and source identity
 
 D067 selects full-catalog discovery with one selected experiment displayed in
-the existing three linked slices. The region panel stays anatomical. Distinct
-experiments sharing a gene symbol remain individually addressable; regional
-aggregation and seed-correlation exploration are deferred.
+the existing three linked slices. Distinct experiments sharing a gene symbol
+remain individually addressable. D078 adds descriptive Allen/Beryl/Cosmos
+regional distributions from the source-native labels; seed-correlation
+exploration remains deferred.
 
 The public IBL source prefix is
 `https://ibl-brain-wide-map-public.s3.amazonaws.com/atlas/agea/`.
@@ -86,7 +88,8 @@ experiment-voxels, 250,166,799 (99.8431%) change, with mean absolute difference
 0.88294 expression-energy units. The processed product is therefore a distinct
 scientific input, not a missing-value patch. The audit preserves representative
 Ndufa10, Grik2, Ptpru and duplicate-Slc17a7 comparisons. It does not select a
-release or resolve the unchanged provisional registration.
+release. D078 separately accepts the source-native labels for descriptive
+regional aggregation without authorizing publication.
 
 ## Geometry and validity evidence
 
@@ -228,12 +231,14 @@ The D069 local integration implements the metadata acceleration, bounded picker,
 source-preserving preview builder and cache-capacity machinery above. Exact
 current scope, commands and measurements are in [the preview runbook](AGEA_LOCAL_PREVIEW.md).
 
-D077 and the hash-bound processed selection now fix the successor source,
-validity, presentation and release recipe. The complete candidate and browser
-evidence are in [the processed review](AGEA_PROCESSED_REVIEW.md). Next: resolve
-Q19 registration and obtain publication authorization; then rebuild on clean
-Linux `main`, run production preflight and measure constrained/final-origin
-delivery before catalog promotion. The full-catalog ZIP currently exceeds the
+D077 and the hash-bound processed selection fix the successor source,
+validity, presentation and release recipe. D078 accepts the source-native label
+registration for descriptive regional aggregation and requires signed physical
+Allen/Beryl/Cosmos companions in the next candidate. The existing complete
+candidate and browser evidence are in [the processed review](AGEA_PROCESSED_REVIEW.md).
+Next: build and review that successor, then obtain publication authorization;
+afterward rebuild on clean Linux `main`, run production preflight and measure
+constrained/final-origin delivery before catalog promotion. The full-catalog ZIP currently exceeds the
 existing 20,000-entry local-import limit; do not advertise that archive as
 supported or weaken the limit without a separate measured packaging task.
 
