@@ -1,5 +1,11 @@
-import type { VolumeFeatureSummary, VolumeRepresentationDescriptor, VolumeValidStatistics } from '../contracts.js';
-import { parseEncodedResource } from './binary.js';
+import type {
+  VolumeFeatureSummary,
+  VolumeRegionalDistributionResource,
+  VolumeRepresentationDescriptor,
+  VolumeValidStatistics,
+} from '../contracts.js';
+import type { ParcellationId } from '../../domain/types.js';
+import { parseBinaryArray, parseEncodedResource } from './binary.js';
 import { array, integerArray, numberArray, object, string, unique } from './primitives.js';
 import { parseDistributionBinning, validateDistributionBinningSet } from './distribution.js';
 
@@ -127,6 +133,7 @@ export function parseVolumeResourceIndex(
 export function parseVolumeSummary(
   value: unknown,
   descriptor: VolumeRepresentationDescriptor,
+  parcellationRegionCounts: Partial<Record<ParcellationId, number>> = {},
 ): VolumeFeatureSummary {
   const root = object(value, 'volume summary');
   if (root.schema_version !== '1.0' || root.format !== 'ephys-atlas-volume-summary-v1') {
@@ -203,6 +210,56 @@ export function parseVolumeSummary(
         return parsed;
       })()
     : [];
+  let regionalDistributions: VolumeRegionalDistributionResource[] = [];
+  if (root.regional_distributions !== undefined) {
+    if (valid === 0) throw new Error('volume summary regional distributions require valid voxels');
+    const expectedBinnings = new Map(binnings.map((binning) => [binning.id, binning.edges.length + 1]));
+    regionalDistributions = array(root.regional_distributions, 'volume summary.regional_distributions')
+      .map((item, companionIndex) => {
+        const context = `volume summary.regional_distributions[${companionIndex}]`;
+        const companion = object(item, context);
+        const parcellationId = string(companion.parcellation_id, `${context}.parcellation_id`) as ParcellationId;
+        if (!['allen', 'beryl', 'cosmos'].includes(parcellationId)) {
+          throw new Error(`${context}.parcellation_id is unsupported`);
+        }
+        const rowCount = parcellationRegionCounts[parcellationId];
+        if (rowCount === undefined) throw new Error(`${context}.parcellation_id is absent from the manifest`);
+        if (companion.hemisphere_encoding !== 'signed-atlas-ids-negative-left') {
+          throw new Error(`${context}.hemisphere_encoding is unsupported`);
+        }
+        const assigned = countValue(companion.assigned_valid_voxel_count, `${context}.assigned_valid_voxel_count`);
+        const unassigned = countValue(companion.unassigned_valid_voxel_count, `${context}.unassigned_valid_voxel_count`);
+        if (assigned + unassigned !== valid) throw new Error(`${context} does not conserve valid voxels`);
+        const resources = array(companion.binnings, `${context}.binnings`).map((entry, binningIndex) => {
+          const binningContext = `${context}.binnings[${binningIndex}]`;
+          const raw = object(entry, binningContext);
+          const binningId = string(raw.binning_id, `${binningContext}.binning_id`);
+          const expectedColumns = expectedBinnings.get(binningId);
+          if (expectedColumns === undefined) throw new Error(`${binningContext}.binning_id has no global binning`);
+          if (raw.regional_count_layout !== 'underflow-bins-overflow') {
+            throw new Error(`${binningContext}.regional_count_layout is unsupported`);
+          }
+          const regionalCounts = parseBinaryArray(raw.regional_counts, `${binningContext}.regional_counts`);
+          if (regionalCounts.dtype !== 'uint32'
+            || regionalCounts.shape.length !== 2
+            || regionalCounts.shape[0] !== rowCount
+            || regionalCounts.shape[1] !== expectedColumns) {
+            throw new Error(`${binningContext}.regional_counts shape or dtype is invalid`);
+          }
+          return { binningId, regionalCounts, regionalCountLayout: 'underflow-bins-overflow' as const };
+        });
+        unique(resources.map((entry) => entry.binningId), `${context}.binnings ids`);
+        if (resources.length !== expectedBinnings.size) throw new Error(`${context}.binnings must match global binnings`);
+        return {
+          parcellationId,
+          hemisphereEncoding: 'signed-atlas-ids-negative-left' as const,
+          assignedValidVoxelCount: assigned,
+          unassignedValidVoxelCount: unassigned,
+          binnings: resources,
+        };
+      });
+    unique(regionalDistributions.map((item) => item.parcellationId), 'volume regional-distribution parcellations');
+  }
   return {
     totalVoxelCount: total,
     validVoxelCount: valid,
@@ -213,5 +270,13 @@ export function parseVolumeSummary(
     ...(binnings.length > 0
       ? { distribution: { binnings: binnings.map(({ regionalCounts: _regionalCounts, ...binning }) => binning) } }
       : {}),
+    ...(regionalDistributions.length > 0 ? { regionalDistributions } : {}),
   };
+}
+
+function countValue(value: unknown, context: string): number {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+    throw new Error(`${context} must be a non-negative safe integer`);
+  }
+  return value;
 }

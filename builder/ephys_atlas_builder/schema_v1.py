@@ -134,6 +134,49 @@ def _summary_semantics(document: dict[str, Any]) -> None:
             minimum=stats["min"],
             maximum=stats["max"],
         )
+    regional_distributions = document.get("regional_distributions")
+    if valid == 0 and regional_distributions is not None:
+        _fail("zero-valid-voxel summary cannot contain regional distributions")
+    if regional_distributions:
+        _volume_regional_distribution_semantics(
+            regional_distributions,
+            distribution["binnings"],
+            valid,
+        )
+
+
+def _volume_regional_distribution_semantics(
+    companions: list[dict[str, Any]],
+    global_binnings: list[dict[str, Any]],
+    valid_count: int,
+) -> None:
+    _unique(
+        [companion["parcellation_id"] for companion in companions],
+        "volume regional-distribution parcellation id",
+    )
+    columns_by_id = {
+        binning["id"]: len(binning["edges"]) + 1 for binning in global_binnings
+    }
+    expected_ids = set(columns_by_id)
+    for companion in companions:
+        if (
+            companion["assigned_valid_voxel_count"]
+            + companion["unassigned_valid_voxel_count"]
+            != valid_count
+        ):
+            _fail("volume regional-distribution counts do not conserve valid voxels")
+        binnings = companion["binnings"]
+        ids = [binning["binning_id"] for binning in binnings]
+        _unique(ids, "volume regional-distribution binning id")
+        if set(ids) != expected_ids:
+            _fail("volume regional-distribution binnings must exactly match global binnings")
+        for binning in binnings:
+            regional = binning["regional_counts"]
+            if regional["dtype"] != "uint32":
+                _fail("volume regional-distribution count matrix must use uint32")
+            shape = regional["shape"]
+            if len(shape) != 2 or shape[1] != columns_by_id[binning["binning_id"]]:
+                _fail("volume regional-distribution count matrix has invalid columns")
 
 
 def _increasing(values: list[float], description: str) -> None:

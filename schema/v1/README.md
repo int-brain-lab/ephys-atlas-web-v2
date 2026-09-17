@@ -93,8 +93,16 @@ typed `uint32` matrix whose columns are exactly
 `underflow, bins..., overflow`. Every combination is computed directly from
 source observations or valid voxels; consumers never stretch or re-bin an
 existing histogram. Focused counts retain whole-population normalization, and
-volume distributions remain global valid-voxel-only.
+the primary volume distribution remains global and valid-voxel-only. A volume
+summary may additionally declare `regional_distributions`: lazy `uint32`
+matrices for one or more manifest parcellations. Their row order is exactly the
+shared `region_index`; physical hemisphere is encoded by signed atlas IDs
+(negative left, positive right); and every matrix reuses the exact global
+binning IDs and edges with `underflow, bins..., overflow` columns. Each
+companion declares assigned and unassigned valid-voxel counts, which must sum
+to the global valid count, while every matrix must sum to the assigned count.
 An empty regional observation population or zero-valid-voxel volume omits the
 distribution object entirely and therefore owns no distribution-count
-resources; its descriptive statistics are null. A nonempty population must
-declare a distribution and finite descriptive statistics.
+resources; a zero-valid-voxel volume also omits regional companions. Its
+descriptive statistics are null. A nonempty population must declare a
+distribution and finite descriptive statistics.

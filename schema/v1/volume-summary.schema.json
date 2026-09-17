@@ -41,6 +41,35 @@
           "items": {"$ref": "common.schema.json#/$defs/distributionBinning"}
         }
       }
+    },
+    "regional_distributions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["parcellation_id", "hemisphere_encoding", "assigned_valid_voxel_count", "unassigned_valid_voxel_count", "binnings"],
+        "properties": {
+          "parcellation_id": {"type": "string", "minLength": 1},
+          "hemisphere_encoding": {"const": "signed-atlas-ids-negative-left"},
+          "assigned_valid_voxel_count": {"type": "integer", "minimum": 0},
+          "unassigned_valid_voxel_count": {"type": "integer", "minimum": 0},
+          "binnings": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["binning_id", "regional_counts", "regional_count_layout"],
+              "properties": {
+                "binning_id": {"$ref": "common.schema.json#/$defs/identifier"},
+                "regional_counts": {"$ref": "common.schema.json#/$defs/binaryArray"},
+                "regional_count_layout": {"const": "underflow-bins-overflow"}
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

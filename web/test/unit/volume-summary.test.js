@@ -79,6 +79,68 @@ test('volume summary parser rejects a distribution that does not conserve valid 
   assert.throws(() => parseVolumeSummary(invalid, descriptor), /does not conserve the population/);
 });
 
+test('volume summary parser retains manifest-aligned regional distribution resources', () => {
+  const value = summary();
+  value.regional_distributions = [{
+    parcellation_id: 'allen',
+    hemisphere_encoding: 'signed-atlas-ids-negative-left',
+    assigned_valid_voxel_count: 5,
+    unassigned_valid_voxel_count: 1,
+    binnings: [{
+      binning_id: 'linear-full',
+      regional_count_layout: 'underflow-bins-overflow',
+      regional_counts: {
+        format: 'raw-binary-array-v1',
+        resource: {
+          path: 'regional/allen.linear-full.u32.gz',
+          media_type: 'application/octet-stream',
+          bytes: 20,
+          sha256: '1'.repeat(64),
+          codec: { name: 'gzip', decoded_bytes: 40 },
+        },
+        dtype: 'uint32',
+        shape: [2, 5],
+        order: 'C',
+        endianness: 'little',
+      },
+    }],
+  }];
+  const parsed = parseVolumeSummary(value, descriptor, { allen: 2 });
+  assert.equal(parsed.regionalDistributions[0].parcellationId, 'allen');
+  assert.equal(parsed.regionalDistributions[0].assignedValidVoxelCount, 5);
+  assert.deepEqual(parsed.regionalDistributions[0].binnings[0].regionalCounts.shape, [2, 5]);
+});
+
+test('volume summary parser rejects regional resources that do not match the manifest', () => {
+  const value = summary();
+  value.regional_distributions = [{
+    parcellation_id: 'allen',
+    hemisphere_encoding: 'signed-atlas-ids-negative-left',
+    assigned_valid_voxel_count: 6,
+    unassigned_valid_voxel_count: 0,
+    binnings: [{
+      binning_id: 'linear-full',
+      regional_count_layout: 'underflow-bins-overflow',
+      regional_counts: {
+        format: 'raw-binary-array-v1',
+        resource: {
+          path: 'regional/allen.linear-full.u32',
+          media_type: 'application/octet-stream',
+          bytes: 20,
+          sha256: '2'.repeat(64),
+          codec: { name: 'none', decoded_bytes: 20 },
+        },
+        dtype: 'uint32',
+        shape: [1, 5],
+        order: 'C',
+        endianness: 'little',
+      },
+    }],
+  }];
+  assert.throws(() => parseVolumeSummary(value, descriptor), /absent from the manifest/);
+  assert.throws(() => parseVolumeSummary(value, descriptor, { allen: 2 }), /shape or dtype is invalid/);
+});
+
 test('volume summary full distribution encloses both declared extrema', () => {
   const invalidMinimum = summary();
   invalidMinimum.distribution.binnings[0].edges[0] = -3;

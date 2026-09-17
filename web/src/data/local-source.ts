@@ -430,7 +430,12 @@ export class LocalDatasetSource implements DatasetSource {
         reader.readJson(reader.resolve(feature.path, descriptor.resourceIndexPath), signal),
         reader.readJson(reader.resolve(feature.path, descriptor.summaryPath), signal),
       ]);
-      const summary = parseVolumeSummary(summaryRaw, descriptor);
+      const summary = parseVolumeSummary(
+        summaryRaw,
+        descriptor,
+        Object.fromEntries(Object.entries(manifest.parcellationDescriptors)
+          .map(([id, item]) => [id, item!.regionIndex.shape[0]!])),
+      );
       const display = feature.display?.volume;
       if (!display) throw new Error(`Feature ${feature.id} has no volume display contract`);
       if (summary.distribution) {

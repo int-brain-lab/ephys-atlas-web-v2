@@ -42,6 +42,20 @@
       "order": "C",
       "endianness": "little"
     },
+    "binaryVolumeRegionalU32": {
+      "format": "raw-binary-array-v1",
+      "resource": {
+        "path": "data/volume-regional-linear-full.bin",
+        "media_type": "application/octet-stream",
+        "bytes": 20,
+        "sha256": "4848484848484848484848484848484848484848484848484848484848484848",
+        "codec": {"name": "none", "decoded_bytes": 20}
+      },
+      "dtype": "uint32",
+      "shape": [1, 5],
+      "order": "C",
+      "endianness": "little"
+    },
     "provenance": {
       "sources": [{"role": "canonical-data", "description": "Synthetic contract input", "sha256": "2222222222222222222222222222222222222222222222222222222222222222"}],
       "builder": {
@@ -396,6 +410,10 @@
     {"name": "volume summary distribution mismatch", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/distribution/binnings/0/global_counts/2": 3}},
     {"name": "volume Full upper edge must enclose declared maximum", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/distribution/binnings/0/edges/3": 7.9}},
     {"name": "volume distribution cannot declare regional counts", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/distribution/binnings/0/regional_count_layout": "underflow-bins-overflow", "/distribution/binnings/0/regional_counts": {"$fixture": "binaryU8"}}},
+    {"name": "volume regional distribution valid", "schema": "volume-summary.schema.json", "valid": true, "document": "volumeSummary", "set": {"/regional_distributions": [{"parcellation_id": "allen", "hemisphere_encoding": "signed-atlas-ids-negative-left", "assigned_valid_voxel_count": 18, "unassigned_valid_voxel_count": 0, "binnings": [{"binning_id": "linear-full", "regional_counts": {"$fixture": "binaryVolumeRegionalU32"}, "regional_count_layout": "underflow-bins-overflow"}]}]}},
+    {"name": "volume regional distribution valid counts must be exhaustive", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/regional_distributions": [{"parcellation_id": "allen", "hemisphere_encoding": "signed-atlas-ids-negative-left", "assigned_valid_voxel_count": 17, "unassigned_valid_voxel_count": 0, "binnings": [{"binning_id": "linear-full", "regional_counts": {"$fixture": "binaryVolumeRegionalU32"}, "regional_count_layout": "underflow-bins-overflow"}]}]}},
+    {"name": "volume regional distribution must match global binnings", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/regional_distributions": [{"parcellation_id": "allen", "hemisphere_encoding": "signed-atlas-ids-negative-left", "assigned_valid_voxel_count": 18, "unassigned_valid_voxel_count": 0, "binnings": [{"binning_id": "log-full", "regional_counts": {"$fixture": "binaryVolumeRegionalU32"}, "regional_count_layout": "underflow-bins-overflow"}]}]}},
+    {"name": "volume regional distribution matrix columns must match global edges", "schema": "volume-summary.schema.json", "valid": false, "document": "volumeSummary", "set": {"/regional_distributions": [{"parcellation_id": "allen", "hemisphere_encoding": "signed-atlas-ids-negative-left", "assigned_valid_voxel_count": 18, "unassigned_valid_voxel_count": 0, "binnings": [{"binning_id": "linear-full", "regional_counts": {"$fixture": "binaryU8"}, "regional_count_layout": "underflow-bins-overflow"}]}]}},
     {"name": "chunk resource index valid", "schema": "volume-resource-index.schema.json", "valid": true, "document": "chunkIndex"},
     {"name": "slice pack resource index valid", "schema": "volume-resource-index.schema.json", "valid": true, "document": "slicePackIndex"},
     {"name": "chunk decoded length mismatch", "schema": "volume-resource-index.schema.json", "valid": false, "document": "chunkIndex", "set": {"/chunks/0/resource/codec/decoded_bytes": 92}},

@@ -339,7 +339,10 @@ def _check_display_distribution_match(
 
 
 def _check_volume(
-    feature_root: Path, volume: dict[str, Any], display: dict[str, Any]
+    feature_root: Path,
+    volume: dict[str, Any],
+    display: dict[str, Any],
+    region_counts: dict[str, int],
 ) -> None:
     from .schema_v1 import validate_schema_v1_document
 
@@ -355,6 +358,31 @@ def _check_volume(
     _check_display_distribution_match(
         display, summary.get("distribution"), "volume"
     )
+    global_binnings = {
+        binning["id"]: binning
+        for binning in summary.get("distribution", {}).get("binnings", [])
+    }
+    for companion in summary.get("regional_distributions", []):
+        parcellation_id = companion["parcellation_id"]
+        if parcellation_id not in region_counts:
+            raise ValidationError(
+                f"volume regional distribution references unknown parcellation {parcellation_id}"
+            )
+        for regional_binning in companion["binnings"]:
+            binning_id = regional_binning["binning_id"]
+            counts = _read_binary(summary_path.parent, regional_binning["regional_counts"])
+            expected_shape = (
+                region_counts[parcellation_id],
+                len(global_binnings[binning_id]["edges"]) + 1,
+            )
+            if counts.shape != expected_shape:
+                raise ValidationError(
+                    f"volume {parcellation_id}/{binning_id} distribution shape does not match parcellation: {summary_path}"
+                )
+            if int(counts.sum(dtype=np.uint64)) != companion["assigned_valid_voxel_count"]:
+                raise ValidationError(
+                    f"volume {parcellation_id}/{binning_id} distribution does not conserve assigned valid voxels: {summary_path}"
+                )
 
     index_path, index = _check_json_resource(
         feature_root,
@@ -485,6 +513,11 @@ def validate_release(release_dir: Path, schema_dir: Path | None = None) -> None:
 
         volume = feature["representations"].get("volume")
         if volume:
-            _check_volume(feature_root, volume, feature["display"]["volume"])
+            _check_volume(
+                feature_root,
+                volume,
+                feature["display"]["volume"],
+                region_counts,
+            )
         for artifact in feature["artifacts"]:
             _check_resource(feature_root, artifact["resource"])

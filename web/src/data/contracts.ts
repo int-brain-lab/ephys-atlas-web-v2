@@ -373,6 +373,20 @@ export interface VolumeValidStatistics {
   q95: number | null;
 }
 
+export interface VolumeRegionalDistributionBinningResource {
+  binningId: string;
+  regionalCounts: BinaryArrayDescriptor;
+  regionalCountLayout: 'underflow-bins-overflow';
+}
+
+export interface VolumeRegionalDistributionResource {
+  parcellationId: ParcellationId;
+  hemisphereEncoding: 'signed-atlas-ids-negative-left';
+  assignedValidVoxelCount: number;
+  unassignedValidVoxelCount: number;
+  binnings: readonly VolumeRegionalDistributionBinningResource[];
+}
+
 export interface VolumeFeatureSummary {
   totalVoxelCount: number;
   validVoxelCount: number;
@@ -381,6 +395,7 @@ export interface VolumeFeatureSummary {
   validStatistics: VolumeValidStatistics;
   valueRange: readonly [number | null, number | null];
   distribution?: ScalarDistribution;
+  regionalDistributions?: readonly VolumeRegionalDistributionResource[];
 }
 
 export type RegionalStatisticId = StatisticId | 'missing_count' | 'std' | 'q05' | 'q25' | 'q75' | 'q95';

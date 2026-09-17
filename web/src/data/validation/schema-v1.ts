@@ -291,6 +291,42 @@ function summarySemantics(document: JsonObject): void {
     object(document.valid_statistics, 'volume statistics').max as number | null,
   );
   else if (document.distribution !== undefined) fail('empty volume population cannot declare a distribution');
+  if (valid === 0 && document.regional_distributions !== undefined) {
+    fail('empty volume population cannot declare regional distributions');
+  }
+  if (document.regional_distributions !== undefined) {
+    const globalBinnings = array(
+      object(document.distribution, 'volume distribution').binnings,
+      'volume binnings',
+    ).map((item) => object(item, 'volume binning'));
+    const columnsById = new Map(globalBinnings.map((binning) => [
+      String(binning.id),
+      array(binning.edges, 'volume binning edges').length + 1,
+    ]));
+    const companions = array(document.regional_distributions, 'volume regional distributions')
+      .map((item) => object(item, 'volume regional distribution'));
+    unique(companions.map((item) => item.parcellation_id), 'volume regional-distribution parcellation id');
+    for (const companion of companions) {
+      if (Number(companion.assigned_valid_voxel_count) + Number(companion.unassigned_valid_voxel_count) !== valid) {
+        fail('volume regional-distribution counts do not conserve valid voxels');
+      }
+      const binnings = array(companion.binnings, 'volume regional-distribution binnings')
+        .map((item) => object(item, 'volume regional-distribution binning'));
+      const ids = binnings.map((binning) => String(binning.binning_id));
+      unique(ids, 'volume regional-distribution binning id');
+      if (ids.length !== columnsById.size || ids.some((id) => !columnsById.has(id))) {
+        fail('volume regional-distribution binnings must exactly match global binnings');
+      }
+      for (const binning of binnings) {
+        const counts = object(binning.regional_counts, 'volume regional-distribution counts');
+        const shape = integers(counts.shape, 'volume regional-distribution count shape');
+        if (counts.dtype !== 'uint32' || shape.length !== 2
+          || shape[1] !== columnsById.get(String(binning.binning_id))) {
+          fail('volume regional-distribution count array shape or dtype is invalid');
+        }
+      }
+    }
+  }
 }
 
 function statisticsSemantics(document: JsonObject): void {

@@ -643,11 +643,49 @@ export async function validateLocalDatasetFiles(
       limits,
     );
     const summaryRaw = await readDeclaredJsonResource(files, resources.get(summaryPath)!, `${feature.id} volume summary`, verified, decodedVerified, signal);
-    const summary = parseVolumeSummary(summaryRaw, volume);
+    const summary = parseVolumeSummary(
+      summaryRaw,
+      volume,
+      Object.fromEntries(regionCounts),
+    );
     const volumeDisplay = feature.display?.volume;
     if (!volumeDisplay) throw new Error(`${feature.id} has no volume display contract`);
     if (summary.distribution) {
       validateDistributionMatchesDisplay(summary.distribution.binnings, volumeDisplay, `${feature.id}/volume`);
+    }
+    for (const companion of summary.regionalDistributions ?? []) {
+      for (const binning of companion.binnings) {
+        const countsPath = addBinaryResource(
+          resources,
+          summaryPath,
+          binning.regionalCounts,
+          `${feature.id}/${companion.parcellationId}/${binning.binningId} volume regional distribution`,
+          budget,
+          limits,
+        );
+        const countsFile = files.get(countsPath);
+        if (!countsFile) throw new Error(`Local dataset is missing ${countsPath}`);
+        const counts = decodeBinaryArray(
+          await (async () => {
+            const expectation = resources.get(countsPath)!;
+            await validateEncodedResource(countsFile, expectation, verified, signal);
+            const buffer = await decodedBuffer(
+              countsFile,
+              binning.regionalCounts.codec.name,
+              countsPath,
+              binning.regionalCounts.codec.decodedBytes,
+              signal,
+            );
+            decodedVerified.add(countsPath);
+            return buffer;
+          })(),
+          { ...binning.regionalCounts, path: countsPath },
+        );
+        const assigned = counts.reduce((sum, count) => sum + count, 0);
+        if (assigned !== companion.assignedValidVoxelCount) {
+          throw new Error(`${feature.id}/${companion.parcellationId}/${binning.binningId} does not conserve assigned valid voxels`);
+        }
+      }
     }
     const resourceIndexPath = addEncodedResource(
       resources,

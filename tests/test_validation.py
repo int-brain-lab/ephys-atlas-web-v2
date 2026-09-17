@@ -49,6 +49,58 @@ def refresh_feature_reference(release: Path) -> None:
     save(manifest_path, manifest)
 
 
+def add_volume_regional_distributions(release: Path) -> Path:
+    summary_path = release / "features" / "rms_ap" / "volume" / "summary.json"
+    summary = load(summary_path)
+    binnings = []
+    regional_dir = summary_path.parent / "regional"
+    regional_dir.mkdir()
+    for binning in summary["distribution"]["binnings"]:
+        counts = np.zeros((4, len(binning["edges"]) + 1), dtype="<u4")
+        counts[0, 1] = summary["valid_voxel_count"]
+        payload = regional_dir / f"allen.{binning['id']}.u32"
+        counts.tofile(payload)
+        binnings.append(
+            {
+                "binning_id": binning["id"],
+                "regional_counts": {
+                    "format": "raw-binary-array-v1",
+                    "resource": {
+                        "path": f"regional/{payload.name}",
+                        "media_type": "application/octet-stream",
+                        "bytes": payload.stat().st_size,
+                        "sha256": sha256_file(payload),
+                        "codec": {
+                            "name": "none",
+                            "decoded_bytes": payload.stat().st_size,
+                        },
+                    },
+                    "dtype": "uint32",
+                    "shape": list(counts.shape),
+                    "order": "C",
+                    "endianness": "little",
+                },
+                "regional_count_layout": "underflow-bins-overflow",
+            }
+        )
+    summary["regional_distributions"] = [
+        {
+            "parcellation_id": "allen",
+            "hemisphere_encoding": "signed-atlas-ids-negative-left",
+            "assigned_valid_voxel_count": summary["valid_voxel_count"],
+            "unassigned_valid_voxel_count": 0,
+            "binnings": binnings,
+        }
+    ]
+    save(summary_path, summary)
+    feature_file = feature_path(release)
+    feature = load(feature_file)
+    refresh_resource(feature["representations"]["volume"]["summary"], summary_path)
+    save(feature_file, feature)
+    refresh_feature_reference(release)
+    return summary_path
+
+
 def test_golden_release_validates(release: Path) -> None:
     validate_release(release, SCHEMA)
 
@@ -205,6 +257,30 @@ def test_volume_summary_grid_identity_must_match(release: Path) -> None:
     save(feature_file, feature)
     refresh_feature_reference(release)
     with pytest.raises(ValidationError, match="volume summary grid does not match"):
+        validate_release(release, SCHEMA)
+
+
+def test_volume_regional_distributions_validate_shared_rows_and_counts(release: Path) -> None:
+    add_volume_regional_distributions(release)
+    validate_release(release, SCHEMA)
+
+
+def test_volume_regional_distributions_conserve_assigned_valid_voxels(release: Path) -> None:
+    summary_path = add_volume_regional_distributions(release)
+    summary = load(summary_path)
+    descriptor = summary["regional_distributions"][0]["binnings"][0]["regional_counts"]
+    payload = summary_path.parent / descriptor["resource"]["path"]
+    counts = np.fromfile(payload, dtype="<u4")
+    counts[1] = 1
+    counts.tofile(payload)
+    refresh_resource(descriptor, payload)
+    save(summary_path, summary)
+    feature_file = feature_path(release)
+    feature = load(feature_file)
+    refresh_resource(feature["representations"]["volume"]["summary"], summary_path)
+    save(feature_file, feature)
+    refresh_feature_reference(release)
+    with pytest.raises(ValidationError, match="does not conserve assigned valid voxels"):
         validate_release(release, SCHEMA)
 
 
