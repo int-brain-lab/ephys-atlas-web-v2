@@ -12,7 +12,11 @@ from ephys_atlas_builder.schema_v1 import validate_schema_v1_document
 from ephys_atlas_builder.validate import validate_release
 
 from tools import s3_publish
-from tools.agea_preview import build_preview, build_production_release
+from tools.agea_preview import (
+    build_preview,
+    build_processed_release,
+    build_production_release,
+)
 from tools.release_preflight import RepositoryState, check_release
 
 AFFINE = (
@@ -50,10 +54,21 @@ def _source(tmp_path: Path) -> tuple[Path, dict[str, str]]:
         dtype="<f2",
     )
     (source / "gene-expression.bin").write_bytes(values.tobytes())
+    processed = np.array(
+        [
+            [[[-1, 0], [2, 4]], [[-1, 0], [2, 4]]],
+            [[[-0.5, 3], [5, 7]], [[-0.5, 3], [5, 7]]],
+        ],
+        dtype="<f2",
+    )
+    (source / "gene-expression-processed.bin").write_bytes(processed.tobytes())
     pd.DataFrame(
         [{"id": "101", "gene": "GeneA"}, {"id": "202", "gene": "GeneA"}]
     ).to_parquet(source / "gene-expression.pqt", index=False)
-    np.save(source / "label.npy", np.zeros((2, 2, 2), dtype="u1"))
+    np.save(
+        source / "label.npy",
+        np.array([[[1, 1], [0, 0]], [[1, 1], [0, 0]]], dtype="u1"),
+    )
     np.save(source / "image.npy", np.zeros((2, 2, 2), dtype="f4"))
     hashes = {
         name: _sha(source / name)
@@ -65,6 +80,17 @@ def _source(tmp_path: Path) -> tuple[Path, dict[str, str]]:
         )
     }
     return source, hashes
+
+
+def _processed_hashes(source: Path, original_hashes: dict[str, str]) -> dict[str, str]:
+    return {
+        "gene-expression-processed.bin": _sha(source / "gene-expression-processed.bin"),
+        **{
+            name: digest
+            for name, digest in original_hashes.items()
+            if name != "gene-expression.bin"
+        },
+    }
 
 
 def test_builds_complete_local_preview_without_changing_source_semantics(
@@ -203,6 +229,59 @@ def test_builds_preflightable_original_release_with_provisional_notes_only_in_pr
         assert {"manifest.json", review.name, "agea_preview.py"} <= set(files)
         assert (snapshot / review.name).read_bytes() == review.read_bytes()
         assert (snapshot / "agea_preview.py").read_bytes() == Path("tools/agea_preview.py").read_bytes()
+
+
+def test_builds_processed_release_with_label_domain_and_signed_values(
+    tmp_path: Path,
+) -> None:
+    source, original_hashes = _source(tmp_path)
+    hashes = _processed_hashes(source, original_hashes)
+    review = tmp_path / "review.json"
+    review.write_text('{"alignment_accepted":false}\n')
+    release = build_processed_release(
+        source,
+        tmp_path / "processed",
+        created_at="2026-09-17T12:00:00Z",
+        alignment_review=review,
+        shape=(2, 2, 2, 2),
+        source_hashes=hashes,
+        affine=AFFINE,
+        builder_commit="b" * 40,
+        release_id="agea-processed-20260917-v1",
+    )
+    validate_release(release)
+    manifest = json.loads((release / "manifest.json").read_text())
+    recipe = manifest["provenance"]["recipe"]
+    assert recipe["id"] == "agea-processed-v1"
+    assert recipe["decision"] == "D077"
+    assert recipe["source_variant"] == "processed"
+    assert recipe["validity"] == {
+        "valid": "every finite processed value where label.npy != 0",
+        "missing": "none; processed values equal to -1 remain valid",
+        "outside": "label.npy == 0",
+    }
+    sources = manifest["provenance"]["sources"]
+    processed_source = next(
+        item for item in sources if item.get("uri", "").endswith("gene-expression-processed.bin")
+    )
+    assert processed_source["sha256"] == hashes["gene-expression-processed.bin"]
+
+    feature_root = release / "features/experiment-101"
+    feature = json.loads((feature_root / "feature.json").read_text())
+    assert "PPCA reconstruction" in feature["value_semantics"]["transform"]
+    mask = np.frombuffer(
+        gzip.decompress((feature_root / "volume/validity.u8.gz").read_bytes()), dtype="u1"
+    )
+    assert mask.tolist() == [0, 0, 1, 1, 0, 0, 1, 1]
+    summary = json.loads((feature_root / "volume/summary.json").read_text())
+    assert (
+        summary["valid_voxel_count"],
+        summary["outside_voxel_count"],
+        summary["missing_voxel_count"],
+        summary["valid_statistics"]["min"],
+    ) == (4, 4, 0, -1.0)
+    chunk = gzip.decompress((feature_root / "volume/chunks/0.0.0.f16.gz").read_bytes())
+    assert chunk == (source / "gene-expression-processed.bin").read_bytes()[:16]
 
 
 @pytest.mark.parametrize("release_id", ["agea-local-preview-v1", "agea-candidate-v1"])

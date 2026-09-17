@@ -1,4 +1,4 @@
-"""Build the reviewed original AGEA schema-v1 release or local preview."""
+"""Build pinned original or processed AGEA schema-v1 releases."""
 
 from __future__ import annotations
 
@@ -32,16 +32,21 @@ from ephys_atlas_builder.volume import write_chunked_volume
 from iblatlas.genomics import agea
 
 from tools.agea_benchmark import SHAPE, SOURCE_HASHES, verify
+from tools.agea_processed_audit import PROCESSED_NAME, PROCESSED_SHA256
 
 DATASET_ID = "agea"
 SOURCE_URI = "https://ibl-brain-wide-map-public.s3.amazonaws.com/atlas/agea/"
 IBLATLAS_COMMIT = "52083adf44825d0622a503705e095699a5957587"
 GRID_ID = "agea-original-200um-loader-grid"
+PROCESSED_SOURCE_HASHES = {
+    PROCESSED_NAME: PROCESSED_SHA256,
+    **{name: digest for name, digest in SOURCE_HASHES.items() if name != "gene-expression.bin"},
+}
 
 
 @dataclass(frozen=True)
 class ReleaseProfile:
-    """Publication identity only; the source recipe remains identical."""
+    """Release identity and source recipe."""
 
     title: str
     project_id: str
@@ -54,6 +59,14 @@ class ReleaseProfile:
     release_description: str
     builder_name: str
     builder_command: str
+    source_variant: str
+    source_filename: str
+    source_last_modified: str
+    feature_description: str
+    transform: str
+    source_population: str
+    missing_values: str
+    validity_mode: str
     notes: tuple[str, ...]
 
 
@@ -69,6 +82,14 @@ LOCAL_PREVIEW = ReleaseProfile(
     release_description="Owner-authorized local preview only; never production or publication.",
     builder_name="agea-local-preview-builder",
     builder_command="python -m tools.agea_preview (local preview only)",
+    source_variant="original",
+    source_filename="gene-expression.bin",
+    source_last_modified="2024-01-21",
+    feature_description="Original Allen expression-energy experiment {experiment_id}; raw source values.",
+    transform="identity; original source float16 values",
+    source_population="every measured source voxel, including zero values and zero-labelled anatomy",
+    missing_values="source value -1 is missing; no voxel is classified outside",
+    validity_mode="original-sentinel",
     notes=(
         "Explicitly owner-authorized for local preview only; this is not an approved scientific or publishable release.",
         "No anatomical mask was invented. Source values and the pinned loader affine are unchanged.",
@@ -87,10 +108,54 @@ PRODUCTION = ReleaseProfile(
     release_description="Original Allen gene-expression experiments.",
     builder_name="agea-original-builder",
     builder_command="python -m tools.agea_preview --production",
+    source_variant="original",
+    source_filename="gene-expression.bin",
+    source_last_modified="2024-01-21",
+    feature_description="Original Allen expression-energy experiment {experiment_id}; raw source values.",
+    transform="identity; original source float16 values",
+    source_population="every measured source voxel, including zero values and zero-labelled anatomy",
+    missing_values="source value -1 is missing; no voxel is classified outside",
+    validity_mode="original-sentinel",
     notes=(
         "Original AGEA expression-energy values are preserved as source float16 values: no denoising, imputation, normalization, anatomical masking, or experiment aggregation was applied.",
         "-1 is treated as missing; zero and other nonnegative values are retained, including outside the coarse brain labels.",
         "Alignment with the anatomical atlas is provisional and has not yet been independently validated. The source coordinate transform is unchanged.",
+    ),
+)
+
+PROCESSED = ReleaseProfile(
+    title="Allen Gene Expression Atlas",
+    project_id="agea",
+    release_prefix="agea-processed",
+    recipe_id="agea-processed-v1",
+    decision="D077",
+    scientific_release=True,
+    catalog_status=None,
+    catalog_description="IBL-processed Allen gene-expression experiments.",
+    release_description="IBL-processed Allen gene-expression experiments.",
+    builder_name="agea-processed-builder",
+    builder_command="python -m tools.agea_preview --processed",
+    source_variant="processed",
+    source_filename=PROCESSED_NAME,
+    source_last_modified="2025-03-18",
+    feature_description=(
+        "IBL-processed Allen expression-energy experiment {experiment_id}; "
+        "PPCA reconstruction, bilateral averaging and curtaining correction."
+    ),
+    transform=(
+        "upstream IBL 50-component PPCA reconstruction; ML-reflected bilateral "
+        "nanmean; bounded per-coronal-slice curtaining correction"
+    ),
+    source_population="every finite processed value within nonzero coarse AGEA labels",
+    missing_values=(
+        "none inside the selected anatomical domain; sign and exact -1 equality "
+        "are processed values rather than missing sentinels"
+    ),
+    validity_mode="processed-label-domain",
+    notes=(
+        "The exact upstream processed float16 product is packaged unchanged; web packaging does not rerun PPCA, bilateral averaging, or curtaining correction.",
+        "Only label.npy != 0 is valid. All finite processed values in that domain, including negative, exact -1, and zero values, are retained; label-zero voxels are outside.",
+        "Alignment with the anatomical atlas remains provisional. Processing preserves the source grid and loader affine and does not independently validate registration.",
     ),
 )
 
@@ -181,6 +246,7 @@ def _write_feature(
     transport: Path | None,
     transport_item: dict | None,
     profile: ReleaseProfile,
+    labels: np.ndarray,
 ) -> dict:
     feature_root = release / "features" / feature_id
     if transport_item is None:
@@ -235,8 +301,16 @@ def _write_feature(
     index_path = feature_root / "volume/resource-index.json"
     write_json(index_path, index)
 
-    missing = values == -1
-    valid_values = np.asarray(values[~missing], dtype=np.float64)
+    if profile.validity_mode == "original-sentinel":
+        outside = np.zeros(values.shape, dtype=bool)
+        missing = values == -1
+    elif profile.validity_mode == "processed-label-domain":
+        outside = labels == 0
+        missing = np.zeros(values.shape, dtype=bool)
+    else:  # pragma: no cover - profiles are module constants
+        raise ValueError(f"unsupported AGEA validity mode {profile.validity_mode}")
+    valid = ~(outside | missing)
+    valid_values = np.asarray(values[valid], dtype=np.float64)
     stats = describe(valid_values)
     summary = {
         "schema_version": "1.0",
@@ -244,8 +318,8 @@ def _write_feature(
         "grid_id": GRID_ID,
         "grid_shape": list(values.shape),
         "total_voxel_count": int(values.size),
-        "valid_voxel_count": int((~missing).sum()),
-        "outside_voxel_count": 0,
+        "valid_voxel_count": int(valid.sum()),
+        "outside_voxel_count": int(outside.sum()),
         "missing_voxel_count": int(missing.sum()),
         "valid_statistics": {
             key: stats[key]
@@ -269,7 +343,9 @@ def _write_feature(
         }
     summary_path = feature_root / "volume/summary.json"
     write_json(summary_path, summary)
-    mask = np.where(missing, 2, 0).astype("u1")
+    mask = np.zeros(values.shape, dtype="u1")
+    mask[outside] = 1
+    mask[missing] = 2
     validity = {
         "kind": "mask",
         "mask": _binary_array(
@@ -283,14 +359,14 @@ def _write_feature(
         "schema_version": "1.0",
         "id": feature_id,
         "label": label,
-        "description": f"{profile.title}. Original Allen expression-energy experiment {experiment_id}; raw source values.",
+        "description": f"{profile.title}. {profile.feature_description.format(experiment_id=experiment_id)}",
         "unit": None,
         "display": {"volume": display},
         "value_semantics": {
             "quantity": "Allen gene expression energy",
-            "transform": "identity; original source float16 values",
-            "source_population": "every measured source voxel, including zero values and zero-labelled anatomy",
-            "missing_values": "source value -1 is missing; no voxel is classified outside",
+            "transform": profile.transform,
+            "source_population": profile.source_population,
+            "missing_values": profile.missing_values,
             "source_column": experiment_id,
             "qc_filter": "none",
         },
@@ -344,7 +420,7 @@ def build_release(
     rows = pd.read_parquet(source / "gene-expression.pqt").to_dict("records")
     if len(rows) != shape[0] or len({str(row["id"]) for row in rows}) != len(rows):
         raise ValueError("unexpected experiment inventory")
-    source_volume = source / "gene-expression.bin"
+    source_volume = source / profile.source_filename
     if source_volume.stat().st_size != int(np.prod(shape)) * 2:
         raise ValueError("unexpected volume byte length")
     matrix = affine or _loader_affine(source)
@@ -361,12 +437,12 @@ def build_release(
     )
     script_sha = sha256_file(Path(__file__))
     release_id = release_id or (
-        f"{profile.release_prefix}-{source_hashes['gene-expression.bin'][:8]}-"
+        f"{profile.release_prefix}-{source_hashes[profile.source_filename][:8]}-"
         f"{commit[:8]}-{script_sha[:8]}"
     )
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", release_id):
         raise ValueError("release ID is invalid")
-    if profile is PRODUCTION and any(marker in release_id.lower() for marker in ("candidate", "local-preview", "local-rebuild")):
+    if profile.scientific_release and any(marker in release_id.lower() for marker in ("candidate", "local-preview", "local-rebuild")):
         raise ValueError("production AGEA release ID cannot be candidate or local")
     release = output / "releases" / DATASET_ID / release_id
     release.mkdir(parents=True)
@@ -375,7 +451,12 @@ def build_release(
     shutil.copyfile(alignment_review, review_path)
     shutil.copyfile(Path(__file__), script_path)
     volumes = np.memmap(source_volume, dtype="<f2", mode="r", shape=shape)
+    labels = np.load(source / "label.npy")
+    if labels.shape != shape[1:]:
+        raise ValueError("AGEA label shape does not match expression volumes")
     transported = _transport_features(transport)
+    if transport is not None and profile.source_variant != "original":
+        raise ValueError("original-value transport cannot be reused for processed AGEA")
     features = []
     for index, row in enumerate(rows):
         experiment_id = str(row["id"])
@@ -390,7 +471,9 @@ def build_release(
                 f"transport identity mismatch for experiment {experiment_id}"
             )
         values = np.asarray(volumes[index])
-        invalid = ~np.isfinite(values) | ((values < 0) & (values != -1))
+        invalid = ~np.isfinite(values)
+        if profile.validity_mode == "original-sentinel":
+            invalid |= (values < 0) & (values != -1)
         if np.any(invalid):
             raise ValueError(
                 f"experiment {experiment_id} contains nonfinite or unsupported negative values"
@@ -406,6 +489,7 @@ def build_release(
                 transport,
                 item,
                 profile,
+                labels,
             )
         )
     json_paths = [entry["descriptor"]["resource"]["path"] for entry in features]
@@ -428,7 +512,7 @@ def build_release(
                 *[
                     {
                         "role": "canonical-data",
-                        "description": f"Pinned original AGEA source {name}",
+                        "description": f"Pinned {profile.source_variant} AGEA source {name}",
                         "uri": SOURCE_URI + name,
                         "sha256": info["sha256"],
                     }
@@ -465,21 +549,29 @@ def build_release(
                 "id": profile.recipe_id,
                 "decision": profile.decision,
                 "scientific_release": profile.scientific_release,
-                "source_variant": "original",
+                "source_variant": profile.source_variant,
                 "source_vintage_marker": "2025-03-18.version",
-                "original_binary_last_modified": "2024-01-21",
+                "source_binary_last_modified": profile.source_last_modified,
                 "experiment_count": len(features),
                 "axis_order": ["ml", "dv", "ap"],
                 "grid_shape": list(shape[1:]),
                 "index_to_world_um": list(matrix),
                 "reference_space_id": "allen-ccf-2017",
                 "registration_status": "provisional",
-                "validity": {
-                    "valid": "all measured values >= 0, including zero and label 0",
-                    "missing": "-1",
-                    "outside": "none",
-                },
-                "transform": "none",
+                "validity": (
+                    {
+                        "valid": "all measured values >= 0, including zero and label 0",
+                        "missing": "-1",
+                        "outside": "none",
+                    }
+                    if profile.validity_mode == "original-sentinel"
+                    else {
+                        "valid": "every finite processed value where label.npy != 0",
+                        "missing": "none; processed values equal to -1 remain valid",
+                        "outside": "label.npy == 0",
+                    }
+                ),
+                "transform": profile.transform,
                 "normalization": "none",
                 "layout": "chunks3d-one-chunk-per-experiment",
                 "histogram": "Linear/Full, 64 bins",
@@ -583,6 +675,27 @@ def build_production_release(
     )
 
 
+def build_processed_release(
+    source: Path,
+    output: Path,
+    *,
+    created_at: str,
+    alignment_review: Path,
+    shape: tuple[int, int, int, int] = SHAPE,
+    source_hashes: dict[str, str] = PROCESSED_SOURCE_HASHES,
+    affine: tuple[float, ...] | None = None,
+    builder_commit: str | None = None,
+    release_id: str | None = None,
+) -> Path:
+    """Build D077's processed-value release; deployment maturity is external."""
+    return build_release(
+        source, output, profile=PROCESSED, created_at=created_at,
+        alignment_review=alignment_review, shape=shape,
+        source_hashes=source_hashes, affine=affine, builder_commit=builder_commit,
+        release_id=release_id,
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, required=True)
@@ -596,26 +709,38 @@ def main() -> None:
         default=Path("docs/data/AGEA_ALIGNMENT_REVIEW.json"),
     )
     parser.add_argument("--transport", type=Path)
-    parser.add_argument(
-        "--production",
-        action="store_true",
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--production", action="store_true",
         help="build the D074 production-intent original-value release",
+    )
+    mode.add_argument(
+        "--processed", action="store_true",
+        help="build the D077 production-intent processed-value release",
     )
     parser.add_argument(
         "--release-id",
         help="required immutable release ID for --production",
     )
     args = parser.parse_args()
-    if args.production:
+    if args.production or args.processed:
         if not args.release_id:
-            parser.error("--production requires --release-id")
+            parser.error("--production/--processed requires --release-id")
         if args.output == Path("artifacts/agea-local-preview"):
-            parser.error("--production requires an explicit --output directory")
-        release = build_production_release(
-            args.source, args.output, created_at=args.created_at,
-            alignment_review=args.alignment_review, transport=args.transport,
-            release_id=args.release_id,
-        )
+            parser.error("--production/--processed requires an explicit --output directory")
+        if args.processed:
+            if args.transport:
+                parser.error("--transport contains original values and cannot be used with --processed")
+            release = build_processed_release(
+                args.source, args.output, created_at=args.created_at,
+                alignment_review=args.alignment_review, release_id=args.release_id,
+            )
+        else:
+            release = build_production_release(
+                args.source, args.output, created_at=args.created_at,
+                alignment_review=args.alignment_review, transport=args.transport,
+                release_id=args.release_id,
+            )
     else:
         if args.release_id:
             parser.error("--release-id requires --production")
