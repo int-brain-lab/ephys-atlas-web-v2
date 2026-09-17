@@ -1,6 +1,6 @@
 import type { DistributionBinning, FeaturePayload, RegionMetadata, RegionalFeaturePayload } from '../../data/contracts.js';
 import type { ResolvedPresentationScale } from '../../application/presentation-scale.js';
-import type { ColorRange, StatisticId } from '../../domain/types.js';
+import type { ColorRange, StatisticId, VolumeRegionHemisphere } from '../../domain/types.js';
 import type { ScaleSpec } from '../../domain/scale-spec.js';
 import { scaleNormalize } from '../../domain/scale-spec.js';
 import { html, message } from './dom.js';
@@ -13,6 +13,7 @@ import {
   selectionColor,
 } from './model.js';
 import { smoothHistogramPath } from './histogram-curve.js';
+import { selectVolumeRegionDistribution } from '../../data/volume-regional-loader.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const CHART_WIDTH = 1000;
@@ -59,6 +60,15 @@ export interface RegionalDetailsTargets {
   summary: HTMLElement;
   distribution: HTMLElement;
   analysis: HTMLElement;
+}
+
+export interface VolumeRegionalDistributionModel {
+  readonly binning: DistributionBinning | null;
+  readonly physicalRegions: readonly RegionMetadata[];
+  readonly hemisphere: VolumeRegionHemisphere;
+  readonly status: 'idle' | 'loading' | 'ready' | 'error';
+  readonly error: string | null;
+  readonly processedAgea: boolean;
 }
 
 export function renderSelectedRegions(
@@ -153,6 +163,7 @@ export function renderDistribution(
   unit: string | null,
   fixture: boolean,
   presentationScale: ResolvedPresentationScale,
+  volumeRegional?: VolumeRegionalDistributionModel,
 ): void {
   const regionalFeature = feature.representation === 'regional' ? feature : null;
   const histogram = presentationScale.histogram;
@@ -161,7 +172,19 @@ export function renderDistribution(
     return;
   }
   const global = histogramDistribution(histogram.global);
-  const selectedDistributions = regionalFeature ? selectedRegionHistogramDistributions(regionalFeature, selected, histogram) : [];
+  const selectedDistributions = regionalFeature
+    ? selectedRegionHistogramDistributions(regionalFeature, selected, histogram)
+    : volumeRegional?.binning
+      ? [...selected].flatMap((regionId) => {
+        const counts = selectVolumeRegionDistribution(
+          volumeRegional.binning!,
+          volumeRegional.physicalRegions,
+          regionId,
+          volumeRegional.hemisphere,
+        );
+        return counts ? [{ regionId, ...histogramDistribution(counts) }] : [];
+      })
+      : [];
   const maxProbability = Math.max(
     0,
     ...global.probabilities,
@@ -215,6 +238,38 @@ export function renderDistribution(
     domainControl.append(button);
   }
   meta.append(label, population, scaleControl, domainControl);
+  if (volumeRegional) {
+    const hemisphereControl = html('div', 'distribution-chart__hemisphere-control');
+    hemisphereControl.setAttribute('role', 'group');
+    hemisphereControl.setAttribute('aria-label', 'Regional distribution hemisphere');
+    for (const [hemisphere, text] of [['both', 'Both'], ['left', 'Left'], ['right', 'Right']] as const) {
+      const button = html('button', 'distribution-chart__hemisphere-button');
+      button.type = 'button';
+      button.dataset.volumeHemisphere = hemisphere;
+      button.textContent = text;
+      button.setAttribute('aria-pressed', String(volumeRegional.hemisphere === hemisphere));
+      hemisphereControl.append(button);
+    }
+    meta.append(hemisphereControl);
+  }
+  const context = html('p', 'distribution-chart__context');
+  if (!volumeRegional) {
+    context.hidden = true;
+  } else if (volumeRegional.status === 'loading') {
+    context.textContent = 'Loading exact selected-region voxel distributions…';
+  } else if (volumeRegional.status === 'error') {
+    context.textContent = volumeRegional.error ?? 'Selected-region voxel distributions could not be loaded.';
+  } else if (selected.size === 0) {
+    context.textContent = 'Select one or more regions to load their exact voxel distributions.';
+  } else {
+    const side = volumeRegional.hemisphere === 'both'
+      ? 'Both combines the stored left and right voxel populations.'
+      : `${volumeRegional.hemisphere === 'left' ? 'Left' : 'Right'} uses that physical hemisphere only.`;
+    const agea = volumeRegional.processedAgea
+      ? ' Processed AGEA was bilaterally averaged upstream: Left and Right are spatial partitions of the same processed signal, not independent biological measurements.'
+      : '';
+    context.textContent = `${side}${agea}`;
+  }
   const plot = html('div', 'distribution-chart__plot');
   const svg = svgElement('svg');
   svg.classList.add('distribution-chart__svg');
@@ -372,7 +427,7 @@ export function renderDistribution(
     item.textContent = `${regionById.get(distribution.regionId)?.acronym ?? distribution.regionId} · n=${distribution.total.toLocaleString('en-US')}${tailCount > 0 ? ` · ${tailCount.toLocaleString('en-US')} outside focus` : ''}`;
     legend.append(item);
   });
-  chart.append(meta, plot, axis, tails, rangeNote, legend);
+  chart.append(meta, context, plot, axis, tails, rangeNote, legend);
   target.replaceChildren(chart);
 }
 

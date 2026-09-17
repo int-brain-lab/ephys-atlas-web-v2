@@ -94,3 +94,59 @@ test('volume exposes release-declared scales and remains global valid-voxel-only
   await expect(chart).toContainText('Valid voxels');
   await expect(chart.locator('.distribution-chart__tails')).toHaveAttribute('data-visible', 'true');
 });
+
+test('volume region chart shows exact hemisphere populations and processed AGEA caveat', async ({ page }) => {
+  await page.goto('/app/');
+  await page.evaluate(async () => {
+    const { renderDistribution } = await import('/src/ui/regional/details-view.ts');
+    const target = document.createElement('div');
+    target.id = 'volume-region-distribution-test';
+    document.body.append(target);
+    const global = {
+      id: 'linear-full',
+      scale: { kind: 'linear' },
+      domain: { kind: 'full' },
+      edges: [0, 1, 2],
+      global: { underflowCount: 0, binCounts: [12, 8], overflowCount: 0 },
+    };
+    const regional = {
+      ...global,
+      regional: [
+        { underflowCount: 0, binCounts: [3, 1], overflowCount: 0 },
+        { underflowCount: 0, binCounts: [2, 4], overflowCount: 0 },
+      ],
+    };
+    renderDistribution(
+      target,
+      {
+        representation: 'volume', featureId: 'agea-test',
+        summary: { gridId: 'test', gridShape: [1, 1, 1], totalVoxelCount: 20, validVoxelCount: 20,
+          outsideVoxelCount: 0, missingVoxelCount: 0, statistics: {}, distribution: { binnings: [global] } },
+      },
+      new Set(['-10']),
+      [{ id: '-10', atlasId: -10, index: 0, acronym: 'R', name: 'Region' }],
+      'mean', null, false,
+      {
+        selection: 'linear', effectiveScale: 'linear', effectiveScaleSpec: { kind: 'linear' },
+        automaticScale: 'linear', availableScales: ['linear'], unavailableScaleReasons: {},
+        distributionSelection: 'full', effectiveDistributionDomain: 'full',
+        automaticDistributionDomain: 'full', availableDistributionDomains: ['full'],
+        unavailableDistributionReasons: {}, histogram: global,
+      },
+      {
+        binning: regional,
+        physicalRegions: [
+          { id: '-10', atlasId: -10, index: 0, acronym: 'R', name: 'Region' },
+          { id: '10', atlasId: 10, index: 1, acronym: 'R', name: 'Region' },
+        ],
+        hemisphere: 'both', status: 'ready', error: null, processedAgea: true,
+      },
+    );
+  });
+  const chart = page.locator('#volume-region-distribution-test .distribution-chart');
+  await expect(chart.getByRole('button', { name: 'Both', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(chart.locator('.distribution-chart__region')).toHaveAttribute('data-total', '10');
+  await expect(chart.locator('.distribution-chart__legend-item[data-region-id="-10"]')).toContainText('n=10');
+  await expect(chart.locator('.distribution-chart__context')).toContainText('spatial partitions');
+  await expect(chart.locator('.distribution-chart__context')).toContainText('not independent biological measurements');
+});

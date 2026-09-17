@@ -18,6 +18,7 @@ export type ColorScale = 'linear' | 'log' | 'symlog';
 export type ColorScaleSelection = 'auto' | ColorScale;
 export type DistributionDomain = 'full' | 'focused';
 export type DistributionDomainSelection = 'auto' | DistributionDomain;
+export type VolumeRegionHemisphere = 'both' | 'left' | 'right';
 export type ColorMode = 'feature' | 'anatomy';
 export type ColormapId = 'viridis' | 'cividis' | 'magma' | 'plasma' | 'inferno' | 'Blues' | 'YlOrRd' | 'coolwarm';
 export type ColormapSelection = 'auto' | ColormapId;
@@ -90,6 +91,7 @@ export interface ColoringState {
 
 export interface DistributionState {
   domain: DistributionDomainSelection;
+  hemisphere: VolumeRegionHemisphere;
 }
 
 export type EffectiveColoringState = Omit<ColoringState, 'scale'> & {

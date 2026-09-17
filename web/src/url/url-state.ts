@@ -222,6 +222,9 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
       domain: params.get('dist') === 'full' || params.get('dist') === 'focused'
         ? params.get('dist') as 'full' | 'focused'
         : 'auto',
+      hemisphere: params.get('hemi') === 'left' || params.get('hemi') === 'right'
+        ? params.get('hemi') as 'left' | 'right'
+        : 'both',
     },
   };
 }
@@ -264,6 +267,7 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   if (view.coloring.range.mode === 'fixed') params.set('range', `${view.coloring.range.min},${view.coloring.range.max}`);
   if (view.coloring.scale !== 'auto') params.set('scale', view.coloring.scale);
   if (view.distribution.domain !== 'auto') params.set('dist', view.distribution.domain);
+  if (view.distribution.hemisphere !== 'both') params.set('hemi', view.distribution.hemisphere);
 
   const cursor = [view.cursor.xUm, view.cursor.yUm, view.cursor.zUm];
   const defaultCursor = [defaults.cursor.xUm, defaults.cursor.yUm, defaults.cursor.zUm];

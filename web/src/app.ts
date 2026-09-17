@@ -134,6 +134,7 @@ export class AtlasApp {
       setRegionOrder: (order) => this.store.dispatch({ type: 'regions/order', order }),
       setColorScale: (scale) => this.store.dispatch({ type: 'color/scale', scale }),
       setDistributionDomain: (domain) => this.store.dispatch({ type: 'distribution/domain', domain }),
+      setVolumeRegionHemisphere: (hemisphere) => this.store.dispatch({ type: 'distribution/hemisphere', hemisphere }),
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       hoverRegion: (regionId) => {
         this.shell.hideRegionTooltip();
@@ -335,6 +336,7 @@ export class AtlasApp {
       manifest: data.manifest,
       feature: data.feature,
       regions: anatomyRegions,
+      physicalRegions: this.atlasRegions?.physical[state.view.parcellation] ?? [],
       anatomyAtlas: this.atlasRegions?.atlas ?? null,
       hoveredRegionId: this.hoveredRegionId,
       presentationScale,

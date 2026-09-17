@@ -64,12 +64,13 @@ test('unsupported scalar presentation reconciles atomically to Linear and Full w
     view: {
       ...DEFAULT_APP_STATE.view,
       coloring: { ...DEFAULT_APP_STATE.view.coloring, scale: 'symlog', range: { mode: 'fixed', min: -2, max: 8 } },
-      distribution: { domain: 'focused' },
+      distribution: { domain: 'focused', hemisphere: 'right' },
     },
   };
   const next = reduceAppState(state, { type: 'presentation/reconcile', scale: 'linear', domain: 'full' });
   assert.equal(next.view.coloring.scale, 'linear');
   assert.equal(next.view.distribution.domain, 'full');
+  assert.equal(next.view.distribution.hemisphere, 'right');
   assert.deepEqual(next.view.coloring.range, { mode: 'fixed', min: -2, max: 8 });
 });
 

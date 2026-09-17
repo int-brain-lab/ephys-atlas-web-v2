@@ -85,6 +85,16 @@ test('distribution domain defaults are automatic while explicit choices round-tr
   assert.equal(parseViewState('?v=4&dist=unknown').distribution.domain, 'auto');
 });
 
+test('volume-region hemisphere defaults to Both and explicit sides round-trip', () => {
+  assert.equal(parseViewState('?v=4').distribution.hemisphere, 'both');
+  for (const hemisphere of ['left', 'right']) {
+    const parsed = parseViewState(`?v=4&hemi=${hemisphere}`);
+    assert.equal(parsed.distribution.hemisphere, hemisphere);
+    assert.match(serializeViewState(parsed), new RegExp(`hemi=${hemisphere}`));
+  }
+  assert.equal(parseViewState('?v=4&hemi=unknown').distribution.hemisphere, 'both');
+});
+
 test('colormap defaults to Auto, preserves registered explicit palettes, and canonicalizes unknown values', () => {
   assert.equal(parseViewState('?v=4').coloring.colormap, 'auto');
   const explicit = parseViewState('?v=4&cmap=cividis');

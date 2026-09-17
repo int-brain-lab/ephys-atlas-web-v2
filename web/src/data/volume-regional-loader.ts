@@ -1,4 +1,4 @@
-import type { ParcellationId } from '../domain/types.js';
+import type { ParcellationId, VolumeRegionHemisphere } from '../domain/types.js';
 import type {
   DistributionBinning,
   DistributionCounts,
@@ -89,8 +89,6 @@ export function createVolumeRegionalDistributionLoader(options: {
     return loaded;
   };
 }
-
-export type VolumeRegionHemisphere = 'both' | 'left' | 'right';
 
 export function selectVolumeRegionDistribution(
   distribution: DistributionBinning,

@@ -5,6 +5,7 @@ import type {
   ColorStatisticId,
   ColorScaleSelection,
   DistributionDomainSelection,
+  VolumeRegionHemisphere,
   CursorState,
   DatasetRef,
   ParcellationId,
@@ -60,6 +61,7 @@ type ViewActionPayload =
   | { type: 'color/range'; range: ColorRange }
   | { type: 'color/scale'; scale: ColorScaleSelection }
   | { type: 'distribution/domain'; domain: DistributionDomainSelection }
+  | { type: 'distribution/hemisphere'; hemisphere: VolumeRegionHemisphere }
   | { type: 'presentation/reconcile'; scale: 'linear'; domain: 'full' };
 
 export type ViewAction = ViewActionPayload & {
