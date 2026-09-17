@@ -135,7 +135,9 @@ IBL processed bytes unchanged, with every finite value at `label.npy != 0`
 valid and label-zero voxels outside. Sign and exact `-1` equality do not encode
 missingness after processing. Linear/Full 64-bin summaries, the processed
 source label and immutable candidate identity are fixed by the hash-bound
-selection. The complete candidate and local Chromium evidence pass.
+selection. The complete D078 `agea-processed-20260917-v3` successor adds the
+approved signed regional companions; graph validation and all five local
+Chromium real-release tests pass.
 
 The [processed audit](data/AGEA_PROCESSED_SOURCE_AUDIT.json) proves all 4,345
 processed experiments are exactly bilaterally symmetric and confirms the

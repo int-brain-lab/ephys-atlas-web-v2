@@ -13,9 +13,13 @@
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
   gap: .24rem;
   padding: .35rem .55rem .4rem;
+}
+
+.distribution-chart[data-volume-regional='true'] {
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
 }
 
 .distribution-chart__meta {
@@ -79,6 +83,16 @@
   color: var(--color-text-muted);
   font-size: .56rem;
   line-height: 1.25;
+}
+
+.distribution-chart__download {
+  border: 0;
+  padding: 0;
+  color: var(--color-accent);
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .distribution-chart__plot {

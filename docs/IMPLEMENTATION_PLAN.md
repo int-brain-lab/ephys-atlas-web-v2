@@ -95,10 +95,12 @@ source-hash, row-count and population-conservation gates. Companion matrices
 are integrity-checked and materialized only after a region is selected. The
 distribution chart defaults to an exact bilateral sum and exposes URL-persisted
 Both/Left/Right controls; processed AGEA explicitly identifies the two sides as
-spatial partitions of an upstream bilaterally averaged signal. Next: build and
-review new AGEA and W26-volume successors.
-Only with later publication
-authorization may AGEA be rebuilt on clean Linux `main`, preflighted against the
+spatial partitions of an upstream bilaterally averaged signal. Selected rows
+can be exported with exact bins, tails, populations, mapping and hemisphere.
+New complete AGEA and W26 successors now pass graph validation and real-release
+browser review; see the [D078 candidate review](data/VOLUME_REGIONAL_DISTRIBUTION_REVIEW.md).
+Next: obtain Q19 publication authorization. Only with that authorization may
+AGEA be rebuilt on clean Linux `main`, preflighted against the
 real origin and promoted in the catalog. Full-catalog ZIP import remains
 outside the current archive entry limit.
 

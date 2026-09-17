@@ -194,6 +194,7 @@ export function renderDistribution(
   const regionById = new Map(regions.map((region) => [region.id, region]));
   const chart = html('div', 'distribution-chart');
   chart.dataset.fixture = String(fixture);
+  chart.dataset.volumeRegional = String(volumeRegional !== undefined);
   chart.dataset.axisScale = presentationScale.effectiveScale;
   chart.dataset.distributionDomain = presentationScale.effectiveDistributionDomain;
   const meta = html('div', 'distribution-chart__meta');
@@ -269,6 +270,11 @@ export function renderDistribution(
       ? ' Processed AGEA was bilaterally averaged upstream: Left and Right are spatial partitions of the same processed signal, not independent biological measurements.'
       : '';
     context.textContent = `${side}${agea}`;
+    const download = html('button', 'distribution-chart__download');
+    download.type = 'button';
+    download.dataset.downloadVolumeDistributions = 'true';
+    download.textContent = 'Download exact counts';
+    context.append(' ', download);
   }
   const plot = html('div', 'distribution-chart__plot');
   const svg = svgElement('svg');

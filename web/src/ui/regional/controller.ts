@@ -27,6 +27,7 @@ import {
 } from './details-view.js';
 import { buildRegionalValueMap } from './model.js';
 import { RegionalTreeView } from './tree-view.js';
+import { buildVolumeDistributionExport } from './volume-distribution-export.js';
 
 export interface RegionalPanelCallbacks {
   toggleSelection(regionId: string): void;
@@ -37,6 +38,7 @@ export interface RegionalPanelCallbacks {
   hoverRegion(regionId: string | null): void;
   downloadComparison(): void;
   setVolumeRegionHemisphere(hemisphere: VolumeRegionHemisphere): void;
+  downloadVolumeRegionDistribution(csv: string, filename: string): void;
 }
 
 export interface RegionalPanelModel {
@@ -299,13 +301,17 @@ export class RegionalPanelController {
 
   private readonly onDistributionClick = (event: Event): void => {
     const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest('[data-download-volume-distributions]')) {
+      this.downloadVolumeRegionalDistribution();
+      return;
+    }
     const scaleButton = target?.closest<HTMLButtonElement>('[data-value-scale]');
     const scale = scaleButton?.dataset.valueScale;
     if (scaleButton && !scaleButton.disabled && (scale === 'linear' || scale === 'log' || scale === 'symlog')) {
       this.callbacks.setColorScale(scale);
       return;
     }
-    const domainButton = target?.closest<HTMLButtonElement>('[data-distribution-domain]');
+    const domainButton = target?.closest<HTMLButtonElement>('button[data-distribution-domain]');
     const domain = domainButton?.dataset.distributionDomain;
     if (domainButton && !domainButton.disabled && (domain === 'full' || domain === 'focused')) {
       this.callbacks.setDistributionDomain(domain);
@@ -317,6 +323,24 @@ export class RegionalPanelController {
       this.callbacks.setVolumeRegionHemisphere(hemisphere);
     }
   };
+
+  private downloadVolumeRegionalDistribution(): void {
+    const model = this.latestModel;
+    const feature = model?.feature?.representation === 'volume' ? model.feature : null;
+    if (!model || !feature || !this.volumeRegionalBinning || model.state.view.selection.length === 0) return;
+    const exported = buildVolumeDistributionExport({
+      datasetId: model.state.view.dataset.datasetId,
+      releaseId: model.state.view.dataset.releaseId ?? model.manifest?.release.releaseId ?? '',
+      featureId: feature.featureId,
+      parcellation: model.state.view.parcellation,
+      hemisphere: model.state.view.distribution.hemisphere,
+      selectedRegionIds: model.state.view.selection,
+      regions: model.regions,
+      physicalRegions: model.physicalRegions,
+      binning: this.volumeRegionalBinning,
+    });
+    this.callbacks.downloadVolumeRegionDistribution(exported.csv, exported.filename);
+  }
 
   private syncVolumeRegionalDistribution(
     model: RegionalPanelModel,

@@ -104,3 +104,28 @@ test('revisiting a recent gene reuses decoded data without another fetch or deco
   expect(await page.evaluate(() => (globalThis as typeof globalThis & { ageaDecodeCount: number }).ageaDecodeCount)).toBe(before);
   expect(requests.filter(url => /\.(f16|u8)\.gz$/.test(url))).toHaveLength(scalarRequests);
 });
+
+test('processed AGEA loads exact region counts lazily and discloses bilateral averaging', async ({ page }) => {
+  const regionalRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/regional/allen.linear-full.u32.gz')) regionalRequests.push(request.url());
+  });
+  await page.goto('/app/?v=4&selected=-362');
+  await ready(page, first);
+  await expect(page.locator('.distribution-chart__region[data-region-id="-362"]')).toHaveCount(1);
+  expect(regionalRequests).toHaveLength(1);
+  await expect(page.locator('.distribution-chart__context')).toContainText('bilaterally averaged upstream');
+  await expect(page.locator('.distribution-chart__context')).toContainText('not independent biological measurements');
+  await page.getByRole('button', { name: 'Left', exact: true }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('hemi')).toBe('left');
+  expect(regionalRequests).toHaveLength(1);
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download exact counts' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toContain('-allen-left-regional-distributions.csv');
+  const downloadPath = await download.path();
+  expect(downloadPath).not.toBeNull();
+  const csv = await readFile(downloadPath!, 'utf8');
+  expect(csv).toContain('hemisphere,binning_id,bin_kind');
+  expect(csv).toContain(',left,linear-full,bin,');
+});

@@ -149,4 +149,5 @@ test('volume region chart shows exact hemisphere populations and processed AGEA 
   await expect(chart.locator('.distribution-chart__legend-item[data-region-id="-10"]')).toContainText('n=10');
   await expect(chart.locator('.distribution-chart__context')).toContainText('spatial partitions');
   await expect(chart.locator('.distribution-chart__context')).toContainText('not independent biological measurements');
+  await expect(chart.getByRole('button', { name: 'Download exact counts' })).toBeVisible();
 });

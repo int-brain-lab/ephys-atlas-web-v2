@@ -2,10 +2,8 @@
 
 Status: active candidate evidence.
 
-Artifact maturity: validated-real-local D077 candidate evidence, 2026-09-17.
-Not staged or published. D078 subsequently accepted source-native labels for
-descriptive regional aggregation; a companion-bearing successor remains to be
-built and reviewed.
+Artifact maturity: validated-real-local D077/D078 candidate evidence,
+2026-09-17. Not staged or published.
 
 ## Candidate
 
@@ -29,6 +27,13 @@ with no missing category. Ndufa10 experiment 74658173 has a valid range of
 0.00010854–34.5; Ptpru experiment 858 has a valid range of −1.94727–15.27344;
 Slc17a7 experiment 75081210 has a valid range of −2–89.25. These signed values
 demonstrate why the original `-1` sentinel policy cannot be reused.
+
+The D078 successor `agea-processed-20260917-v3` retains those exact source
+values and validity semantics and adds signed physical Allen/Beryl/Cosmos
+distribution companions. Its complete conservation, size, hash, validation
+and real-browser evidence are recorded in the
+[D078 candidate review](VOLUME_REGIONAL_DISTRIBUTION_REVIEW.md). This successor,
+not v2, is the current local candidate for any later publication decision.
 
 ## Visual comparison
 
@@ -54,11 +59,12 @@ the upstream processing method.
 
 ## Browser evidence
 
-The existing real-release application suite was run against the complete
-candidate in Chromium. All four tests pass: full-catalog bundled-metadata load,
+The existing real-release application suite was run against the complete D078
+successor in Chromium. All five tests pass: full-catalog bundled-metadata load,
 linked orthogonal rendering and navigation, duplicate-gene selection, deep-link
 state, bounded feature discovery, corrupt-resource recovery, quota fallback,
-and decoded/cache reuse.
+decoded/cache reuse, lazy exact regional loading, hemisphere reuse, processed
+bilateral disclosure and exact-count export.
 
 One diagnostic run measured 1,648 ms from navigation to the first three rendered
 planes and 94 ms for a cold switch to Slc17a7. It fetched one metadata bundle,
@@ -76,12 +82,12 @@ Reproduce the build and browser check from the repository root:
 uv run --project builder --extra test --locked python -m tools.agea_preview \
   --processed \
   --source artifacts/agea-metadata-sizing \
-  --output artifacts/agea-processed-candidate-new \
-  --created-at 2026-09-17T13:15:00+02:00 \
+  --output artifacts/d078-regional-candidates/agea \
+  --created-at 2026-09-17T12:26:26Z \
   --alignment-review docs/data/AGEA_ALIGNMENT_REVIEW.json \
-  --release-id agea-processed-20260917-v2
+  --release-id agea-processed-20260917-v3
 
-EPHYS_ATLAS_REAL_RELEASE="$PWD/artifacts/agea-processed-candidate-new/releases/agea/agea-processed-20260917-v2" \
+EPHYS_ATLAS_REAL_RELEASE="$PWD/artifacts/d078-regional-candidates/agea/releases/agea/agea-processed-20260917-v3" \
   npx --prefix web playwright test --config web/playwright.agea-preview.config.ts
 ```
 

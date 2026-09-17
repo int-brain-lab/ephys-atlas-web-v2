@@ -34,6 +34,7 @@ owns mapping and laterality; Q19 retains publication promotion only.
 | [`AGEA_PROCESSED_SOURCE_AUDIT.json`](AGEA_PROCESSED_SOURCE_AUDIT.json) | full-catalog processed-source identity and value-domain evidence | frozen evidence |
 | [`AGEA_PROCESSED_SELECTION.json`](AGEA_PROCESSED_SELECTION.json) | D077 processed source, validity, geometry and presentation selection | accepted |
 | [`VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json`](VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json) | D078 volume mapping, registration, laterality and regional-distribution selection | accepted |
+| [`VOLUME_REGIONAL_DISTRIBUTION_REVIEW.md`](VOLUME_REGIONAL_DISTRIBUTION_REVIEW.md) | complete AGEA/W26 regional-companion builds, validation and real-browser evidence | active |
 | [`AGEA_PROCESSED_REVIEW.md`](AGEA_PROCESSED_REVIEW.md) | complete candidate build, visual comparison and browser evidence | active |
 | [`AGEA_COVERAGE_LAB.md`](AGEA_COVERAGE_LAB.md) | exploratory coverage and masking UX | runbook |
 | [`AGEA_STRIPE_REPORT.md`](AGEA_STRIPE_REPORT.md) | missing-slab/intensity review evidence and reproduction | runbook |

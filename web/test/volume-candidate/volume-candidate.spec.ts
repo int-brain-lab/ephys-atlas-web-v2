@@ -137,6 +137,28 @@ test('changes the anatomy parcellation without reloading or altering the volume'
   await expect(page.locator('[role="alert"]:visible')).toHaveCount(0);
 });
 
+test('loads exact W26 region counts only after selection and reuses them across hemispheres', async ({ page }) => {
+  const regionalRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/regional/allen.linear-full.u32.gz')) regionalRequests.push(request.url());
+  });
+  await page.goto('/app/?v=4&repr=volume&feature=rms_lf&cursor=0,0,0');
+  await expect(page.locator('[data-volume-feature="rms_lf"]')).toHaveCount(3);
+  expect(regionalRequests).toHaveLength(0);
+  await page.evaluate(() => {
+    const url = new URL(location.href);
+    url.searchParams.set('selected', '-362');
+    history.replaceState({}, '', url);
+    dispatchEvent(new PopStateEvent('popstate'));
+  });
+  await expect(page.locator('.distribution-chart__region[data-region-id="-362"]')).toHaveCount(1);
+  expect(regionalRequests).toHaveLength(1);
+  await page.getByRole('button', { name: 'Right', exact: true }).click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('hemi')).toBe('right');
+  expect(regionalRequests).toHaveLength(1);
+  await expect(page.locator('.distribution-chart__context')).toContainText('physical hemisphere only');
+});
+
 test('rapid feature switching cancels stale presentation and keeps the latest feature', async ({ page }) => {
   await page.route('**/features/rms_lf/volume/packs/**', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 100));

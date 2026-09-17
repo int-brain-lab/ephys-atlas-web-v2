@@ -231,3 +231,9 @@ EPHYS_ATLAS_VOLUME_CANDIDATE_BENCHMARK_OUTPUT=../benchmarks/rendering/real-volum
 npx playwright test --config playwright.volume-benchmark.config.ts \
   candidate-profiles.spec.ts
 ```
+
+D078 later adds exact signed Allen/Beryl/Cosmos regional distribution
+companions without changing the W26 voxel bytes or depth-four transport choice.
+The complete successor's conservation, graph validation and real-browser
+evidence are recorded in the
+[regional distribution review](VOLUME_REGIONAL_DISTRIBUTION_REVIEW.md).
