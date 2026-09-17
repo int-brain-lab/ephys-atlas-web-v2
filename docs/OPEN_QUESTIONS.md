@@ -123,10 +123,10 @@ block pure domain/application machinery, synthetic fixtures, the UX lab, or
 scientist testing with clearly labelled synthetic normalization.
 
 
-## Q19 — AGEA registration and processed-release promotion
+## Q19 — AGEA processed-release promotion
 
-Status: **DECISION** for final AGEA scientific acceptance and processed-release
-promotion; not a launch blocker. D067 authorizes the full catalog and one
+Status: **DECISION** for processed-release publication and catalog promotion;
+not a launch blocker. D067 authorizes the full catalog and one
 selected expression volume at a time. D069/D074 retain the published original
 release and its provisional registration as historical/live authority.
 
@@ -142,16 +142,19 @@ processed experiments are exactly bilaterally symmetric and confirms the
 processed value domain. The [candidate review](data/AGEA_PROCESSED_REVIEW.md)
 records the complete build, visual comparison and browser checks.
 
-Resolution needed:
+The owner accepts the official loader-paired `label.npy` and source affine for
+descriptive regional aggregation under D078, including the expected coarse
+200 µm boundary behavior. Registration is no longer open.
 
-- accept the source-derived affine/reference-space evidence against the native
-  anatomy, including the expected coarse-grid boundary behavior;
+Resolution still needed:
+
 - authorize a clean-Linux-`main` rebuild, publication transaction and catalog
   promotion when the processed candidate is ready to replace the live mapping.
 
-The remaining registration decision does not reopen D077's source or validity
-selection. Duplicate gene symbols remain distinct experiments under D067.
-Publication remains blocked; validated local candidate construction does not.
+The remaining publication decision does not reopen D077's source or validity
+selection or D078's mapping semantics. Duplicate gene symbols remain distinct
+experiments under D067. Publication remains blocked; validated local candidate
+construction does not authorize it.
 
 ## Resolution procedure
 

@@ -102,8 +102,9 @@ For a schema-v1 volume feature, the viewer must:
   missing counts sum to the grid voxel count and whose statistics/histogram use
   valid voxels only;
 - <a id="ls03-03"></a> **`LS03-03`** — offer the same release-declared value-scale and distribution-domain controls
-  as regional data where available, while keeping volume distributions global
-  and valid-voxel-only rather than inventing regional comparison curves;
+  as regional data where available; retain the global valid-voxel distribution
+  and, where a release declares D078 companions, compare exact mapped regional
+  subsets over the same bin edges with bilateral, left and right populations;
 - <a id="ls03-04"></a> **`LS03-04`** — map linked anatomical coordinates to the volume using the declared scientific transform, never the curated SVG display calibration;
 - <a id="ls03-05"></a> **`LS03-05`** — require the volume and anatomy to declare the same `reference_space_id`
   before compositing, while permitting distinct grid identities, resolutions,

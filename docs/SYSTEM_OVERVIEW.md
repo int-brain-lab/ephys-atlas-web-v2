@@ -121,14 +121,15 @@ local/CI-buildable only rather than a published site.
 The initial IBL review website is live at `ephys-atlas.iblcore.org`, with the
 approved regional datasets, ephys volumes, AGEA and native 3-D anatomy. D074 keeps this
 deployment separate from Q2 (paper channel vintage), Q9 (paper aliases/defaults)
-and Q19 (final AGEA scientific acceptance). D075 resolves Q5 with the real-origin depth-four volume benchmark, and the
+and Q19 (processed AGEA publication promotion). D075 resolves Q5 with the real-origin depth-four volume benchmark, and the
 new production volume release is now catalogued. Q8's selected origin, access
 and routing have been exercised successfully.
 
 The live AGEA mapping remains the D074 original-value release. D077 selects an
 audited processed successor and its nonzero-label validity policy; the complete
-candidate is validated locally but is neither staged nor published. Q19 retains
-registration acceptance and promotion authorization.
+candidate is validated locally but is neither staged nor published. D078
+accepts source-native AGEA registration for descriptive regional aggregation;
+Q19 retains only promotion authorization.
 
 D062 fixes the execution environment independently of those choices: Linux is
 canonical for release builds and deployment, while macOS is preview-only.

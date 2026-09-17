@@ -12,7 +12,7 @@ evidence. Machine-readable selection JSON remains at its existing stable path.
 | --- | --- | --- | --- | --- |
 | Channels | [`CHANNELS_RECIPE.md`](CHANNELS_RECIPE.md) | [`CHANNELS_DISTRIBUTION_SELECTION.json`](CHANNELS_DISTRIBUTION_SELECTION.json) | [`DEVELOPMENT_RELEASE.md`](DEVELOPMENT_RELEASE.md) | [`DISTRIBUTION_AUDIT.md`](DISTRIBUTION_AUDIT.md) |
 | Clusters | [`CLUSTERS_RECIPE.md`](CLUSTERS_RECIPE.md) | [`CLUSTERS_CATALOG_SELECTION.json`](CLUSTERS_CATALOG_SELECTION.json) and [`CLUSTERS_DISTRIBUTION_SELECTION.json`](CLUSTERS_DISTRIBUTION_SELECTION.json) | [`CLUSTERS_RELEASE.md`](CLUSTERS_RELEASE.md), [`CLUSTERS_SOURCE_AUDIT.md`](CLUSTERS_SOURCE_AUDIT.md) | [`DISTRIBUTION_AUDIT.md`](DISTRIBUTION_AUDIT.md) |
-| Encoding volumes | [`VOLUME_IMPLEMENTATION_HANDOFF.md`](VOLUME_IMPLEMENTATION_HANDOFF.md) for the pinned W26 source/continuation contract | [`VOLUME_2026_W26_GEOMETRY_SELECTION.json`](VOLUME_2026_W26_GEOMETRY_SELECTION.json) and [`VOLUME_2026_W26_DISTRIBUTION_SELECTION.json`](VOLUME_2026_W26_DISTRIBUTION_SELECTION.json) | [`VOLUME_2026_W26_EVIDENCE.md`](VOLUME_2026_W26_EVIDENCE.md) | [`DISTRIBUTION_AUDIT.md`](DISTRIBUTION_AUDIT.md); Q5 final-origin validation remains blocked |
+| Encoding volumes | [`VOLUME_IMPLEMENTATION_HANDOFF.md`](VOLUME_IMPLEMENTATION_HANDOFF.md) for the pinned W26 source/continuation contract | [`VOLUME_2026_W26_GEOMETRY_SELECTION.json`](VOLUME_2026_W26_GEOMETRY_SELECTION.json), [`VOLUME_2026_W26_DISTRIBUTION_SELECTION.json`](VOLUME_2026_W26_DISTRIBUTION_SELECTION.json) and [`VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json`](VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json) | [`VOLUME_2026_W26_EVIDENCE.md`](VOLUME_2026_W26_EVIDENCE.md) | D078 regional successor implementation |
 | Brain-Wide Map | [`BRAINWIDE_MAP_RECIPE.md`](BRAINWIDE_MAP_RECIPE.md) | [`BRAINWIDE_MAP_DISTRIBUTION_SELECTION.json`](BRAINWIDE_MAP_DISTRIBUTION_SELECTION.json) | exact-input equivalence tests and current integration status | [`DISTRIBUTION_AUDIT.md`](DISTRIBUTION_AUDIT.md) |
 | Local/custom | D051 and [`CUSTOM_DATA_AUTHORING.md`](CUSTOM_DATA_AUTHORING.md) | user-supplied explicit authoring inputs constrained by schema v1 | public authoring/import tests and [`LOCAL_IMPORT_CAPACITY_EVIDENCE.md`](LOCAL_IMPORT_CAPACITY_EVIDENCE.md) | [`CUSTOM_DATA_TUTORIAL.md`](CUSTOM_DATA_TUTORIAL.md) for the implemented path; [`CUSTOM_DATA_AUTHORING.md`](CUSTOM_DATA_AUTHORING.md) for remaining work |
 
@@ -22,16 +22,18 @@ choices; evidence reports retain hashes, measurements, and reproduction facts.
 
 ## Document roles
 
-AGEA is active independent work under D067/D077. [AGEA evidence](AGEA.md), the
+AGEA is active independent work under D067/D077/D078. [AGEA evidence](AGEA.md), the
 hash-bound [processed selection](AGEA_PROCESSED_SELECTION.json) and the
 [candidate review](AGEA_PROCESSED_REVIEW.md) own its source, recipe and local
-release evidence. Q19 retains registration and promotion decisions.
+release evidence. The [regional-distribution selection](VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json)
+owns mapping and laterality; Q19 retains publication promotion only.
 
 | Document | Role | Status |
 | --- | --- | --- |
 | [`AGEA.md`](AGEA.md) | original and processed source evidence and implementation continuation | active |
 | [`AGEA_PROCESSED_SOURCE_AUDIT.json`](AGEA_PROCESSED_SOURCE_AUDIT.json) | full-catalog processed-source identity and value-domain evidence | frozen evidence |
 | [`AGEA_PROCESSED_SELECTION.json`](AGEA_PROCESSED_SELECTION.json) | D077 processed source, validity, geometry and presentation selection | accepted |
+| [`VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json`](VOLUME_REGIONAL_DISTRIBUTION_SELECTION.json) | D078 volume mapping, registration, laterality and regional-distribution selection | accepted |
 | [`AGEA_PROCESSED_REVIEW.md`](AGEA_PROCESSED_REVIEW.md) | complete candidate build, visual comparison and browser evidence | active |
 | [`AGEA_COVERAGE_LAB.md`](AGEA_COVERAGE_LAB.md) | exploratory coverage and masking UX | runbook |
 | [`AGEA_STRIPE_REPORT.md`](AGEA_STRIPE_REPORT.md) | missing-slab/intensity review evidence and reproduction | runbook |

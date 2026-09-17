@@ -62,7 +62,7 @@ Run from the release commit on Linux:
 
 ### AGEA — full-catalog single-experiment browsing
 
-Status: active under D067/D069/D074/D077. The original release remains live.
+Status: active under D067/D069/D074/D077/D078. The original release remains live.
 D077 selects the exact upstream processed product and nonzero-label validity for
 its successor. Full-catalog audit, deterministic builder, complete local
 candidate, visual comparison and Chromium application checks are implemented.
@@ -77,8 +77,9 @@ website projection pack: linked native planes, CCF-derived reference image or
 original expression, coarse boundaries, presets and source-grounded note export.
 The review uses the atlas dark theme and a five-location save-and-advance flow;
 experiment browsing, extra overlays and coordinate evidence are collapsed.
-Coordinate evidence is tested; biological registration remains pending owner
-review and is not implied by agreement with the CCF-derived template.
+Coordinate evidence is tested. D078 accepts the official loader-paired source
+labels and affine for descriptive regional aggregation with the coarse-grid
+limitation; it does not imply finer histological precision.
 
 The [stripe screening and review report](data/AGEA_STRIPE_REPORT.md) is
 implemented: direct-source checks, Ptpru section-gap projection, synthetic
@@ -88,9 +89,10 @@ Screening flags are not confirmed defects; no production QC choice is implied.
 
 The processed candidate reuses the main website's 4,345-experiment picker,
 linked slices, shared metadata acceleration and bounded/quota-safe caching.
-Next: resolve Q19 registration, then—only with publication authorization—rebuild
-on clean Linux `main`, run production preflight and real-origin Chromium/Firefox
-checks, and promote the catalog mapping last. Full-catalog ZIP import remains
+Next: implement D078's exact Allen/Beryl/Cosmos volume-region companions and
+build new AGEA and W26-volume successors. Only with later publication
+authorization may AGEA be rebuilt on clean Linux `main`, preflighted against the
+real origin and promoted in the catalog. Full-catalog ZIP import remains
 outside the current archive entry limit.
 
 ### Other independent work

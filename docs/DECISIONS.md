@@ -58,7 +58,7 @@ only part of the body; the index states what remains effective.
 | D047 | One value scale | partially superseded | 2026-08-26 | synchronization retained; D048/D050 refine |
 | D048 | Firing-rate Log range | accepted | 2026-08-26 | exact Log choices retained by D054 |
 | D049 | Legacy Top/static MIT assets | accepted | 2026-08-27 | exact hashes only |
-| D050 | Scale vs distribution domain | partially superseded | — | D053 replaces only compact-Full rule |
+| D050 | Scale vs distribution domain | partially superseded | — | D053 replaces compact-Full; D078 adds exact mapped volume-region curves |
 | D051 | Custom authoring/ZIP import | accepted | — | implementation pending |
 | D052 | `peak_val.raw` Linear/Focused | accepted | 2026-08-29 | exact choice retained by D054 |
 | D053 | Focused compact viewport | accepted | 2026-08-29 | current compact behavior |
@@ -86,6 +86,7 @@ only part of the body; the index states what remains effective.
 | D075 | Select production W26 volume transport | accepted | 2026-09-08 | owner retains depth-four orthogonal slice packs; real CloudFront slider matrix and all-feature correctness pass; preserve D043 and build a new production release |
 | D076 | Progressive slice prefetch and updating feedback | accepted | 2026-09-08 | foreground rendering takes priority; progressively cache all registered SVG packs, bound directional volume prefetch to the active feature, retain explicitly updating pixels until replacement is ready |
 | D077 | Select processed AGEA successor | accepted | 2026-09-17 | exact upstream processed bytes; nonzero-label validity; original release retained; candidate work only, no publication authorization |
+| D078 | Exact mapped volume-region distributions | accepted | 2026-09-17 | Allen/Beryl/Cosmos; mutually exclusive mappings; lateralized storage; bilateral default; source AGEA labels accepted; successor candidates only |
 
 ## D001 — Separate v2
 
@@ -955,8 +956,10 @@ a regional feature, each selected region has exact counts over
 the same edges and tails, and
 `underflow + sum(bin_counts) + overflow` equals that region's finite
 observation count. The corresponding global equality uses the global finite
-count. A volume has a valid-voxel global distribution only, with the analogous
-equality against `valid_voxel_count`; it does not acquire regional curves.
+count. A volume always retains a valid-voxel global distribution, with the
+analogous equality against `valid_voxel_count`. D078 permits exact regional
+companion curves over subsets of those valid voxels without changing the
+global population or histogram edges.
 Full binnings cover the complete finite domain and therefore have zero tails.
 Linear/Full remains mandatory for every nonempty scalar population.
 
@@ -1916,3 +1919,46 @@ candidate and browser evidence are recorded in
 not authorize staging, production upload, catalog promotion or mutation of the
 live AGEA mapping. Any promotable artifact must be rebuilt and preflighted on
 clean Linux `main` from the committed selection.
+
+## D078 — Add exact mapped regional distributions to volumes
+
+The owner approves exact per-region descriptive distributions for AGEA and
+ephys scalar volumes. Build them for Allen, Beryl and Cosmos from the pinned
+`iblatlas` `BrainRegions` mappings. A regional population contains every valid
+voxel whose source annotation maps to that one active mapping member. These
+rows are mutually exclusive; do not silently replace Allen mapping membership
+with an overlapping ontology-subtree query. Beryl and Cosmos perform their
+canonical descendant consolidation through the pinned mapping itself.
+
+Store physical lateralized rows using the IBL convention: negative atlas IDs
+are left and positive IDs are right. The browser's logical selection remains
+bilateral and displays the exact sum of those rows by default, with explicit
+Both, Left and Right analysis choices. Never discard ephys-volume laterality
+at build time. Processed AGEA retains the same physical contract, but its UI
+defaults to Both and explains that upstream bilateral averaging removes a
+biological interpretation from a left/right comparison.
+
+Accept the exact source `label.npy` paired with the official AGEA loader as the
+region-assignment authority on the 200 µm AGEA grid. Its values are
+`BrainRegions` indices, not Allen IDs: builders map the source index through
+the selected pinned mapping and then resolve the mapped `BrainRegions.id`.
+Do not independently resample a finer annotation to manufacture replacement
+AGEA labels. This resolves Q19 registration for descriptive aggregation while
+retaining the source grid's coarse-boundary limitation.
+
+Volume regional distributions are immutable companions to the global
+valid-voxel binnings. They reuse each binning's exact raw-unit edges and store
+`uint32` rows in `underflow-bins-overflow` layout. Count only voxels valid under
+the feature's declared validity contract; outside and missing voxels never
+enter a regional population. Record assigned and unassigned valid counts and
+fail validation unless global, regional, hemisphere and mapping conservation
+rules hold. Regional probabilities normalize within the selected population;
+exports retain exact counts, tails, population, mapping and hemisphere.
+
+Implement the contract coherently across schema v1, builders, validators,
+HTTP and local readers, fixtures, browser presentation and exports. Fetch
+regional matrices lazily; they must not delay initial volume slices. Build new
+immutable processed-AGEA and W26-volume successor candidates while preserving
+their existing voxel bytes and provenance. This decision authorizes local
+candidate work only. It does not authorize upload, catalog mutation, alias
+movement, staging or production publication.

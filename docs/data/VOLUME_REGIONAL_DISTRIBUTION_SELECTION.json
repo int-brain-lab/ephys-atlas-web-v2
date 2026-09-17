@@ -1,0 +1,56 @@
+{
+  "format": "ibl-volume-regional-distribution-selection-v1",
+  "status": "accepted",
+  "decision": "D078",
+  "recorded_on": "2026-09-17",
+  "publication_authorized": false,
+  "parcellations": [
+    "allen",
+    "beryl",
+    "cosmos"
+  ],
+  "population": {
+    "assignment": "each valid voxel is assigned to exactly one active BrainRegions mapping member",
+    "ontology_subtree_expansion": false,
+    "outside_included": false,
+    "missing_included": false
+  },
+  "hemispheres": {
+    "stored": "physical lateralized rows; negative atlas ID is left and positive atlas ID is right",
+    "default_display": "both",
+    "both_definition": "exact elementwise sum of left and right rows",
+    "processed_agea_split_interpretation": "not biological because upstream processing bilaterally averaged the values"
+  },
+  "binning": {
+    "edges": "reuse the exact release-owned global volume binning edges",
+    "count_dtype": "uint32",
+    "row_layout": "underflow-bins-overflow",
+    "probability_denominator": "the selected mapped region and hemisphere population"
+  },
+  "agea": {
+    "label_resource_sha256": "0a09957f2e6b9c70081928e15587e9f3b97382ac7a79baa2788160206ad8a81a",
+    "label_semantics": "BrainRegions indices paired with the official 200 um AGEA BrainAtlas",
+    "iblatlas_commit": "52083adf44825d0622a503705e095699a5957587",
+    "valid_voxels": 62959,
+    "mapping_audit": {
+      "allen_lr_physical_rows": 1172,
+      "beryl_lr_physical_rows": 586,
+      "cosmos_lr_physical_rows": 21,
+      "unassigned_nonzero_label_voxels": 0
+    },
+    "registration_audit_against_pinned_allen_50um": {
+      "annotation_sha256": "84e7cecea1b03af16e923c3639602b8324929f833425ba03582bf56f962ea0d4",
+      "brain_mask_dice": 0.9928138315954242,
+      "allen_lr_exact_fraction": 0.9158341142648391,
+      "beryl_lr_exact_fraction": 0.9444241490493813,
+      "cosmos_lr_exact_fraction": 0.9661684588382916,
+      "interpretation": "source-native labels remain authoritative; disagreement is expected at coarse 200 um boundaries"
+    }
+  },
+  "ephys_volumes": {
+    "annotation_sha256": "84e7cecea1b03af16e923c3639602b8324929f833425ba03582bf56f962ea0d4",
+    "grid": "allen-ccf-2017-50um",
+    "require_every_valid_voxel_assigned": true,
+    "preserve_physical_laterality": true
+  }
+}
