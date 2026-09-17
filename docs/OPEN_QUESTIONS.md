@@ -123,42 +123,35 @@ block pure domain/application machinery, synthetic fixtures, the UX lab, or
 scientist testing with clearly labelled synthetic normalization.
 
 
-## Q19 — AGEA processing, validity and registration
+## Q19 — AGEA registration and processed-release promotion
 
-Status: **DECISION** for a real AGEA release; not a launch blocker. D067
-authorizes the full catalog and one selected expression volume at a time.
-D069 additionally authorizes a main-website local preview: original values,
-all measured nonnegative voxels valid, `-1` missing, no coarse-label outside
-mask, and unchanged source affine with explicitly provisional registration.
-This resolves the local-preview recipe only, not public release acceptance.
+Status: **DECISION** for final AGEA scientific acceptance and processed-release
+promotion; not a launch blocker. D067 authorizes the full catalog and one
+selected expression volume at a time. D069/D074 retain the published original
+release and its provisional registration as historical/live authority.
 
-D074 subsequently authorizes this exact recipe for the initial website
-deployment, with provisional processing/registration notes only in Data details.
-Neutral main-viewer labels do not imply completed scientific validation. The
-remaining review below concerns final scientific acceptance, not whether this
-provisional dataset may be deployed.
+D077 resolves processing and validity for the successor: use the exact pinned
+IBL processed bytes unchanged, with every finite value at `label.npy != 0`
+valid and label-zero voxels outside. Sign and exact `-1` equality do not encode
+missingness after processing. Linear/Full 64-bin summaries, the processed
+source label and immutable candidate identity are fixed by the hash-bound
+selection. The complete candidate and local Chromium evidence pass.
 
-The [source audit](data/AGEA.md) pins the original 4,345-experiment IBL
-collection, confirms one Allen energy-volume conversion exactly, and derives
-the loader's 200 µm coordinate mapping. Original and processed source variants
-are distinct scientific inputs. The raw audit finds both missing measurements
-inside labelled anatomy and nonnegative measurements outside it.
+The [processed audit](data/AGEA_PROCESSED_SOURCE_AUDIT.json) proves all 4,345
+processed experiments are exactly bilaterally symmetric and confirms the
+processed value domain. The [candidate review](data/AGEA_PROCESSED_REVIEW.md)
+records the complete build, visual comparison and browser checks.
 
 Resolution needed:
 
-- choose original or processed input and pin the selected exact bytes;
-- decide whether valid observations include every measured source voxel or
-  only nonzero labelled anatomy; specify outside/missing precedence and preserve
-  measured zero values;
 - accept the source-derived affine/reference-space evidence against the native
   anatomy, including the expected coarse-grid boundary behavior;
-- approve expression semantics, display distributions and source release label.
+- authorize a clean-Linux-`main` rebuild, publication transaction and catalog
+  promotion when the processed candidate is ready to replace the live mapping.
 
-The benchmark's finite/nonnegative statistics are explicitly a sizing
-assumption, not a release selection. Do not reuse W26's zero-as-outside rule.
-Duplicate gene symbols remain distinct experiments under D067. This question
-blocks real scientific release construction, not synthetic bundle/picker/cache
-machinery or transport-only source measurements.
+The remaining registration decision does not reopen D077's source or validity
+selection. Duplicate gene symbols remain distinct experiments under D067.
+Publication remains blocked; validated local candidate construction does not.
 
 ## Resolution procedure
 

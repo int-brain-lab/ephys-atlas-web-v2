@@ -248,6 +248,7 @@ def test_builds_processed_release_with_label_domain_and_signed_values(
         affine=AFFINE,
         builder_commit="b" * 40,
         release_id="agea-processed-20260917-v1",
+        selection=Path("docs/data/AGEA_PROCESSED_SELECTION.json"),
     )
     validate_release(release)
     manifest = json.loads((release / "manifest.json").read_text())
@@ -265,9 +266,19 @@ def test_builds_processed_release_with_label_domain_and_signed_values(
         item for item in sources if item.get("uri", "").endswith("gene-expression-processed.bin")
     )
     assert processed_source["sha256"] == hashes["gene-expression-processed.bin"]
+    selection = next(
+        item for item in sources if item.get("description", "").startswith("Processed AGEA source")
+    )
+    assert selection["path"] == "AGEA_PROCESSED_SELECTION.json"
+    assert (release / selection["path"]).read_bytes() == Path(
+        "docs/data/AGEA_PROCESSED_SELECTION.json"
+    ).read_bytes()
 
     feature_root = release / "features/experiment-101"
     feature = json.loads((feature_root / "feature.json").read_text())
+    assert feature["value_semantics"]["quantity"] == (
+        "Allen gene expression energy after IBL processing"
+    )
     assert "PPCA reconstruction" in feature["value_semantics"]["transform"]
     mask = np.frombuffer(
         gzip.decompress((feature_root / "volume/validity.u8.gz").read_bytes()), dtype="u1"

@@ -125,6 +125,11 @@ and Q19 (final AGEA scientific acceptance). D075 resolves Q5 with the real-origi
 new production volume release is now catalogued. Q8's selected origin, access
 and routing have been exercised successfully.
 
+The live AGEA mapping remains the D074 original-value release. D077 selects an
+audited processed successor and its nonzero-label validity policy; the complete
+candidate is validated locally but is neither staged nor published. Q19 retains
+registration acceptance and promotion authorization.
+
 D062 fixes the execution environment independently of those choices: Linux is
 canonical for release builds and deployment, while macOS is preview-only.
 

@@ -38,6 +38,10 @@ and registration notes appear only in Data details. Initial defaults select
 W32 channels, denoised AP RMS and linked 2-D slices. This deployment does not
 declare the separately reviewed final paper freeze complete.
 
+D077 later selects the upstream processed AGEA product for a successor release.
+That validated local candidate does not alter the completed initial-deployment
+scope or authorize a production catalog change.
+
 ## 1. Application shell and navigation
 
 Acceptance criteria:

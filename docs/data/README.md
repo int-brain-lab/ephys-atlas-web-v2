@@ -22,14 +22,17 @@ choices; evidence reports retain hashes, measurements, and reproduction facts.
 
 ## Document roles
 
-AGEA is active independent work under D067. [AGEA evidence and continuation](AGEA.md)
-owns the source audit, transport benchmark and pending implementation sequence;
-Q19 retains scientific release choices. It has no production recipe or release.
+AGEA is active independent work under D067/D077. [AGEA evidence](AGEA.md), the
+hash-bound [processed selection](AGEA_PROCESSED_SELECTION.json) and the
+[candidate review](AGEA_PROCESSED_REVIEW.md) own its source, recipe and local
+release evidence. Q19 retains registration and promotion decisions.
 
 | Document | Role | Status |
 | --- | --- | --- |
 | [`AGEA.md`](AGEA.md) | original and processed source evidence and implementation continuation | active |
 | [`AGEA_PROCESSED_SOURCE_AUDIT.json`](AGEA_PROCESSED_SOURCE_AUDIT.json) | full-catalog processed-source identity and value-domain evidence | frozen evidence |
+| [`AGEA_PROCESSED_SELECTION.json`](AGEA_PROCESSED_SELECTION.json) | D077 processed source, validity, geometry and presentation selection | accepted |
+| [`AGEA_PROCESSED_REVIEW.md`](AGEA_PROCESSED_REVIEW.md) | complete candidate build, visual comparison and browser evidence | active |
 | [`AGEA_COVERAGE_LAB.md`](AGEA_COVERAGE_LAB.md) | exploratory coverage and masking UX | runbook |
 | [`AGEA_STRIPE_REPORT.md`](AGEA_STRIPE_REPORT.md) | missing-slab/intensity review evidence and reproduction | runbook |
 | [`CHANNELS_RECIPE.md`](CHANNELS_RECIPE.md) | scientific recipe | accepted |

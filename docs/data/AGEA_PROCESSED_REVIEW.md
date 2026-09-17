@@ -1,21 +1,24 @@
 # AGEA processed-source candidate review
 
-Status: validated-real-local candidate evidence, 2026-09-17. Not staged or
-published. Registration remains provisional.
+Status: active candidate evidence.
+
+Artifact maturity: validated-real-local candidate evidence, 2026-09-17. Not
+staged or published. Registration remains provisional.
 
 ## Candidate
 
-The complete `agea-processed-20260917-v1` candidate was built from the exact
+The complete `agea-processed-20260917-v2` candidate is built from the exact
 processed source pinned in
 [`AGEA_PROCESSED_SOURCE_AUDIT.json`](AGEA_PROCESSED_SOURCE_AUDIT.json). The
 builder packages the upstream float16 values unchanged and applies one validity
 rule: `label.npy != 0`. Negative, exact `-1`, zero and positive processed values
 inside that domain are valid; label-zero voxels are outside.
 
-The local candidate was built from commit `fba4cbd` with release timestamp
-`2026-09-17T12:57:21+02:00`. It contains all 4,345 experiments and 21,729 files.
-Its release graph occupies 823,171,192 bytes: 757,061,586 bytes of independently
-compressed expression chunks, 21,529,475 bytes of validity masks, and a
+The local candidate uses release timestamp `2026-09-17T13:15:00+02:00`; its
+manifest records the exact D077 decision commit and build environment. It
+contains all 4,345 experiments and 21,730 files. Its release graph occupies
+approximately 823.2 MB: 757,061,586 bytes of independently compressed
+expression chunks, 21,529,475 bytes of validity masks, and a
 3,891,981-byte metadata bundle (43,270,056 decoded bytes). These are local
 measurements, not production-origin acceptance.
 
@@ -72,11 +75,11 @@ uv run --project builder --extra test --locked python -m tools.agea_preview \
   --processed \
   --source artifacts/agea-metadata-sizing \
   --output artifacts/agea-processed-candidate-new \
-  --created-at 2026-09-17T12:57:21+02:00 \
+  --created-at 2026-09-17T13:15:00+02:00 \
   --alignment-review docs/data/AGEA_ALIGNMENT_REVIEW.json \
-  --release-id agea-processed-20260917-v1
+  --release-id agea-processed-20260917-v2
 
-EPHYS_ATLAS_REAL_RELEASE="$PWD/artifacts/agea-processed-candidate-new/releases/agea/agea-processed-20260917-v1" \
+EPHYS_ATLAS_REAL_RELEASE="$PWD/artifacts/agea-processed-candidate-new/releases/agea/agea-processed-20260917-v2" \
   npx --prefix web playwright test --config web/playwright.agea-preview.config.ts
 ```
 

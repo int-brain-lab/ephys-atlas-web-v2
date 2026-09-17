@@ -38,7 +38,7 @@ pass; D070 records owner acceptance and waives additional Firefox/Safari review 
 | `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048/D054 presentation, D050 distributions, HTTP acceptance. | Published `sha256-9b5e55215b306f26-ibl-review-20260908-v1` from the frozen source. | Initial live browsing passed. |
 | `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | Published `legacy-v1-1d908bea-ibl-review-20260908-v1` from all six exact hash-pinned Parquets. | Initial live browsing passed. |
 | `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, summaries, D050 global-only distributions, full 41-feature builds. | Published `2026_W26-ibl-review-20260908-v1` from clean `2be9ec9`, with every non-manifest file identical to the measured candidate. | D075 measurement, publication and real-origin Chromium/Firefox chooser/slider/deep-link checks pass. |
-| `agea` | Full original-expression catalog, shared metadata bundle, explicit missing masks and linked slices. | Published `agea-original-20260908-v1`, all 4,345 experiments; provisional processing/registration notes only in Data details. | Q19 final scientific acceptance remains separate from the D074 initial deployment. |
+| `agea` | Original and processed full-catalog builders, shared metadata bundle, recipe-specific validity masks and linked slices. | Published `agea-original-20260908-v1`; validated-real-local `agea-processed-20260917-v2` candidate with all 4,345 experiments. | D077 selects the processed successor; Q19 registration and publication promotion remain open. |
 | `local` | Same schema-v1 graph and materializers; public regional and explicit-grid volume `ibl_ephys_atlas` authoring; deterministic validated ZIP packaging; strict bounded two-phase browser import, atomic IndexedDB admission/deletion, inventory, and integrity recovery. | Real regional and 467 MiB/6,807-entry volume archives pass Chromium, Firefox, and native Safari import/reload checks; near-1 GiB and 20,000-entry boundaries pass Chromium/Firefox; adversarial, cancellation, quota, rollback, reload, delete, and recovery regressions are recorded. | Supported capacity remains provisional pending native-Safari quota/RSS and representative end-user-device evidence; publish the Python distribution only after authorization. |
 
 Dataset source, recipe, selection, release, and audit ownership is indexed by
@@ -59,6 +59,12 @@ reuse, stride-based decoding and retained anatomy-tree rows reduce gene-switch
 work; local before/after evidence is recorded in the preview runbook.
 See [AGEA evidence](data/AGEA.md).
 
+D077 pins and selects the upstream processed binary. The complete processed
+candidate preserves all source float16 values, classifies only nonzero-label
+voxels as valid, passes schema validation and the real-release Chromium suite,
+and has a deterministic six-page original/processed review. It is not staged or
+published; see the [candidate review](data/AGEA_PROCESSED_REVIEW.md).
+
 The separate development-only [AGEA coverage lab](data/AGEA_COVERAGE_LAB.md)
 now loads the full pinned original experiment catalog, linked source-index
 slices, coverage categories, mask comparison, voxel inspection, histograms,
@@ -76,7 +82,7 @@ The [AGEA stripe review report](data/AGEA_STRIPE_REPORT.md) adds deterministic
 missing-slab/intensity diagnostics, full-catalog screening, six exact Allen
 archive comparisons, Ptpru section-projection evidence and a reproducible
 12-page PDF. Controls and source checks pass; flags remain unadjudicated
-screening evidence. Scientific source/validity/registration choices remain Q19.
+screening evidence. D077 resolves successor source/validity; registration remains Q19.
 
 ## Scalar exploration
 

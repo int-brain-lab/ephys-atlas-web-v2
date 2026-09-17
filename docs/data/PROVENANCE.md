@@ -60,6 +60,7 @@ release directories and identify the immutable target they resolve to.
 | Clusters | [`CLUSTERS_RECIPE.md`](CLUSTERS_RECIPE.md) and machine selections | [`CLUSTERS_RELEASE.md`](CLUSTERS_RELEASE.md), [`CLUSTERS_SOURCE_AUDIT.md`](CLUSTERS_SOURCE_AUDIT.md) |
 | Encoding volumes | [`VOLUME_IMPLEMENTATION_HANDOFF.md`](VOLUME_IMPLEMENTATION_HANDOFF.md) and geometry selection | [`VOLUME_2026_W26_EVIDENCE.md`](VOLUME_2026_W26_EVIDENCE.md) |
 | Brain-Wide Map | [`BRAINWIDE_MAP_RECIPE.md`](BRAINWIDE_MAP_RECIPE.md) | exact-input equivalence tests and current integration status |
+| AGEA | [`AGEA.md`](AGEA.md) and [`AGEA_PROCESSED_SELECTION.json`](AGEA_PROCESSED_SELECTION.json) | [`AGEA_PROCESSED_SOURCE_AUDIT.json`](AGEA_PROCESSED_SOURCE_AUDIT.json) and [`AGEA_PROCESSED_REVIEW.md`](AGEA_PROCESSED_REVIEW.md) |
 | Local/custom | [`CUSTOM_DATA_AUTHORING.md`](CUSTOM_DATA_AUTHORING.md) | user-supplied explicit source metadata plus validated archive graph |
 
 The complete documentation map, including machine-readable distribution

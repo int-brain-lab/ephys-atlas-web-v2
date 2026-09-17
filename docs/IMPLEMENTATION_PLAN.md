@@ -62,15 +62,15 @@ Run from the release commit on Linux:
 
 ### AGEA — full-catalog single-experiment browsing
 
-Status: active under D067/D069/D074. Source audit, Chromium/Firefox transport evidence,
-shared metadata-bundle machinery and the main-website original-value local
-preview are implemented. D074 approves initial deployment of the original-value
-recipe, with provisional processing/registration notes only in Data details.
-See [AGEA evidence and continuation](data/AGEA.md).
+Status: active under D067/D069/D074/D077. The original release remains live.
+D077 selects the exact upstream processed product and nonzero-label validity for
+its successor. Full-catalog audit, deterministic builder, complete local
+candidate, visual comparison and Chromium application checks are implemented.
+See [AGEA evidence](data/AGEA.md) and the
+[processed candidate review](data/AGEA_PROCESSED_REVIEW.md).
 
-The [coverage lab](data/AGEA_COVERAGE_LAB.md) is implemented for scientist review
-of the original-volume/coarse-label mismatch. Use its mask comparison and
-aggregate coverage before selecting Q19's population/validity policy.
+The [coverage lab](data/AGEA_COVERAGE_LAB.md) remains original-source evidence.
+D077 now fixes the processed validity policy independently.
 
 The same lab now includes fixed-transform alignment review against the actual
 website projection pack: linked native planes, CCF-derived reference image or
@@ -86,12 +86,12 @@ controls, full-catalog scores and a reproducible 12-page PDF. Next: scientist
 adjudication of the declared examples and confirmation of section conventions.
 Screening flags are not confirmed defects; no production QC choice is implied.
 
-The [main-website local preview](data/AGEA_LOCAL_PREVIEW.md) now provides all
-4,345 experiments, fully scrollable virtualized search, original values with explicit
-missing masks, shared metadata acceleration and bounded/quota-safe caching.
-Next: owner review of integrated expression, remaining Q19 public-release
-decisions, and peak-memory/constrained/final-origin browser measurements.
-Full-catalog ZIP import remains outside the current archive entry limit.
+The processed candidate reuses the main website's 4,345-experiment picker,
+linked slices, shared metadata acceleration and bounded/quota-safe caching.
+Next: resolve Q19 registration, then—only with publication authorization—rebuild
+on clean Linux `main`, run production preflight and real-origin Chromium/Firefox
+checks, and promote the catalog mapping last. Full-catalog ZIP import remains
+outside the current archive entry limit.
 
 ### Other independent work
 

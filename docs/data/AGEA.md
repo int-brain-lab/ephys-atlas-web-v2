@@ -1,14 +1,16 @@
 # AGEA source audit and browser transport
 
-Status: active evidence and continuation reference for D067.
+Status: active evidence and continuation reference for D067/D077.
 
-Artifact maturity: registration-provisional local preview under D069.
+Artifact maturity: published original release plus validated-real-local,
+registration-provisional processed candidate under D077.
 The [main-website integration](AGEA_LOCAL_PREVIEW.md) now includes the full
 catalog, shared schema-v1 metadata bundle, bounded searchable feature picker,
 original expression with linked anatomy, and bounded persistent caching.
 The local [coverage lab](AGEA_COVERAGE_LAB.md) remains available for source
-investigation. No approved public AGEA scientific release has been published.
-The measurements below are not production-origin acceptance.
+investigation. The original D074 release remains live; the processed candidate
+has not been staged or published. The measurements below are not
+production-origin acceptance.
 
 The [source and alignment report](AGEA_SOURCE_ALIGNMENT_REPORT.md) summarizes
 catalog completeness, upstream missing-band evidence and the saved owner
@@ -226,10 +228,13 @@ The D069 local integration implements the metadata acceleration, bounded picker,
 source-preserving preview builder and cache-capacity machinery above. Exact
 current scope, commands and measurements are in [the preview runbook](AGEA_LOCAL_PREVIEW.md).
 
-Next: owner review of the integrated original-expression view; resolve remaining
-Q19 public-release registration/identity/display choices; measure peak memory
-and constrained/final-origin delivery. The full-catalog ZIP currently exceeds
-the existing 20,000-entry local-import limit; do not advertise that archive as
+D077 and the hash-bound processed selection now fix the successor source,
+validity, presentation and release recipe. The complete candidate and browser
+evidence are in [the processed review](AGEA_PROCESSED_REVIEW.md). Next: resolve
+Q19 registration and obtain publication authorization; then rebuild on clean
+Linux `main`, run production preflight and measure constrained/final-origin
+delivery before catalog promotion. The full-catalog ZIP currently exceeds the
+existing 20,000-entry local-import limit; do not advertise that archive as
 supported or weaken the limit without a separate measured packaging task.
 
 The measured bundle and experiment sizes support the chosen one-bundle,

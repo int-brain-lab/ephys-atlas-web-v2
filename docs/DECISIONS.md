@@ -82,9 +82,10 @@ only part of the body; the index states what remains effective.
 | D071 | International Brain Laboratory production hostname | superseded | 2026-09-07 | D072 restores ephys-atlas.iblcore.org |
 | D072 | Confirm iblcore.org with Cloudflare DNS | accepted | 2026-09-07 | production hostname ephys-atlas.iblcore.org; Cloudflare DNS, existing AWS delivery model retained |
 | D073 | Landing page and viewer routes | accepted | 2026-09-08 | lightweight themed landing at `/`, viewer at `/app/`; integrated about/credits and existing user guide; no separate help/about/docs launch pages |
-| D074 | Authorize initial atlas deployment | accepted | 2026-09-08 | scoped staging/production deployment, W32 channels/defaults and AGEA inclusion; provisional AGEA notes only in Data details; paper freeze remains separate |
+| D074 | Authorize initial atlas deployment | partially superseded | 2026-09-08 | completed initial deployment retained; D077 selects the processed AGEA successor candidate |
 | D075 | Select production W26 volume transport | accepted | 2026-09-08 | owner retains depth-four orthogonal slice packs; real CloudFront slider matrix and all-feature correctness pass; preserve D043 and build a new production release |
 | D076 | Progressive slice prefetch and updating feedback | accepted | 2026-09-08 | foreground rendering takes priority; progressively cache all registered SVG packs, bound directional volume prefetch to the active feature, retain explicitly updating pixels until replacement is ready |
+| D077 | Select processed AGEA successor | accepted | 2026-09-17 | exact upstream processed bytes; nonzero-label validity; original release retained; candidate work only, no publication authorization |
 
 ## D001 — Separate v2
 
@@ -1880,3 +1881,38 @@ the next whole pack instead of re-requesting the next slice from the current
 pack. It preempts an active generic background transfer and lets progressive
 warming resume afterward. This prevents an opposite-side cache fill from
 sharing constrained bandwidth with the pack the user is approaching.
+
+## D077 — Select the processed AGEA successor
+
+The owner identifies the documented IBL post-processed AGEA product as the
+intended website dataset and authorizes autonomous candidate implementation on
+`feature/shared-atlas-region-contract`. Select the exact public
+`gene-expression-processed.bin` object pinned by
+[`AGEA_PROCESSED_SELECTION.json`](data/AGEA_PROCESSED_SELECTION.json):
+1,384,542,940 bytes, SHA-256
+`2c3cabd41a422a449f9ced791ccfc5e0f3b3ff8db328ff970086685aec96d41e`.
+Package those upstream float16 bytes unchanged. Do not rerun or approximate the
+50-component PPCA reconstruction, bilateral averaging or curtaining correction
+during web release construction.
+
+Use `label.npy != 0` as the processed validity domain. Every finite processed
+value inside it is valid, including negative, exact `-1`, zero and positive
+values. `label.npy == 0` is outside; the processed recipe has no missing
+category. This replaces the original value-sentinel policy only for the new
+processed recipe. It does not reinterpret or mutate
+`agea-original-20260908-v1`.
+
+Retain the loader-derived 200 µm grid, affine and provisional
+`allen-ccf-2017` assignment. Processing does not establish biological
+registration. Use Linear/Full descriptive distributions with 64 bins over the
+valid processed domain and identify the quantity as Allen expression energy
+after IBL processing. Preserve all 4,345 experiment identities and duplicate
+gene symbols.
+
+Build a new immutable `agea-processed-*` release and retain the published
+original release as immutable rollback and source evidence. The audited local
+candidate and browser evidence are recorded in
+[`AGEA_PROCESSED_REVIEW.md`](data/AGEA_PROCESSED_REVIEW.md). This decision does
+not authorize staging, production upload, catalog promotion or mutation of the
+live AGEA mapping. Any promotable artifact must be rebuilt and preflighted on
+clean Linux `main` from the committed selection.

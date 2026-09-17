@@ -1,0 +1,60 @@
+{
+  "format": "agea-processed-selection-v1",
+  "decision": "D077",
+  "status": "accepted",
+  "recorded_at": "2026-09-17",
+  "source": {
+    "uri": "https://ibl-brain-wide-map-public.s3.amazonaws.com/atlas/agea/gene-expression-processed.bin",
+    "bytes": 1384542940,
+    "sha256": "2c3cabd41a422a449f9ced791ccfc5e0f3b3ff8db328ff970086685aec96d41e",
+    "last_modified": "2025-03-18T14:03:46Z",
+    "shape": [4345, 58, 41, 67],
+    "dtype": "little-endian float16",
+    "experiment_catalog_sha256": "90433973765b0361921c48dc70bce8291885c427d23d930b1eb6617348024572",
+    "label_sha256": "0a09957f2e6b9c70081928e15587e9f3b97382ac7a79baa2788160206ad8a81a",
+    "image_sha256": "665d671ad51976e9e0680da43eab8b74d5d6e84c11c230be31451c00d3ea71ba"
+  },
+  "processing": {
+    "authority": "upstream published IBL processed product",
+    "repository": "int-brain-lab/iblatlas",
+    "commit": "52083adf44825d0622a503705e095699a5957587",
+    "script": "iblatlas/genomics/gene_expression_scrapping/06-denoise-impute.py",
+    "script_sha256": "d7ce788b67a74af33e098dc734d53374892b79e91757198582e0803d1478d23c",
+    "published_intermediate": "ppca_dual_curtain.bin",
+    "steps": [
+      "50-component PPCA reconstruction on nonzero-label voxels",
+      "ML-reflected bilateral nanmean",
+      "per-experiment coronal slice weighting within [0.5, 2] using Cosmos-region medians"
+    ],
+    "web_packaging_transform": "none"
+  },
+  "validity": {
+    "valid": "all finite processed values where label.npy != 0",
+    "outside": "label.npy == 0",
+    "missing": "none",
+    "value_sign": "negative, exact -1, zero and positive values are retained inside the valid domain",
+    "classification_order": ["outside", "valid"]
+  },
+  "geometry": {
+    "axis_order": ["ml", "dv", "ap"],
+    "grid_shape": [58, 41, 67],
+    "spacing_um": 200,
+    "affine": "unchanged pinned AGEA loader affine",
+    "reference_space_id": "allen-ccf-2017",
+    "registration_status": "provisional"
+  },
+  "presentation": {
+    "display_scale": "Linear",
+    "distribution_domain": "Full",
+    "histogram_bins": 64,
+    "quantity": "Allen gene expression energy after IBL processing",
+    "unit": null
+  },
+  "release": {
+    "recipe_id": "agea-processed-v1",
+    "candidate_release_id": "agea-processed-20260917-v2",
+    "catalog_label": "Allen Gene Expression Atlas",
+    "original_release_retained": "agea-original-20260908-v1",
+    "publication_authorized": false
+  }
+}

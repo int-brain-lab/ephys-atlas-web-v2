@@ -38,6 +38,7 @@ DATASET_ID = "agea"
 SOURCE_URI = "https://ibl-brain-wide-map-public.s3.amazonaws.com/atlas/agea/"
 IBLATLAS_COMMIT = "52083adf44825d0622a503705e095699a5957587"
 GRID_ID = "agea-original-200um-loader-grid"
+PROCESSED_SELECTION = Path("docs/data/AGEA_PROCESSED_SELECTION.json")
 PROCESSED_SOURCE_HASHES = {
     PROCESSED_NAME: PROCESSED_SHA256,
     **{name: digest for name, digest in SOURCE_HASHES.items() if name != "gene-expression.bin"},
@@ -63,6 +64,7 @@ class ReleaseProfile:
     source_filename: str
     source_last_modified: str
     feature_description: str
+    quantity: str
     transform: str
     source_population: str
     missing_values: str
@@ -86,6 +88,7 @@ LOCAL_PREVIEW = ReleaseProfile(
     source_filename="gene-expression.bin",
     source_last_modified="2024-01-21",
     feature_description="Original Allen expression-energy experiment {experiment_id}; raw source values.",
+    quantity="Allen gene expression energy",
     transform="identity; original source float16 values",
     source_population="every measured source voxel, including zero values and zero-labelled anatomy",
     missing_values="source value -1 is missing; no voxel is classified outside",
@@ -112,6 +115,7 @@ PRODUCTION = ReleaseProfile(
     source_filename="gene-expression.bin",
     source_last_modified="2024-01-21",
     feature_description="Original Allen expression-energy experiment {experiment_id}; raw source values.",
+    quantity="Allen gene expression energy",
     transform="identity; original source float16 values",
     source_population="every measured source voxel, including zero values and zero-labelled anatomy",
     missing_values="source value -1 is missing; no voxel is classified outside",
@@ -142,6 +146,7 @@ PROCESSED = ReleaseProfile(
         "IBL-processed Allen expression-energy experiment {experiment_id}; "
         "PPCA reconstruction, bilateral averaging and curtaining correction."
     ),
+    quantity="Allen gene expression energy after IBL processing",
     transform=(
         "upstream IBL 50-component PPCA reconstruction; ML-reflected bilateral "
         "nanmean; bounded per-coronal-slice curtaining correction"
@@ -363,7 +368,7 @@ def _write_feature(
         "unit": None,
         "display": {"volume": display},
         "value_semantics": {
-            "quantity": "Allen gene expression energy",
+            "quantity": profile.quantity,
             "transform": profile.transform,
             "source_population": profile.source_population,
             "missing_values": profile.missing_values,
@@ -410,6 +415,7 @@ def build_release(
     affine: tuple[float, ...] | None = None,
     builder_commit: str | None = None,
     release_id: str | None = None,
+    selection: Path | None = None,
 ) -> Path:
     if output.exists():
         raise ValueError(f"output already exists: {output}")
@@ -450,6 +456,10 @@ def build_release(
     script_path = release / Path(__file__).name
     shutil.copyfile(alignment_review, review_path)
     shutil.copyfile(Path(__file__), script_path)
+    selection_path = release / selection.name if selection is not None else None
+    selection_sha = sha256_file(selection) if selection is not None else None
+    if selection is not None:
+        shutil.copyfile(selection, selection_path)
     volumes = np.memmap(source_volume, dtype="<f2", mode="r", shape=shape)
     labels = np.load(source / "label.npy")
     if labels.shape != shape[1:]:
@@ -536,6 +546,18 @@ def build_release(
                     "path": script_path.name,
                     "sha256": script_sha,
                 },
+                *(
+                    [
+                        {
+                            "role": "selection-freeze",
+                            "description": "Processed AGEA source, validity, geometry and presentation selection",
+                            "path": selection_path.name,
+                            "sha256": selection_sha,
+                        }
+                    ]
+                    if selection_path is not None
+                    else []
+                ),
             ],
             "builder": {
                 "name": profile.builder_name,
@@ -686,13 +708,14 @@ def build_processed_release(
     affine: tuple[float, ...] | None = None,
     builder_commit: str | None = None,
     release_id: str | None = None,
+    selection: Path = PROCESSED_SELECTION,
 ) -> Path:
     """Build D077's processed-value release; deployment maturity is external."""
     return build_release(
         source, output, profile=PROCESSED, created_at=created_at,
         alignment_review=alignment_review, shape=shape,
         source_hashes=source_hashes, affine=affine, builder_commit=builder_commit,
-        release_id=release_id,
+        release_id=release_id, selection=selection,
     )
 
 
