@@ -419,6 +419,11 @@ export interface VolumeFeaturePayload {
   descriptor: VolumeRepresentationDescriptor;
   summary: VolumeFeatureSummary;
   loadResource(path: string, signal?: AbortSignal, resource?: EncodedResourceDescriptor): Promise<ArrayBuffer>;
+  loadRegionalDistribution?(
+    parcellation: ParcellationId,
+    binningId: string,
+    signal?: AbortSignal,
+  ): Promise<DistributionBinning>;
   baseUrl?: string;
 }
 

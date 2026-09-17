@@ -1,6 +1,7 @@
 import type { DatasetId, DatasetRef, ParcellationId, RepresentationKind } from '../domain/types.js';
 import { ResourceFetcher } from './cache.js';
 import { loadRegionalFeatureFromResources, loadRegionsFromResources } from './regional-loader.js';
+import { createVolumeRegionalDistributionLoader } from './volume-regional-loader.js';
 import type { ResourceReader } from './resource-reader.js';
 import { parseVolumeResourceIndex, parseVolumeSummary } from './validation/volume-v1.js';
 import { validateDistributionMatchesDisplay } from './validation/distribution.js';
@@ -207,6 +208,12 @@ export class HttpDatasetSource implements DatasetSource {
         ...descriptor,
         resource: parseVolumeResourceIndex(resourceIndexRaw, descriptor),
       };
+      const loadRegionalDistribution = createVolumeRegionalDistributionLoader({
+        reader,
+        featureLocation: featureUrl,
+        summaryPath: descriptor.summaryPath,
+        summary,
+      });
       return {
         schemaVersion: SCHEMA_VERSION,
         featureId,
@@ -219,6 +226,7 @@ export class HttpDatasetSource implements DatasetSource {
           resourceSignal,
           resource,
         ),
+        loadRegionalDistribution,
       };
     }
 
