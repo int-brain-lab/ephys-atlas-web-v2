@@ -1,8 +1,8 @@
 {
   "catalog": {
     "path": "catalog.json",
-    "bytes": 4058,
-    "sha256": "ef5566f80f77d25e70127da07bcd0de63f7655e4f63008af0d91134d24e5a1ab"
+    "bytes": 5318,
+    "sha256": "817c3854b9be9989ba763756a554260611443823a0fe37a394f47ce113e77843"
   },
   "projection": {
     "path": "atlas/projections/ibl-atlas-projections-05b9f3f85db9/manifest.json",

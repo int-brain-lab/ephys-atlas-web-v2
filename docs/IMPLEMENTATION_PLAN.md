@@ -103,9 +103,10 @@ spatial partitions of an upstream bilaterally averaged signal. Selected rows
 can be exported with exact bins, tails, populations, mapping and hemisphere.
 New complete AGEA and W26 successors now pass graph validation and real-release
 browser review; see the [D078 candidate review](data/VOLUME_REGIONAL_DISTRIBUTION_REVIEW.md).
-Next: rebuild AGEA and W26 on clean Linux `main`, run production preflight,
-publish both immutable graphs, deploy the compatible site, promote new Ephys
-Atlas and Anatomy editions, and record all-dataset production-origin QA.
+The D079 production deployment is complete: both successors, the compatible
+site and catalog-last edition promotion passed their guarded transactions and
+all-dataset production-origin QA. See the
+[deployment record](publishing/REGIONAL_DISTRIBUTION_DEPLOYMENT_20260917.md).
 Full-catalog ZIP import remains outside the current archive entry limit.
 
 ### Other independent work

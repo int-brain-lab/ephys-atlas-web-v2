@@ -274,12 +274,17 @@ directional volume prefetch, progressively persists all registered SVG packs,
 and marks retained frames as updating during feature loads. Final Chromium and
 Firefox checks pass; see the [prefetch deployment record](publishing/PREFETCH_DEPLOYMENT_20260908.md).
 
-AGEA is included with provisional notes only in Data details. The D075 production volume release is now public in Ephys Atlas edition
-`ibl-review-20260908-v2`. Benchmark bytes remain separate and outside discovery;
-the existing v1 edition mapping is retained unchanged.
-Q2/Q9 still govern the later paper freeze; Q19 retains processed AGEA
-publication promotion only. No further administrator intervention is needed for the approved
-initial deployment operations.
+The D079 successors are public. Ephys Atlas edition
+`ibl-review-20260917-v3` retains the existing channels/clusters and selects
+regional W26 release `2026_W26-ibl-review-20260917-v2`; Anatomy edition
+`ibl-review-20260917-v2` selects processed AGEA release
+`agea-processed-20260917-v3`. Both are their project defaults. The former
+editions/releases and Brain-Wide Map remain unchanged, and Ephys Atlas channels
+remain the overall default. Production-origin Chromium and Firefox QA covers
+the automatic first-visit tour and all five datasets; see the
+[D079 deployment record](publishing/REGIONAL_DISTRIBUTION_DEPLOYMENT_20260917.md).
+Q2/Q9 still govern the later paper freeze. No further administrator intervention
+is needed for the approved deployment operations.
 
 D056/D061 accept Project/Dataset/Release/Feature/View navigation, immutable
 scoped project editions, curator-owned catalog promotion, explicit

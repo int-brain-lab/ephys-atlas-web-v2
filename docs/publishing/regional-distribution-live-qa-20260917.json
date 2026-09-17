@@ -1,0 +1,31 @@
+{
+  "format": "ibl-ephys-atlas-live-qa-v2",
+  "date": "2026-09-17",
+  "origin": "https://ephys-atlas.iblcore.org",
+  "site_build_id": "f08a249fa97ea7dcd21110cd9a07e1b0",
+  "catalog": {
+    "publication_id": "2a152441f24c4c0a81bdad190e3e507c",
+    "bytes": 5318,
+    "sha256": "817c3854b9be9989ba763756a554260611443823a0fe37a394f47ce113e77843"
+  },
+  "raw_report": {
+    "path": "artifacts/deployment-20260917/live-qa/result.json",
+    "sha256": "ffbd72aba5bb91b0597659734041200d08fcd11f8c8928edf76205f8e959cfa7"
+  },
+  "browsers": ["Chromium headless", "Firefox headless"],
+  "checks": [
+    "automatic tour opens once from fresh local storage and remains dismissed after reload",
+    "channels, clusters, Brain-Wide Map, regional W26 volumes and processed AGEA reach ready state at their exact catalog releases",
+    "W26 and AGEA request Allen regional counts once after selection and reuse them across hemisphere changes",
+    "processed AGEA discloses upstream bilateral averaging and non-independent left/right spatial partitions",
+    "no console errors, page errors, HTTP error responses or unexpected failed requests"
+  ],
+  "expected_navigation_cancellations": {
+    "browser": "Firefox headless",
+    "count": 1,
+    "resource": "site decorative slices SVG",
+    "error": "NS_BINDING_ABORTED"
+  },
+  "screenshot_count": 10,
+  "result": "passed"
+}
