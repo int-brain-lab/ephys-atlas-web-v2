@@ -5,7 +5,7 @@ import path from 'node:path';
 
 const configuredRelease = process.env.EPHYS_ATLAS_REAL_RELEASE;
 if (!configuredRelease) {
-  throw new Error('EPHYS_ATLAS_REAL_RELEASE must point to a W26 candidate release');
+  throw new Error('EPHYS_ATLAS_REAL_RELEASE must point to a W26 release');
 }
 const releaseRoot = path.resolve(configuredRelease);
 const manifest = JSON.parse(await readFile(path.join(releaseRoot, 'manifest.json'), 'utf8')) as {
@@ -56,7 +56,7 @@ async function selectFeature(page: import('@playwright/test').Page, featureId: s
   await expect(page.locator(`[data-volume-feature="${featureId}"]`)).toHaveCount(3);
 }
 
-test('serves the candidate with CDN-like immutable and opaque-gzip headers', async ({ request }) => {
+test('serves the release with CDN-like immutable and opaque-gzip headers', async ({ request }) => {
   const catalog = await request.get('/__real-data/catalog.json');
   expect(catalog.headers()['access-control-allow-origin']).toBe('*');
   expect(catalog.headers()['cache-control']).toContain('max-age=60');
@@ -83,7 +83,11 @@ test('serves the candidate with CDN-like immutable and opaque-gzip headers', asy
 
 test('loads all 41 dynamic features with D043-linked indices and cache reuse', async ({ page }) => {
   expect(featureIds).toHaveLength(41);
-  expect(manifest.description).toContain('Local non-published transport candidate');
+  if (manifest.release.release_id.includes('candidate')) {
+    expect(manifest.description).toContain('Local non-published transport candidate');
+  } else {
+    expect(manifest.description).toContain('pinned canonical encoding-volume object');
+  }
   const packRequests: string[] = [];
   page.on('request', (request) => {
     if (request.url().includes('/volume/packs/')) packRequests.push(request.url());
