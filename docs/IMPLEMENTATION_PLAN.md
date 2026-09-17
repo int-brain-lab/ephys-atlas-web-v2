@@ -112,6 +112,12 @@ Full-catalog ZIP import remains outside the current archive entry limit.
 
 These remain useful but must not displace the launch path:
 
+- benchmark the deferred AGEA object-compaction options recorded in
+  [Storage formats](data/STORAGE_FORMATS.md#deferred-agea-object-compaction-study)
+  after production request evidence is available; retain the current D079
+  schema-v1 release unchanged and require a new contract/release for any
+  sharded successor;
+
 - create a new development-bundle descriptor pinning the published immutable
   HTTPS releases and prove acquisition from a clean checkout; retain the
   historical local/candidate descriptors unchanged;

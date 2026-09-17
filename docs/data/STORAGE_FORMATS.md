@@ -92,6 +92,41 @@ a CDN exposes an equivalently efficient representation with correct CORS, add a
 direct reader/representation and remove the redundant transform after measuring
 it against the same interaction workloads.
 
+### Deferred AGEA object-compaction study
+
+Keep the D079 processed AGEA release in its current schema-v1 layout. Its
+34,772 immutable files are valid S3/CloudFront objects and preserve simple
+per-resource integrity, selective experiment loading, cache isolation and
+small retry units. The browser does not enumerate or fetch the complete graph:
+it loads the metadata bundle once and fetches only the selected experiment's
+volume resources, adding regional companions lazily after region selection.
+Do not relabel or republish this immutable release merely to reduce its object
+count.
+
+The production build contains 923,911,515 served bytes with a mean object size
+of about 26.6 kB; 30,164 of its 34,772 files are smaller than 16 kB. This is
+safe for the selected static origin, but publication time, request accounting
+and cold-cache round trips justify a measured future transport study. Evaluate
+these alternatives without changing schema v1 in place:
+
+- one indexed immutable pack per experiment, reducing the graph to roughly one
+  pack plus metadata per experiment;
+- indexed shards of approximately 32–128 experiments, using HTTP Range for
+  selective reads and retaining explicit decoded-resource integrity;
+- a standard sharded scientific layout such as a future Zarr contract, only if
+  its browser/runtime and interoperability value exceeds its added dependency
+  surface.
+
+Do not select a single monolithic archive by default: it weakens cache and
+failure isolation and can amplify cold reads. Likewise, do not assume that a
+smaller object count is faster. Benchmark candidate shard sizes through the
+real CloudFront origin using publication duration, request count and cost,
+cold first-experiment load, warm and cold experiment switching, regional
+selection latency, transferred-byte amplification, cache reuse, integrity
+failure recovery and interrupted-range retry behavior. Any winner requires a
+new explicit transport/schema contract and an immutable successor release;
+the current D079 release remains supported evidence and rollback history.
+
 ## Downloads
 
 Individual feature downloads are ordinary checksummed artifacts (CSV, NPZ,
