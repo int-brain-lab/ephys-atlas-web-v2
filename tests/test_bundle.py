@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import zipfile
 
 import pytest
 
-from ephys_atlas_builder.bundle import validate_bundle, write_bundle
+from ephys_atlas_builder.bundle import (
+    declared_release_resource_paths,
+    validate_bundle,
+    write_bundle,
+)
 from ephys_atlas_builder.fixture import generate_golden
 from ephys_atlas_builder.validate import ValidationError
 
@@ -49,6 +54,56 @@ def test_bundle_rejects_undeclared_release_files(tmp_path: Path) -> None:
 
     with pytest.raises(ValidationError, match="undeclared"):
         write_bundle(release, tmp_path / "bad.ibl-ephys-atlas.zip", SCHEMA)
+
+
+def test_declared_resources_are_relative_to_each_containing_json(tmp_path: Path) -> None:
+    def resource(path: str, media_type: str = "application/octet-stream") -> dict:
+        return {
+            "path": path,
+            "media_type": media_type,
+            "bytes": 1,
+            "sha256": "0" * 64,
+            "codec": {"name": "none", "decoded_bytes": 1},
+        }
+
+    release = tmp_path / "release"
+    summary = release / "features/example/volume/summary.json"
+    summary.parent.mkdir(parents=True)
+    (summary.parent / "regional").mkdir()
+    (summary.parent / "regional/counts.bin").write_bytes(b"x")
+    summary.write_text(
+        json.dumps(
+            {
+                "format": "ephys-atlas-volume-summary-v1",
+                "counts": resource("regional/counts.bin"),
+            }
+        )
+    )
+    feature = release / "features/example/feature.json"
+    feature.write_text(
+        json.dumps(
+            {"summary": resource("volume/summary.json", "application/json")}
+        )
+    )
+    (release / "manifest.json").write_text(
+        json.dumps(
+            {
+                "features": [
+                    {
+                        "descriptor": {
+                            "resource": resource(
+                                "features/example/feature.json", "application/json"
+                            )
+                        }
+                    }
+                ]
+            }
+        )
+    )
+
+    declared = declared_release_resource_paths(release)
+    assert "features/example/volume/regional/counts.bin" in declared
+    assert "features/example/regional/counts.bin" not in declared
 
 
 @pytest.mark.parametrize("name", ["../escape.txt", "/absolute.txt", "back\\slash.txt"])

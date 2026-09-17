@@ -48,6 +48,13 @@ def declared_release_resource_paths(release_dir: Path) -> set[str]:
             document = json.loads((release_dir / document_path).read_text())
         except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
             raise ValidationError(f"invalid declared JSON resource {document_path}: {error}") from error
+        document_base = (
+            PurePosixPath(document_path).parent
+            if isinstance(document, dict)
+            and document.get("format")
+            in {"ephys-atlas-regional-statistics-v1", "ephys-atlas-volume-summary-v1"}
+            else resource_base
+        )
 
         def visit(value: Any) -> None:
             if isinstance(value, list):
@@ -61,7 +68,7 @@ def declared_release_resource_paths(release_dir: Path) -> set[str]:
                 if not isinstance(raw, str):
                     raise ValidationError(f"invalid resource path in {document_path}")
                 relative = _safe_path(raw)
-                combined = resource_base / relative
+                combined = document_base / relative
                 normalized = _safe_path(combined.as_posix()).as_posix()
                 expected.add(normalized)
                 if (
@@ -71,7 +78,7 @@ def declared_release_resource_paths(release_dir: Path) -> set[str]:
                     next_base = (
                         PurePosixPath(normalized).parent
                         if normalized in feature_paths
-                        else resource_base
+                        else document_base
                     )
                     pending.append((normalized, next_base))
             for item in value.values():
