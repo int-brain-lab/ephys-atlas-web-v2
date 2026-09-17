@@ -62,7 +62,8 @@ Run from the release commit on Linux:
 
 ### AGEA — full-catalog single-experiment browsing
 
-Status: active under D067/D069/D074/D077/D078. The original release remains live.
+Status: production promotion authorized under D079. The original release remains
+live and immutable until the catalog-last transaction succeeds.
 D077 selects the exact upstream processed product and nonzero-label validity for
 its successor. Full-catalog audit, deterministic builder, complete local
 candidate, visual comparison and Chromium application checks are implemented.
@@ -102,10 +103,10 @@ spatial partitions of an upstream bilaterally averaged signal. Selected rows
 can be exported with exact bins, tails, populations, mapping and hemisphere.
 New complete AGEA and W26 successors now pass graph validation and real-release
 browser review; see the [D078 candidate review](data/VOLUME_REGIONAL_DISTRIBUTION_REVIEW.md).
-Next: obtain Q19 publication authorization. Only with that authorization may
-AGEA be rebuilt on clean Linux `main`, preflighted against the
-real origin and promoted in the catalog. Full-catalog ZIP import remains
-outside the current archive entry limit.
+Next: rebuild AGEA and W26 on clean Linux `main`, run production preflight,
+publish both immutable graphs, deploy the compatible site, promote new Ephys
+Atlas and Anatomy editions, and record all-dataset production-origin QA.
+Full-catalog ZIP import remains outside the current archive entry limit.
 
 ### Other independent work
 

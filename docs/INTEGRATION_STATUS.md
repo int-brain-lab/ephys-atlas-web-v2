@@ -37,8 +37,8 @@ pass; D070 records owner acceptance and waives additional Firefox/Safari review 
 | `ephys_atlas_channels` | Dynamic raw/denoised discovery, explicit `inside` recipe, Allen/Beryl/Cosmos summaries, D050 distributions, provenance, HTTP acceptance. | Published `2026_W32-ibl-review-20260908-v1` from the reviewed recipe; not the final paper freeze. | Q2 paper vintage remains separate; initial live browsing passed. |
 | `ephys_atlas_clusters` | D038/D044 all-row 14-feature recipe, deterministic summaries, D048/D054 presentation, D050 distributions, HTTP acceptance. | Published `sha256-9b5e55215b306f26-ibl-review-20260908-v1` from the frozen source. | Initial live browsing passed. |
 | `brainwide_map` | D038 five-family Beryl-only legacy adapter, equivalence coverage, D050 distributions, HTTP acceptance. | Published `legacy-v1-1d908bea-ibl-review-20260908-v1` from all six exact hash-pinned Parquets. | Initial live browsing passed. |
-| `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, D050 global distributions, deterministic D078 signed companions, lazy verified materialization, Both/Left/Right overlays and exact-count export. | Published `2026_W26-ibl-review-20260908-v1` remains immutable; validated-real-local `2026_W26-candidate-depth4-regional-20260917-v1` adds D078 companions for all 41 features. | Decide any later publication separately; the branch-built successor is review evidence only. |
-| `agea` | Original and processed full-catalog builders, shared metadata bundle, recipe-specific validity masks, linked slices, deterministic D078 signed regional-companion builders, lazy verified browser materialization, exact Both/Left/Right region overlays and exact-count export. | Published `agea-original-20260908-v1`; validated-real-local `agea-processed-20260917-v3` D077/D078 successor with all 4,345 experiments. | Q19 retains clean-`main` rebuild, preflight and publication promotion only. |
+| `ephys_atlas_volumes` | Both schema transports, exact D043 mapping/validity, retained Canvas slices, inspection, D050 global distributions, deterministic D078 signed companions, lazy verified materialization, Both/Left/Right overlays and exact-count export. | Published `2026_W26-ibl-review-20260908-v1` remains immutable; validated-real-local `2026_W26-candidate-depth4-regional-20260917-v1` adds D078 companions for all 41 features. | D079 authorizes a clean-`main` production successor and new immutable edition. |
+| `agea` | Original and processed full-catalog builders, shared metadata bundle, recipe-specific validity masks, linked slices, deterministic D078 signed regional-companion builders, lazy verified browser materialization, exact Both/Left/Right region overlays and exact-count export. | Published `agea-original-20260908-v1`; validated-real-local `agea-processed-20260917-v3` D077/D078 successor with all 4,345 experiments. | D079 authorizes clean-`main` rebuild, preflight and publication promotion. |
 | `local` | Same schema-v1 graph and materializers; public regional and explicit-grid volume `ibl_ephys_atlas` authoring; deterministic validated ZIP packaging; strict bounded two-phase browser import, atomic IndexedDB admission/deletion, inventory, and integrity recovery. | Real regional and 467 MiB/6,807-entry volume archives pass Chromium, Firefox, and native Safari import/reload checks; near-1 GiB and 20,000-entry boundaries pass Chromium/Firefox; adversarial, cancellation, quota, rollback, reload, delete, and recovery regressions are recorded. | Supported capacity remains provisional pending native-Safari quota/RSS and representative end-user-device evidence; publish the Python distribution only after authorization. |
 
 Dataset source, recipe, selection, release, and audit ownership is indexed by
@@ -54,7 +54,7 @@ support, fully scrollable virtualized feature search, linked anatomy, and 64 MiB
 entry verified caching with quota fallback. Real-data Chromium tests pass;
 D074-authorized `agea-original-20260908-v1` is now published; registration remains
 historically provisional. D078 now accepts the source-native registration for
-descriptive regional aggregation; Q19 retains publication promotion only.
+descriptive regional aggregation; D079 authorizes production promotion.
 Compact virtual rows, deferred bounded cache admission, recent decoded-source
 reuse, stride-based decoding and retained anatomy-tree rows reduce gene-switch
 work; local before/after evidence is recorded in the preview runbook.
@@ -85,8 +85,8 @@ The [AGEA stripe review report](data/AGEA_STRIPE_REPORT.md) adds deterministic
 missing-slab/intensity diagnostics, full-catalog screening, six exact Allen
 archive comparisons, Ptpru section-projection evidence and a reproducible
 12-page PDF. Controls and source checks pass; flags remain unadjudicated
-screening evidence. D077 resolves successor source/validity and D078 resolves
-regional registration; publication promotion remains Q19.
+screening evidence. D077 resolves successor source/validity, D078 resolves
+regional registration and D079 authorizes publication promotion.
 
 ## Scalar exploration
 

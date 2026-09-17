@@ -11,7 +11,7 @@
         "ephys_atlas_volumes"
       ],
       "default_dataset": "ephys_atlas_channels",
-      "default_edition": "ibl-review-20260908-v2",
+      "default_edition": "ibl-review-20260917-v3",
       "editions": [
         {
           "edition_id": "ibl-review-20260908-v1",
@@ -42,6 +42,24 @@
             {
               "dataset_id": "ephys_atlas_volumes",
               "release_id": "2026_W26-ibl-review-20260908-v1"
+            }
+          ]
+        },
+        {
+          "edition_id": "ibl-review-20260917-v3",
+          "label": "September 2026 (regional volumes)",
+          "dataset_releases": [
+            {
+              "dataset_id": "ephys_atlas_channels",
+              "release_id": "2026_W32-ibl-review-20260908-v1"
+            },
+            {
+              "dataset_id": "ephys_atlas_clusters",
+              "release_id": "sha256-9b5e55215b306f26-ibl-review-20260908-v1"
+            },
+            {
+              "dataset_id": "ephys_atlas_volumes",
+              "release_id": "2026_W26-ibl-review-20260917-v2"
             }
           ]
         }
@@ -75,7 +93,7 @@
         "agea"
       ],
       "default_dataset": "agea",
-      "default_edition": "ibl-review-20260908-v1",
+      "default_edition": "ibl-review-20260917-v2",
       "editions": [
         {
           "edition_id": "ibl-review-20260908-v1",
@@ -84,6 +102,16 @@
             {
               "dataset_id": "agea",
               "release_id": "agea-original-20260908-v1"
+            }
+          ]
+        },
+        {
+          "edition_id": "ibl-review-20260917-v2",
+          "label": "September 2026 (processed expression)",
+          "dataset_releases": [
+            {
+              "dataset_id": "agea",
+              "release_id": "agea-processed-20260917-v3"
             }
           ]
         }
@@ -116,11 +144,15 @@
     {
       "dataset_id": "ephys_atlas_volumes",
       "title": "Volumes",
-      "default_release": "2026_W26-ibl-review-20260908-v1",
+      "default_release": "2026_W26-ibl-review-20260917-v2",
       "releases": [
         {
           "release_id": "2026_W26-ibl-review-20260908-v1",
           "label": "2026 W26"
+        },
+        {
+          "release_id": "2026_W26-ibl-review-20260917-v2",
+          "label": "2026 W26 · regional distributions"
         }
       ]
     },
@@ -139,11 +171,15 @@
     {
       "dataset_id": "agea",
       "title": "AGEA",
-      "default_release": "agea-original-20260908-v1",
+      "default_release": "agea-processed-20260917-v3",
       "releases": [
         {
           "release_id": "agea-original-20260908-v1",
           "label": "Original expression"
+        },
+        {
+          "release_id": "agea-processed-20260917-v3",
+          "label": "Processed expression"
         }
       ]
     }

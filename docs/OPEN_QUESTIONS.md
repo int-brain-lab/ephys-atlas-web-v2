@@ -123,41 +123,6 @@ block pure domain/application machinery, synthetic fixtures, the UX lab, or
 scientist testing with clearly labelled synthetic normalization.
 
 
-## Q19 — AGEA processed-release promotion
-
-Status: **DECISION** for processed-release publication and catalog promotion;
-not a launch blocker. D067 authorizes the full catalog and one
-selected expression volume at a time. D069/D074 retain the published original
-release and its provisional registration as historical/live authority.
-
-D077 resolves processing and validity for the successor: use the exact pinned
-IBL processed bytes unchanged, with every finite value at `label.npy != 0`
-valid and label-zero voxels outside. Sign and exact `-1` equality do not encode
-missingness after processing. Linear/Full 64-bin summaries, the processed
-source label and immutable candidate identity are fixed by the hash-bound
-selection. The complete D078 `agea-processed-20260917-v3` successor adds the
-approved signed regional companions; graph validation and all five local
-Chromium real-release tests pass.
-
-The [processed audit](data/AGEA_PROCESSED_SOURCE_AUDIT.json) proves all 4,345
-processed experiments are exactly bilaterally symmetric and confirms the
-processed value domain. The [candidate review](data/AGEA_PROCESSED_REVIEW.md)
-records the complete build, visual comparison and browser checks.
-
-The owner accepts the official loader-paired `label.npy` and source affine for
-descriptive regional aggregation under D078, including the expected coarse
-200 µm boundary behavior. Registration is no longer open.
-
-Resolution still needed:
-
-- authorize a clean-Linux-`main` rebuild, publication transaction and catalog
-  promotion when the processed candidate is ready to replace the live mapping.
-
-The remaining publication decision does not reopen D077's source or validity
-selection or D078's mapping semantics. Duplicate gene symbols remain distinct
-experiments under D067. Publication remains blocked; validated local candidate
-construction does not authorize it.
-
 ## Resolution procedure
 
 When authoritative evidence arrives:

@@ -85,8 +85,9 @@ only part of the body; the index states what remains effective.
 | D074 | Authorize initial atlas deployment | partially superseded | 2026-09-08 | completed initial deployment retained; D077 selects the processed AGEA successor candidate |
 | D075 | Select production W26 volume transport | accepted | 2026-09-08 | owner retains depth-four orthogonal slice packs; real CloudFront slider matrix and all-feature correctness pass; preserve D043 and build a new production release |
 | D076 | Progressive slice prefetch and updating feedback | accepted | 2026-09-08 | foreground rendering takes priority; progressively cache all registered SVG packs, bound directional volume prefetch to the active feature, retain explicitly updating pixels until replacement is ready |
-| D077 | Select processed AGEA successor | accepted | 2026-09-17 | exact upstream processed bytes; nonzero-label validity; original release retained; candidate work only, no publication authorization |
-| D078 | Exact mapped volume-region distributions | accepted | 2026-09-17 | Allen/Beryl/Cosmos; mutually exclusive mappings; lateralized storage; bilateral default; source AGEA labels accepted; successor candidates only |
+| D077 | Select processed AGEA successor | accepted | 2026-09-17 | exact upstream processed bytes; nonzero-label validity; original release retained; D079 later authorizes publication |
+| D078 | Exact mapped volume-region distributions | accepted | 2026-09-17 | Allen/Beryl/Cosmos; mutually exclusive mappings; lateralized storage; bilateral default; source AGEA labels accepted; D079 later authorizes publication |
+| D079 | Publish D078 AGEA and W26 successors | accepted | 2026-09-17 | clean-Linux-main rebuilds; preserve existing releases; add immutable editions; deploy compatible site before catalog promotion |
 
 ## D001 — Separate v2
 
@@ -1962,3 +1963,25 @@ immutable processed-AGEA and W26-volume successor candidates while preserving
 their existing voxel bytes and provenance. This decision authorizes local
 candidate work only. It does not authorize upload, catalog mutation, alias
 movement, staging or production publication.
+
+## D079 — Publish the processed AGEA and regional W26 successors
+
+The repository owner approves autonomous clean-Linux-`main` rebuild,
+production preflight, website deployment, immutable release publication and
+catalog promotion for the D077/D078 successors. Publish processed AGEA as
+`agea-processed-20260917-v3` and W26 volumes as
+`2026_W26-ibl-review-20260917-v2`. Preserve every previously published release
+and exposed edition unchanged.
+
+Add a new Ephys Atlas edition that retains the existing channel and cluster
+releases and selects the new W26 successor. Add a new Anatomy edition selecting
+the processed AGEA successor. Retain the existing Brain-Wide Map project and
+release unchanged. Make the new editions the defaults only within their
+existing projects; the overall default remains Ephys Atlas channels.
+
+Deploy the backward-compatible site before promoting the new catalog. Publish
+release graphs privately and verify their complete remote metadata before the
+catalog-last operation. Run all-dataset production-origin QA afterward. If the
+promoted site or catalog fails validation, restore the last-known-good site or
+catalog through the guarded publication path. This decision closes Q19 and
+does not select the later paper freeze governed by Q2/Q9.
