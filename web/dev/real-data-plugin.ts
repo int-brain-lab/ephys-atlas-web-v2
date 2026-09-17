@@ -9,6 +9,7 @@ const RELEASE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 export interface RealDevelopmentRelease {
   releaseRoot: string;
+  projectId: string;
   datasetId: string;
   title: string;
   description: string;
@@ -107,8 +108,10 @@ export async function loadRealDevelopmentRelease(
     || !manifest.features.some((feature) => feature && typeof feature === 'object' && (feature as { id?: unknown }).id === featureId)) {
     throw new Error(`Default feature ${featureId} is not present in ${manifestPath}`);
   }
+  const synthetic = manifest.dataset_id === 'golden_fixture';
   return {
     releaseRoot,
+    projectId: synthetic ? 'synthetic-development' : developmentProject(manifest.dataset_id).id,
     datasetId: manifest.dataset_id,
     title: manifest.title,
     description: manifest.description,
@@ -116,7 +119,7 @@ export async function loadRealDevelopmentRelease(
     featureId,
     manifestBytes: manifestBytes.byteLength,
     manifestSha256: createHash('sha256').update(manifestBytes).digest('hex'),
-    synthetic: manifest.dataset_id === 'golden_fixture',
+    synthetic,
     status: manifest.dataset_id === 'brainwide_map' ? 'legacy' : 'development',
   };
 }

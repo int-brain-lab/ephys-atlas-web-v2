@@ -16,6 +16,10 @@ export default defineConfig(async () => {
     return { publicDir: false, envDir: false, plugins: [helpMarkdownPlugin()] };
   }
   const releasePath = process.env.EPHYS_ATLAS_REAL_RELEASE;
+  const defaultRepresentation = process.env.EPHYS_ATLAS_REAL_REPRESENTATION;
+  if (defaultRepresentation && defaultRepresentation !== 'regional' && defaultRepresentation !== 'volume') {
+    throw new Error('EPHYS_ATLAS_REAL_REPRESENTATION must be regional or volume');
+  }
   const additionalReleasePaths = (process.env.EPHYS_ATLAS_ADDITIONAL_RELEASES ?? '')
     .split(',').map((value) => value.trim()).filter(Boolean);
   const projectionPackPath = process.env.EPHYS_ATLAS_PROJECTION_PACK;
@@ -58,8 +62,12 @@ export default defineConfig(async () => {
       ...projectionDefine,
       ...meshDefine,
       'import.meta.env.VITE_DEFAULT_DATASET_ID': JSON.stringify(release.datasetId),
+      'import.meta.env.VITE_DEFAULT_PROJECT_ID': JSON.stringify(release.projectId),
       'import.meta.env.VITE_DEFAULT_RELEASE_ID': JSON.stringify(release.releaseId),
       'import.meta.env.VITE_DEFAULT_FEATURE_ID': JSON.stringify(release.featureId),
+      ...(defaultRepresentation ? {
+        'import.meta.env.VITE_DEFAULT_REPRESENTATION': JSON.stringify(defaultRepresentation),
+      } : {}),
       'import.meta.env.VITE_DEFAULT_PARCELLATION_ID': JSON.stringify(
         process.env.EPHYS_ATLAS_REAL_PARCELLATION ?? 'allen',
       ),
