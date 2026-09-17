@@ -65,12 +65,13 @@ test('full real catalog loads through one metadata bundle and the existing atlas
     source: 'real local preview; timings are not production-origin acceptance', requests }, null, 2), contentType: 'application/json' });
 });
 
-test('failed expression selection clears stale volume and remains recoverable', async ({ page }) => {
+test('failed expression selection retains the previous volume with an explicit error and remains recoverable', async ({ page }) => {
   await page.goto('/app/'); await ready(page, first);
   await page.route('**/features/experiment-*/volume/chunks/*.f16.gz', route => route.fulfill({ body: Buffer.from('corrupt') }));
   const id = await choose(page, 'Slc17a7');
-  await expect(page.locator(`[data-volume-feature="${first}"]`)).toHaveCount(0);
   await expect(page.locator('.projection-viewport__error').first()).toBeVisible();
+  await expect(page.locator(`[data-volume-feature="${first}"]`)).toHaveCount(3);
+  await expect(page.locator('.view-frame__status').first()).toContainText('Previous slice');
   await page.unroute('**/features/experiment-*/volume/chunks/*.f16.gz');
   await choose(page, '74658173'); await ready(page, first);
   await choose(page, id.replace('experiment-', '')); await ready(page, id);
