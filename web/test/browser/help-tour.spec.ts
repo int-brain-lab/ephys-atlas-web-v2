@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+const HELP_TOUR_SEEN_KEY = 'ibl-ephys-atlas:help-tour-seen:v1';
+
 async function openTour(page: Page): Promise<void> {
   const help = page.getByRole('dialog', { name: 'Help & getting started' });
   await page.getByRole('button', { name: 'Help' }).first().click();
@@ -18,6 +20,23 @@ async function expectInsideViewport(page: Page, selector: string): Promise<void>
   expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport!.width);
   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport!.height);
 }
+
+test('tour opens automatically once after the first dataset is ready', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate((key) => window.localStorage.removeItem(key), HELP_TOUR_SEEN_KEY);
+  await page.goto('/app/');
+
+  const card = page.locator('.help-tour__card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Step 1 of 5');
+  await expect.poll(() => page.evaluate((key) => window.localStorage.getItem(key), HELP_TOUR_SEEN_KEY))
+    .toBe('seen');
+
+  await card.getByRole('button', { name: 'Skip tour' }).click();
+  await page.reload();
+  await expect(page.locator('[data-context-field="data"]')).not.toContainText('Loading datasets…');
+  await expect(card).not.toBeVisible();
+});
 
 test('regional essentials tour uses real controls without changing view state', async ({ page }) => {
   await page.goto('/app/');

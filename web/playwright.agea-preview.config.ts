@@ -1,10 +1,14 @@
 import { defineConfig } from '@playwright/test';
+import { seenHelpTourStorageState } from './playwright.seen-tour';
 
 if (!process.env.EPHYS_ATLAS_REAL_RELEASE) throw new Error('EPHYS_ATLAS_REAL_RELEASE must point to the AGEA local preview');
 export default defineConfig({
   testDir: './test/agea-preview', timeout: 90_000, workers: 1,
   reporter: [['list'], ['json', { outputFile: 'artifacts/agea-preview-results.json' }]],
-  use: { baseURL: 'http://127.0.0.1:4192', headless: true },
+  use: {
+    baseURL: 'http://127.0.0.1:4192', headless: true,
+    storageState: seenHelpTourStorageState('http://127.0.0.1:4192'),
+  },
   webServer: {
     command: 'npm run dev:real -- --host 127.0.0.1 --port 4192 --strictPort',
     env: { EPHYS_ATLAS_REAL_FEATURE: 'experiment-74658173' },

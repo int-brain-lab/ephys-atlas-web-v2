@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test';
+import { seenHelpTourStorageState } from './playwright.seen-tour';
 
 export default defineConfig({
   testDir: './test/local-import-benchmark',
@@ -17,6 +18,7 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:4173',
     headless: true,
     trace: 'retain-on-failure',
+    storageState: seenHelpTourStorageState('http://127.0.0.1:4173'),
   },
   webServer: {
     command: 'EPHYS_ATLAS_REAL_RELEASE=../fixtures/golden-v1 EPHYS_ATLAS_REAL_FEATURE=rms_ap npm run dev:real -- --host 127.0.0.1 --port 4173',

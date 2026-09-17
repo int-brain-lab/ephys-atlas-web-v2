@@ -55,7 +55,7 @@ Acceptance criteria:
 - <a id="ls01-05"></a> **`LS01-05`** — The world cursor and its derived slice positions, dataset/release, feature,
   representation, parcellation, coloring, region selection, and relevant
   workspace view state are serializable into a shareable URL.
-- <a id="ls01-06"></a> **`LS01-06`** — Maximized views, drawers, and responsive composition remain keyboard-reversible and covered by browser tests.
+- <a id="ls01-06"></a> **`LS01-06`** — Maximized views, drawers, and responsive composition remain keyboard-reversible and covered by browser tests. Once the first viewer dataset is ready, the representation-specific essentials tour opens automatically for a browser that has not seen it; completing or skipping it suppresses future automatic opening while Help retains explicit replay.
 - <a id="ls01-07"></a> **`LS01-07`** — Current Chrome/Edge, Firefox, and Safari are the launch browser targets. Chromium CI is necessary but not sufficient for final release QA.
 - <a id="ls01-08"></a> **`LS01-08`** — Public navigation clearly separates Project, Dataset, immutable Release,
   Feature, and display choices; the grouped Data chooser preserves project/dataset

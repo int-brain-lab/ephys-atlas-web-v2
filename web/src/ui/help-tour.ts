@@ -2,6 +2,8 @@ import regionalTourHtml from '../../content/help/tour-regional.md';
 import volumeTourHtml from '../../content/help/tour-volume.md';
 import type { RepresentationKind } from '../domain/types.js';
 
+export const HELP_TOUR_SEEN_KEY = 'ibl-ephys-atlas:help-tour-seen:v1';
+
 export type HelpTourAnchor = 'context' | 'navigation' | 'regions' | 'values' | 'actions';
 
 interface HelpTourStep {

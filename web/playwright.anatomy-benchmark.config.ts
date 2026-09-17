@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test';
+import { seenHelpTourStorageState } from './playwright.seen-tour';
 
 export default defineConfig({
   testDir: './test/anatomy-benchmark',
@@ -7,6 +8,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:4174',
     headless: true,
+    storageState: seenHelpTourStorageState('http://127.0.0.1:4174'),
     launchOptions: { args: ['--enable-precise-memory-info'] },
   },
   webServer: {

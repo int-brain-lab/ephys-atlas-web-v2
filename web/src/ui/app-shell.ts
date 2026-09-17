@@ -65,7 +65,7 @@ import {
   type LayoutPreferences,
 } from '../application/layout-preferences.js';
 import { HelpGuide } from './help-guide.js';
-import { HelpTour, type HelpTourAnchor } from './help-tour.js';
+import { HELP_TOUR_SEEN_KEY, HelpTour, type HelpTourAnchor } from './help-tour.js';
 
 export interface AppShellCallbacks {
   setDataset(ref: DatasetRef): void;
@@ -226,6 +226,7 @@ export class AppShell {
   private readonly helpGuide: HelpGuide;
   private readonly helpDialog: HTMLDialogElement;
   private readonly helpTour: HelpTour;
+  private automaticHelpTourAttempted = false;
   private readonly localImportInput: HTMLInputElement;
   private readonly localImportDialog: HTMLDialogElement;
   private readonly localImportStatus: HTMLElement;
@@ -485,6 +486,7 @@ export class AppShell {
     for (const projection of ORTHOGONAL_PROJECTION_REGISTRY) {
       this.renderViewFrame(projection.id, model);
     }
+    this.maybeStartAutomaticHelpTour(model);
   }
 
   showRegionTooltip(inspection: RegionInspection, model: RegionTooltipModel): void {
@@ -1294,6 +1296,7 @@ export class AppShell {
   }
 
   private startHelpTour(): void {
+    this.rememberHelpTourSeen();
     const representation = this.currentModel?.state.view.representation ?? 'regional';
     const returnFocus = this.layoutMode === 'narrow' || this.layoutMode === 'phone'
       ? this.overflowActions?.querySelector<HTMLElement>('.app-header__overflow-trigger') ?? null
@@ -1303,6 +1306,36 @@ export class AppShell {
     this.closeDrawers();
     if (this.overflowActions) this.overflowActions.open = false;
     window.requestAnimationFrame(() => this.helpTour.start(representation, returnFocus));
+  }
+
+  private maybeStartAutomaticHelpTour(model: ShellModel): void {
+    if (this.automaticHelpTourAttempted
+      || this.helpTour.active
+      || this.helpDialog.open
+      || window.location.hash === '#help'
+      || model.featureLoading
+      || model.state.runtime.navigationStatus !== 'ready'
+      || model.state.runtime.datasetStatus !== 'ready') return;
+
+    this.automaticHelpTourAttempted = true;
+    try {
+      if (window.localStorage.getItem(HELP_TOUR_SEEN_KEY) === 'seen') return;
+    } catch {
+      // Storage denial must not prevent first-page onboarding.
+    }
+    this.rememberHelpTourSeen();
+    const representation = model.state.view.representation;
+    window.requestAnimationFrame(() => {
+      if (!this.helpTour.active && !this.helpDialog.open) this.helpTour.start(representation, null);
+    });
+  }
+
+  private rememberHelpTourSeen(): void {
+    try {
+      window.localStorage.setItem(HELP_TOUR_SEEN_KEY, 'seen');
+    } catch {
+      // The tour still works when browser storage is unavailable.
+    }
   }
 
   private resolveHelpTourTarget(anchor: HelpTourAnchor): HTMLElement | null {
