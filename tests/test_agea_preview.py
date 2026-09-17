@@ -275,6 +275,11 @@ def test_builds_processed_release_with_label_domain_and_signed_values(
         "missing": "none; processed values equal to -1 remain valid",
         "outside": "label.npy == 0",
     }
+    assert manifest["provenance"]["notes"][2] == (
+        "D078 accepts the source-native label volume for descriptive regional "
+        "aggregation; D079 authorizes this processed successor for production "
+        "publication."
+    )
     sources = manifest["provenance"]["sources"]
     processed_source = next(
         item for item in sources if item.get("uri", "").endswith("gene-expression-processed.bin")

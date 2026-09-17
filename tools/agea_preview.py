@@ -169,7 +169,7 @@ PROCESSED = ReleaseProfile(
     notes=(
         "The exact upstream processed float16 product is packaged unchanged; web packaging does not rerun PPCA, bilateral averaging, or curtaining correction.",
         "Only label.npy != 0 is valid. All finite processed values in that domain, including negative, exact -1, and zero values, are retained; label-zero voxels are outside.",
-        "D078 accepts the source-native label volume for descriptive regional aggregation. Publication promotion remains separately unapproved.",
+        "D078 accepts the source-native label volume for descriptive regional aggregation; D079 authorizes this processed successor for production publication.",
     ),
 )
 
