@@ -1,6 +1,6 @@
 {
   "status": "published-production",
-  "packaging": "deployed-production-graph; shared-lock-adoption-pending",
+  "packaging": "deployed-production-graph; shared-lock-adopted-by-ibl-anatomy",
   "reference_space_id": "allen-ccf-2017",
   "source": {
     "atlas": "Allen CCFv3",
@@ -55,7 +55,10 @@
     "immutable_origin": "https://ephys-atlas.iblcore.org/atlas/projections/ibl-atlas-projections-05b9f3f85db9/manifest.json",
     "release_id": "ibl-atlas-projections-05b9f3f85db9",
     "runtime_cutover": true,
-    "shared_lock_adoption": "pending",
+    "shared_lock_adoption": {
+      "ibl_anatomy": "feature/publish-10um-anatomy@119457b68fae6967c54d549d9d44e4a4e49c74f8",
+      "ibl_datoviz": "feature/datoviz-v04-atlas-spike@e8bf9f5dd18f1f790a7c72a41f9be06e19dd23d9"
+    },
     "cors_verification": "pending"
   }
 }

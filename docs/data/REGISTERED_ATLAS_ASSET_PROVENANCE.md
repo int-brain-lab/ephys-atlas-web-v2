@@ -1,7 +1,8 @@
 # Registered atlas asset provenance
 
-Status: published-production for the existing Ephys deployment. Shared-lock
-adoption by external consumers and CORS verification remain pending.
+Status: published-production for the existing Ephys deployment. `ibl-anatomy`
+now carries the hash-bound shared lock, and the `ibl-datoviz` integration branch
+consumes its verified result. Cross-origin browser delivery remains pending CORS.
 
 The exact immutable graph currently used by the website is the pack
 `ibl-atlas-projections-05b9f3f85db9`, served at
@@ -63,15 +64,16 @@ confirmed may the operator append:
   --confirm-root aggregates/atlas/ephys-atlas-web-v2/production/
 ```
 
-No AWS mutation is part of this repository change. Runtime URLs/defaults remain
-unchanged until remote immutable bytes, served-byte/SHA validation, CORS,
-opaque-gzip delivery, and browser parity have all passed.
+No AWS mutation is part of this repository change. Ephys runtime URLs/defaults
+remain unchanged. Python/native consumers can verify and read the immutable graph
+without CORS; external browser consumers must wait for served-byte/SHA, CORS,
+opaque-gzip, and browser parity checks.
 
 The live CloudFront response for the deployed projection manifest currently
 serves immutable cache headers but does not return
 `Access-Control-Allow-Origin` for an external `Origin` request. This is a
 delivery follow-up, not a missing scientific-artifact field: fix it in the
 approved CloudFront/origin configuration, then capture a read-only response
-check for the exact deployed path before any shared-lock consumer is enabled.
+check for the exact deployed path before any external-origin browser consumer is enabled.
 Do not use `tools.s3_assets --apply` for this; the graph is already immutable
 and must not be duplicated or mutated.
