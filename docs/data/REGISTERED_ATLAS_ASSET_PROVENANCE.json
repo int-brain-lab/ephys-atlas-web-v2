@@ -1,0 +1,55 @@
+{
+  "status": "validated-real-local",
+  "packaging": "candidate-for-shared-publication",
+  "reference_space_id": "allen-ccf-2017",
+  "source": {
+    "atlas": "Allen CCFv3",
+    "resolution_um": 10,
+    "hemisphere": "bilateral",
+    "annotation": {
+      "path": "annotation_10.nrrd",
+      "bytes": 32802468,
+      "sha256": "a9e9654ef491f0af107dc0a61bd720dabe7f36e8f3e9239532bf3dbdc94ef24c"
+    },
+    "region_lut": {
+      "path": "annotation_10_lut_bilateral_v02.npy",
+      "bytes": 2407680128,
+      "sha256": "f8c26e2eb972cbff5caa2101fda8b7c5c2a2bdb985e3faad6bf0e57defcc27cb"
+    },
+    "source_authority": "Allen Mouse Brain CCFv3 annotation and IBL iblatlas bilateral signed-ID convention",
+    "terms_url": "https://alleninstitute.org/terms-of-use/",
+    "citation": "Wang et al. (2020), The Allen Mouse Brain Common Coordinate Framework (CCFv3). Cell 181(4), 936-953.e20. doi:10.1016/j.cell.2020.04.007"
+  },
+  "parent": {
+    "format": "anatomy-pack-v2",
+    "pack_id": "allen-ccfv3-10um-bilateral-exact-599b5e0bbab1",
+    "manifest_sha256": "273adff9e76ee902126bfb1dc18b9f0a7f6dfccacb3305f56e0463c68b24fc8c",
+    "generator": {
+      "repository": "rossant/ibl-ephys-atlas-web-v2",
+      "commit": "fcdb82d144d3104dc1ee76f6582ed537bfc211be",
+      "iblatlas_repository": "int-brain-lab/iblatlas",
+      "iblatlas_commit": "52083adf44825d0622a503705e095699a5957587",
+      "geos_version": "3.13.1",
+      "shapely_version": "2.1.2"
+    }
+  },
+  "display_derivative": {
+    "format": "anatomy-pack-v3",
+    "pack_id": "allen-ccfv3-10um-bilateral-exact-599b5e0bbab1-display-80um-d8-f8277956e67a",
+    "manifest_sha256": "4aeab256be79588fb6b9032bb9482479e227a1fa5499060db037318882e5fe9d",
+    "parent_manifest_sha256": "273adff9e76ee902126bfb1dc18b9f0a7f6dfccacb3305f56e0463c68b24fc8c"
+  },
+  "projection_pack": {
+    "format": "atlas-projection-pack-v1",
+    "pack_id": "ibl-atlas-projections-05b9f3f85db9",
+    "manifest_sha256": "5c6ad6fb49b8ad9281c954c3fc7948300997b60b98097043dbe6d26ddc5b8a46",
+    "builder_commit": "fcdb82d144d3104dc1ee76f6582ed537bfc211be",
+    "registered_parent_manifest_sha256": "4aeab256be79588fb6b9032bb9482479e227a1fa5499060db037318882e5fe9d"
+  },
+  "publication": {
+    "authority": "pending explicit publication approval",
+    "immutable_origin": null,
+    "release_id": null,
+    "runtime_cutover": false
+  }
+}
