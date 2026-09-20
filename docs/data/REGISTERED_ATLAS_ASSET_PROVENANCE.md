@@ -6,11 +6,12 @@ adoption by external consumers and CORS verification remain pending.
 The exact immutable graph currently used by the website is the pack
 `ibl-atlas-projections-05b9f3f85db9`, served at
 `https://ephys-atlas.iblcore.org/atlas/projections/ibl-atlas-projections-05b9f3f85db9/manifest.json`.
-The tracked deployment descriptor records its manifest size and SHA-256. It is
-the bilateral Allen CCFv3
-10 µm parent anatomy pack, its sparse 80 µm display derivative, and the
-registered projection pack. Machine-readable identities, source hashes,
-builder commits, terms, and citation are in
+The tracked deployment descriptor records its manifest size and SHA-256. The
+published runtime graph contains the projection manifest, registered sparse
+resources, static maps, and their notice. Its provenance records the bilateral
+Allen CCFv3 10 µm parent anatomy pack and sparse 80 µm display derivative;
+those source graphs are not separate runtime downloads from this origin.
+Machine-readable identities, source hashes, builder commits, terms, and citation are in
 [`REGISTERED_ATLAS_ASSET_PROVENANCE.json`](REGISTERED_ATLAS_ASSET_PROVENANCE.json).
 
 The parent source objects are the Allen CCFv3 10 µm annotation and the IBL-derived
