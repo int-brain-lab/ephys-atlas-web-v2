@@ -60,15 +60,18 @@
       "ibl_datoviz": "main@e8bf9f5dd18f1f790a7c72a41f9be06e19dd23d9"
     },
     "cors_verification": {
-      "status": "verified",
+      "status": "incomplete",
       "verified_at": "2026-09-20",
       "distribution_id": "ET6VJW8JWAGVR",
       "path_pattern": "atlas/*",
       "response_headers_policy": {
         "name": "SimpleCORS",
         "id": "60669652-455b-4ae9-85a4-c4c02393f86c",
-        "access_control_allow_origin": "*"
+        "access_control_allow_origin": "*",
+        "origin_override": false
       },
+      "browser_result": "A cached origin response carrying Vary: Origin but no Access-Control-Allow-Origin can bypass the managed policy; an actual Chromium cross-origin fetch failed.",
+      "required_follow_up": "Attach an atlas-scoped custom response headers policy with Access-Control-Allow-Origin: * and OriginOverride=true; the current principal lacks cloudfront:CreateResponseHeadersPolicy.",
       "manifest_sha256": "5c6ad6fb49b8ad9281c954c3fc7948300997b60b98097043dbe6d26ddc5b8a46",
       "sample_resource": {
         "path": "registered/coronal/0.isvg.gz",

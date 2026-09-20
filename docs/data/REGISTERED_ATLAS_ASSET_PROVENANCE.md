@@ -2,8 +2,8 @@
 
 Status: published-production for the existing Ephys deployment. `ibl-anatomy`
 now carries the hash-bound shared lock, and `ibl-datoviz` `main` consumes its
-verified result. Cross-origin browser delivery is enabled for the
-distribution's existing `atlas/*` behavior and verified on the deployed graph.
+verified result. Cross-origin browser delivery is configured on the existing
+`atlas/*` behavior, but one cache-dependent browser failure remains unresolved.
 
 The exact immutable graph currently used by the website is the pack
 `ibl-atlas-projections-05b9f3f85db9`, served at
@@ -67,8 +67,8 @@ confirmed may the operator append:
 
 No S3 object or Ephys runtime URL/default changed. Python/native consumers can
 verify and read the immutable graph without CORS. The CloudFront-only change
-below completes served-byte/SHA, CORS, and opaque-gzip delivery checks for
-external browsers; each browser adapter still owns its parity tests.
+below preserves served-byte/SHA and opaque-gzip delivery, but does not yet
+complete the external-browser CORS gate.
 
 On 2026-09-20, production distribution `ET6VJW8JWAGVR` attached AWS managed
 `SimpleCORS` policy `60669652-455b-4ae9-85a4-c4c02393f86c` only to its existing
@@ -79,3 +79,14 @@ index, complete indexed-SVG resource, and a `206` byte range. The manifest and
 indexed-SVG bytes retained their locked SHA-256 values; opaque gzip retained no
 `Content-Encoding`. A `catalog.json` control response had no CORS header,
 confirming the bounded behavior scope.
+
+A subsequent real Chromium fetch found the missing case: an origin response
+cached without an `Origin` request carried `Vary: Origin` but no
+`Access-Control-Allow-Origin`. The managed policy has `OriginOverride=false`,
+so that cached variant remained unusable to a cross-origin browser even though
+curl requests hitting an Origin-bearing variant returned the wildcard header.
+The durable follow-up is an atlas-scoped custom response-headers policy with
+`Access-Control-Allow-Origin: *` and `OriginOverride=true`. The authenticated
+`iblmember` principal can update the distribution but cannot create or list
+custom response-headers policies, so browser delivery remains incomplete until
+that policy is created by an authorized operator and attached to `atlas/*`.
