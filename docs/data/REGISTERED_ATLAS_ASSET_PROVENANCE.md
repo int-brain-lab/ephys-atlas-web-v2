@@ -3,10 +3,11 @@
 Status: published-production for the existing Ephys deployment. Shared-lock
 adoption by external consumers and CORS verification remain pending.
 
-The exact immutable graph currently used by the website is served at
-`https://ephys-atlas.iblcore.org/atlas/projections/ibl-atlas-projections-05b9f3f85db9/manifest.json`
-`ibl-atlas-projections-05b9f3f85db9` (the tracked deployment descriptor records
-its manifest size and SHA-256). It is the bilateral Allen CCFv3
+The exact immutable graph currently used by the website is the pack
+`ibl-atlas-projections-05b9f3f85db9`, served at
+`https://ephys-atlas.iblcore.org/atlas/projections/ibl-atlas-projections-05b9f3f85db9/manifest.json`.
+The tracked deployment descriptor records its manifest size and SHA-256. It is
+the bilateral Allen CCFv3
 10 µm parent anatomy pack, its sparse 80 µm display derivative, and the
 registered projection pack. Machine-readable identities, source hashes,
 builder commits, terms, and citation are in
@@ -23,7 +24,7 @@ topology, coverage, sentinel, and zero-boundary-error validation evidence.
 
 The historical Top and Swanson fragments remain separately covered by the
 existing MIT notice at
-`web/dist/atlas/projections/ibl-static-registered-v1/LICENSES/IBL-EPHYS-ATLAS-V1-STATIC-ASSETS-MIT.txt`.
+`web/public/atlas/projections/ibl-static-registered-v1/LICENSES/IBL-EPHYS-ATLAS-V1-STATIC-ASSETS-MIT.txt`.
 That notice does not license the Allen-derived parent annotation or LUT.
 
 ## Validation and publication gate
