@@ -1,8 +1,9 @@
 # Registered atlas asset provenance
 
 Status: published-production for the existing Ephys deployment. `ibl-anatomy`
-now carries the hash-bound shared lock, and the `ibl-datoviz` integration branch
-consumes its verified result. Cross-origin browser delivery remains pending CORS.
+now carries the hash-bound shared lock, and `ibl-datoviz` `main` consumes its
+verified result. Cross-origin browser delivery is enabled for the
+distribution's existing `atlas/*` behavior and verified on the deployed graph.
 
 The exact immutable graph currently used by the website is the pack
 `ibl-atlas-projections-05b9f3f85db9`, served at
@@ -64,16 +65,17 @@ confirmed may the operator append:
   --confirm-root aggregates/atlas/ephys-atlas-web-v2/production/
 ```
 
-No AWS mutation is part of this repository change. Ephys runtime URLs/defaults
-remain unchanged. Python/native consumers can verify and read the immutable graph
-without CORS; external browser consumers must wait for served-byte/SHA, CORS,
-opaque-gzip, and browser parity checks.
+No S3 object or Ephys runtime URL/default changed. Python/native consumers can
+verify and read the immutable graph without CORS. The CloudFront-only change
+below completes served-byte/SHA, CORS, and opaque-gzip delivery checks for
+external browsers; each browser adapter still owns its parity tests.
 
-The live CloudFront response for the deployed projection manifest currently
-serves immutable cache headers but does not return
-`Access-Control-Allow-Origin` for an external `Origin` request. This is a
-delivery follow-up, not a missing scientific-artifact field: fix it in the
-approved CloudFront/origin configuration, then capture a read-only response
-check for the exact deployed path before any external-origin browser consumer is enabled.
-Do not use `tools.s3_assets --apply` for this; the graph is already immutable
-and must not be duplicated or mutated.
+On 2026-09-20, production distribution `ET6VJW8JWAGVR` attached AWS managed
+`SimpleCORS` policy `60669652-455b-4ae9-85a4-c4c02393f86c` only to its existing
+`atlas/*` behavior. No S3 object, origin, cache TTL, compression setting, site,
+catalog, or dataset behavior changed. External-Origin checks returned
+`Access-Control-Allow-Origin: *` for the exact projection manifest, resource
+index, complete indexed-SVG resource, and a `206` byte range. The manifest and
+indexed-SVG bytes retained their locked SHA-256 values; opaque gzip retained no
+`Content-Encoding`. A `catalog.json` control response had no CORS header,
+confirming the bounded behavior scope.

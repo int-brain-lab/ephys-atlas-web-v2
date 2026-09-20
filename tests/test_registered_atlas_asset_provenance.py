@@ -27,3 +27,11 @@ def test_deployed_registered_graph_matches_hash_bound_provenance() -> None:
     assert record["publication"]["immutable_origin"].endswith(
         "/ibl-atlas-projections-05b9f3f85db9/manifest.json"
     )
+    cors = record["publication"]["cors_verification"]
+    assert cors["status"] == "verified"
+    assert cors["path_pattern"] == "atlas/*"
+    assert cors["response_headers_policy"]["id"] == (
+        "60669652-455b-4ae9-85a4-c4c02393f86c"
+    )
+    assert cors["manifest_sha256"] == projection["manifest_sha256"]
+    assert cors["sample_resource"]["range_status"] == 206

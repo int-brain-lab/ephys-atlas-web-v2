@@ -56,9 +56,27 @@
     "release_id": "ibl-atlas-projections-05b9f3f85db9",
     "runtime_cutover": true,
     "shared_lock_adoption": {
-      "ibl_anatomy": "feature/publish-10um-anatomy@119457b68fae6967c54d549d9d44e4a4e49c74f8",
-      "ibl_datoviz": "feature/datoviz-v04-atlas-spike@e8bf9f5dd18f1f790a7c72a41f9be06e19dd23d9"
+      "ibl_anatomy": "main@119457b68fae6967c54d549d9d44e4a4e49c74f8",
+      "ibl_datoviz": "main@e8bf9f5dd18f1f790a7c72a41f9be06e19dd23d9"
     },
-    "cors_verification": "pending"
+    "cors_verification": {
+      "status": "verified",
+      "verified_at": "2026-09-20",
+      "distribution_id": "ET6VJW8JWAGVR",
+      "path_pattern": "atlas/*",
+      "response_headers_policy": {
+        "name": "SimpleCORS",
+        "id": "60669652-455b-4ae9-85a4-c4c02393f86c",
+        "access_control_allow_origin": "*"
+      },
+      "manifest_sha256": "5c6ad6fb49b8ad9281c954c3fc7948300997b60b98097043dbe6d26ddc5b8a46",
+      "sample_resource": {
+        "path": "registered/coronal/0.isvg.gz",
+        "bytes": 6821,
+        "sha256": "e9d32e8186b0bf5ca7850a9fd97cb2bebcf2ea9fd596d00987d018905527bbe5",
+        "range_status": 206
+      },
+      "non_atlas_control": "catalog.json returned no Access-Control-Allow-Origin header"
+    }
   }
 }
