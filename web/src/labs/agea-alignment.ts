@@ -269,7 +269,7 @@ export class AlignmentReview {
   private present(): void {
     const feature = this.feature(); if (!this.factory || !feature) return;
     const coloring = { mode: 'feature', statistic: 'mean', colormap: this.layer === 'image' ? 'cividis' : 'viridis', range: { mode: 'auto' }, scale: { kind: 'linear' } } as const;
-    this.factory.updatePresentation({ feature, coloring, volumeOpacity: this.opacity, anatomyOutlines: this.outlines && (!this.blink || this.phase),
+    this.factory.updatePresentation({ feature, coloring, volumeOpacity: this.opacity, anatomyColors: false, anatomyOutlines: this.outlines && (!this.blink || this.phase),
       regional: resolveRegionalPresentation({ mapping: 'allen', feature, anatomyRegions: this.regions, coloring, selectedRegionIds: [], hoveredRegionId: null }) });
     for (const panel of this.panels.values()) panel.overlay.style.display = this.coarse ? '' : 'none';
   }

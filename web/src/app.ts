@@ -112,6 +112,7 @@ export class AtlasApp {
       setDistributionDomain: (domain) => this.store.dispatch({ type: 'distribution/domain', domain }),
       setVolumeOpacity: (opacity) => this.store.dispatch({ type: 'layers/volume-opacity', opacity }),
       setAnatomyOutlines: (visible) => this.store.dispatch({ type: 'layers/anatomy-outlines', visible }),
+      setAnatomyColors: (visible) => this.store.dispatch({ type: 'layers/anatomy-colors', visible }),
       setSlice: (axis, index) => this.setSlice(axis, index),
       setActiveCompactView: (view) => this.store.dispatch({ type: 'workspace/compact-view', view }),
       setSecondaryTab: (tab) => this.store.dispatch({ type: 'workspace/secondary-tab', tab }),
@@ -312,6 +313,7 @@ export class AtlasApp {
       coloring,
       volumeOpacity: state.view.layers.volumeOpacity,
       anatomyOutlines: state.view.layers.anatomyOutlines,
+      anatomyColors: state.view.layers.anatomyColors,
     };
     if (!featureLoading && this.presentationChanged(presentation)) {
       this.viewportPresentation = presentation;
@@ -365,7 +367,8 @@ export class AtlasApp {
       || !sameRange
       || JSON.stringify(previous.coloring.scale) !== JSON.stringify(next.coloring.scale)
       || previous.volumeOpacity !== next.volumeOpacity
-      || previous.anatomyOutlines !== next.anatomyOutlines;
+      || previous.anatomyOutlines !== next.anatomyOutlines
+      || previous.anatomyColors !== next.anatomyColors;
   }
 
   private setSlice(axis: SliceAxis, index: number): void {

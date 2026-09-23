@@ -82,6 +82,7 @@ export interface AppShellCallbacks {
   setDistributionDomain(domain: DistributionDomainSelection): void;
   setVolumeOpacity(opacity: number): void;
   setAnatomyOutlines(visible: boolean): void;
+  setAnatomyColors(visible: boolean): void;
   setSlice(axis: SliceAxis, index: number): void;
   setActiveCompactView(view: WorkspaceViewId): void;
   setSecondaryTab(tab: SecondaryTabId): void;
@@ -295,6 +296,7 @@ export class AppShell {
   private volumeOpacityInput!: HTMLInputElement;
   private volumeOpacityValue!: HTMLOutputElement;
   private anatomyOutlinesInput!: HTMLInputElement;
+  private anatomyColorsInput!: HTMLInputElement;
   private featureId: string | null = null;
 
   constructor(
@@ -440,6 +442,8 @@ export class AppShell {
     this.applyPanelPreferences();
     this.backdrop.addEventListener('click', () => this.closeDrawers());
     window.addEventListener('keydown', this.onKeyDown);
+    window.addEventListener('keyup', this.onKeyUp);
+    window.addEventListener('blur', this.endAnatomyPeek);
     window.addEventListener('resize', this.onResize);
     this.syncLayoutMode();
   }
@@ -490,10 +494,15 @@ export class AppShell {
   }
 
   showRegionTooltip(inspection: RegionInspection, model: RegionTooltipModel): void {
+    const nodes = this.projectionTooltip(inspection.projectionId);
+    if (nodes) delete nodes.tooltip.dataset.kind;
     this.showProjectionTooltip(inspection, model, inspection.regionId);
   }
 
   showVolumeTooltip(inspection: VolumeInspection, model: RegionTooltipModel): void {
+    // The kind reveals the static hold-A anatomy-colour hint in orthogonal views.
+    const nodes = this.projectionTooltip(inspection.projectionId);
+    if (nodes) nodes.tooltip.dataset.kind = 'volume';
     this.showProjectionTooltip(inspection, model, inspection.regionId);
   }
 
@@ -569,6 +578,8 @@ export class AppShell {
     this.helpTour.destroy();
     this.colorRangeControl.destroy();
     window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener('keyup', this.onKeyUp);
+    window.removeEventListener('blur', this.endAnatomyPeek);
     window.removeEventListener('resize', this.onResize);
     this.contextMenus.forEach((menu) => menu.destroy());
     this.dataChooser.destroy();
@@ -1795,7 +1806,19 @@ export class AppShell {
     });
     outlinesRow.append(outlinesLabel, this.anatomyOutlinesInput);
 
-    group.append(opacityRow, outlinesRow);
+    const colorsRow = element('label', 'settings-control settings-control--toggle');
+    colorsRow.title = 'Hold A to peek at anatomy colours';
+    const colorsLabel = element('span', 'settings-control__label');
+    colorsLabel.textContent = 'Anatomy colours';
+    this.anatomyColorsInput = element('input', 'settings-control__checkbox');
+    this.anatomyColorsInput.type = 'checkbox';
+    this.anatomyColorsInput.setAttribute('aria-label', 'Show anatomy colours');
+    this.anatomyColorsInput.addEventListener('change', () => {
+      this.callbacks.setAnatomyColors(this.anatomyColorsInput.checked);
+    });
+    colorsRow.append(colorsLabel, this.anatomyColorsInput);
+
+    group.append(opacityRow, outlinesRow, colorsRow);
     this.volumeLayerSettings = group;
     return group;
   }
@@ -1968,6 +1991,7 @@ export class AppShell {
     this.volumeOpacityInput.value = String(model.state.view.layers.volumeOpacity);
     this.volumeOpacityValue.value = `${Math.round(model.state.view.layers.volumeOpacity * 100)}%`;
     this.anatomyOutlinesInput.checked = model.state.view.layers.anatomyOutlines;
+    this.anatomyColorsInput.checked = model.state.view.layers.anatomyColors;
   }
 
   private featureRepresentations(feature: DatasetManifest['features'][number]): RepresentationKind[] {
@@ -2365,7 +2389,11 @@ export class AppShell {
     const tooltipIdentity = element('div', 'region-tooltip__identity');
     const tooltipValue = element('div', 'region-tooltip__value');
     const tooltipMeta = element('div', 'region-tooltip__meta');
-    tooltip.append(tooltipIdentity, tooltipValue, tooltipMeta);
+    const tooltipHint = element('div', 'region-tooltip__hint');
+    const hintKey = element('kbd');
+    hintKey.textContent = 'A';
+    tooltipHint.append('Hold ', hintKey, ' for anatomy colours');
+    tooltip.append(tooltipIdentity, tooltipValue, tooltipMeta, tooltipHint);
     viewport.append(target, stateText, tooltip);
 
     const footer = element('div', 'view-frame__footer');
@@ -2876,6 +2904,12 @@ export class AppShell {
       this.togglePanel(event.key === '[' ? 'regions' : 'settings');
       return;
     }
+    if ((event.key === 'a' || event.key === 'A') && !event.altKey && !event.ctrlKey && !event.metaKey) {
+      // Transient peek: never URL-persisted, released on keyup or window blur.
+      event.preventDefault();
+      this.app.dataset.anatomyPeek = 'true';
+      return;
+    }
     if (event.key === '/' && !event.altKey && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
       this.featureContext.open();
@@ -2901,6 +2935,14 @@ export class AppShell {
       this.stepFeature(event.key === 'ArrowDown' ? 1 : -1);
       event.preventDefault();
     }
+  };
+
+  private readonly onKeyUp = (event: KeyboardEvent): void => {
+    if (event.key === 'a' || event.key === 'A') this.endAnatomyPeek();
+  };
+
+  private readonly endAnatomyPeek = (): void => {
+    delete this.app.dataset.anatomyPeek;
   };
 
   private stepFeature(direction: -1 | 1): void {

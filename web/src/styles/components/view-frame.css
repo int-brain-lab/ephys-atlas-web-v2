@@ -295,6 +295,27 @@
   white-space: pre-line;
 }
 
+.region-tooltip__hint {
+  display: none;
+  margin-top: 0.15rem;
+  padding-top: 0.3rem;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.6rem;
+}
+
+.region-tooltip[data-kind='volume'] .region-tooltip__hint {
+  display: block;
+}
+
+.region-tooltip__hint kbd {
+  padding: 0 0.3em;
+  border: 1px solid currentcolor;
+  border-radius: 3px;
+  font: inherit;
+  font-weight: 600;
+}
+
 .view-frame[data-state='loading'] .view-frame__state-message,
 .view-frame[data-state='error'] .view-frame__state-message {
   opacity: 1;

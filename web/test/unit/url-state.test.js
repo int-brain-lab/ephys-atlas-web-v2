@@ -30,7 +30,7 @@ test('URL state round-trips common shareable state', () => {
     selection: ['CA1', 'VISp'],
     cursor: { xUm: -5539, yUm: 5300, zUm: 32 },
     workspace: { secondaryTab: 'swanson', activeCompactView: 'secondary', maximizedView: 'coronal' },
-    layers: { volumeOpacity: 0.35, anatomyOutlines: false },
+    layers: { volumeOpacity: 0.35, anatomyOutlines: false, anatomyColors: true },
     coloring: {
       mode: 'anatomy',
       statistic: 'median',
@@ -47,15 +47,19 @@ test('URL state round-trips common shareable state', () => {
   assert.match(query, /order=value-desc/);
   assert.match(query, /opacity=0.35/);
   assert.match(query, /outlines=0/);
+  assert.match(query, /anatomy=1/);
   assert.deepEqual(parseViewState(`?${query}`), view);
 });
 
 test('volume layer controls use safe defaults and reject malformed opacity', () => {
-  assert.deepEqual(parseViewState('?v=4').layers, { volumeOpacity: 1, anatomyOutlines: true });
+  assert.deepEqual(parseViewState('?v=4').layers, { volumeOpacity: 1, anatomyOutlines: true, anatomyColors: false });
   assert.deepEqual(parseViewState('?v=4&opacity=0.4&outlines=0').layers, {
     volumeOpacity: 0.4,
     anatomyOutlines: false,
+    anatomyColors: false,
   });
+  assert.equal(parseViewState('?v=4&anatomy=1').layers.anatomyColors, true);
+  assert.equal(parseViewState('?v=4&anatomy=wat').layers.anatomyColors, false);
   assert.equal(parseViewState('?v=4&opacity=2').layers.volumeOpacity, 1);
   assert.equal(parseViewState('?v=4&opacity=wat').layers.volumeOpacity, 1);
 });

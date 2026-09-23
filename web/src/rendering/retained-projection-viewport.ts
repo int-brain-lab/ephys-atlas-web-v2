@@ -147,6 +147,7 @@ const DEFAULT_PRESENTATION: ProjectionPresentation = {
   },
   volumeOpacity: 1,
   anatomyOutlines: true,
+  anatomyColors: false,
 };
 
 function finiteRange(values: Float32Array): readonly [number, number] | null {
@@ -202,9 +203,9 @@ function regionalFrame(
     svgFragment: slice.svgFragment,
     viewBox: slice.viewBox,
     guides,
-    ...(model.feature?.representation === 'volume'
-      ? {}
-      : { regionColors: regionalPresentationColors(semantics, true) }),
+    // Volume composites always carry anatomy colours so the anatomy-colour
+    // toggle (and hold-to-peek) is a CSS-only switch that never re-renders.
+    regionColors: regionalPresentationColors(semantics, model.feature?.representation !== 'volume'),
     selectedRegionIds: semantics.selectedRegionIds,
     highlightedRegionIds: semantics.highlightedRegionId == null
       ? new Set()
@@ -629,6 +630,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
       : 1;
     this.mount.scalar.style.opacity = String(opacity);
     this.mount.root.dataset.anatomyOutlines = String(presentation.anatomyOutlines ?? true);
+    this.mount.root.dataset.anatomyColors = String(presentation.anatomyColors ?? false);
   }
 
   private onRegionPointer(event: SliceRegionPointerEvent): void {

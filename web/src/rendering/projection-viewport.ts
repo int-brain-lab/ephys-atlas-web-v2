@@ -25,6 +25,8 @@ export interface ProjectionPresentation {
   coloring: EffectiveColoringState;
   volumeOpacity: number;
   anatomyOutlines: boolean;
+  /** Fill composite anatomy regions with atlas colours; the SVG then covers the volume. */
+  anatomyColors: boolean;
 }
 
 export interface RegionHit {

@@ -1118,6 +1118,7 @@ test('slice hover tooltip shows current regional value and stays inside its view
   await expect(tooltip.locator('.region-tooltip__value-label')).toHaveText('Mean');
   await expect(tooltip.locator('.region-tooltip__value-text')).toHaveText('1 dB rel. V');
   await expect(tooltip.locator('.region-tooltip__meta')).toHaveText('Left hemisphere · n=3');
+  await expect(tooltip.locator('.region-tooltip__hint')).toBeHidden();
   const tooltipBounds = await tooltip.boundingBox();
   expect(tooltipBounds).not.toBeNull();
   expect(tooltipBounds!.x).toBeGreaterThanOrEqual(viewportBounds!.x);

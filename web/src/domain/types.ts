@@ -40,6 +40,8 @@ export interface WorkspaceState {
 export interface VolumeLayerState {
   volumeOpacity: number;
   anatomyOutlines: boolean;
+  /** Fill registered anatomy regions with atlas colours over the volume. */
+  anatomyColors: boolean;
 }
 
 export interface BrainCameraPose {
