@@ -80,7 +80,21 @@ def _read_channel_frame(table_dir: Path, feature_mode: str, atlas):
     return frame
 
 
-def _feature_info(model, source_column: str, variant: str) -> FeatureInfo:
+def _feature_info(model, source_column: str, variant: str, *, label_variant: bool) -> FeatureInfo:
+    """Resolve catalog metadata for one channel feature column.
+
+    Parameters
+    ----------
+    model : type
+        ephysatlas feature schema model providing column metadata.
+    source_column : str
+        Channel-table column name.
+    variant : str
+        Source table variant, ``raw`` or ``denoised``; always kept in metadata.
+    label_variant : bool
+        Append the variant to the label; only needed when both variants share
+        a release and must be told apart in the browser.
+    """
     column = model.to_schema().columns.get(source_column)
     metadata = getattr(column, "metadata", None) or {}
     label = metadata.get("label") or source_column.replace("_", " ")
@@ -94,7 +108,7 @@ def _feature_info(model, source_column: str, variant: str) -> FeatureInfo:
         unit = None
     return FeatureInfo(
         source_column=source_column,
-        label=f"{label} ({variant})",
+        label=f"{label} ({variant})" if label_variant else label,
         description=description,
         unit=unit,
         variant=variant,
@@ -167,6 +181,7 @@ def load_channel_scientific_inputs(
                 ephysatlas.features.ModelRawFeatures,
                 feature,
                 mode,
+                label_variant=feature_mode == "both",
             )
 
     parcellation_ids = {
