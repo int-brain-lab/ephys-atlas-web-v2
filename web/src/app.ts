@@ -41,7 +41,7 @@ import { AppShell, type ShellModel } from './ui/app-shell.js';
 import type { DataChooserSelection, NavigationRecoveryAction } from './ui/data-chooser.js';
 import { RegionalPanelController } from './ui/regional-panel.js';
 import { buildSelectedComparisonExport } from './ui/regional/comparison-export.js';
-import { buildRegionTooltipModel } from './ui/regional/model.js';
+import { buildRegionTooltipModel, regionTooltipIdentity } from './ui/regional/model.js';
 import { parseNavigationRequest, UrlStateController } from './url/url-state.js';
 
 export interface AppOptions {
@@ -112,6 +112,7 @@ export class AtlasApp {
       setDistributionDomain: (domain) => this.store.dispatch({ type: 'distribution/domain', domain }),
       setVolumeOpacity: (opacity) => this.store.dispatch({ type: 'layers/volume-opacity', opacity }),
       setAnatomyOutlines: (visible) => this.store.dispatch({ type: 'layers/anatomy-outlines', visible }),
+      setAnatomyColors: (visible) => this.store.dispatch({ type: 'layers/anatomy-colors', visible }),
       setSlice: (axis, index) => this.setSlice(axis, index),
       setActiveCompactView: (view) => this.store.dispatch({ type: 'workspace/compact-view', view }),
       setSecondaryTab: (tab) => this.store.dispatch({ type: 'workspace/secondary-tab', tab }),
@@ -312,6 +313,7 @@ export class AtlasApp {
       coloring,
       volumeOpacity: state.view.layers.volumeOpacity,
       anatomyOutlines: state.view.layers.anatomyOutlines,
+      anatomyColors: state.view.layers.anatomyColors,
     };
     if (!featureLoading && this.presentationChanged(presentation)) {
       this.viewportPresentation = presentation;
@@ -365,7 +367,8 @@ export class AtlasApp {
       || !sameRange
       || JSON.stringify(previous.coloring.scale) !== JSON.stringify(next.coloring.scale)
       || previous.volumeOpacity !== next.volumeOpacity
-      || previous.anatomyOutlines !== next.anatomyOutlines;
+      || previous.anatomyOutlines !== next.anatomyOutlines
+      || previous.anatomyColors !== next.anatomyColors;
   }
 
   private setSlice(axis: SliceAxis, index: number): void {
@@ -637,8 +640,7 @@ export class AtlasApp {
       ? `${Number(inspection.value.toPrecision(6)).toLocaleString('en-US')}${descriptor?.unit ? ` ${descriptor.unit}` : ''}`
       : statusLabel;
     this.shell.showVolumeTooltip(inspection, {
-      acronym: region?.acronym ?? 'Voxel',
-      name: region?.name.replace(/\s+\(left\)$/i, '') ?? 'Volume sample',
+      ...(region ? regionTooltipIdentity(regions, region) : { acronym: 'Voxel', name: 'Volume sample' }),
       valueText,
       meta: [
         inspection.status === 'valid' ? voxel : `${statusLabel} · ${voxel}`,

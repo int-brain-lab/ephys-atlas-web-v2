@@ -120,6 +120,11 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         ...state,
         view: { ...state.view, layers: { ...state.view.layers, anatomyOutlines: action.visible } },
       };
+    case 'layers/anatomy-colors':
+      return {
+        ...state,
+        view: { ...state.view, layers: { ...state.view.layers, anatomyColors: action.visible } },
+      };
     case 'scene3d/explode':
       return { ...state, view: { ...state.view, scene3d: { ...state.view.scene3d, explode: normalizeScene3DExplode(action.explode) } } };
     case 'scene3d/camera': {

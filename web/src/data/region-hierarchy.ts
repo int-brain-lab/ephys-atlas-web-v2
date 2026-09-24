@@ -67,9 +67,41 @@ export function buildRegionHierarchy(regions: readonly RegionMetadata[]): readon
  * browser. The catalog remains complete for provenance and lookup; only its UI
  * presentation omits the root/grey wrappers and non-grey root branches.
  */
+function isGreyMatterRoot(region: RegionMetadata): boolean {
+  return region.acronym === 'grey' && Math.abs(region.atlasId) === 8;
+}
+
+const regionIndexCache = new WeakMap<readonly RegionMetadata[], ReadonlyMap<string, RegionMetadata>>();
+
+/**
+ * Ancestor acronyms of one region, outermost first, excluding the region itself.
+ *
+ * Like the grey-matter tree, the walk stops before `grey` (and `root`) so the
+ * outermost entry is a grey-matter child such as `CH`. Regions outside grey
+ * matter keep their full parent chain below `root`.
+ */
+export function regionLineage(regions: readonly RegionMetadata[], regionId: string): readonly string[] {
+  let byId = regionIndexCache.get(regions);
+  if (!byId) {
+    byId = new Map(regions.map((region) => [region.id, region]));
+    regionIndexCache.set(regions, byId);
+  }
+  const lineage: string[] = [];
+  const visited = new Set<string>([regionId]);
+  let parentId = byId.get(regionId)?.parentId;
+  while (parentId !== undefined && parentId !== null && !visited.has(parentId)) {
+    visited.add(parentId);
+    const parent = byId.get(parentId);
+    if (!parent || isGreyMatterRoot(parent) || parent.acronym === 'root') break;
+    lineage.push(parent.acronym);
+    parentId = parent.parentId;
+  }
+  return lineage.reverse();
+}
+
 export function buildGreyMatterHierarchy(regions: readonly RegionMetadata[]): readonly RegionHierarchyRow[] {
   const hierarchy = buildRegionHierarchy(regions);
-  const greyIndex = hierarchy.findIndex(({ region }) => region.acronym === 'grey' && Math.abs(region.atlasId) === 8);
+  const greyIndex = hierarchy.findIndex(({ region }) => isGreyMatterRoot(region));
   if (greyIndex < 0) return hierarchy;
   const greyDepth = hierarchy[greyIndex]?.depth ?? 0;
   let end = greyIndex + 1;

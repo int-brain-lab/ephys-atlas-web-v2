@@ -21,6 +21,7 @@ export const DEFAULT_VIEW_STATE: ViewState = {
   layers: {
     volumeOpacity: 1,
     anatomyOutlines: true,
+    anatomyColors: false,
   },
   scene3d: {
     explode: 0,

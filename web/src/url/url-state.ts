@@ -204,6 +204,7 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
     layers: {
       volumeOpacity: parseOpacity(params.get('opacity'), defaults.layers.volumeOpacity),
       anatomyOutlines: params.get('outlines') === '0' ? false : defaults.layers.anatomyOutlines,
+      anatomyColors: params.get('anatomy') === '1' ? true : defaults.layers.anatomyColors,
     },
     scene3d: {
       explode: parseOpacity(params.get('explode3d'), defaults.scene3d.explode),
@@ -285,6 +286,9 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   }
   if (view.layers.anatomyOutlines !== defaults.layers.anatomyOutlines) {
     params.set('outlines', view.layers.anatomyOutlines ? '1' : '0');
+  }
+  if (view.layers.anatomyColors !== defaults.layers.anatomyColors) {
+    params.set('anatomy', view.layers.anatomyColors ? '1' : '0');
   }
   if (view.scene3d.explode !== defaults.scene3d.explode) params.set('explode3d', String(view.scene3d.explode));
   if (view.scene3d.camera !== null && !sameCamera(view.scene3d.camera, defaults.scene3d.camera)) {

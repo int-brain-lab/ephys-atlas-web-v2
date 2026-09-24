@@ -53,6 +53,7 @@ type ViewActionPayload =
   | { type: 'workspace/maximized-view'; view: WorkspaceViewId | null }
   | { type: 'layers/volume-opacity'; opacity: number }
   | { type: 'layers/anatomy-outlines'; visible: boolean }
+  | { type: 'layers/anatomy-colors'; visible: boolean }
   | { type: 'scene3d/explode'; explode: number }
   | { type: 'scene3d/camera'; camera: BrainCameraPose | null }
   | { type: 'color/statistic'; statistic: ColorStatisticId }

@@ -82,6 +82,7 @@ export interface AppShellCallbacks {
   setDistributionDomain(domain: DistributionDomainSelection): void;
   setVolumeOpacity(opacity: number): void;
   setAnatomyOutlines(visible: boolean): void;
+  setAnatomyColors(visible: boolean): void;
   setSlice(axis: SliceAxis, index: number): void;
   setActiveCompactView(view: WorkspaceViewId): void;
   setSecondaryTab(tab: SecondaryTabId): void;
@@ -128,6 +129,7 @@ interface ViewFrameNodes {
   maximize: HTMLButtonElement;
   tooltip: HTMLElement;
   tooltipIdentity: HTMLElement;
+  tooltipLineage: HTMLElement;
   tooltipValue: HTMLElement;
   tooltipMeta: HTMLElement;
   renderKey: string;
@@ -139,6 +141,7 @@ interface ViewFrameNodes {
 interface ProjectionTooltipNodes {
   tooltip: HTMLElement;
   tooltipIdentity: HTMLElement;
+  tooltipLineage: HTMLElement;
   tooltipValue: HTMLElement;
   tooltipMeta: HTMLElement;
 }
@@ -295,6 +298,7 @@ export class AppShell {
   private volumeOpacityInput!: HTMLInputElement;
   private volumeOpacityValue!: HTMLOutputElement;
   private anatomyOutlinesInput!: HTMLInputElement;
+  private anatomyColorsInput!: HTMLInputElement;
   private featureId: string | null = null;
 
   constructor(
@@ -440,6 +444,8 @@ export class AppShell {
     this.applyPanelPreferences();
     this.backdrop.addEventListener('click', () => this.closeDrawers());
     window.addEventListener('keydown', this.onKeyDown);
+    window.addEventListener('keyup', this.onKeyUp);
+    window.addEventListener('blur', this.endAnatomyPeek);
     window.addEventListener('resize', this.onResize);
     this.syncLayoutMode();
   }
@@ -490,10 +496,15 @@ export class AppShell {
   }
 
   showRegionTooltip(inspection: RegionInspection, model: RegionTooltipModel): void {
+    const nodes = this.projectionTooltip(inspection.projectionId);
+    if (nodes) delete nodes.tooltip.dataset.kind;
     this.showProjectionTooltip(inspection, model, inspection.regionId);
   }
 
   showVolumeTooltip(inspection: VolumeInspection, model: RegionTooltipModel): void {
+    // The kind reveals the static hold-A anatomy-colour hint in orthogonal views.
+    const nodes = this.projectionTooltip(inspection.projectionId);
+    if (nodes) nodes.tooltip.dataset.kind = 'volume';
     this.showProjectionTooltip(inspection, model, inspection.regionId);
   }
 
@@ -510,7 +521,7 @@ export class AppShell {
     for (const [projectionId, frame] of this.staticFrames) {
       if (projectionId !== inspection.projectionId) frame.tooltip.hidden = true;
     }
-    const contentKey = `${regionId ?? ''}\u0000${model.acronym}\u0000${model.name}\u0000${model.valueLabel ?? ''}\u0000${model.valueText ?? ''}\u0000${model.meta}`;
+    const contentKey = `${regionId ?? ''}\u0000${model.acronym}\u0000${model.name}\u0000${model.atlasId ?? ''}\u0000${model.lineage?.join('/') ?? ''}\u0000${model.valueLabel ?? ''}\u0000${model.valueText ?? ''}\u0000${model.meta}`;
     if (nodes.tooltip.dataset.contentKey !== contentKey) {
       nodes.tooltip.dataset.contentKey = contentKey;
       if (regionId) nodes.tooltip.dataset.regionId = regionId;
@@ -521,6 +532,14 @@ export class AppShell {
       const name = element('span', 'region-tooltip__name');
       name.textContent = model.name;
       nodes.tooltipIdentity.append(acronym, name);
+      if (model.atlasId !== undefined) {
+        const atlasId = element('span', 'region-tooltip__id');
+        atlasId.textContent = String(model.atlasId);
+        atlasId.title = 'Allen structure ID';
+        nodes.tooltipIdentity.append(atlasId);
+      }
+      nodes.tooltipLineage.textContent = model.lineage?.join(' › ') ?? '';
+      nodes.tooltipLineage.hidden = !model.lineage?.length;
       nodes.tooltipValue.hidden = !model.valueText;
       nodes.tooltipValue.replaceChildren();
       if (model.valueText) {
@@ -569,6 +588,8 @@ export class AppShell {
     this.helpTour.destroy();
     this.colorRangeControl.destroy();
     window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener('keyup', this.onKeyUp);
+    window.removeEventListener('blur', this.endAnatomyPeek);
     window.removeEventListener('resize', this.onResize);
     this.contextMenus.forEach((menu) => menu.destroy());
     this.dataChooser.destroy();
@@ -1795,7 +1816,19 @@ export class AppShell {
     });
     outlinesRow.append(outlinesLabel, this.anatomyOutlinesInput);
 
-    group.append(opacityRow, outlinesRow);
+    const colorsRow = element('label', 'settings-control settings-control--toggle');
+    colorsRow.title = 'Hold A to peek at anatomy colours';
+    const colorsLabel = element('span', 'settings-control__label');
+    colorsLabel.textContent = 'Anatomy colours';
+    this.anatomyColorsInput = element('input', 'settings-control__checkbox');
+    this.anatomyColorsInput.type = 'checkbox';
+    this.anatomyColorsInput.setAttribute('aria-label', 'Show anatomy colours');
+    this.anatomyColorsInput.addEventListener('change', () => {
+      this.callbacks.setAnatomyColors(this.anatomyColorsInput.checked);
+    });
+    colorsRow.append(colorsLabel, this.anatomyColorsInput);
+
+    group.append(opacityRow, outlinesRow, colorsRow);
     this.volumeLayerSettings = group;
     return group;
   }
@@ -1968,6 +2001,7 @@ export class AppShell {
     this.volumeOpacityInput.value = String(model.state.view.layers.volumeOpacity);
     this.volumeOpacityValue.value = `${Math.round(model.state.view.layers.volumeOpacity * 100)}%`;
     this.anatomyOutlinesInput.checked = model.state.view.layers.anatomyOutlines;
+    this.anatomyColorsInput.checked = model.state.view.layers.anatomyColors;
   }
 
   private featureRepresentations(feature: DatasetManifest['features'][number]): RepresentationKind[] {
@@ -2363,9 +2397,15 @@ export class AppShell {
     tooltip.setAttribute('role', 'tooltip');
     tooltip.hidden = true;
     const tooltipIdentity = element('div', 'region-tooltip__identity');
+    const tooltipLineage = element('div', 'region-tooltip__lineage');
+    tooltipLineage.hidden = true;
     const tooltipValue = element('div', 'region-tooltip__value');
     const tooltipMeta = element('div', 'region-tooltip__meta');
-    tooltip.append(tooltipIdentity, tooltipValue, tooltipMeta);
+    const tooltipHint = element('div', 'region-tooltip__hint');
+    const hintKey = element('kbd');
+    hintKey.textContent = 'A';
+    tooltipHint.append('Hold ', hintKey, ' for anatomy colours');
+    tooltip.append(tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta, tooltipHint);
     viewport.append(target, stateText, tooltip);
 
     const footer = element('div', 'view-frame__footer');
@@ -2388,7 +2428,7 @@ export class AppShell {
     frame.append(header, viewport, footer);
     this.viewFrames.set(axis, {
       frame, target, viewport: projectionViewport, coordinate, slider, status, maximize,
-      tooltip, tooltipIdentity, tooltipValue, tooltipMeta,
+      tooltip, tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta,
       renderKey: '', geometryKey: '', renderToken: 0, sliceProgressTimer: null,
     });
     return frame;
@@ -2408,12 +2448,14 @@ export class AppShell {
     tooltip.setAttribute('role', 'tooltip');
     tooltip.hidden = true;
     const tooltipIdentity = element('div', 'region-tooltip__identity');
+    const tooltipLineage = element('div', 'region-tooltip__lineage');
+    tooltipLineage.hidden = true;
     const tooltipValue = element('div', 'region-tooltip__value');
     const tooltipMeta = element('div', 'region-tooltip__meta');
-    tooltip.append(tooltipIdentity, tooltipValue, tooltipMeta);
+    tooltip.append(tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta);
     frame.append(target, notice, tooltip);
     this.staticFrames.set(projectionId, {
-      frame, target, viewport, notice, tooltip, tooltipIdentity, tooltipValue, tooltipMeta,
+      frame, target, viewport, notice, tooltip, tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta,
       renderKey: '', renderToken: 0,
     });
     this.secondaryPanels.set(projectionId, frame);
@@ -2876,6 +2918,12 @@ export class AppShell {
       this.togglePanel(event.key === '[' ? 'regions' : 'settings');
       return;
     }
+    if ((event.key === 'a' || event.key === 'A') && !event.altKey && !event.ctrlKey && !event.metaKey) {
+      // Transient peek: never URL-persisted, released on keyup or window blur.
+      event.preventDefault();
+      this.app.dataset.anatomyPeek = 'true';
+      return;
+    }
     if (event.key === '/' && !event.altKey && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
       this.featureContext.open();
@@ -2901,6 +2949,14 @@ export class AppShell {
       this.stepFeature(event.key === 'ArrowDown' ? 1 : -1);
       event.preventDefault();
     }
+  };
+
+  private readonly onKeyUp = (event: KeyboardEvent): void => {
+    if (event.key === 'a' || event.key === 'A') this.endAnatomyPeek();
+  };
+
+  private readonly endAnatomyPeek = (): void => {
+    delete this.app.dataset.anatomyPeek;
   };
 
   private stepFeature(direction: -1 | 1): void {

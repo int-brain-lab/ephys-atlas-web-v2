@@ -406,9 +406,13 @@ def test_channel_feature_metadata_prefers_transformed_then_raw_units():
         def to_schema():
             return Schema()
 
-    info = _feature_info(Model, "rms_ap", "raw")
+    info = _feature_info(Model, "rms_ap", "raw", label_variant=True)
     assert info.unit == "dB rel. V"
     assert info.source_column == "rms_ap"
     assert info.variant == "raw"
     assert info.label == "rms ap (raw)"
     assert info.description == "Schema description"
+    # A single-variant release keeps the variant in metadata but not the label.
+    single = _feature_info(Model, "rms_ap", "denoised", label_variant=False)
+    assert single.variant == "denoised"
+    assert single.label == "rms ap"

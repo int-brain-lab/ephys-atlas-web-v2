@@ -6,7 +6,7 @@ import {
   loadAtlasRegionCatalog,
   parseAtlasRegionCatalog,
 } from '../../.test-dist/data/atlas-regions.js';
-import { buildGreyMatterHierarchy, buildRegionHierarchy } from '../../.test-dist/data/region-hierarchy.js';
+import { buildGreyMatterHierarchy, buildRegionHierarchy, regionLineage } from '../../.test-dist/data/region-hierarchy.js';
 
 function row(atlasId, acronym, parentId, depth, mappingMember = true, colorHex = '#123456') {
   return {
@@ -93,6 +93,24 @@ test('grey-matter projection promotes CH, BS, and CB while retaining the full ca
     ['-512', null, 0],
   ]);
   assert.equal(regions.length, 8);
+});
+
+test('region lineage lists ancestors outermost first and stops before grey matter', () => {
+  const regions = parseAtlasRegionCatalog(document([
+    row(-997, 'root', null, 0),
+    row(-8, 'grey', -997, 1),
+    row(-567, 'CH', -8, 2),
+    row(-688, 'CTX', -567, 3),
+    row(-315, 'Isocortex', -688, 4),
+    row(-1009, 'fiber tracts', -997, 1),
+    row(-967, 'cm', -1009, 2),
+  ])).left.allen;
+
+  assert.deepEqual(regionLineage(regions, '-315'), ['CH', 'CTX']);
+  assert.deepEqual(regionLineage(regions, '-567'), []);
+  assert.deepEqual(regionLineage(regions, '-8'), []);
+  assert.deepEqual(regionLineage(regions, '-967'), ['fiber tracts']);
+  assert.deepEqual(regionLineage(regions, '-404'), []);
 });
 
 test('catalog rejects missing ontology parents', () => {

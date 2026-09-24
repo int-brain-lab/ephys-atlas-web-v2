@@ -49,7 +49,7 @@ test('retained viewport shares region identity, guides, presentation, and intera
         scale: 'linear' as const,
     };
     const presentation = {
-      feature, coloring, volumeOpacity: 1, anatomyOutlines: true,
+      feature, coloring, volumeOpacity: 1, anatomyOutlines: true, anatomyColors: false,
       regional: resolveRegionalPresentation({
         mapping: 'beryl', feature, anatomyRegions: regions, coloring, selectedRegionIds, hoveredRegionId: null,
       }),

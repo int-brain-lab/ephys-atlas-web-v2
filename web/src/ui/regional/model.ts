@@ -8,6 +8,7 @@ import type {
 } from '../../data/contracts.js';
 import type { ColoringState, RegionOrder, StatisticId } from '../../domain/types.js';
 import type { RegionInspection } from '../../rendering/projection-viewport.js';
+import { regionLineage } from '../../data/region-hierarchy.js';
 
 const SELECTION_COLORS = ['#55a7f7', '#ef6f61', '#73c991', '#c38cf5', '#f2b84b', '#4dc6c6', '#f08cc2', '#a5b95c'] as const;
 
@@ -93,9 +94,26 @@ export function rankRegionsByValue(
 export interface RegionTooltipModel {
   acronym: string;
   name: string;
+  /** Unsigned Allen structure ID of the hovered region. */
+  atlasId?: number;
+  /** Ancestor acronyms, outermost first, below grey matter. */
+  lineage?: readonly string[];
   valueLabel?: string;
   valueText?: string;
   meta: string;
+}
+
+/** Shared tooltip identity: acronym, name, Allen ID, and ancestor acronyms. */
+export function regionTooltipIdentity(
+  regions: readonly RegionMetadata[],
+  region: RegionMetadata,
+): Pick<RegionTooltipModel, 'acronym' | 'name' | 'atlasId' | 'lineage'> {
+  return {
+    acronym: region.acronym,
+    name: region.name.replace(/\s+\(left\)$/i, ''),
+    atlasId: Math.abs(region.atlasId),
+    lineage: regionLineage(regions, region.id),
+  };
 }
 
 export function buildRegionTooltipModel(
@@ -130,8 +148,7 @@ export function buildRegionTooltipModel(
   }
 
   return {
-    acronym: region.acronym,
-    name: region.name.replace(/\s+\(left\)$/i, ''),
+    ...regionTooltipIdentity(regions, region),
     ...(valueLabel ? { valueLabel } : {}),
     ...(valueText ? { valueText } : {}),
     meta: meta.join(' · '),

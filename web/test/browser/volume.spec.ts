@@ -195,6 +195,11 @@ test('schema-v1 chunks3d volume renders all three orthogonal golden slices', asy
   await expect(tooltip.locator('.region-tooltip__meta')).toHaveCSS('white-space', 'pre-line');
   expect(await tooltip.locator('.region-tooltip__meta').textContent()).toMatch(/voxel \d,\d,\d\nML /);
   expect(await tooltip.locator('.region-tooltip__meta').textContent()).toMatch(/ML [^\n]+ · AP [^\n]+ · DV [^\n]+ mm$/);
+  await expect(tooltip.locator('.region-tooltip__hint')).toBeVisible();
+  // A voxel outside every region path has no Allen ID or lineage.
+  await expect(tooltip.locator('.region-tooltip__id')).toHaveCount(0);
+  await expect(tooltip.locator('.region-tooltip__lineage')).toBeHidden();
+  await expect(tooltip.locator('.region-tooltip__hint')).toHaveText('Hold A for anatomy colours');
   expect((await tooltip.boundingBox())?.width).toBeLessThanOrEqual(224);
 });
 
@@ -276,6 +281,40 @@ test('URL-persisted layer controls repaint retained layers without volume reques
   await expect(page.locator('.projection-viewport').first()).toHaveAttribute('data-anatomy-outlines', 'true');
   await expect.poll(() => new URL(page.url()).searchParams.get('opacity')).toBe('0.25');
   await expect.poll(() => new URL(page.url()).searchParams.has('outlines')).toBe(false);
+  expect(chunks.length).toBe(baseline);
+});
+
+test('anatomy colours toggle and hold-A peek cover the volume without volume requests', async ({ page }) => {
+  const chunks: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/volume/chunks/')) chunks.push(request.url());
+  });
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&cursor=25,25,25');
+  await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
+  const projection = page.locator('[data-view="coronal"] .projection-viewport');
+  const path = projection.locator('.view-frame__slice-figure path').first();
+  await expect(projection).toHaveAttribute('data-anatomy-colors', 'false');
+  await expect(path).toHaveCSS('fill-opacity', '0');
+  await page.waitForTimeout(200);
+  const baseline = chunks.length;
+
+  await page.locator('body').click({ position: { x: 1, y: 1 } });
+  await page.keyboard.down('a');
+  await expect(page.locator('.atlas-app')).toHaveAttribute('data-anatomy-peek', 'true');
+  await expect(path).toHaveCSS('fill-opacity', '1');
+  await page.keyboard.up('a');
+  await expect(page.locator('.atlas-app')).not.toHaveAttribute('data-anatomy-peek', 'true');
+  await expect(path).toHaveCSS('fill-opacity', '0');
+  expect(new URL(page.url()).searchParams.has('anatomy')).toBe(false);
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('checkbox', { name: 'Show anatomy colours' }).check();
+  await expect(projection).toHaveAttribute('data-anatomy-colors', 'true');
+  await expect(path).toHaveCSS('fill-opacity', '1');
+  await expect.poll(() => new URL(page.url()).searchParams.get('anatomy')).toBe('1');
+  await page.getByRole('checkbox', { name: 'Show anatomy colours' }).uncheck();
+  await expect(path).toHaveCSS('fill-opacity', '0');
+  await expect.poll(() => new URL(page.url()).searchParams.has('anatomy')).toBe(false);
   expect(chunks.length).toBe(baseline);
 });
 

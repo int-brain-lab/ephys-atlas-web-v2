@@ -29,8 +29,9 @@
   stroke-opacity: 1;
 }
 
-.projection-viewport[data-mode='composite'] .view-frame__brain-svg.has-region-selection path:not(.is-selected):not(.is-highlighted) {
-  fill: rgb(232 242 248);
+/* Composite paths carry inline atlas fills; the neutral veil must override them. */
+.atlas-app:not([data-anatomy-peek='true']) .projection-viewport[data-mode='composite']:not([data-anatomy-colors='true']) .view-frame__brain-svg.has-region-selection path:not(.is-selected):not(.is-highlighted) {
+  fill: rgb(232 242 248) !important;
   fill-opacity: .35;
 }
 
@@ -42,6 +43,12 @@
 .projection-viewport[data-mode='composite'] .view-frame__slice-figure path.is-highlighted:not(.is-selected) {
   stroke: rgb(126 207 255 / 92%);
   stroke-width: 1.2;
+}
+
+/* Anatomy colours (persisted toggle or hold-A peek) cover the volume with atlas fills. */
+.projection-viewport[data-mode='composite'][data-anatomy-colors='true'] .view-frame__slice-figure path,
+.atlas-app[data-anatomy-peek='true'] .projection-viewport[data-mode='composite'] .view-frame__slice-figure path {
+  fill-opacity: 1;
 }
 
 .view-frame__renderer[data-slice-asset='schema-volume-v1'] {

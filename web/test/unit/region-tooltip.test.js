@@ -23,6 +23,8 @@ test('region tooltip reports the active value, population count, and physical he
   ), {
     acronym: 'CA1',
     name: 'Field CA1',
+    atlasId: 382,
+    lineage: [],
     valueLabel: 'Mean',
     valueText: '-89.51 dB rel. V**2/Hz',
     meta: 'Left hemisphere · n=15,324',
