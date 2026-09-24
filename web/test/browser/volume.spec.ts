@@ -201,6 +201,19 @@ test('schema-v1 chunks3d volume renders all three orthogonal golden slices', asy
   await expect(tooltip.locator('.region-tooltip__lineage')).toBeHidden();
   await expect(tooltip.locator('.region-tooltip__hint')).toHaveText('Hold A for anatomy colours');
   expect((await tooltip.boundingBox())?.width).toBeLessThanOrEqual(224);
+
+  // Beyond the declared volume extent there is no sample, so no tooltip.
+  await coronal.evaluate((frame) => {
+    const host = frame.querySelector<SVGGraphicsElement>('.projection-viewport__scalar-host')!;
+    const regional = frame.querySelector<SVGSVGElement>('svg.projection-viewport__regional')!;
+    const bounds = host.getBoundingClientRect();
+    regional.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true,
+      clientX: bounds.left + bounds.width / 2,
+      clientY: bounds.bottom + 4,
+    }));
+  });
+  await expect(tooltip).toBeHidden();
 });
 
 test('an out-of-grid world cursor fails explicitly without fetching a clamped edge plane', async ({ page }) => {
