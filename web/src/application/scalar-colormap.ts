@@ -44,6 +44,7 @@ export function scalarColorGradient(
   scale: ScaleSpec,
   divergingCenter?: number,
   stops = 9,
+  direction = '90deg',
 ): string {
   const count = Math.max(2, Math.floor(stops));
   const positions = Array.from({ length: count }, (_, index) => index / (count - 1));
@@ -57,7 +58,7 @@ export function scalarColorGradient(
     const normalized = value === null ? null : scalarColorNormalize(value, range, scale, colormap, divergingCenter);
     return `${paletteCssColor(colormap, normalized ?? 0)} ${position * 100}%`;
   });
-  return `linear-gradient(90deg, ${colors.join(', ')})`;
+  return `linear-gradient(${direction}, ${colors.join(', ')})`;
 }
 
 function validRange(range: readonly [number | null, number | null] | undefined): readonly [number, number] | null {
