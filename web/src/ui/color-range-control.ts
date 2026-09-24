@@ -33,7 +33,7 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, className: strin
   return node;
 }
 
-function formatScalar(value: number): string {
+export function formatScalar(value: number): string {
   const magnitude = Math.abs(value);
   if (magnitude !== 0 && (magnitude >= 100_000 || magnitude < 0.001)) return value.toExponential(2);
   return new Intl.NumberFormat(undefined, {
