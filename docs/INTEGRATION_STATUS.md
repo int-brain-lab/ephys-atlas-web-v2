@@ -247,6 +247,10 @@ the landing design, revised copy, acknowledgements and vector slices at
 `a3a88cd` on 2026-09-08. Dataset, pack, catalog and site transactions have now succeeded against S3;
 multipart objects above 5 GB remain unimplemented. See
 [Local publisher operations](publishing/LOCAL_PUBLISHER.md).
+The 2026-09-24 UI changes are live as site build
+`dd84910e44def90bea41660bc7e554e2`; the site-only publication left the catalog
+and scientific artifacts unchanged. See the
+[deployment record](publishing/SITE_UI_DEPLOYMENT_20260924.md).
 Public reads remain static and unauthenticated.
 
 D040/D059/D060/D072 select private IBL-owned S3 and the existing CloudFront
