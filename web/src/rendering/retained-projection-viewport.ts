@@ -205,6 +205,7 @@ function regionalFrame(
     guides,
     // Volume composites always carry anatomy colours so the anatomy-colour
     // toggle (and hold-to-peek) is a CSS-only switch that never re-renders.
+    anatomyColors: semantics.anatomyColors,
     regionColors: regionalPresentationColors(semantics, model.feature?.representation !== 'volume'),
     selectedRegionIds: semantics.selectedRegionIds,
     highlightedRegionIds: semantics.highlightedRegionId == null

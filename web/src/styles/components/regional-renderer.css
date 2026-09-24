@@ -17,3 +17,8 @@
 .view-frame__slice-figure path[style*='fill'] {
   transition: fill 90ms linear, filter 90ms linear, stroke 90ms linear;
 }
+
+/* Hold A to peek at atlas fills over regional feature colours. */
+.atlas-app[data-anatomy-peek='true'] .view-frame__slice-figure path[style*='--anatomy-fill'] {
+  fill: var(--anatomy-fill) !important;
+}
