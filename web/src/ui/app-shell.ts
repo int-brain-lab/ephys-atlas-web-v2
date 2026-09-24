@@ -129,6 +129,7 @@ interface ViewFrameNodes {
   maximize: HTMLButtonElement;
   tooltip: HTMLElement;
   tooltipIdentity: HTMLElement;
+  tooltipLineage: HTMLElement;
   tooltipValue: HTMLElement;
   tooltipMeta: HTMLElement;
   renderKey: string;
@@ -140,6 +141,7 @@ interface ViewFrameNodes {
 interface ProjectionTooltipNodes {
   tooltip: HTMLElement;
   tooltipIdentity: HTMLElement;
+  tooltipLineage: HTMLElement;
   tooltipValue: HTMLElement;
   tooltipMeta: HTMLElement;
 }
@@ -519,7 +521,7 @@ export class AppShell {
     for (const [projectionId, frame] of this.staticFrames) {
       if (projectionId !== inspection.projectionId) frame.tooltip.hidden = true;
     }
-    const contentKey = `${regionId ?? ''}\u0000${model.acronym}\u0000${model.name}\u0000${model.valueLabel ?? ''}\u0000${model.valueText ?? ''}\u0000${model.meta}`;
+    const contentKey = `${regionId ?? ''}\u0000${model.acronym}\u0000${model.name}\u0000${model.atlasId ?? ''}\u0000${model.lineage?.join('/') ?? ''}\u0000${model.valueLabel ?? ''}\u0000${model.valueText ?? ''}\u0000${model.meta}`;
     if (nodes.tooltip.dataset.contentKey !== contentKey) {
       nodes.tooltip.dataset.contentKey = contentKey;
       if (regionId) nodes.tooltip.dataset.regionId = regionId;
@@ -530,6 +532,14 @@ export class AppShell {
       const name = element('span', 'region-tooltip__name');
       name.textContent = model.name;
       nodes.tooltipIdentity.append(acronym, name);
+      if (model.atlasId !== undefined) {
+        const atlasId = element('span', 'region-tooltip__id');
+        atlasId.textContent = String(model.atlasId);
+        atlasId.title = 'Allen structure ID';
+        nodes.tooltipIdentity.append(atlasId);
+      }
+      nodes.tooltipLineage.textContent = model.lineage?.join(' › ') ?? '';
+      nodes.tooltipLineage.hidden = !model.lineage?.length;
       nodes.tooltipValue.hidden = !model.valueText;
       nodes.tooltipValue.replaceChildren();
       if (model.valueText) {
@@ -2387,13 +2397,15 @@ export class AppShell {
     tooltip.setAttribute('role', 'tooltip');
     tooltip.hidden = true;
     const tooltipIdentity = element('div', 'region-tooltip__identity');
+    const tooltipLineage = element('div', 'region-tooltip__lineage');
+    tooltipLineage.hidden = true;
     const tooltipValue = element('div', 'region-tooltip__value');
     const tooltipMeta = element('div', 'region-tooltip__meta');
     const tooltipHint = element('div', 'region-tooltip__hint');
     const hintKey = element('kbd');
     hintKey.textContent = 'A';
     tooltipHint.append('Hold ', hintKey, ' for anatomy colours');
-    tooltip.append(tooltipIdentity, tooltipValue, tooltipMeta, tooltipHint);
+    tooltip.append(tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta, tooltipHint);
     viewport.append(target, stateText, tooltip);
 
     const footer = element('div', 'view-frame__footer');
@@ -2416,7 +2428,7 @@ export class AppShell {
     frame.append(header, viewport, footer);
     this.viewFrames.set(axis, {
       frame, target, viewport: projectionViewport, coordinate, slider, status, maximize,
-      tooltip, tooltipIdentity, tooltipValue, tooltipMeta,
+      tooltip, tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta,
       renderKey: '', geometryKey: '', renderToken: 0, sliceProgressTimer: null,
     });
     return frame;
@@ -2436,12 +2448,14 @@ export class AppShell {
     tooltip.setAttribute('role', 'tooltip');
     tooltip.hidden = true;
     const tooltipIdentity = element('div', 'region-tooltip__identity');
+    const tooltipLineage = element('div', 'region-tooltip__lineage');
+    tooltipLineage.hidden = true;
     const tooltipValue = element('div', 'region-tooltip__value');
     const tooltipMeta = element('div', 'region-tooltip__meta');
-    tooltip.append(tooltipIdentity, tooltipValue, tooltipMeta);
+    tooltip.append(tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta);
     frame.append(target, notice, tooltip);
     this.staticFrames.set(projectionId, {
-      frame, target, viewport, notice, tooltip, tooltipIdentity, tooltipValue, tooltipMeta,
+      frame, target, viewport, notice, tooltip, tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta,
       renderKey: '', renderToken: 0,
     });
     this.secondaryPanels.set(projectionId, frame);

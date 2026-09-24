@@ -196,6 +196,9 @@ test('schema-v1 chunks3d volume renders all three orthogonal golden slices', asy
   expect(await tooltip.locator('.region-tooltip__meta').textContent()).toMatch(/voxel \d,\d,\d\nML /);
   expect(await tooltip.locator('.region-tooltip__meta').textContent()).toMatch(/ML [^\n]+ · AP [^\n]+ · DV [^\n]+ mm$/);
   await expect(tooltip.locator('.region-tooltip__hint')).toBeVisible();
+  // A voxel outside every region path has no Allen ID or lineage.
+  await expect(tooltip.locator('.region-tooltip__id')).toHaveCount(0);
+  await expect(tooltip.locator('.region-tooltip__lineage')).toBeHidden();
   await expect(tooltip.locator('.region-tooltip__hint')).toHaveText('Hold A for anatomy colours');
   expect((await tooltip.boundingBox())?.width).toBeLessThanOrEqual(224);
 });

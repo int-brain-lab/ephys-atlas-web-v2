@@ -41,7 +41,7 @@ import { AppShell, type ShellModel } from './ui/app-shell.js';
 import type { DataChooserSelection, NavigationRecoveryAction } from './ui/data-chooser.js';
 import { RegionalPanelController } from './ui/regional-panel.js';
 import { buildSelectedComparisonExport } from './ui/regional/comparison-export.js';
-import { buildRegionTooltipModel } from './ui/regional/model.js';
+import { buildRegionTooltipModel, regionTooltipIdentity } from './ui/regional/model.js';
 import { parseNavigationRequest, UrlStateController } from './url/url-state.js';
 
 export interface AppOptions {
@@ -640,8 +640,7 @@ export class AtlasApp {
       ? `${Number(inspection.value.toPrecision(6)).toLocaleString('en-US')}${descriptor?.unit ? ` ${descriptor.unit}` : ''}`
       : statusLabel;
     this.shell.showVolumeTooltip(inspection, {
-      acronym: region?.acronym ?? 'Voxel',
-      name: region?.name.replace(/\s+\(left\)$/i, '') ?? 'Volume sample',
+      ...(region ? regionTooltipIdentity(regions, region) : { acronym: 'Voxel', name: 'Volume sample' }),
       valueText,
       meta: [
         inspection.status === 'valid' ? voxel : `${statusLabel} · ${voxel}`,
