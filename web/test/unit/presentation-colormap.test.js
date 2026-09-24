@@ -15,15 +15,15 @@ const expected = (selection, automaticColormap, effectiveColormap, divergingCent
   automaticColormap,
   effectiveColormap,
   availableColormaps: divergingCenter === undefined
-    ? ['viridis', 'cividis', 'magma', 'plasma', 'inferno', 'Blues', 'YlOrRd']
-    : ['viridis', 'cividis', 'magma', 'plasma', 'inferno', 'Blues', 'YlOrRd', 'coolwarm'],
+    ? ['berlin', 'viridis', 'cividis', 'magma', 'plasma', 'inferno', 'Blues', 'YlOrRd']
+    : ['berlin', 'viridis', 'cividis', 'magma', 'plasma', 'inferno', 'Blues', 'YlOrRd', 'coolwarm'],
   ...(divergingCenter === undefined ? {} : { divergingCenter }),
 });
 
-test('Auto resolves the active representation preference and falls back to Viridis', () => {
+test('Auto resolves the active representation preference and falls back to Berlin', () => {
   assert.deepEqual(resolvePresentationColormap('auto', display('magma')), expected('auto', 'magma', 'magma'));
-  assert.deepEqual(resolvePresentationColormap('auto', display()), expected('auto', 'viridis', 'viridis'));
-  assert.deepEqual(resolvePresentationColormap('auto', display('unregistered')), expected('auto', 'viridis', 'viridis'));
+  assert.deepEqual(resolvePresentationColormap('auto', display()), expected('auto', 'berlin', 'berlin'));
+  assert.deepEqual(resolvePresentationColormap('auto', display('unregistered')), expected('auto', 'berlin', 'berlin'));
 });
 
 test('an explicit registered palette overrides every release preference', () => {

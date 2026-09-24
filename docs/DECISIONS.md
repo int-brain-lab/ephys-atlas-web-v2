@@ -65,7 +65,7 @@ only part of the body; the index states what remains effective.
 | D054 | Complete audited distribution selections | accepted | 2026-08-29 | closes Q14; local rebuilds authorized |
 | D055 | Unlisted expiring dataset shares | accepted | 2026-09-02 | optional sharing transport; separate from publication |
 | D056 | Project/dataset/release navigation | partially superseded | 2026-09-02 | hierarchy retained; D061 fixes edition identity, authority and context; D063 refines presentation and control labels |
-| D057 | Preferred palettes and explicit diverging centers | accepted | 2026-09-02 | infrastructure policy; Q16 retains real-feature selections |
+| D057 | Preferred palettes and explicit diverging centers | partially superseded | 2026-09-02 | infrastructure policy retained; D080 replaces the Viridis fallback with Berlin; Q16 retains real-feature selections |
 | D058 | Flexible multi-feature comparison | accepted | 2026-09-02 | arbitrary feature scopes, z-score comparison, and iterative Focus/Gallery/Profile UX |
 | D059 | Shared S3 staging/production roots | partially superseded | 2026-09-02 | bucket roots and immutable-key policy retained; D072 confirms hostname after D071 |
 | D060 | Lean AWS static hosting and local publication | partially superseded | 2026-09-02 | AWS topology and local publication retained; D072 confirms hostname after D071 |
@@ -88,6 +88,7 @@ only part of the body; the index states what remains effective.
 | D077 | Select processed AGEA successor | accepted | 2026-09-17 | exact upstream processed bytes; nonzero-label validity; original release retained; D079 later authorizes publication |
 | D078 | Exact mapped volume-region distributions | accepted | 2026-09-17 | Allen/Beryl/Cosmos; mutually exclusive mappings; lateralized storage; bilateral default; source AGEA labels accepted; D079 later authorizes publication |
 | D079 | Publish D078 AGEA and W26 successors | accepted | 2026-09-17 | clean-Linux-main rebuilds; preserve existing releases; add immutable editions; deploy compatible site before catalog promotion |
+| D080 | Berlin as the neutral Auto palette | accepted | 2026-09-24 | replaces the D057 Viridis fallback; Berlin registered as a plain ramp without an implied center; release preferences and Q16 unchanged |
 
 ## D001 — Separate v2
 
@@ -1985,3 +1986,26 @@ catalog-last operation. Run all-dataset production-origin QA afterward. If the
 promoted site or catalog fails validation, restore the last-known-good site or
 catalog through the guarded publication path. This decision closes Q19 and
 does not select the later paper freeze governed by Q2/Q9.
+
+## D080 — Use Berlin as the neutral Auto palette
+
+The repository owner replaces the D057 Viridis fallback with Matplotlib's
+Berlin palette. Auto still resolves a representation's release-owned
+preferred palette first; only representations without a preference, which
+currently includes every real channel, cluster, Brain-Wide Map, AGEA and
+volume release, now fall back to Berlin instead of Viridis. Viridis and every
+other registered palette remain selectable, and explicit URL palettes are
+unchanged.
+
+Berlin is diverging by design. It is registered as a plain ramp so it can be
+the neutral fallback without a release-owned `diverging_center`: its dark
+middle marks the middle of the active colour range, not a scientific center,
+and no center is inferred. The D057 rule that palettes classified as diverging
+require an explicit finite center is unchanged. Berlin's near-black midpoint
+reduces contrast against the dark volume background for mid-range values;
+anatomy outlines keep region boundaries visible.
+
+This is a presentation choice only. It changes no release bytes or selection
+artifacts and does not resolve Q16's per-feature palette and diverging-center
+selections.
+

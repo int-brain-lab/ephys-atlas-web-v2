@@ -141,7 +141,7 @@ const DEFAULT_PRESENTATION: ProjectionPresentation = {
   coloring: {
     mode: 'feature',
     statistic: 'mean',
-    colormap: 'viridis',
+    colormap: 'berlin',
     range: { mode: 'auto' },
     scale: { kind: 'linear' },
   },

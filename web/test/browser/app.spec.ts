@@ -734,7 +734,7 @@ test('scientific context menus and color controls are driven by the loaded relea
   await expect.poll(() => new URL(page.url()).searchParams.get('stat')).toBe('std');
   await expect(page.locator('.region-row[data-region-id="-362"] .region-row__value')).toHaveAttribute('aria-label', /^std /);
   await expect.poll(() => coloredRegion.evaluate((element) => getComputedStyle(element).fill)).not.toBe(meanFill);
-  await expect(page.getByLabel('Feature colormap').locator('option')).toHaveText(['Auto (Viridis)', 'Viridis', 'Cividis', 'Magma', 'Plasma', 'Inferno', 'Blues', 'YlOrRd', 'Coolwarm']);
+  await expect(page.getByLabel('Feature colormap').locator('option')).toHaveText(['Auto (Viridis)', 'Berlin', 'Viridis', 'Cividis', 'Magma', 'Plasma', 'Inferno', 'Blues', 'YlOrRd', 'Coolwarm']);
   await expect(page.getByLabel('Feature color legend')).toBeVisible();
   await expect(page.locator('.color-legend__unit')).toHaveText('dB rel. V');
   await expect(page.locator('.color-range__histogram-bin')).toHaveCount(8);
