@@ -201,9 +201,9 @@ implemented-path [`data/CUSTOM_DATA_TUTORIAL.md`](data/CUSTOM_DATA_TUTORIAL.md).
 
 ## Publishing and deployment
 
-GitHub CI has a prepared site-only deployment job after the Python and web
-gates, and the production environment accepts `main` only. The job skips until
-the scoped AWS OIDC role ARN is configured; see the
+GitHub CI deploys the site after the Python and web gates on `main`, using a
+scoped AWS OIDC role and a `main`-only production environment. The first manual
+run passed on 2026-09-28; see the
 [automatic site deployment runbook](publishing/AUTOMATIC_SITE_DEPLOYMENT.md).
 No scientific data or catalog publication is attached to a code push.
 

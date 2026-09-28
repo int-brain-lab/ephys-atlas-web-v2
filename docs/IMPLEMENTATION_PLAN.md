@@ -60,15 +60,6 @@ Run from the release commit on Linux:
 
 ## Independent non-launch work
 
-### Automatic site deployment
-
-GitHub CI now contains a production site-only deployment job and a `main`-only
-environment. The job remains inactive until an AWS administrator creates the
-scoped GitHub OIDC role and its ARN is set as the repository variable. Complete
-that setup and run one manual CI deployment before relying on push automation;
-see [the runbook](publishing/AUTOMATIC_SITE_DEPLOYMENT.md). Scientific data
-publication and curator promotion retain their separate workflow.
-
 ### AGEA — full-catalog single-experiment browsing
 
 Status: production promotion authorized under D079. The original release remains
