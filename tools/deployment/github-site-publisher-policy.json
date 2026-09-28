@@ -1,0 +1,49 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BucketRegion",
+      "Effect": "Allow",
+      "Action": "s3:GetBucketLocation",
+      "Resource": "arn:aws:s3:::ibl-brain-wide-map-private"
+    },
+    {
+      "Sid": "ListSiteTransactionsAndDependencies",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::ibl-brain-wide-map-private",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "aggregates/atlas/ephys-atlas-web-v2/production/site/*",
+            "aggregates/atlas/ephys-atlas-web-v2/production/_staging/*",
+            "aggregates/atlas/ephys-atlas-web-v2/production/catalog.json",
+            "aggregates/atlas/ephys-atlas-web-v2/production/atlas/projections/*/manifest.json",
+            "aggregates/atlas/ephys-atlas-web-v2/production/atlas/meshes/*/manifest.json"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "ReadSiteTransactionsAndDependencies",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": [
+        "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/production/site/*",
+        "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/production/_staging/*",
+        "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/production/catalog.json",
+        "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/production/atlas/projections/*/manifest.json",
+        "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/production/atlas/meshes/*/manifest.json"
+      ]
+    },
+    {
+      "Sid": "WriteSiteAndPrivateTransactions",
+      "Effect": "Allow",
+      "Action": "s3:PutObject",
+      "Resource": [
+        "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/production/site/*",
+        "arn:aws:s3:::ibl-brain-wide-map-private/aggregates/atlas/ephys-atlas-web-v2/production/_staging/*"
+      ]
+    }
+  ]
+}

@@ -201,6 +201,12 @@ implemented-path [`data/CUSTOM_DATA_TUTORIAL.md`](data/CUSTOM_DATA_TUTORIAL.md).
 
 ## Publishing and deployment
 
+GitHub CI has a prepared site-only deployment job after the Python and web
+gates, and the production environment accepts `main` only. The job skips until
+the scoped AWS OIDC role ARN is configured; see the
+[automatic site deployment runbook](publishing/AUTOMATIC_SITE_DEPLOYMENT.md).
+No scientific data or catalog publication is attached to a code push.
+
 The capability-token publishing service supports resumable private staging,
 byte-size/SHA/schema validation, immutable publication, administrative aliases,
 bounded requests, process-safe filesystem mutations, and external validation.

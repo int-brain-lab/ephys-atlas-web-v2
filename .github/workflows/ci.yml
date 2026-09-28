@@ -4,13 +4,15 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel an in-flight conditional site publication.
+  cancel-in-progress: false
 
 jobs:
   python:
@@ -49,3 +51,90 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
+
+  deploy_site:
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' && vars.PRODUCTION_AWS_ROLE_ARN != ''
+    needs: [python, web]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://ephys-atlas.iblcore.org/
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+      - name: Check that CI tested the current main commit
+        id: current
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          if [ "$(git rev-parse HEAD)" = "$EXPECTED_SHA" ]; then
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'A newer main commit exists; its CI run will publish the site.'
+            echo 'publish=false' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        if: steps.current.outputs.publish == 'true'
+        with:
+          version: '0.12.0'
+          python-version: '3.12'
+          enable-cache: true
+          cache-dependency-glob: '**/uv.lock'
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        if: steps.current.outputs.publish == 'true'
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install locked build dependencies
+        if: steps.current.outputs.publish == 'true'
+        run: |
+          uv sync --project builder --python 3.12 --extra test --extra scientific --locked
+          npm ci --prefix web
+      - name: Build and plan the site
+        if: steps.current.outputs.publish == 'true'
+        run: |
+          uv run --project builder --extra test --extra scientific --locked python -m tools.site_build \
+            data/deployment/initial-site.json "$RUNNER_TEMP/site-build"
+          uv run --project builder --extra test --extra scientific --locked python -m tools.s3_assets \
+            site "$RUNNER_TEMP/site-build" --environment production > "$RUNNER_TEMP/site-plan.json"
+      - name: Assume the site-only AWS role
+        if: steps.current.outputs.publish == 'true'
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ vars.PRODUCTION_AWS_ROLE_ARN }}
+          allowed-account-ids: '842577843587'
+          aws-profile: site-publisher
+      - name: Publish the site
+        if: steps.current.outputs.publish == 'true'
+        run: |
+          uv run --project builder --extra test --extra scientific --locked python -m tools.s3_assets \
+            site "$RUNNER_TEMP/site-build" --environment production --transport sdk \
+            --apply --profile site-publisher \
+            --confirm-root aggregates/atlas/ephys-atlas-web-v2/production/ \
+            > "$RUNNER_TEMP/site-publication.json"
+          cat "$RUNNER_TEMP/site-publication.json"
+      - name: Verify the live site
+        if: steps.current.outputs.publish == 'true'
+        run: |
+          build_id="$(python -c 'import json,os; print(json.load(open(os.environ["RUNNER_TEMP"] + "/site-publication.json"))["identity"])')"
+          marker="/site/builds/$build_id/"
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error https://ephys-atlas.iblcore.org/ -o "$RUNNER_TEMP/site-root.html" &&
+               curl --fail --silent --show-error https://ephys-atlas.iblcore.org/app/ -o "$RUNNER_TEMP/site-app.html" &&
+               curl --fail --silent --show-error "https://ephys-atlas.iblcore.org${marker}index.html" -o /dev/null &&
+               grep -Fq "$marker" "$RUNNER_TEMP/site-root.html" &&
+               grep -Fq "$marker" "$RUNNER_TEMP/site-app.html"; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "The live site did not serve build $build_id within five minutes." >&2
+          exit 1
