@@ -1220,6 +1220,10 @@ test('view maximize is reversible with Escape', async ({ page }) => {
   await expect(page.locator('.app-header')).not.toHaveAttribute('inert', '');
   await expect(page.locator('.app-header__actions')).toHaveAttribute('inert', '');
   await expect(page.locator('.drawer-backdrop')).toHaveCSS('pointer-events', 'auto');
+  const colorbar = frame.locator('.frame-colorbar');
+  await expect(colorbar).toBeVisible();
+  await expect(colorbar.locator('.frame-colorbar__bar')).toHaveCSS('background-image', /linear-gradient/);
+  await expect(page.locator('[data-view="sagittal"] .frame-colorbar')).toBeHidden();
   const representation = page.locator('[data-context-field="representation"]');
   await representation.locator('.context-menu__trigger').click();
   await expect(representation.locator('.context-menu__panel')).toBeVisible();
@@ -1228,6 +1232,7 @@ test('view maximize is reversible with Escape', async ({ page }) => {
   await page.keyboard.press('Escape');
   await expect(frame).toHaveAttribute('data-maximized', 'false');
   await expect(page.locator('.atlas-app')).not.toHaveAttribute('data-maximized-view', /.+/);
+  await expect(colorbar).toBeHidden();
   await expect(page.locator('.app-header__actions')).not.toHaveAttribute('inert', '');
   await expect.poll(() => new URL(page.url()).searchParams.get('max')).toBeNull();
 });
