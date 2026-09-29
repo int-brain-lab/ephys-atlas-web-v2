@@ -97,7 +97,7 @@ do not edit the D054 selection artifacts in place.
 
 Blocks: real release-owned palette defaults and diverging-center metadata only.
 It does not block the neutral Auto/fallback machinery, the expanded palette
-registry, or launch with existing Viridis behavior.
+registry, or launch with the D080 Berlin fallback.
 
 ## Q17 — Multi-feature z-score normalization populations
 

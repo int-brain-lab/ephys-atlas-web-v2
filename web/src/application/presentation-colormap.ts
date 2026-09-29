@@ -21,8 +21,8 @@ export function resolvePresentationColormap(
     .map(({ id }) => id);
   const preferred = display?.colormap && isColormapId(display.colormap)
     ? display.colormap
-    : 'viridis';
-  const automaticColormap = availableColormaps.includes(preferred) ? preferred : 'viridis';
+    : 'berlin';
+  const automaticColormap = availableColormaps.includes(preferred) ? preferred : 'berlin';
   const requested = selection === 'auto' ? automaticColormap : selection;
   const effectiveColormap = availableColormaps.includes(requested) ? requested : automaticColormap;
   return {
