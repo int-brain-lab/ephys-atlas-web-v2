@@ -1237,6 +1237,20 @@ test('view maximize is reversible with Escape', async ({ page }) => {
   await expect.poll(() => new URL(page.url()).searchParams.get('max')).toBeNull();
 });
 
+test('holding A peeks at anatomy colours over regional feature fills', async ({ page }) => {
+  await page.goto('/app/');
+  const region = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
+  const fill = () => region.evaluate((element) => getComputedStyle(element).fill);
+  await expect.poll(fill).not.toBe('');
+  const featureFill = await fill();
+  const anatomyFill = await region.evaluate((element) => (element as SVGElement).style.getPropertyValue('--anatomy-fill'));
+  expect(anatomyFill).not.toBe('');
+  await page.keyboard.down('a');
+  await expect.poll(fill).not.toBe(featureFill);
+  await page.keyboard.up('a');
+  await expect.poll(fill).toBe(featureFill);
+});
+
 test('compact workspace selection hydrates and persists independently', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto('/app/?v=4&compact=secondary');

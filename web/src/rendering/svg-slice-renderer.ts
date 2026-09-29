@@ -198,11 +198,14 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     this.mount.svg.classList.toggle('has-region-selection', (frame.selectedRegionIds?.size ?? 0) > 0);
     for (const [regionId, paths] of this.pathIndex) {
       const fill = frame.regionColors?.get(regionId);
+      const anatomyFill = frame.anatomyColors?.get(regionId);
       const selected = frame.selectedRegionIds?.has(regionId) ?? false;
       const highlighted = frame.highlightedRegionIds?.has(regionId) ?? frame.highlightedRegionId === regionId;
       for (const path of paths) {
         if (fill) path.style.fill = fill;
         else path.style.removeProperty('fill');
+        if (anatomyFill) path.style.setProperty('--anatomy-fill', anatomyFill);
+        else path.style.removeProperty('--anatomy-fill');
         path.classList.toggle('is-selected', selected);
         path.classList.toggle('is-highlighted', highlighted);
       }
