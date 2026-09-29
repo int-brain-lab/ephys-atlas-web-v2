@@ -109,7 +109,7 @@ deployment, including the D075 production volume release. See
 The bounded D057 presentation follow-ups are implemented. Regional standard
 deviation is selectable when present; one classified Matplotlib-derived
 palette registry drives SVG, Canvas, and legends; Auto resolves a
-representation preference with a Viridis fallback; and Coolwarm is available
+representation preference with a Berlin fallback (D080); and Coolwarm is available
 only with an explicit finite release-owned diverging center. Shared piecewise
 normalization covers regional, volume, and legend rendering without inventing
 a midpoint. Region rows use shared-domain dot tracks rather than unlabelled
