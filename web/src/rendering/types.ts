@@ -13,6 +13,8 @@ export interface RegionalSliceFrame {
   viewBox: ViewBox;
   guides: readonly SliceGuide[];
   regionColors?: ReadonlyMap<number, string>;
+  /** Atlas fills exposed as `--anatomy-fill` so the hold-A peek is CSS-only. */
+  anatomyColors?: ReadonlyMap<number, string>;
   selectedRegionIds?: ReadonlySet<number>;
   highlightedRegionId?: number | null;
   highlightedRegionIds?: ReadonlySet<number>;

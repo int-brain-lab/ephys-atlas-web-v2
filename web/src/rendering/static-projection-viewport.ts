@@ -25,6 +25,7 @@ function presentationFrame(
     svgFragment: source.svgFragment,
     viewBox: source.viewBox,
     guides: [],
+    anatomyColors: semantics.anatomyColors,
     regionColors: regionalPresentationColors(semantics, presentation.feature?.representation === 'regional'),
     selectedRegionIds: semantics.selectedRegionIds,
     highlightedRegionIds: semantics.highlightedRegionId == null
