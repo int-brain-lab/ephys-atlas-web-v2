@@ -615,7 +615,8 @@ export class AtlasApp {
       this.shell.hideRegionTooltip(inspection.projectionId);
       return;
     }
-    if (inspection.status === 'outside') {
+    // Only samples inside the volume extent carry information worth a tooltip.
+    if (inspection.status === 'outside' || inspection.status === 'out-of-grid') {
       this.shell.hideRegionTooltip(inspection.projectionId);
       return;
     }
@@ -628,14 +629,12 @@ export class AtlasApp {
       coordinate(inspection.world.ap, 'AP'),
       coordinate(inspection.world.dv, 'DV'),
     ];
-    const voxel = inspection.voxelIndex ? `voxel ${inspection.voxelIndex.join(',')}` : 'outside grid';
+    const voxel = `voxel ${inspection.voxelIndex?.join(',') ?? '?'}`;
     const statusLabel = inspection.status === 'valid'
       ? 'Valid voxel'
       : inspection.status === 'missing'
         ? 'Missing value'
-        : inspection.status === 'unsupported-validity'
-          ? 'Validity mask unsupported'
-          : 'Outside volume grid';
+        : 'Validity mask unsupported';
     const valueText = inspection.status === 'valid' && inspection.value !== undefined
       ? `${Number(inspection.value.toPrecision(6)).toLocaleString('en-US')}${descriptor?.unit ? ` ${descriptor.unit}` : ''}`
       : statusLabel;
