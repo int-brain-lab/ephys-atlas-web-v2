@@ -8,6 +8,8 @@ import {
   regionalColorMap,
   scalarColorGradient,
   scalarColorNormalize,
+  scalarColorValueAtNormalized,
+  scalarPaletteGradient,
 } from '../../.test-dist/application/scalar-colormap.js';
 import { resolveColoringState } from '../../.test-dist/domain/color-scale.js';
 import {
@@ -129,6 +131,22 @@ test('regional maps and legends use the same diverging normalization', () => {
   assert.equal(colors.get(10), paletteCssColor('coolwarm', scalarColorNormalize(0, range, { kind: 'linear' }, 'coolwarm', 0)));
   const gradient = scalarColorGradient('coolwarm', range, { kind: 'linear' }, 0);
   assert.match(gradient, new RegExp(`${paletteCssColor('coolwarm', .5).replaceAll(/[()]/g, '\\$&')} 25%`));
+});
+
+test('pseudo-log coloring includes zero and exposes near-zero detail without changing the raw range', () => {
+  const scale = { kind: 'linear' };
+  assert.equal(scalarColorNormalize(0, [0, 100], scale, 'viridis', undefined, 'pseudolog', 0.05), 0);
+  assert.equal(scalarColorNormalize(100, [0, 100], scale, 'viridis', undefined, 'pseudolog', 0.05), 1);
+  const middle = scalarColorNormalize(10, [0, 100], scale, 'viridis', undefined, 'pseudolog', 0.05);
+  assert.ok(middle > 0.1);
+  const strong = scalarColorNormalize(1, [0, 100], scale, 'viridis', undefined, 'pseudolog', 0.01);
+  const gentle = scalarColorNormalize(1, [0, 100], scale, 'viridis', undefined, 'pseudolog', 0.2);
+  assert.ok(strong > gentle);
+  assert.equal(scalarColorNormalize(0, [-100, 100], scale, 'coolwarm', 0, 'pseudolog', 0.05), 0.5);
+  const halfValue = scalarColorValueAtNormalized(0.5, [0, 100], scale, 'viridis', undefined, 'pseudolog', 0.05);
+  assert.ok(halfValue > 0 && halfValue < 50);
+  assert.match(scalarColorGradient('viridis', [0, 100], scale, undefined, 9, '90deg', 'pseudolog', 0.05), /^linear-gradient\(90deg/);
+  assert.match(scalarPaletteGradient('viridis', [0, 100], scale, undefined, 'pseudolog', 0.05), /^linear-gradient\(0deg/);
 });
 
 

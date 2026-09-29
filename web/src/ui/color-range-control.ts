@@ -1,5 +1,5 @@
 import type { DistributionBinning, FeaturePayload } from '../data/contracts.js';
-import type { ColorRange, StatisticId } from '../domain/types.js';
+import type { ColorMappingMode, ColorRange, ColorScale, PseudoLogStrength, StatisticId } from '../domain/types.js';
 import type { ScaleSpec } from '../domain/scale-spec.js';
 import { scalarColorGradient } from '../application/scalar-colormap.js';
 import {
@@ -24,6 +24,9 @@ export interface ColorRangeControlModel {
   context: string;
   enabled: boolean;
   axisScale: ScaleSpec;
+  colorMapping: ColorMappingMode;
+  pseudoLogStrength: PseudoLogStrength;
+  distributionScale: ColorScale;
   histogram: DistributionBinning | undefined;
 }
 
@@ -46,6 +49,7 @@ export class ColorRangeControl {
   readonly element = element('figure', 'color-legend');
 
   private readonly context = element('div', 'color-legend__context');
+  private readonly mappingStatus = element('div', 'color-legend__mapping-status');
   private readonly tailSummary = element('div', 'color-legend__tails');
   private readonly reset = element('button', 'color-legend__reset');
   private readonly bar = element('div', 'color-legend__bar');
@@ -113,7 +117,7 @@ export class ColorRangeControl {
     cancel.addEventListener('click', this.closeExactEditor);
     this.exactEditor.append(this.exactTitle, apply, cancel);
 
-    this.element.append(header, this.valueLabels, this.bar, labels, this.exactEditor);
+    this.element.append(header, this.mappingStatus, this.valueLabels, this.bar, labels, this.exactEditor);
   }
 
   render(model: ColorRangeControlModel): void {
@@ -150,6 +154,9 @@ export class ColorRangeControl {
       ? ''
       : 'A color bound is outside this viewport. Choose Full or enter an exact value to edit it.';
     this.context.textContent = model.context;
+    this.mappingStatus.textContent = model.colorMapping === 'pseudolog'
+      ? `Colors: Pseudo-log (${model.pseudoLogStrength === 0.01 ? 'Strong' : model.pseudoLogStrength === 0.2 ? 'Gentle' : 'Medium'}) · Distribution: ${model.distributionScale === 'symlog' ? 'Signed log' : model.distributionScale === 'log' ? 'Log' : 'Linear'}`
+      : `Colors and distribution: ${model.distributionScale === 'symlog' ? 'Signed log' : model.distributionScale === 'log' ? 'Log' : 'Linear'}`;
     const below = model.histogram?.global.underflowCount ?? 0;
     const above = model.histogram?.global.overflowCount ?? 0;
     this.tailSummary.hidden = model.histogram?.domain.kind !== 'focused' || (below === 0 && above === 0);
@@ -159,7 +166,8 @@ export class ColorRangeControl {
     this.bar.dataset.colormap = model.colormap;
     this.bar.style.setProperty(
       '--color-range-gradient',
-      scalarColorGradient(model.colormap, model.effectiveRange, model.axisScale, model.divergingCenter),
+      scalarColorGradient(model.colormap, model.effectiveRange, model.axisScale, model.divergingCenter,
+        9, '90deg', model.colorMapping, model.pseudoLogStrength),
     );
     this.unit.textContent = model.unit ?? '';
   }

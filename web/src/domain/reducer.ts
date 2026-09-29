@@ -142,6 +142,10 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, range: action.range } } };
     case 'color/scale':
       return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, scale: action.scale } } };
+    case 'color/mapping':
+      return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, colorMapping: action.mode } } };
+    case 'color/pseudolog-strength':
+      return { ...state, view: { ...state.view, coloring: { ...state.view.coloring, pseudoLogStrength: action.strength } } };
     case 'distribution/domain':
       return { ...state, view: { ...state.view, distribution: { ...state.view.distribution, domain: action.domain } } };
     case 'distribution/hemisphere':

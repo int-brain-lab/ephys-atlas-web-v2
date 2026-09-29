@@ -16,6 +16,8 @@ export type ParcellationId = 'allen' | 'beryl' | 'cosmos';
 export type RepresentationKind = 'regional' | 'volume';
 export type ColorScale = 'linear' | 'log' | 'symlog';
 export type ColorScaleSelection = 'auto' | ColorScale;
+export type ColorMappingMode = 'match' | 'pseudolog';
+export type PseudoLogStrength = 0.01 | 0.05 | 0.2;
 export type DistributionDomain = 'full' | 'focused';
 export type DistributionDomainSelection = 'auto' | DistributionDomain;
 export type VolumeRegionHemisphere = 'both' | 'left' | 'right';
@@ -89,6 +91,8 @@ export interface ColoringState {
   colormap: ColormapSelection;
   range: ColorRange;
   scale: ColorScaleSelection;
+  colorMapping: ColorMappingMode;
+  pseudoLogStrength: PseudoLogStrength;
 }
 
 export interface DistributionState {

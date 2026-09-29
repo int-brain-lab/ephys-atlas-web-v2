@@ -14,6 +14,7 @@ import type { AppStore } from '../domain/store.js';
 import type { DatasetCatalog } from '../data/contracts.js';
 import type {
   ColorRange,
+  PseudoLogStrength,
   ColorStatisticId,
   DatasetId,
   ParcellationId,
@@ -218,6 +219,9 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
       scale: params.get('scale') === 'log' || params.get('scale') === 'linear' || params.get('scale') === 'symlog'
         ? params.get('scale') as 'linear' | 'log' | 'symlog'
         : 'auto',
+      colorMapping: params.get('cmapscale') === 'pseudolog' ? 'pseudolog' : 'match',
+      pseudoLogStrength: ([0.01, 0.05, 0.2] as const).includes(Number(params.get('cstrength')) as PseudoLogStrength)
+        ? Number(params.get('cstrength')) as PseudoLogStrength : defaults.coloring.pseudoLogStrength,
     },
     distribution: {
       domain: params.get('dist') === 'full' || params.get('dist') === 'focused'
@@ -267,6 +271,10 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   if (view.coloring.colormap !== 'auto') params.set('cmap', view.coloring.colormap);
   if (view.coloring.range.mode === 'fixed') params.set('range', `${view.coloring.range.min},${view.coloring.range.max}`);
   if (view.coloring.scale !== 'auto') params.set('scale', view.coloring.scale);
+  if (view.coloring.colorMapping !== 'match') params.set('cmapscale', view.coloring.colorMapping);
+  if (view.coloring.pseudoLogStrength !== defaults.coloring.pseudoLogStrength) {
+    params.set('cstrength', String(view.coloring.pseudoLogStrength));
+  }
   if (view.distribution.domain !== 'auto') params.set('dist', view.distribution.domain);
   if (view.distribution.hemisphere !== 'both') params.set('hemi', view.distribution.hemisphere);
 

@@ -462,8 +462,17 @@
 }
 
 .frame-colorbar__bar {
+  position: relative;
   width: 0.75rem;
   height: min(16rem, 40vh);
   border: 1px solid var(--color-border);
   border-radius: 2px;
+}
+
+.frame-colorbar__middle {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + .35rem);
+  transform: translateY(-50%);
+  white-space: nowrap;
 }

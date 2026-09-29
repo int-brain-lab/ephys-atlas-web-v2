@@ -1,9 +1,26 @@
-import type { ColoringState, EffectiveColoringState } from '../domain/types.js';
+import type { ColoringState, ColorMappingMode, EffectiveColoringState, PseudoLogStrength } from '../domain/types.js';
 import type { FeaturePayload, RegionalFeaturePayload, RegionMetadata, RepresentationDisplay } from '../data/contracts.js';
 import { clampScalePosition, scaleDenormalize, scaleDomainIsValid, scaleNormalize, type ScaleSpec } from '../domain/scale-spec.js';
 import { colormapDefinition, paletteCssColor } from './colormap-palettes.js';
 
 type ScalarRange = readonly [number, number];
+const DEFAULT_PSEUDOLOG_STRENGTH: PseudoLogStrength = 0.05;
+
+function colorValueNormalize(
+  value: number,
+  range: ScalarRange,
+  scale: ScaleSpec,
+  mapping: ColorMappingMode,
+  strength: PseudoLogStrength,
+  fullRangeWidth: number,
+): number | null {
+  if (mapping === 'match') return scaleNormalize(value, range, scale);
+  const transition = fullRangeWidth * strength;
+  if (!(Number.isFinite(value) && Number.isFinite(transition) && transition > 0)) return null;
+  const lower = Math.asinh(range[0] / transition);
+  const upper = Math.asinh(range[1] / transition);
+  return upper > lower ? (Math.asinh(value / transition) - lower) / (upper - lower) : null;
+}
 
 /**
  * Normalize scalar values for the selected palette. A declared diverging center
@@ -16,27 +33,58 @@ export function scalarColorNormalize(
   scale: ScaleSpec,
   colormap: string,
   divergingCenter?: number,
+  mapping: ColorMappingMode = 'match',
+  strength: PseudoLogStrength = DEFAULT_PSEUDOLOG_STRENGTH,
 ): number | null {
-  if (!scaleDomainIsValid(range, scale)) return null;
-  if (colormapDefinition(colormap)?.kind !== 'diverging') return scaleNormalize(value, range, scale);
+  if (!scaleDomainIsValid(range, mapping === 'match' ? scale : { kind: 'linear' })) return null;
+  const normalize = (domain: ScalarRange): number | null => colorValueNormalize(
+    value, domain, scale, mapping, strength, range[1] - range[0],
+  );
+  if (colormapDefinition(colormap)?.kind !== 'diverging') return normalize(range);
   if (typeof divergingCenter !== 'number' || !Number.isFinite(divergingCenter)) {
-    return scaleNormalize(value, range, scale);
+    return normalize(range);
   }
   const center = divergingCenter;
   if (range[1] <= center) {
-    const normalized = scaleNormalize(value, range, scale);
+    const normalized = normalize(range);
     return normalized === null ? null : clampScalePosition(normalized) / 2;
   }
   if (range[0] >= center) {
-    const normalized = scaleNormalize(value, range, scale);
+    const normalized = normalize(range);
     return normalized === null ? null : .5 + clampScalePosition(normalized) / 2;
   }
   if (value <= center) {
-    const normalized = scaleNormalize(value, [range[0], center], scale);
+    const normalized = normalize([range[0], center]);
     return normalized === null ? null : clampScalePosition(normalized) / 2;
   }
-  const normalized = scaleNormalize(value, [center, range[1]], scale);
+  const normalized = normalize([center, range[1]]);
   return normalized === null ? null : .5 + clampScalePosition(normalized) / 2;
+}
+
+/** Invert the monotone color normalization to label a colorbar in raw units. */
+export function scalarColorValueAtNormalized(
+  position: number,
+  range: ScalarRange,
+  scale: ScaleSpec,
+  colormap: string,
+  divergingCenter?: number,
+  mapping: ColorMappingMode = 'match',
+  strength: PseudoLogStrength = DEFAULT_PSEUDOLOG_STRENGTH,
+): number | null {
+  const normalize = (value: number) => scalarColorNormalize(value, range, scale, colormap, divergingCenter, mapping, strength);
+  const first = normalize(range[0]);
+  const last = normalize(range[1]);
+  if (first === null || last === null) return null;
+  if (position <= first) return range[0];
+  if (position >= last) return range[1];
+  let low = range[0];
+  let high = range[1];
+  for (let index = 0; index < 48; index += 1) {
+    const middle = low + (high - low) / 2;
+    if ((normalize(middle) ?? first) < position) low = middle;
+    else high = middle;
+  }
+  return low + (high - low) / 2;
 }
 
 /** Build the legend gradient from the exact same normalization as map pixels. */
@@ -47,18 +95,49 @@ export function scalarColorGradient(
   divergingCenter?: number,
   stops = 9,
   direction = '90deg',
+  mapping: ColorMappingMode = 'match',
+  strength: PseudoLogStrength = DEFAULT_PSEUDOLOG_STRENGTH,
 ): string {
-  const count = Math.max(2, Math.floor(stops));
+  const count = Math.max(mapping === 'pseudolog' ? 129 : 2, Math.floor(stops));
+  const firstColor = scalarColorNormalize(range[0], range, scale, colormap, divergingCenter, mapping, strength);
+  const lastColor = scalarColorNormalize(range[1], range, scale, colormap, divergingCenter, mapping, strength);
   const positions = Array.from({ length: count }, (_, index) => index / (count - 1));
   if (colormapDefinition(colormap)?.kind === 'diverging'
     && typeof divergingCenter === 'number' && Number.isFinite(divergingCenter)) {
     const centerPosition = scaleNormalize(divergingCenter, range, scale);
     if (centerPosition !== null && centerPosition > 0 && centerPosition < 1) positions.push(centerPosition);
   }
+  if (mapping === 'pseudolog' && firstColor !== null && lastColor !== null) {
+    for (let index = 0; index < count; index += 1) {
+      const target = firstColor + (lastColor - firstColor) * index / (count - 1);
+      const value = scalarColorValueAtNormalized(target, range, scale, colormap, divergingCenter, mapping, strength);
+      const axisPosition = value === null ? null : scaleNormalize(value, range, scale);
+      if (axisPosition !== null) positions.push(clampScalePosition(axisPosition));
+    }
+  }
   const colors = [...new Set(positions)].sort((left, right) => left - right).map((position) => {
     const value = scaleDenormalize(position, range, scale);
-    const normalized = value === null ? null : scalarColorNormalize(value, range, scale, colormap, divergingCenter);
+    const normalized = value === null ? null : scalarColorNormalize(value, range, scale, colormap, divergingCenter, mapping, strength);
     return `${paletteCssColor(colormap, normalized ?? 0)} ${position * 100}%`;
+  });
+  return `linear-gradient(${direction}, ${colors.join(', ')})`;
+}
+
+/** Standalone colorbar: equal color steps, with raw-value labels supplied separately. */
+export function scalarPaletteGradient(
+  colormap: string,
+  range: ScalarRange,
+  scale: ScaleSpec,
+  divergingCenter?: number,
+  mapping: ColorMappingMode = 'match',
+  strength: PseudoLogStrength = DEFAULT_PSEUDOLOG_STRENGTH,
+  direction = '0deg',
+): string {
+  const first = scalarColorNormalize(range[0], range, scale, colormap, divergingCenter, mapping, strength) ?? 0;
+  const last = scalarColorNormalize(range[1], range, scale, colormap, divergingCenter, mapping, strength) ?? 1;
+  const colors = Array.from({ length: 65 }, (_, index) => {
+    const fraction = index / 64;
+    return `${paletteCssColor(colormap, first + (last - first) * fraction)} ${fraction * 100}%`;
   });
   return `linear-gradient(${direction}, ${colors.join(', ')})`;
 }
@@ -113,6 +192,7 @@ export function regionalColorMap(feature: RegionalFeaturePayload, coloring: Effe
     if (!Number.isInteger(regionId) || value === undefined || !Number.isFinite(value)) continue;
     const normalized = scalarColorNormalize(
       value, [min, max], coloring.scale, coloring.colormap, coloring.divergingCenter,
+      coloring.colorMapping, coloring.pseudoLogStrength,
     );
     if (normalized === null) continue;
     colors.set(regionId, paletteCssColor(coloring.colormap, normalized));

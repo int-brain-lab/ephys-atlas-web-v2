@@ -6,6 +6,8 @@ import type {
   ColorMode,
   ColorRange,
   ColorScaleSelection,
+  ColorMappingMode,
+  PseudoLogStrength,
   DistributionDomainSelection,
   DatasetId,
   DatasetRef,
@@ -80,6 +82,8 @@ export interface AppShellCallbacks {
   setColormap(colormap: ColormapSelection): void;
   setColorRange(range: ColorRange): void;
   setColorScale(scale: ColorScaleSelection): void;
+  setColorMapping(mode: ColorMappingMode): void;
+  setPseudoLogStrength(strength: PseudoLogStrength): void;
   setDistributionDomain(domain: DistributionDomainSelection): void;
   setVolumeOpacity(opacity: number): void;
   setAnatomyOutlines(visible: boolean): void;
@@ -294,6 +298,9 @@ export class AppShell {
   private colormapSelect!: HTMLSelectElement;
   private colormapNote!: HTMLParagraphElement;
   private scaleSelect!: HTMLSelectElement;
+  private colorMappingSelect!: HTMLSelectElement;
+  private pseudoStrengthSelect!: HTMLSelectElement;
+  private pseudoStrengthRow!: HTMLLabelElement;
   private distributionDomainSelect!: HTMLSelectElement;
   private rangeModeSelect!: HTMLSelectElement;
   private colorRangeControl!: ColorRangeControl;
@@ -1764,10 +1771,21 @@ export class AppShell {
     this.colormapNote = element('p', 'settings-control__note');
     this.colormapNote.textContent = 'No scientific center is declared. The palette midpoint represents the middle of the selected color range.';
     this.colormapNote.hidden = true;
-    const scale = this.settingsSelect('Value scale', [['auto', 'Auto (Linear)'], ['linear', 'Linear'], ['log', 'Log'], ['symlog', 'Signed log']]);
+    const mapping = this.settingsSelect('Color mapping', [['match', 'Match axis'], ['pseudolog', 'Pseudo-log colors']]);
+    this.colorMappingSelect = mapping.select;
+    this.colorMappingSelect.setAttribute('aria-label', 'Color mapping');
+    this.colorMappingSelect.addEventListener('change', () => this.callbacks.setColorMapping(this.colorMappingSelect.value as ColorMappingMode));
+    const strength = this.settingsSelect('Near-zero detail', [['0.2', 'Gentle'], ['0.05', 'Medium'], ['0.01', 'Strong']]);
+    this.pseudoStrengthSelect = strength.select;
+    this.pseudoStrengthSelect.setAttribute('aria-label', 'Pseudo-log strength');
+    this.pseudoStrengthSelect.title = 'Smaller transition widths reveal more variation near zero. The width is a fraction of the active color range.';
+    this.pseudoStrengthSelect.addEventListener('change', () => this.callbacks.setPseudoLogStrength(Number(this.pseudoStrengthSelect.value) as PseudoLogStrength));
+    this.pseudoStrengthRow = strength.row;
+    this.pseudoStrengthRow.hidden = true;
+    const scale = this.settingsSelect('Distribution axis', [['auto', 'Auto (Linear)'], ['linear', 'Linear'], ['log', 'Log'], ['symlog', 'Signed log']]);
     this.scaleSelect = scale.select;
-    this.scaleSelect.setAttribute('aria-label', 'Value scale');
-    this.scaleSelect.title = 'Controls color normalization, distribution spacing, and range-handle geometry.';
+    this.scaleSelect.setAttribute('aria-label', 'Distribution axis');
+    this.scaleSelect.title = 'Controls exact histogram binning and range-handle positions. Colors also follow it when Color mapping is set to Match.';
     this.scaleSelect.addEventListener('change', () => this.callbacks.setColorScale(this.scaleSelect.value as ColorScaleSelection));
     const distributionDomain = this.settingsSelect('Distribution domain', [['auto', 'Auto (Full)'], ['full', 'Full'], ['focused', 'Focused']]);
     this.distributionDomainSelect = distributionDomain.select;
@@ -1783,7 +1801,7 @@ export class AppShell {
 
     this.colorRangeControl = new ColorRangeControl((range) => this.callbacks.setColorRange(range));
 
-    group.append(colorMode.row, statistic.row, colormap.row, this.colormapNote, scale.row, distributionDomain.row, rangeMode.row, this.colorRangeControl.element);
+    group.append(colorMode.row, statistic.row, colormap.row, this.colormapNote, mapping.row, this.pseudoStrengthRow, scale.row, distributionDomain.row, rangeMode.row, this.colorRangeControl.element);
     return group;
   }
 
@@ -1918,6 +1936,9 @@ export class AppShell {
       ...COLORMAPS.map(({ id, label }) => ({ value: id, label })),
     ], view.coloring.colormap);
     this.colormapNote.hidden = !model.presentationColormap.uncenteredManualDiverging;
+    this.colorMappingSelect.value = view.coloring.colorMapping;
+    this.pseudoStrengthSelect.value = String(view.coloring.pseudoLogStrength);
+    this.pseudoStrengthRow.hidden = view.coloring.colorMapping !== 'pseudolog';
     const automaticScale = model.presentationScale.automaticScale;
     this.syncOptions(this.scaleSelect, [
       { value: 'auto', label: `Auto (${automaticScale === 'log' ? 'Log' : automaticScale === 'symlog' ? 'Signed log' : 'Linear'})` },
@@ -1951,6 +1972,8 @@ export class AppShell {
     this.statisticSelect.disabled = !featureColors || statistics.length < 2;
     this.colormapSelect.disabled = !featureColors;
     this.scaleSelect.disabled = !featureColors;
+    this.colorMappingSelect.disabled = !featureColors;
+    this.pseudoStrengthSelect.disabled = !featureColors;
     this.distributionDomainSelect.disabled = feature === null;
     this.rangeModeSelect.disabled = !featureColors;
 
@@ -1982,6 +2005,9 @@ export class AppShell {
         context,
         enabled: featureColors,
         axisScale: model.presentationScale.effectiveScaleSpec,
+        colorMapping: view.coloring.colorMapping,
+        pseudoLogStrength: view.coloring.pseudoLogStrength,
+        distributionScale: model.presentationScale.effectiveScale,
         histogram: model.presentationScale.histogram,
       };
       this.colorRangeControl.render(legend);

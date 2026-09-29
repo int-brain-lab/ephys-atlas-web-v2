@@ -60,6 +60,10 @@
   font-size: .68rem;
 }
 
+.settings-control[hidden] {
+  display: none;
+}
+
 .settings-control__select {
   width: 100%;
   min-height: 1.8rem;
@@ -121,6 +125,11 @@
 
 .color-legend[hidden] {
   display: none;
+}
+
+.color-legend__mapping-status {
+  color: var(--color-text-secondary);
+  font-size: .65rem;
 }
 
 .color-legend__header {

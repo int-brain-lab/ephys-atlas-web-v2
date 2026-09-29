@@ -268,7 +268,7 @@ export class AlignmentReview {
   private feature(): VolumeFeaturePayload | null { return this.layer === 'image' ? this.imageFeature : this.expressionFeature; }
   private present(): void {
     const feature = this.feature(); if (!this.factory || !feature) return;
-    const coloring = { mode: 'feature', statistic: 'mean', colormap: this.layer === 'image' ? 'cividis' : 'viridis', range: { mode: 'auto' }, scale: { kind: 'linear' } } as const;
+    const coloring = { mode: 'feature', statistic: 'mean', colormap: this.layer === 'image' ? 'cividis' : 'viridis', range: { mode: 'auto' }, scale: { kind: 'linear' }, colorMapping: 'match', pseudoLogStrength: 0.05 } as const;
     this.factory.updatePresentation({ feature, coloring, volumeOpacity: this.opacity, anatomyColors: false, anatomyOutlines: this.outlines && (!this.blink || this.phase),
       regional: resolveRegionalPresentation({ mapping: 'allen', feature, anatomyRegions: this.regions, coloring, selectedRegionIds: [], hoveredRegionId: null }) });
     for (const panel of this.panels.values()) panel.overlay.style.display = this.coarse ? '' : 'none';

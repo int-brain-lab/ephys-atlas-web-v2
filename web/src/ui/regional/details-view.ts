@@ -206,7 +206,7 @@ export function renderDistribution(
     : 'valid voxels only';
   const scaleControl = html('div', 'distribution-chart__scale-control');
   scaleControl.setAttribute('role', 'group');
-  scaleControl.setAttribute('aria-label', 'Value scale');
+  scaleControl.setAttribute('aria-label', 'Distribution axis');
   for (const [scale, text] of [['linear', 'Linear'], ['log', 'Log'], ['symlog', 'Signed log']] as const) {
     const button = html('button', 'distribution-chart__scale-button');
     button.type = 'button';

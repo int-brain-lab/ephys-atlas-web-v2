@@ -4,6 +4,8 @@ import type {
   ColormapSelection,
   ColorStatisticId,
   ColorScaleSelection,
+  ColorMappingMode,
+  PseudoLogStrength,
   DistributionDomainSelection,
   VolumeRegionHemisphere,
   CursorState,
@@ -61,6 +63,8 @@ type ViewActionPayload =
   | { type: 'color/colormap'; colormap: ColormapSelection }
   | { type: 'color/range'; range: ColorRange }
   | { type: 'color/scale'; scale: ColorScaleSelection }
+  | { type: 'color/mapping'; mode: ColorMappingMode }
+  | { type: 'color/pseudolog-strength'; strength: PseudoLogStrength }
   | { type: 'distribution/domain'; domain: DistributionDomainSelection }
   | { type: 'distribution/hemisphere'; hemisphere: VolumeRegionHemisphere }
   | { type: 'presentation/reconcile'; scale: 'linear'; domain: 'full' };

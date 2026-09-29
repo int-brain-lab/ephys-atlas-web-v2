@@ -144,6 +144,8 @@ const DEFAULT_PRESENTATION: ProjectionPresentation = {
     colormap: 'viridis',
     range: { mode: 'auto' },
     scale: { kind: 'linear' },
+    colorMapping: 'match',
+    pseudoLogStrength: 0.05,
   },
   volumeOpacity: 1,
   anatomyOutlines: true,
@@ -178,6 +180,7 @@ function rgbaForSlice(
     if (!volumeValueIsVisible(feature, value, slice.validity?.[index])) continue;
     const normalized = scalarColorNormalize(
       value, [min, max], coloring.scale, coloring.colormap, coloring.divergingCenter,
+      coloring.colorMapping, coloring.pseudoLogStrength,
     );
     if (normalized === null) continue;
     const [r, g, b] = paletteRgb(coloring.colormap, normalized);

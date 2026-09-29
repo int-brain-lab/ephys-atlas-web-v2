@@ -109,6 +109,8 @@ export class AtlasApp {
       setColormap: (colormap) => this.store.dispatch({ type: 'color/colormap', colormap }),
       setColorRange: (range) => this.store.dispatch({ type: 'color/range', range }),
       setColorScale: (scale) => this.store.dispatch({ type: 'color/scale', scale }),
+      setColorMapping: (mode) => this.store.dispatch({ type: 'color/mapping', mode }),
+      setPseudoLogStrength: (strength) => this.store.dispatch({ type: 'color/pseudolog-strength', strength }),
       setDistributionDomain: (domain) => this.store.dispatch({ type: 'distribution/domain', domain }),
       setVolumeOpacity: (opacity) => this.store.dispatch({ type: 'layers/volume-opacity', opacity }),
       setAnatomyOutlines: (visible) => this.store.dispatch({ type: 'layers/anatomy-outlines', visible }),
@@ -278,6 +280,8 @@ export class AtlasApp {
         ? { mode: 'fixed' as const, min: effectiveRange[0], max: effectiveRange[1] }
         : state.view.coloring.range,
       scale: presentationScale.effectiveScaleSpec,
+      colorMapping: state.view.coloring.colorMapping,
+      pseudoLogStrength: state.view.coloring.pseudoLogStrength,
       ...(presentationColormap.divergingCenter !== undefined
         ? { divergingCenter: presentationColormap.divergingCenter }
         : {}),
@@ -353,6 +357,8 @@ export class AtlasApp {
       || previous.coloring.divergingCenter !== next.coloring.divergingCenter
       || !sameRange
       || JSON.stringify(previous.coloring.scale) !== JSON.stringify(next.coloring.scale)
+      || previous.coloring.colorMapping !== next.coloring.colorMapping
+      || previous.coloring.pseudoLogStrength !== next.coloring.pseudoLogStrength
       || previous.volumeOpacity !== next.volumeOpacity
       || previous.anatomyOutlines !== next.anatomyOutlines
       || previous.anatomyColors !== next.anatomyColors;

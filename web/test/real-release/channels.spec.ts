@@ -107,7 +107,7 @@ test('loads real float64 alpha values and all launch parcellations', async ({ pa
 test('uses the approved peak_val.raw focused distribution and preserves explicit alternatives', async ({ page }) => {
   await page.goto('/app/?v=4&feature=peak_val.raw');
 
-  const scale = page.locator('select[aria-label="Value scale"]');
+  const scale = page.locator('select[aria-label="Distribution axis"]');
   const domain = page.locator('select[aria-label="Distribution domain"]');
   const chart = page.locator('.distribution-chart');
   await expect(scale).toHaveValue('auto');
@@ -152,7 +152,7 @@ test('uses the approved peak_val.raw focused distribution and preserves explicit
 
 test('exposes the complete Q14 channel choices without adding controls to discrete labels', async ({ page }) => {
   await page.goto('/app/?v=4&feature=alpha_mean.raw');
-  const scale = page.locator('select[aria-label="Value scale"]');
+  const scale = page.locator('select[aria-label="Distribution axis"]');
   const domain = page.locator('select[aria-label="Distribution domain"]');
   const chart = page.locator('.distribution-chart');
   await expect(scale.locator('option:checked')).toHaveText('Auto (Linear)');

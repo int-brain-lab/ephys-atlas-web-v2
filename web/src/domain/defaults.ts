@@ -37,6 +37,8 @@ export const DEFAULT_VIEW_STATE: ViewState = {
     colormap: 'auto',
     range: { mode: 'auto' },
     scale: 'auto',
+    colorMapping: 'match',
+    pseudoLogStrength: 0.05,
   },
   distribution: {
     domain: 'auto',

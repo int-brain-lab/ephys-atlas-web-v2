@@ -44,7 +44,7 @@ test('encoding and distribution controls', async ({ page }) => {
   test.skip(!canonicalPixelPlatform, 'canonical documentation pixels are generated and checked on Linux');
   const settings = page.getByRole('complementary', { name: 'Visualization settings' });
   await expect(settings).toBeVisible();
-  await expect(settings.getByLabel('Value scale')).toHaveValue('symlog');
+  await expect(settings.getByLabel('Distribution axis')).toHaveValue('symlog');
   await expect(settings.getByLabel('Distribution domain')).toHaveValue('focused');
   await expect(page.getByRole('region', { name: 'Compare selected regions' })).toContainText('2');
   await expect(page.getByRole('main')).toHaveScreenshot('encoding-and-distribution-controls.png');

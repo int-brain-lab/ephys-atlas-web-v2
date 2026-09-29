@@ -4,7 +4,7 @@ test('scale and analytical domain are release-aware, synchronized, and canonical
   await page.setViewportSize({ width: 1600, height: 900 });
   await page.goto('/app/');
 
-  const scale = page.locator('select[aria-label="Value scale"]');
+  const scale = page.locator('select[aria-label="Distribution axis"]');
   const domain = page.locator('select[aria-label="Distribution domain"]');
   const chart = page.locator('.distribution-chart');
   await expect(scale).toHaveValue('auto');
@@ -25,10 +25,57 @@ test('scale and analytical domain are release-aware, synchronized, and canonical
   await expect.poll(() => new URL(page.url()).searchParams.get('dist')).toBe('full');
 
   await page.goto('/app/?v=4&histScale=log&scale=log&dist=unknown');
-  await expect(page.locator('select[aria-label="Value scale"]')).toHaveValue('linear');
+  await expect(page.locator('select[aria-label="Distribution axis"]')).toHaveValue('linear');
   await expect.poll(() => new URL(page.url()).searchParams.get('scale')).toBe('linear');
   await expect.poll(() => new URL(page.url()).searchParams.get('histScale')).toBeNull();
   await expect.poll(() => new URL(page.url()).searchParams.get('dist')).toBe('full');
+});
+
+test('pseudo-log changes colors while both exact histograms keep their distribution axis and counts', async ({ page }) => {
+  await page.goto('/app/');
+  await page.getByRole('button', { name: 'Settings' }).click();
+  const axis = page.locator('select[aria-label="Distribution axis"]');
+  await axis.selectOption('linear');
+  const chart = page.locator('.distribution-chart');
+  const compactBins = page.locator('.color-range__histogram-bin');
+  const region = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
+  const originalChart = await chart.locator('.distribution-chart__global').getAttribute('d');
+  const originalCounts = await compactBins.evaluateAll((bins) => bins.map((bin) => [
+    bin.style.getPropertyValue('--histogram-height'),
+    bin.style.getPropertyValue('--histogram-left'),
+    bin.style.getPropertyValue('--histogram-right'),
+  ]));
+  const originalFill = await region.evaluate((element) => (element as SVGPathElement).style.fill);
+  const gradient = page.locator('.color-range__selection');
+  const originalGradient = await gradient.evaluate((element) => getComputedStyle(element).backgroundImage);
+
+  await page.getByLabel('Color mapping').selectOption('pseudolog');
+  await expect(page.getByLabel('Pseudo-log strength')).toBeVisible();
+  await expect(page.locator('.color-legend__mapping-status')).toHaveText('Colors: Pseudo-log (Medium) · Distribution: Linear');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cmapscale')).toBe('pseudolog');
+  await expect.poll(() => gradient.evaluate((element) => getComputedStyle(element).backgroundImage)).not.toBe(originalGradient);
+  await expect.poll(() => region.evaluate((element) => (element as SVGPathElement).style.fill)).not.toBe(originalFill);
+  await expect(chart).toHaveAttribute('data-axis-scale', 'linear');
+  expect(await chart.locator('.distribution-chart__global').getAttribute('d')).toBe(originalChart);
+  expect(await compactBins.evaluateAll((bins) => bins.map((bin) => [
+    bin.style.getPropertyValue('--histogram-height'),
+    bin.style.getPropertyValue('--histogram-left'),
+    bin.style.getPropertyValue('--histogram-right'),
+  ]))).toEqual(originalCounts);
+
+  const mediumFill = await region.evaluate((element) => (element as SVGPathElement).style.fill);
+  await page.getByLabel('Pseudo-log strength').selectOption('0.01');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cstrength')).toBe('0.01');
+  await expect.poll(() => region.evaluate((element) => (element as SVGPathElement).style.fill)).not.toBe(mediumFill);
+  const strongFill = await region.evaluate((element) => (element as SVGPathElement).style.fill);
+  await axis.selectOption('symlog');
+  await expect(chart).toHaveAttribute('data-axis-scale', 'symlog');
+  await expect.poll(() => region.evaluate((element) => (element as SVGPathElement).style.fill)).toBe(strongFill);
+
+  await page.reload();
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.getByLabel('Color mapping')).toHaveValue('pseudolog');
+  await expect(page.getByLabel('Pseudo-log strength')).toHaveValue('0.01');
 });
 
 test('Focused uses whole-population probabilities and gives the compact range the same viewport', async ({ page }) => {

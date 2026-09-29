@@ -37,6 +37,8 @@ test('URL state round-trips common shareable state', () => {
       colormap: 'magma',
       range: { mode: 'fixed', min: -2, max: 4 },
       scale: 'linear',
+      colorMapping: 'pseudolog',
+      pseudoLogStrength: 0.01,
     },
   };
   const query = serializeViewState(view);
@@ -77,6 +79,19 @@ test('color scale defaults are automatic while explicit overrides round-trip', (
     assert.equal(parsed.coloring.scale, scale);
     assert.match(serializeViewState(parsed), new RegExp(`scale=${scale}`));
   }
+});
+
+test('pseudo-log color mapping and strength persist independently of the release distribution axis', () => {
+  assert.equal(parseViewState('?v=4').coloring.colorMapping, 'match');
+  assert.equal(parseViewState('?v=4').coloring.pseudoLogStrength, 0.05);
+  const parsed = parseViewState('?v=4&scale=linear&cmapscale=pseudolog&cstrength=0.01');
+  assert.equal(parsed.coloring.scale, 'linear');
+  assert.equal(parsed.coloring.colorMapping, 'pseudolog');
+  assert.equal(parsed.coloring.pseudoLogStrength, 0.01);
+  assert.match(serializeViewState(parsed), /cmapscale=pseudolog/);
+  assert.match(serializeViewState(parsed), /cstrength=0.01/);
+  assert.equal(parseViewState('?v=4&cmapscale=unknown&cstrength=0').coloring.colorMapping, 'match');
+  assert.equal(parseViewState('?v=4&cmapscale=unknown&cstrength=0').coloring.pseudoLogStrength, 0.05);
 });
 
 test('distribution domain defaults are automatic while explicit choices round-trip', () => {
