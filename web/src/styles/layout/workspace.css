@@ -19,6 +19,13 @@
   gap: var(--space-2);
 }
 
+@media (min-width: 1100px) {
+  .context-strip {
+    /* Match Coronal's 1.15 / 3.55 share after the slice row's two gaps. */
+    grid-template-columns: calc((100% - 2 * var(--space-2)) * 0.323943662) minmax(0, 1fr);
+  }
+}
+
 .view-switcher {
   display: none;
 }
