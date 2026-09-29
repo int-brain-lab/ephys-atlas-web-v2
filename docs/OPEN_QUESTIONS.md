@@ -82,9 +82,12 @@ Blocks: deployment or user-visible enablement of unlisted sharing only.
 Status: **DECISION** for a future immutable presentation release; not a launch
 blocker.
 
-D057 fixes the infrastructure policy: feature representations may own a
-preferred palette, Auto resolves that preference, and diverging palettes
-require an explicit release-owned center. Synthetic fixtures may implement and
+D081 fixes the presentation machinery and fallback policy: Auto uses a
+representation's preferred palette, then Berlin when a finite
+release-owned `diverging_center` exists, otherwise Viridis. An explicit manual
+palette persists across features; a diverging palette without a declared
+center is displayed as an ordinary range ramp with an explicit non-scientific
+midpoint note. No center is inferred. Synthetic fixtures may implement and
 exercise this machinery.
 
 Resolution needed: audit and owner-review the exact preferred palette and,
@@ -96,8 +99,9 @@ names, sign distributions, v1 defaults, or an arithmetic range midpoint, and
 do not edit the D054 selection artifacts in place.
 
 Blocks: real release-owned palette defaults and diverging-center metadata only.
-It does not block the neutral Auto/fallback machinery, the expanded palette
-registry, or launch with the D080 Berlin fallback.
+It does not block the D081 Auto/fallback machinery or launch. Palette and
+color-mapping URL state, pseudo-log strength, and range-only Reset are
+client-side presentation behavior and do not resolve this question.
 
 ## Q17 — Multi-feature z-score normalization populations
 

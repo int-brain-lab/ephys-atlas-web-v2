@@ -80,17 +80,33 @@ For a schema-v1 regional feature, the viewer must:
 - <a id="ls02-06"></a> **`LS02-06`** — use one shared selection state for region-list and SVG interactions;
 - <a id="ls02-07"></a> **`LS02-07`** — persist selection in URL state;
 - <a id="ls02-08"></a> **`LS02-08`** — show global descriptive statistics and a distribution/histogram;
-- <a id="ls02-09"></a> **`LS02-09`** — expose available Linear, Log, and Signed-log value scales through one
-  synchronized control for coloring, distributions, and range geometry;
+- <a id="ls02-09"></a> **`LS02-09`** — expose available Linear, Log, and Signed-log distribution axes through one
+  synchronized control for histogram bins, histogram geometry, and range handles;
+  default color mapping matches that axis, while explicit Pseudo-log changes
+  colors only, including at zero;
 - <a id="ls02-10"></a> **`LS02-10`** — expose Full and Focused distribution domains independently across the global,
   comparison, and compact color-range histogram viewports, with exact
   underflow/overflow disclosure and whole-population normalization in Focused,
   without changing the selected color bounds;
 - <a id="ls02-11"></a> **`LS02-11`** — preserve explicit scale/domain choices in the URL without changing source
   observations, and obtain thresholds, focus bounds, availability, and defaults
-  only from immutable representation-specific release metadata;
+  only from immutable representation-specific release metadata; preserve explicit
+  color-mapping mode and pseudo-log strength as client-side URL state;
 - <a id="ls02-12"></a> **`LS02-12`** — compare selected-region statistics/distributions with the global population;
-- <a id="ls02-13"></a> **`LS02-13`** — clearly identify synthetic fixtures as non-scientific.
+- <a id="ls02-13"></a> **`LS02-13`** — clearly identify synthetic fixtures as non-scientific;
+
+Global, selected-region, and compact histograms retain exact release bins when
+color mapping changes. The compact gradient aligns to raw values at
+distribution-axis positions. Range Reset clears only the manual color interval
+and preserves palette and color-mapping selections; explicit Auto palette
+selection resets the palette choice.
+
+Auto palette resolution uses the representation's release preference, then
+Berlin when a finite release-owned diverging center exists, otherwise Viridis.
+Manual palette choices persist across feature changes. A manually selected
+diverging palette without a release-owned center is shown as an ordinary range
+ramp with a visible note that its midpoint is not a scientific center. The
+standalone colorbar labels raw feature units using inverse color mapping.
 
 Launch statistics are descriptive only: mean, median, min, max, count, standard deviation/quantiles where present, histograms, and visual comparisons. Inferential tests are out of scope.
 

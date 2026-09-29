@@ -132,6 +132,8 @@ These remain useful but must not displace the launch path:
 - run scientist review of the implemented multi-feature Focus/Gallery/Profile
   UX; Q17 retains real normalization populations;
 - select real-feature palette/center metadata under Q16;
+- review the locally implemented D081 scalar-presentation behavior in a dev
+  server against the available real data releases before any push or deployment;
 - pursue D055 unlisted sharing only after Q15;
 - develop the D066 [native 3-D component candidate](tasks/2026-09-02-native-3d-mesh-components/README.md).
   The [baseline/component audit](tasks/2026-09-02-native-3d-mesh-components/AUDIT.md)

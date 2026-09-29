@@ -116,6 +116,15 @@ a midpoint. Region rows use shared-domain dot tracks rather than unlabelled
 fill proportions. Q16 continues to retain every real-feature palette and
 center selection; the implementation changes only synthetic fixtures.
 
+D081 implements scalar-presentation behavior: Berlin is the Auto
+fallback only when a finite release-owned diverging center exists, otherwise
+Viridis; explicit palettes persist across features, and range Reset clears only
+the manual interval. A URL-persisted, zero-safe pseudo-log color mapping is
+independent of the release-owned distribution axis; exact histograms remain on
+that axis. The implementation is local pending owner review with real data
+before any push or deployment. Q16 continues to retain real-feature palette
+and center selections.
+
 D076 adds progressive nearby-first encoded SVG cache warming after visible
 rendering, next-pack decoded SVG prefetch in the observed direction, bounded directional active-volume prefetch, and per-view updating
 feedback that retains the previous pixels until replacement rendering completes.

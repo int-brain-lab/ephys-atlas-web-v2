@@ -58,14 +58,14 @@ only part of the body; the index states what remains effective.
 | D047 | One value scale | partially superseded | 2026-08-26 | synchronization retained; D048/D050 refine |
 | D048 | Firing-rate Log range | accepted | 2026-08-26 | exact Log choices retained by D054 |
 | D049 | Legacy Top/static MIT assets | accepted | 2026-08-27 | exact hashes only |
-| D050 | Scale vs distribution domain | partially superseded | — | D053 replaces compact-Full; D078 adds exact mapped volume-region curves |
+| D050 | Scale vs distribution domain | partially superseded | — | D053 replaces compact-Full; D078 adds exact mapped volume-region curves; D081 separates color mapping from the distribution axis while retaining exact binnings and axis synchronization |
 | D051 | Custom authoring/ZIP import | accepted | — | implementation pending |
 | D052 | `peak_val.raw` Linear/Focused | accepted | 2026-08-29 | exact choice retained by D054 |
 | D053 | Focused compact viewport | accepted | 2026-08-29 | current compact behavior |
 | D054 | Complete audited distribution selections | accepted | 2026-08-29 | closes Q14; local rebuilds authorized |
 | D055 | Unlisted expiring dataset shares | accepted | 2026-09-02 | optional sharing transport; separate from publication |
 | D056 | Project/dataset/release navigation | partially superseded | 2026-09-02 | hierarchy retained; D061 fixes edition identity, authority and context; D063 refines presentation and control labels |
-| D057 | Preferred palettes and explicit diverging centers | partially superseded | 2026-09-02 | infrastructure policy retained; D080 replaces the Viridis fallback with Berlin; Q16 retains real-feature selections |
+| D057 | Preferred palettes and explicit diverging centers | partially superseded | 2026-09-02 | release preferences and explicit centers remain; D081 defines fallback/manual palette behavior and range-only Reset; Q16 retains real-feature selections |
 | D058 | Flexible multi-feature comparison | accepted | 2026-09-02 | arbitrary feature scopes, z-score comparison, and iterative Focus/Gallery/Profile UX |
 | D059 | Shared S3 staging/production roots | partially superseded | 2026-09-02 | bucket roots and immutable-key policy retained; D072 confirms hostname after D071 |
 | D060 | Lean AWS static hosting and local publication | partially superseded | 2026-09-02 | AWS topology and local publication retained; D072 confirms hostname after D071 |
@@ -88,7 +88,8 @@ only part of the body; the index states what remains effective.
 | D077 | Select processed AGEA successor | accepted | 2026-09-17 | exact upstream processed bytes; nonzero-label validity; original release retained; D079 later authorizes publication |
 | D078 | Exact mapped volume-region distributions | accepted | 2026-09-17 | Allen/Beryl/Cosmos; mutually exclusive mappings; lateralized storage; bilateral default; source AGEA labels accepted; D079 later authorizes publication |
 | D079 | Publish D078 AGEA and W26 successors | accepted | 2026-09-17 | clean-Linux-main rebuilds; preserve existing releases; add immutable editions; deploy compatible site before catalog promotion |
-| D080 | Berlin as the neutral Auto palette | accepted | 2026-09-24 | replaces the D057 Viridis fallback; Berlin registered as a plain ramp without an implied center; release preferences and Q16 unchanged |
+| D080 | Berlin as the neutral Auto palette | partially superseded | 2026-09-24 | D081 classifies Berlin as diverging and limits its Auto fallback to representations with a finite declared center; manual Berlin remains available without one; Q16 unchanged |
+| D081 | Separate color mapping from distribution scale | accepted | 2026-09-29 | Auto precedence, manual palette persistence, range-only Reset, and URL-persisted pseudo-log color mapping; exact histograms remain on their distribution axis; supersedes conflicting D050/D057/D080 presentation rules |
 
 ## D001 — Separate v2
 
@@ -2009,3 +2010,45 @@ This is a presentation choice only. It changes no release bytes or selection
 artifacts and does not resolve Q16's per-feature palette and diverging-center
 selections.
 
+## D081 — Separate color mapping from distribution scale
+
+Resolve Auto palette selection in this order: the active representation's
+release-owned preferred palette; otherwise Berlin when it declares a finite
+release-owned `diverging_center`; otherwise Viridis. An explicit user palette
+overrides Auto and remains selected across feature changes, including when a
+diverging palette is selected for a representation without a declared center.
+In that case render the palette as an ordinary ramp across the active range and
+show a visible note that its midpoint is a display midpoint, not a scientific
+center. Never infer or persist a scientific center from the data or range.
+
+Range Reset and Range → Auto clear only the manual color interval. They preserve
+palette and color-mapping choices. Auto palette remains the explicit palette
+reset action.
+
+Keep the release-owned distribution axis (`linear`, `log`, or `symlog`) distinct
+from client-side color mapping. Color mapping defaults to Match distribution
+axis, preserving current behavior, and may be explicitly set to Pseudo-log. The
+pseudo-log mapping is smooth and zero-safe, has a user-visible strength
+parameter, and persists with its mode in URL state. It maps each raw value
+through `asinh(value / transition)`, with transition equal to 1%, 5%, or 20%
+of the active color-range width for Strong, Medium, or Gentle respectively.
+It is a presentation
+transform only: do not alter release data, scientific thresholds, source
+observations, or histogram binning. Pseudo-log requires no release/schema
+change and must not replace a release-owned Signed-log threshold.
+
+Global, selected-region, and compact histograms continue to use their exact
+release bins on the selected distribution axis. Changing color mapping does not
+rebin, warp, or otherwise change histogram counts or bin edges. In the compact range widget,
+sample the color gradient at the raw values represented by positions on the
+distribution axis so the gradient, histogram, and range handles stay aligned.
+The standalone colorbar uses the active color mapping and labels ticks in raw
+feature units, positioned through the inverse mapping. Make the active color
+mapping and distribution axis legible together in the UI.
+
+This is browser presentation state, not scientific metadata. It changes no
+immutable release bytes and does not resolve Q16's real-feature preferred
+palette or center selections. Preserve D050's exact release-owned histograms,
+population counts, and selected distribution-axis behavior; this decision
+supersedes only the assumption that the distribution axis must always control
+color mapping.
