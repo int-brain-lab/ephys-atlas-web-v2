@@ -39,7 +39,8 @@ import { COLORMAPS } from '../application/colormap-palettes.js';
 import { colormapLabel } from '../application/colormap-palettes.js';
 import type { ResolvedPresentationColormap } from '../application/presentation-colormap.js';
 import { formatRegionalCoordinate, maxRegionalSliceIndex } from '../rendering/slice-calibration.js';
-import { ColorRangeControl } from './color-range-control.js';
+import { ColorRangeControl, type ColorRangeControlModel } from './color-range-control.js';
+import { FrameColorbar } from './frame-colorbar.js';
 import { overrideNavigationRelease, resolveDatasetNavigation, selectNavigationDataset, selectNavigationProject } from '../application/dataset-navigation.js';
 import { ContextMenu, type ContextMenuOption } from './context-menu.js';
 import {
@@ -127,6 +128,7 @@ interface ViewFrameNodes {
   slider: HTMLInputElement;
   status: HTMLElement;
   maximize: HTMLButtonElement;
+  colorbar: FrameColorbar;
   tooltip: HTMLElement;
   tooltipIdentity: HTMLElement;
   tooltipLineage: HTMLElement;
@@ -1975,7 +1977,7 @@ export class AppShell {
         : usesReleaseDefault
           ? `${scope} · release default`
           : usesRobustQuantiles ? `${scope} · robust 5–95%` : `${scope} · automatic range`;
-      this.colorRangeControl.render({
+      const legend: ColorRangeControlModel = {
         feature,
         statistic: view.coloring.statistic,
         effectiveRange: range,
@@ -1989,9 +1991,12 @@ export class AppShell {
         enabled: featureColors,
         axisScale: model.presentationScale.effectiveScaleSpec,
         histogram: model.presentationScale.histogram,
-      });
+      };
+      this.colorRangeControl.render(legend);
+      for (const nodes of this.viewFrames.values()) nodes.colorbar.render(legend);
     } else {
       this.colorRangeControl.hide();
+      for (const nodes of this.viewFrames.values()) nodes.colorbar.render(null);
     }
   }
 
@@ -2406,7 +2411,8 @@ export class AppShell {
     hintKey.textContent = 'A';
     tooltipHint.append('Hold ', hintKey, ' for anatomy colours');
     tooltip.append(tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta, tooltipHint);
-    viewport.append(target, stateText, tooltip);
+    const colorbar = new FrameColorbar();
+    viewport.append(target, stateText, colorbar.element, tooltip);
 
     const footer = element('div', 'view-frame__footer');
     const slider = element('input', 'view-frame__slider');
@@ -2427,7 +2433,7 @@ export class AppShell {
 
     frame.append(header, viewport, footer);
     this.viewFrames.set(axis, {
-      frame, target, viewport: projectionViewport, coordinate, slider, status, maximize,
+      frame, target, viewport: projectionViewport, coordinate, slider, status, maximize, colorbar,
       tooltip, tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta,
       renderKey: '', geometryKey: '', renderToken: 0, sliceProgressTimer: null,
     });
