@@ -292,6 +292,7 @@ export class AppShell {
   private colorModeSelect!: HTMLSelectElement;
   private statisticSelect!: HTMLSelectElement;
   private colormapSelect!: HTMLSelectElement;
+  private colormapNote!: HTMLParagraphElement;
   private scaleSelect!: HTMLSelectElement;
   private distributionDomainSelect!: HTMLSelectElement;
   private rangeModeSelect!: HTMLSelectElement;
@@ -1760,6 +1761,9 @@ export class AppShell {
     this.colormapSelect = colormap.select;
     this.colormapSelect.setAttribute('aria-label', 'Feature colormap');
     this.colormapSelect.addEventListener('change', () => this.callbacks.setColormap(this.colormapSelect.value as ColormapSelection));
+    this.colormapNote = element('p', 'settings-control__note');
+    this.colormapNote.textContent = 'No scientific center is declared. The palette midpoint represents the middle of the selected color range.';
+    this.colormapNote.hidden = true;
     const scale = this.settingsSelect('Value scale', [['auto', 'Auto (Linear)'], ['linear', 'Linear'], ['log', 'Log'], ['symlog', 'Signed log']]);
     this.scaleSelect = scale.select;
     this.scaleSelect.setAttribute('aria-label', 'Value scale');
@@ -1777,12 +1781,9 @@ export class AppShell {
     this.rangeModeSelect.setAttribute('aria-label', 'Color range mode');
     this.rangeModeSelect.addEventListener('change', () => this.onRangeModeChanged());
 
-    this.colorRangeControl = new ColorRangeControl(
-      (range) => this.callbacks.setColorRange(range),
-      () => this.callbacks.setColormap('auto'),
-    );
+    this.colorRangeControl = new ColorRangeControl((range) => this.callbacks.setColorRange(range));
 
-    group.append(colorMode.row, statistic.row, colormap.row, scale.row, distributionDomain.row, rangeMode.row, this.colorRangeControl.element);
+    group.append(colorMode.row, statistic.row, colormap.row, this.colormapNote, scale.row, distributionDomain.row, rangeMode.row, this.colorRangeControl.element);
     return group;
   }
 
@@ -1914,18 +1915,9 @@ export class AppShell {
     const automaticColormap = model.presentationColormap.automaticColormap;
     this.syncOptions(this.colormapSelect, [
       { value: 'auto', label: `Auto (${colormapLabel(automaticColormap)})` },
-      ...COLORMAPS.map(({ id, label }) => {
-        const unavailable = !model.presentationColormap.availableColormaps.includes(id);
-        return {
-          value: id,
-          label,
-          ...(unavailable ? {
-            disabled: true,
-            title: 'Requires a release-declared diverging center.',
-          } : {}),
-        };
-      }),
+      ...COLORMAPS.map(({ id, label }) => ({ value: id, label })),
     ], view.coloring.colormap);
+    this.colormapNote.hidden = !model.presentationColormap.uncenteredManualDiverging;
     const automaticScale = model.presentationScale.automaticScale;
     this.syncOptions(this.scaleSelect, [
       { value: 'auto', label: `Auto (${automaticScale === 'log' ? 'Log' : automaticScale === 'symlog' ? 'Signed log' : 'Linear'})` },

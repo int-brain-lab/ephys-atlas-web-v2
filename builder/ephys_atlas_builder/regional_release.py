@@ -151,7 +151,7 @@ def validate_scalar_display(display: Mapping, values: np.ndarray) -> dict:
         ):
             raise ValueError("display diverging center must be finite")
         result["diverging_center"] = float(diverging_center)
-    if colormap == "coolwarm" and diverging_center is None:
+    if colormap in {"coolwarm", "berlin"} and diverging_center is None:
         raise ValueError("preferred diverging palette requires a center")
     value_range = display.get("range")
     if value_range is not None:

@@ -6,9 +6,9 @@ import { colormapDefinition, paletteCssColor } from './colormap-palettes.js';
 type ScalarRange = readonly [number, number];
 
 /**
- * Normalize scalar values for the selected palette. Diverging palettes only
- * receive a release-declared center; their two sides are independently mapped
- * into the matching palette halves.
+ * Normalize scalar values for the selected palette. A declared diverging center
+ * owns the two palette halves; manual diverging choices without one use the
+ * ordinary full-range ramp and do not claim a scientific midpoint.
  */
 export function scalarColorNormalize(
   value: number,
@@ -19,7 +19,9 @@ export function scalarColorNormalize(
 ): number | null {
   if (!scaleDomainIsValid(range, scale)) return null;
   if (colormapDefinition(colormap)?.kind !== 'diverging') return scaleNormalize(value, range, scale);
-  if (typeof divergingCenter !== 'number' || !Number.isFinite(divergingCenter)) return null;
+  if (typeof divergingCenter !== 'number' || !Number.isFinite(divergingCenter)) {
+    return scaleNormalize(value, range, scale);
+  }
   const center = divergingCenter;
   if (range[1] <= center) {
     const normalized = scaleNormalize(value, range, scale);

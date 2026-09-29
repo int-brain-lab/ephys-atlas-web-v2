@@ -268,19 +268,6 @@ export class AtlasApp {
         this.store.dispatch({ type: 'presentation/reconcile', scale: 'linear', domain: 'full', history: 'replace' });
       });
     }
-    if (
-      state.view.coloring.colormap !== 'auto'
-      && presentationColormap.effectiveColormap !== state.view.coloring.colormap
-      && data.feature !== null
-      && data.feature.featureId === state.view.featureId
-      && !this.presentationReconciliationPending
-    ) {
-      this.presentationReconciliationPending = true;
-      queueMicrotask(() => {
-        this.presentationReconciliationPending = false;
-        this.store.dispatch({ type: 'color/colormap', colormap: 'auto' });
-      });
-    }
     const effectiveRange = data.feature
       ? effectiveScalarColorRange(data.feature, state.view.coloring, representationDisplay)
       : null;

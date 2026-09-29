@@ -71,10 +71,10 @@ test('regional colors are keyed by numeric atlas ids', () => {
 
 test('shared colormap registry exposes the classified official lookup tables', () => {
   assert.deepEqual(COLORMAPS.map(({ id }) => id), ['berlin', 'viridis', 'cividis', 'magma', 'plasma', 'inferno', 'Blues', 'YlOrRd', 'coolwarm']);
-  assert.deepEqual(COLORMAPS.map(({ kind }) => kind), ['sequential', 'sequential', 'sequential', 'sequential', 'sequential', 'sequential', 'sequential', 'sequential', 'diverging']);
+  assert.deepEqual(COLORMAPS.map(({ kind }) => kind), ['diverging', 'sequential', 'sequential', 'sequential', 'sequential', 'sequential', 'sequential', 'sequential', 'diverging']);
   assert.deepEqual(paletteRgb('cividis', 0), [0, 34, 78]);
   assert.deepEqual(paletteRgb('cividis', 1), [254, 232, 56]);
-  assert.equal(paletteCssColor('unknown', 0), 'rgb(158 176 255)');
+  assert.equal(paletteCssColor('unknown', 0), 'rgb(68 1 84)');
   assert.match(paletteCssGradient('cividis'), /^linear-gradient\(90deg, rgb\(0 34 78\).+rgb\(254 232 56\)\)$/);
 });
 
@@ -115,7 +115,7 @@ test('diverging normalization maps both sides around the release-owned center', 
   assert.equal(scalarColorNormalize(6, [2, 6], scale, 'coolwarm', 0), 1);
   assert.equal(scalarColorNormalize(0, [0, 6], scale, 'coolwarm', 0), .5);
   assert.equal(scalarColorNormalize(0, [-6, 0], scale, 'coolwarm', 0), .5);
-  assert.equal(scalarColorNormalize(0, [-2, 2], scale, 'coolwarm'), null);
+  assert.equal(scalarColorNormalize(0, [-2, 2], scale, 'coolwarm'), .5);
 });
 
 test('regional maps and legends use the same diverging normalization', () => {

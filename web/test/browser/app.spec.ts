@@ -840,8 +840,8 @@ test('scientific context menus and color controls are driven by the loaded relea
 
   await page.getByRole('button', { name: 'Reset' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('range')).toBeNull();
-  await expect.poll(() => new URL(page.url()).searchParams.get('cmap')).toBeNull();
-  await expect(page.getByLabel('Feature colormap')).toHaveValue('auto');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cmap')).toBe('cividis');
+  await expect(page.getByLabel('Feature colormap')).toHaveValue('cividis');
   await expect(page.getByLabel('Color range mode')).toHaveValue('auto');
   await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-mode', 'auto');
   await expect(page.locator('.distribution-chart__color-range')).toHaveAttribute('data-minimum', '-0.5');
@@ -893,7 +893,7 @@ test('Auto colormap follows synthetic representation preferences while explicit 
   await expect(legend).toHaveAttribute('data-colormap', 'magma');
 });
 
-test('Coolwarm needs a release-owned center and centers the synthetic regional legend', async ({ page }) => {
+test('manual Coolwarm retains a declared center or shows its uncentered range meaning', async ({ page }) => {
   await page.goto('/app/');
   const settingsButton = page.getByRole('button', { name: 'Settings', exact: true });
   const closeSettingsButton = page.getByRole('button', { name: 'Close Visualization settings' });
@@ -910,10 +910,11 @@ test('Coolwarm needs a release-owned center and centers the synthetic regional l
   await representation.locator('.context-menu__trigger').click();
   await representation.getByRole('option', { name: /Volume/ }).click();
   await settingsButton.click();
-  await expect(coolwarm).toHaveAttribute('disabled', '');
-  await expect(colormap).toHaveValue('auto');
-  await expect(page.locator('.color-legend__bar')).toHaveAttribute('data-colormap', 'magma');
-  await expect.poll(() => new URL(page.url()).searchParams.get('cmap')).toBeNull();
+  await expect(coolwarm).toBeEnabled();
+  await expect(colormap).toHaveValue('coolwarm');
+  await expect(page.locator('.color-legend__bar')).toHaveAttribute('data-colormap', 'coolwarm');
+  await expect(page.locator('.settings-control__note')).toBeVisible();
+  await expect.poll(() => new URL(page.url()).searchParams.get('cmap')).toBe('coolwarm');
 });
 
 test('scientific context picker becomes a bounded phone sheet', async ({ page }) => {

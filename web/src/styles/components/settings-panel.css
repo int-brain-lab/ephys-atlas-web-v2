@@ -75,6 +75,17 @@
   opacity: .45;
 }
 
+.settings-control__note {
+  margin: 0 0 var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: .68rem;
+  line-height: 1.4;
+}
+
+.settings-control__note[hidden] {
+  display: none;
+}
+
 .settings-control__range {
   width: 100%;
   min-width: 0;

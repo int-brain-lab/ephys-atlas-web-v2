@@ -8,6 +8,7 @@ export interface ResolvedPresentationColormap {
   readonly effectiveColormap: ColormapId;
   readonly availableColormaps: readonly ColormapId[];
   readonly divergingCenter?: number;
+  readonly uncenteredManualDiverging: boolean;
 }
 
 /** Resolve release-owned palette preferences without making unregistered values renderable. */
@@ -16,13 +17,13 @@ export function resolvePresentationColormap(
   display: RepresentationDisplay | undefined,
 ): ResolvedPresentationColormap {
   const divergingCenter = Number.isFinite(display?.divergingCenter) ? display?.divergingCenter : undefined;
-  const availableColormaps = COLORMAPS
-    .filter(({ kind }) => kind !== 'diverging' || divergingCenter !== undefined)
-    .map(({ id }) => id);
+  const availableColormaps = COLORMAPS.map(({ id }) => id);
+  const fallback: ColormapId = divergingCenter === undefined ? 'viridis' : 'berlin';
   const preferred = display?.colormap && isColormapId(display.colormap)
     ? display.colormap
-    : 'berlin';
-  const automaticColormap = availableColormaps.includes(preferred) ? preferred : 'berlin';
+    : fallback;
+  const automaticColormap = colormapDefinition(preferred)?.kind === 'diverging' && divergingCenter === undefined
+    ? fallback : preferred;
   const requested = selection === 'auto' ? automaticColormap : selection;
   const effectiveColormap = availableColormaps.includes(requested) ? requested : automaticColormap;
   return {
@@ -30,6 +31,9 @@ export function resolvePresentationColormap(
     automaticColormap,
     effectiveColormap,
     availableColormaps,
+    uncenteredManualDiverging: selection !== 'auto'
+      && colormapDefinition(effectiveColormap)?.kind === 'diverging'
+      && divergingCenter === undefined,
     ...(colormapDefinition(effectiveColormap)?.kind === 'diverging' && divergingCenter !== undefined
       ? { divergingCenter }
       : {}),

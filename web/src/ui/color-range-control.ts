@@ -75,7 +75,6 @@ export class ColorRangeControl {
 
   constructor(
     private readonly setRange: (range: ColorRange) => void,
-    private readonly resetColormap: () => void,
   ) {
     this.element.setAttribute('aria-label', 'Feature color legend');
     const header = element('div', 'color-legend__header');
@@ -179,7 +178,6 @@ export class ColorRangeControl {
   readonly setAutomaticRange = (): void => {
     this.cancelPendingCommit();
     this.setRange({ mode: 'auto' });
-    this.resetColormap();
   };
 
   destroy(): void {

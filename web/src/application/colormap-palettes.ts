@@ -9,10 +9,7 @@ export interface ColormapDefinition {
 }
 
 export const COLORMAPS: readonly ColormapDefinition[] = [
-  // Berlin is diverging by design, but it is registered as a plain ramp so it can be
-  // the neutral default: its dark middle marks the middle of the colour range, not a
-  // release-owned diverging centre.
-  { id: 'berlin', label: 'Berlin', kind: 'sequential' },
+  { id: 'berlin', label: 'Berlin', kind: 'diverging' },
   { id: 'viridis', label: 'Viridis', kind: 'sequential' },
   { id: 'cividis', label: 'Cividis', kind: 'sequential' },
   { id: 'magma', label: 'Magma', kind: 'sequential' },
@@ -32,7 +29,7 @@ export function colormapDefinition(id: string): ColormapDefinition | undefined {
 }
 
 export function colormapLabel(id: ColormapId): string {
-  return COLORMAPS.find((item) => item.id === id)?.label ?? 'Berlin';
+  return COLORMAPS.find((item) => item.id === id)?.label ?? 'Viridis';
 }
 
 type Rgb = readonly [number, number, number];
@@ -52,7 +49,7 @@ const LUT_HEX: Readonly<Record<ColormapId, string>> = {
   coolwarm: '3b4cc03c4ec23d50c33e51c53f53c64055c84257c94358cb445acc455cce465ecf485fd14961d24a63d34b64d54c66d64e68d84f69d9506bda516ddb536edd5470de5572df5673e05875e15977e35a78e45b7ae55d7ce65e7de75f7fe86180e96282ea6384eb6485ec6687ed6788ee688aef6a8bef6b8df06c8ff16e90f26f92f37093f37295f47396f57597f67699f6779af7799cf87a9df87b9ff97da0f97ea1fa80a3fa81a4fb82a6fb84a7fc85a8fc86a9fc88abfd89acfd8badfd8caffe8db0fe8fb1fe90b2fe92b4fe93b5fe94b6ff96b7ff97b8ff98b9ff9abbff9bbcff9dbdff9ebeff9fbfffa1c0ffa2c1ffa3c2fea5c3fea6c4fea7c5fea9c6fdaac7fdabc8fdadc9fdaec9fcafcafcb1cbfcb2ccfbb3cdfbb5cdfab6cefab7cff9b9d0f9bad0f8bbd1f8bcd2f7bed2f6bfd3f6c0d4f5c1d4f4c3d5f4c4d5f3c5d6f2c6d6f1c7d7f0c9d7f0cad8efcbd8eeccd9edcdd9eccedaebcfdaead1dae9d2dbe8d3dbe7d4dbe6d5dbe5d6dce4d7dce3d8dce2d9dce1dadce0dbdcdedcdddddddcdcdedcdbdfdbd9e0dbd8e1dad6e2dad5e3d9d3e4d9d2e5d8d1e6d7cfe7d7cee8d6cce9d5cbead5c9ead4c8ebd3c6ecd3c5edd2c3edd1c2eed0c0efcfbfefcebdf0cdbbf1cdbaf1ccb8f2cbb7f2cab5f2c9b4f3c8b2f3c7b1f4c6aff4c5adf5c4acf5c2aaf5c1a9f5c0a7f6bfa6f6bea4f6bda2f7bca1f7ba9ff7b99ef7b89cf7b79bf7b599f7b497f7b396f7b194f7b093f7af91f7ad90f7ac8ef7aa8cf7a98bf7a889f7a688f6a586f6a385f6a283f5a081f59f80f59d7ef59c7df49a7bf4987af39778f39577f39475f29274f29072f18f71f18d6ff08b6ef08a6cef886bee8669ee8468ed8366ec8165ec7f63eb7d62ea7b60e97a5fe9785de8765ce7745be67259e57058e46e56e36c55e36b54e26952e16751e0654fdf634ede614ddd5f4bdc5d4ada5a49d95847d85646d75445d65244d55042d44e41d24b40d1493fd0473dcf453ccd423bcc403acb3e38ca3b37c83836c73635c53334c43032c32e31c12b30c0282fbe242ebd1f2dbb1b2cba162bb8122ab70d28b50927b40426',
 };
 
-const FALLBACK: ColormapId = 'berlin';
+const FALLBACK: ColormapId = 'viridis';
 
 function lookupHex(name: string): string {
   return LUT_HEX[name as ColormapId] ?? LUT_HEX[FALLBACK];

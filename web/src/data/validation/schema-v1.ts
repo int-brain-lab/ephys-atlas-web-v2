@@ -395,7 +395,8 @@ function featureDisplaySemantics(document: JsonObject): void {
       && (typeof representation.diverging_center !== 'number' || !Number.isFinite(representation.diverging_center))) {
       fail(`feature ${kind} diverging center must be finite`);
     }
-    if (representation.colormap === 'coolwarm' && representation.diverging_center === undefined) {
+    if ((representation.colormap === 'coolwarm' || representation.colormap === 'berlin')
+      && representation.diverging_center === undefined) {
       fail(`preferred diverging ${kind} palette requires a center`);
     }
     for (const domain of domains) {
