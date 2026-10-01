@@ -1,5 +1,5 @@
 import type { CursorState, SliceAxis, SliceState } from '../core/spatial.js';
-import type { ScaleSpec } from './scale-spec.js';
+import type { QuantileScaleSpec, ScaleSpec } from './scale-spec.js';
 export type { CursorState, SliceAxis, SliceState } from '../core/spatial.js';
 
 export const LAUNCH_DATASET_IDS = [
@@ -16,7 +16,7 @@ export type ParcellationId = 'allen' | 'beryl' | 'cosmos';
 export type RepresentationKind = 'regional' | 'volume';
 export type ColorScale = 'linear' | 'log' | 'symlog';
 export type ColorScaleSelection = 'auto' | ColorScale;
-export type ColorMappingMode = 'match' | 'pseudolog';
+export type ColorMappingMode = 'match' | 'pseudolog' | 'quantile-uniform' | 'quantile-gaussian';
 export type PseudoLogStrength = 0.01 | 0.05 | 0.2;
 export type DistributionDomain = 'full' | 'focused';
 export type DistributionDomainSelection = 'auto' | DistributionDomain;
@@ -103,6 +103,8 @@ export interface DistributionState {
 export type EffectiveColoringState = Omit<ColoringState, 'scale'> & {
   scale: ScaleSpec;
   divergingCenter?: number;
+  /** D082 knots, resolved only for a quantile color mapping. */
+  colorQuantiles?: QuantileScaleSpec;
 };
 
 export interface ViewState {

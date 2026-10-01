@@ -1771,7 +1771,7 @@ export class AppShell {
     this.colormapNote = element('p', 'settings-control__note');
     this.colormapNote.textContent = 'No scientific center is declared. The palette midpoint represents the middle of the selected color range.';
     this.colormapNote.hidden = true;
-    const mapping = this.settingsSelect('Color mapping', [['match', 'Match axis'], ['pseudolog', 'Pseudo-log colors']]);
+    const mapping = this.settingsSelect('Color mapping', [['match', 'Match axis'], ['pseudolog', 'Pseudo-log colors'], ['quantile-uniform', 'Quantile uniform'], ['quantile-gaussian', 'Quantile Gaussian']]);
     this.colorMappingSelect = mapping.select;
     this.colorMappingSelect.setAttribute('aria-label', 'Color mapping');
     this.colorMappingSelect.addEventListener('change', () => this.callbacks.setColorMapping(this.colorMappingSelect.value as ColorMappingMode));
@@ -2007,6 +2007,7 @@ export class AppShell {
         axisScale: model.presentationScale.effectiveScaleSpec,
         colorMapping: view.coloring.colorMapping,
         pseudoLogStrength: view.coloring.pseudoLogStrength,
+        ...(model.presentationScale.colorQuantiles ? { colorQuantiles: model.presentationScale.colorQuantiles } : {}),
         distributionScale: model.presentationScale.effectiveScale,
         histogram: model.presentationScale.histogram,
       };

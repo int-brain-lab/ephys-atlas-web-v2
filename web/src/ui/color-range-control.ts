@@ -1,6 +1,6 @@
 import type { DistributionBinning, FeaturePayload } from '../data/contracts.js';
 import type { ColorMappingMode, ColorRange, ColorScale, PseudoLogStrength, StatisticId } from '../domain/types.js';
-import type { ScaleSpec } from '../domain/scale-spec.js';
+import type { QuantileScaleSpec, ScaleSpec } from '../domain/scale-spec.js';
 import { scalarColorGradient } from '../application/scalar-colormap.js';
 import {
   clampRangeHandle,
@@ -12,6 +12,13 @@ import {
   translateRangeWindowByPosition,
   type NumericRange,
 } from './color-range.js';
+
+/** Short legend label for a non-matching color mapping. */
+export function colorMappingLabel(mapping: ColorMappingMode, strength: PseudoLogStrength): string {
+  if (mapping === 'quantile-uniform') return 'Quantile uniform';
+  if (mapping === 'quantile-gaussian') return 'Quantile Gaussian';
+  return `Pseudo-log (${strength === 0.01 ? 'Strong' : strength === 0.2 ? 'Gentle' : 'Medium'})`;
+}
 
 export interface ColorRangeControlModel {
   feature: FeaturePayload;
@@ -26,6 +33,7 @@ export interface ColorRangeControlModel {
   axisScale: ScaleSpec;
   colorMapping: ColorMappingMode;
   pseudoLogStrength: PseudoLogStrength;
+  colorQuantiles?: QuantileScaleSpec;
   distributionScale: ColorScale;
   histogram: DistributionBinning | undefined;
 }
@@ -154,9 +162,10 @@ export class ColorRangeControl {
       ? ''
       : 'A color bound is outside this viewport. Choose Full or enter an exact value to edit it.';
     this.context.textContent = model.context;
-    this.mappingStatus.textContent = model.colorMapping === 'pseudolog'
-      ? `Colors: Pseudo-log (${model.pseudoLogStrength === 0.01 ? 'Strong' : model.pseudoLogStrength === 0.2 ? 'Gentle' : 'Medium'}) · Distribution: ${model.distributionScale === 'symlog' ? 'Signed log' : model.distributionScale === 'log' ? 'Log' : 'Linear'}`
-      : `Colors and distribution: ${model.distributionScale === 'symlog' ? 'Signed log' : model.distributionScale === 'log' ? 'Log' : 'Linear'}`;
+    const distribution = model.distributionScale === 'symlog' ? 'Signed log' : model.distributionScale === 'log' ? 'Log' : 'Linear';
+    this.mappingStatus.textContent = model.colorMapping === 'match'
+      ? `Colors and distribution: ${distribution}`
+      : `Colors: ${colorMappingLabel(model.colorMapping, model.pseudoLogStrength)} · Distribution: ${distribution}`;
     const below = model.histogram?.global.underflowCount ?? 0;
     const above = model.histogram?.global.overflowCount ?? 0;
     this.tailSummary.hidden = model.histogram?.domain.kind !== 'focused' || (below === 0 && above === 0);
@@ -167,7 +176,7 @@ export class ColorRangeControl {
     this.bar.style.setProperty(
       '--color-range-gradient',
       scalarColorGradient(model.colormap, model.effectiveRange, model.axisScale, model.divergingCenter,
-        9, '90deg', model.colorMapping, model.pseudoLogStrength),
+        9, '90deg', model.colorMapping, model.pseudoLogStrength, model.colorQuantiles),
     );
     this.unit.textContent = model.unit ?? '';
   }

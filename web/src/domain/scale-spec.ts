@@ -16,6 +16,17 @@ export interface SymlogScaleSpec {
 }
 
 export type ScaleSpec = LinearScaleSpec | LogScaleSpec | SymlogScaleSpec;
+
+/**
+ * D082 color-only quantile map from raw knots `xs` to transformed knots `ys`
+ * (empirical CDF, optionally probit-mapped). Never a distribution axis or a
+ * release-declared scale, so it is deliberately not part of `ScaleSpec`.
+ */
+export interface QuantileScaleSpec {
+  readonly kind: 'quantile-uniform' | 'quantile-gaussian';
+  readonly xs: readonly number[];
+  readonly ys: readonly number[];
+}
 export type ScaleDomain = readonly [number, number];
 
 const LINEAR: LinearScaleSpec = { kind: 'linear' };

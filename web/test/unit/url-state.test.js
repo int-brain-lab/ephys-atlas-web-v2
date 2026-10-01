@@ -61,6 +61,10 @@ test('volume layer controls use safe defaults and reject malformed opacity', () 
     anatomyColors: false,
   });
   assert.equal(parseViewState('?v=4&anatomy=1').layers.anatomyColors, true);
+  for (const mapping of ['quantile-uniform', 'quantile-gaussian']) {
+    assert.equal(parseViewState(`?v=4&cmapscale=${mapping}`).coloring.colorMapping, mapping);
+  }
+  assert.equal(parseViewState('?v=4&cmapscale=unknown').coloring.colorMapping, 'match');
   assert.equal(parseViewState('?v=4&anatomy=wat').layers.anatomyColors, false);
   assert.equal(parseViewState('?v=4&opacity=2').layers.volumeOpacity, 1);
   assert.equal(parseViewState('?v=4&opacity=wat').layers.volumeOpacity, 1);
