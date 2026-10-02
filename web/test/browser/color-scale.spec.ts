@@ -78,6 +78,37 @@ test('pseudo-log changes colors while both exact histograms keep their distribut
   await expect(page.getByLabel('Pseudo-log strength')).toHaveValue('0.01');
 });
 
+test('quantile color mappings change colors while exact histograms keep their axis and counts', async ({ page }) => {
+  await page.goto('/app/');
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.locator('select[aria-label="Distribution axis"]').selectOption('linear');
+  const chart = page.locator('.distribution-chart');
+  const compactBins = page.locator('.color-range__histogram-bin');
+  const region = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
+  const fill = () => region.evaluate((element) => (element as SVGPathElement).style.fill);
+  const bins = () => compactBins.evaluateAll((items) => items.map((bin) => bin.getAttribute('style')));
+  const originalChart = await chart.locator('.distribution-chart__global').getAttribute('d');
+  const originalBins = await bins();
+  const originalFill = await fill();
+
+  await page.getByLabel('Color mapping').selectOption('quantile-uniform');
+  await expect(page.getByLabel('Pseudo-log strength')).toBeHidden();
+  await expect(page.locator('.color-legend__mapping-status')).toHaveText('Colors: Quantile uniform · Distribution: Linear');
+  await expect.poll(() => new URL(page.url()).searchParams.get('cmapscale')).toBe('quantile-uniform');
+  await expect.poll(fill).not.toBe(originalFill);
+  const uniformFill = await fill();
+  await page.getByLabel('Color mapping').selectOption('quantile-gaussian');
+  await expect(page.locator('.color-legend__mapping-status')).toHaveText('Colors: Quantile Gaussian · Distribution: Linear');
+  await expect.poll(fill).not.toBe(uniformFill);
+  await expect(chart).toHaveAttribute('data-axis-scale', 'linear');
+  expect(await chart.locator('.distribution-chart__global').getAttribute('d')).toBe(originalChart);
+  expect(await bins()).toEqual(originalBins);
+
+  await page.reload();
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.getByLabel('Color mapping')).toHaveValue('quantile-gaussian');
+});
+
 test('Focused uses whole-population probabilities and gives the compact range the same viewport', async ({ page }) => {
   await page.goto('/app/?v=4&selected=-477,-803&scale=symlog&dist=focused');
   const chart = page.locator('.distribution-chart');

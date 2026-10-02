@@ -89,7 +89,8 @@ only part of the body; the index states what remains effective.
 | D078 | Exact mapped volume-region distributions | accepted | 2026-09-17 | Allen/Beryl/Cosmos; mutually exclusive mappings; lateralized storage; bilateral default; source AGEA labels accepted; D079 later authorizes publication |
 | D079 | Publish D078 AGEA and W26 successors | accepted | 2026-09-17 | clean-Linux-main rebuilds; preserve existing releases; add immutable editions; deploy compatible site before catalog promotion |
 | D080 | Berlin as the neutral Auto palette | partially superseded | 2026-09-24 | D081 classifies Berlin as diverging and limits its Auto fallback to representations with a finite declared center; manual Berlin remains available without one; Q16 unchanged |
-| D081 | Separate color mapping from distribution scale | accepted | 2026-09-29 | Auto precedence, manual palette persistence, range-only Reset, and URL-persisted pseudo-log color mapping; exact histograms remain on their distribution axis; supersedes conflicting D050/D057/D080 presentation rules |
+| D081 | Separate color mapping from distribution scale | accepted | 2026-09-29 | Auto precedence, manual palette persistence, range-only Reset, and URL-persisted pseudo-log color mapping; exact histograms remain on their distribution axis; supersedes conflicting D050/D057/D080 presentation rules; D082 adds quantile color mappings |
+| D082 | Quantile color mappings | accepted | 2026-10-01 | Quantile uniform and Quantile Gaussian join D081's color mapping; browser-derived rank maps from the colored regional statistic or valid-voxel binnings; histograms, axis, and release bytes unchanged |
 
 ## D001 — Separate v2
 
@@ -2052,3 +2053,33 @@ palette or center selections. Preserve D050's exact release-owned histograms,
 population counts, and selected distribution-axis behavior; this decision
 supersedes only the assumption that the distribution axis must always control
 color mapping.
+
+## D082 — Add quantile color mappings
+
+On 2026-10-01 the repository owner reviewed a local prototype against real
+channel and encoding-volume releases and accepted two further D081 color
+mappings, Quantile uniform and Quantile Gaussian. They spread the palette by
+value rank: Quantile uniform maps each value through the empirical CDF `F`;
+Quantile Gaussian maps it through `Φ⁻¹(F)`, so the color distribution
+resembles a standard normal and tails remain distinguishable. The selected
+mode persists as `cmapscale=quantile-uniform` or `quantile-gaussian`.
+
+The browser derives `F` as a monotone piecewise-linear map from the data the
+release already serves:
+
+- regional representations use mid-rank knots of the finite values of the
+  colored regional statistic, extended to the full-domain observation-histogram
+  extent with half of the unobserved tail mass on each side;
+- volume representations use the exact cumulative fractions at the edges of
+  every full-domain valid-voxel binning, merged, with probabilities clipped to
+  `[1e-6, 1 - 1e-6]`, and are linear inside each bin.
+
+These maps normalize colors within the active color range only. As D081
+requires, global, selected-region, and compact histograms keep their exact
+release bins on the selected distribution axis, and quantile maps are never a
+distribution axis, a release-declared scale, or schema content. When fewer
+than two distinct finite values exist, colors fall back to the distribution
+axis. This is presentation state only: it changes no immutable release bytes,
+estimates no scientific threshold, and does not resolve Q16. A future
+release-owned quantile table would need its own decision and schema change.
+

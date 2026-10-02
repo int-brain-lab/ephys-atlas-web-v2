@@ -125,6 +125,11 @@ that axis. The implementation is local pending owner review with real data
 before any push or deployment. Q16 continues to retain real-feature palette
 and center selections.
 
+D082 adds Quantile uniform and Quantile Gaussian color mappings. The browser
+derives rank maps from the colored regional statistic or the full-domain
+valid-voxel binnings; exact histograms and the distribution axis are unchanged.
+The owner reviewed the prototype locally with real channel and volume data.
+
 D076 adds progressive nearby-first encoded SVG cache warming after visible
 rendering, next-pack decoded SVG prefetch in the observed direction, bounded directional active-volume prefetch, and per-view updating
 feedback that retains the previous pixels until replacement rendering completes.

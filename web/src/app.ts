@@ -282,6 +282,7 @@ export class AtlasApp {
       scale: presentationScale.effectiveScaleSpec,
       colorMapping: state.view.coloring.colorMapping,
       pseudoLogStrength: state.view.coloring.pseudoLogStrength,
+      ...(presentationScale.colorQuantiles ? { colorQuantiles: presentationScale.colorQuantiles } : {}),
       ...(presentationColormap.divergingCenter !== undefined
         ? { divergingCenter: presentationColormap.divergingCenter }
         : {}),
@@ -359,6 +360,7 @@ export class AtlasApp {
       || JSON.stringify(previous.coloring.scale) !== JSON.stringify(next.coloring.scale)
       || previous.coloring.colorMapping !== next.coloring.colorMapping
       || previous.coloring.pseudoLogStrength !== next.coloring.pseudoLogStrength
+      || previous.coloring.colorQuantiles !== next.coloring.colorQuantiles
       || previous.volumeOpacity !== next.volumeOpacity
       || previous.anatomyOutlines !== next.anatomyOutlines
       || previous.anatomyColors !== next.anatomyColors;

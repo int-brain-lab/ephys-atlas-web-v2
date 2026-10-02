@@ -180,7 +180,7 @@ function rgbaForSlice(
     if (!volumeValueIsVisible(feature, value, slice.validity?.[index])) continue;
     const normalized = scalarColorNormalize(
       value, [min, max], coloring.scale, coloring.colormap, coloring.divergingCenter,
-      coloring.colorMapping, coloring.pseudoLogStrength,
+      coloring.colorMapping, coloring.pseudoLogStrength, coloring.colorQuantiles,
     );
     if (normalized === null) continue;
     const [r, g, b] = paletteRgb(coloring.colormap, normalized);
