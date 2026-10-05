@@ -126,6 +126,8 @@ test('volume features expose and download their immutable declared artifacts', a
 });
 
 test('volume artifact integrity failures remain explicit and do not download corrupt bytes', async ({ page }) => {
+  const receivedDownloads: string[] = [];
+  page.on('download', (download) => receivedDownloads.push(download.suggestedFilename()));
   await page.route('**/features/rms_ap/rms_ap.csv', (route) => route.fulfill({
     status: 200,
     contentType: 'text/csv',
@@ -136,7 +138,9 @@ test('volume artifact integrity failures remain explicit and do not download cor
   await actions.getByRole('button', { name: 'Download' }).click();
   const downloads = page.getByRole('dialog', { name: 'Download feature data' });
   await downloads.getByRole('button', { name: /Human-readable regional fixture values/ }).click();
-  await expect(downloads.getByRole('alert')).toHaveText('Resource SHA-256 mismatch');
+  await expect(downloads.locator('.operation-status[data-state="error"] .operation-status__detail')).toHaveText('Resource SHA-256 mismatch');
+  await expect(downloads.getByRole('button', { name: 'Retry', exact: true })).toBeVisible();
+  expect(receivedDownloads).toEqual([]);
   await expect(downloads).toBeVisible();
 });
 

@@ -184,3 +184,8 @@
     min-height: 1.95rem;
   }
 }
+
+/* Long operation messages must fit the pane rather than widen its grid track. */
+.region-search:has(> .operation-status:not([hidden])) {
+  grid-template-columns: minmax(0, 1fr);
+}

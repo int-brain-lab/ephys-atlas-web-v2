@@ -17,9 +17,10 @@ export class OperationStatus {
   private readonly title: HTMLElement;
   private readonly detail: HTMLParagraphElement;
   private readonly retryButton: HTMLButtonElement;
+  private readonly externalAnnouncement: HTMLElement | undefined;
   private retryAction: (() => void) | undefined;
 
-  constructor(variant: OperationStatusVariant) {
+  constructor(variant: OperationStatusVariant, announcementHost?: HTMLElement) {
     const root = document.createElement('div');
     root.className = 'operation-status';
     root.dataset.variant = variant;
@@ -35,6 +36,17 @@ export class OperationStatus {
     this.announcement.setAttribute('role', 'status');
     this.announcement.setAttribute('aria-atomic', 'true');
     this.announcement.tabIndex = -1;
+    // Busy view contents may defer descendant live regions. Keep their
+    // announcements outside that subtree while preserving visible status text.
+    if (announcementHost) {
+      this.announcement.removeAttribute('role');
+      this.announcement.removeAttribute('aria-atomic');
+      this.externalAnnouncement = document.createElement('div');
+      this.externalAnnouncement.className = 'operation-status__live';
+      this.externalAnnouncement.setAttribute('role', 'status');
+      this.externalAnnouncement.setAttribute('aria-atomic', 'true');
+      announcementHost.append(this.externalAnnouncement);
+    }
 
     this.title = document.createElement('strong');
     this.title.className = 'operation-status__title';
@@ -72,6 +84,10 @@ export class OperationStatus {
     if (this.detail.textContent !== detail) this.detail.textContent = detail;
     this.detail.hidden = detail.length === 0;
 
+    if (this.externalAnnouncement) {
+      const text = update.state === 'ready' ? '' : [update.title, detail].filter(Boolean).join(' ');
+      if (this.externalAnnouncement.textContent !== text) this.externalAnnouncement.textContent = text;
+    }
     this.retryAction = update.retry;
     this.retryButton.hidden = update.state !== 'error' || update.retry === undefined;
   }

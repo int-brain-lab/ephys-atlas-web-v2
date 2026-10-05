@@ -1,3 +1,4 @@
+import { OperationStatus } from './operation-status.js';
 import type { DatasetCatalog, DatasetManifest, FeaturePayload, RepresentationDisplay } from '../data/contracts.js';
 import type { LocalArchivePreview } from '../data/local-archive.js';
 import type { LocalReleaseInspection, LocalStorageInspection } from '../data/local-source.js';
@@ -96,6 +97,8 @@ export interface AppShellCallbacks {
   clearSelection(): void;
   shareCurrentView(): Promise<void>;
   downloadCurrentFeature(): void;
+  retryFeature(): void;
+  refreshSliceInventory(): void;
   downloadArtifact(artifactId: string, featureId?: string): Promise<void>;
   prepareLocal(file: File): Promise<LocalArchivePreview>;
   admitLocal(): Promise<void>;
@@ -112,6 +115,7 @@ export interface ShellModel {
   manifest: DatasetManifest | null;
   feature: FeaturePayload | null;
   featureLoading?: boolean;
+  featureError?: string | null;
   displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null;
   regionalPresentation: RegionalPresentation;
   presentationScale: ResolvedPresentationScale;
@@ -140,7 +144,10 @@ interface ViewFrameNodes {
   tooltipMeta: HTMLElement;
   renderKey: string;
   geometryKey: string;
+  displayedCoordinate: string;
   renderToken: number;
+  initialStatus: OperationStatus;
+  updateStatus: OperationStatus;
   sliceProgressTimer: number | null;
 }
 
@@ -159,6 +166,8 @@ interface StaticFrameNodes extends ProjectionTooltipNodes {
   notice: HTMLElement;
   renderKey: string;
   renderToken: number;
+  initialStatus: OperationStatus;
+  updateStatus: OperationStatus;
 }
 
 const LOCAL_IMPORT_OPTION_ID = '__import_local_dataset__';
@@ -270,10 +279,9 @@ export class AppShell {
   private readonly secondaryPanels = new Map<SecondaryTabId, HTMLElement>();
   private scene3dHost!: HTMLElement;
   private scene3dNotice!: HTMLElement;
-  private scene3dOverlay!: HTMLElement;
-  private scene3dLoadingTitle!: HTMLElement;
-  private scene3dLoadingDetail!: HTMLElement;
-  private scene3dRetry!: HTMLButtonElement;
+  private scene3dStatus!: OperationStatus;
+  private scene3dFeatureStatus!: OperationStatus;
+  private retryScene3D!: () => void;
   private scene3dObserver: MutationObserver | null = null;
   private scene3dExplodeInput!: HTMLInputElement;
   private scene3dExplodeValue!: HTMLOutputElement;
@@ -1573,6 +1581,13 @@ export class AppShell {
 
   private renderDownloads(model: ShellModel): void {
     const { manifest, feature: payload, state } = model;
+    const key = JSON.stringify([
+      state.view.dataset, state.view.featureId, state.view.representation,
+      state.view.parcellation, state.view.coloring.statistic, !!payload,
+    ]);
+    if (key === this.downloadRenderKey && manifest === this.downloadManifest) return;
+    this.downloadRenderKey = key;
+    this.downloadManifest = manifest;
     const feature = manifest?.features.find((item) => item.id === state.view.featureId);
     if (!manifest || !feature || !payload) {
       this.downloadContent.replaceChildren();
@@ -1628,17 +1643,24 @@ export class AppShell {
     for (const artifact of artifacts) {
       const filename = artifact.resource.path.split('/').at(-1) ?? artifact.id;
       const description = artifact.description || `Declared ${titleCaseToken(artifact.role)} artifact`;
+      const operation = new OperationStatus('inline');
       const button = this.downloadButton(
         description,
         `${titleCaseToken(artifact.role)} · ${filename} · ${formatBytes(artifact.resource.bytes)}`,
         async (target) => {
           target.disabled = true;
           target.dataset.loading = 'true';
+          operation.update({ state: 'loading', title: 'Downloading artifact…', detail: filename });
           try {
             await this.callbacks.downloadArtifact(artifact.id, featureId);
-            this.downloadDialog.close();
+            operation.update({ state: 'ready', title: '' });
+            if (target.isConnected) this.downloadDialog.close();
           } catch (error) {
-            this.callbacks.reportError(error);
+            operation.update({
+              state: 'error', title: 'Couldn’t download this artifact',
+              detail: error instanceof Error ? error.message : String(error),
+              retry: () => button.click(),
+            });
           } finally {
             target.disabled = false;
             delete target.dataset.loading;
@@ -1646,7 +1668,7 @@ export class AppShell {
         },
       );
       button.dataset.artifactId = artifact.id;
-      list.append(button);
+      list.append(button, operation.element);
     }
     section.append(list);
     return section;
@@ -2419,9 +2441,6 @@ export class AppShell {
     const target = element('div', 'view-frame__renderer');
     target.setAttribute('aria-label', `${axis} renderer target`);
     const projectionViewport = this.viewportFactory.create(target, axis);
-    const stateText = element('div', 'view-frame__state-message');
-    stateText.setAttribute('role', 'status');
-    stateText.textContent = 'Loading registered anatomy…';
     const tooltip = element('div', 'region-tooltip');
     tooltip.setAttribute('role', 'tooltip');
     tooltip.hidden = true;
@@ -2436,7 +2455,9 @@ export class AppShell {
     tooltipHint.append('Hold ', hintKey, ' for anatomy colours');
     tooltip.append(tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta, tooltipHint);
     const colorbar = new FrameColorbar();
-    viewport.append(target, stateText, colorbar.element, tooltip);
+    const initialStatus = new OperationStatus('centered', this.app);
+    const updateStatus = new OperationStatus('compact', this.app);
+    viewport.append(target, colorbar.element, tooltip, initialStatus.element, updateStatus.element);
 
     const footer = element('div', 'view-frame__footer');
     const slider = element('input', 'view-frame__slider');
@@ -2459,7 +2480,7 @@ export class AppShell {
     this.viewFrames.set(axis, {
       frame, target, viewport: projectionViewport, coordinate, slider, status, maximize, colorbar,
       tooltip, tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta,
-      renderKey: '', geometryKey: '', renderToken: 0, sliceProgressTimer: null,
+      renderKey: '', geometryKey: '', displayedCoordinate: '', renderToken: 0, sliceProgressTimer: null, initialStatus, updateStatus,
     });
     return frame;
   }
@@ -2483,10 +2504,12 @@ export class AppShell {
     const tooltipValue = element('div', 'region-tooltip__value');
     const tooltipMeta = element('div', 'region-tooltip__meta');
     tooltip.append(tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta);
-    frame.append(target, notice, tooltip);
+    const initialStatus = new OperationStatus('centered', this.app);
+    const updateStatus = new OperationStatus('compact', this.app);
+    frame.append(target, notice, tooltip, initialStatus.element, updateStatus.element);
     this.staticFrames.set(projectionId, {
       frame, target, viewport, notice, tooltip, tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta,
-      renderKey: '', renderToken: 0,
+      renderKey: '', renderToken: 0, initialStatus, updateStatus,
     });
     this.secondaryPanels.set(projectionId, frame);
     return frame;
@@ -2517,19 +2540,13 @@ export class AppShell {
     const notice = element('p', 'secondary-view__scene3d-notice');
     notice.setAttribute('role', 'status');
     notice.textContent = '3-D anatomy is not connected in this build.';
-    const overlay = element('div', 'secondary-view__scene3d-overlay');
-    const spinner = element('span', 'secondary-view__scene3d-spinner');
-    spinner.setAttribute('aria-hidden', 'true');
-    const status = element('div', 'secondary-view__scene3d-status');
-    status.setAttribute('role', 'status');
-    status.setAttribute('aria-atomic', 'true');
-    const loadingTitle = element('strong', 'secondary-view__scene3d-loading-title');
-    const loadingDetail = element('p', 'secondary-view__scene3d-loading-detail');
-    status.append(loadingTitle, loadingDetail);
-    const retry = element('button', 'secondary-view__scene3d-retry');
-    retry.type = 'button';
-    retry.textContent = 'Retry';
-    retry.addEventListener('click', () => {
+    const operation = new OperationStatus('centered');
+    const overlay = operation.element;
+    overlay.classList.add('secondary-view__scene3d-overlay');
+    for (const [part, alias] of [
+      ['spinner', 'spinner'], ['title', 'loading-title'], ['detail', 'loading-detail'], ['retry', 'retry'],
+    ]) overlay.querySelector(`.operation-status__${part}`)?.classList.add(`secondary-view__scene3d-${alias}`);
+    this.retryScene3D = () => {
       this.scene3dViewport?.destroy();
       this.scene3dViewport = null;
       this.scene3dPresentation = null;
@@ -2539,8 +2556,7 @@ export class AppShell {
       host.dataset.scene3dState = 'loading';
       delete host.dataset.error;
       if (this.currentModel) this.renderScene3D(this.currentModel, true);
-    });
-    overlay.append(spinner, status, retry);
+    };
     const controls = element('label', 'secondary-view__scene3d-controls');
     const label = element('span', 'secondary-view__scene3d-control-label');
     label.textContent = 'Explode';
@@ -2558,13 +2574,12 @@ export class AppShell {
       this.callbacks.setScene3DExplode(explode.valueAsNumber);
     });
     controls.append(label, explode, value);
-    frame.append(host, controls, notice, overlay);
+    const featureStatus = new OperationStatus('compact');
+    frame.append(host, controls, notice, overlay, featureStatus.element);
+    this.scene3dFeatureStatus = featureStatus;
     this.scene3dHost = host;
     this.scene3dNotice = notice;
-    this.scene3dOverlay = overlay;
-    this.scene3dLoadingTitle = loadingTitle;
-    this.scene3dLoadingDetail = loadingDetail;
-    this.scene3dRetry = retry;
+    this.scene3dStatus = operation;
     this.scene3dExplodeInput = explode;
     this.scene3dExplodeValue = value;
     // Loading completes independently of application state and URL updates.
@@ -2576,6 +2591,8 @@ export class AppShell {
   }
 
   private currentModel: ShellModel | null = null;
+  private downloadRenderKey = '';
+  private downloadManifest: DatasetManifest | null = null;
 
   private renderSecondaryView(model: ShellModel): void {
     const tab = model.state.view.workspace.secondaryTab;
@@ -2596,8 +2613,23 @@ export class AppShell {
       nodes.renderToken += 1;
       nodes.renderKey = '';
       nodes.frame.setAttribute('aria-busy', 'true');
+      nodes.frame.dataset.updating = 'true';
       nodes.notice.hidden = false;
       nodes.notice.textContent = 'Updating…';
+      this.setViewStatus(nodes, !!nodes.target.querySelector('[data-static-source-mode]'), {
+        state: 'loading', title: 'Updating map…', detail: 'Downloading feature data.',
+      });
+      return;
+    }
+    if (model.featureError) {
+      nodes.renderToken += 1;
+      nodes.renderKey = '';
+      nodes.frame.setAttribute('aria-busy', 'false');
+      nodes.frame.dataset.updating = 'true';
+      this.setViewStatus(nodes, !!nodes.target.querySelector('[data-static-source-mode]'), {
+        state: 'error', title: 'Couldn’t load feature data', detail: model.featureError,
+        retry: () => this.callbacks.retryFeature(),
+      });
       return;
     }
     const projectionParcellation = model.regionalPresentation.mapping;
@@ -2608,6 +2640,11 @@ export class AppShell {
     const token = ++nodes.renderToken;
     nodes.notice.hidden = false;
     nodes.notice.textContent = 'Loading static projection…';
+    nodes.frame.setAttribute('aria-busy', 'true');
+    nodes.frame.dataset.updating = 'true';
+    this.setViewStatus(nodes, !!nodes.target.querySelector('[data-static-source-mode]'), {
+      state: 'loading', title: 'Loading map…', detail: 'Downloading and preparing this projection.',
+    });
     const pending = nodes.viewport.render({
       projectionId: content.projectionId,
       parcellation: projectionParcellation,
@@ -2616,6 +2653,8 @@ export class AppShell {
     Promise.resolve(pending).then(() => {
       if (nodes.renderToken !== token) return;
       nodes.frame.setAttribute('aria-busy', 'false');
+      delete nodes.frame.dataset.updating;
+      this.setViewStatus(nodes, false, { state: 'ready', title: '' });
       const viewport = nodes.target.querySelector<HTMLElement>('[data-static-source-mode]');
       const sourceMode = viewport?.dataset.staticSourceMode;
       nodes.notice.textContent = sourceMode === 'pinned-review'
@@ -2635,7 +2674,13 @@ export class AppShell {
       nodes.frame.setAttribute('aria-busy', 'false');
       nodes.notice.textContent = 'Static projection unavailable';
       nodes.viewport.showError(error);
-      this.callbacks.reportError(error);
+      this.setViewStatus(nodes, !!nodes.target.querySelector('[data-static-source-mode]'), {
+        state: 'error', title: 'Couldn’t load this map', detail: 'Please try again.',
+        retry: () => {
+          nodes.renderKey = '';
+          if (this.currentModel) this.renderSecondaryView(this.currentModel);
+        },
+      });
     });
   }
 
@@ -2686,7 +2731,7 @@ export class AppShell {
       }
       if (visible) viewport.activate();
       else viewport.deactivate();
-      this.scene3dNotice.textContent = model.featureLoading ? 'Updating…' : view.representation === 'volume'
+      this.scene3dNotice.textContent = view.representation === 'volume'
         ? '3-D anatomy · anatomy only — volume scalars are not defined on this view'
         : '3-D anatomy';
       this.scene3dNotice.dataset.state = 'ready';
@@ -2709,15 +2754,29 @@ export class AppShell {
     this.scene3dHost.setAttribute('aria-busy', String(loading || (ready && !!this.currentModel?.featureLoading)));
     this.scene3dExplodeInput.disabled = !ready;
     this.scene3dNotice.hidden = !ready && !unavailable;
-    this.scene3dOverlay.hidden = ready || unavailable;
-    this.scene3dOverlay.dataset.state = failed ? 'error' : 'loading';
-    this.scene3dRetry.hidden = !failed;
-    const title = failed ? 'Couldn’t load the 3D brain'
-      : state === 'context-lost' ? 'Restoring the 3D view…' : 'Loading 3D brain…';
-    const detail = failed ? 'Please try again.'
-      : 'Downloading and preparing the model. This may take a moment.';
-    if (this.scene3dLoadingTitle.textContent !== title) this.scene3dLoadingTitle.textContent = title;
-    if (this.scene3dLoadingDetail.textContent !== detail) this.scene3dLoadingDetail.textContent = detail;
+    const model = this.currentModel;
+    this.scene3dFeatureStatus.update({
+      state: !ready ? 'ready' : model?.featureError ? 'error' : model?.featureLoading ? 'loading' : 'ready',
+      title: model?.featureError ? 'Couldn’t load feature data' : 'Updating feature context…',
+      detail: '3D anatomy is ready. Showing the previous presentation.',
+      ...(model?.featureError ? { retry: () => this.callbacks.retryFeature() } : {}),
+    });
+    this.scene3dStatus.update({
+      state: ready || unavailable ? 'ready' : failed ? 'error' : 'loading',
+      title: failed ? 'Couldn’t load the 3D brain'
+        : state === 'context-lost' ? 'Restoring the 3D view…' : 'Loading 3D brain…',
+      detail: failed ? 'Please try again.' : 'Downloading and preparing the model. This may take a moment.',
+      ...(failed ? { retry: this.retryScene3D } : {}),
+    });
+  }
+
+  private setViewStatus(
+    nodes: Pick<ViewFrameNodes, 'initialStatus' | 'updateStatus'>,
+    retained: boolean,
+    status: Parameters<OperationStatus['update']>[0],
+  ): void {
+    nodes.initialStatus.update(retained ? { state: 'ready', title: '' } : status);
+    nodes.updateStatus.update(retained ? status : { state: 'ready', title: '' });
   }
 
   private renderViewFrame(axis: SliceAxis, model: ShellModel): void {
@@ -2750,6 +2809,23 @@ export class AppShell {
       const hasImage = !!nodes.target.dataset.sliceAsset;
       if (!hasImage) nodes.frame.dataset.state = 'loading';
       nodes.status.textContent = hasImage ? 'Updating…' : 'Loading atlas…';
+      this.setViewStatus(nodes, hasImage, {
+        state: 'loading', title: hasImage ? 'Updating feature…' : 'Loading atlas…',
+        detail: hasImage ? 'Showing the previous view.' : 'Downloading data and preparing this view.',
+      });
+      return;
+    }
+    if (model.featureError) {
+      this.clearSliceProgress(nodes);
+      nodes.renderToken += 1;
+      nodes.renderKey = '';
+      nodes.geometryKey = '';
+      nodes.frame.setAttribute('aria-busy', 'false');
+      nodes.frame.dataset.updating = 'feature';
+      this.setViewStatus(nodes, !!nodes.target.dataset.sliceAsset, {
+        state: 'error', title: 'Couldn’t load feature data', detail: model.featureError,
+        retry: () => this.callbacks.retryFeature(),
+      });
       return;
     }
     const featureWasLoading = nodes.frame.dataset.updating === 'feature';
@@ -2772,10 +2848,10 @@ export class AppShell {
     const retainedSliceAsset = nodes.target.dataset.sliceAsset;
     const retainsRenderedFrame = retainedSliceAsset === 'projection-pack-v1'
       || retainedSliceAsset === 'schema-volume-v1';
-    const stateMessage = nodes.frame.querySelector<HTMLElement>('.view-frame__state-message');
     if (geometryChanged) {
       this.clearSliceProgress(nodes);
       this.hideRegionTooltip(axis);
+      this.setViewStatus(nodes, false, { state: 'ready', title: '' });
       nodes.frame.dataset.state = retainsRenderedFrame ? 'ready' : 'loading';
       nodes.status.removeAttribute('aria-label');
       nodes.frame.dataset.updating = featureWasLoading ? 'feature' : 'slice';
@@ -2788,15 +2864,19 @@ export class AppShell {
           if (nodes.renderToken !== token || nodes.frame.dataset.updating !== 'slice') return;
           nodes.frame.dataset.sliceProgress = 'true';
           nodes.status.setAttribute('aria-label', 'Loading slice');
+          this.setViewStatus(nodes, true, {
+            state: 'loading', title: 'Loading slice…', detail: `Showing the previous slice${nodes.displayedCoordinate ? ` (${nodes.displayedCoordinate})` : ''}.`,
+          });
         }, SLICE_PROGRESS_DELAY_MS);
       }
-      if (stateMessage) {
-        stateMessage.textContent = retainsRenderedFrame
-          ? ''
-          : view.representation === 'volume'
-            ? 'Loading scientific volume…'
-            : 'Loading registered anatomy…';
+      if (!retainsRenderedFrame || featureWasLoading) {
+        this.setViewStatus(nodes, retainsRenderedFrame, {
+          state: 'loading', title: retainsRenderedFrame && featureWasLoading ? 'Updating feature…'
+            : view.representation === 'volume' ? 'Loading scientific volume…' : 'Loading registered anatomy…',
+          detail: retainsRenderedFrame ? 'Showing the previous view.' : 'Downloading data and preparing this view.',
+        });
       }
+
     }
 
     const pending = nodes.viewport.render({
@@ -2813,6 +2893,8 @@ export class AppShell {
       delete nodes.frame.dataset.updating;
       nodes.frame.setAttribute('aria-busy', 'false');
       nodes.frame.dataset.state = 'ready';
+      nodes.displayedCoordinate = coordinate;
+      this.setViewStatus(nodes, false, { state: 'ready', title: '' });
       nodes.status.textContent = '';
       nodes.status.setAttribute('aria-label', view.representation === 'volume' ? 'Scientific volume ready' : 'Registered anatomy ready');
     }).catch((error: unknown) => {
@@ -2834,11 +2916,18 @@ export class AppShell {
         nodes.status.textContent = 'Unavailable';
         nodes.viewport.clear();
         nodes.viewport.showError(error);
-        if (stateMessage) {
-          stateMessage.textContent = error instanceof Error ? error.message : 'Registered anatomy could not be loaded';
-        }
       }
-      this.callbacks.reportError(error);
+      nodes.frame.dataset.updating = 'slice';
+      this.setViewStatus(nodes, retainsRenderedFrame || preservedFrame, {
+        state: 'error', title: 'Couldn’t load this view',
+        detail: preservedFrame ? 'Showing the previous view. Please try again.' : 'Please try again.',
+        retry: () => {
+          nodes.renderKey = '';
+          nodes.geometryKey = '';
+          this.callbacks.refreshSliceInventory();
+          if (this.currentModel) this.renderViewFrame(axis, this.currentModel);
+        },
+      });
     });
   }
 

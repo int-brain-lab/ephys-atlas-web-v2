@@ -218,21 +218,15 @@ test('an existing anatomy slice stays visible while an adjacent pack loads', asy
   await expect(page.getByLabel('coronal slice')).toHaveValue('88');
   await expect(target).toHaveAttribute('data-asset-index', '660');
   await expect(frame).toHaveAttribute('data-state', 'ready');
-  await expect(frame.locator('.view-frame__state-message')).toHaveCSS('opacity', '0');
+  await expect(frame.locator('.operation-status[data-variant="centered"]')).toBeHidden();
   await expect(frame.locator('.view-frame__status')).toHaveText('');
 
   await expect(frame).toHaveAttribute('data-slice-progress', 'true');
-  const progressAppearance = await frame.locator('.view-frame__status').evaluate((node) => {
-    const style = getComputedStyle(node, '::before');
-    return {
-      width: Number.parseFloat(style.width),
-      borderWidth: Number.parseFloat(style.borderTopWidth),
-      animationName: style.animationName,
-    };
-  });
-  expect(progressAppearance.width).toBeGreaterThanOrEqual(16);
-  expect(progressAppearance.borderWidth).toBe(3);
-  expect(progressAppearance.animationName).toBe('view-frame-slice-progress');
+  const progress = frame.locator('.operation-status[data-variant="compact"]');
+  await expect(progress).toBeVisible();
+  await expect(progress).toContainText('Loading slice…');
+  await expect(progress).toContainText('Showing the previous slice');
+  await expect(progress.locator('.operation-status__spinner')).toBeVisible();
   expect((await coordinate.boundingBox())!.x).toBeCloseTo(coordinateX, 1);
 
   releasePack();
@@ -1297,7 +1291,8 @@ test('empty atlas views disclose pending SVG downloads', async ({ page }) => {
   const frame = page.locator('[data-view="coronal"]');
   await expect(frame).toHaveAttribute('aria-busy', 'true');
   await expect(frame.locator('.view-frame__status')).toHaveText('Loading atlas…');
-  await expect(frame.locator('.view-frame__state-message')).toHaveCSS('opacity', '1');
+  await expect(frame.locator('.operation-status[data-variant="centered"]')).toBeVisible();
+  await expect(frame.locator('.operation-status__title').first()).toContainText('Loading registered anatomy…');
   release();
   await expect(frame).toHaveAttribute('aria-busy', 'false');
   await expect(frame.locator('.view-frame__status')).toHaveText('');

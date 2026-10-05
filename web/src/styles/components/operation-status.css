@@ -40,6 +40,7 @@
   color: var(--color-text-secondary);
   font-size: .8rem;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .operation-status__retry {
@@ -112,6 +113,9 @@
 
 .operation-status[data-variant='inline'] {
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
   align-items: center;
   gap: var(--space-2);
   min-height: 1.5rem;
@@ -157,4 +161,27 @@
 
 @media (prefers-reduced-motion: reduce) {
   .operation-status__spinner { animation: none; }
+}
+
+/* Hidden wins over every variant layout rule. */
+.operation-status[data-variant][hidden] { display: none; }
+
+.operation-status__live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.operation-status[data-variant='inline'] .operation-status__announcement {
+  flex: 1 1 8rem;
+}
+
+.operation-status[data-variant='inline'] .operation-status__retry {
+  flex: 0 0 auto;
 }

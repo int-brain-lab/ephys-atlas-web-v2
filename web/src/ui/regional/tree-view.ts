@@ -4,6 +4,7 @@ import type { RegionOrder, StatisticId } from '../../domain/types.js';
 import { html, required } from './dom.js';
 import { formatRegionalValue, rankRegionsByValue, regionMatchesQuery, regionalStatisticExtent } from './model.js';
 import { createRegionRow } from './row-view.js';
+import { OperationStatus } from '../operation-status.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -53,6 +54,8 @@ export class RegionalTreeView {
   private rovingButton: HTMLButtonElement | null = null;
   private hoveredRegionId: string | null = null;
   private currentOrder: RegionOrder = 'anatomy';
+  private valueState: 'ready' | 'loading' | 'error' | 'anatomy' | 'empty' = 'ready';
+  private readonly valueStatus = new OperationStatus('inline');
   private lastRender: {
     regions: readonly RegionMetadata[];
     values: ReadonlyMap<string, number>;
@@ -60,6 +63,7 @@ export class RegionalTreeView {
     unit: string | null;
     selection: string;
     order: RegionOrder;
+    valueState: 'ready' | 'loading' | 'error' | 'anatomy' | 'empty';
   } | null = null;
 
   constructor(root: ParentNode, private readonly callbacks: RegionalTreeCallbacks) {
@@ -123,6 +127,7 @@ export class RegionalTreeView {
     unit: string | null,
     selected: ReadonlySet<string>,
     order: RegionOrder,
+    valueState: 'ready' | 'loading' | 'error' | 'anatomy' | 'empty' = 'ready',
   ): void {
     // Volume switches have no regional values: keep the anatomical DOM, focus,
     // collapsed branches and scroll position intact while summaries change.
@@ -130,18 +135,32 @@ export class RegionalTreeView {
     const selection = JSON.stringify([...selected]);
     const last = this.lastRender;
     if (last && last.regions === regions && last.statistic === statistic && last.unit === unit
-      && last.selection === selection && last.order === order && last.values.size === values.size
+      && last.selection === selection && last.order === order && last.valueState === valueState && last.values.size === values.size
       && [...values].every(([id, value]) => last.values.has(id) && Object.is(last.values.get(id), value))) return;
-    this.lastRender = { regions, values, statistic, unit, selection, order };
+    this.lastRender = { regions, values, statistic, unit, selection, order, valueState };
+    this.valueState = valueState;
     this.setRegions(regions);
     this.currentOrder = order;
     this.syncOrderButton();
     this.list.dataset.order = order;
     const extent = regionalStatisticExtent(values);
     const statisticLabel = statistic === 'count' ? 'Count' : `${statistic[0]?.toUpperCase() ?? ''}${statistic.slice(1)}`;
-    this.statisticDomain.textContent = extent
+    const domainText = extent
       ? `${statisticLabel}: ${formatRegionalValue(extent[0], statistic, null)}–${formatRegionalValue(extent[1], statistic, null)}${unit && statistic !== 'count' ? ` ${unit}` : ''}`
       : `${statisticLabel}: no finite regional values`;
+    if (valueState === 'ready') this.statisticDomain.textContent = domainText;
+    else {
+      this.valueStatus.update({
+        state: valueState === 'anatomy' ? 'empty' : valueState,
+        title: valueState === 'loading' ? 'Loading regional values…'
+          : valueState === 'error' ? 'Regional values unavailable'
+          : valueState === 'anatomy' ? 'Anatomy only · regional values are not defined in volume mode'
+          : 'No regional feature loaded',
+      });
+      if (this.valueStatus.element.parentElement !== this.statisticDomain) {
+        this.statisticDomain.replaceChildren(this.valueStatus.element);
+      }
+    }
     const previousRovingId = this.rovingButton?.dataset.regionButton;
     const restoreFocus = document.activeElement === this.rovingButton;
     const rowModels = order === 'anatomy'
@@ -151,9 +170,22 @@ export class RegionalTreeView {
         depth: 0,
         hasChildren: false,
       }));
-    const rows = rowModels.map(({ region, depth, hasChildren }) =>
-      createRegionRow(region, depth, hasChildren, values.get(region.id), statistic, unit, extent, selected, this.collapsedRegionIds));
-    this.list.replaceChildren(...rows);
+    const retainRows = last?.regions === regions && last.order === order && this.rowById.size === rowModels.length;
+    const rows = rowModels.map(({ region, depth, hasChildren }) => {
+      const next = createRegionRow(region, depth, hasChildren, values.get(region.id), statistic, unit, extent, selected, this.collapsedRegionIds);
+      if (valueState !== 'ready') next.querySelector('.region-row__value')?.setAttribute('aria-hidden', 'true');
+      const existing = retainRows ? this.rowById.get(region.id) : undefined;
+      if (!existing) return next;
+      existing.dataset.missing = next.dataset.missing!;
+      existing.dataset.selected = next.dataset.selected!;
+      existing.setAttribute('aria-selected', String(selected.has(region.id)));
+      existing.querySelector('.region-row__button')?.setAttribute('aria-pressed', String(selected.has(region.id)));
+      existing.querySelector('.region-row__value')?.replaceWith(next.querySelector('.region-row__value')!);
+      return existing;
+    });
+    if (!retainRows || rows.some((row, index) => this.list.children[index] !== row)) {
+      this.list.replaceChildren(...rows);
+    }
     this.rowById.clear();
     rows.forEach((row) => {
       const id = row.dataset.regionId;
@@ -387,7 +419,7 @@ export class RegionalTreeView {
   }
 
   private syncTreeControls(filtering: boolean): void {
-    this.orderButton.disabled = this.rowById.size === 0;
+    this.orderButton.disabled = this.rowById.size === 0 || this.valueState !== 'ready';
     this.treeControls.hidden = this.currentOrder !== 'anatomy';
     if (this.currentOrder !== 'anatomy') {
       this.collapseAllButton.disabled = true;

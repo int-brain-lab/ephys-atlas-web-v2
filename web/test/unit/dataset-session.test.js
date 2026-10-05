@@ -205,3 +205,38 @@ test('feature loading prefetches the next and previous manifest neighbours', asy
   assert.deepEqual(prefetched, ['feature_c', 'feature_a']);
   session.stop();
 });
+
+test('feature Retry clears its own failure and ignores obsolete errors', async () => {
+  const store = createAppStore({ ...DEFAULT_APP_STATE, view: {
+    ...DEFAULT_APP_STATE.view,
+    dataset: { datasetId: 'custom_dataset', releaseId: 'r1' },
+    featureId: 'feature_a', parcellation: 'beryl',
+  } });
+  const feature = { schemaVersion: '1.0', featureId: 'feature_a', representation: 'regional', parcellation: 'beryl', regionIds: [], statistics: {} };
+  let calls = 0;
+  let rejectStale;
+  const repository = {
+    async loadManifest() { return manifest(); },
+    async loadRegions() { return []; },
+    async loadFeature() {
+      calls += 1;
+      if (calls === 1) throw new Error('first attempt unavailable');
+      if (calls === 2) return new Promise((_resolve, reject) => { rejectStale = reject; });
+      return feature;
+    },
+    async prefetchFeature() {},
+  };
+  const session = new DatasetSession(repository, store, () => {});
+  await session.loadDataset(store.getState().view.dataset);
+  assert.equal(session.snapshot().featureError, 'first attempt unavailable');
+  assert.equal(session.snapshot().datasetError, null);
+  const stale = session.loadCurrentFeature();
+  assert.equal(session.snapshot().featureError, null);
+  assert.equal(store.getState().runtime.datasetStatus, 'ready');
+  await session.loadCurrentFeature();
+  rejectStale(new Error('obsolete failure'));
+  await stale;
+  assert.equal(session.snapshot().feature, feature);
+  assert.equal(session.snapshot().featureError, null);
+  assert.equal(store.getState().runtime.datasetStatus, 'ready');
+});

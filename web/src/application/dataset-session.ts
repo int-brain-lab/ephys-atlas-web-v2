@@ -31,6 +31,8 @@ export interface DatasetSessionSnapshot {
   catalog: DatasetCatalog | null;
   manifest: DatasetManifest | null;
   feature: FeaturePayload | null;
+  featureError: string | null;
+  datasetError: string | null;
   regions: readonly RegionMetadata[];
 }
 
@@ -39,6 +41,8 @@ export class DatasetSession {
   private catalog: DatasetCatalog | null = null;
   private manifest: DatasetManifest | null = null;
   private feature: FeaturePayload | null = null;
+  private featureError: string | null = null;
+  private datasetError: string | null = null;
   private regions: readonly RegionMetadata[] = [];
   private datasetGeneration = 0;
   private regionsGeneration = 0;
@@ -55,6 +59,8 @@ export class DatasetSession {
       catalog: this.catalog,
       manifest: this.manifest,
       feature: this.feature,
+      featureError: this.featureError,
+      datasetError: this.datasetError,
       regions: this.regions,
     };
   }
@@ -81,6 +87,8 @@ export class DatasetSession {
     this.feature = null;
     this.regions = [];
     this.manifest = null;
+    this.featureError = null;
+    this.datasetError = null;
     this.changed();
     this.store.dispatch({ type: 'runtime/dataset', status: 'loading' });
 
@@ -104,6 +112,7 @@ export class DatasetSession {
       this.changed();
     } catch (error) {
       if (!this.isCurrentDataset(generation)) return;
+      this.datasetError = message(error);
       this.store.dispatch({ type: 'runtime/dataset', status: 'error', error: message(error) });
     }
   }
@@ -129,6 +138,7 @@ export class DatasetSession {
     } catch (error) {
       if (!this.isCurrentRegions(datasetGeneration, requestGeneration)) return true;
       this.regions = [];
+      this.datasetError = message(error);
       this.store.dispatch({ type: 'runtime/dataset', status: 'error', error: message(error) });
       return false;
     }
@@ -136,6 +146,10 @@ export class DatasetSession {
 
   async loadCurrentFeature(reconcileParcellation = false): Promise<void> {
     const requestGeneration = ++this.featureGeneration;
+    if (this.featureError !== null) {
+      this.featureError = null;
+      this.store.dispatch({ type: 'runtime/dataset', status: 'ready' });
+    }
     this.prefetch.cancel();
     const hadFeature = this.feature !== null;
     this.feature = null;
@@ -177,6 +191,7 @@ export class DatasetSession {
     } catch (error) {
       if (!this.isCurrentFeature(datasetGeneration, requestGeneration)) return;
       this.feature = null;
+      this.featureError = message(error);
       this.store.dispatch({ type: 'runtime/dataset', status: 'error', error: message(error) });
     }
   }

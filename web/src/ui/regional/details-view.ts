@@ -14,10 +14,12 @@ import {
 } from './model.js';
 import { smoothHistogramPath } from './histogram-curve.js';
 import { selectVolumeRegionDistribution } from '../../data/volume-regional-loader.js';
+import { OperationStatus } from '../operation-status.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const CHART_WIDTH = 1000;
 const CHART_HEIGHT = 100;
+const companionStatuses = new WeakMap<HTMLElement, OperationStatus>();
 
 function probabilitySum(values: readonly number[]): string {
   return String(Math.round(values.reduce((sum, value) => sum + value, 0) * 1e12) / 1e12);
@@ -69,6 +71,7 @@ export interface VolumeRegionalDistributionModel {
   readonly status: 'idle' | 'loading' | 'ready' | 'error';
   readonly error: string | null;
   readonly processedAgea: boolean;
+  readonly retry?: () => void;
 }
 
 export function renderSelectedRegions(
@@ -253,15 +256,23 @@ export function renderDistribution(
     }
     meta.append(hemisphereControl);
   }
-  const context = html('p', 'distribution-chart__context');
+  const context = html('div', 'distribution-chart__context');
   if (!volumeRegional) {
     context.hidden = true;
-  } else if (volumeRegional.status === 'loading') {
-    context.textContent = 'Loading exact selected-region voxel distributions…';
-  } else if (volumeRegional.status === 'error') {
-    context.textContent = volumeRegional.error ?? 'Selected-region voxel distributions could not be loaded.';
-  } else if (selected.size === 0) {
-    context.textContent = 'Select one or more regions to load their exact voxel distributions.';
+  } else if (selected.size === 0 || volumeRegional.status === 'loading' || volumeRegional.status === 'error') {
+    let status = companionStatuses.get(target);
+    if (!status) {
+      status = new OperationStatus('inline');
+      companionStatuses.set(target, status);
+    }
+    status.update(selected.size === 0
+      ? { state: 'empty', title: 'Select one or more regions to load their exact voxel distributions.' }
+      : volumeRegional.status === 'loading'
+        ? { state: 'loading', title: 'Loading exact selected-region voxel distributions…' }
+        : { state: 'error', title: 'Selected-region voxel distributions unavailable',
+          ...(volumeRegional.error ? { detail: volumeRegional.error } : {}),
+          ...(volumeRegional.retry ? { retry: volumeRegional.retry } : {}) });
+    context.append(status.element);
   } else {
     const side = volumeRegional.hemisphere === 'both'
       ? 'Both combines the stored left and right voxel populations.'
