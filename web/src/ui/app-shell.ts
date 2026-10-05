@@ -270,6 +270,11 @@ export class AppShell {
   private readonly secondaryPanels = new Map<SecondaryTabId, HTMLElement>();
   private scene3dHost!: HTMLElement;
   private scene3dNotice!: HTMLElement;
+  private scene3dOverlay!: HTMLElement;
+  private scene3dLoadingTitle!: HTMLElement;
+  private scene3dLoadingDetail!: HTMLElement;
+  private scene3dRetry!: HTMLButtonElement;
+  private scene3dObserver: MutationObserver | null = null;
   private scene3dExplodeInput!: HTMLInputElement;
   private scene3dExplodeValue!: HTMLOutputElement;
   private scene3dViewport: BrainScene3DViewport | null = null;
@@ -607,6 +612,7 @@ export class AppShell {
       this.clearSliceProgress(nodes);
     }
     this.viewportFactory.destroy();
+    this.scene3dObserver?.disconnect();
     this.scene3dFactory?.destroy();
   }
 
@@ -2511,6 +2517,30 @@ export class AppShell {
     const notice = element('p', 'secondary-view__scene3d-notice');
     notice.setAttribute('role', 'status');
     notice.textContent = '3-D anatomy is not connected in this build.';
+    const overlay = element('div', 'secondary-view__scene3d-overlay');
+    const spinner = element('span', 'secondary-view__scene3d-spinner');
+    spinner.setAttribute('aria-hidden', 'true');
+    const status = element('div', 'secondary-view__scene3d-status');
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-atomic', 'true');
+    const loadingTitle = element('strong', 'secondary-view__scene3d-loading-title');
+    const loadingDetail = element('p', 'secondary-view__scene3d-loading-detail');
+    status.append(loadingTitle, loadingDetail);
+    const retry = element('button', 'secondary-view__scene3d-retry');
+    retry.type = 'button';
+    retry.textContent = 'Retry';
+    retry.addEventListener('click', () => {
+      this.scene3dViewport?.destroy();
+      this.scene3dViewport = null;
+      this.scene3dPresentation = null;
+      this.scene3dViewState = null;
+      this.scene3dFailed = false;
+      host.replaceChildren();
+      host.dataset.scene3dState = 'loading';
+      delete host.dataset.error;
+      if (this.currentModel) this.renderScene3D(this.currentModel, true);
+    });
+    overlay.append(spinner, status, retry);
     const controls = element('label', 'secondary-view__scene3d-controls');
     const label = element('span', 'secondary-view__scene3d-control-label');
     label.textContent = 'Explode';
@@ -2528,11 +2558,19 @@ export class AppShell {
       this.callbacks.setScene3DExplode(explode.valueAsNumber);
     });
     controls.append(label, explode, value);
-    frame.append(host, controls, notice);
+    frame.append(host, controls, notice, overlay);
     this.scene3dHost = host;
     this.scene3dNotice = notice;
+    this.scene3dOverlay = overlay;
+    this.scene3dLoadingTitle = loadingTitle;
+    this.scene3dLoadingDetail = loadingDetail;
+    this.scene3dRetry = retry;
     this.scene3dExplodeInput = explode;
     this.scene3dExplodeValue = value;
+    // Loading completes independently of application state and URL updates.
+    this.scene3dObserver = new MutationObserver(() => this.syncScene3DStatus());
+    this.scene3dObserver.observe(host, { attributes: true, attributeFilter: ['data-scene3d-state'] });
+    this.syncScene3DStatus();
     this.secondaryPanels.set('brain-3d', frame);
     return frame;
   }
@@ -2605,25 +2643,25 @@ export class AppShell {
     const view = model.state.view;
     this.scene3dExplodeInput.value = String(view.scene3d.explode);
     this.scene3dExplodeValue.value = `${Math.round(view.scene3d.explode * 100)}%`;
-    this.scene3dExplodeInput.disabled = !this.scene3dFactory || this.scene3dFailed;
     const maximized = view.workspace.maximizedView;
     const visible = selected && (maximized === 'secondary'
       || (maximized === null && (window.innerWidth >= 1100 || view.workspace.activeCompactView === 'secondary')));
     if (!this.scene3dFactory) {
       this.scene3dNotice.textContent = '3-D anatomy is not connected in this build.';
       this.scene3dNotice.dataset.state = 'unavailable';
+      this.syncScene3DStatus();
       return;
     }
     if (visible && !this.scene3dViewport && !this.scene3dFailed) {
       try {
         this.scene3dViewport = this.scene3dFactory.create(this.scene3dHost);
         this.scene3dHost.dataset.scene3dHost = 'connected';
-      } catch (error) {
+      } catch {
         this.scene3dFailed = true;
         this.scene3dHost.dataset.scene3dState = 'error';
         this.scene3dNotice.textContent = '3-D anatomy unavailable.';
         this.scene3dNotice.dataset.state = 'error';
-        this.callbacks.reportError(error);
+        this.syncScene3DStatus();
         return;
       }
     }
@@ -2635,6 +2673,7 @@ export class AppShell {
         viewport.deactivate();
         this.scene3dNotice.textContent = '3-D anatomy unavailable.';
         this.scene3dNotice.dataset.state = 'error';
+        this.syncScene3DStatus();
         return;
       }
       if (this.scene3dPresentation !== model.regionalPresentation) {
@@ -2647,18 +2686,38 @@ export class AppShell {
       }
       if (visible) viewport.activate();
       else viewport.deactivate();
-      this.scene3dHost.setAttribute('aria-busy', String(!!model.featureLoading));
       this.scene3dNotice.textContent = model.featureLoading ? 'Updating…' : view.representation === 'volume'
         ? '3-D anatomy · anatomy only — volume scalars are not defined on this view'
         : '3-D anatomy';
       this.scene3dNotice.dataset.state = 'ready';
-    } catch (error) {
+      this.syncScene3DStatus();
+    } catch {
       this.scene3dFailed = true;
       viewport.deactivate();
       this.scene3dNotice.textContent = '3-D anatomy unavailable.';
       this.scene3dNotice.dataset.state = 'error';
-      this.callbacks.reportError(error);
+      this.syncScene3DStatus();
     }
+  }
+
+  private syncScene3DStatus(): void {
+    const state = this.scene3dHost.dataset.scene3dState;
+    const unavailable = !this.scene3dFactory;
+    const failed = this.scene3dFailed || state === 'error';
+    const ready = !unavailable && !failed && state === 'ready';
+    const loading = !unavailable && !failed && !ready;
+    this.scene3dHost.setAttribute('aria-busy', String(loading || (ready && !!this.currentModel?.featureLoading)));
+    this.scene3dExplodeInput.disabled = !ready;
+    this.scene3dNotice.hidden = !ready && !unavailable;
+    this.scene3dOverlay.hidden = ready || unavailable;
+    this.scene3dOverlay.dataset.state = failed ? 'error' : 'loading';
+    this.scene3dRetry.hidden = !failed;
+    const title = failed ? 'Couldn’t load the 3D brain'
+      : state === 'context-lost' ? 'Restoring the 3D view…' : 'Loading 3D brain…';
+    const detail = failed ? 'Please try again.'
+      : 'Downloading and preparing the model. This may take a moment.';
+    if (this.scene3dLoadingTitle.textContent !== title) this.scene3dLoadingTitle.textContent = title;
+    if (this.scene3dLoadingDetail.textContent !== detail) this.scene3dLoadingDetail.textContent = detail;
   }
 
   private renderViewFrame(axis: SliceAxis, model: ShellModel): void {

@@ -200,7 +200,6 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
       this.installLod(lod);
       this.frameCamera();
       if (this.state.camera) this.applyCamera(this.state.camera);
-      this.host.dataset.scene3dState = 'ready';
       this.host.dataset.lod = lod.id;
       this.scheduleRender();
       void this.loadUpgrade();
@@ -423,7 +422,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     this.host.dataset.scene3dState = 'context-lost';
   };
   private readonly onContextRestored = (): void => {
-    this.host.dataset.scene3dState = 'ready';
+    this.host.dataset.scene3dState = 'loading';
     this.active = this.resumeAfterContextRestore;
     this.controls.enabled = this.active;
     this.scheduleRender();
@@ -489,7 +488,8 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
           this.renderer.render(this.scene, this.camera);
           this.host.dataset.transparency = 'opaque';
         }
-        if (this.renderFailed) {
+        // A decoded model is ready only once its first frame renders successfully.
+        if (this.meshes.length && (this.renderFailed || this.host.dataset.scene3dState === 'loading')) {
           this.renderFailed = false;
           this.host.dataset.scene3dState = 'ready';
           delete this.host.dataset.error;

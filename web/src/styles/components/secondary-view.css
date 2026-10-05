@@ -113,6 +113,59 @@
   pointer-events: none;
 }
 
+.secondary-view__scene3d-overlay {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: rgb(9 20 30 / 94%);
+  color: var(--color-text);
+  text-align: center;
+}
+
+.secondary-view__scene3d-overlay[hidden],
+.secondary-view__scene3d-overlay[data-state='error'] .secondary-view__scene3d-spinner {
+  display: none;
+}
+
+.secondary-view__scene3d-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid rgb(var(--color-accent-rgb) / 20%);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: scene3d-loading-spin 1s linear infinite;
+}
+
+.secondary-view__scene3d-loading-title {
+  font-size: 1rem;
+}
+
+.secondary-view__scene3d-loading-detail {
+  max-width: 24rem;
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-secondary);
+  font-size: .8rem;
+  line-height: 1.5;
+}
+
+.secondary-view__scene3d-retry {
+  padding: .45rem 1rem;
+}
+
+@keyframes scene3d-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secondary-view__scene3d-spinner { animation: none; }
+}
+
 .secondary-projection {
   position: absolute;
   inset: 0;

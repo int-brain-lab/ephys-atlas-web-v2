@@ -30,6 +30,15 @@ for translucent context, with opaque-depth occlusion and a single-pass opaque
 fast path. Synthetic order/recovery tests and real Native / D042 Chromium checks
 pass; D070 records owner acceptance and waives additional Firefox/Safari review for this 3-D selection, without claiming unmeasured hardware performance.
 
+The 3-D context shows a centred loading overlay with a spinner and explicit
+download/preparation text from tab activation through the first successfully
+rendered model frame. The explode slider remains disabled until ready; loading
+is announced through a live status and `aria-busy`, with reduced-motion support.
+3-D failures remain local to the panel without marking the dataset unavailable.
+Manifest/model failures show a Retry action that recreates only the 3-D viewport
+and retains URL camera/explode state. Browser tests cover delayed resources at
+desktop, tablet and phone sizes, retained tab switching, and failure recovery.
+
 ## Scientific datasets
 
 | Dataset | Builder and browser machinery | Current real artifact maturity | Blocker/next action |

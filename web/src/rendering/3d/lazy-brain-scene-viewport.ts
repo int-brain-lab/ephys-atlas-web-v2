@@ -65,6 +65,9 @@ export class LazyBrainScene3DViewportFactory implements BrainScene3DViewportFact
       }
       this.inner = factory;
       return factory;
+    }).catch((error: unknown) => {
+      this.pending = null;
+      throw error;
     });
     return this.pending;
   }

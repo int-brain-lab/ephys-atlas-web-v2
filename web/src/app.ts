@@ -170,7 +170,8 @@ export class AtlasApp {
         }
       },
       cameraChanged: (camera) => this.store.dispatch({ type: 'scene3d/camera', camera }),
-      error: (error) => this.reportRuntimeError(error),
+      // The 3-D panel observes renderer errors and offers Retry independently
+      // of dataset readiness; optional anatomy failures must not fail the data.
     });
   }
 
