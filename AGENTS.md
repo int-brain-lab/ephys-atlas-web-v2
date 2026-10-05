@@ -30,6 +30,16 @@ default.
 - Do not create pull requests for routine work unless explicitly requested. The current project workflow integrates directly on `main`.
 - Do not rewrite or force-push shared history.
 
+## GitHub posting identity
+
+- GitHub comments and pull-request reviews must always originate from the
+  repository owner's `rossant` account.
+- Before every GitHub comment or review mutation, verify that the credentials
+  used by the selected tool resolve to `rossant`. For GitHub CLI, check
+  `gh api user --jq .login`; do not rely on Git commit identity or a prior check.
+- If the authenticated account differs, switch to `rossant` and verify again.
+  If that identity is unavailable, stop without posting and report the blocker.
+
 ## Scientific correctness guardrails
 
 Scientific provenance is part of the product contract, not optional metadata.
