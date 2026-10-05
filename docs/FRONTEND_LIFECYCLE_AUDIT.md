@@ -65,32 +65,56 @@ Three audit findings were fixed:
   produces an explicit unavailable frame
   ([app.spec.ts](../web/test/browser/app.spec.ts#L941)).
 
+## Lifecycle and ownership follow-up (2026-10-05)
+
+The catalog session now admits only the newest refresh completion, including
+runtime status and errors. App-owned catalog callers also guard navigation with
+a refresh generation, so an older caller cannot apply its returned catalog to
+the URL controller. Teardown invalidates both layers. Reversed completion,
+obsolete failure, and stop-during-refresh cases are covered by
+[dataset-session tests](../web/test/unit/dataset-session.test.js) and
+[app lifecycle browser tests](../web/test/browser/app-lifecycle.spec.ts).
+
+Foreground feature requests now carry a per-request `AbortSignal` through the
+repository to the existing HTTP/local readers. Dataset or feature supersession
+and session teardown abort that request; generations remain the commit
+authority. Signal-bearing resource fetches do not share cancellable work with
+another consumer. Tests cover signal forwarding, cancellation, and late results.
+
+`AtlasApp` already retained and invoked its store unsubscribe callback; the
+original audit's contrary statement was incorrect. Startup now shares one
+promise, stop is idempotent, and late startup/catalog completions cannot activate
+subscriptions or repaint the destroyed shell. A stopped instance is terminal.
+
+Downloads now belong to `ui/download-dialog.ts`, including artifact identity,
+stable row state, retries, and disposal. Completion from an earlier opening
+cannot close a later reopening of the same dialog. Orthogonal and static frames
+share `ui/retained-view-status.ts`, which owns typed requested/displayed content
+identities, token checks, busy state, pending/error transitions, retry
+invalidation, and timer disposal. Viewports continue to own geometry and actual
+asset readiness. Slice feedback retains the D076 150 ms delay; guide-only
+supersession cannot suppress that pending geometry cue. Dedicated browser tests
+cover these controller lifecycles alongside the existing view loading tests.
+
 ## Residual bounded risks
 
 | Risk | Severity | Why it is bounded | Next action |
 | --- | --- | --- | --- |
-| Foreground `DatasetRepositoryPort` manifest, region, and feature methods do not accept `AbortSignal`. | Medium performance; low correctness | Generations prevent stale commits, but superseded network and decode work can continue. | Thread a per-dataset/per-feature signal through the repository and source ports, abort it on supersession, and retain generation checks as the commit authority. |
-| `loadCatalog()` has no refresh generation. | Low | Overlapping refreshes can publish an older catalog result last; dataset and scientific payload commits remain separately guarded. | Add a catalog generation (or serialize refreshes) and a deterministic reversed-completion test. |
-| WebCrypto SHA-256 work after the response body is buffered is not cancellable. | Low performance | Integrity is still checked before cache admission; cancellation may only waste digest work. | Check the signal immediately before and after `crypto.subtle.digest`; consider a worker only if measurements show material main-thread cost. |
-| `AtlasApp.start()` does not retain the store unsubscribe callback, and asynchronous startup lacks an app-level stopped generation. | Low lifecycle | Normal production startup is single-shot, and session/viewport teardown guards scientific commits; repeated start/stop or embedding could leave callbacks or late UI work. | Store and invoke the unsubscribe callback, make start/stop idempotent, and add stop-during-start plus double-start tests. |
+| Shared manifest and region loads are not cancelled by feature supersession. | Medium performance; low correctness | Generations prevent stale commits; shared work may be useful to the next request. | Measure discarded work before adding consumer-aware cancellation to shared promises. |
+| IndexedDB transactions already in progress and WebCrypto SHA-256 after buffering cannot be interrupted by the feature signal. | Low performance | Reader signal checks and generation checks prevent obsolete exposure; integrity remains required before cache admission. | Consider interruptible work only if measurements show material cost. |
 
-These are follow-up hardening opportunities. None is currently evidence of a
-scientific stale-commit defect after the generation and render-token guards.
+## Structural work still worth measuring
 
-## Loading feedback audit follow-ups (2026-10-05)
+The local-data dialog remains in the shell and can be extracted as a separate
+coherent task if its behavior grows. Downloads and retained status ownership
+have already been extracted; no additional renderer facade was introduced.
 
-The loading pass extracted reusable presentation into `ui/operation-status.ts`,
-scoped retries to their operation, kept artifact rows stable across unrelated
-renders, and preserved tree button identity across value changes. These are
-implemented changes. Broader structural work remains a separate task:
-
-| Candidate | Benefit | Bounded next step |
-| --- | --- | --- |
-| Extract retained-view status ownership from `ui/app-shell.ts`. | Orthogonal and static methods repeat token checks, busy state, pending/error transitions and retry invalidation. | Extract a UI controller with explicit requested/displayed identities and keep geometry/readiness in the existing viewport boundary; retain D076 delay tests. |
-| Extract downloads and local-data dialogs from `ui/app-shell.ts`. | The shell combines layout, navigation, dialogs and asynchronous operations in one large class. | Start with a download-dialog controller owning immutable artifact identity and stable row state; retain close/retry/context-switch coverage. |
-| Represent requested versus displayed content explicitly. | DOM asset flags and string keys currently carry retained-frame readiness and identity. | Add a small typed presentation record at the UI/viewport boundary before extending retained-view behavior; keep coordinate, mapping and feature identity distinct. |
-| Reduce full chart/tree work during presentation-only changes. | Tree buttons now persist, but value nodes and distribution chart contents can still be recreated. | Measure mutations and focus behavior first; retain child nodes only where data identity and layout remain valid. |
-
-These proposals do not change scientific schemas or introduce another renderer
-facade. Existing foreground-cancellation and catalog-refresh risks above remain
-higher-priority lifecycle work when those paths are extended.
+The chart/tree audit found an existing presentation-only fast path. A Chromium
+probe against the real Tailscale development app exercised 40 pointer hover/leave
+transitions: all 874 tree buttons, the chart SVG, and its global curve retained
+identity. The only seven child-list mutations were chart `title` text updates.
+This supports keeping the existing hover path rather than rewriting it. It does
+not measure data/statistic/selection changes, which legitimately invalidate
+more presentation; future optimization there should start with profiling and
+focus checks. The reproducible local probe is ignored at
+`artifacts/local-dev/refactor-hover-probe.mjs`.

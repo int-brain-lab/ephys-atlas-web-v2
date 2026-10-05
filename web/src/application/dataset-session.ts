@@ -17,6 +17,7 @@ export interface DatasetRepositoryPort {
     featureId: string,
     representation: RepresentationKind,
     parcellation?: ParcellationId,
+    signal?: AbortSignal,
   ): Promise<FeaturePayload>;
   prefetchFeature(
     ref: DatasetRef,
@@ -45,8 +46,10 @@ export class DatasetSession {
   private datasetError: string | null = null;
   private regions: readonly RegionMetadata[] = [];
   private datasetGeneration = 0;
+  private catalogGeneration = 0;
   private regionsGeneration = 0;
   private featureGeneration = 0;
+  private featureLoadController: AbortController | null = null;
 
   constructor(
     private readonly repository: DatasetRepositoryPort,
@@ -66,14 +69,20 @@ export class DatasetSession {
   }
 
   async loadCatalog(options: { allowLocalOnly?: boolean } = {}): Promise<DatasetCatalog> {
+    const generation = ++this.catalogGeneration;
     this.store.dispatch({ type: 'runtime/catalog', status: 'loading' });
     try {
-      this.catalog = await this.repository.loadCatalog(options);
-      this.store.dispatch({ type: 'runtime/catalog', status: 'ready' });
-      this.changed();
-      return this.catalog;
+      const catalog = await this.repository.loadCatalog(options);
+      if (generation === this.catalogGeneration) {
+        this.catalog = catalog;
+        this.store.dispatch({ type: 'runtime/catalog', status: 'ready' });
+        this.changed();
+      }
+      return catalog;
     } catch (error) {
-      this.store.dispatch({ type: 'runtime/catalog', status: 'error', error: message(error) });
+      if (generation === this.catalogGeneration) {
+        this.store.dispatch({ type: 'runtime/catalog', status: 'error', error: message(error) });
+      }
       throw error;
     }
   }
@@ -83,6 +92,7 @@ export class DatasetSession {
     const generation = ++this.datasetGeneration;
     this.regionsGeneration += 1;
     this.featureGeneration += 1;
+    this.cancelFeatureLoad();
     this.prefetch.cancel();
     this.feature = null;
     this.regions = [];
@@ -146,6 +156,7 @@ export class DatasetSession {
 
   async loadCurrentFeature(reconcileParcellation = false): Promise<void> {
     const requestGeneration = ++this.featureGeneration;
+    this.cancelFeatureLoad();
     if (this.featureError !== null) {
       this.featureError = null;
       this.store.dispatch({ type: 'runtime/dataset', status: 'ready' });
@@ -168,12 +179,15 @@ export class DatasetSession {
       const regionsReady = await this.loadRegions(dataset, parcellation, datasetGeneration);
       if (!regionsReady || !this.isCurrentFeature(datasetGeneration, requestGeneration)) return;
     }
+    const controller = new AbortController();
+    this.featureLoadController = controller;
     try {
       const feature = await this.repository.loadFeature(
         dataset,
         featureId,
         representation,
         representation === 'regional' ? parcellation : undefined,
+        controller.signal,
       );
       if (!this.isCurrentFeature(datasetGeneration, requestGeneration)) return;
       const current = this.store.getState().view;
@@ -193,14 +207,23 @@ export class DatasetSession {
       this.feature = null;
       this.featureError = message(error);
       this.store.dispatch({ type: 'runtime/dataset', status: 'error', error: message(error) });
+    } finally {
+      if (this.featureLoadController === controller) this.featureLoadController = null;
     }
   }
 
   stop(): void {
+    this.catalogGeneration += 1;
     this.datasetGeneration += 1;
     this.regionsGeneration += 1;
     this.featureGeneration += 1;
+    this.cancelFeatureLoad();
     this.prefetch.cancel();
+  }
+
+  private cancelFeatureLoad(): void {
+    this.featureLoadController?.abort(new DOMException('Feature load cancelled', 'AbortError'));
+    this.featureLoadController = null;
   }
 
   private schedulePrefetch(

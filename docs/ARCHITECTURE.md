@@ -41,6 +41,14 @@ HTTP / IndexedDB adapters -> resource readers -> data materializers
 frameworks, global service registries, or abstractions without an existing
 product variation.
 
+`AppShell` delegates download operation state to `DownloadDialogController` and
+retained slice/static loading state to `RetainedViewStatus`. The latter tracks
+typed requested/displayed content and supersession; retained viewports remain
+the geometry and asset-readiness boundary. `DatasetSession` guards catalog and
+scientific payload commits by generation and cancels superseded foreground
+feature work. `AtlasApp` additionally guards catalog-dependent navigation and
+owns a single startup lifetime with terminal, idempotent teardown.
+
 ## Dataset and release model
 
 A dataset ID is an opaque runtime identifier, not a closed frontend enum. A

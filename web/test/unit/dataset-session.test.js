@@ -23,9 +23,83 @@ function manifest(id = 'custom_dataset') {
 
 function deferred() {
   let resolve;
-  const promise = new Promise((done) => { resolve = done; });
-  return { promise, resolve };
+  let reject;
+  const promise = new Promise((done, fail) => { resolve = done; reject = fail; });
+  return { promise, resolve, reject };
 }
+
+function catalog(projectId) {
+  return { schemaVersion: '1.0', projects: [{ id: projectId }], datasets: [] };
+}
+
+test('catalog refreshes keep the newest catalog when requests finish out of order', async () => {
+  const first = deferred();
+  const store = createAppStore(DEFAULT_APP_STATE);
+  const repository = {
+    loadCatalog() { return first.promise; },
+    async loadManifest() { throw new Error('unused'); },
+    async loadRegions() { return []; },
+    async loadFeature() { throw new Error('unused'); },
+    async prefetchFeature() {},
+  };
+  const session = new DatasetSession(repository, store, () => {});
+  const oldRefresh = session.loadCatalog();
+  repository.loadCatalog = async () => catalog('new');
+  const newCatalog = await session.loadCatalog();
+  first.resolve(catalog('old'));
+  const oldCatalog = await oldRefresh;
+
+  assert.equal(oldCatalog.projects[0].id, 'old');
+  assert.equal(newCatalog.projects[0].id, 'new');
+  assert.equal(session.snapshot().catalog, newCatalog);
+  assert.equal(store.getState().runtime.catalogStatus, 'ready');
+});
+
+test('a stale catalog failure rejects its caller without replacing newer catalog state', async () => {
+  const first = deferred();
+  const store = createAppStore(DEFAULT_APP_STATE);
+  const repository = {
+    loadCatalog() { return first.promise; },
+    async loadManifest() { throw new Error('unused'); },
+    async loadRegions() { return []; },
+    async loadFeature() { throw new Error('unused'); },
+    async prefetchFeature() {},
+  };
+  const session = new DatasetSession(repository, store, () => {});
+  const staleRefresh = session.loadCatalog();
+  repository.loadCatalog = async () => catalog('current');
+  const currentCatalog = await session.loadCatalog();
+  first.reject(new Error('old request failed'));
+
+  await assert.rejects(staleRefresh, /old request failed/);
+  assert.equal(session.snapshot().catalog, currentCatalog);
+  assert.equal(store.getState().runtime.catalogStatus, 'ready');
+  assert.equal(store.getState().runtime.catalogError, null);
+});
+
+test('stopping a session prevents an in-flight catalog load from publishing', async () => {
+  const pending = deferred();
+  const store = createAppStore(DEFAULT_APP_STATE);
+  const repository = {
+    loadCatalog() { return pending.promise; },
+    async loadManifest() { throw new Error('unused'); },
+    async loadRegions() { return []; },
+    async loadFeature() { throw new Error('unused'); },
+    async prefetchFeature() {},
+  };
+  let changes = 0;
+  const session = new DatasetSession(repository, store, () => { changes += 1; });
+  const load = session.loadCatalog();
+  const changesWhileLoading = changes;
+  session.stop();
+  pending.resolve(catalog('stopped'));
+
+  const result = await load;
+  assert.equal(result.projects[0].id, 'stopped');
+  assert.equal(session.snapshot().catalog, null);
+  assert.equal(changes, changesWhileLoading);
+  assert.equal(store.getState().runtime.catalogStatus, 'loading');
+});
 
 test('dataset sessions reject unresolved releases before repository loading', async () => {
   let loads = 0;
@@ -102,7 +176,9 @@ test('feature switches clear stale data before loading and ignore obsolete compl
   } });
   const testManifest = manifest();
   testManifest.features.push({ ...testManifest.features[0], id: 'feature_b' });
-  const slowFeature = deferred();
+  const slowFeatures = [deferred(), deferred(), deferred()];
+  let slowFeatureLoads = 0;
+  const featureSignals = [];
   const payload = (featureId) => ({
     schemaVersion: '1.0', featureId, representation: 'regional',
     parcellation: 'beryl', regionIds: [], statistics: {},
@@ -111,8 +187,11 @@ test('feature switches clear stale data before loading and ignore obsolete compl
     async loadCatalog() { return { schemaVersion: '1.0', datasets: [] }; },
     async loadManifest() { return testManifest; },
     async loadRegions() { return []; },
-    loadFeature(_ref, featureId) {
-      return featureId === 'feature_b' ? slowFeature.promise : Promise.resolve(payload(featureId));
+    loadFeature(_ref, featureId, _representation, _parcellation, signal) {
+      featureSignals.push(signal);
+      return featureId === 'feature_b'
+        ? slowFeatures[slowFeatureLoads++].promise
+        : Promise.resolve(payload(featureId));
     },
     async prefetchFeature() {},
   };
@@ -126,11 +205,30 @@ test('feature switches clear stale data before loading and ignore obsolete compl
 
   store.dispatch({ type: 'feature/set', featureId: 'feature_a' });
   await session.loadCurrentFeature();
-  slowFeature.resolve(payload('feature_b'));
+  assert.equal(featureSignals[1].aborted, true);
+  assert.equal(featureSignals[2].aborted, false);
+  slowFeatures[0].resolve(payload('feature_b'));
   await obsoleteLoad;
 
   assert.equal(session.snapshot().feature.featureId, 'feature_a');
+  assert.equal(session.snapshot().featureError, null);
+  store.dispatch({ type: 'feature/set', featureId: 'feature_b' });
+  const datasetObsoleteLoad = session.loadCurrentFeature();
+  store.dispatch({ type: 'feature/set', featureId: 'feature_a' });
+  await session.loadDataset(store.getState().view.dataset);
+  assert.equal(featureSignals[3].aborted, true);
+  assert.equal(featureSignals[4].aborted, false);
+  slowFeatures[1].resolve(payload('feature_b'));
+  await datasetObsoleteLoad;
+
+  store.dispatch({ type: 'feature/set', featureId: 'feature_b' });
+  const stoppedLoad = session.loadCurrentFeature();
   session.stop();
+  assert.equal(featureSignals[5].aborted, true);
+  slowFeatures[2].resolve(payload('feature_b'));
+  await stoppedLoad;
+  assert.equal(session.snapshot().feature, null);
+  assert.equal(session.snapshot().featureError, null);
 });
 
 test('starting a feature load aborts active prefetch from the previous feature', async () => {

@@ -446,3 +446,22 @@ pixel comparisons skip on this host). The reviewed four-dataset local bundle
 also passes `just validate-local-full` without browser errors. The manual
 Documentation screenshots workflow provides Linux-generated, rechecked pixels
 for review from macOS.
+
+## Frontend lifecycle refactoring (2026-10-05)
+
+Download operations and retained slice/static status now have dedicated UI
+controllers using the shared `OperationStatus` presentation. Typed requested
+and displayed identities replace shell-local string keys and status tokens.
+The viewport boundary, scientific navigation, retained content, and delayed
+slice feedback remain intact. An earlier download cannot close a newly reopened
+dialog.
+
+Catalog refreshes are guarded in both the session and app navigation callers.
+Superseded foreground feature loads are cancelled through repository signals;
+generation checks still reject obsolete payloads. Startup and teardown are
+idempotent, and late results cannot revive a stopped app. Shared manifest/region
+work and in-progress IndexedDB/digest operations remain bounded cancellation
+limits. Regression coverage includes reversed catalog results, stop during
+startup, feature cancellation, and retained-status retries/disposal. See the
+[updated lifecycle audit](FRONTEND_LIFECYCLE_AUDIT.md) for evidence and remaining
+refactoring candidates.

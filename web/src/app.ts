@@ -16,6 +16,7 @@ import {
 import { maxRegionalSliceIndex } from './core/slice-calibration.js';
 import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
 import type { ResourceIntegrity } from './data/cache.js';
+import type { DatasetCatalog } from './data/contracts.js';
 import { HttpDatasetSource } from './data/http-source.js';
 import { LocalDatasetSource } from './data/local-source.js';
 import type { PreparedLocalArchive, LocalArchivePreview } from './data/local-archive.js';
@@ -81,6 +82,9 @@ export class AtlasApp {
   private pendingLocalArchive: PreparedLocalArchive | null = null;
   private localImportAbort: AbortController | null = null;
   private stopApplicationStore: (() => void) | null = null;
+  private startup: Promise<void> | null = null;
+  private stopped = false;
+  private catalogRequestGeneration = 0;
 
   constructor(root: HTMLElement, private readonly options: AppOptions = {}) {
     const defaultView = options.defaultView ?? DEFAULT_VIEW_STATE;
@@ -181,15 +185,22 @@ export class AtlasApp {
     });
   }
 
-  async start(): Promise<void> {
+  start(): Promise<void> {
+    if (this.stopped) return Promise.resolve();
+    this.startup ??= this.startApplication();
+    return this.startup;
+  }
+
+  private async startApplication(): Promise<void> {
     this.render();
     this.loadRendererInventory();
     this.loadAtlasRegions();
     let catalog;
     try {
-      catalog = await this.session.loadCatalog({
+      catalog = await this.loadCatalog({
         allowLocalOnly: parseNavigationRequest(window.location.search).context === 'local',
       });
+      if (!catalog) return;
       this.urlController.start(catalog);
     } catch {
       // Catalog and navigation failures are already retained in their distinct
@@ -206,7 +217,7 @@ export class AtlasApp {
   }
 
   private activateApplication(): void {
-    if (this.stopApplicationStore) return;
+    if (this.stopped || this.stopApplicationStore) return;
     this.stopApplicationStore = this.store.subscribe((state, action) => {
       if (isDatasetNavigationAction(action) || action.type === 'view/hydrate' || action.type === 'parcellation/set') {
         this.hoveredRegionId = null;
@@ -228,6 +239,9 @@ export class AtlasApp {
   }
 
   stop(): void {
+    if (this.stopped) return;
+    this.stopped = true;
+    this.catalogRequestGeneration += 1;
     this.cancelLocal();
     this.stopApplicationStore?.();
     this.stopApplicationStore = null;
@@ -238,6 +252,7 @@ export class AtlasApp {
   }
 
   private render(): void {
+    if (this.stopped) return;
     const state = this.store.getState();
     const snapshot = this.session.snapshot();
     const manifestMatches = snapshot.manifest?.dataset.id === state.view.dataset.datasetId
@@ -545,9 +560,10 @@ export class AtlasApp {
 
   private async retryCatalog(): Promise<void> {
     try {
-      const catalog = await this.session.loadCatalog({
+      const catalog = await this.loadCatalog({
         allowLocalOnly: parseNavigationRequest(window.location.search).context === 'local',
       });
+      if (!catalog) return;
       if (this.stopApplicationStore) {
         this.urlController.setCatalog(catalog);
         this.render();
@@ -558,6 +574,19 @@ export class AtlasApp {
       await this.session.loadDataset(requireExactDataset(this.store.getState().view.dataset));
     } catch {
       this.render();
+    }
+  }
+
+  /** Only the latest app-owned refresh may apply catalog-dependent navigation. */
+  private async loadCatalog(options: { allowLocalOnly?: boolean } = {}): Promise<DatasetCatalog | null> {
+    if (this.stopped) return null;
+    const generation = ++this.catalogRequestGeneration;
+    try {
+      const catalog = await this.session.loadCatalog(options);
+      return !this.stopped && generation === this.catalogRequestGeneration ? catalog : null;
+    } catch (error) {
+      if (this.stopped || generation !== this.catalogRequestGeneration) return null;
+      throw error;
     }
   }
 
@@ -720,7 +749,9 @@ export class AtlasApp {
     const manifest = await this.localSource.admitPrepared(prepared);
     this.pendingLocalArchive = null;
     this.localImportAbort = null;
-    this.urlController.setCatalog(await this.session.loadCatalog());
+    const catalog = await this.loadCatalog();
+    if (!catalog) return;
+    this.urlController.setCatalog(catalog);
     this.store.dispatch({
       type: 'navigation/local',
       navigation: { kind: 'local' },
@@ -750,6 +781,7 @@ export class AtlasApp {
     }
 
     await this.localSource.deleteRelease(selector);
+    if (this.stopped) return;
     if (deletingActive && published) {
       this.store.dispatch({
         type: 'navigation/release',
@@ -758,7 +790,8 @@ export class AtlasApp {
         history: 'replace',
       });
     }
-    this.urlController.setCatalog(await this.session.loadCatalog());
+    const refreshedCatalog = await this.loadCatalog();
+    if (refreshedCatalog) this.urlController.setCatalog(refreshedCatalog);
   }
 
   private async copyCurrentUrl(): Promise<void> {
