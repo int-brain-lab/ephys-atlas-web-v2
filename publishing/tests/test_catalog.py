@@ -3,6 +3,7 @@ import json
 import sys
 from pathlib import Path
 import pytest
+import ibl_ephys_atlas_publish.catalog as catalog_module
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
@@ -168,6 +169,31 @@ def test_failed_promotion_preserves_last_good_catalog(tmp_path):
     with pytest.raises(ValidationError):
         store.promote_catalog({"schema_version": "1.0", "default_project": "missing", "projects": [], "datasets": []}, "credential")
     assert public_catalog(store) == before
+
+
+def test_catalog_is_the_recovery_authority_if_history_write_fails(tmp_path, monkeypatch):
+    store = PublicationStore(tmp_path)
+    store.create_dataset("d", {}, "credential")
+    publish(store, "d", "r1")
+    publish(store, "d", "r2")
+    original_atomic_json = catalog_module.atomic_json
+
+    def fail_history_write(path, value, mode=0o644):
+        if path.name == "edition-history.json":
+            raise OSError("simulated history write failure")
+        return original_atomic_json(path, value, mode)
+
+    monkeypatch.setattr(catalog_module, "atomic_json", fail_history_write)
+    with pytest.raises(OSError, match="history write failure"):
+        store.promote_catalog(_config(), "credential")
+
+    # The public catalog commits first and seeds identity history on recovery.
+    assert public_catalog(store)["projects"][0]["editions"][0]["edition_id"] == "e"
+    assert not (store.state / "edition-history.json").exists()
+    monkeypatch.setattr(catalog_module, "atomic_json", original_atomic_json)
+    with pytest.raises(Conflict, match="cannot be remapped"):
+        store.promote_catalog(_config(release_id="r2"), "credential")
+    assert public_catalog(store)["datasets"][0]["default_release"] == "r1"
 
 
 @pytest.mark.parametrize(
