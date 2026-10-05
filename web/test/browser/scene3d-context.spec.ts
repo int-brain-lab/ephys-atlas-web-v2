@@ -149,8 +149,17 @@ test('3-D shares presentation and selection without rebuilding geometry', async 
   await canvas.dblclick();
   const box = await canvas.boundingBox();
   expect(box).not.toBeNull();
-  await canvas.click({ position: { x: box!.width * .35, y: box!.height * .5 } });
+  const point = { x: box!.width * .35, y: box!.height * .5 };
+  await canvas.click({ position: point });
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-315');
+  await canvas.click({ position: point, modifiers: ['Control'] });
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
+  await page.getByRole('checkbox', { name: 'Select multiple', exact: true }).check();
+  await canvas.click({ position: point });
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-315');
+  await canvas.click({ position: point });
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
+  await page.getByRole('checkbox', { name: 'Select multiple', exact: true }).uncheck();
   await expect(host).toHaveAttribute('data-geometry-uploads', uploads!);
 
   await page.evaluate(() => {
@@ -202,8 +211,13 @@ test('3-D hover preserves the physical side while the regional panel keeps logic
       }
       sink.regionPointer({ type: 'select', regionId: 315, originalEvent: new PointerEvent('pointerup') });
       const selected = [...presentation.selectedRegionIds];
+      const selections = [selected];
+      for (const [regionId, modifiers] of [[343, {}], [315, { ctrlKey: true }], [343, { metaKey: true }]] as const) {
+        sink.regionPointer({ type: 'select', regionId, originalEvent: new PointerEvent('pointerup', modifiers) });
+        selections.push([...presentation.selectedRegionIds]);
+      }
       sink.regionPointer({ type: 'leave', regionId: null, originalEvent: new PointerEvent('pointerleave') });
-      return { observations, selected, afterLeave: presentation.highlightedRegionId,
+      return { observations, selected, selections, afterLeave: presentation.highlightedRegionId,
         hoveredRowsAfterLeave: root.querySelectorAll('.region-row[data-hovered="true"]').length };
     } finally { app.stop(); root.remove(); }
   });
@@ -213,6 +227,7 @@ test('3-D hover preserves the physical side while the regional panel keeps logic
     { highlighted: 315, logicalHovered: '-315' },
   ]);
   expect(result.selected).toEqual([-315, 315]);
+  expect(result.selections).toEqual([[-315, 315], [-343, 343], [-343, 343, -315, 315], [-315, 315]]);
   expect(result.afterLeave).toBeNull();
   expect(result.hoveredRowsAfterLeave).toBe(0);
 });

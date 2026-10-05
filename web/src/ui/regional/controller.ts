@@ -33,6 +33,8 @@ import { buildVolumeDistributionExport } from './volume-distribution-export.js';
 import { OperationStatus } from '../operation-status.js';
 
 export interface RegionalPanelCallbacks {
+  selectRegion(regionId: string, additive: boolean): void;
+  setMultiSelection(enabled: boolean): void;
   toggleSelection(regionId: string): void;
   setRegionOrder(order: RegionOrder): void;
   setColorScale(scale: ColorScaleSelection): void;

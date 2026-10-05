@@ -545,7 +545,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
       projectionId: this.axis,
       sliceIndex: this.requestedIndex,
     };
-    if (event.type === 'select') sink.toggleSelection(hit);
+    if (event.type === 'select') sink.selectRegion(hit, event.originalEvent.ctrlKey || event.originalEvent.metaKey);
     else if (event.type === 'hover') sink.hover(hit);
     else if (this.mount.root.dataset.mode !== 'composite') sink.inspect({
       ...hit,

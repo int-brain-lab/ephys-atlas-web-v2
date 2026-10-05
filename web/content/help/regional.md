@@ -1,6 +1,6 @@
 ## Inspect and select regions {#regional-inspection}
 
-Hover over a brain region to inspect its name and value. Select a region from a brain view or the Regions panel to add it to the comparison.
+Hover over a brain region to inspect its name and value. Click a region in a brain view or the Regions panel to select only that region. Ctrl-click (Cmd-click on Mac) adds or removes regions. Enable **Select multiple** in Regions to toggle regions without a modifier.
 
 ## Read regional values {#regional-values}
 

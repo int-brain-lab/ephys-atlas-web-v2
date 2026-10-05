@@ -70,7 +70,7 @@ export interface StaticProjectionRenderModel {
 export interface ProjectionInteractionSink {
   hover(hit: RegionHit | null): void;
   inspect(inspection: ProjectionInspection | null): void;
-  toggleSelection(hit: RegionHit): void;
+  selectRegion(hit: RegionHit, additive: boolean): void;
   stepSlice(axis: SliceAxis, delta: number): void;
   moveCursor(cursor: CursorState): void;
   reportError(error: unknown): void;

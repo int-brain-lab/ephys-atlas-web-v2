@@ -90,6 +90,7 @@ only part of the body; the index states what remains effective.
 | D079 | Publish D078 AGEA and W26 successors | accepted | 2026-09-17 | clean-Linux-main rebuilds; preserve existing releases; add immutable editions; deploy compatible site before catalog promotion |
 | D080 | Berlin as the neutral Auto palette | partially superseded | 2026-09-24 | D081 classifies Berlin as diverging and limits its Auto fallback to representations with a finite declared center; manual Berlin remains available without one; Q16 unchanged |
 | D081 | Separate color mapping from distribution scale | accepted | 2026-09-29 | Auto precedence, manual palette persistence, range-only Reset, and URL-persisted pseudo-log color mapping; exact histograms remain on their distribution axis; supersedes conflicting D050/D057/D080 presentation rules |
+| D082 | Replace region selection on plain click | accepted | 2026-10-05 | Ctrl/Cmd-click toggles membership; session-only Select multiple supports touch and keyboard across list, 2-D and 3-D |
 
 ## D001 — Separate v2
 
@@ -2052,3 +2053,20 @@ palette or center selections. Preserve D050's exact release-owned histograms,
 population counts, and selected distribution-axis behavior; this decision
 supersedes only the assumption that the distribution axis must always control
 color mapping.
+
+## D082 — Replace region selection on plain click
+
+Prioritize sequential region exploration: plain clicks select only the clicked
+region, replacing the existing selection. Clicking the sole selected region
+keeps it selected. Ctrl-click (Cmd-click on Mac) toggles membership without
+clearing other regions. Apply this consistently to the region list, registered
+slices, Top/Swanson and optional 3-D, using the existing shared logical IDs and
+selection actions.
+
+Expose a visible **Select multiple** checkbox in Regions, with a concise
+modifier-click hint. This session-only mode toggles regions without modifiers
+across every selection surface, including touch and Enter/Space activation.
+Keyboard modifiers must be retained during region activation. Arrow-key
+navigation does not select. Keep explicit clear/remove controls and first-
+selection ordering. Selected IDs remain URL-persisted; the interaction mode
+resets on reload and does not change scientific data or coordinate contracts.

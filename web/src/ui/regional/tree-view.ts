@@ -31,7 +31,8 @@ function createOrderIcon(order: RegionOrder): SVGSVGElement {
 }
 
 export interface RegionalTreeCallbacks {
-  toggleSelection(regionId: string): void;
+  selectRegion(regionId: string, additive: boolean): void;
+  setMultiSelection(enabled: boolean): void;
   setRegionOrder(order: RegionOrder): void;
   hoverRegion(regionId: string | null): void;
 }
@@ -41,6 +42,7 @@ export class RegionalTreeView {
   readonly source: HTMLElement;
   readonly resultCount: HTMLElement;
   private readonly pane: HTMLElement;
+  private readonly multiSelection: HTMLInputElement;
   private readonly searchClear: HTMLButtonElement;
   private readonly collapseAllButton: HTMLButtonElement;
   private readonly expandAllButton: HTMLButtonElement;
@@ -85,6 +87,17 @@ export class RegionalTreeView {
     this.resultCount.before(this.treeControls);
     this.resultCount.after(this.orderButton);
     this.list.setAttribute('role', 'tree');
+    this.list.setAttribute('aria-multiselectable', 'true');
+    const selectionControls = html('div', 'region-selection-controls');
+    const modeLabel = html('label', 'region-selection-controls__mode');
+    this.multiSelection = html('input');
+    this.multiSelection.type = 'checkbox';
+    modeLabel.append(this.multiSelection, 'Select multiple');
+    const hint = html('span', 'region-selection-controls__hint');
+    hint.textContent = 'Click to select · Ctrl/Cmd-click to compare';
+    selectionControls.append(modeLabel, hint);
+    this.search.closest('.region-search')!.append(selectionControls);
+    this.multiSelection.addEventListener('change', this.onSelectionModeChange);
 
     this.search.addEventListener('input', this.filterRegions);
     this.searchClear.addEventListener('click', this.clearSearch);
@@ -101,6 +114,7 @@ export class RegionalTreeView {
   }
 
   destroy(): void {
+    this.multiSelection.removeEventListener('change', this.onSelectionModeChange);
     this.search.removeEventListener('input', this.filterRegions);
     this.searchClear.removeEventListener('click', this.clearSearch);
     this.orderButton.removeEventListener('click', this.cycleOrder);
@@ -289,7 +303,11 @@ export class RegionalTreeView {
     this.orderButton.title = `Order: ${labels[this.currentOrder]} · Next: ${nextLabels[this.currentOrder]}`;
   }
 
-  private readonly onTreeClick = (event: Event): void => {
+  private readonly onSelectionModeChange = (): void => {
+    this.callbacks.setMultiSelection(this.multiSelection.checked);
+  };
+
+  private readonly onTreeClick = (event: MouseEvent): void => {
     const target = event.target instanceof Element ? event.target : null;
     const toggle = target?.closest<HTMLButtonElement>('[data-region-toggle]');
     if (toggle?.dataset.regionToggle) {
@@ -299,14 +317,21 @@ export class RegionalTreeView {
     const button = target?.closest<HTMLButtonElement>('[data-region-button]');
     const id = button?.dataset.regionButton;
     if (!id || this.regionById.get(id)?.mappingMember === false) return;
-    this.callbacks.toggleSelection(id);
+    this.callbacks.selectRegion(id, event.ctrlKey || event.metaKey);
   };
 
   private readonly onTreeKeyDown = (event: KeyboardEvent): void => {
     const button = event.target instanceof HTMLButtonElement
       ? event.target.closest<HTMLButtonElement>('[data-region-button]')
       : null;
-    if (button) this.navigateRegions(event, button);
+    if (!button) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      const id = button.dataset.regionButton;
+      if (id && this.regionById.get(id)?.mappingMember !== false) {
+        this.callbacks.selectRegion(id, event.ctrlKey || event.metaKey);
+      }
+    } else this.navigateRegions(event, button);
   };
 
   private readonly onTreePointerOver = (event: PointerEvent): void => {

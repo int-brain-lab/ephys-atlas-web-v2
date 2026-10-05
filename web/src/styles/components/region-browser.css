@@ -189,3 +189,9 @@
 .region-search:has(> .operation-status:not([hidden])) {
   grid-template-columns: minmax(0, 1fr);
 }
+
+.region-selection-controls{display:grid;gap:.2rem;color:var(--color-text-muted);font-size:.62rem}
+
+.region-selection-controls__mode{display:flex;align-items:center;gap:.35rem;min-height:1.75rem;color:var(--color-text-secondary);cursor:pointer}
+
+.region-selection-controls__mode input{margin:0;accent-color:var(--color-accent)}

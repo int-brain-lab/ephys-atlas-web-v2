@@ -77,7 +77,7 @@ For a schema-v1 regional feature, the viewer must:
 - <a id="ls02-03"></a> **`LS02-03`** — search regions by loaded metadata rather than a hardcoded list;
 - <a id="ls02-04"></a> **`LS02-04`** — display the selected statistic for each region;
 - <a id="ls02-05"></a> **`LS02-05`** — color registered anatomical regions from the selected statistic/colormap/range;
-- <a id="ls02-06"></a> **`LS02-06`** — use one shared selection state for region-list and SVG interactions;
+- <a id="ls02-06"></a> **`LS02-06`** — use one shared selection state for region-list and brain-view interactions; plain clicks select only the clicked region, Ctrl/Cmd-click toggles membership, and an explicit Select multiple mode supports touch and keyboard use;
 - <a id="ls02-07"></a> **`LS02-07`** — persist selection in URL state;
 - <a id="ls02-08"></a> **`LS02-08`** — show global descriptive statistics and a distribution/histogram;
 - <a id="ls02-09"></a> **`LS02-09`** — expose available Linear, Log, and Signed-log distribution axes through one

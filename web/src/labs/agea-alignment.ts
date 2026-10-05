@@ -134,7 +134,7 @@ export class AlignmentReview {
     if (this.disposed) return;
     this.factory = new RetainedProjectionViewportFactory({ source: this.source, maxVolumeDecodedBytes: 8 * 1024 * 1024 });
     this.factory.setInteractionSink({ hover: () => undefined, inspect: () => undefined,
-      toggleSelection: () => undefined, moveCursor: cursor => this.move({ ml: cursor.xUm, ap: cursor.yUm, dv: cursor.zUm }),
+      selectRegion: () => undefined, moveCursor: cursor => this.move({ ml: cursor.xUm, ap: cursor.yUm, dv: cursor.zUm }),
       stepSlice: (axis, delta) => this.step(axis, delta), reportError: error => this.fail(error) });
     AXES.forEach((axis, i) => this.createPanel(axis, registrations[i]!));
     if (this.values) {

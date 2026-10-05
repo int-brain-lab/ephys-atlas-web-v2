@@ -166,7 +166,7 @@ test('multi-region selection keeps first-selection order and identity colors', a
   const firstSelection = page.locator('.selected-region[data-region-id="-68"]');
   await expect(firstSelection).toHaveCSS('--selection-color', '#55a7f7');
 
-  await page.getByRole('button', { name: 'FRP5, Frontal pole layer 5 (left)' }).click();
+  await page.getByRole('button', { name: 'FRP5, Frontal pole layer 5 (left)' }).click({ modifiers: ['Control'] });
   const selectedRegions = page.locator('.selected-region');
   await expect(selectedRegions).toHaveCount(2);
   await expect(selectedRegions.nth(0)).toHaveAttribute('data-region-id', '-68');

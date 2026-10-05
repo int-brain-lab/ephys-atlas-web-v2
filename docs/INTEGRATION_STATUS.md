@@ -490,3 +490,13 @@ locations/signals/integrity descriptors, active panel-drag disposal, and recover
 after private edition-history failure. Scientific selections, release schemas,
 geometry, and reviewed pixels are unchanged. Exact public-authoring ZIP fixture
 regeneration and the full local gate validate serialization and browser parity.
+
+## Region selection (2026-10-05)
+
+D082 is implemented across the Regions list, linked slices, Top/Swanson and
+optional 3-D. Plain clicks replace selection; Ctrl/Cmd-click toggles membership.
+The Regions pane includes a session-only Select multiple control for touch and
+keyboard use, with the same behavior across views. Enter/Space retains modifier
+keys, explicit clear/remove controls remain available, and selection IDs retain
+URL persistence and first-selection order. Browser regressions cover replacement,
+modifier toggling, reload, keyboard activation, touch and shared view behavior.

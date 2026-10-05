@@ -8,7 +8,7 @@ Drag a slice control, scroll over a view, or use the arrow keys. Coronal, sagitt
 
 ## Inspect and select regions {#inspect}
 
-Hover over a brain view to inspect a region and its value. Click a region in the brain or Regions panel to add it to your selection.
+Hover over a brain view to inspect a region and its value. Click a region in a brain view or the Regions panel to select only that region. Ctrl-click (Cmd-click on Mac) adds or removes regions. Enable **Select multiple** in Regions to toggle regions without a modifier.
 
 ## Understand the values {#interpret}
 

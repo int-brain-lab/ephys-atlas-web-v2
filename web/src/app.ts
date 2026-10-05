@@ -77,6 +77,7 @@ export class AtlasApp {
   private anatomyLoading = true;
   private anatomyError: string | null = null;
   private hoveredRegionId: string | null = null;
+  private multiSelection = false;
   private viewportPresentation: ProjectionPresentation | null = null;
   private presentationReconciliationPending = false;
   private pendingLocalArchive: PreparedLocalArchive | null = null;
@@ -141,6 +142,8 @@ export class AtlasApp {
       reportError: (error) => this.reportRuntimeError(error),
     }, this.viewportFactory, options.scene3dFactory);
     this.regionalPanel = new RegionalPanelController(root, {
+      selectRegion: (regionId, additive) => this.selectRegion(regionId, additive),
+      setMultiSelection: (enabled) => { this.multiSelection = enabled; },
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
       setRegionOrder: (order) => this.store.dispatch({ type: 'regions/order', order }),
       setColorScale: (scale) => this.store.dispatch({ type: 'color/scale', scale }),
@@ -161,9 +164,9 @@ export class AtlasApp {
         this.projectionMappingIsCurrent() ? hit?.regionId ?? null : null,
       ),
       inspect: (inspection) => this.inspectProjection(inspection),
-      toggleSelection: (hit) => {
+      selectRegion: (hit, additive) => {
         if (this.projectionMappingIsCurrent()) {
-          this.store.dispatch({ type: 'selection/toggle', regionId: hit.regionId });
+          this.selectRegion(hit.regionId, additive);
         }
       },
       stepSlice: (axis, delta) => this.stepSlice(axis, delta),
@@ -171,10 +174,10 @@ export class AtlasApp {
       reportError: (error) => this.reportRuntimeError(error),
     });
     options.scene3dFactory?.setInteractionSink({
-      regionPointer: ({ type, regionId }) => {
+      regionPointer: ({ type, regionId, originalEvent }) => {
         const logicalRegionId = regionId === null ? null : String(-Math.abs(regionId));
         if (type === 'select' && logicalRegionId !== null) {
-          this.store.dispatch({ type: 'selection/toggle', regionId: logicalRegionId });
+          this.selectRegion(logicalRegionId, originalEvent.ctrlKey || originalEvent.metaKey);
         } else {
           this.setHoveredRegion(type === 'hover' && regionId !== null ? String(regionId) : null);
         }
@@ -183,6 +186,12 @@ export class AtlasApp {
       // The 3-D panel observes renderer errors and offers Retry independently
       // of dataset readiness; optional anatomy failures must not fail the data.
     });
+  }
+
+  private selectRegion(regionId: string, additive: boolean): void {
+    this.store.dispatch(additive || this.multiSelection
+      ? { type: 'selection/toggle', regionId }
+      : { type: 'selection/set', regionIds: [regionId] });
   }
 
   start(): Promise<void> {

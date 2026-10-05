@@ -6,3 +6,5 @@
 - **Esc** — close transient UI or restore a maximized view
 - **?** — open Help
 
+- **Ctrl/Cmd-click** — add or remove a region from the selection
+- **Enter / Space** on a region — select only that region; hold Ctrl/Cmd to toggle it, or enable Select multiple in Regions
