@@ -21,6 +21,7 @@ anatomy-pack documents remain derivation and reproducibility authorities.
 | Native 3-D component candidate | D066/D068 and [active task handoff](../tasks/2026-09-02-native-3d-mesh-components/README.md) |
 | Optional 3-D application integration | D037 and [`3D_INTEGRATION_PLAN.md`](3D_INTEGRATION_PLAN.md) |
 | Optional 3-D transparency | [`3D_TRANSPARENCY.md`](3D_TRANSPARENCY.md) |
+| Optional 3-D picking and hover scheduling | [`3D_PICKING.md`](3D_PICKING.md) |
 | Cross-repository asset boundary | [`SHARED_ATLAS_ASSET_EXTRACTION.md`](SHARED_ATLAS_ASSET_EXTRACTION.md) |
 
 ## Document roles

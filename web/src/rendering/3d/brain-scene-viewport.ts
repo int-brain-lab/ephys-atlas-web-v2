@@ -54,7 +54,7 @@ const DEFAULT_PRESENTATION: RegionalPresentation = {
   visibleRegionIds: new Set(), selectedRegionIds: new Set(), highlightedRegionId: null, featureSide: null,
 };
 
-const HOVER_PICK_DELAY_MS = 75;
+const HOVER_PICK_INTERVAL_MS = 32;
 
 export class RetainedBrainScene3DViewportFactory implements BrainScene3DViewportFactory {
   private sink: BrainScene3DInteractionSink = {};
@@ -377,15 +377,17 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
   }
 
   private scheduleHoverPick(event: PointerEvent): void {
-    this.clearPendingHoverPick();
     this.pendingHoverEvent = event;
+    // Coalesce to the latest pointer without postponing an already scheduled
+    // pick. Continuous movement must receive feedback before it stops.
+    if (this.hoverPickTimer !== null) return;
     this.hoverPickTimer = window.setTimeout(() => {
       this.hoverPickTimer = null;
       const pending = this.pendingHoverEvent;
       this.pendingHoverEvent = null;
       if (!pending || !this.active || this.destroyed || this.cameraInteractionActive) return;
       this.updateHovered(this.pick(pending), pending);
-    }, HOVER_PICK_DELAY_MS);
+    }, HOVER_PICK_INTERVAL_MS);
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
