@@ -35,6 +35,7 @@ import { OperationStatus } from '../operation-status.js';
 export interface RegionalPanelCallbacks {
   selectRegion(regionId: string, additive: boolean): void;
   setMultiSelection(enabled: boolean): void;
+  setAutoSlice(enabled: boolean): void;
   toggleSelection(regionId: string): void;
   setRegionOrder(order: RegionOrder): void;
   setColorScale(scale: ColorScaleSelection): void;
@@ -58,6 +59,7 @@ export interface RegionalPanelModel {
   regions: readonly RegionMetadata[];
   physicalRegions: readonly RegionMetadata[];
   anatomyAtlas: string | null;
+  autoSliceStatus?: string;
   anatomyLoading?: boolean;
   anatomyError?: string | null;
   hoveredRegionId: string | null;
@@ -138,6 +140,7 @@ export class RegionalPanelController {
 
   render(model: RegionalPanelModel): void {
     this.latestModel = model;
+    this.tree.updateAutoSlice(model.state.view.autoSlice, model.autoSliceStatus ?? '');
     this.anatomyStatus.update({
       state: model.anatomyLoading ? 'loading' : model.anatomyError ? 'error' : 'ready',
       title: model.anatomyLoading ? 'Loading region names…' : 'Couldn’t load region names',

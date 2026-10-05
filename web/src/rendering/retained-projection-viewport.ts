@@ -1,3 +1,6 @@
+import { RegionSliceLocator } from './region-slice-locator.js';
+import type { SliceIndices } from '../core/spatial.js';
+import type { ParcellationId } from '../domain/types.js';
 import { registeredVolumeCanvasPlacement, type RegisteredVolumeCanvasPlacement } from './registered-volume-placement.js';
 import { rgbaForSlice } from './volume-slice-colors.js';
 import type { EffectiveColoringState, SliceAxis } from '../domain/types.js';
@@ -681,6 +684,7 @@ export function volumeScalarCacheBudget(
 
 export class RetainedProjectionViewportFactory implements ProjectionViewportFactory {
   private readonly source: RegisteredProjectionSource;
+  private readonly regionLocator: RegionSliceLocator;
   private readonly viewports = new Set<RetainedProjectionViewport>();
   private readonly staticViewports = new Set<RetainedStaticProjectionViewport>();
   private readonly maxVolumeDecodedBytes: number;
@@ -710,6 +714,11 @@ export class RetainedProjectionViewportFactory implements ProjectionViewportFact
         ...(options.maxDecodedBytes ? { maxDecodedBytes: options.maxDecodedBytes } : {}),
       });
     }
+    this.regionLocator = new RegionSliceLocator(this.source);
+  }
+
+  locateRegionSlices(regionId: string, mapping: ParcellationId, current: SliceIndices, signal: AbortSignal) {
+    return this.regionLocator.locate(regionId, mapping, current, signal);
   }
 
   create(target: HTMLElement, axis: SliceAxis): ProjectionViewport {

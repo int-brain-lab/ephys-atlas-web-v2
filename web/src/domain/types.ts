@@ -115,6 +115,7 @@ export interface ViewState {
   regionOrder: RegionOrder;
   selection: readonly string[];
   cursor: CursorState;
+  autoSlice: boolean;
   workspace: WorkspaceState;
   layers: VolumeLayerState;
   scene3d: Scene3DViewState;

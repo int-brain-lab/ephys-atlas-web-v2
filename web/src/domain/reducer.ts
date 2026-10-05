@@ -78,6 +78,8 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       };
     case 'selection/clear':
       return { ...state, view: { ...state.view, selection: [] } };
+    case 'slices/auto':
+      return { ...state, view: { ...state.view, autoSlice: action.enabled } };
     case 'cursor/set': {
       const slices = worldToRegionalIndices(cursorStateToWorld(action.cursor));
       const cursor = worldToCursorState(regionalIndicesToWorld(slices));

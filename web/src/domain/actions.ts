@@ -48,6 +48,7 @@ type ViewActionPayload =
   | { type: 'selection/toggle'; regionId: string }
   | { type: 'selection/set'; regionIds: readonly string[] }
   | { type: 'selection/clear' }
+  | { type: 'slices/auto'; enabled: boolean }
   | { type: 'cursor/set'; cursor: CursorState }
   | { type: 'slice/set'; axis: SliceAxis; index: number }
   | { type: 'workspace/secondary-tab'; tab: SecondaryTabId }

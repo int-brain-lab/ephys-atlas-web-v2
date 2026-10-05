@@ -8,3 +8,5 @@ Explore how an electrophysiology feature varies across the mouse brain.
 4. **Interpret and save.** Use the distribution and comparison to understand the values. Open Data details for units, population, release, and provenance. Share preserves the current view; Download exports its data.
 
 > Display controls change how values look. They do not change the source or downloaded values.
+
+**Auto-slice** in Regions moves the three linked slices to show a selected region. Uncheck it to keep slices fixed while changing regions. Your choice is included in shared URLs. Manual slice navigation always remains available.

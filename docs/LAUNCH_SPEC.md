@@ -95,6 +95,11 @@ For a schema-v1 regional feature, the viewer must:
 - <a id="ls02-12"></a> **`LS02-12`** — compare selected-region statistics/distributions with the global population;
 - <a id="ls02-13"></a> **`LS02-13`** — clearly identify synthetic fixtures as non-scientific;
 
+Auto-slice defaults on for region selection and moves the shared cursor to the
+nearest registered display planes showing the region in all three projections.
+The Regions checkbox and hint explain how to keep slices fixed, and its setting
+is URL-persisted. Missing coverage keeps coordinates intact with explicit feedback.
+
 Global, selected-region, and compact histograms retain exact release bins when
 color mapping changes. The compact gradient aligns to raw values at
 distribution-axis positions. Range Reset clears only the manual color interval

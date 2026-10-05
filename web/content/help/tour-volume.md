@@ -4,7 +4,7 @@ Choose a dataset in Data, then search Feature. Data details contains the exact v
 
 ## Navigate linked slices {#navigate}
 
-Drag a slice control, scroll over a view, or use the arrow keys. Coronal, sagittal, and horizontal views stay linked to one atlas location.
+Drag a slice control, scroll over a view, or use the arrow keys. Coronal, sagittal, and horizontal views stay linked to one atlas location. **Auto-slice** in Regions moves them to a selected region; uncheck it to keep slices fixed.
 
 ## Inspect a voxel {#inspect}
 

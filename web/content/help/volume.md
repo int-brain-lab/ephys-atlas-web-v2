@@ -10,3 +10,5 @@ Anatomical outlines and the selected parcellation help identify the surrounding 
 
 Global Distribution describes valid voxels in the selected feature volume. Settings control the scale, color range, opacity, and anatomy outlines.
 
+
+**Auto-slice** in Regions moves the three linked slices to show a selected region. Uncheck it to keep slices fixed while changing regions. Your choice is included in shared URLs. Manual slice navigation always remains available.

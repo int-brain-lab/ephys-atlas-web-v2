@@ -1,3 +1,4 @@
+import type { SliceIndices } from '../core/spatial.js';
 import type { FeaturePayload } from '../data/contracts.js';
 import type {
   CursorState,
@@ -100,6 +101,7 @@ export interface ProjectionViewportFactory {
   updatePresentation(presentation: ProjectionPresentation): void;
   setInteractionSink(sink: ProjectionInteractionSink): void;
   getDisplaySliceInventories(): Promise<Readonly<Record<SliceAxis, DisplaySliceInventory>> | null>;
+  locateRegionSlices?(regionId: string, mapping: ParcellationId, current: SliceIndices, signal: AbortSignal): Promise<SliceIndices | null>;
   destroy(): void;
 }
 

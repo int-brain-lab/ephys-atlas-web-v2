@@ -520,3 +520,11 @@ modifier toggling, reload, keyboard activation, touch and shared view behavior.
 Parent-row regressions cover expansion, modifier/multiple-mode activation,
 selection preservation, search, value ordering and Beryl leaf selection. Parent
 navigation does not emit the analytics exploration event.
+
+D085 adds default-on Auto-slice in Regions with an explanatory hint and guide/
+tour coverage. User selection locates nearest visible registered anatomy planes
+using verified SVG identities and commits one shared native cursor. Disabling
+the URL-persisted setting keeps slices fixed; native positions already showing
+the region are retained. Cancelled/stale searches cannot move the cursor, and
+missing coverage or lookup errors leave coordinates intact with visible status.
+This is locally implemented behavior, not a deployed site update.

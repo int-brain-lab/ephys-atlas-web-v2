@@ -33,6 +33,7 @@ function createOrderIcon(order: RegionOrder): SVGSVGElement {
 export interface RegionalTreeCallbacks {
   selectRegion(regionId: string, additive: boolean): void;
   setMultiSelection(enabled: boolean): void;
+  setAutoSlice(enabled: boolean): void;
   setRegionOrder(order: RegionOrder): void;
   hoverRegion(regionId: string | null): void;
 }
@@ -42,6 +43,8 @@ export class RegionalTreeView {
   readonly source: HTMLElement;
   readonly resultCount: HTMLElement;
   private readonly pane: HTMLElement;
+  private readonly autoSlice: HTMLInputElement;
+  private readonly autoSliceStatus: HTMLElement;
   private readonly multiSelection: HTMLInputElement;
   private readonly searchClear: HTMLButtonElement;
   private readonly collapseAllButton: HTMLButtonElement;
@@ -98,6 +101,22 @@ export class RegionalTreeView {
     selectionControls.append(modeLabel, hint);
     this.search.closest('.region-search')!.append(selectionControls);
     this.multiSelection.addEventListener('change', this.onSelectionModeChange);
+    const autoControls = html('div', 'region-selection-controls');
+    const autoLabel = html('label', 'region-selection-controls__mode');
+    this.autoSlice = html('input');
+    this.autoSlice.type = 'checkbox';
+    this.autoSlice.checked = true;
+    this.autoSlice.setAttribute('aria-describedby', 'auto-slice-hint');
+    autoLabel.append(this.autoSlice, 'Auto-slice');
+    const autoHint = html('span', 'region-selection-controls__hint');
+    autoHint.id = 'auto-slice-hint';
+    autoHint.textContent = 'Move slices to the selected region. Uncheck Auto-slice to keep slices fixed.';
+    this.autoSliceStatus = html('span', 'region-selection-controls__hint');
+    this.autoSliceStatus.setAttribute('role', 'status');
+    this.autoSliceStatus.hidden = true;
+    autoControls.append(autoLabel, autoHint, this.autoSliceStatus);
+    selectionControls.after(autoControls);
+    this.autoSlice.addEventListener('change', this.onAutoSliceChange);
 
     this.search.addEventListener('input', this.filterRegions);
     this.searchClear.addEventListener('click', this.clearSearch);
@@ -114,6 +133,7 @@ export class RegionalTreeView {
   }
 
   destroy(): void {
+    this.autoSlice.removeEventListener('change', this.onAutoSliceChange);
     this.multiSelection.removeEventListener('change', this.onSelectionModeChange);
     this.search.removeEventListener('input', this.filterRegions);
     this.searchClear.removeEventListener('click', this.clearSearch);
@@ -128,6 +148,16 @@ export class RegionalTreeView {
     this.list.removeEventListener('focusout', this.onTreeFocusOut);
     this.pane.removeEventListener('pointerover', this.onPanePointerOver);
   }
+
+  updateAutoSlice(enabled: boolean, status: string): void {
+    this.autoSlice.checked = enabled;
+    this.autoSliceStatus.textContent = status;
+    this.autoSliceStatus.hidden = !status;
+  }
+
+  private readonly onAutoSliceChange = (): void => {
+    this.callbacks.setAutoSlice(this.autoSlice.checked);
+  };
 
   setRegions(regions: readonly RegionMetadata[]): void {
     this.regionById.clear();

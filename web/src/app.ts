@@ -14,7 +14,8 @@ import {
   resolveRegionalPresentation,
   retainRegionalPresentationWhileMappingLoads,
 } from './application/regional-presentation.js';
-import { maxRegionalSliceIndex } from './core/slice-calibration.js';
+import { worldToCursorState } from './core/spatial.js';
+import { regionalIndicesToWorld, maxRegionalSliceIndex } from './core/slice-calibration.js';
 import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
 import type { ResourceIntegrity } from './data/cache.js';
 import type { DatasetCatalog } from './data/contracts.js';
@@ -79,6 +80,8 @@ export class AtlasApp {
   private anatomyError: string | null = null;
   private hoveredRegionId: string | null = null;
   private multiSelection = false;
+  private autoSliceAbort: AbortController | null = null;
+  private autoSliceStatus = '';
   private viewportPresentation: ProjectionPresentation | null = null;
   private presentationReconciliationPending = false;
   private pendingLocalArchive: PreparedLocalArchive | null = null;
@@ -144,6 +147,7 @@ export class AtlasApp {
     }, this.viewportFactory, options.scene3dFactory);
     this.regionalPanel = new RegionalPanelController(root, {
       selectRegion: (regionId, additive) => this.selectRegion(regionId, additive),
+      setAutoSlice: (enabled) => this.store.dispatch({ type: 'slices/auto', enabled }),
       setMultiSelection: (enabled) => { this.multiSelection = enabled; },
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
       setRegionOrder: (order) => this.store.dispatch({ type: 'regions/order', order }),
@@ -194,6 +198,43 @@ export class AtlasApp {
     this.trackExploration(() => this.store.dispatch(additive || this.multiSelection
       ? { type: 'selection/toggle', regionId }
       : { type: 'selection/set', regionIds: [regionId] }));
+    if (this.store.getState().view.selection.includes(regionId)) void this.autoSliceToRegion(regionId);
+  }
+
+  private cancelAutoSlice(): void {
+    this.autoSliceAbort?.abort();
+    this.autoSliceAbort = null;
+    this.autoSliceStatus = '';
+  }
+
+  private async autoSliceToRegion(regionId: string): Promise<void> {
+    this.cancelAutoSlice();
+    const view = this.store.getState().view;
+    if (!view.autoSlice || !this.viewportFactory.locateRegionSlices) return;
+    const controller = new AbortController();
+    this.autoSliceAbort = controller;
+    this.autoSliceStatus = 'Finding slices for the selected region…';
+    this.render();
+    try {
+      const slices = await this.viewportFactory.locateRegionSlices(
+        regionId, view.parcellation, deriveRegionalSliceIndices(view.cursor), controller.signal,
+      );
+      if (this.stopped || controller.signal.aborted) return;
+      this.autoSliceAbort = null;
+      if (slices) {
+        this.autoSliceStatus = '';
+        this.store.dispatch({ type: 'cursor/set', cursor: worldToCursorState(regionalIndicesToWorld(slices)) });
+      } else {
+        this.autoSliceStatus = 'This region is not visible in all three slice projections. Slices kept fixed.';
+        this.render();
+      }
+    } catch {
+      if (this.stopped || controller.signal.aborted) return;
+      controller.abort();
+      this.autoSliceAbort = null;
+      this.autoSliceStatus = 'Couldn’t find slices. Select the region again to retry, or turn off Auto-slice.';
+      this.render();
+    }
   }
 
   /** Measure accepted user intent, never automatic reconciliation or URL hydration. */
@@ -244,6 +285,9 @@ export class AtlasApp {
   private activateApplication(): void {
     if (this.stopped || this.stopApplicationStore) return;
     this.stopApplicationStore = this.store.subscribe((state, action) => {
+      if (isDatasetNavigationAction(action) || ['view/hydrate', 'parcellation/set', 'context/reconcile',
+        'feature/set', 'selection/set', 'selection/toggle', 'selection/clear', 'cursor/set', 'slice/set',
+        'slices/auto'].includes(action.type)) this.cancelAutoSlice();
       if (isDatasetNavigationAction(action) || action.type === 'view/hydrate' || action.type === 'parcellation/set') {
         this.hoveredRegionId = null;
       }
@@ -266,6 +310,7 @@ export class AtlasApp {
   stop(): void {
     if (this.stopped) return;
     this.stopped = true;
+    this.cancelAutoSlice();
     this.catalogRequestGeneration += 1;
     this.cancelLocal();
     this.stopApplicationStore?.();
@@ -396,6 +441,7 @@ export class AtlasApp {
       // ontology rows.
       physicalRegions: data.feature?.representation === 'volume' ? data.regions : [],
       anatomyAtlas: this.atlasRegions?.atlas ?? null,
+      autoSliceStatus: this.autoSliceStatus,
       anatomyLoading: this.anatomyLoading,
       anatomyError: this.anatomyError,
       // The tree and feature rows use logical identities, while rendering

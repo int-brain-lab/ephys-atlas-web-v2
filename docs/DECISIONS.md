@@ -93,6 +93,7 @@ only part of the body; the index states what remains effective.
 | D082 | Replace region selection on plain click | partially superseded | 2026-10-05 | Ctrl/Cmd-click toggles membership; session-only Select multiple retained; D084 makes non-leaf tree rows expand/collapse |
 | D083 | Conservative Umami analytics | accepted | 2026-10-05 | one manual pageview plus six once-per-document capability events; production-only, sanitized metadata and no custom properties |
 | D084 | Parent rows navigate the region tree | accepted | 2026-10-05 | click and Enter/Space expand/collapse non-leaves; leaves retain selection; value rankings contain current-parcellation leaves |
+| D085 | Optional automatic region slice navigation | accepted | 2026-10-05 | default-on URL-persisted Auto-slice; nearest visible registered planes from verified SVG geometry; manual movement cancels lookup |
 
 ## D001 — Separate v2
 
@@ -2117,3 +2118,28 @@ not alter scientific mapping membership, feature aggregation, brain-view
 selection or URL-restored selection; existing selected parents remain
 removable using the selection controls. No automatic selection of descendants
 or parcellation change is introduced.
+
+## D085 — Optional automatic region slice navigation
+
+Selecting a region moves the linked coronal, sagittal and horizontal slices to
+show that region when **Auto-slice** is enabled. Default it on and expose the
+checkbox in Regions with a visible hint explaining how to keep slices fixed;
+include the setting in URL-v4 state and both representation tours. Switching
+it on affects subsequent selections, without changing restored coordinates.
+
+Find the nearest existing display plane containing the logical mapped region
+in each projection using verified registered SVG path identities. Keep a native
+coordinate when its current display plane already contains the region. Resolve
+equal-distance ties to the lower index. The three resulting native coordinates
+update the one shared cursor atomically; this is a visibility aid, not a
+scientific centroid or a guarantee that the crosshair lies inside the region.
+Never use feature values, static-map coordinates or optional 3-D centroids.
+
+Cache small presence sets for inspected slices, reuse existing verified pack
+transport and bounded decoded caches, and scan at most one plane per projection
+concurrently. Missing coverage in any projection leaves all slices fixed with
+an explicit explanation. Lookup failures offer retry by reselecting the region.
+Subsequent selections, manual navigation, disabling the setting, context
+changes, history restoration and teardown cancel pending work. Deselection,
+branch expansion and URL hydration do not trigger automatic movement. Existing
+immutable packs and scientific grid contracts remain unchanged.

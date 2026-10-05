@@ -259,3 +259,14 @@ test('resolved navigation serializes exact public edition/custom and local ident
   const local = { context: { kind: 'local' }, dataset: { id: 'local' }, releaseId: 'r1' };
   assert.equal(serializeNavigationRequest(local), 'v=4&dataset=local&release=r1&context=local');
 });
+
+test('auto-slice defaults on and fixed-slice preference roundtrips without moving the cursor', () => {
+  const fixed = { ...DEFAULT_VIEW_STATE, autoSlice: false };
+  const encoded = serializeViewState(fixed);
+  assert.equal(new URLSearchParams(encoded).get('autoslice'), '0');
+  const restored = parseViewState(`?${encoded}`);
+  assert.equal(restored.autoSlice, false);
+  assert.deepEqual(restored.cursor, fixed.cursor);
+  assert.equal(parseViewState('?v=4').autoSlice, true);
+  assert.equal(parseViewState('?v=4&autoslice=invalid').autoSlice, true);
+});
