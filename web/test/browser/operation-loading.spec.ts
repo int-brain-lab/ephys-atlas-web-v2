@@ -23,7 +23,7 @@ for (const width of [1280, 768, 390]) {
       await expect(announcement).toHaveCount(1);
       expect(await announcement.evaluate((node) => node.closest('[aria-busy="true"]'))).toBeNull();
       await expect(renderer).toHaveAttribute('data-asset-index', '660');
-      await expect(renderer).toHaveCSS('pointer-events', 'none');
+      await expect(renderer).toHaveCSS('pointer-events', 'auto');
       const box = (await status.boundingBox())!;
       const frameBox = (await frame.boundingBox())!;
       expect(box.x).toBeGreaterThanOrEqual(frameBox.x);
@@ -125,7 +125,7 @@ test('failed adjacent slice retries without clearing other ready views or charts
   await expect(status).toContainText('Couldn’t load this view');
   await expect(frame).toHaveAttribute('aria-busy', 'false');
   await expect(renderer).toHaveAttribute('data-asset-index', '660');
-  await expect(renderer).toHaveCSS('pointer-events', 'none');
+  await expect(renderer).toHaveCSS('pointer-events', 'auto');
   await expect(page.locator('.distribution-chart__global')).toBeAttached();
   await expect(page.locator('[data-view="sagittal"]')).toHaveAttribute('aria-busy', 'false');
   await expect(page.locator('[data-view="horizontal"]')).toHaveAttribute('aria-busy', 'false');

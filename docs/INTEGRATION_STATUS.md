@@ -38,6 +38,12 @@ Registered slice progress keeps the D076 150 ms delay, and speculative
 Retained pixels cannot be inspected as newly requested data; the slice badge
 identifies the previous displayed coordinate. Busy view announcements live
 outside their busy subtree. Reduced-motion mode stops the shared spinner.
+Slice updates preserve the renderer's wheel hit target throughout a continuous
+trackpad gesture; capture handlers block only stale region inspection/selection.
+Passive update badges allow wheel input through. Browser hit-testing regressions
+in `slice-scroll.spec.ts` cover continued small-delta scrolling during a delayed
+pack and stale-picking suppression, with Chromium, Firefox and Linux WebKit
+coverage. Native macOS trackpad confirmation remains a manual check.
 
 Feature summary, distribution, comparison and regional values distinguish
 pending data from loaded empty/non-finite values. The anatomical tree keeps its

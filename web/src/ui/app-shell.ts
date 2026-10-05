@@ -2440,6 +2440,13 @@ export class AppShell {
     const viewport = element('div', 'view-frame__viewport');
     const target = element('div', 'view-frame__renderer');
     target.setAttribute('aria-label', `${axis} renderer target`);
+    // Keep the wheel hit target stable during slice loads. Only region picking
+    // is blocked while these pixels belong to a previous request.
+    for (const type of ['pointermove', 'pointerup']) {
+      target.addEventListener(type, (event) => {
+        if (frame.dataset.updating) event.stopPropagation();
+      }, { capture: true });
+    }
     const projectionViewport = this.viewportFactory.create(target, axis);
     const tooltip = element('div', 'region-tooltip');
     tooltip.setAttribute('role', 'tooltip');

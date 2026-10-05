@@ -389,8 +389,9 @@
   }
 }
 
-/* Retained pixels remain visible, but cannot be inspected as the new feature. */
-.view-frame[data-updating] .view-frame__renderer,
+/* Feature changes disable the old renderer; slice loads gate picking in the shell
+   while keeping the wheel target active throughout a trackpad gesture. */
+.view-frame[data-updating='feature'] .view-frame__renderer,
 .secondary-view__surface[aria-busy='true'] .view-frame__renderer {
   pointer-events: none;
 }

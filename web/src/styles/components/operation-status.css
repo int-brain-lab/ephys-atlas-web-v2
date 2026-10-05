@@ -185,3 +185,8 @@
 .operation-status[data-variant='inline'] .operation-status__retry {
   flex: 0 0 auto;
 }
+
+/* A passive progress badge must not intercept an ongoing wheel gesture. */
+.operation-status[data-variant='compact'][data-state='loading'] {
+  pointer-events: none;
+}
