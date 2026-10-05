@@ -1,7 +1,7 @@
 # Local development bundle
 
-Status: active local-data runbook. Remote clean-checkout acquisition requires
-a new descriptor with resolved immutable HTTPS sources; Q8 is resolved.
+Status: active local-data runbook. The v6 volume and AGEA sources resolve to
+immutable public HTTPS releases; other roles still require reviewed local bytes.
 
 The local viewer consumes the same immutable schema-v1 releases and validated
 packs intended for HTTP delivery. It does not copy them into a developer-only
@@ -22,9 +22,9 @@ just dev
 
 `just data` reuses and fully validates present artifacts. It downloads a
 missing artifact only when the descriptor contains an exact HTTPS source;
-the historical v5 descriptor still contains unresolved sources. Published
-production releases exist separately; the remaining acquisition work is a new
-descriptor and clean-checkout verification, not an origin/access decision.
+v6 resolves the published regional-volume and processed AGEA successors.
+Other roles retain the reviewed local artifacts and unresolved sources. Full
+clean-checkout acquisition still needs those remaining origins pinned and verified.
 `just dev` is read-only and stops on a missing or corrupt launch-critical artifact.
 
 Use the refresh lane on the macOS development machine when you want to know
@@ -43,7 +43,31 @@ new bytes. Brain-Wide Map stays on its exact D038 preserved source and the
 volume stays on the D043 W26 source because neither has an approved mutable
 development policy.
 
-## Active v5 identity
+## Active v6 identity
+
+[`data/development-bundle-v6.json`](../../data/development-bundle-v6.json) is
+used by `just data`, `just dev`, `just dev-latest` and the full local-browser gate.
+It preserves v5's channels, clusters, Brain-Wide Map, projections, native mesh
+and initial view, and replaces only these dataset entries:
+
+| Role | Immutable identity | Maturity |
+| --- | --- | --- |
+| Volume | `2026_W26-ibl-review-20260917-v2` | published production |
+| AGEA | `agea-processed-20260917-v3` | published production |
+
+Both root manifests were checked against the live catalog's served-byte size
+and SHA-256. Their exact immutable HTTPS directories are recorded as resolved
+sources, so `just data` can acquire them when absent. The complete local v6
+graph validates: 7 artifacts, 43,330 files and 1,488,052,370 stored bytes.
+
+These releases include D078 regional histograms. Select a region to load its
+companion matrix; changing hemisphere reuses it. The chart keeps each selected
+region in its legend during loading, failures and empty results, and explains
+when a release has no regional capability. A missing mapping row is distinct
+from a stored row containing no valid voxels. No ontology subtree is inferred.
+Processed AGEA retains its upstream bilateral-averaging disclosure.
+
+## Historical v5 identity
 
 [`data/development-bundle-v5.json`](../../data/development-bundle-v5.json) pins:
 
@@ -131,8 +155,8 @@ Q5 with depth-four orthogonal slice packs; D079 publishes the processed AGEA
 and regional W26 successors. See the
 [deployment record](../publishing/REGIONAL_DISTRIBUTION_DEPLOYMENT_20260917.md).
 
-Create a new bundle descriptor with resolved immutable HTTPS sources, verify
-remote served bytes, and prove acquisition and viewer startup from a clean
-checkout. Preserve v5 and the rollback descriptors as local-preview evidence.
+Pin resolved immutable HTTPS sources for the remaining v6 roles, verify
+remote served bytes, and prove complete acquisition and viewer startup from a
+clean checkout. Preserve v5 and the rollback descriptors as local-preview evidence.
 Q2/Q9 concern the later paper snapshot and defaults, not this acquisition work.
 The [implementation plan](../IMPLEMENTATION_PLAN.md) tracks the remaining task.

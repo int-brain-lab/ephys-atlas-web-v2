@@ -677,7 +677,7 @@ def test_active_native_bundle_preserves_core_releases_and_pins_approved_mesh():
     assert current['artifacts'][6]['identity']['dataset_id'] == 'agea'
     assert current['artifacts'][6]['maturity'] == 'validated-real-local'
     assert current['unavailable'] == []
-    assert 'development-bundle-v5.json' in (ROOT / 'Justfile').read_text()
+    assert 'development-bundle-v6.json' in (ROOT / 'Justfile').read_text()
     rollback = load_development_bundle(ROOT / 'data/development-bundle-v5-d042-rollback.json')
     assert rollback['default_view'] == current['default_view']
     assert rollback['artifacts'][:5] == current['artifacts'][:5]
@@ -700,3 +700,21 @@ def test_bundle_environment_binds_mesh_identity_and_clears_stale_override(tmp_pa
     environment = _environment(bundle)
     assert environment['EPHYS_ATLAS_EXPECTED_MESH_PACK_ID'] == mesh['identity']['pack_id']
     assert environment['EPHYS_ATLAS_REAL_MESH_PACK'] == str(repository / 'artifacts/mesh')
+
+
+def test_regional_bundle_pins_published_successors_without_changing_historical_bundle():
+    previous = load_development_bundle(ROOT / 'data/development-bundle-v5.json')
+    current = load_development_bundle(ROOT / 'data/development-bundle-v6.json')
+    assert current['default_view'] == previous['default_view']
+    assert current['artifacts'][:3] == previous['artifacts'][:3]
+    assert current['artifacts'][4:6] == previous['artifacts'][4:6]
+    for index, release_id in ((3, '2026_W26-ibl-review-20260917-v2'),
+                              (6, 'agea-processed-20260917-v3')):
+        artifact = current['artifacts'][index]
+        assert artifact['identity']['release_id'] == release_id
+        assert artifact['maturity'] == 'published-production'
+        assert artifact['source'] == {
+            'state': 'resolved',
+            'base_url': f"https://ephys-atlas.iblcore.org/datasets/{artifact['identity']['dataset_id']}/releases/{release_id}/",
+        }
+    assert 'development-bundle-v6.json' in (ROOT / 'tools/local_preview.py').read_text()

@@ -23,6 +23,7 @@ if (expectedMesh && !expectedMeshId) throw new Error('Expected mesh identity mus
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await page.addInitScript(() => localStorage.setItem('ibl-ephys-atlas:help-tour-seen:v1', 'seen'));
   let meshManifest;
   page.on('response', async (response) => {
     if (response.url().includes('/__local-assets/mesh/') && response.url().endsWith('/manifest.json')) meshManifest = await response.json();
@@ -77,7 +78,8 @@ try {
     }, { datasetId, releaseId });
     await detailsButton.click();
     await details.getByRole('region', { name: 'Data version' }).getByText(releaseId, { exact: true }).waitFor();
-    await page.keyboard.press('Escape');
+    await details.getByRole('button', { name: 'Close', exact: true }).click();
+    await details.waitFor({ state: 'hidden' });
     await page.waitForFunction(() => {
       const field = document.querySelector('[data-context-field="feature"]');
       const value = field?.querySelector('.context-field__value')?.textContent?.trim();

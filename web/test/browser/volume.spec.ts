@@ -78,6 +78,8 @@ test('volume summary and exact valid-voxel distribution reuse the loaded summary
   await expect(distribution.locator('.distribution-chart__bin')).toHaveCount(8);
   await expect(distribution.locator('.distribution-chart__global')).toHaveAttribute('data-total', '191');
   await expect(distribution.locator('.distribution-chart__region')).toHaveCount(0);
+  await expect(distribution.locator('.distribution-chart__context')).toContainText('This release has no regional histograms');
+  await expect(distribution.locator('.distribution-chart__legend-item[data-region-id="-362"]')).toContainText('MD · This release has no regional histograms');
   const log = distribution.getByRole('button', { name: 'Log', exact: true });
   await expect(log).toBeEnabled();
   await expect(distribution.getByRole('button', { name: 'Signed log' })).toBeEnabled();

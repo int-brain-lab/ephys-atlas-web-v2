@@ -67,6 +67,7 @@ export interface VolumeRegionalDistributionModel {
   readonly status: 'idle' | 'loading' | 'ready' | 'error';
   readonly error: string | null;
   readonly processedAgea: boolean;
+  readonly unavailableReason?: string;
   readonly retry?: () => void;
 }
 
@@ -101,6 +102,8 @@ export function renderDistribution(
         return counts ? [{ regionId, ...histogramDistribution(counts) }] : [];
       })
       : [];
+  const selectedIds = [...selected];
+  const seriesColor = (regionId: string): string => selectionColor(selectedIds.indexOf(regionId));
   const maxProbability = Math.max(
     0,
     ...global.probabilities,
@@ -110,7 +113,8 @@ export function renderDistribution(
   const regionById = new Map(regions.map((region) => [region.id, region]));
   const chart = html('div', 'distribution-chart');
   chart.dataset.fixture = String(fixture);
-  chart.dataset.volumeRegional = String(volumeRegional !== undefined);
+  chart.dataset.representation = feature.representation;
+  chart.dataset.volumeRegional = String(volumeRegional !== undefined && !volumeRegional.unavailableReason);
   chart.dataset.axisScale = presentationScale.effectiveScale;
   chart.dataset.distributionDomain = presentationScale.effectiveDistributionDomain;
   const meta = html('div', 'distribution-chart__meta');
@@ -155,7 +159,7 @@ export function renderDistribution(
     domainControl.append(button);
   }
   meta.append(label, population, scaleControl, domainControl);
-  if (volumeRegional) {
+  if (volumeRegional && !volumeRegional.unavailableReason) {
     const hemisphereControl = html('div', 'distribution-chart__hemisphere-control');
     hemisphereControl.setAttribute('role', 'group');
     hemisphereControl.setAttribute('aria-label', 'Regional distribution hemisphere');
@@ -170,7 +174,9 @@ export function renderDistribution(
     meta.append(hemisphereControl);
   }
   const context = html('div', 'distribution-chart__context');
-  if (!volumeRegional) {
+  if (feature.representation === 'volume' && (!volumeRegional || volumeRegional.unavailableReason)) {
+    context.textContent = volumeRegional?.unavailableReason ?? 'This release has no regional histograms.';
+  } else if (!volumeRegional) {
     context.hidden = true;
   } else if (selected.size === 0 || volumeRegional.status === 'loading' || volumeRegional.status === 'error') {
     let status = companionStatuses.get(target);
@@ -245,9 +251,9 @@ export function renderDistribution(
   colorRange.append(leftOutsideRange, selectedRange, rightOutsideRange, minimumBoundary, maximumBoundary);
   svg.append(colorRange);
 
-  selectedDistributions.forEach((distribution, selectionIndex) => {
+  selectedDistributions.filter((distribution) => distribution.total > 0).forEach((distribution) => {
     const region = regionById.get(distribution.regionId);
-    const color = selectionColor(selectionIndex);
+    const color = seriesColor(distribution.regionId);
     const line = svgElement('path');
     line.classList.add('distribution-chart__region');
     line.dataset.regionId = distribution.regionId;
@@ -349,12 +355,30 @@ export function renderDistribution(
   globalLegend.dataset.series = 'global';
   globalLegend.textContent = `${regionalFeature ? 'Global' : 'Valid voxels'} · n=${global.total.toLocaleString('en-US')}`;
   legend.append(globalLegend);
-  selectedDistributions.forEach((distribution, selectionIndex) => {
+  selectedIds.forEach((regionId) => {
+    const distribution = selectedDistributions.find((item) => item.regionId === regionId);
     const item = html('span', 'distribution-chart__legend-item');
-    item.dataset.regionId = distribution.regionId;
-    item.style.setProperty('--selection-color', selectionColor(selectionIndex));
-    const tailCount = distribution.underflowCount + distribution.overflowCount;
-    item.textContent = `${regionById.get(distribution.regionId)?.acronym ?? distribution.regionId} · n=${distribution.total.toLocaleString('en-US')}${tailCount > 0 ? ` · ${tailCount.toLocaleString('en-US')} outside focus` : ''}`;
+    item.dataset.regionId = regionId;
+    item.style.setProperty('--selection-color', seriesColor(regionId));
+    const name = regionById.get(regionId)?.acronym ?? regionId;
+    if (distribution && distribution.total > 0) {
+      const tailCount = distribution.underflowCount + distribution.overflowCount;
+      item.textContent = `${name} · n=${distribution.total.toLocaleString('en-US')}${tailCount > 0 ? ` · ${tailCount.toLocaleString('en-US')} outside focus` : ''}`;
+    } else {
+      const reason = regionalFeature
+        ? 'No observations for this region'
+        : volumeRegional?.unavailableReason ?? (!volumeRegional
+          ? 'This release has no regional histograms'
+          : volumeRegional.status === 'loading' || volumeRegional.status === 'idle'
+            ? 'Loading regional histogram…'
+            : volumeRegional.status === 'error'
+              ? 'Regional histogram failed to load'
+              : distribution
+                ? 'No valid voxels for this region and hemisphere'
+                : 'No stored population for this region and hemisphere');
+      item.dataset.empty = 'true';
+      item.textContent = `${name} · ${reason}`;
+    }
     legend.append(item);
   });
   chart.append(meta, context, plot, axis, tails, rangeNote, legend);

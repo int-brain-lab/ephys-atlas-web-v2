@@ -84,7 +84,7 @@ test('region-name catalog failure retains release data and retries independently
   expect(requests).toBe(2);
 });
 
-test('selected-region companion retries its failed resource while the global chart stays ready', async ({ page }) => {
+test('regional histograms explain loading, failures, empty populations and missing rows', async ({ page }) => {
   // Extend canonical golden inputs in this route fixture; every changed descriptor
   // retains exact byte/SHA verification and the scientific runtime stays unchanged.
   const manifest = JSON.parse(await readFile('../fixtures/golden-v1/manifest.json', 'utf8'));
@@ -139,17 +139,40 @@ test('selected-region companion retries its failed resource while the global cha
       await route.fulfill({ body: resources.get(path)!, contentType: 'application/octet-stream' });
     }
   });
-  await page.goto('/app/?v=4&repr=volume&selected=-362&cursor=25,25,25&scale=linear&dist=full');
+  await page.goto('/app/?v=4&repr=volume&cursor=25,25,25&scale=linear&dist=full');
   const chart = page.locator('.distribution-chart');
+  await expect(chart).toContainText('Select one or more regions');
+  expect(requests).toBe(0);
+  await page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ }).click();
+  const selectedLegend = chart.locator('.distribution-chart__legend-item[data-region-id="-362"]');
+  await expect(selectedLegend).toContainText('Loading regional histogram');
   await expect(chart.locator('.distribution-chart__global')).toHaveAttribute('data-total', '191');
   await expect(chart).toContainText('Loading exact selected-region voxel distributions…');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
   release();
   await expect(chart).toContainText('Selected-region voxel distributions unavailable');
+  await expect(selectedLegend).toContainText('Regional histogram failed to load');
   await expect(chart.locator('.distribution-chart__global')).toHaveAttribute('data-total', '191');
   await chart.getByRole('button', { name: 'Retry', exact: true }).click();
   await expect(chart.locator('.distribution-chart__region[data-region-id="-362"]')).toHaveAttribute('data-total', '191');
   await expect(chart.getByRole('button', { name: 'Download exact counts' })).toBeVisible();
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
+  expect(requests).toBe(2);
+  await page.getByLabel('Select multiple').check();
+  await page.getByRole('button', { name: /CA1, Field CA1/ }).click();
+  // Move the populated region after the empty one without reloading the feature.
+  await page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ }).click();
+  await page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ }).click();
+  await expect(chart.locator('.distribution-chart__legend-item[data-region-id="-382"]')).toContainText('No valid voxels for this region and hemisphere');
+  await expect(chart.locator('.distribution-chart__region[data-region-id="-382"]')).toHaveCount(0);
+  const curve = chart.locator('.distribution-chart__region[data-region-id="-362"]');
+  expect(await curve.evaluate((node) => (node as HTMLElement).style.getPropertyValue('--selection-color')))
+    .toBe(await selectedLegend.evaluate((node) => (node as HTMLElement).style.getPropertyValue('--selection-color')));
+  await chart.getByRole('button', { name: 'Right', exact: true }).click();
+  await expect(selectedLegend).toContainText('No stored population for this region and hemisphere');
+  await expect(chart.locator('.distribution-chart__region')).toHaveCount(0);
+  await chart.getByRole('button', { name: 'Both', exact: true }).click();
+  await expect(curve).toHaveAttribute('data-total', '191');
+  await expect(chart.locator('.distribution-chart__global')).toHaveAttribute('data-total', '191');
   expect(requests).toBe(2);
 });

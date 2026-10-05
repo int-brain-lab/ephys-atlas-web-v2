@@ -57,7 +57,7 @@ test('validated full-catalog workflow visits every local dataset with retained N
   test.setTimeout(150_000);
   const result = await promisify(execFile)('uv', [
     'run','--project','builder','--extra','test','--locked','python','-m','tools.development_bundle',
-    'run','--cwd','web','data/development-bundle-v5.json','--','node','scripts/validate-local-full.mjs',
+    'run','--cwd','web','data/development-bundle-v6.json','--','node','scripts/validate-local-full.mjs',
     'http://127.0.0.1:4196/','../artifacts/native-main-browser-evidence',
   ], {cwd:path.resolve('..'),timeout:140_000});
   expect(result.stdout).toContain('ibl-native-d070-b5f5abc7d0bb3575');

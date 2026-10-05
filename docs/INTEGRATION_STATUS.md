@@ -393,6 +393,18 @@ must not be silently relabelled.
 An absent optional mesh is reported but does not block launch-critical 2-D;
 an invalid mesh already present fails closed.
 
+The active v6 bundle preserves the reviewed local channels, clusters,
+Brain-Wide Map, projection and native mesh while selecting the published
+D079 regional W26 and processed AGEA releases. These two entries pin resolved
+immutable HTTPS directories and verified root size/hash; historical descriptors
+remain unchanged. The seven-artifact local v6 graph validates in full.
+Volume charts now explain absent regional capability and keep every selected
+region in the legend through loading, errors, zero valid voxels and absent
+mapping rows. Empty selections retain the select-a-region prompt, companions
+remain lazy and hemisphere changes reuse them. The AGEA averaging caveat is
+preserved. Other bundle roles still require local bytes until their exact
+published origins are pinned.
+
 `just data-refresh-local` refreshes channel/cluster upstream aliases and
 proceeds only when their immutable source IDs match the reviewed bundle.
 `just dev-latest` combines that check with startup. New upstream bytes require

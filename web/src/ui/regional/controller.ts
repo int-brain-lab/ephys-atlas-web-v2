@@ -284,7 +284,7 @@ export class RegionalPanelController {
           model.presentationScale.histogram,
         );
       } else {
-        this.analysis.replaceChildren(message('Exact selected-region voxel distributions are overlaid in the distribution chart above; regional summary statistics are not derived from the volume.'));
+        this.analysis.replaceChildren(message(volumeRegional?.unavailableReason ?? 'Exact selected-region voxel distributions are overlaid in the distribution chart above; regional summary statistics are not derived from the volume.'));
       }
     } else {
       this.renderFeatureStatus(model);
@@ -411,9 +411,25 @@ export class RegionalPanelController {
       && binning
       && companion?.binnings.some(({ binningId }) => binningId === binning.id)
       && model.physicalRegions.length > 0;
-    if (!feature || !binning || !available || !load) {
+    if (!feature || !binning) {
       this.resetVolumeRegionalDistribution();
       return undefined;
+    }
+    if (!available || !load) {
+      this.resetVolumeRegionalDistribution();
+      return {
+        binning: null,
+        physicalRegions: model.physicalRegions,
+        hemisphere: model.state.view.distribution.hemisphere,
+        status: 'idle',
+        error: null,
+        processedAgea: false,
+        unavailableReason: !companion || !load
+          ? 'This release has no regional histograms for this parcellation.'
+          : model.physicalRegions.length === 0
+            ? 'Region metadata is unavailable for regional histograms.'
+            : 'This release has no regional histogram for the current scale and distribution domain.',
+      };
     }
     const key = `${model.state.view.dataset.datasetId}/${model.state.view.dataset.releaseId ?? ''}/${feature.featureId}/${model.state.view.parcellation}/${binning.id}`;
     if (key !== this.volumeRegionalKey) {
