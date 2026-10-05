@@ -16,6 +16,7 @@
 @import './styles/components/regional-renderer.css' layer(components);
 @import './styles/components/volume-renderer.css' layer(components);
 @import './styles/components/secondary-view.css' layer(components);
+@import './styles/components/operation-status.css' layer(components);
 @import './styles/components/distribution.css' layer(components);
 @import './styles/components/analysis.css' layer(components);
 @import './styles/components/settings-panel.css' layer(components);
