@@ -172,7 +172,7 @@ export class AtlasApp {
         if (type === 'select' && logicalRegionId !== null) {
           this.store.dispatch({ type: 'selection/toggle', regionId: logicalRegionId });
         } else {
-          this.setHoveredRegion(type === 'hover' ? logicalRegionId : null);
+          this.setHoveredRegion(type === 'hover' && regionId !== null ? String(regionId) : null);
         }
       },
       cameraChanged: (camera) => this.store.dispatch({ type: 'scene3d/camera', camera }),
@@ -356,7 +356,9 @@ export class AtlasApp {
       anatomyAtlas: this.atlasRegions?.atlas ?? null,
       anatomyLoading: this.anatomyLoading,
       anatomyError: this.anatomyError,
-      hoveredRegionId: this.hoveredRegionId,
+      // The tree and feature rows use logical identities, while rendering
+      // retains the signed physical side of a 3-D hover.
+      hoveredRegionId: this.hoveredRegionId === null ? null : String(-Math.abs(Number(this.hoveredRegionId))),
       presentationScale,
       representationDisplay,
     });

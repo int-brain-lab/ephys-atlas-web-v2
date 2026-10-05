@@ -167,6 +167,56 @@ test('3-D shares presentation and selection without rebuilding geometry', async 
   expect(new URL(page.url()).searchParams.get('selected')).toBeNull();
 });
 
+test('3-D hover preserves the physical side while the regional panel keeps logical identity', async ({ page }) => {
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
+  const result = await page.evaluate(async () => {
+    const { AtlasApp } = await import('/src/app.ts');
+    const { DEFAULT_VIEW_STATE } = await import('/src/domain/defaults.ts');
+    const root = document.createElement('div');
+    document.body.append(root);
+    let sink: any;
+    let presentation: any;
+    const factory = {
+      setInteractionSink(value: any) { sink = value; },
+      create() { return {
+        setPresentation(value: any) { presentation = value; },
+        setViewState() {}, activate() {}, deactivate() {}, destroy() {},
+      }; },
+      destroy() {},
+    };
+    const app = new AtlasApp(root, {
+      scene3dFactory: factory, catalogUrl: '/__real-data/catalog.json',
+      defaultView: { ...DEFAULT_VIEW_STATE, parcellation: 'cosmos' },
+    });
+    try {
+      await app.start();
+      root.querySelector<HTMLButtonElement>('[data-secondary-tab="brain-3d"]')!.click();
+      const observations = [];
+      // Same anatomical region, alternating sides: a logical-ID equality
+      // shortcut must not suppress the second physical highlight update.
+      for (const regionId of [315, -315, 315]) {
+        sink.regionPointer({ type: 'hover', regionId, originalEvent: new PointerEvent('pointermove') });
+        observations.push({ highlighted: presentation.highlightedRegionId,
+          logicalHovered: root.querySelector('.region-row[data-hovered="true"]')?.getAttribute('data-region-id') });
+      }
+      sink.regionPointer({ type: 'select', regionId: 315, originalEvent: new PointerEvent('pointerup') });
+      const selected = [...presentation.selectedRegionIds];
+      sink.regionPointer({ type: 'leave', regionId: null, originalEvent: new PointerEvent('pointerleave') });
+      return { observations, selected, afterLeave: presentation.highlightedRegionId,
+        hoveredRowsAfterLeave: root.querySelectorAll('.region-row[data-hovered="true"]').length };
+    } finally { app.stop(); root.remove(); }
+  });
+  expect(result.observations).toEqual([
+    { highlighted: 315, logicalHovered: '-315' },
+    { highlighted: -315, logicalHovered: '-315' },
+    { highlighted: 315, logicalHovered: '-315' },
+  ]);
+  expect(result.selected).toEqual([-315, 315]);
+  expect(result.afterLeave).toBeNull();
+  expect(result.hoveredRowsAfterLeave).toBe(0);
+});
+
 test('volume mode keeps integrated 3-D anatomy-only and scene failure isolated', async ({ page }) => {
   await page.goto('/app/?v=4&feature=rms_ap&repr=volume&secondary=brain-3d');
   const panel = page.locator('[data-secondary-panel="brain-3d"]');

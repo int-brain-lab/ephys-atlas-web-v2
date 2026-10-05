@@ -24,6 +24,17 @@ several intersections belong to one component. Barycentric interpolation uses
 the original positions and the shared original-ML presentation rule; explode
 does not change hemisphere identity. Visible translucent context stays pickable.
 
+## Hover identity
+
+A 3-D hover keeps its signed physical region ID through the application and
+shared regional presentation. The 3-D lookup highlights that exact hemisphere,
+including when the pointer crosses between two sides of the same region.
+The regional tree and feature charts receive the folded logical ID; selection
+still expands that logical region bilaterally. Linked 2-D projection hover
+emphasis retains its existing bilateral expansion. Leave clears the shared
+highlight. This fixes the former right-to-left hover folding at the application
+boundary and presentation resolver.
+
 ## Hover scheduling
 
 The first pointer move schedules a pick after 32 ms. Further movement replaces
