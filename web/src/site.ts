@@ -1,4 +1,6 @@
-export {};
+import { initializeAnalytics } from './analytics.js';
+
+initializeAnalytics(import.meta.env.PROD);
 
 const APP_PATHS = new Set(['/app', '/app/']);
 

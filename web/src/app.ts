@@ -1,4 +1,5 @@
 import { DatasetSession } from './application/dataset-session.js';
+import { trackOnce } from './analytics.js';
 import { resolvePresentationScale } from './application/presentation-scale.js';
 import { resolvePresentationColormap } from './application/presentation-colormap.js';
 import { effectiveScalarColorRange } from './application/scalar-colormap.js';
@@ -96,16 +97,16 @@ export class AtlasApp {
     this.urlController = new UrlStateController(this.store, window, defaultView);
     this.viewportFactory = options.viewportFactory ?? new NullProjectionViewportFactory();
     this.shell = new AppShell(root, {
-      setDataset: (ref) => this.selectDataset(ref),
-      selectData: (selection) => this.selectData(selection),
+      setDataset: (ref) => this.trackExploration(() => this.selectDataset(ref)),
+      selectData: (selection) => this.trackExploration(() => this.selectData(selection)),
       recoverNavigation: (action) => this.recoverNavigation(action),
-      selectEdition: (projectId, editionId) => this.selectEdition(projectId, editionId),
-      setFeature: (featureId, representation) => this.store.dispatch({
+      selectEdition: (projectId, editionId) => this.trackExploration(() => this.selectEdition(projectId, editionId)),
+      setFeature: (featureId, representation) => this.trackExploration(() => this.store.dispatch({
         type: 'feature/set',
         featureId,
         history: 'push',
         ...(representation ? { representation } : {}),
-      }),
+      })),
       setParcellation: (parcellation) => this.store.dispatch({
         type: 'parcellation/set',
         parcellation,
@@ -156,6 +157,7 @@ export class AtlasApp {
         this.setHoveredRegion(regionId);
       },
       downloadComparison: () => this.downloadSelectedComparison(),
+      comparisonUsed: () => trackOnce('comparison_used'),
       retryFeature: () => this.retryFeature(),
       retryAnatomy: () => this.loadAtlasRegions(),
     });
@@ -189,9 +191,23 @@ export class AtlasApp {
   }
 
   private selectRegion(regionId: string, additive: boolean): void {
-    this.store.dispatch(additive || this.multiSelection
+    this.trackExploration(() => this.store.dispatch(additive || this.multiSelection
       ? { type: 'selection/toggle', regionId }
-      : { type: 'selection/set', regionIds: [regionId] });
+      : { type: 'selection/set', regionIds: [regionId] }));
+  }
+
+  /** Measure accepted user intent, never automatic reconciliation or URL hydration. */
+  private trackExploration(change: () => void): void {
+    const before = this.store.getState().view;
+    change();
+    const after = this.store.getState().view;
+    if (before.dataset.datasetId !== after.dataset.datasetId
+      || before.dataset.releaseId !== after.dataset.releaseId
+      || before.featureId !== after.featureId
+      || before.representation !== after.representation
+      || after.selection.some((id) => !before.selection.includes(id))) {
+      trackOnce('exploration_started');
+    }
   }
 
   start(): Promise<void> {
@@ -274,6 +290,8 @@ export class AtlasApp {
     const featureError = snapshot.featureError ?? snapshot.datasetError;
     const featureLoading = featureError === null
       && (!manifestMatches || (!!state.view.featureId && !featureMatches));
+    // Payload availability is distinct from first-frame renderer readiness.
+    if (data.feature && !featureLoading && !featureError) trackOnce('data_loaded');
     const anatomyRegions = this.atlasRegions?.left[state.view.parcellation] ?? data.regions;
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
     const representationDisplay = data.feature
@@ -756,6 +774,7 @@ export class AtlasApp {
     const prepared = this.pendingLocalArchive;
     if (!prepared) throw new Error('No validated local dataset is ready to import');
     const manifest = await this.localSource.admitPrepared(prepared);
+    trackOnce('local_imported');
     this.pendingLocalArchive = null;
     this.localImportAbort = null;
     const catalog = await this.loadCatalog();
@@ -806,6 +825,7 @@ export class AtlasApp {
   private async copyCurrentUrl(): Promise<void> {
     if (!navigator.clipboard?.writeText) throw new Error('Clipboard access is unavailable in this browser');
     await navigator.clipboard.writeText(window.location.href);
+    trackOnce('share_copied');
   }
 
   private downloadCurrentFeature(): void {
@@ -891,6 +911,7 @@ export class AtlasApp {
     link.href = url;
     link.download = filename;
     link.click();
+    trackOnce('download_started');
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 

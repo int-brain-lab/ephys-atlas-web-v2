@@ -10,6 +10,7 @@
   "include": [
     "src/labs/agea-model.ts",
     "src/labs/agea-alignment-model.ts",
+    "src/analytics.ts",
     "src/application/**/*.ts",
     "src/core/**/*.ts",
     "src/domain/**/*.ts",

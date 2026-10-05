@@ -42,6 +42,7 @@ export interface RegionalPanelCallbacks {
   clearSelection(): void;
   hoverRegion(regionId: string | null): void;
   downloadComparison(): void;
+  comparisonUsed?(): void;
   setVolumeRegionHemisphere(hemisphere: VolumeRegionHemisphere): void;
   downloadVolumeRegionDistribution(csv: string, filename: string): void;
   retryFeature(): void;
@@ -283,6 +284,7 @@ export class RegionalPanelController {
           fixture,
           model.presentationScale.histogram,
         );
+        this.reportComparisonUse();
       } else {
         this.analysis.replaceChildren(message(volumeRegional?.unavailableReason ?? 'Exact selected-region voxel distributions are overlaid in the distribution chart above; regional summary statistics are not derived from the volume.'));
       }
@@ -509,7 +511,17 @@ export class RegionalPanelController {
     else this.analysisDialog.show();
     this.syncAnalysisDisclosure();
     this.analysisClose.focus();
+    this.reportComparisonUse();
   };
+
+  private reportComparisonUse(): void {
+    const model = this.latestModel;
+    if (!this.analysisDialog.open || !model || model.featureLoading || model.featureError
+      || model.feature?.representation !== 'regional') return;
+    if (this.analysis.querySelectorAll('.regional-comparison__table tbody tr[data-region-id]').length >= 2) {
+      this.callbacks.comparisonUsed?.();
+    }
+  }
 
   private readonly closeAnalysis = (): void => {
     this.closeAnalysisAndRestoreFocus();

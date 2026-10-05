@@ -91,6 +91,7 @@ only part of the body; the index states what remains effective.
 | D080 | Berlin as the neutral Auto palette | partially superseded | 2026-09-24 | D081 classifies Berlin as diverging and limits its Auto fallback to representations with a finite declared center; manual Berlin remains available without one; Q16 unchanged |
 | D081 | Separate color mapping from distribution scale | accepted | 2026-09-29 | Auto precedence, manual palette persistence, range-only Reset, and URL-persisted pseudo-log color mapping; exact histograms remain on their distribution axis; supersedes conflicting D050/D057/D080 presentation rules |
 | D082 | Replace region selection on plain click | accepted | 2026-10-05 | Ctrl/Cmd-click toggles membership; session-only Select multiple supports touch and keyboard across list, 2-D and 3-D |
+| D083 | Conservative Umami analytics | accepted | 2026-10-05 | one manual pageview plus six once-per-document capability events; production-only, sanitized metadata and no custom properties |
 
 ## D001 — Separate v2
 
@@ -2070,3 +2071,27 @@ Keyboard modifiers must be retained during region activation. Arrow-key
 navigation does not select. Keep explicit clear/remove controls and first-
 selection ordering. Selected IDs remain URL-persisted; the interaction mode
 resets on reload and does not change scientific data or coordinate contracts.
+
+## D083 — Conservative Umami analytics
+
+Use the owner's Umami Cloud website to measure capability adoption on the
+production site. Send one manual pageview for `/` or `/app/` and at most one
+each of `data_loaded`, `exploration_started`, `comparison_used`,
+`share_copied`, `download_started` and `local_imported` per viewer document.
+The counting unit is a page load, not an identified user or Umami session.
+Reloads and additional tabs count again; retained documents retain their limits.
+
+Disable automatic tracking and load the script only in production builds on
+the exact HTTPS production hostname. Use explicit sanitized payloads with fixed
+routes/titles, source referrers without private paths, and no query/hash state,
+custom properties, local identifiers, filenames, search text or error messages.
+Do not identify users or persist analytics queues. Respect tracker opt-outs.
+Analytics failures must not block exploration, imports, sharing or downloads.
+
+Data availability does not claim first-frame rendering. Comparison use requires
+an open regional comparison with at least two rendered region rows. Sharing
+requires successful clipboard copying; downloads measure initiation; imports
+measure successful validated storage. Automatic defaults, URL hydration,
+reconciliation and retries are not deliberate exploration. Defer additional
+events and campaign attribution until there is a concrete measurement need.
+See [analytics contract and verification](frontend/ANALYTICS.md).
