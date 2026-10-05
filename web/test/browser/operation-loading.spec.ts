@@ -110,6 +110,35 @@ test('artifact download pending and retry stay in the dialog across view updates
   } finally { release(); }
 });
 
+test('artifact completion cannot close a later reopening of the same download dialog', async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  await page.route('**/features/rms_ap/rms_ap.csv', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  try {
+    await page.goto('/app/');
+    await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
+    await page.getByRole('button', { name: 'Download', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Download feature data' });
+    const button = dialog.locator('[data-artifact-id="rms_ap-csv"]');
+    await button.click();
+    await expect(dialog.locator('.operation-status')).toContainText('Downloading artifact…');
+
+    await dialog.getByRole('button', { name: 'Close' }).click();
+    await expect(dialog).not.toBeVisible();
+    await page.getByRole('button', { name: 'Download', exact: true }).click();
+    await expect(dialog).toBeVisible();
+
+    const downloadPromise = page.waitForEvent('download');
+    release();
+    expect((await downloadPromise).suggestedFilename()).toBe('rms_ap.csv');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('.operation-status')).toBeHidden();
+  } finally { release(); }
+});
+
 test('failed adjacent slice retries without clearing other ready views or charts', async ({ page }) => {
   let allowRecovery = false;
   await page.route('**/registered/coronal/11.isvg.gz', async (route) => {
