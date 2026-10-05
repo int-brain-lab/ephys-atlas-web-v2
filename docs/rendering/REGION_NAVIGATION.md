@@ -12,6 +12,8 @@ on load; enabling only affects subsequent selections.
 `atlas-region-navigation-v1` companion in `web/src/assets/navigation/`. These
 small imported assets are bundled even when production excludes Vite publicDir.
 No projection-pack or release bytes are changed.
+The site build accepts the emitted `.bin` files under `assets/` and includes
+their byte sizes and SHA-256 hashes in its verified immutable inventory.
 
 The source is the bilateral 10 µm native LUT pinned by the canonical parent:
 `annotation_10_lut_bilateral_v02.npy`, SHA-256

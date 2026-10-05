@@ -170,7 +170,7 @@ def validate_site(root: Path, repo) -> dict:
     for path in actual:
         if not (path == "index.html" or path == "favicon.png" or path == "brand/ibl-core-logo.svg"
                 or path == regions["path"]
-                or re.fullmatch(r"assets/[A-Za-z0-9_.-]+\.(js|css|woff2|png|jpg|svg)", path)):
+                or re.fullmatch(r"assets/[A-Za-z0-9_.-]+\.(js|css|woff2|png|jpg|svg|bin)", path)):
             raise ValueError(f"unexpected site file: {path}")
     return receipt
 
