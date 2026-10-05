@@ -7,4 +7,4 @@
 - **?** — open Help
 
 - **Ctrl/Cmd-click** — add or remove a region from the selection
-- **Enter / Space** on a region — select only that region; hold Ctrl/Cmd to toggle it, or enable Select multiple in Regions
+- **Enter / Space** in Regions — expand/collapse a parent, or select a leaf; hold Ctrl/Cmd to toggle a leaf, or enable Select multiple

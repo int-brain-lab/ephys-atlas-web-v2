@@ -94,7 +94,7 @@ export class RegionalTreeView {
     this.multiSelection.type = 'checkbox';
     modeLabel.append(this.multiSelection, 'Select multiple');
     const hint = html('span', 'region-selection-controls__hint');
-    hint.textContent = 'Click to select · Ctrl/Cmd-click to compare';
+    hint.textContent = 'Branches expand · Leaves select · Ctrl/Cmd-click to compare';
     selectionControls.append(modeLabel, hint);
     this.search.closest('.region-search')!.append(selectionControls);
     this.multiSelection.addEventListener('change', this.onSelectionModeChange);
@@ -177,9 +177,11 @@ export class RegionalTreeView {
     }
     const previousRovingId = this.rovingButton?.dataset.regionButton;
     const restoreFocus = document.activeElement === this.rovingButton;
+    const hierarchy = buildGreyMatterHierarchy(regions);
+    const leafIds = new Set(hierarchy.filter(({ hasChildren }) => !hasChildren).map(({ region }) => region.id));
     const rowModels = order === 'anatomy'
-      ? buildGreyMatterHierarchy(regions)
-      : rankRegionsByValue(regions, values, order).map((region) => ({
+      ? hierarchy
+      : rankRegionsByValue(regions.filter(({ id }) => leafIds.has(id)), values, order).map((region) => ({
         region: { ...region, parentId: null },
         depth: 0,
         hasChildren: false,
@@ -193,7 +195,7 @@ export class RegionalTreeView {
       existing.dataset.missing = next.dataset.missing!;
       existing.dataset.selected = next.dataset.selected!;
       existing.setAttribute('aria-selected', String(selected.has(region.id)));
-      existing.querySelector('.region-row__button')?.setAttribute('aria-pressed', String(selected.has(region.id)));
+      if (!hasChildren) existing.querySelector('.region-row__button')?.setAttribute('aria-pressed', String(selected.has(region.id)));
       existing.querySelector('.region-row__value')?.replaceWith(next.querySelector('.region-row__value')!);
       return existing;
     });
@@ -316,8 +318,7 @@ export class RegionalTreeView {
     }
     const button = target?.closest<HTMLButtonElement>('[data-region-button]');
     const id = button?.dataset.regionButton;
-    if (!id || this.regionById.get(id)?.mappingMember === false) return;
-    this.callbacks.selectRegion(id, event.ctrlKey || event.metaKey);
+    if (id) this.activateRegion(id, event.ctrlKey || event.metaKey);
   };
 
   private readonly onTreeKeyDown = (event: KeyboardEvent): void => {
@@ -328,11 +329,14 @@ export class RegionalTreeView {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       const id = button.dataset.regionButton;
-      if (id && this.regionById.get(id)?.mappingMember !== false) {
-        this.callbacks.selectRegion(id, event.ctrlKey || event.metaKey);
-      }
+      if (id) this.activateRegion(id, event.ctrlKey || event.metaKey);
     } else this.navigateRegions(event, button);
   };
+
+  private activateRegion(id: string, additive: boolean): void {
+    if (this.rowById.get(id)?.dataset.branch === 'true') this.toggleBranch(id);
+    else if (this.regionById.get(id)?.mappingMember !== false) this.callbacks.selectRegion(id, additive);
+  }
 
   private readonly onTreePointerOver = (event: PointerEvent): void => {
     const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-region-button]') : null;
@@ -429,6 +433,7 @@ export class RegionalTreeView {
     if (!regionId) return;
     const expanded = !this.collapsedRegionIds.has(regionId);
     row.setAttribute('aria-expanded', String(expanded));
+    row.querySelector('.region-row__button')?.setAttribute('aria-expanded', String(expanded));
     const toggle = row.querySelector<HTMLButtonElement>('.region-row__toggle');
     if (!toggle) return;
     toggle.setAttribute('aria-expanded', String(expanded));

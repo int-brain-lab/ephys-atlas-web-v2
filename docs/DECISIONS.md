@@ -90,8 +90,9 @@ only part of the body; the index states what remains effective.
 | D079 | Publish D078 AGEA and W26 successors | accepted | 2026-09-17 | clean-Linux-main rebuilds; preserve existing releases; add immutable editions; deploy compatible site before catalog promotion |
 | D080 | Berlin as the neutral Auto palette | partially superseded | 2026-09-24 | D081 classifies Berlin as diverging and limits its Auto fallback to representations with a finite declared center; manual Berlin remains available without one; Q16 unchanged |
 | D081 | Separate color mapping from distribution scale | accepted | 2026-09-29 | Auto precedence, manual palette persistence, range-only Reset, and URL-persisted pseudo-log color mapping; exact histograms remain on their distribution axis; supersedes conflicting D050/D057/D080 presentation rules |
-| D082 | Replace region selection on plain click | accepted | 2026-10-05 | Ctrl/Cmd-click toggles membership; session-only Select multiple supports touch and keyboard across list, 2-D and 3-D |
+| D082 | Replace region selection on plain click | partially superseded | 2026-10-05 | Ctrl/Cmd-click toggles membership; session-only Select multiple retained; D084 makes non-leaf tree rows expand/collapse |
 | D083 | Conservative Umami analytics | accepted | 2026-10-05 | one manual pageview plus six once-per-document capability events; production-only, sanitized metadata and no custom properties |
+| D084 | Parent rows navigate the region tree | accepted | 2026-10-05 | click and Enter/Space expand/collapse non-leaves; leaves retain selection; value rankings contain current-parcellation leaves |
 
 ## D001 — Separate v2
 
@@ -2095,3 +2096,24 @@ measure successful validated storage. Automatic defaults, URL hydration,
 reconciliation and retries are not deliberate exploration. Defer additional
 events and campaign attribution until there is a concrete measurement need.
 See [analytics contract and verification](frontend/ANALYTICS.md).
+
+## D084 — Parent rows navigate the region tree
+
+In Regions, clicking a non-leaf row or pressing Enter/Space expands or collapses
+its children, matching the existing chevron. This includes hierarchy-only
+containers. Modifiers and Select multiple do not turn parent activation into
+selection. Leaf mapping members retain D082's replace/toggle behavior; arrow
+navigation and branch state remain unchanged.
+
+Determine non-leaf status from the complete current-parcellation hierarchy,
+independent of search matches or collapsed descendants. Value ordering remains
+a flat ranking of mapping-member leaves, so sorting cannot make an anatomical
+parent selectable. Search retains its existing visibility behavior through
+collapsed ancestors. Parent expansion is navigation, not the D083 exploration
+event.
+
+This supersedes D082 only for activation of non-leaf rows in Regions. It does
+not alter scientific mapping membership, feature aggregation, brain-view
+selection or URL-restored selection; existing selected parents remain
+removable using the selection controls. No automatic selection of descendants
+or parcellation change is introduced.

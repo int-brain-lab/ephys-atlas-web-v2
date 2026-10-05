@@ -43,8 +43,12 @@ test('initial data load is recorded once, while hydrated state and navigation ar
   expect(await events(page)).not.toContain('exploration_started');
 
   await page.locator('[data-region-button="-315"]').click({ modifiers: ['Control'] });
+  expect(await events(page)).not.toContain('exploration_started');
+  await page.getByLabel('Search brain regions').fill('CA1');
+  await page.locator('[data-region-button="-382"]').click({ modifiers: ['Control'] });
   await expect.poll(() => events(page)).toContain('exploration_started');
-  await page.locator('[data-region-button="-68"]').click({ modifiers: ['Control'] });
+  await page.getByLabel('Search brain regions').fill('');
+  await page.locator('[data-region-button="-362"]').click({ modifiers: ['Control'] });
   await expect.poll(async () => (await events(page)).filter((event) => event === 'exploration_started')).toHaveLength(1);
 });
 

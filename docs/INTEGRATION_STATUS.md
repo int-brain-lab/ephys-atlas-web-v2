@@ -2,7 +2,7 @@
 
 Status: active initial-deployment capability matrix.
 
-Last updated: 2026-10-05 on `main` for shared loading feedback, responsive 3-D picking and conservative usage analytics.
+Last updated: 2026-10-05 on `main` for shared loading feedback, responsive 3-D picking, conservative usage analytics and parent-row navigation.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -507,9 +507,16 @@ regeneration and the full local gate validate serialization and browser parity.
 ## Region selection (2026-10-05)
 
 D082 is implemented across the Regions list, linked slices, Top/Swanson and
-optional 3-D. Plain clicks replace selection; Ctrl/Cmd-click toggles membership.
+optional 3-D. D084 makes non-leaf rows in Regions expand/collapse on click or
+Enter/Space; leaf status is independent of search or collapsed branches, and
+value rankings contain only current-parcellation leaves. Hierarchy containers
+are active navigation controls. Leaf and brain-view plain clicks replace
+selection; Ctrl/Cmd-click toggles membership.
 The Regions pane includes a session-only Select multiple control for touch and
 keyboard use, with the same behavior across views. Enter/Space retains modifier
 keys, explicit clear/remove controls remain available, and selection IDs retain
 URL persistence and first-selection order. Browser regressions cover replacement,
 modifier toggling, reload, keyboard activation, touch and shared view behavior.
+Parent-row regressions cover expansion, modifier/multiple-mode activation,
+selection preservation, search, value ordering and Beryl leaf selection. Parent
+navigation does not emit the analytics exploration event.

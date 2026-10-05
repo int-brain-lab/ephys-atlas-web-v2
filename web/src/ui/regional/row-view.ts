@@ -42,9 +42,10 @@ export function createRegionRow(
   button.type = 'button';
   button.tabIndex = -1;
   button.dataset.regionButton = region.id;
-  button.setAttribute('aria-pressed', String(selected.has(region.id)));
+  if (hasChildren) button.setAttribute('aria-expanded', String(!collapsedRegionIds.has(region.id)));
+  else button.setAttribute('aria-pressed', String(selected.has(region.id)));
   button.setAttribute('aria-label', `${region.acronym}, ${region.name}`);
-  if (region.mappingMember === false) button.setAttribute('aria-disabled', 'true');
+  if (!hasChildren && region.mappingMember === false) button.setAttribute('aria-disabled', 'true');
 
   const disclosure = html('span', 'region-row__disclosure');
   if (region.colorHex) {
