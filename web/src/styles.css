@@ -19,6 +19,7 @@
 @import './styles/components/operation-status.css' layer(components);
 @import './styles/components/distribution.css' layer(components);
 @import './styles/components/analysis.css' layer(components);
+@import './styles/components/regional-comparison.css' layer(components);
 @import './styles/components/settings-panel.css' layer(components);
 @import './styles/components/help-guide.css' layer(components);
 @import './styles/components/help-tour.css' layer(components);

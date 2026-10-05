@@ -17,14 +17,16 @@ import type {
 import { effectiveScalarColorRange } from '../../application/scalar-colormap.js';
 import { required, message } from './dom.js';
 import {
-  renderAnalysis,
-  renderDistribution,
   renderFeatureSummary,
   renderSelectedRegions,
+} from './details-view.js';
+import { renderAnalysis } from './comparison-view.js';
+import {
+  renderDistribution,
   updateDistributionColorRange,
   updateDistributionHover,
   type VolumeRegionalDistributionModel,
-} from './details-view.js';
+} from './distribution-view.js';
 import { buildRegionalValueMap } from './model.js';
 import { RegionalTreeView } from './tree-view.js';
 import { buildVolumeDistributionExport } from './volume-distribution-export.js';

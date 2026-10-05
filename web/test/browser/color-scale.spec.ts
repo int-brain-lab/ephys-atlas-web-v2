@@ -145,7 +145,7 @@ test('volume exposes release-declared scales and remains global valid-voxel-only
 test('volume region chart shows exact hemisphere populations and processed AGEA caveat', async ({ page }) => {
   await page.goto('/app/');
   await page.evaluate(async () => {
-    const { renderDistribution } = await import('/src/ui/regional/details-view.ts');
+    const { renderDistribution } = await import('/src/ui/regional/distribution-view.ts');
     const target = document.createElement('div');
     target.id = 'volume-region-distribution-test';
     document.body.append(target);
