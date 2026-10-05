@@ -1,3 +1,4 @@
+import { RetainedViewStatus, type RetainedViewRequest } from './retained-view-status.js';
 import { element, heading, titleCaseToken, formatBytes } from './dom-helpers.js';
 import { DownloadDialogController } from './download-dialog.js';
 import { OperationStatus } from './operation-status.js';
@@ -144,13 +145,7 @@ interface ViewFrameNodes {
   tooltipLineage: HTMLElement;
   tooltipValue: HTMLElement;
   tooltipMeta: HTMLElement;
-  renderKey: string;
-  geometryKey: string;
-  displayedCoordinate: string;
-  renderToken: number;
-  initialStatus: OperationStatus;
-  updateStatus: OperationStatus;
-  sliceProgressTimer: number | null;
+  loadStatus: RetainedViewStatus;
 }
 
 interface ProjectionTooltipNodes {
@@ -166,16 +161,12 @@ interface StaticFrameNodes extends ProjectionTooltipNodes {
   target: HTMLElement;
   viewport: StaticProjectionViewport;
   notice: HTMLElement;
-  renderKey: string;
-  renderToken: number;
-  initialStatus: OperationStatus;
-  updateStatus: OperationStatus;
+  loadStatus: RetainedViewStatus;
 }
 
 const LOCAL_IMPORT_OPTION_ID = '__import_local_dataset__';
 const LOCAL_MANAGE_OPTION_ID = '__manage_local_datasets__';
 const LOCAL_DELETE_OPTION_ID = '__delete_local_dataset__';
-const SLICE_PROGRESS_DELAY_MS = 150;
 
 const ACTION_ICONS: Record<HeaderAction, string> = {
   share: '↗',
@@ -597,8 +588,9 @@ export class AppShell {
     this.contextMenus.forEach((menu) => menu.destroy());
     this.dataChooser.destroy();
     for (const nodes of this.viewFrames.values()) {
-      this.clearSliceProgress(nodes);
+      nodes.loadStatus.dispose();
     }
+    for (const nodes of this.staticFrames.values()) nodes.loadStatus.dispose();
     this.viewportFactory.destroy();
     this.scene3dObserver?.disconnect();
     this.scene3dFactory?.destroy();
@@ -2312,9 +2304,8 @@ export class AppShell {
     tooltipHint.append('Hold ', hintKey, ' for anatomy colours');
     tooltip.append(tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta, tooltipHint);
     const colorbar = new FrameColorbar();
-    const initialStatus = new OperationStatus('centered', this.app);
-    const updateStatus = new OperationStatus('compact', this.app);
-    viewport.append(target, colorbar.element, tooltip, initialStatus.element, updateStatus.element);
+    const loadStatus = new RetainedViewStatus(frame, this.app, status);
+    viewport.append(target, colorbar.element, tooltip, loadStatus.initialStatus.element, loadStatus.updateStatus.element);
 
     const footer = element('div', 'view-frame__footer');
     const slider = element('input', 'view-frame__slider');
@@ -2337,7 +2328,7 @@ export class AppShell {
     this.viewFrames.set(axis, {
       frame, target, viewport: projectionViewport, coordinate, slider, status, maximize, colorbar,
       tooltip, tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta,
-      renderKey: '', geometryKey: '', displayedCoordinate: '', renderToken: 0, sliceProgressTimer: null, initialStatus, updateStatus,
+      loadStatus,
     });
     return frame;
   }
@@ -2361,12 +2352,11 @@ export class AppShell {
     const tooltipValue = element('div', 'region-tooltip__value');
     const tooltipMeta = element('div', 'region-tooltip__meta');
     tooltip.append(tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta);
-    const initialStatus = new OperationStatus('centered', this.app);
-    const updateStatus = new OperationStatus('compact', this.app);
-    frame.append(target, notice, tooltip, initialStatus.element, updateStatus.element);
+    const loadStatus = new RetainedViewStatus(frame, this.app);
+    frame.append(target, notice, tooltip, loadStatus.initialStatus.element, loadStatus.updateStatus.element);
     this.staticFrames.set(projectionId, {
       frame, target, viewport, notice, tooltip, tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta,
-      renderKey: '', renderToken: 0, initialStatus, updateStatus,
+      loadStatus,
     });
     this.secondaryPanels.set(projectionId, frame);
     return frame;
@@ -2463,41 +2453,33 @@ export class AppShell {
     if (content.kind !== 'static-projection') return;
     const nodes = this.staticFrames.get(content.projectionId);
     if (!nodes) return;
-    const view = model.state.view;
     if (model.featureLoading) {
-      nodes.renderToken += 1;
-      nodes.renderKey = '';
-      nodes.frame.setAttribute('aria-busy', 'true');
-      nodes.frame.dataset.updating = 'true';
+      nodes.loadStatus.invalidate();
       nodes.notice.hidden = false;
       nodes.notice.textContent = 'Updating…';
-      this.setViewStatus(nodes, !!nodes.target.querySelector('[data-static-source-mode]'), {
+      nodes.loadStatus.pending('feature', !!nodes.target.querySelector('[data-static-source-mode]'), {
         state: 'loading', title: 'Updating map…', detail: 'Downloading feature data.',
       });
       return;
     }
     if (model.featureError) {
-      nodes.renderToken += 1;
-      nodes.renderKey = '';
-      nodes.frame.setAttribute('aria-busy', 'false');
-      nodes.frame.dataset.updating = 'true';
-      this.setViewStatus(nodes, !!nodes.target.querySelector('[data-static-source-mode]'), {
+      nodes.loadStatus.invalidate();
+      nodes.loadStatus.error('feature', !!nodes.target.querySelector('[data-static-source-mode]'), {
         state: 'error', title: 'Couldn’t load feature data', detail: model.featureError,
         retry: () => this.callbacks.retryFeature(),
       });
       return;
     }
     const projectionParcellation = model.regionalPresentation.mapping;
-    const renderKey = [view.dataset.datasetId, view.dataset.releaseId ?? '', projectionParcellation,
-      model.feature?.featureId ?? '', model.feature?.representation ?? ''].join(':');
-    if (renderKey === nodes.renderKey) return;
-    nodes.renderKey = renderKey;
-    const token = ++nodes.renderToken;
+    const request: RetainedViewRequest = {
+      kind: 'static', content: this.retainedViewContent(model), projectionId: content.projectionId,
+    };
+    const operation = nodes.loadStatus.begin(request);
+    if (!operation) return;
+    const { token } = operation;
     nodes.notice.hidden = false;
     nodes.notice.textContent = 'Loading static projection…';
-    nodes.frame.setAttribute('aria-busy', 'true');
-    nodes.frame.dataset.updating = 'true';
-    this.setViewStatus(nodes, !!nodes.target.querySelector('[data-static-source-mode]'), {
+    nodes.loadStatus.pending('static', !!nodes.target.querySelector('[data-static-source-mode]'), {
       state: 'loading', title: 'Loading map…', detail: 'Downloading and preparing this projection.',
     });
     const pending = nodes.viewport.render({
@@ -2506,10 +2488,7 @@ export class AppShell {
       feature: model.feature?.representation === 'regional' ? model.feature : null,
     });
     Promise.resolve(pending).then(() => {
-      if (nodes.renderToken !== token) return;
-      nodes.frame.setAttribute('aria-busy', 'false');
-      delete nodes.frame.dataset.updating;
-      this.setViewStatus(nodes, false, { state: 'ready', title: '' });
+      if (!nodes.loadStatus.complete(token)) return;
       const viewport = nodes.target.querySelector<HTMLElement>('[data-static-source-mode]');
       const sourceMode = viewport?.dataset.staticSourceMode;
       nodes.notice.textContent = sourceMode === 'pinned-review'
@@ -2525,14 +2504,13 @@ export class AppShell {
           : '';
       nodes.notice.hidden = nodes.notice.textContent === '';
     }).catch((error: unknown) => {
-      if (nodes.renderToken !== token) return;
-      nodes.frame.setAttribute('aria-busy', 'false');
+      if (!nodes.loadStatus.isCurrent(token)) return;
       nodes.notice.textContent = 'Static projection unavailable';
       nodes.viewport.showError(error);
-      this.setViewStatus(nodes, !!nodes.target.querySelector('[data-static-source-mode]'), {
+      nodes.loadStatus.error('static', !!nodes.target.querySelector('[data-static-source-mode]'), {
         state: 'error', title: 'Couldn’t load this map', detail: 'Please try again.',
         retry: () => {
-          nodes.renderKey = '';
+          nodes.loadStatus.invalidate();
           if (this.currentModel) this.renderSecondaryView(this.currentModel);
         },
       });
@@ -2625,13 +2603,15 @@ export class AppShell {
     });
   }
 
-  private setViewStatus(
-    nodes: Pick<ViewFrameNodes, 'initialStatus' | 'updateStatus'>,
-    retained: boolean,
-    status: Parameters<OperationStatus['update']>[0],
-  ): void {
-    nodes.initialStatus.update(retained ? { state: 'ready', title: '' } : status);
-    nodes.updateStatus.update(retained ? status : { state: 'ready', title: '' });
+  private retainedViewContent(model: ShellModel): RetainedViewRequest['content'] {
+    return {
+      datasetId: model.state.view.dataset.datasetId,
+      releaseId: model.state.view.dataset.releaseId ?? null,
+      representation: model.state.view.representation,
+      featureRepresentation: model.feature?.representation ?? null,
+      featureId: model.feature?.featureId ?? null,
+      parcellation: model.regionalPresentation.mapping,
+    };
   }
 
   private renderViewFrame(axis: SliceAxis, model: ShellModel): void {
@@ -2650,88 +2630,57 @@ export class AppShell {
     nodes.slider.setAttribute('aria-valuetext', coordinate);
 
     if (model.featureLoading) {
-      this.clearSliceProgress(nodes);
-      if (nodes.frame.dataset.updating !== 'feature') {
-        nodes.renderToken += 1;
-        nodes.renderKey = '';
-        nodes.geometryKey = '';
+      if (nodes.loadStatus.updating !== 'feature') {
+        nodes.loadStatus.invalidate();
         nodes.viewport.suspend?.();
       }
       this.hideRegionTooltip(axis);
-      nodes.frame.dataset.updating = 'feature';
-      nodes.frame.setAttribute('aria-busy', 'true');
       nodes.status.removeAttribute('aria-label');
       const hasImage = !!nodes.target.dataset.sliceAsset;
       if (!hasImage) nodes.frame.dataset.state = 'loading';
       nodes.status.textContent = hasImage ? 'Updating…' : 'Loading atlas…';
-      this.setViewStatus(nodes, hasImage, {
+      nodes.loadStatus.pending('feature', hasImage, {
         state: 'loading', title: hasImage ? 'Updating feature…' : 'Loading atlas…',
         detail: hasImage ? 'Showing the previous view.' : 'Downloading data and preparing this view.',
       });
       return;
     }
     if (model.featureError) {
-      this.clearSliceProgress(nodes);
-      nodes.renderToken += 1;
-      nodes.renderKey = '';
-      nodes.geometryKey = '';
-      nodes.frame.setAttribute('aria-busy', 'false');
-      nodes.frame.dataset.updating = 'feature';
-      this.setViewStatus(nodes, !!nodes.target.dataset.sliceAsset, {
+      nodes.loadStatus.invalidate();
+      nodes.loadStatus.error('feature', !!nodes.target.dataset.sliceAsset, {
         state: 'error', title: 'Couldn’t load feature data', detail: model.featureError,
         retry: () => this.callbacks.retryFeature(),
       });
       return;
     }
-    const featureWasLoading = nodes.frame.dataset.updating === 'feature';
+    const featureWasLoading = nodes.loadStatus.updating === 'feature';
     const projectionParcellation = model.regionalPresentation.mapping;
-    const geometryKey = [
-      view.dataset.datasetId,
-      view.dataset.releaseId ?? '',
-      view.representation,
-      model.feature?.representation ?? '',
-      projectionParcellation,
-      model.feature?.featureId ?? '',
-      sliceIndex,
-    ].join(':');
-    const renderKey = `${geometryKey}:${view.cursor.xUm}:${view.cursor.yUm}:${view.cursor.zUm}`;
-    if (nodes.renderKey === renderKey) return;
-    nodes.renderKey = renderKey;
-    const geometryChanged = nodes.geometryKey !== geometryKey;
-    nodes.geometryKey = geometryKey;
-    const token = ++nodes.renderToken;
+    const request: RetainedViewRequest = {
+      kind: 'slice', content: this.retainedViewContent(model), axis, sliceIndex,
+      cursor: { ...view.cursor }, coordinate,
+    };
+    const operation = nodes.loadStatus.begin(request);
+    if (!operation) return;
+    const { token, geometryChanged } = operation;
     const retainedSliceAsset = nodes.target.dataset.sliceAsset;
     const retainsRenderedFrame = retainedSliceAsset === 'projection-pack-v1'
       || retainedSliceAsset === 'schema-volume-v1';
     if (geometryChanged) {
-      this.clearSliceProgress(nodes);
       this.hideRegionTooltip(axis);
-      this.setViewStatus(nodes, false, { state: 'ready', title: '' });
       nodes.frame.dataset.state = retainsRenderedFrame ? 'ready' : 'loading';
       nodes.status.removeAttribute('aria-label');
-      nodes.frame.dataset.updating = featureWasLoading ? 'feature' : 'slice';
-      nodes.frame.setAttribute('aria-busy', 'true');
       nodes.status.textContent = !retainsRenderedFrame ? 'Loading atlas…'
         : featureWasLoading ? 'Updating…' : '';
-      if (retainsRenderedFrame && !featureWasLoading) {
-        nodes.sliceProgressTimer = window.setTimeout(() => {
-          nodes.sliceProgressTimer = null;
-          if (nodes.renderToken !== token || nodes.frame.dataset.updating !== 'slice') return;
-          nodes.frame.dataset.sliceProgress = 'true';
-          nodes.status.setAttribute('aria-label', 'Loading slice');
-          this.setViewStatus(nodes, true, {
-            state: 'loading', title: 'Loading slice…', detail: `Showing the previous slice${nodes.displayedCoordinate ? ` (${nodes.displayedCoordinate})` : ''}.`,
-          });
-        }, SLICE_PROGRESS_DELAY_MS);
-      }
-      if (!retainsRenderedFrame || featureWasLoading) {
-        this.setViewStatus(nodes, retainsRenderedFrame, {
-          state: 'loading', title: retainsRenderedFrame && featureWasLoading ? 'Updating feature…'
+      const previous = nodes.loadStatus.displayedRequest;
+      const previousCoordinate = previous?.kind === 'slice' ? previous.coordinate : '';
+      const delayed = retainsRenderedFrame && !featureWasLoading;
+      nodes.loadStatus.pending(featureWasLoading ? 'feature' : 'slice', retainsRenderedFrame, {
+        state: 'loading', title: delayed ? 'Loading slice…'
+          : retainsRenderedFrame && featureWasLoading ? 'Updating feature…'
             : view.representation === 'volume' ? 'Loading scientific volume…' : 'Loading registered anatomy…',
-          detail: retainsRenderedFrame ? 'Showing the previous view.' : 'Downloading data and preparing this view.',
-        });
-      }
-
+        detail: delayed ? `Showing the previous slice${previousCoordinate ? ` (${previousCoordinate})` : ''}.`
+          : retainsRenderedFrame ? 'Showing the previous view.' : 'Downloading data and preparing this view.',
+      }, delayed);
     }
 
     const pending = nodes.viewport.render({
@@ -2743,20 +2692,12 @@ export class AppShell {
     });
 
     Promise.resolve(pending).then(() => {
-      if (nodes.renderToken !== token) return;
-      this.clearSliceProgress(nodes);
-      delete nodes.frame.dataset.updating;
-      nodes.frame.setAttribute('aria-busy', 'false');
+      if (!nodes.loadStatus.complete(token)) return;
       nodes.frame.dataset.state = 'ready';
-      nodes.displayedCoordinate = coordinate;
-      this.setViewStatus(nodes, false, { state: 'ready', title: '' });
       nodes.status.textContent = '';
       nodes.status.setAttribute('aria-label', view.representation === 'volume' ? 'Scientific volume ready' : 'Registered anatomy ready');
     }).catch((error: unknown) => {
-      if (nodes.renderToken !== token) return;
-      this.clearSliceProgress(nodes);
-      delete nodes.frame.dataset.updating;
-      nodes.frame.setAttribute('aria-busy', 'false');
+      if (!nodes.loadStatus.isCurrent(token)) return;
       const preservedSliceAsset = nodes.target.dataset.sliceAsset;
       const preservedFrame = preservedSliceAsset === 'projection-pack-v1'
         || preservedSliceAsset === 'schema-volume-v1';
@@ -2772,27 +2713,16 @@ export class AppShell {
         nodes.viewport.clear();
         nodes.viewport.showError(error);
       }
-      nodes.frame.dataset.updating = 'slice';
-      this.setViewStatus(nodes, retainsRenderedFrame || preservedFrame, {
+      nodes.loadStatus.error('slice', retainsRenderedFrame || preservedFrame, {
         state: 'error', title: 'Couldn’t load this view',
         detail: preservedFrame ? 'Showing the previous view. Please try again.' : 'Please try again.',
         retry: () => {
-          nodes.renderKey = '';
-          nodes.geometryKey = '';
+          nodes.loadStatus.invalidate();
           this.callbacks.refreshSliceInventory();
           if (this.currentModel) this.renderViewFrame(axis, this.currentModel);
         },
       });
     });
-  }
-
-  private clearSliceProgress(nodes: ViewFrameNodes): void {
-    if (nodes.sliceProgressTimer !== null) {
-      window.clearTimeout(nodes.sliceProgressTimer);
-      nodes.sliceProgressTimer = null;
-    }
-    delete nodes.frame.dataset.sliceProgress;
-    if (nodes.status.getAttribute('aria-label') === 'Loading slice') nodes.status.removeAttribute('aria-label');
   }
 
   private toggleMaximizedView(axis: WorkspaceViewId): void {
