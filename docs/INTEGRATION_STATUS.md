@@ -2,7 +2,7 @@
 
 Status: active initial-deployment capability matrix.
 
-Last updated: 2026-09-09 on `main` for the live initial IBL review deployment.
+Last updated: 2026-10-05 on `main` for shared loading feedback and scoped retries.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -30,14 +30,34 @@ for translucent context, with opaque-depth occlusion and a single-pass opaque
 fast path. Synthetic order/recovery tests and real Native / D042 Chromium checks
 pass; D070 records owner acceptance and waives additional Firefox/Safari review for this 3-D selection, without claiming unmeasured hardware performance.
 
-The 3-D context shows a centred loading overlay with a spinner and explicit
-download/preparation text from tab activation through the first successfully
-rendered model frame. The explode slider remains disabled until ready; loading
-is announced through a live status and `aria-busy`, with reduced-motion support.
-3-D failures remain local to the panel without marking the dataset unavailable.
-Manifest/model failures show a Retry action that recreates only the 3-D viewport
-and retains URL camera/explode state. Browser tests cover delayed resources at
-desktop, tablet and phone sizes, retained tab switching, and failure recovery.
+Loading feedback uses the shared plain-DOM `OperationStatus` component and
+stylesheet. Empty 2-D, Top/Swanson and 3-D views show centred download/preparation
+feedback; retained images show a compact update badge, including on phones.
+Registered slice progress keeps the D076 150 ms delay, and speculative
+“Preparing slices” activity remains independent of foreground readiness.
+Retained pixels cannot be inspected as newly requested data; the slice badge
+identifies the previous displayed coordinate. Busy view announcements live
+outside their busy subtree. Reduced-motion mode stops the shared spinner.
+
+Feature summary, distribution, comparison and regional values distinguish
+pending data from loaded empty/non-finite values. The anatomical tree keeps its
+buttons, keyboard focus, expansion and scroll position through value updates;
+volume mode explicitly labels regional values as anatomy-only. Region-name
+metadata, selected-region volume counts, static maps, individual slice views,
+3-D geometry and artifact downloads report failures and Retry locally. Dataset
+and feature failures retain generation guards and explicit retry scope.
+Download rows remain stable across unrelated view updates and cannot close a
+newer dialog when an obsolete row finishes.
+
+3-D loading lasts through the first successfully rendered model frame. The
+explode slider remains disabled until ready; model Retry recreates only that
+viewport and retains URL camera/explode state. Browser evidence covers delayed
+resources, error recovery, desktop/tablet/phone retained slice feedback,
+region-name failure isolation, exact volume-count retries and artifact download
+recovery in `operation-loading.spec.ts`, `regional-loading.spec.ts`,
+`feature-loading.spec.ts` and `scene3d-context.spec.ts`. These checks use canonical
+synthetic test inputs; local real-data Tailscale preview instructions remain in
+ignored `artifacts/local-dev/README.md`.
 
 ## Scientific datasets
 

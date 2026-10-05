@@ -76,3 +76,21 @@ Three audit findings were fixed:
 
 These are follow-up hardening opportunities. None is currently evidence of a
 scientific stale-commit defect after the generation and render-token guards.
+
+## Loading feedback audit follow-ups (2026-10-05)
+
+The loading pass extracted reusable presentation into `ui/operation-status.ts`,
+scoped retries to their operation, kept artifact rows stable across unrelated
+renders, and preserved tree button identity across value changes. These are
+implemented changes. Broader structural work remains a separate task:
+
+| Candidate | Benefit | Bounded next step |
+| --- | --- | --- |
+| Extract retained-view status ownership from `ui/app-shell.ts`. | Orthogonal and static methods repeat token checks, busy state, pending/error transitions and retry invalidation. | Extract a UI controller with explicit requested/displayed identities and keep geometry/readiness in the existing viewport boundary; retain D076 delay tests. |
+| Extract downloads and local-data dialogs from `ui/app-shell.ts`. | The shell combines layout, navigation, dialogs and asynchronous operations in one large class. | Start with a download-dialog controller owning immutable artifact identity and stable row state; retain close/retry/context-switch coverage. |
+| Represent requested versus displayed content explicitly. | DOM asset flags and string keys currently carry retained-frame readiness and identity. | Add a small typed presentation record at the UI/viewport boundary before extending retained-view behavior; keep coordinate, mapping and feature identity distinct. |
+| Reduce full chart/tree work during presentation-only changes. | Tree buttons now persist, but value nodes and distribution chart contents can still be recreated. | Measure mutations and focus behavior first; retain child nodes only where data identity and layout remain valid. |
+
+These proposals do not change scientific schemas or introduce another renderer
+facade. Existing foreground-cancellation and catalog-refresh risks above remain
+higher-priority lifecycle work when those paths are extended.
