@@ -1,8 +1,9 @@
+import { registeredVolumeCanvasPlacement } from '../rendering/registered-volume-placement.js';
 import type { RegionMetadata, VolumeFeaturePayload, VolumeGridDescriptor } from '../data/contracts.js';
 import { ResourceFetcher } from '../data/cache.js';
 import { loadAtlasRegionCatalog } from '../data/atlas-regions.js';
 import { ProjectionPackSource, type RegisteredProjectionRegistration } from '../rendering/projection-pack-source.js';
-import { RetainedProjectionViewportFactory, registeredVolumeCanvasPlacement } from '../rendering/retained-projection-viewport.js';
+import { RetainedProjectionViewportFactory } from '../rendering/retained-projection-viewport.js';
 import type { ProjectionViewport } from '../rendering/projection-viewport.js';
 import type { VolumeSlice } from '../rendering/volume.js';
 import { regionIdFromPath } from '../rendering/region-id.js';

@@ -9,7 +9,7 @@ import {
 } from '../../.test-dist/labs/agea-alignment-model.js';
 import { SchemaChunks3dVolumeSource } from '../../.test-dist/rendering/chunked-volume-source.js';
 import { inspectVolumePlanePoint } from '../../.test-dist/rendering/volume-inspection.js';
-import { registeredVolumeCanvasPlacement } from '../../.test-dist/rendering/retained-projection-viewport.js';
+import { registeredVolumeCanvasPlacement } from '../../.test-dist/rendering/registered-volume-placement.js';
 import { VolumeValiditySliceSource } from '../../.test-dist/rendering/volume-validity-source.js';
 import { VolumeSliceLoader } from '../../.test-dist/rendering/volume.js';
 
