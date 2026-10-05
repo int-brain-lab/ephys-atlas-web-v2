@@ -1,7 +1,7 @@
 # Local development bundle
 
-Status: active local-data runbook. Remote clean-checkout acquisition remains
-blocked on Q8.
+Status: active local-data runbook. Remote clean-checkout acquisition requires
+a new descriptor with resolved immutable HTTPS sources; Q8 is resolved.
 
 The local viewer consumes the same immutable schema-v1 releases and validated
 packs intended for HTTP delivery. It does not copy them into a developer-only
@@ -22,8 +22,10 @@ just dev
 
 `just data` reuses and fully validates present artifacts. It downloads a
 missing artifact only when the descriptor contains an exact HTTPS source;
-current v5 sources remain unresolved pending Q8. `just dev` is read-only and
-stops on a missing or corrupt launch-critical artifact.
+the historical v5 descriptor still contains unresolved sources. Published
+production releases exist separately; the remaining acquisition work is a new
+descriptor and clean-checkout verification, not an origin/access decision.
+`just dev` is read-only and stops on a missing or corrupt launch-critical artifact.
 
 Use the refresh lane on the macOS development machine when you want to know
 whether newer upstream data exists:
@@ -50,10 +52,10 @@ development policy.
 | Channels | `2026_W32-d050-q14-v1` | reviewed local technical release; not the Q2 paper release |
 | Clusters | `sha256-9b5e55215b306f26-d050-d048-q14-v1` | reviewed local technical release |
 | Brain-Wide Map | `legacy-v1-1d908bea-d050-q14-linear-full-v1` | reviewed local technical release |
-| Volume | `2026_W26-candidate-depth4-d050-q14-linear-full-v1` | reviewed candidate; Q5 remains open |
+| Volume | `2026_W26-candidate-depth4-d050-q14-linear-full-v1` | reviewed local candidate; Q5 resolved by D075 for a separately built production release |
 | Projection pack | `ibl-atlas-projections-2363b6958fbf` | production-intent local asset |
 | 3-D mesh pack | `ibl-native-d070-b5f5abc7d0bb3575` | D070 owner-approved, validated-real-local anatomy |
-| AGEA | `agea-original-local-preview-86b49971-2cdd9bee-c93e9c5b` | D069 original-value preview; registration remains provisional under Q19 |
+| AGEA | `agea-original-local-preview-86b49971-2cdd9bee-c93e9c5b` | D069 original-value local preview; D078/D079 govern the separately published processed successor |
 
 The available graph is 7 artifacts, 30,157 files and 1,376,287,351 stored bytes.
 The core releases and projections are unchanged from v4. AGEA's local copy under
@@ -117,15 +119,20 @@ pass, on clean `main`:
 just production-release-preflight data/releases/<dataset>/<release-id>
 ```
 
-This is a mandatory precursor, not the still-unimplemented Q8 S3 publication
-transaction. Candidate/local IDs, mutable source IDs, non-Linux provenance,
-dirty/non-main worktrees, and mismatched builder commits fail closed.
+This is a mandatory precursor to the implemented S3 publication transaction;
+passing it does not authorize publication. Candidate/local IDs, mutable source
+IDs, non-Linux provenance, dirty/non-main worktrees, and mismatched builder
+commits fail closed.
 
 ## Remaining distribution work
 
-Q8 must provide the exact staging CloudFront/OAC/header policy, publisher IAM,
-first authorized artifact set, and local S3 publisher. Then create a new bundle
-descriptor with resolved immutable HTTPS sources, verify remote served bytes,
-and prove `just data`, `just dev`, and `just validate-local-full` from a clean
-checkout. Q2, Q5, and Q9 still govern paper channels, volume transport, and
-public edition/defaults respectively.
+Q8 is resolved and the initial production deployment is complete. D075 resolves
+Q5 with depth-four orthogonal slice packs; D079 publishes the processed AGEA
+and regional W26 successors. See the
+[deployment record](../publishing/REGIONAL_DISTRIBUTION_DEPLOYMENT_20260917.md).
+
+Create a new bundle descriptor with resolved immutable HTTPS sources, verify
+remote served bytes, and prove acquisition and viewer startup from a clean
+checkout. Preserve v5 and the rollback descriptors as local-preview evidence.
+Q2/Q9 concern the later paper snapshot and defaults, not this acquisition work.
+The [implementation plan](../IMPLEMENTATION_PLAN.md) tracks the remaining task.
