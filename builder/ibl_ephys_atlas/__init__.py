@@ -52,8 +52,8 @@ from .model import (
     ValidationIssue,
     ValidationReport,
     ValueSemantics,
-    _authoring_version,
 )
+from ._version import _authoring_version
 from .volume import AllenCCFGrid, VoxelValidity
 
 __all__ = [
