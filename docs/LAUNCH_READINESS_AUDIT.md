@@ -57,7 +57,11 @@ release is now published and catalogued. Q2/Q9 remain paper-only choices.
   applicable workflows but its strict raw report retains six expected
   navigation cancellations; it is not a clean raw diagnostic pass.
 
-- **Navigation/UI:** `web/test/browser/app.spec.ts`,
+- **Navigation/UI:** `web/test/browser/app-slice-navigation.spec.ts`,
+  `web/test/browser/app-regional-analysis.spec.ts`,
+  `web/test/browser/app-feature-controls.spec.ts`,
+  `web/test/browser/app-data-context.spec.ts`,
+  `web/test/browser/app-workspace.spec.ts`,
   `projection-viewport.spec.ts`, `static-projections.spec.ts`,
   `panel-layout.spec.ts`, `keyboard-shortcuts.spec.ts`, and
   `url-history.spec.ts`; URL, reducer, and projection-navigation unit tests;
@@ -106,7 +110,7 @@ release is now published and catalogued. Q2/Q9 remain paper-only choices.
 | --- | --- | --- | --- | --- |
 | [LS02-01](LAUNCH_SPEC.md#ls02-01) | Discover features from the immutable release. | Regional and focused real-release browser suites. | satisfied | Retain dynamic-catalog tests. |
 | [LS02-02](LAUNCH_SPEC.md#ls02-02) | Load parcellation metadata and region index from the release. | Regional loader/validation and browser tests. | satisfied | Retain coverage. |
-| [LS02-03](LAUNCH_SPEC.md#ls02-03) | Search loaded metadata, not a hardcoded list. | `app.spec.ts` search case and regional-model tests. | satisfied | Retain coverage. |
+| [LS02-03](LAUNCH_SPEC.md#ls02-03) | Search loaded metadata, not a hardcoded list. | `app-regional-analysis.spec.ts` search case and regional-model tests. | satisfied | Retain coverage. |
 | [LS02-04](LAUNCH_SPEC.md#ls02-04) | Display the selected statistic for each region. | Regional model and browser assertions. | satisfied | Retain coverage. |
 | [LS02-05](LAUNCH_SPEC.md#ls02-05) | Color registered regions from statistic, colormap, and range. | Regional presentation/scalar-colormap/browser tests. | satisfied | Retain coverage. |
 | [LS02-06](LAUNCH_SPEC.md#ls02-06) | Region list and SVG share selection state. | Projection viewport, reducer, and region-tree tests. | satisfied | Retain coverage. |

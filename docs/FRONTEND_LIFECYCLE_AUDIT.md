@@ -63,7 +63,7 @@ Three audit findings were fixed:
   integrity verification
   ([cache.test.js](../web/test/unit/cache.test.js#L64)); projection-pack failure
   produces an explicit unavailable frame
-  ([app.spec.ts](../web/test/browser/app.spec.ts#L941)).
+  ([workspace browser tests](../web/test/browser/app-workspace.spec.ts)).
 
 ## Lifecycle and ownership follow-up (2026-10-05)
 
@@ -105,9 +105,21 @@ cover these controller lifecycles alongside the existing view loading tests.
 
 ## Structural work still worth measuring
 
-The local-data dialog remains in the shell and can be extracted as a separate
-coherent task if its behavior grows. Downloads and retained status ownership
-have already been extracted; no additional renderer facade was introduced.
+Local-data dialogs and panel layout now have dedicated controllers. The shell
+retains composition, header actions, and responsive drawer coordination. Local
+storage/catalog/navigation remain application responsibilities. A panel drag
+is terminated on disposal, with a regression proving later window movement
+cannot resize the disposed controller.
+
+Regional summary, distribution, and comparison rendering now have distinct
+modules; comparison styles follow the same boundary. HTTP and local volume
+payloads share a resource-reader materializer. Its transport-location,
+integrity-descriptor, lazy-resource, and cancellation behavior has focused tests.
+Local resource integrity and bounded decoding are separated from release-graph
+validation. Pure registered volume placement and pixel coloring are separated
+from retained rendering; scheduling and layer ownership remain in the viewport.
+The application browser suite was divided by behavior with its 44 test titles
+and bodies preserved. No additional renderer facade was introduced.
 
 The chart/tree audit found an existing presentation-only fast path. A Chromium
 probe against the real Tailscale development app exercised 40 pointer hover/leave

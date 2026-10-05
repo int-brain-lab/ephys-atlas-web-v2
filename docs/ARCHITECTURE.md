@@ -41,8 +41,10 @@ HTTP / IndexedDB adapters -> resource readers -> data materializers
 frameworks, global service registries, or abstractions without an existing
 product variation.
 
-`AppShell` delegates download operation state to `DownloadDialogController` and
-retained slice/static loading state to `RetainedViewStatus`. The latter tracks
+`AppShell` delegates downloads to `DownloadDialogController`, local import,
+management, deletion and sharing dialogs to `LocalDatasetDialogs`, panel
+preferences and resizing to `WorkspacePanelLayoutController`, and retained
+slice/static loading state to `RetainedViewStatus`. The latter tracks
 typed requested/displayed content and supersession; retained viewports remain
 the geometry and asset-readiness boundary. `DatasetSession` guards catalog and
 scientific payload commits by generation and cancels superseded foreground
@@ -72,7 +74,10 @@ Schema v1 under `schema/v1/` is the sole producer/consumer release contract.
 Published and local data use the same manifest, feature, representation,
 statistics, volume, and resource contracts; IndexedDB changes only transport.
 The independent Python and TypeScript validators execute one shared semantic
-fixture corpus.
+fixture corpus. Their semantic checks are grouped into common resource,
+distribution/display, volume/grid, projection, and mesh modules behind the
+existing schema-v1 validation entry points. The schema files remain the sole
+release contract.
 
 Immutable release contents include provenance and checksummed resources.
 Mutable aliases and catalogs live outside release directories. Existing
@@ -84,7 +89,13 @@ selection; builders emit a new release ID.
 Source acquisition/pinning, scientific recipe selection, transformation,
 serialization, validation, and publication are separate steps. Dataset-specific
 builders own scientific source loading and computation; shared builder code
-owns actual common release mechanics. Do not introduce a generic scientific
+owns actual common release mechanics. The ephys volume builder separates
+explicit geometry/configuration from deterministic release writing and pinned
+snapshot adaptation, retaining its public entry points. Development-bundle
+machinery similarly separates descriptor parsing, graph acquisition, and local
+validation behind its facade. Public authoring keeps model validation and the
+atomic ZIP transaction in `Dataset`; release serialization is a separate
+internal module. Do not introduce a generic scientific
 pipeline DSL or move scientific choices into publishing.
 
 Every release records source identity, vintage/release, source hashes,
@@ -95,7 +106,9 @@ fail closed rather than inheriting convenient defaults.
 ## Data access, integrity, and caching
 
 HTTP and IndexedDB implement the same small resource-reader boundary and feed
-shared materializers. Only bytes matching declared served-byte size and SHA-256
+shared materializers, including one volume-feature loader for both transports.
+Local-release resource integrity and bounded decoding are separate from
+release-graph validation. Only bytes matching declared served-byte size and SHA-256
 may enter persistent cache or decode. A bad cached entry is evicted and may be
 retried cleanly. Decoded-cache identity combines resource hash with the complete
 decoding contract, never a feature-relative path alone. Failed in-flight loads
@@ -121,7 +134,9 @@ decoded-plane source and remains independent of scientific geometry.
 
 `ProjectionViewportFactory` is the retained 2-D application boundary. Each
 registered coronal/sagittal/horizontal viewport owns stable scalar Canvas,
-regional SVG, interaction, guide, and error layers. A capability-driven
+regional SVG, interaction, guide, and error layers. Pure registered volume
+placement and slice coloring live outside the viewport lifecycle; render
+scheduling, cancellation, and layer coordination remain viewport-owned. A capability-driven
 projection registry also exposes affine-free Top and Swanson static regional
 views without slice, crosshair, world-coordinate, or volume claims.
 
@@ -176,7 +191,10 @@ dataset publisher. One shared compiler validates that configuration against
 the immutable published inventory, rejects remapping an exposed edition ID,
 and conditionally promotes the complete catalog last while retaining the
 last-known-good catalog on failure. The local S3 publisher and optional hosted
-service use the same compiler and promotion rules.
+service use the same compiler and promotion rules. `CatalogManager` owns
+compilation and local catalog/history writes; `PublicationStore` retains its
+API, mutation lock, and audit ordering. Public catalog writes precede private
+edition-history writes, and exposed editions seed recovery if the latter fails.
 
 The implemented filesystem-backed WSGI service retains revocable
 capability-style bearer authentication, serialized staging/catalog/alias

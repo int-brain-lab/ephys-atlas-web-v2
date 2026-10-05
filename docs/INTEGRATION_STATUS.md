@@ -465,3 +465,28 @@ limits. Regression coverage includes reversed catalog results, stop during
 startup, feature cancellation, and retained-status retries/disposal. See the
 [updated lifecycle audit](FRONTEND_LIFECYCLE_AUDIT.md) for evidence and remaining
 refactoring candidates.
+
+## Semantic refactoring pass (2026-10-05)
+
+The shell delegates local-data dialogs and panel layout to dedicated controllers.
+Regional summary, distribution, and comparison rendering have separate modules
+and comparison styles. HTTP and local volume loading share one materializer;
+local byte integrity/bounded decoding are separate from release-graph checks.
+Registered volume placement and pixel coloring are pure rendering modules,
+while retained viewports keep scheduling and layer coordination.
+
+Development-bundle parsing, pinned acquisition, and graph validation are
+separate implementation modules. The volume builder separates explicit
+geometry/configuration, deterministic writing, and snapshot ingestion. Python
+and TypeScript schema-v1 semantic checks are organized by contract family and
+retain the same entry points and shared parity corpus. Public authoring retains
+its model API and atomic ZIP transaction with an internal release serializer.
+Publishing catalog compilation/promotion is separated from upload management,
+with existing locks, facade APIs, and catalog-first recovery ordering intact.
+
+The original application browser suite's 44 test titles and bodies are preserved
+across five behavior-focused suites. New regressions cover volume materializer
+locations/signals/integrity descriptors, active panel-drag disposal, and recovery
+after private edition-history failure. Scientific selections, release schemas,
+geometry, and reviewed pixels are unchanged. Exact public-authoring ZIP fixture
+regeneration and the full local gate validate serialization and browser parity.
