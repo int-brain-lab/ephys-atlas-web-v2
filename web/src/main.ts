@@ -1,3 +1,4 @@
+import { REGION_NAVIGATION_ASSETS } from './assets/navigation/bindings.js';
 import './styles.css';
 import { AtlasApp } from './app.js';
 import { DEFAULT_VIEW_STATE } from './domain/defaults.js';
@@ -30,6 +31,7 @@ const defaultProjectionPackUrl =
 const projectionPackUrl = import.meta.env.VITE_PROJECTION_PACK_URL as string | undefined;
 const viewportFactory = new RetainedProjectionViewportFactory({
   projectionPackUrl: projectionPackUrl ?? defaultProjectionPackUrl,
+  regionNavigation: REGION_NAVIGATION_ASSETS,
 });
 const catalogUrl = import.meta.env.VITE_DATASET_CATALOG_URL as string | undefined;
 

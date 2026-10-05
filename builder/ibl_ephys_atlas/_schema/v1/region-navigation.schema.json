@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlas.internationalbrainlab.org/schema/v1/region-navigation.schema.json",
+  "title": "Atlas region navigation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "format", "navigation_id", "immutable", "reference_space_id", "projection_pack", "grid", "mappings", "provenance"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "format": {"const": "atlas-region-navigation-v1"},
+    "navigation_id": {"$ref": "common.schema.json#/$defs/identifier"},
+    "immutable": {"const": true},
+    "reference_space_id": {"$ref": "common.schema.json#/$defs/identifier"},
+    "projection_pack": {
+      "type": "object", "additionalProperties": false,
+      "required": ["pack_id", "manifest_sha256"],
+      "properties": {
+        "pack_id": {"$ref": "common.schema.json#/$defs/identifier"},
+        "manifest_sha256": {"$ref": "common.schema.json#/$defs/sha256"}
+      }
+    },
+    "grid": {
+      "type": "object", "additionalProperties": false,
+      "required": ["grid_id", "shape", "storage_axes", "index_to_world_um"],
+      "properties": {
+        "grid_id": {"$ref": "common.schema.json#/$defs/identifier"},
+        "shape": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "integer", "minimum": 1}},
+        "storage_axes": {"const": ["ap", "ml", "dv"]},
+        "index_to_world_um": {"$ref": "common.schema.json#/$defs/matrix4"}
+      }
+    },
+    "mappings": {
+      "type": "object", "additionalProperties": false,
+      "required": ["allen", "beryl", "cosmos"],
+      "properties": {
+        "allen": {"$ref": "#/$defs/navigationArray"},
+        "beryl": {"$ref": "#/$defs/navigationArray"},
+        "cosmos": {"$ref": "#/$defs/navigationArray"}
+      }
+    },
+    "provenance": {"$ref": "provenance.schema.json"}
+  },
+  "$defs": {
+    "navigationArray": {
+      "type": "object", "additionalProperties": false,
+      "required": ["format", "resource", "dtype", "shape", "order", "endianness"],
+      "properties": {
+        "format": {"const": "raw-binary-array-v1"},
+        "resource": {"$ref": "common.schema.json#/$defs/encodedResource"},
+        "dtype": {"const": "int32"},
+        "shape": {"type": "array", "minItems": 2, "maxItems": 2, "prefixItems": [{"type": "integer", "minimum": 1, "maximum": 3000}, {"const": 4}], "items": false},
+        "order": {"const": "C"},
+        "endianness": {"const": "little"}
+      }
+    }
+  }
+}

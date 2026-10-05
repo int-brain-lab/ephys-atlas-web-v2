@@ -26,6 +26,7 @@ from ._schema_v1_projections import (
     _static_semantics,
 )
 from ._schema_v1_mesh import _mesh_pack_semantics
+from ._schema_v1_navigation import _region_navigation_semantics
 
 SCHEMA_DIR = Path(__file__).resolve().parents[1] / "ibl_ephys_atlas" / "_schema" / "v1"
 
@@ -166,6 +167,8 @@ def _document_semantics(document: dict[str, Any], schema_name: str) -> None:
         _projection_pack_semantics(document)
     elif schema_name == "mesh-pack.schema.json":
         _mesh_pack_semantics(document)
+    elif schema_name == "region-navigation.schema.json":
+        _region_navigation_semantics(document)
 
 
 def validate_schema_v1_document(

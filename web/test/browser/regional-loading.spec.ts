@@ -139,7 +139,7 @@ test('regional histograms explain loading, failures, empty populations and missi
       await route.fulfill({ body: resources.get(path)!, contentType: 'application/octet-stream' });
     }
   });
-  await page.goto('/app/?v=4&repr=volume&cursor=25,25,25&scale=linear&dist=full');
+  await page.goto('/app/?v=4&repr=volume&cursor=25,25,25&scale=linear&dist=full&autoslice=0');
   const chart = page.locator('.distribution-chart');
   await expect(chart).toContainText('Select one or more regions');
   expect(requests).toBe(0);
@@ -158,7 +158,7 @@ test('regional histograms explain loading, failures, empty populations and missi
   await expect(chart.getByRole('button', { name: 'Download exact counts' })).toBeVisible();
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
   expect(requests).toBe(2);
-  await page.getByLabel('Select multiple').check();
+  await page.getByRole('button', { name: 'Select multiple', exact: true }).click();
   await page.getByRole('button', { name: /CA1, Field CA1/ }).click();
   // Move the populated region after the empty one without reloading the feature.
   await page.getByRole('button', { name: /MD, Mediodorsal nucleus of thalamus/ }).click();

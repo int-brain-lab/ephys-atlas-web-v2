@@ -10,4 +10,4 @@ The selected statistic determines which regional summary is displayed. Missing v
 
 Global Distribution describes the complete release population. Select regions, then open Compare selected regions to inspect their descriptive statistics and distributions.
 
-**Auto-slice** in Regions moves the three linked slices to show a selected region. Uncheck it to keep slices fixed while changing regions. Your choice is included in shared URLs. Manual slice navigation always remains available.
+**Auto-slice** in Regions moves the three linked slices to an interior position near the selected region’s center. Click the target icon beside the fold/unfold buttons to switch it off and keep slices fixed. Hover or focus the icon for its current state and help. Your choice is included in shared URLs. Manual slice navigation always remains available.

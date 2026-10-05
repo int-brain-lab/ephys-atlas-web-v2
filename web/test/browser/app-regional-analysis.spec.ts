@@ -180,7 +180,7 @@ test('Allen anatomy mode shows actual regions and dark-theme ontology colors', a
 
 test('renderer region selection flows back into shared URL state', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/app/');
+  await page.goto('/app/?v=4&autoslice=0');
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   const path = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
   await path.dispatchEvent('pointerup');

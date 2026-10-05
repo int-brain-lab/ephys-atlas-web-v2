@@ -71,8 +71,8 @@ test('comparison usage requires an opened table with at least two selected regio
   await expect(openComparison).toBeDisabled();
   expect(await events(page)).not.toContain('comparison_used');
 
-  const multiple = page.getByRole('checkbox', { name: 'Select multiple', exact: true });
-  await multiple.check();
+  const multiple = page.getByRole('button', { name: 'Select multiple', exact: true });
+  await multiple.click();
   await page.locator('[data-region-button="-68"]').click();
   await page.locator('[data-region-button="-362"]').click();
   await expect(page.locator('.regional-comparison__table')).toBeHidden();

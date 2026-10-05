@@ -154,12 +154,12 @@ test('3-D shares presentation and selection without rebuilding geometry', async 
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-315');
   await canvas.click({ position: point, modifiers: ['Control'] });
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
-  await page.getByRole('checkbox', { name: 'Select multiple', exact: true }).check();
+  await page.getByRole('button', { name: 'Select multiple', exact: true }).click();
   await canvas.click({ position: point });
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-315');
   await canvas.click({ position: point });
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
-  await page.getByRole('checkbox', { name: 'Select multiple', exact: true }).uncheck();
+  await page.getByRole('button', { name: 'Select multiple', exact: true }).click();
   await expect(host).toHaveAttribute('data-geometry-uploads', uploads!);
 
   await page.evaluate(() => {

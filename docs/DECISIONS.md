@@ -93,7 +93,8 @@ only part of the body; the index states what remains effective.
 | D082 | Replace region selection on plain click | partially superseded | 2026-10-05 | Ctrl/Cmd-click toggles membership; session-only Select multiple retained; D084 makes non-leaf tree rows expand/collapse |
 | D083 | Conservative Umami analytics | accepted | 2026-10-05 | one manual pageview plus six once-per-document capability events; production-only, sanitized metadata and no custom properties |
 | D084 | Parent rows navigate the region tree | accepted | 2026-10-05 | click and Enter/Space expand/collapse non-leaves; leaves retain selection; value rankings contain current-parcellation leaves |
-| D085 | Optional automatic region slice navigation | accepted | 2026-10-05 | default-on URL-persisted Auto-slice; nearest visible registered planes from verified SVG geometry; manual movement cancels lookup |
+| D085 | Optional automatic region slice navigation | partially superseded | 2026-10-05 | default-on URL-persisted Auto-slice; D086 replaces nearest-plane search and checkbox; manual movement cancels lookup |
+| D086 | Compact region controls and interior Auto-slice | accepted | 2026-10-05 | icon toggles with tooltips; pinned native interior anchors nearest signed mapped centroids, gated against sparse display coverage |
 
 ## D001 — Separate v2
 
@@ -2143,3 +2144,28 @@ Subsequent selections, manual navigation, disabling the setting, context
 changes, history restoration and teardown cancel pending work. Deselection,
 branch expansion and URL hydration do not trigger automatic movement. Existing
 immutable packs and scientific grid contracts remain unchanged.
+
+## D086 — Compact region controls and interior Auto-slice
+
+Replace D085’s checkbox/hint rows and D082’s multiple-selection checkbox with
+compact icon buttons alongside fold/unfold. Use stable accessible names,
+`aria-pressed`, active styling and state-aware tooltips on hover/focus; Escape
+dismisses the tooltip. Keep pending lookup announcements accessible without
+adding a toolbar row, and expose errors visibly.
+
+Replace independent nearest-visible-plane searches with one native 10 µm
+interior point nearest the centroid of all occupied voxels of the exact signed
+mapped region. A candidate must remain in that same region at the crosshair on
+each snapped sparse display plane, and the region identity must exist in each
+verified SVG fragment. Resolve equal distances by AP, then ML, then DV. Commit
+the three coordinates atomically. This is a navigation aid, not a scientific
+feature statistic. Preserve hemisphere identity and current parcellation.
+
+Generate a small immutable navigation companion with the pinned bilateral LUT,
+signed atlas catalog and existing projection pack. Bind it to the exact pack
+manifest SHA-256, reference space, native grid and affine; verify binary bytes
+before decoding. Keep existing geometry and scientific releases immutable.
+Hierarchy-only rows without native voxels and regions without a display-eligible
+interior point return unavailable and keep slices fixed with an explanation.
+Retain D085’s default, URL persistence, cancellation and hydration behavior.
+See [region navigation](rendering/REGION_NAVIGATION.md) for generation and evidence.

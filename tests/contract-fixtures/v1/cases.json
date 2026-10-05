@@ -323,6 +323,7 @@
       "projections": [{"$fixture": "coronal"}, {"$fixture": "sagittal"}, {"$fixture": "horizontal"}, {"$fixture": "top"}, {"$fixture": "swanson"}],
       "provenance": {"$fixture": "provenance"}
     },
+    "regionNavigation": {"schema_version":"1.0","format":"atlas-region-navigation-v1","navigation_id":"allen-native-10um","immutable":true,"reference_space_id":"ibl-allen-ccf-v3","projection_pack":{"pack_id":"website-projection-pack-v1","manifest_sha256":"4444444444444444444444444444444444444444444444444444444444444444"},"grid":{"grid_id":"allen-10um","shape":[1320,800,1140],"storage_axes":["ap","ml","dv"],"index_to_world_um":[0,10,0,0,10,0,0,0,0,0,10,0,0,0,0,1]},"mappings":{"allen":{"format":"raw-binary-array-v1","resource":{"path":"navigation/allen.i32","media_type":"application/octet-stream","bytes":32,"sha256":"3333333333333333333333333333333333333333333333333333333333333333","codec":{"name":"none","decoded_bytes":32}},"dtype":"int32","shape":[2,4],"order":"C","endianness":"little"},"beryl":{"format":"raw-binary-array-v1","resource":{"path":"navigation/beryl.i32","media_type":"application/octet-stream","bytes":32,"sha256":"3333333333333333333333333333333333333333333333333333333333333333","codec":{"name":"none","decoded_bytes":32}},"dtype":"int32","shape":[2,4],"order":"C","endianness":"little"},"cosmos":{"format":"raw-binary-array-v1","resource":{"path":"navigation/cosmos.i32","media_type":"application/octet-stream","bytes":32,"sha256":"3333333333333333333333333333333333333333333333333333333333333333","codec":{"name":"none","decoded_bytes":32}},"dtype":"int32","shape":[2,4],"order":"C","endianness":"little"}},"provenance":{"sources":[{"role":"canonical-data","description":"Synthetic contract input","sha256":"2222222222222222222222222222222222222222222222222222222222222222"}],"builder":{"name":"contract-fixture","version":"1.0.0","command":"build synthetic","environment":{"operating_system":"linux","machine":"x86_64","python":"3.12.11","numpy":"2.3.2"}},"recipe":{"id":"synthetic-v1","population":"synthetic"},"notes":["Not scientific data."]}},
     "meshPack": {
       "schema_version": "1.0", "format": "atlas-mesh-pack-v1",
       "pack_id": "synthetic-mesh-pack-v1", "geometry_id": "synthetic-bilateral-grey-v1",
@@ -469,6 +470,14 @@
     {"name": "mesh pack review boundary cannot be labelled production", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/purpose": "production", "/presentation_boundary/status": "provisional-review"}},
     {"name": "mesh pack review boundary cannot be labelled synthetic", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/presentation_boundary/status": "provisional-review"}},
     {"name": "mesh pack selected LOD exists", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/default_lod_id": "missing"}},
-    {"name": "mesh pack LOD ratio matches counts", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/lods/0/actual_triangle_ratio": 0.5}}
+    {"name": "mesh pack LOD ratio matches counts", "schema": "mesh-pack.schema.json", "valid": false, "document": "meshPack", "set": {"/lods/0/actual_triangle_ratio": 0.5}},
+    {"name":"region navigation valid","schema":"region-navigation.schema.json","valid":true,"document":"regionNavigation"},
+    {"name":"region navigation bad dtype","schema":"region-navigation.schema.json","valid":false,"document":"regionNavigation","set":{"/mappings/allen/dtype":"int16"}},
+    {"name":"region navigation bad shape","schema":"region-navigation.schema.json","valid":false,"document":"regionNavigation","set":{"/mappings/allen/shape":[3001,4]}},
+    {"name":"region navigation wrong columns","schema":"region-navigation.schema.json","valid":false,"document":"regionNavigation","set":{"/mappings/allen/shape":[2,3]}},
+    {"name":"region navigation decoded byte count mismatch","schema":"region-navigation.schema.json","valid":false,"document":"regionNavigation","set":{"/mappings/allen/resource/codec/decoded_bytes":31}},
+    {"name":"region navigation storage axes fixed","schema":"region-navigation.schema.json","valid":false,"document":"regionNavigation","set":{"/grid/storage_axes":["ml","ap","dv"]}},
+    {"name":"region navigation singular affine","schema":"region-navigation.schema.json","valid":false,"document":"regionNavigation","set":{"/grid/index_to_world_um":[1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1]}},
+    {"name":"region navigation nonaffine matrix","schema":"region-navigation.schema.json","valid":false,"document":"regionNavigation","set":{"/grid/index_to_world_um/15":2}}
   ]
 }

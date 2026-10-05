@@ -106,3 +106,12 @@ distribution object entirely and therefore owns no distribution-count
 resources; a zero-valid-voxel volume also omits regional companions. Its
 descriptive statistics are null. A nonempty population must declare a
 distribution and finite descriptive statistics.
+
+`atlas-region-navigation-v1` is a standalone immutable navigation artifact.
+It binds an exact projection-pack manifest SHA-256 and `reference_space_id`
+to its own grid identity and Allen/Beryl/Cosmos signed-region-to-index arrays.
+The arrays store signed region ID and AP/ML/DV indices as C-order,
+little-endian int32 rows. An absent anchor is encoded by three `-1` indices;
+the consumer validates array contents after fetching the integrity-checked
+resource. The navigation document does not modify or extend the projection
+pack manifest.

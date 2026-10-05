@@ -338,7 +338,7 @@ test('anatomy colours toggle and hold-A peek cover the volume without volume req
 });
 
 test('reduced-parcellation volume selection keeps the target vivid under a neutral veil', async ({ page }) => {
-  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&parcel=cosmos&cursor=25,25,25');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&parcel=cosmos&cursor=25,25,25&autoslice=0');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
   const projection = page.locator('[data-view="coronal"] .projection-viewport');
   const source = projection.locator('path[data-cosmos-id]').first();

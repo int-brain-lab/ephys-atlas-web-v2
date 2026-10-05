@@ -217,7 +217,7 @@ export class AtlasApp {
     this.render();
     try {
       const slices = await this.viewportFactory.locateRegionSlices(
-        regionId, view.parcellation, deriveRegionalSliceIndices(view.cursor), controller.signal,
+        regionId, view.parcellation, controller.signal,
       );
       if (this.stopped || controller.signal.aborted) return;
       this.autoSliceAbort = null;
@@ -225,7 +225,7 @@ export class AtlasApp {
         this.autoSliceStatus = '';
         this.store.dispatch({ type: 'cursor/set', cursor: worldToCursorState(regionalIndicesToWorld(slices)) });
       } else {
-        this.autoSliceStatus = 'This region is not visible in all three slice projections. Slices kept fixed.';
+        this.autoSliceStatus = 'No interior position is visible in all three slice projections for this region. Slices kept fixed.';
         this.render();
       }
     } catch {

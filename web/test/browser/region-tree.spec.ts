@@ -95,7 +95,7 @@ test('parent row clicks and keyboard activation toggle children without changing
   await expect(child).toBeHidden();
   await button.click({ modifiers: ['Control'] });
   await expect(child).toBeVisible();
-  await page.getByRole('checkbox', { name: 'Select multiple', exact: true }).check();
+  await page.getByRole('button', { name: 'Select multiple', exact: true }).click();
   await button.press('Space');
   await expect(child).toBeHidden();
   await button.press('Meta+Enter');

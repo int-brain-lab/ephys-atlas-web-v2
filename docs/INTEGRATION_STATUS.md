@@ -521,10 +521,16 @@ Parent-row regressions cover expansion, modifier/multiple-mode activation,
 selection preservation, search, value ordering and Beryl leaf selection. Parent
 navigation does not emit the analytics exploration event.
 
-D085 adds default-on Auto-slice in Regions with an explanatory hint and guide/
-tour coverage. User selection locates nearest visible registered anatomy planes
-using verified SVG identities and commits one shared native cursor. Disabling
-the URL-persisted setting keeps slices fixed; native positions already showing
-the region are retained. Cancelled/stale searches cannot move the cursor, and
-missing coverage or lookup errors leave coordinates intact with visible status.
+D085/D086 add default-on, URL-persisted Auto-slice with compact target and
+multiple-selection icon buttons beside fold/unfold. Hover/focus tooltips explain
+state and switching; pending lookup remains accessible without a visible row.
+Selection uses a verified native interior anchor nearest the signed mapped
+region centroid, constrained by all three sparse display planes. All Beryl and
+Cosmos regions have anchors; five occupied Allen regions have no display-eligible
+anchor and keep slices fixed. Hierarchy-only Allen rows are unavailable.
+Cancelled/stale lookups cannot move the cursor. Explicit restored URLs retain
+their positions; disabling keeps slices fixed. Help, synthetic builder tests,
+schema parity, integrity/cancellation unit tests and browser regressions cover
+the behavior, including HATA crosshairs inside all three displayed fragments.
+See [generation and evidence](rendering/REGION_NAVIGATION.md).
 This is locally implemented behavior, not a deployed site update.

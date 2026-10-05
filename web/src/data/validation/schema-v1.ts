@@ -21,6 +21,7 @@ import {
   packSemantics,
 } from './schema-v1-projections.js';
 import { meshPackSemantics } from './schema-v1-mesh.js';
+import { regionNavigationSemantics } from './schema-v1-navigation.js';
 
 export function validateSchemaV1Document(value: unknown, schemaName: string): void {
   const document = object(value, schemaName);
@@ -89,6 +90,9 @@ export function validateSchemaV1Document(value: unknown, schemaName: string): vo
       break;
     case 'mesh-pack.schema.json':
       meshPackSemantics(document);
+      break;
+    case 'region-navigation.schema.json':
+      regionNavigationSemantics(document);
       break;
     default:
       fail(`unknown schema ${schemaName}`);

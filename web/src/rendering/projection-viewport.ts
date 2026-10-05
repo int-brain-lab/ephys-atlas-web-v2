@@ -101,7 +101,7 @@ export interface ProjectionViewportFactory {
   updatePresentation(presentation: ProjectionPresentation): void;
   setInteractionSink(sink: ProjectionInteractionSink): void;
   getDisplaySliceInventories(): Promise<Readonly<Record<SliceAxis, DisplaySliceInventory>> | null>;
-  locateRegionSlices?(regionId: string, mapping: ParcellationId, current: SliceIndices, signal: AbortSignal): Promise<SliceIndices | null>;
+  locateRegionSlices?(regionId: string, mapping: ParcellationId, signal: AbortSignal): Promise<SliceIndices | null>;
   destroy(): void;
 }
 

@@ -1,5 +1,4 @@
-import { RegionSliceLocator } from './region-slice-locator.js';
-import type { SliceIndices } from '../core/spatial.js';
+import type { RegionNavigationAssets } from './region-navigation-source.js';
 import type { ParcellationId } from '../domain/types.js';
 import { registeredVolumeCanvasPlacement, type RegisteredVolumeCanvasPlacement } from './registered-volume-placement.js';
 import { rgbaForSlice } from './volume-slice-colors.js';
@@ -659,6 +658,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
 
 export interface RetainedProjectionViewportFactoryOptions {
   readonly projectionPackUrl?: string;
+  readonly regionNavigation?: RegionNavigationAssets;
   readonly fetchImpl?: typeof fetch;
   readonly maxDecodedBytes?: number;
   readonly maxVolumeDecodedBytes?: number;
@@ -684,7 +684,6 @@ export function volumeScalarCacheBudget(
 
 export class RetainedProjectionViewportFactory implements ProjectionViewportFactory {
   private readonly source: RegisteredProjectionSource;
-  private readonly regionLocator: RegionSliceLocator;
   private readonly viewports = new Set<RetainedProjectionViewport>();
   private readonly staticViewports = new Set<RetainedStaticProjectionViewport>();
   private readonly maxVolumeDecodedBytes: number;
@@ -710,15 +709,15 @@ export class RetainedProjectionViewportFactory implements ProjectionViewportFact
       if (!options.projectionPackUrl) throw new Error('projectionPackUrl is required without a test source');
       this.source = new ProjectionPackSource({
         manifestUrl: options.projectionPackUrl,
+        ...(options.regionNavigation ? { regionNavigation: options.regionNavigation } : {}),
         ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
         ...(options.maxDecodedBytes ? { maxDecodedBytes: options.maxDecodedBytes } : {}),
       });
     }
-    this.regionLocator = new RegionSliceLocator(this.source);
   }
 
-  locateRegionSlices(regionId: string, mapping: ParcellationId, current: SliceIndices, signal: AbortSignal) {
-    return this.regionLocator.locate(regionId, mapping, current, signal);
+  locateRegionSlices(regionId: string, mapping: ParcellationId, signal: AbortSignal) {
+    return this.source.locateRegionAnchor?.(regionId, mapping, signal) ?? Promise.resolve(null);
   }
 
   create(target: HTMLElement, axis: SliceAxis): ProjectionViewport {

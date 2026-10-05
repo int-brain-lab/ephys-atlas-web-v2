@@ -43,9 +43,11 @@ export class RegionalTreeView {
   readonly source: HTMLElement;
   readonly resultCount: HTMLElement;
   private readonly pane: HTMLElement;
-  private readonly autoSlice: HTMLInputElement;
+  private readonly autoSlice: HTMLButtonElement;
+  private readonly autoSliceTooltip: HTMLElement;
   private readonly autoSliceStatus: HTMLElement;
-  private readonly multiSelection: HTMLInputElement;
+  private readonly multiSelection: HTMLButtonElement;
+  private readonly multiSelectionTooltip: HTMLElement;
   private readonly searchClear: HTMLButtonElement;
   private readonly collapseAllButton: HTMLButtonElement;
   private readonly expandAllButton: HTMLButtonElement;
@@ -91,32 +93,21 @@ export class RegionalTreeView {
     this.resultCount.after(this.orderButton);
     this.list.setAttribute('role', 'tree');
     this.list.setAttribute('aria-multiselectable', 'true');
-    const selectionControls = html('div', 'region-selection-controls');
-    const modeLabel = html('label', 'region-selection-controls__mode');
-    this.multiSelection = html('input');
-    this.multiSelection.type = 'checkbox';
-    modeLabel.append(this.multiSelection, 'Select multiple');
-    const hint = html('span', 'region-selection-controls__hint');
-    hint.textContent = 'Branches expand · Leaves select · Ctrl/Cmd-click to compare';
-    selectionControls.append(modeLabel, hint);
-    this.search.closest('.region-search')!.append(selectionControls);
-    this.multiSelection.addEventListener('change', this.onSelectionModeChange);
-    const autoControls = html('div', 'region-selection-controls');
-    const autoLabel = html('label', 'region-selection-controls__mode');
-    this.autoSlice = html('input');
-    this.autoSlice.type = 'checkbox';
-    this.autoSlice.checked = true;
-    this.autoSlice.setAttribute('aria-describedby', 'auto-slice-hint');
-    autoLabel.append(this.autoSlice, 'Auto-slice');
-    const autoHint = html('span', 'region-selection-controls__hint');
-    autoHint.id = 'auto-slice-hint';
-    autoHint.textContent = 'Move slices to the selected region. Uncheck Auto-slice to keep slices fixed.';
-    this.autoSliceStatus = html('span', 'region-selection-controls__hint');
+    const selectionControls = html('span', 'region-selection-controls');
+    [this.multiSelection, this.multiSelectionTooltip] = this.selectionControl(
+      'Select multiple', 'multiple',
+    );
+    [this.autoSlice, this.autoSliceTooltip] = this.selectionControl('Auto-slice', 'target');
+    selectionControls.append(this.multiSelection.parentElement!, this.autoSlice.parentElement!);
+    this.treeControls.after(selectionControls);
+    this.syncMultiSelection(false);
+    this.autoSliceStatus = html('span', 'region-auto-slice-status');
     this.autoSliceStatus.setAttribute('role', 'status');
     this.autoSliceStatus.hidden = true;
-    autoControls.append(autoLabel, autoHint, this.autoSliceStatus);
-    selectionControls.after(autoControls);
-    this.autoSlice.addEventListener('change', this.onAutoSliceChange);
+    this.search.closest('.region-search')!.append(this.autoSliceStatus);
+    this.updateAutoSlice(true, '');
+    this.multiSelection.addEventListener('click', this.onSelectionModeChange);
+    this.autoSlice.addEventListener('click', this.onAutoSliceChange);
 
     this.search.addEventListener('input', this.filterRegions);
     this.searchClear.addEventListener('click', this.clearSearch);
@@ -133,8 +124,8 @@ export class RegionalTreeView {
   }
 
   destroy(): void {
-    this.autoSlice.removeEventListener('change', this.onAutoSliceChange);
-    this.multiSelection.removeEventListener('change', this.onSelectionModeChange);
+    this.autoSlice.removeEventListener('click', this.onAutoSliceChange);
+    this.multiSelection.removeEventListener('click', this.onSelectionModeChange);
     this.search.removeEventListener('input', this.filterRegions);
     this.searchClear.removeEventListener('click', this.clearSearch);
     this.orderButton.removeEventListener('click', this.cycleOrder);
@@ -150,13 +141,15 @@ export class RegionalTreeView {
   }
 
   updateAutoSlice(enabled: boolean, status: string): void {
-    this.autoSlice.checked = enabled;
+    this.autoSlice.setAttribute('aria-pressed', String(enabled));
+    this.autoSliceTooltip.textContent = `Auto-slice ${enabled ? 'on. Click to keep slices fixed.' : 'off. Click to follow selected regions.'}${status ? ` ${status}` : ''}`;
     this.autoSliceStatus.textContent = status;
+    this.autoSliceStatus.classList.toggle('region-auto-slice-status--quiet', status === 'Finding slices for the selected region…');
     this.autoSliceStatus.hidden = !status;
   }
 
   private readonly onAutoSliceChange = (): void => {
-    this.callbacks.setAutoSlice(this.autoSlice.checked);
+    this.callbacks.setAutoSlice(this.autoSlice.getAttribute('aria-pressed') !== 'true');
   };
 
   setRegions(regions: readonly RegionMetadata[]): void {
@@ -173,6 +166,7 @@ export class RegionalTreeView {
     order: RegionOrder,
     valueState: 'ready' | 'loading' | 'error' | 'anatomy' | 'empty' = 'ready',
   ): void {
+    this.source.title = this.source.textContent ?? '';
     // Volume switches have no regional values: keep the anatomical DOM, focus,
     // collapsed branches and scroll position intact while summaries change.
     unit = values.size ? unit : null;
@@ -272,6 +266,44 @@ export class RegionalTreeView {
     this.hoveredRegionId = regionId;
   }
 
+  private selectionControl(label: string, icon: 'target' | 'multiple'): [HTMLButtonElement, HTMLElement] {
+    const wrapper = html('span', 'region-selection-control');
+    const button = html('button', 'region-selection-controls__button');
+    button.type = 'button';
+    button.setAttribute('aria-label', label);
+    const tooltip = html('span', 'region-selection-control__tooltip');
+    tooltip.id = icon === 'target' ? 'auto-slice-hint' : 'multi-selection-hint';
+    tooltip.setAttribute('role', 'tooltip');
+    button.setAttribute('aria-describedby', tooltip.id);
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 16 16');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '1.35');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('d', icon === 'target'
+      ? 'M8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10M8 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4M8 1v3M8 12v3M1 8h3M12 8h3'
+      : 'M6 2h7v7M3 5h7v8H3zM5 9l1.5 1.5L9 8');
+    svg.append(path);
+    button.append(svg);
+    wrapper.append(button, tooltip);
+    wrapper.addEventListener('pointerenter', () => delete wrapper.dataset.dismissed);
+    wrapper.addEventListener('focusin', () => delete wrapper.dataset.dismissed);
+    wrapper.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') wrapper.dataset.dismissed = 'true';
+    });
+    return [button, tooltip];
+  }
+
+  private syncMultiSelection(enabled: boolean): void {
+    this.multiSelection.setAttribute('aria-pressed', String(enabled));
+    this.multiSelectionTooltip.textContent = `Select multiple ${enabled ? 'on. Click to select one region at a time.' : 'off. Click to compare multiple regions.'} Ctrl/Cmd-click also toggles selection. Branches expand; leaves select.`;
+  }
+
   private treeControl(text: string, label: string): HTMLButtonElement {
     const button = html('button', 'region-tree-controls__button');
     button.type = 'button';
@@ -336,7 +368,9 @@ export class RegionalTreeView {
   }
 
   private readonly onSelectionModeChange = (): void => {
-    this.callbacks.setMultiSelection(this.multiSelection.checked);
+    const enabled = this.multiSelection.getAttribute('aria-pressed') !== 'true';
+    this.syncMultiSelection(enabled);
+    this.callbacks.setMultiSelection(enabled);
   };
 
   private readonly onTreeClick = (event: MouseEvent): void => {

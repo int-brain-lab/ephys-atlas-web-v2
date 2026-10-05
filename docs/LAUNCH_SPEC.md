@@ -96,9 +96,12 @@ For a schema-v1 regional feature, the viewer must:
 - <a id="ls02-13"></a> **`LS02-13`** — clearly identify synthetic fixtures as non-scientific;
 
 Auto-slice defaults on for region selection and moves the shared cursor to the
-nearest registered display planes showing the region in all three projections.
-The Regions checkbox and hint explain how to keep slices fixed, and its setting
-is URL-persisted. Missing coverage keeps coordinates intact with explicit feedback.
+native interior voxel nearest the signed mapped region’s centroid whose displayed
+crosshairs still intersect that region in all three projections. Compact target
+and multiple-selection buttons sit beside fold/unfold with state-aware tooltips
+and pressed states. Auto-slice is URL-persisted; unavailable interior coverage
+keeps coordinates intact with explicit feedback. See D086 and the
+[region navigation contract](rendering/REGION_NAVIGATION.md).
 
 Global, selected-region, and compact histograms retain exact release bins when
 color mapping changes. The compact gradient aligns to raw values at
