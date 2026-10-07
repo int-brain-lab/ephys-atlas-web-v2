@@ -677,7 +677,7 @@ def test_active_native_bundle_preserves_core_releases_and_pins_approved_mesh():
     assert current['artifacts'][6]['identity']['dataset_id'] == 'agea'
     assert current['artifacts'][6]['maturity'] == 'validated-real-local'
     assert current['unavailable'] == []
-    assert 'development-bundle-v6.json' in (ROOT / 'Justfile').read_text()
+    assert 'development-bundle-v7.json' in (ROOT / 'Justfile').read_text()
     rollback = load_development_bundle(ROOT / 'data/development-bundle-v5-d042-rollback.json')
     assert rollback['default_view'] == current['default_view']
     assert rollback['artifacts'][:5] == current['artifacts'][:5]
@@ -717,4 +717,30 @@ def test_regional_bundle_pins_published_successors_without_changing_historical_b
             'state': 'resolved',
             'base_url': f"https://ephys-atlas.iblcore.org/datasets/{artifact['identity']['dataset_id']}/releases/{release_id}/",
         }
-    assert 'development-bundle-v6.json' in (ROOT / 'tools/local_preview.py').read_text()
+    assert 'development-bundle-v7.json' in (ROOT / 'tools/local_preview.py').read_text()
+
+
+def test_w39_bundle_pins_every_published_release_by_served_manifest():
+    current = load_development_bundle(ROOT / 'data/development-bundle-v7.json')
+    assert current['default_view'] == {
+        'dataset_id': 'ephys_atlas_channels',
+        'release_id': '2026_W39-ibl-review-20261007-v1',
+        'feature_id': 'rms_ap',
+        'parcellation_id': 'allen',
+    }
+    releases = [a for a in current['artifacts'] if a['kind'] == 'release']
+    assert [a['identity']['dataset_id'] for a in releases] == [
+        'ephys_atlas_channels', 'ephys_atlas_clusters', 'ephys_atlas_volumes',
+        'ephys_atlas_edges', 'agea', 'merfish_class', 'lipids',
+    ]
+    assert 'brainwide_map' not in {a['identity']['dataset_id'] for a in releases}
+    destinations = [a['destination'] for a in current['artifacts']]
+    assert len(destinations) == len(set(destinations))
+    for artifact in releases:
+        identity = artifact['identity']
+        assert artifact['maturity'] == 'published-production'
+        assert artifact['source'] == {
+            'state': 'resolved',
+            'base_url': f"https://ephys-atlas.iblcore.org/datasets/{identity['dataset_id']}/releases/{identity['release_id']}/",
+        }
+    assert current['unavailable'] == []

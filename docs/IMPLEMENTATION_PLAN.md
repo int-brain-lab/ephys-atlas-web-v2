@@ -17,7 +17,11 @@ macOS is a preview host. `just data-refresh-local` verifies whether upstream
 channel/cluster `latest` aliases still match the reviewed releases and stops if
 new scientific review is needed.
 
-The initial IBL review website and all five approved datasets are live. D075
+The initial IBL review website and all five approved datasets are live. The
+2026-10-07 W39 deployment (D088-D090) added W39 channels, volumes and edges,
+denoised MERFISH classes and the Lipid Brain Atlas, reorganized the catalog
+into Ephys Atlas, Genomics and Lipidome, and removed Brain-Wide Map from it; see
+the [W39 deployment record](publishing/W39_DEPLOYMENT_20261007.md). D075
 volume measurements, the fresh production build and catalog promotion passed.
 Chromium and Firefox final volume checks pass. Keep broad-promotion QA explicit. Q2/Q9 concern a later paper
 freeze and do not block the authorized initial deployment.

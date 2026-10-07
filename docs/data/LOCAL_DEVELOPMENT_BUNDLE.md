@@ -1,7 +1,8 @@
 # Local development bundle
 
-Status: active local-data runbook. The v6 volume and AGEA sources resolve to
-immutable public HTTPS releases; other roles still require reviewed local bytes.
+Status: active local-data runbook. Every v7 dataset resolves to an immutable
+public HTTPS release; the projection pack and native mesh still require
+reviewed local bytes.
 
 The local viewer consumes the same immutable schema-v1 releases and validated
 packs intended for HTTP delivery. It does not copy them into a developer-only
@@ -22,9 +23,9 @@ just dev
 
 `just data` reuses and fully validates present artifacts. It downloads a
 missing artifact only when the descriptor contains an exact HTTPS source;
-v6 resolves the published regional-volume and processed AGEA successors.
-Other roles retain the reviewed local artifacts and unresolved sources. Full
-clean-checkout acquisition still needs those remaining origins pinned and verified.
+v7 resolves all seven published datasets. The projection pack and native mesh
+retain reviewed local artifacts and unresolved sources, so full clean-checkout
+acquisition still needs those two origins pinned and verified.
 `just dev` is read-only and stops on a missing or corrupt launch-critical artifact.
 
 Use the refresh lane on the macOS development machine when you want to know
@@ -43,9 +44,20 @@ new bytes. Brain-Wide Map stays on its exact D038 preserved source and the
 volume stays on the D043 W26 source because neither has an approved mutable
 development policy.
 
-## Active v6 identity
+## Active v7 identity
 
-[`data/development-bundle-v6.json`](../../data/development-bundle-v6.json) is
+[`data/development-bundle-v7.json`](../../data/development-bundle-v7.json)
+pins the October 2026 W39 deployment: channels, clusters, volumes, edges,
+processed AGEA, MERFISH classes and lipids, each by its served root-manifest
+size and SHA-256 and exact HTTPS directory, plus the projection pack and
+native mesh. The default view is `rms_ap` on the W39 channels release. Brain-Wide
+Map is no longer part of the bundle (see the
+[deployment record](../publishing/W39_DEPLOYMENT_20261007.md)). `just data`,
+`just dev`, `just dev-latest` and the full local-browser gate use it.
+
+## Historical v6 identity
+
+[`data/development-bundle-v6.json`](../../data/development-bundle-v6.json) was
 used by `just data`, `just dev`, `just dev-latest` and the full local-browser gate.
 It preserves v5's channels, clusters, Brain-Wide Map, projections, native mesh
 and initial view, and replaces only these dataset entries:

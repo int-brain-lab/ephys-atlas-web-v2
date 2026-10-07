@@ -1,0 +1,203 @@
+{
+  "schema_version": "1.0",
+  "bundle_id": "local-development-w39-2026-10-07-v7",
+  "provenance": {
+    "generator": "manually-reviewed-development-bundle",
+    "version": "1",
+    "launcher_baseline_commit": "f623d27a78a70ed0e64133f6178958d4e57981a2"
+  },
+  "default_view": {
+    "dataset_id": "ephys_atlas_channels",
+    "release_id": "2026_W39-ibl-review-20261007-v1",
+    "feature_id": "rms_ap",
+    "parcellation_id": "allen"
+  },
+  "artifacts": [
+    {
+      "role": "channels",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "ephys_atlas_channels",
+        "release_id": "2026_W39-ibl-review-20261007-v1"
+      },
+      "maturity": "published-production",
+      "destination": "data/releases/ephys_atlas_channels/2026_W39-ibl-review-20261007-v1",
+      "root_manifest": {
+        "media_type": "application/json",
+        "bytes": 32647,
+        "sha256": "6adc9fa963196d6db829125c5ac869c49bec7622ec7397e8503965f79476a2b8",
+        "path": "manifest.json"
+      },
+      "source": {
+        "state": "resolved",
+        "base_url": "https://ephys-atlas.iblcore.org/datasets/ephys_atlas_channels/releases/2026_W39-ibl-review-20261007-v1/"
+      },
+      "launch_critical": true
+    },
+    {
+      "role": "clusters",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "ephys_atlas_clusters",
+        "release_id": "sha256-9b5e55215b306f26-ibl-review-20260908-v1"
+      },
+      "maturity": "published-production",
+      "destination": "data/releases/ephys_atlas_clusters/sha256-9b5e55215b306f26-ibl-review-20260908-v1",
+      "root_manifest": {
+        "media_type": "application/json",
+        "bytes": 14130,
+        "sha256": "c28936c8819c4e7f06f31afe69bf71a94b5f52d530e2c269dfc79a216f4f2c6c",
+        "path": "manifest.json"
+      },
+      "source": {
+        "state": "resolved",
+        "base_url": "https://ephys-atlas.iblcore.org/datasets/ephys_atlas_clusters/releases/sha256-9b5e55215b306f26-ibl-review-20260908-v1/"
+      },
+      "launch_critical": true
+    },
+    {
+      "role": "volume",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "ephys_atlas_volumes",
+        "release_id": "2026_W39-ibl-review-20261007-v1"
+      },
+      "maturity": "published-production",
+      "destination": "data/releases/ephys_atlas_volumes/2026_W39-ibl-review-20261007-v1",
+      "root_manifest": {
+        "media_type": "application/json",
+        "bytes": 29336,
+        "sha256": "99bcd4075943b86f62e5f0a5be5fbbc1ec439a4a797f9ed705e7b0a37a7e4c71",
+        "path": "manifest.json"
+      },
+      "source": {
+        "state": "resolved",
+        "base_url": "https://ephys-atlas.iblcore.org/datasets/ephys_atlas_volumes/releases/2026_W39-ibl-review-20261007-v1/"
+      },
+      "launch_critical": true
+    },
+    {
+      "role": "edges",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "ephys_atlas_edges",
+        "release_id": "2026_W39-edges-ibl-review-20261007-v1"
+      },
+      "maturity": "published-production",
+      "destination": "data/releases/ephys_atlas_edges/2026_W39-edges-ibl-review-20261007-v1",
+      "root_manifest": {
+        "media_type": "application/json",
+        "bytes": 8912,
+        "sha256": "b42e72d6180345b231a71ef4bcd5efafd0ece42ff84decdbe479e0dd33533d9f",
+        "path": "manifest.json"
+      },
+      "source": {
+        "state": "resolved",
+        "base_url": "https://ephys-atlas.iblcore.org/datasets/ephys_atlas_edges/releases/2026_W39-edges-ibl-review-20261007-v1/"
+      },
+      "launch_critical": false
+    },
+    {
+      "role": "agea",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "agea",
+        "release_id": "agea-processed-20260917-v3"
+      },
+      "maturity": "published-production",
+      "destination": "data/releases/agea/agea-processed-20260917-v3",
+      "root_manifest": {
+        "media_type": "application/json",
+        "bytes": 2037757,
+        "sha256": "36c7758d44531c0c3932262f9e275393b310a5b1e87e0e2011980be6f7e5c2da",
+        "path": "manifest.json"
+      },
+      "source": {
+        "state": "resolved",
+        "base_url": "https://ephys-atlas.iblcore.org/datasets/agea/releases/agea-processed-20260917-v3/"
+      },
+      "launch_critical": false
+    },
+    {
+      "role": "merfish_class",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "merfish_class",
+        "release_id": "class-processed-all-3b4a73f-ibl-review-20261007-v1"
+      },
+      "maturity": "published-production",
+      "destination": "data/releases/merfish_class/class-processed-all-3b4a73f-ibl-review-20261007-v1",
+      "root_manifest": {
+        "media_type": "application/json",
+        "bytes": 22373,
+        "sha256": "5564ad8dcfc6731f1638e28eefbcd80d310f6c1da12ba9c9364edec6b564816c",
+        "path": "manifest.json"
+      },
+      "source": {
+        "state": "resolved",
+        "base_url": "https://ephys-atlas.iblcore.org/datasets/merfish_class/releases/class-processed-all-3b4a73f-ibl-review-20261007-v1/"
+      },
+      "launch_critical": false
+    },
+    {
+      "role": "lipids",
+      "kind": "release",
+      "identity": {
+        "dataset_id": "lipids",
+        "release_id": "lba-2025-3b4a73f-ibl-review-20261007-v1"
+      },
+      "maturity": "published-production",
+      "destination": "data/releases/lipids/lba-2025-3b4a73f-ibl-review-20261007-v1",
+      "root_manifest": {
+        "media_type": "application/json",
+        "bytes": 87850,
+        "sha256": "3d2b836b6046f80ee3fe159dbbc657d67c77dd0dc35f417b7825e45d54d7c331",
+        "path": "manifest.json"
+      },
+      "source": {
+        "state": "resolved",
+        "base_url": "https://ephys-atlas.iblcore.org/datasets/lipids/releases/lba-2025-3b4a73f-ibl-review-20261007-v1/"
+      },
+      "launch_critical": false
+    },
+    {
+      "role": "projections",
+      "kind": "projection_pack",
+      "identity": {
+        "pack_id": "ibl-atlas-projections-2363b6958fbf"
+      },
+      "maturity": "production-intent",
+      "destination": "web/public/atlas/projections/ibl-static-registered-v1",
+      "root_manifest": {
+        "path": "manifest.json",
+        "media_type": "application/json",
+        "bytes": 7336,
+        "sha256": "d402496d63044ac26edf1a4128a4ccd291f32a53c1bd7ef97ee1558c949c05a5"
+      },
+      "source": {
+        "state": "unresolved"
+      },
+      "launch_critical": true
+    },
+    {
+      "role": "mesh",
+      "kind": "mesh_pack",
+      "identity": {
+        "pack_id": "ibl-native-d070-b5f5abc7d0bb3575"
+      },
+      "maturity": "validated-real-local",
+      "destination": "artifacts/mesh-native-d070-v1",
+      "root_manifest": {
+        "path": "manifest.json",
+        "media_type": "application/json",
+        "bytes": 682717,
+        "sha256": "131d3e8cbac9bdadcab8e9fe1b12d3ad2b9b85632f840c4b2c56db07f52d4973"
+      },
+      "source": {
+        "state": "unresolved"
+      },
+      "launch_critical": false
+    }
+  ],
+  "unavailable": []
+}

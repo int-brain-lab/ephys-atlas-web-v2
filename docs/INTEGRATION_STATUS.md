@@ -356,6 +356,9 @@ editions/releases and Brain-Wide Map remain unchanged, and Ephys Atlas channels
 remain the overall default. Production-origin Chromium and Firefox QA covers
 the automatic first-visit tour and all five datasets; see the
 [D079 deployment record](publishing/REGIONAL_DISTRIBUTION_DEPLOYMENT_20260917.md).
+The W39 channels, volumes, edges, MERFISH and lipid releases and the
+Genomics and Lipidome catalog projects followed on 2026-10-07; see the
+[W39 deployment record](publishing/W39_DEPLOYMENT_20261007.md).
 Q2/Q9 still govern the later paper freeze. No further administrator intervention
 is needed for the approved deployment operations.
 
