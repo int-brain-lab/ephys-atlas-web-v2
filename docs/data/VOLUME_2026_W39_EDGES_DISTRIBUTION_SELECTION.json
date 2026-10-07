@@ -1,0 +1,36 @@
+{
+  "schema": "ibl-scalar-distribution-selection-v1",
+  "selection_id": "volumes-2026-w39-edges-d089-v1",
+  "dataset_id": "ephys_atlas_edges",
+  "representation": "volume",
+  "source_release_id": "2026_W39-edges",
+  "scientific_owner_confirmation": true,
+  "confirmed_at": "2026-10-07",
+  "reviewer_role": "repository owner and scientific owner",
+  "confirmation_source": "Owner approval in session 2026-10-07 (Olivier Winter, repository and scientific owner) for the production W39 release. Neutral Linear/Full display with the range at the 1st-99th percentile of in-brain values for the single ephys-edges feature.",
+  "decision": "Linear/Full, range at the 1st-99th percentile of in-brain values.",
+  "rationale": "Edge strength is strictly positive with a right tail; a percentile range avoids saturation.",
+  "features": [
+    {
+      "id": "ephys_edges",
+      "display": {
+        "range": [
+          1.858,
+          12.945
+        ],
+        "scales": [
+          {
+            "kind": "linear"
+          }
+        ],
+        "preferred_scale": "linear",
+        "distribution_domains": [
+          {
+            "kind": "full"
+          }
+        ],
+        "preferred_distribution_domain": "full"
+      }
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "schema": "ibl-volume-geometry-selection-v1",
+  "review_id": "owner-2026-w39-volumes-20261007",
+  "selected_at": "2026-10-07T00:00:00Z",
+  "reviewer_role": "repository owner and scientific owner",
+  "confirmation_source": "Owner approval in session 2026-10-07 (Olivier Winter, repository and scientific owner) for the production W39 release. Geometry facts are identical to docs/data/VOLUME_2026_W26_GEOMETRY_SELECTION.json; only the source identity and validity audit counts differ.",
+  "candidate_id": "ml-forward_ap-forward_dv-forward",
+  "resolution_um": 50,
+  "reference_space_id": "allen-ccf-2017",
+  "grid_id": "allen-ccf-2017-50um",
+  "grid_shape": [
+    228,
+    264,
+    160
+  ],
+  "axis_order": [
+    "ml",
+    "ap",
+    "dv"
+  ],
+  "index_convention": "voxel_centers",
+  "index_to_world_um": [
+    50.0,
+    0.0,
+    0.0,
+    -5739.0,
+    0.0,
+    -50.0,
+    0.0,
+    5400.0,
+    0.0,
+    0.0,
+    -50.0,
+    332.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "rationale": "Production build of the ea_active 2026_W39 encoding volume on the unchanged native 50 um Allen grid.",
+  "scientific_owner_confirmation": true,
+  "validity": {
+    "outside_value": 0.0,
+    "outside_authority": "official ibleatools W26 documentation",
+    "missing_values": "nonfinite",
+    "audited_value_count": 414120960,
+    "audited_nan_count": 0,
+    "audited_infinite_count": 0
+  },
+  "source": {
+    "volume": {
+      "uri": "s3://ibl-brain-wide-map-private/aggregates/atlas/encoding_volumes/ea_active/2026_W39/brainwide_ephys_atlas_50um.npz",
+      "bytes": 141462084,
+      "sha256": "51c2c8315b91a17613aa2edac9ef06f1e09fa531fb32d858f40d01c5782007db"
+    },
+    "annotation": {
+      "bytes": 880845,
+      "sha256": "84e7cecea1b03af16e923c3639602b8324929f833425ba03582bf56f962ea0d4"
+    },
+    "iblatlas": {
+      "repository": "int-brain-lab/iblatlas",
+      "commit": "52083adf44825d0622a503705e095699a5957587"
+    },
+    "review_generator": {
+      "repository": "rossant/ibl-ephys-atlas-web-v2",
+      "commit": "47e3fe9cce7fc03fce6fbf713969e0d082781cfa"
+    }
+  }
+}

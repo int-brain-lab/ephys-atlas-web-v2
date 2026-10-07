@@ -95,6 +95,7 @@ only part of the body; the index states what remains effective.
 | D084 | Parent rows navigate the region tree | accepted | 2026-10-05 | click and Enter/Space expand/collapse non-leaves; leaves retain selection; value rankings contain current-parcellation leaves |
 | D085 | Optional automatic region slice navigation | partially superseded | 2026-10-05 | default-on URL-persisted Auto-slice; D086 replaces nearest-plane search and checkbox; manual movement cancels lookup |
 | D086 | Compact region controls and interior Auto-slice | accepted | 2026-10-05 | icon toggles with tooltips; pinned native interior anchors nearest signed mapped centroids, gated against sparse display coverage |
+| D089 | W39 channel, volume and edges release selections | accepted | 2026-10-07 | Owner-approved production selections for the W39 channels (denoised-only), volumes and edges; W32 display carried over only where comparable; six W32 features dropped upstream |
 | D088 | Relax D062: macOS or Linux release hosts | accepted | 2026-10-07 | Owner direction: preflight no longer requires Linux; provenance must still match the publishing host, main must be clean and commit-exact |
 | D087 | Quantile color mappings | accepted | 2026-10-01 | Quantile uniform and Quantile Gaussian join D081's color mapping; browser-derived rank maps from the colored regional statistic or valid-voxel binnings; histograms, axis, and release bytes unchanged |
 
@@ -2214,3 +2215,25 @@ recorded environment for catalog compilation. Small numeric or raster
 differences between hosts are accepted; the recorded environment keeps them
 auditable. Projection and mesh pack builds, the site build and CI deployment are
 unchanged and remain Linux, and canonical screenshot pixels remain Linux-only.
+
+## D089 — W39 channel, volume and edges release selections
+
+Owner direction recorded 2026-10-07. The next production channels release is
+the `ea_active` `2026_W39` snapshot, published denoised-only, so its feature IDs
+carry no `.raw`/`.denoised` suffix (for example `rms_ap`, not `rms_ap.denoised`)
+and the default feature and deep links change accordingly. The W32 reviewed
+display (D050/Q14) is carried over only for features whose W39 distribution is
+comparable (IQR ratio 0.8-1.25 and median shift below 0.25 IQR): `alpha_mean`
+and `alpha_std` keep their focused domain, as do `psd_residual_gamma` and
+`psd_residual_lfp`. `depolarisation_slope`, `recovery_slope`,
+`repolarisation_slope` and `tip_val` changed scale by about 1e5, `spike_count`
+shifted population, and `channel_labels` is categorical, so these use neutral
+linear/full. CSD features were compared across W37, W38 and W39, did not change
+scale, and use neutral linear/full like all new features. Six W32 features
+(`peak_time_secs`, `peak_val`, `recovery_time_secs`, `tip_time_secs`,
+`trough_time_secs`, `trough_val`) are absent from W39 and are not published.
+Volumes reuse the reviewed W26 display for shared features and neutral
+linear/full for the 8 new ones; the geometry is the unchanged native 50 um Allen
+grid. Selections: `docs/data/CHANNELS_2026_W39_DISTRIBUTION_SELECTION.json`,
+`docs/data/VOLUME_2026_W39_*_SELECTION.json`. Eigenmodes and the W26
+interpretable remap are not published.
