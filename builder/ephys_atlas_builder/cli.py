@@ -146,6 +146,12 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
         help="immutable output release identifier; candidate builds must differ from the source vintage",
     )
+    p.add_argument(
+        "--dataset-id",
+        default=VOLUMES_DATASET_ID,
+        help="dataset for a separate volume product built with this recipe (source and release directories)",
+    )
+    p.add_argument("--title", help="dataset title recorded in the release manifest")
     p.add_argument("--created-at", required=True)
     p.add_argument(
         "--geometry-selection",
@@ -464,10 +470,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"built and validated: {release_dir}")
         elif args.cmd == "build-volumes":
             resolved = resolve_source_release(
-                args.source_root, VOLUMES_DATASET_ID, args.release
+                args.source_root, args.dataset_id, args.release
             )
-            source_snapshot = args.source_root / VOLUMES_DATASET_ID / resolved
-            release_dir = args.release_root / VOLUMES_DATASET_ID / args.release_id
+            source_snapshot = args.source_root / args.dataset_id / resolved
+            release_dir = args.release_root / args.dataset_id / args.release_id
             config = apply_volume_geometry_selection(
                 VolumeBuildConfig(
                     release_id=args.release_id,
@@ -487,6 +493,8 @@ def main(argv: list[str] | None = None) -> int:
                     distribution_selection=args.distribution_selection,
                     regional_distribution_selection=args.regional_distribution_selection,
                     regional_annotation=args.regional_annotation,
+                    dataset_id=args.dataset_id,
+                    title=args.title,
                 ),
                 load_volume_geometry_selection(args.geometry_selection),
             )

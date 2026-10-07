@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import gzip
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -64,7 +65,11 @@ def _features() -> dict[str, np.ndarray]:
 
 
 def _distribution_selection(
-    path: Path, *, source_release_id: str, features: tuple[str, ...]
+    path: Path,
+    *,
+    source_release_id: str,
+    features: tuple[str, ...],
+    dataset_id: str = "ephys_atlas_volumes",
 ) -> Path:
     write_json(
         path,
@@ -72,7 +77,7 @@ def _distribution_selection(
             "schema": "ibl-scalar-distribution-selection-v1",
             "selection_id": "synthetic-d050-v1",
             "scientific_owner_confirmation": True,
-            "dataset_id": "ephys_atlas_volumes",
+            "dataset_id": dataset_id,
             "representation": "volume",
             "source_release_id": source_release_id,
             "features": [
@@ -275,8 +280,8 @@ def test_volume_recipe_refuses_implicit_scientific_or_transport_choices(
         )
 
 
-def test_snapshot_recipe_verifies_source_identity_and_discovers_features(tmp_path):
-    source = tmp_path / "source"
+def _snapshot_source(source: Path, dataset_id: str = "ephys_atlas_volumes") -> tuple[int, int, int]:
+    """Write a two-feature synthetic snapshot; returns its grid shape."""
     source.mkdir()
     npz = source / "brainwide_ephys_atlas_50um.npz"
     first = _features()["rms_ap"]
@@ -294,7 +299,7 @@ def test_snapshot_recipe_verifies_source_identity_and_discovers_features(tmp_pat
         source / "source.json",
         {
             "schema_version": "1.0",
-            "dataset_id": "ephys_atlas_volumes",
+            "dataset_id": dataset_id,
             "requested_release": "synthetic-volume-v1",
             "resolved_release": "synthetic-volume-v1",
             "project": "ea_active",
@@ -308,7 +313,13 @@ def test_snapshot_recipe_verifies_source_identity_and_discovers_features(tmp_pat
             ],
         },
     )
-    regional_selection, regional_annotation = _regional_inputs(tmp_path, first.shape)
+    return first.shape
+
+
+def test_snapshot_recipe_verifies_source_identity_and_discovers_features(tmp_path):
+    source = tmp_path / "source"
+    grid_shape = _snapshot_source(source)
+    regional_selection, regional_annotation = _regional_inputs(tmp_path, grid_shape)
     config = _config(
         source_release_id="synthetic-volume-v1",
         features=("polarity",),
@@ -347,6 +358,46 @@ def test_snapshot_recipe_verifies_source_identity_and_discovers_features(tmp_pat
         item["unassigned_valid_voxel_count"] == 0
         for item in summary["regional_distributions"]
     )
+
+
+def test_snapshot_recipe_builds_a_separate_volume_dataset(tmp_path):
+    dataset_id = "synthetic_volume_product"
+    source = tmp_path / "source"
+    grid_shape = _snapshot_source(source, dataset_id)
+    regional_selection, regional_annotation = _regional_inputs(tmp_path, grid_shape)
+    config = _config(
+        source_release_id="synthetic-volume-v1",
+        ibleatools_commit="9bfa0623a16bc7a989a6b27a589887641beee0a8",
+        iblatlas_commit="52083adf44825d0622a503705e095699a5957587",
+        builder_commit="1234567",
+        distribution_selection=_distribution_selection(
+            tmp_path / "distribution-selection.json",
+            source_release_id="synthetic-volume-v1",
+            features=("rms_ap", "polarity"),
+            dataset_id=dataset_id,
+        ),
+        regional_distribution_selection=regional_selection,
+        regional_annotation=regional_annotation,
+        dataset_id=dataset_id,
+        title="Synthetic volume product",
+    )
+    release = build_volumes_from_snapshot(source, tmp_path / "release", config)
+    validate_release(release, ROOT / "schema" / "v1")
+    manifest = json.loads((release / "manifest.json").read_text())
+    assert manifest["dataset_id"] == dataset_id
+    assert manifest["title"] == "Synthetic volume product"
+    command = manifest["provenance"]["builder"]["command"]
+    assert f"--dataset-id {dataset_id}" in command
+    with pytest.raises(RuntimeError, match="source snapshot is not ephys_atlas_volumes"):
+        build_volumes_from_snapshot(
+            source,
+            tmp_path / "mismatched-release",
+            replace(config, dataset_id="ephys_atlas_volumes", distribution_selection=_distribution_selection(
+                tmp_path / "default-selection.json",
+                source_release_id="synthetic-volume-v1",
+                features=("rms_ap", "polarity"),
+            )),
+        )
 
 
 def test_snapshot_recipe_loads_and_pins_machine_readable_geometry(tmp_path):

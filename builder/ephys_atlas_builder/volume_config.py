@@ -44,6 +44,9 @@ class VolumeBuildConfig:
     regional_distribution_selection: Path | None = None
     regional_annotation: Path | None = None
     candidate: bool = False
+    # Separate volume datasets reuse this recipe; the default keeps the encoding-volume identity.
+    dataset_id: str = DATASET_ID
+    title: str | None = None
 
     def validate(self) -> None:
         if not self.release_id:

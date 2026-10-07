@@ -274,6 +274,10 @@ def build_volumes_release_from_arrays(
         )
     for feature in config.features or ():
         command.extend(("--feature", feature))
+    if config.dataset_id != DATASET_ID:
+        command.extend(("--dataset-id", config.dataset_id))
+    if config.title:
+        command.extend(("--title", config.title))
     if config.paper_snapshot:
         command.append("--paper-snapshot")
     if config.candidate:
@@ -287,8 +291,8 @@ def build_volumes_release_from_arrays(
             command.extend((name, value))
     manifest = {
         "schema_version": "1.0",
-        "dataset_id": DATASET_ID,
-        "title": "IBL Encoding Volumes",
+        "dataset_id": config.dataset_id,
+        "title": config.title or "IBL Encoding Volumes",
         "description": (
             "Local non-published transport candidate derived from a pinned canonical encoding-volume object."
             if config.candidate

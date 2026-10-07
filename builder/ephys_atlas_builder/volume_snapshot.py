@@ -50,7 +50,7 @@ def build_volumes_from_snapshot(
         )
     distribution_selection = load_distribution_selection(
         config.distribution_selection,
-        dataset_id=DATASET_ID,
+        dataset_id=config.dataset_id,
         representation="volume",
     )
     config.validate()
@@ -59,9 +59,9 @@ def build_volumes_from_snapshot(
     if not source_json.is_file():
         raise RuntimeError(f"missing source snapshot metadata: {source_json}")
     source = json.loads(source_json.read_text())
-    if source.get("dataset_id") != DATASET_ID:
+    if source.get("dataset_id") != config.dataset_id:
         raise RuntimeError(
-            f"source snapshot is not {DATASET_ID}: {source.get('dataset_id')}"
+            f"source snapshot is not {config.dataset_id}: {source.get('dataset_id')}"
         )
     source_release_id = config.source_release_id
     if str(source.get("resolved_release")) != source_release_id:
