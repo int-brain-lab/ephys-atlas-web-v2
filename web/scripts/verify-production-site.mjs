@@ -119,8 +119,10 @@ try {
     const release = dataset.releases.find(r => r.release_id === dataset.default_release);
     const manifestUrl = new URL(release.manifest.path, origin + '/');
     const manifest = await verifiedJson(manifestUrl, release.manifest);
-    const feature = dataset.dataset_id === config.default_view?.dataset_id
-      ? config.default_view.feature_id : manifest.features[0].id;
+    const configured = dataset.dataset_id === config.default_view?.dataset_id
+      ? config.default_view.feature_id : undefined;
+    // The pinned default may belong to an older release of the dataset; fall back to the first declared feature.
+    const feature = manifest.features.some(f => f.id === configured) ? configured : manifest.features[0].id;
     const resource = manifest.features.find(f => f.id === feature).descriptor.resource;
     const descriptor = await verifiedJson(new URL(resource.path, manifestUrl), resource);
     const representation = descriptor.representations.volume ? 'volume' : 'regional';
