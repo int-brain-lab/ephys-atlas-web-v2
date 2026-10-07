@@ -77,7 +77,7 @@ For a schema-v1 regional feature, the viewer must:
 - <a id="ls02-03"></a> **`LS02-03`** — search regions by loaded metadata rather than a hardcoded list;
 - <a id="ls02-04"></a> **`LS02-04`** — display the selected statistic for each region;
 - <a id="ls02-05"></a> **`LS02-05`** — color registered anatomical regions from the selected statistic/colormap/range;
-- <a id="ls02-06"></a> **`LS02-06`** — use one shared selection state for region-list and SVG interactions;
+- <a id="ls02-06"></a> **`LS02-06`** — use one shared selection state for region-list and brain-view interactions; in Regions, non-leaf rows expand/collapse and leaves select, while brain-view clicks select the clicked region; Ctrl/Cmd-click toggles selectable regions, and an explicit Select multiple mode supports touch and keyboard use;
 - <a id="ls02-07"></a> **`LS02-07`** — persist selection in URL state;
 - <a id="ls02-08"></a> **`LS02-08`** — show global descriptive statistics and a distribution/histogram;
 - <a id="ls02-09"></a> **`LS02-09`** — expose available Linear, Log, and Signed-log distribution axes through one
@@ -95,6 +95,14 @@ For a schema-v1 regional feature, the viewer must:
   color-mapping mode and pseudo-log strength as client-side URL state;
 - <a id="ls02-12"></a> **`LS02-12`** — compare selected-region statistics/distributions with the global population;
 - <a id="ls02-13"></a> **`LS02-13`** — clearly identify synthetic fixtures as non-scientific;
+
+Auto-slice defaults on for region selection and moves the shared cursor to the
+native interior voxel nearest the signed mapped region’s centroid whose displayed
+crosshairs still intersect that region in all three projections. Compact target
+and multiple-selection buttons sit beside fold/unfold with state-aware tooltips
+and pressed states. Auto-slice is URL-persisted; unavailable interior coverage
+keeps coordinates intact with explicit feedback. See D086 and the
+[region navigation contract](rendering/REGION_NAVIGATION.md).
 
 Global, selected-region, and compact histograms retain exact release bins when
 color mapping changes. The compact gradient aligns to raw values at

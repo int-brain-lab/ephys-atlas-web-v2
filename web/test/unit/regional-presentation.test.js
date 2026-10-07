@@ -16,7 +16,7 @@ const feature = {
 };
 const coloring = { mode: 'feature', statistic: 'mean', colormap: 'viridis', range: { mode: 'auto' }, scale: 'linear' };
 
-test('resolver produces bilateral anatomy, visibility, selection, and folded hover for every mapping', () => {
+test('resolver produces bilateral anatomy, visibility, selection, and signed hover for every mapping', () => {
   for (const mapping of ['allen', 'beryl', 'cosmos']) {
     const presentation = resolveRegionalPresentation({
       mapping, feature: null, anatomyRegions: regions,
@@ -25,11 +25,23 @@ test('resolver produces bilateral anatomy, visibility, selection, and folded hov
     assert.equal(presentation.mapping, mapping);
     assert.deepEqual([...presentation.visibleRegionIds], [-10, 10, -20, 20]);
     assert.deepEqual([...presentation.selectedRegionIds], [-10, 10, -20, 20]);
-    assert.equal(presentation.highlightedRegionId, -20);
+    assert.equal(presentation.highlightedRegionId, 20);
     assert.equal(presentation.anatomyColors.get(-10), '#ff90ff');
     assert.equal(presentation.anatomyColors.get(10), '#ff90ff');
     assert.equal(presentation.featureColors, null);
     assert.equal(presentation.featureSide, null);
+  }
+});
+
+test('hover preserves either physical hemisphere while selection remains bilateral', () => {
+  for (const hoveredRegionId of ['-10', '10', null, 'bad', '0']) {
+    const presentation = resolveRegionalPresentation({
+      mapping: 'allen', feature, anatomyRegions: regions, coloring,
+      selectedRegionIds: ['10'], hoveredRegionId,
+    });
+    assert.equal(presentation.highlightedRegionId,
+      hoveredRegionId === '-10' ? -10 : hoveredRegionId === '10' ? 10 : null);
+    assert.deepEqual([...presentation.selectedRegionIds], [-10, 10]);
   }
 });
 

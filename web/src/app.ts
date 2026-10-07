@@ -1,4 +1,5 @@
 import { DatasetSession } from './application/dataset-session.js';
+import { trackOnce } from './analytics.js';
 import { resolvePresentationScale } from './application/presentation-scale.js';
 import { resolvePresentationColormap } from './application/presentation-colormap.js';
 import { effectiveScalarColorRange } from './application/scalar-colormap.js';
@@ -13,9 +14,11 @@ import {
   resolveRegionalPresentation,
   retainRegionalPresentationWhileMappingLoads,
 } from './application/regional-presentation.js';
-import { maxRegionalSliceIndex } from './core/slice-calibration.js';
+import { worldToCursorState } from './core/spatial.js';
+import { regionalIndicesToWorld, maxRegionalSliceIndex } from './core/slice-calibration.js';
 import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
 import type { ResourceIntegrity } from './data/cache.js';
+import type { DatasetCatalog } from './data/contracts.js';
 import { HttpDatasetSource } from './data/http-source.js';
 import { LocalDatasetSource } from './data/local-source.js';
 import type { PreparedLocalArchive, LocalArchivePreview } from './data/local-archive.js';
@@ -73,12 +76,20 @@ export class AtlasApp {
   private readonly viewportFactory: ProjectionViewportFactory;
   private displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null = null;
   private atlasRegions: AtlasRegionCatalog | null = null;
+  private anatomyLoading = true;
+  private anatomyError: string | null = null;
   private hoveredRegionId: string | null = null;
+  private multiSelection = false;
+  private autoSliceAbort: AbortController | null = null;
+  private autoSliceStatus = '';
   private viewportPresentation: ProjectionPresentation | null = null;
   private presentationReconciliationPending = false;
   private pendingLocalArchive: PreparedLocalArchive | null = null;
   private localImportAbort: AbortController | null = null;
   private stopApplicationStore: (() => void) | null = null;
+  private startup: Promise<void> | null = null;
+  private stopped = false;
+  private catalogRequestGeneration = 0;
 
   constructor(root: HTMLElement, private readonly options: AppOptions = {}) {
     const defaultView = options.defaultView ?? DEFAULT_VIEW_STATE;
@@ -89,16 +100,16 @@ export class AtlasApp {
     this.urlController = new UrlStateController(this.store, window, defaultView);
     this.viewportFactory = options.viewportFactory ?? new NullProjectionViewportFactory();
     this.shell = new AppShell(root, {
-      setDataset: (ref) => this.selectDataset(ref),
-      selectData: (selection) => this.selectData(selection),
+      setDataset: (ref) => this.trackExploration(() => this.selectDataset(ref)),
+      selectData: (selection) => this.trackExploration(() => this.selectData(selection)),
       recoverNavigation: (action) => this.recoverNavigation(action),
-      selectEdition: (projectId, editionId) => this.selectEdition(projectId, editionId),
-      setFeature: (featureId, representation) => this.store.dispatch({
+      selectEdition: (projectId, editionId) => this.trackExploration(() => this.selectEdition(projectId, editionId)),
+      setFeature: (featureId, representation) => this.trackExploration(() => this.store.dispatch({
         type: 'feature/set',
         featureId,
         history: 'push',
         ...(representation ? { representation } : {}),
-      }),
+      })),
       setParcellation: (parcellation) => this.store.dispatch({
         type: 'parcellation/set',
         parcellation,
@@ -123,6 +134,8 @@ export class AtlasApp {
       clearSelection: () => this.store.dispatch({ type: 'selection/clear' }),
       shareCurrentView: () => this.copyCurrentUrl(),
       downloadCurrentFeature: () => this.downloadCurrentFeature(),
+      retryFeature: () => this.retryFeature(),
+      refreshSliceInventory: () => { if (!this.displaySliceInventories) this.loadRendererInventory(); },
       downloadArtifact: (artifactId, featureId) => this.downloadArtifact(artifactId, featureId),
       prepareLocal: (file) => this.prepareLocal(file),
       admitLocal: () => this.admitLocal(),
@@ -133,6 +146,9 @@ export class AtlasApp {
       reportError: (error) => this.reportRuntimeError(error),
     }, this.viewportFactory, options.scene3dFactory);
     this.regionalPanel = new RegionalPanelController(root, {
+      selectRegion: (regionId, additive) => this.selectRegion(regionId, additive),
+      setAutoSlice: (enabled) => this.store.dispatch({ type: 'slices/auto', enabled }),
+      setMultiSelection: (enabled) => { this.multiSelection = enabled; },
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
       setRegionOrder: (order) => this.store.dispatch({ type: 'regions/order', order }),
       setColorScale: (scale) => this.store.dispatch({ type: 'color/scale', scale }),
@@ -145,15 +161,18 @@ export class AtlasApp {
         this.setHoveredRegion(regionId);
       },
       downloadComparison: () => this.downloadSelectedComparison(),
+      comparisonUsed: () => trackOnce('comparison_used'),
+      retryFeature: () => this.retryFeature(),
+      retryAnatomy: () => this.loadAtlasRegions(),
     });
     this.viewportFactory.setInteractionSink({
       hover: (hit) => this.setHoveredRegion(
         this.projectionMappingIsCurrent() ? hit?.regionId ?? null : null,
       ),
       inspect: (inspection) => this.inspectProjection(inspection),
-      toggleSelection: (hit) => {
+      selectRegion: (hit, additive) => {
         if (this.projectionMappingIsCurrent()) {
-          this.store.dispatch({ type: 'selection/toggle', regionId: hit.regionId });
+          this.selectRegion(hit.regionId, additive);
         }
       },
       stepSlice: (axis, delta) => this.stepSlice(axis, delta),
@@ -161,28 +180,93 @@ export class AtlasApp {
       reportError: (error) => this.reportRuntimeError(error),
     });
     options.scene3dFactory?.setInteractionSink({
-      regionPointer: ({ type, regionId }) => {
+      regionPointer: ({ type, regionId, originalEvent }) => {
         const logicalRegionId = regionId === null ? null : String(-Math.abs(regionId));
         if (type === 'select' && logicalRegionId !== null) {
-          this.store.dispatch({ type: 'selection/toggle', regionId: logicalRegionId });
+          this.selectRegion(logicalRegionId, originalEvent.ctrlKey || originalEvent.metaKey);
         } else {
-          this.setHoveredRegion(type === 'hover' ? logicalRegionId : null);
+          this.setHoveredRegion(type === 'hover' && regionId !== null ? String(regionId) : null);
         }
       },
       cameraChanged: (camera) => this.store.dispatch({ type: 'scene3d/camera', camera }),
-      error: (error) => this.reportRuntimeError(error),
+      // The 3-D panel observes renderer errors and offers Retry independently
+      // of dataset readiness; optional anatomy failures must not fail the data.
     });
   }
 
-  async start(): Promise<void> {
+  private selectRegion(regionId: string, additive: boolean): void {
+    this.trackExploration(() => this.store.dispatch(additive || this.multiSelection
+      ? { type: 'selection/toggle', regionId }
+      : { type: 'selection/set', regionIds: [regionId] }));
+    if (this.store.getState().view.selection.includes(regionId)) void this.autoSliceToRegion(regionId);
+  }
+
+  private cancelAutoSlice(): void {
+    this.autoSliceAbort?.abort();
+    this.autoSliceAbort = null;
+    this.autoSliceStatus = '';
+  }
+
+  private async autoSliceToRegion(regionId: string): Promise<void> {
+    this.cancelAutoSlice();
+    const view = this.store.getState().view;
+    if (!view.autoSlice || !this.viewportFactory.locateRegionSlices) return;
+    const controller = new AbortController();
+    this.autoSliceAbort = controller;
+    this.autoSliceStatus = 'Finding slices for the selected region…';
+    this.render();
+    try {
+      const slices = await this.viewportFactory.locateRegionSlices(
+        regionId, view.parcellation, controller.signal,
+      );
+      if (this.stopped || controller.signal.aborted) return;
+      this.autoSliceAbort = null;
+      if (slices) {
+        this.autoSliceStatus = '';
+        this.store.dispatch({ type: 'cursor/set', cursor: worldToCursorState(regionalIndicesToWorld(slices)) });
+      } else {
+        this.autoSliceStatus = 'No interior position is visible in all three slice projections for this region. Slices kept fixed.';
+        this.render();
+      }
+    } catch {
+      if (this.stopped || controller.signal.aborted) return;
+      controller.abort();
+      this.autoSliceAbort = null;
+      this.autoSliceStatus = 'Couldn’t find slices. Select the region again to retry, or turn off Auto-slice.';
+      this.render();
+    }
+  }
+
+  /** Measure accepted user intent, never automatic reconciliation or URL hydration. */
+  private trackExploration(change: () => void): void {
+    const before = this.store.getState().view;
+    change();
+    const after = this.store.getState().view;
+    if (before.dataset.datasetId !== after.dataset.datasetId
+      || before.dataset.releaseId !== after.dataset.releaseId
+      || before.featureId !== after.featureId
+      || before.representation !== after.representation
+      || after.selection.some((id) => !before.selection.includes(id))) {
+      trackOnce('exploration_started');
+    }
+  }
+
+  start(): Promise<void> {
+    if (this.stopped) return Promise.resolve();
+    this.startup ??= this.startApplication();
+    return this.startup;
+  }
+
+  private async startApplication(): Promise<void> {
     this.render();
     this.loadRendererInventory();
     this.loadAtlasRegions();
     let catalog;
     try {
-      catalog = await this.session.loadCatalog({
+      catalog = await this.loadCatalog({
         allowLocalOnly: parseNavigationRequest(window.location.search).context === 'local',
       });
+      if (!catalog) return;
       this.urlController.start(catalog);
     } catch {
       // Catalog and navigation failures are already retained in their distinct
@@ -199,8 +283,11 @@ export class AtlasApp {
   }
 
   private activateApplication(): void {
-    if (this.stopApplicationStore) return;
+    if (this.stopped || this.stopApplicationStore) return;
     this.stopApplicationStore = this.store.subscribe((state, action) => {
+      if (isDatasetNavigationAction(action) || ['view/hydrate', 'parcellation/set', 'context/reconcile',
+        'feature/set', 'selection/set', 'selection/toggle', 'selection/clear', 'cursor/set', 'slice/set',
+        'slices/auto'].includes(action.type)) this.cancelAutoSlice();
       if (isDatasetNavigationAction(action) || action.type === 'view/hydrate' || action.type === 'parcellation/set') {
         this.hoveredRegionId = null;
       }
@@ -221,6 +308,10 @@ export class AtlasApp {
   }
 
   stop(): void {
+    if (this.stopped) return;
+    this.stopped = true;
+    this.cancelAutoSlice();
+    this.catalogRequestGeneration += 1;
     this.cancelLocal();
     this.stopApplicationStore?.();
     this.stopApplicationStore = null;
@@ -231,6 +322,7 @@ export class AtlasApp {
   }
 
   private render(): void {
+    if (this.stopped) return;
     const state = this.store.getState();
     const snapshot = this.session.snapshot();
     const manifestMatches = snapshot.manifest?.dataset.id === state.view.dataset.datasetId
@@ -240,8 +332,11 @@ export class AtlasApp {
       && (snapshot.feature?.representation !== 'regional'
         || snapshot.feature.parcellation === state.view.parcellation);
     const data = { ...snapshot, feature: featureMatches ? snapshot.feature : null };
-    const featureLoading = state.runtime.datasetStatus !== 'error'
+    const featureError = snapshot.featureError ?? snapshot.datasetError;
+    const featureLoading = featureError === null
       && (!manifestMatches || (!!state.view.featureId && !featureMatches));
+    // Payload availability is distinct from first-frame renderer readiness.
+    if (data.feature && !featureLoading && !featureError) trackOnce('data_loaded');
     const anatomyRegions = this.atlasRegions?.left[state.view.parcellation] ?? data.regions;
     const descriptor = data.manifest?.features.find(({ id }) => id === state.view.featureId);
     const representationDisplay = data.feature
@@ -307,7 +402,15 @@ export class AtlasApp {
       anatomyOutlines: state.view.layers.anatomyOutlines,
       anatomyColors: state.view.layers.anatomyColors,
     };
-    if (!featureLoading && this.presentationChanged(presentation)) {
+    if ((featureLoading || featureError) && this.hoveredRegionId === null
+      && this.viewportPresentation?.regional.highlightedRegionId != null) {
+      this.viewportPresentation = {
+        ...this.viewportPresentation,
+        regional: { ...this.viewportPresentation.regional, highlightedRegionId: null },
+      };
+      this.viewportFactory.updatePresentation(this.viewportPresentation);
+    }
+    if (!featureLoading && !featureError && this.presentationChanged(presentation)) {
       this.viewportPresentation = presentation;
       this.viewportFactory.updatePresentation(presentation);
     }
@@ -318,6 +421,7 @@ export class AtlasApp {
       manifest: data.manifest,
       feature: data.feature,
       featureLoading,
+      featureError,
       displaySliceInventories: this.displaySliceInventories,
       regionalPresentation: this.viewportPresentation?.regional ?? presentation.regional,
       presentationScale,
@@ -330,13 +434,20 @@ export class AtlasApp {
       state,
       manifest: data.manifest,
       feature: data.feature,
+      featureLoading,
+      featureError,
       regions: anatomyRegions,
       // D078 companion rows follow the release's mutually exclusive physical
       // mapping, not the display atlas's complete (and potentially overlapping)
       // ontology rows.
       physicalRegions: data.feature?.representation === 'volume' ? data.regions : [],
       anatomyAtlas: this.atlasRegions?.atlas ?? null,
-      hoveredRegionId: this.hoveredRegionId,
+      autoSliceStatus: this.autoSliceStatus,
+      anatomyLoading: this.anatomyLoading,
+      anatomyError: this.anatomyError,
+      // The tree and feature rows use logical identities, while rendering
+      // retains the signed physical side of a 3-D hover.
+      hoveredRegionId: this.hoveredRegionId === null ? null : String(-Math.abs(Number(this.hoveredRegionId))),
       presentationScale,
       representationDisplay,
     });
@@ -514,11 +625,20 @@ export class AtlasApp {
     }
   }
 
+  private retryFeature(): void {
+    if (this.session.snapshot().featureError !== null) {
+      void this.session.loadCurrentFeature();
+    } else {
+      void this.session.loadDataset(requireExactDataset(this.store.getState().view.dataset));
+    }
+  }
+
   private async retryCatalog(): Promise<void> {
     try {
-      const catalog = await this.session.loadCatalog({
+      const catalog = await this.loadCatalog({
         allowLocalOnly: parseNavigationRequest(window.location.search).context === 'local',
       });
+      if (!catalog) return;
       if (this.stopApplicationStore) {
         this.urlController.setCatalog(catalog);
         this.render();
@@ -529,6 +649,19 @@ export class AtlasApp {
       await this.session.loadDataset(requireExactDataset(this.store.getState().view.dataset));
     } catch {
       this.render();
+    }
+  }
+
+  /** Only the latest app-owned refresh may apply catalog-dependent navigation. */
+  private async loadCatalog(options: { allowLocalOnly?: boolean } = {}): Promise<DatasetCatalog | null> {
+    if (this.stopped) return null;
+    const generation = ++this.catalogRequestGeneration;
+    try {
+      const catalog = await this.session.loadCatalog(options);
+      return !this.stopped && generation === this.catalogRequestGeneration ? catalog : null;
+    } catch (error) {
+      if (this.stopped || generation !== this.catalogRequestGeneration) return null;
+      throw error;
     }
   }
 
@@ -649,16 +782,25 @@ export class AtlasApp {
         this.displaySliceInventories = inventories;
         this.render();
       })
-      .catch((error: unknown) => this.reportRuntimeError(error));
+      // Each viewport reports projection-pack failures in its own status/retry UI.
+      .catch(() => this.render());
   }
 
   private loadAtlasRegions(): void {
+    this.anatomyLoading = true;
+    this.anatomyError = null;
+    this.render();
     void loadAtlasRegionCatalog(this.options.atlasRegionsUrl, fetch.bind(globalThis), this.options.atlasRegionsIntegrity)
       .then((catalog) => {
         this.atlasRegions = catalog;
+        this.anatomyLoading = false;
         this.render();
       })
-      .catch((error: unknown) => this.reportRuntimeError(error));
+      .catch((error: unknown) => {
+        this.anatomyLoading = false;
+        this.anatomyError = error instanceof Error ? error.message : String(error);
+        this.render();
+      });
   }
 
   private async prepareLocal(file: File): Promise<LocalArchivePreview> {
@@ -680,9 +822,12 @@ export class AtlasApp {
     const prepared = this.pendingLocalArchive;
     if (!prepared) throw new Error('No validated local dataset is ready to import');
     const manifest = await this.localSource.admitPrepared(prepared);
+    trackOnce('local_imported');
     this.pendingLocalArchive = null;
     this.localImportAbort = null;
-    this.urlController.setCatalog(await this.session.loadCatalog());
+    const catalog = await this.loadCatalog();
+    if (!catalog) return;
+    this.urlController.setCatalog(catalog);
     this.store.dispatch({
       type: 'navigation/local',
       navigation: { kind: 'local' },
@@ -712,6 +857,7 @@ export class AtlasApp {
     }
 
     await this.localSource.deleteRelease(selector);
+    if (this.stopped) return;
     if (deletingActive && published) {
       this.store.dispatch({
         type: 'navigation/release',
@@ -720,12 +866,14 @@ export class AtlasApp {
         history: 'replace',
       });
     }
-    this.urlController.setCatalog(await this.session.loadCatalog());
+    const refreshedCatalog = await this.loadCatalog();
+    if (refreshedCatalog) this.urlController.setCatalog(refreshedCatalog);
   }
 
   private async copyCurrentUrl(): Promise<void> {
     if (!navigator.clipboard?.writeText) throw new Error('Clipboard access is unavailable in this browser');
     await navigator.clipboard.writeText(window.location.href);
+    trackOnce('share_copied');
   }
 
   private downloadCurrentFeature(): void {
@@ -811,6 +959,7 @@ export class AtlasApp {
     link.href = url;
     link.download = filename;
     link.click();
+    trackOnce('download_started');
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 

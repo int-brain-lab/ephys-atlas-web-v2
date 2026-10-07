@@ -1,5 +1,63 @@
 import { expect, test } from '@playwright/test';
 
+for (const width of [1280, 768, 390]) {
+  test(`3-D shows an accessible loading overlay until its first rendered frame at ${width}px`, async ({ page }) => {
+    let releaseManifest!: () => void;
+    let releaseGeometry!: () => void;
+    const manifestGate = new Promise<void>((resolve) => { releaseManifest = resolve; });
+    const geometryGate = new Promise<void>((resolve) => { releaseGeometry = resolve; });
+    await page.route('**/__mesh-pack-fixture/manifest.json', async (route) => {
+      await manifestGate;
+      await route.continue();
+    });
+    await page.route('**/__mesh-pack-fixture/default.eam3.gz', async (route) => {
+      await geometryGate;
+      await route.continue();
+    });
+    try {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto('/app/?v=4&explode3d=0.4');
+      if (width < 1100) await page.getByRole('button', { name: 'Context', exact: true }).click();
+      await page.getByRole('tab', { name: '3-D' }).click();
+      const panel = page.locator('[data-secondary-panel="brain-3d"]');
+      const overlay = panel.locator('.secondary-view__scene3d-overlay');
+      const host = panel.locator('[data-scene3d-host="connected"]');
+      const slider = page.getByRole('slider', { name: 'Explode 3-D brain' });
+      await expect(overlay).toBeVisible();
+      await expect(overlay.getByRole('status')).toContainText('Loading 3D brain…');
+      await expect(overlay).toContainText('Downloading and preparing the model. This may take a moment.');
+      await expect(overlay.locator('.secondary-view__scene3d-spinner')).toBeVisible();
+      await expect(host).toHaveAttribute('aria-busy', 'true');
+      await expect(slider).toBeDisabled();
+      await expect(overlay.getByRole('button', { name: 'Retry' })).toBeHidden();
+      const overlayBox = await overlay.boundingBox();
+      const titleBox = await overlay.locator('strong').boundingBox();
+      expect(Math.abs((titleBox!.x + titleBox!.width / 2) - (overlayBox!.x + overlayBox!.width / 2))).toBeLessThan(2);
+      await page.screenshot({ path: `/tmp/ephys-3d-loading-${width}.png` });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      expect(await overlay.locator('.secondary-view__scene3d-spinner').evaluate((node) => getComputedStyle(node).animationName)).toBe('none');
+      releaseManifest();
+      await expect(host.locator('canvas')).toHaveCount(1);
+      await expect(overlay).toBeVisible();
+      await expect(slider).toBeDisabled();
+      releaseGeometry();
+      await expect(host).toHaveAttribute('data-scene3d-state', 'ready');
+      await expect.poll(async () => Number(await host.getAttribute('data-render-count'))).toBeGreaterThan(0);
+      await expect(overlay).toBeHidden();
+      await expect(host).toHaveAttribute('aria-busy', 'false');
+      await expect(slider).toBeEnabled();
+      await expect(slider).toHaveValue('0.4');
+      await page.getByRole('tab', { name: 'Summary' }).click();
+      await page.getByRole('tab', { name: '3-D' }).click();
+      await expect(overlay).toBeHidden();
+      await expect(host).toHaveAttribute('data-geometry-uploads', '1');
+    } finally {
+      releaseManifest();
+      releaseGeometry();
+    }
+  });
+}
+
 test('3-D context lazily loads its injected immutable fixture and persists responsive state', async ({ page }) => {
   const meshRequests: string[] = [];
   page.on('request', (request) => {
@@ -91,8 +149,17 @@ test('3-D shares presentation and selection without rebuilding geometry', async 
   await canvas.dblclick();
   const box = await canvas.boundingBox();
   expect(box).not.toBeNull();
-  await canvas.click({ position: { x: box!.width * .35, y: box!.height * .5 } });
+  const point = { x: box!.width * .35, y: box!.height * .5 };
+  await canvas.click({ position: point });
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-315');
+  await canvas.click({ position: point, modifiers: ['Control'] });
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
+  await page.getByRole('button', { name: 'Select multiple', exact: true }).click();
+  await canvas.click({ position: point });
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-315');
+  await canvas.click({ position: point });
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
+  await page.getByRole('button', { name: 'Select multiple', exact: true }).click();
   await expect(host).toHaveAttribute('data-geometry-uploads', uploads!);
 
   await page.evaluate(() => {
@@ -107,6 +174,62 @@ test('3-D shares presentation and selection without rebuilding geometry', async 
     await canvas.click({ position: { x: box!.width * x, y: box!.height * y } });
   }
   expect(new URL(page.url()).searchParams.get('selected')).toBeNull();
+});
+
+test('3-D hover preserves the physical side while the regional panel keeps logical identity', async ({ page }) => {
+  await page.goto('/app/');
+  await expect(page.locator('.atlas-app')).toBeVisible();
+  const result = await page.evaluate(async () => {
+    const { AtlasApp } = await import('/src/app.ts');
+    const { DEFAULT_VIEW_STATE } = await import('/src/domain/defaults.ts');
+    const root = document.createElement('div');
+    document.body.append(root);
+    let sink: any;
+    let presentation: any;
+    const factory = {
+      setInteractionSink(value: any) { sink = value; },
+      create() { return {
+        setPresentation(value: any) { presentation = value; },
+        setViewState() {}, activate() {}, deactivate() {}, destroy() {},
+      }; },
+      destroy() {},
+    };
+    const app = new AtlasApp(root, {
+      scene3dFactory: factory, catalogUrl: '/__real-data/catalog.json',
+      defaultView: { ...DEFAULT_VIEW_STATE, parcellation: 'cosmos' },
+    });
+    try {
+      await app.start();
+      root.querySelector<HTMLButtonElement>('[data-secondary-tab="brain-3d"]')!.click();
+      const observations = [];
+      // Same anatomical region, alternating sides: a logical-ID equality
+      // shortcut must not suppress the second physical highlight update.
+      for (const regionId of [315, -315, 315]) {
+        sink.regionPointer({ type: 'hover', regionId, originalEvent: new PointerEvent('pointermove') });
+        observations.push({ highlighted: presentation.highlightedRegionId,
+          logicalHovered: root.querySelector('.region-row[data-hovered="true"]')?.getAttribute('data-region-id') });
+      }
+      sink.regionPointer({ type: 'select', regionId: 315, originalEvent: new PointerEvent('pointerup') });
+      const selected = [...presentation.selectedRegionIds];
+      const selections = [selected];
+      for (const [regionId, modifiers] of [[343, {}], [315, { ctrlKey: true }], [343, { metaKey: true }]] as const) {
+        sink.regionPointer({ type: 'select', regionId, originalEvent: new PointerEvent('pointerup', modifiers) });
+        selections.push([...presentation.selectedRegionIds]);
+      }
+      sink.regionPointer({ type: 'leave', regionId: null, originalEvent: new PointerEvent('pointerleave') });
+      return { observations, selected, selections, afterLeave: presentation.highlightedRegionId,
+        hoveredRowsAfterLeave: root.querySelectorAll('.region-row[data-hovered="true"]').length };
+    } finally { app.stop(); root.remove(); }
+  });
+  expect(result.observations).toEqual([
+    { highlighted: 315, logicalHovered: '-315' },
+    { highlighted: -315, logicalHovered: '-315' },
+    { highlighted: 315, logicalHovered: '-315' },
+  ]);
+  expect(result.selected).toEqual([-315, 315]);
+  expect(result.selections).toEqual([[-315, 315], [-343, 343], [-343, 343, -315, 315], [-315, 315]]);
+  expect(result.afterLeave).toBeNull();
+  expect(result.hoveredRowsAfterLeave).toBe(0);
 });
 
 test('volume mode keeps integrated 3-D anatomy-only and scene failure isolated', async ({ page }) => {
@@ -140,7 +263,7 @@ test('volume mode keeps integrated 3-D anatomy-only and scene failure isolated',
     root.querySelector<HTMLButtonElement>('[data-secondary-tab="brain-3d"]')!.click();
     await new Promise((resolve) => requestAnimationFrame(resolve));
     const outcome = {
-      notice: root.querySelector<HTMLElement>('.secondary-view__scene3d-notice')?.textContent,
+      notice: root.querySelector<HTMLElement>('.secondary-view__scene3d-loading-title')?.textContent,
       slices: root.querySelectorAll('[data-view="coronal"], [data-view="sagittal"], [data-view="horizontal"]').length,
       nullHost,
     };
@@ -148,16 +271,33 @@ test('volume mode keeps integrated 3-D anatomy-only and scene failure isolated',
     root.remove();
     return { ...outcome, destroyed };
   });
-  expect(result).toEqual({ notice: '3-D anatomy unavailable.', slices: 3, nullHost: true, destroyed: 1 });
+  expect(result).toEqual({ notice: 'Couldn’t load the 3D brain', slices: 3, nullHost: true, destroyed: 1 });
 });
 
 for (const resource of ['manifest.json', 'default.eam3.gz']) {
-  test(`3-D ${resource} failure stays isolated from the 2-D workspace`, async ({ page }) => {
+  test(`3-D ${resource} failure stays isolated and Retry reloads the model`, async ({ page }) => {
     await page.route(`**/__mesh-pack-fixture/${resource}`, (route) => route.fulfill({ status: 503, body: 'offline' }));
-    await page.goto('/app/?v=4&secondary=brain-3d');
+    await page.goto('/app/?v=4&secondary=brain-3d&explode3d=0.4');
     const panel = page.locator('[data-secondary-panel="brain-3d"]');
     await expect(panel.locator('[data-scene3d-host="connected"]')).toHaveAttribute('data-scene3d-state', 'error');
-    await expect(panel.locator('.secondary-view__scene3d-notice')).toHaveText('3-D anatomy unavailable.');
+    const overlay = panel.locator('.secondary-view__scene3d-overlay');
+    await expect(overlay).toBeVisible();
+    await expect(overlay.getByRole('status')).toContainText('Couldn’t load the 3D brain');
+    await expect(overlay.locator('.secondary-view__scene3d-spinner')).toBeHidden();
+    await expect(panel.locator('[data-scene3d-host="connected"]')).toHaveAttribute('aria-busy', 'false');
+    await expect(page.getByRole('slider', { name: 'Explode 3-D brain' })).toBeDisabled();
     await expect(page.locator('[data-slice-asset="projection-pack-v1"]')).toHaveCount(3);
+    await page.getByRole('button', { name: 'Data details', exact: true }).click();
+    const details = page.getByRole('dialog', { name: 'Data details' });
+    await expect(details).toContainText('Synthetic test fixture');
+    await expect(details).not.toContainText('Data unavailable');
+    await page.keyboard.press('Escape');
+    await page.unroute(`**/__mesh-pack-fixture/${resource}`);
+    await overlay.getByRole('button', { name: 'Retry' }).click();
+    await expect(panel.locator('[data-scene3d-host="connected"]')).toHaveAttribute('data-scene3d-state', 'ready');
+    await expect(overlay).toBeHidden();
+    await expect(page.getByRole('slider', { name: 'Explode 3-D brain' })).toBeEnabled();
+    await expect(page.getByRole('slider', { name: 'Explode 3-D brain' })).toHaveValue('0.4');
+    await expect(panel.locator('canvas')).toHaveCount(1);
   });
 }

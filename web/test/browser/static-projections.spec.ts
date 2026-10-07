@@ -24,7 +24,7 @@ test('Top and Swanson share regional presentation, interaction, URL state, and m
   await expect(path).toHaveClass(/is-highlighted/);
   await expect(top.locator('.region-tooltip')).toBeVisible();
   await path.click();
-  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toContain(selectedTopRegionId);
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe(selectedTopRegionId);
 
   await page.getByRole('tab', { name: 'Swanson' }).click();
   const swanson = page.locator('[data-secondary-panel="swanson"]');
@@ -37,7 +37,16 @@ test('Top and Swanson share regional presentation, interaction, URL state, and m
   await swansonPath.hover();
   await expect(swanson.locator('.region-tooltip')).toBeVisible();
   await swansonPath.click();
-  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toContain(selectedSwansonRegionId);
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe(selectedSwansonRegionId);
+  await swansonPath.click({ modifiers: ['Meta'] });
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
+  await page.getByRole('tab', { name: 'Top', exact: true }).click();
+  await path.click();
+  await page.getByRole('tab', { name: 'Swanson', exact: true }).click();
+  await swansonPath.click({ modifiers: ['Control'] });
+  const expectedIds = [...new Set([selectedTopRegionId, selectedSwansonRegionId])];
+  if (selectedTopRegionId === selectedSwansonRegionId) expectedIds.length = 0;
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe(expectedIds.join(',') || null);
   await expect.poll(() => new URL(page.url()).searchParams.get('secondary')).toBe('swanson');
 
   await page.getByRole('button', { name: 'Maximize secondary panel' }).click();

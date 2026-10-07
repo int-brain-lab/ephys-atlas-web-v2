@@ -4,6 +4,7 @@ import type { RegionOrder, StatisticId } from '../../domain/types.js';
 import { html, required } from './dom.js';
 import { formatRegionalValue, rankRegionsByValue, regionMatchesQuery, regionalStatisticExtent } from './model.js';
 import { createRegionRow } from './row-view.js';
+import { OperationStatus } from '../operation-status.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -30,7 +31,9 @@ function createOrderIcon(order: RegionOrder): SVGSVGElement {
 }
 
 export interface RegionalTreeCallbacks {
-  toggleSelection(regionId: string): void;
+  selectRegion(regionId: string, additive: boolean): void;
+  setMultiSelection(enabled: boolean): void;
+  setAutoSlice(enabled: boolean): void;
   setRegionOrder(order: RegionOrder): void;
   hoverRegion(regionId: string | null): void;
 }
@@ -40,6 +43,11 @@ export class RegionalTreeView {
   readonly source: HTMLElement;
   readonly resultCount: HTMLElement;
   private readonly pane: HTMLElement;
+  private readonly autoSlice: HTMLButtonElement;
+  private readonly autoSliceTooltip: HTMLElement;
+  private readonly autoSliceStatus: HTMLElement;
+  private readonly multiSelection: HTMLButtonElement;
+  private readonly multiSelectionTooltip: HTMLElement;
   private readonly searchClear: HTMLButtonElement;
   private readonly collapseAllButton: HTMLButtonElement;
   private readonly expandAllButton: HTMLButtonElement;
@@ -53,6 +61,8 @@ export class RegionalTreeView {
   private rovingButton: HTMLButtonElement | null = null;
   private hoveredRegionId: string | null = null;
   private currentOrder: RegionOrder = 'anatomy';
+  private valueState: 'ready' | 'loading' | 'error' | 'anatomy' | 'empty' = 'ready';
+  private readonly valueStatus = new OperationStatus('inline');
   private lastRender: {
     regions: readonly RegionMetadata[];
     values: ReadonlyMap<string, number>;
@@ -60,6 +70,7 @@ export class RegionalTreeView {
     unit: string | null;
     selection: string;
     order: RegionOrder;
+    valueState: 'ready' | 'loading' | 'error' | 'anatomy' | 'empty';
   } | null = null;
 
   constructor(root: ParentNode, private readonly callbacks: RegionalTreeCallbacks) {
@@ -81,6 +92,22 @@ export class RegionalTreeView {
     this.resultCount.before(this.treeControls);
     this.resultCount.after(this.orderButton);
     this.list.setAttribute('role', 'tree');
+    this.list.setAttribute('aria-multiselectable', 'true');
+    const selectionControls = html('span', 'region-selection-controls');
+    [this.multiSelection, this.multiSelectionTooltip] = this.selectionControl(
+      'Select multiple', 'multiple',
+    );
+    [this.autoSlice, this.autoSliceTooltip] = this.selectionControl('Auto-slice', 'target');
+    selectionControls.append(this.multiSelection.parentElement!, this.autoSlice.parentElement!);
+    this.treeControls.after(selectionControls);
+    this.syncMultiSelection(false);
+    this.autoSliceStatus = html('span', 'region-auto-slice-status');
+    this.autoSliceStatus.setAttribute('role', 'status');
+    this.autoSliceStatus.hidden = true;
+    this.search.closest('.region-search')!.append(this.autoSliceStatus);
+    this.updateAutoSlice(true, '');
+    this.multiSelection.addEventListener('click', this.onSelectionModeChange);
+    this.autoSlice.addEventListener('click', this.onAutoSliceChange);
 
     this.search.addEventListener('input', this.filterRegions);
     this.searchClear.addEventListener('click', this.clearSearch);
@@ -97,6 +124,8 @@ export class RegionalTreeView {
   }
 
   destroy(): void {
+    this.autoSlice.removeEventListener('click', this.onAutoSliceChange);
+    this.multiSelection.removeEventListener('click', this.onSelectionModeChange);
     this.search.removeEventListener('input', this.filterRegions);
     this.searchClear.removeEventListener('click', this.clearSearch);
     this.orderButton.removeEventListener('click', this.cycleOrder);
@@ -111,6 +140,18 @@ export class RegionalTreeView {
     this.pane.removeEventListener('pointerover', this.onPanePointerOver);
   }
 
+  updateAutoSlice(enabled: boolean, status: string): void {
+    this.autoSlice.setAttribute('aria-pressed', String(enabled));
+    this.autoSliceTooltip.textContent = `Auto-slice ${enabled ? 'on. Click to keep slices fixed.' : 'off. Click to follow selected regions.'}${status ? ` ${status}` : ''}`;
+    this.autoSliceStatus.textContent = status;
+    this.autoSliceStatus.classList.toggle('region-auto-slice-status--quiet', status === 'Finding slices for the selected region…');
+    this.autoSliceStatus.hidden = !status;
+  }
+
+  private readonly onAutoSliceChange = (): void => {
+    this.callbacks.setAutoSlice(this.autoSlice.getAttribute('aria-pressed') !== 'true');
+  };
+
   setRegions(regions: readonly RegionMetadata[]): void {
     this.regionById.clear();
     regions.forEach((region) => this.regionById.set(region.id, region));
@@ -123,37 +164,68 @@ export class RegionalTreeView {
     unit: string | null,
     selected: ReadonlySet<string>,
     order: RegionOrder,
+    valueState: 'ready' | 'loading' | 'error' | 'anatomy' | 'empty' = 'ready',
   ): void {
+    this.source.title = this.source.textContent ?? '';
     // Volume switches have no regional values: keep the anatomical DOM, focus,
     // collapsed branches and scroll position intact while summaries change.
     unit = values.size ? unit : null;
     const selection = JSON.stringify([...selected]);
     const last = this.lastRender;
     if (last && last.regions === regions && last.statistic === statistic && last.unit === unit
-      && last.selection === selection && last.order === order && last.values.size === values.size
+      && last.selection === selection && last.order === order && last.valueState === valueState && last.values.size === values.size
       && [...values].every(([id, value]) => last.values.has(id) && Object.is(last.values.get(id), value))) return;
-    this.lastRender = { regions, values, statistic, unit, selection, order };
+    this.lastRender = { regions, values, statistic, unit, selection, order, valueState };
+    this.valueState = valueState;
     this.setRegions(regions);
     this.currentOrder = order;
     this.syncOrderButton();
     this.list.dataset.order = order;
     const extent = regionalStatisticExtent(values);
     const statisticLabel = statistic === 'count' ? 'Count' : `${statistic[0]?.toUpperCase() ?? ''}${statistic.slice(1)}`;
-    this.statisticDomain.textContent = extent
+    const domainText = extent
       ? `${statisticLabel}: ${formatRegionalValue(extent[0], statistic, null)}–${formatRegionalValue(extent[1], statistic, null)}${unit && statistic !== 'count' ? ` ${unit}` : ''}`
       : `${statisticLabel}: no finite regional values`;
+    if (valueState === 'ready') this.statisticDomain.textContent = domainText;
+    else {
+      this.valueStatus.update({
+        state: valueState === 'anatomy' ? 'empty' : valueState,
+        title: valueState === 'loading' ? 'Loading regional values…'
+          : valueState === 'error' ? 'Regional values unavailable'
+          : valueState === 'anatomy' ? 'Anatomy only · regional values are not defined in volume mode'
+          : 'No regional feature loaded',
+      });
+      if (this.valueStatus.element.parentElement !== this.statisticDomain) {
+        this.statisticDomain.replaceChildren(this.valueStatus.element);
+      }
+    }
     const previousRovingId = this.rovingButton?.dataset.regionButton;
     const restoreFocus = document.activeElement === this.rovingButton;
+    const hierarchy = buildGreyMatterHierarchy(regions);
+    const leafIds = new Set(hierarchy.filter(({ hasChildren }) => !hasChildren).map(({ region }) => region.id));
     const rowModels = order === 'anatomy'
-      ? buildGreyMatterHierarchy(regions)
-      : rankRegionsByValue(regions, values, order).map((region) => ({
+      ? hierarchy
+      : rankRegionsByValue(regions.filter(({ id }) => leafIds.has(id)), values, order).map((region) => ({
         region: { ...region, parentId: null },
         depth: 0,
         hasChildren: false,
       }));
-    const rows = rowModels.map(({ region, depth, hasChildren }) =>
-      createRegionRow(region, depth, hasChildren, values.get(region.id), statistic, unit, extent, selected, this.collapsedRegionIds));
-    this.list.replaceChildren(...rows);
+    const retainRows = last?.regions === regions && last.order === order && this.rowById.size === rowModels.length;
+    const rows = rowModels.map(({ region, depth, hasChildren }) => {
+      const next = createRegionRow(region, depth, hasChildren, values.get(region.id), statistic, unit, extent, selected, this.collapsedRegionIds);
+      if (valueState !== 'ready') next.querySelector('.region-row__value')?.setAttribute('aria-hidden', 'true');
+      const existing = retainRows ? this.rowById.get(region.id) : undefined;
+      if (!existing) return next;
+      existing.dataset.missing = next.dataset.missing!;
+      existing.dataset.selected = next.dataset.selected!;
+      existing.setAttribute('aria-selected', String(selected.has(region.id)));
+      if (!hasChildren) existing.querySelector('.region-row__button')?.setAttribute('aria-pressed', String(selected.has(region.id)));
+      existing.querySelector('.region-row__value')?.replaceWith(next.querySelector('.region-row__value')!);
+      return existing;
+    });
+    if (!retainRows || rows.some((row, index) => this.list.children[index] !== row)) {
+      this.list.replaceChildren(...rows);
+    }
     this.rowById.clear();
     rows.forEach((row) => {
       const id = row.dataset.regionId;
@@ -192,6 +264,44 @@ export class RegionalTreeView {
     if (this.hoveredRegionId) this.rowById.get(this.hoveredRegionId)?.removeAttribute('data-hovered');
     if (regionId) this.rowById.get(regionId)?.setAttribute('data-hovered', 'true');
     this.hoveredRegionId = regionId;
+  }
+
+  private selectionControl(label: string, icon: 'target' | 'multiple'): [HTMLButtonElement, HTMLElement] {
+    const wrapper = html('span', 'region-selection-control');
+    const button = html('button', 'region-selection-controls__button');
+    button.type = 'button';
+    button.setAttribute('aria-label', label);
+    const tooltip = html('span', 'region-selection-control__tooltip');
+    tooltip.id = icon === 'target' ? 'auto-slice-hint' : 'multi-selection-hint';
+    tooltip.setAttribute('role', 'tooltip');
+    button.setAttribute('aria-describedby', tooltip.id);
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 16 16');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '1.35');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('d', icon === 'target'
+      ? 'M8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10M8 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4M8 1v3M8 12v3M1 8h3M12 8h3'
+      : 'M6 2h7v7M3 5h7v8H3zM5 9l1.5 1.5L9 8');
+    svg.append(path);
+    button.append(svg);
+    wrapper.append(button, tooltip);
+    wrapper.addEventListener('pointerenter', () => delete wrapper.dataset.dismissed);
+    wrapper.addEventListener('focusin', () => delete wrapper.dataset.dismissed);
+    wrapper.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') wrapper.dataset.dismissed = 'true';
+    });
+    return [button, tooltip];
+  }
+
+  private syncMultiSelection(enabled: boolean): void {
+    this.multiSelection.setAttribute('aria-pressed', String(enabled));
+    this.multiSelectionTooltip.textContent = `Select multiple ${enabled ? 'on. Click to select one region at a time.' : 'off. Click to compare multiple regions.'} Ctrl/Cmd-click also toggles selection. Branches expand; leaves select.`;
   }
 
   private treeControl(text: string, label: string): HTMLButtonElement {
@@ -257,7 +367,13 @@ export class RegionalTreeView {
     this.orderButton.title = `Order: ${labels[this.currentOrder]} · Next: ${nextLabels[this.currentOrder]}`;
   }
 
-  private readonly onTreeClick = (event: Event): void => {
+  private readonly onSelectionModeChange = (): void => {
+    const enabled = this.multiSelection.getAttribute('aria-pressed') !== 'true';
+    this.syncMultiSelection(enabled);
+    this.callbacks.setMultiSelection(enabled);
+  };
+
+  private readonly onTreeClick = (event: MouseEvent): void => {
     const target = event.target instanceof Element ? event.target : null;
     const toggle = target?.closest<HTMLButtonElement>('[data-region-toggle]');
     if (toggle?.dataset.regionToggle) {
@@ -266,16 +382,25 @@ export class RegionalTreeView {
     }
     const button = target?.closest<HTMLButtonElement>('[data-region-button]');
     const id = button?.dataset.regionButton;
-    if (!id || this.regionById.get(id)?.mappingMember === false) return;
-    this.callbacks.toggleSelection(id);
+    if (id) this.activateRegion(id, event.ctrlKey || event.metaKey);
   };
 
   private readonly onTreeKeyDown = (event: KeyboardEvent): void => {
     const button = event.target instanceof HTMLButtonElement
       ? event.target.closest<HTMLButtonElement>('[data-region-button]')
       : null;
-    if (button) this.navigateRegions(event, button);
+    if (!button) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      const id = button.dataset.regionButton;
+      if (id) this.activateRegion(id, event.ctrlKey || event.metaKey);
+    } else this.navigateRegions(event, button);
   };
+
+  private activateRegion(id: string, additive: boolean): void {
+    if (this.rowById.get(id)?.dataset.branch === 'true') this.toggleBranch(id);
+    else if (this.regionById.get(id)?.mappingMember !== false) this.callbacks.selectRegion(id, additive);
+  }
 
   private readonly onTreePointerOver = (event: PointerEvent): void => {
     const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-region-button]') : null;
@@ -372,6 +497,7 @@ export class RegionalTreeView {
     if (!regionId) return;
     const expanded = !this.collapsedRegionIds.has(regionId);
     row.setAttribute('aria-expanded', String(expanded));
+    row.querySelector('.region-row__button')?.setAttribute('aria-expanded', String(expanded));
     const toggle = row.querySelector<HTMLButtonElement>('.region-row__toggle');
     if (!toggle) return;
     toggle.setAttribute('aria-expanded', String(expanded));
@@ -387,7 +513,7 @@ export class RegionalTreeView {
   }
 
   private syncTreeControls(filtering: boolean): void {
-    this.orderButton.disabled = this.rowById.size === 0;
+    this.orderButton.disabled = this.rowById.size === 0 || this.valueState !== 'ready';
     this.treeControls.hidden = this.currentOrder !== 'anatomy';
     if (this.currentOrder !== 'anatomy') {
       this.collapseAllButton.disabled = true;

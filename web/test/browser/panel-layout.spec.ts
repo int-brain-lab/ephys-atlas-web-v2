@@ -5,6 +5,32 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/app/');
 });
 
+test('disposing panel layout ends an active drag and removes window listeners', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const { WorkspacePanelLayoutController } = await import('/src/ui/workspace-panel-layout.ts');
+    const root = document.createElement('div');
+    const pane = document.createElement('div');
+    pane.style.width = '320px';
+    root.append(pane);
+    document.body.append(root);
+    const controller = new WorkspacePanelLayoutController(root, () => pane, () => 'wide', () => {});
+    const handle = controller.createResizeHandle('regions');
+    root.append(handle);
+    handle.dispatchEvent(new PointerEvent('pointerdown', { button: 0, clientX: 100 }));
+    window.dispatchEvent(new PointerEvent('pointermove', { clientX: 125 }));
+    const duringDrag = root.style.getPropertyValue('--region-pane-width');
+    controller.dispose();
+    window.dispatchEvent(new PointerEvent('pointermove', { clientX: 180 }));
+    const afterDispose = root.style.getPropertyValue('--region-pane-width');
+    const resizing = root.dataset.panelResizing ?? null;
+    root.remove();
+    return { duringDrag, afterDispose, resizing };
+  });
+  expect(result.duringDrag).toBe('345px');
+  expect(result.afterDispose).toBe(result.duringDrag);
+  expect(result.resizing).toBeNull();
+});
+
 test('desktop panels resize within bounds and reset to their responsive defaults', async ({ page }) => {
   const regions = page.locator('.region-pane');
   const regionHandle = page.getByRole('separator', { name: 'Resize brain regions panel' });

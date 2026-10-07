@@ -1,8 +1,9 @@
+import { registeredVolumeCanvasPlacement } from '../rendering/registered-volume-placement.js';
 import type { RegionMetadata, VolumeFeaturePayload, VolumeGridDescriptor } from '../data/contracts.js';
 import { ResourceFetcher } from '../data/cache.js';
 import { loadAtlasRegionCatalog } from '../data/atlas-regions.js';
 import { ProjectionPackSource, type RegisteredProjectionRegistration } from '../rendering/projection-pack-source.js';
-import { RetainedProjectionViewportFactory, registeredVolumeCanvasPlacement } from '../rendering/retained-projection-viewport.js';
+import { RetainedProjectionViewportFactory } from '../rendering/retained-projection-viewport.js';
 import type { ProjectionViewport } from '../rendering/projection-viewport.js';
 import type { VolumeSlice } from '../rendering/volume.js';
 import { regionIdFromPath } from '../rendering/region-id.js';
@@ -133,7 +134,7 @@ export class AlignmentReview {
     if (this.disposed) return;
     this.factory = new RetainedProjectionViewportFactory({ source: this.source, maxVolumeDecodedBytes: 8 * 1024 * 1024 });
     this.factory.setInteractionSink({ hover: () => undefined, inspect: () => undefined,
-      toggleSelection: () => undefined, moveCursor: cursor => this.move({ ml: cursor.xUm, ap: cursor.yUm, dv: cursor.zUm }),
+      selectRegion: () => undefined, moveCursor: cursor => this.move({ ml: cursor.xUm, ap: cursor.yUm, dv: cursor.zUm }),
       stepSlice: (axis, delta) => this.step(axis, delta), reportError: error => this.fail(error) });
     AXES.forEach((axis, i) => this.createPanel(axis, registrations[i]!));
     if (this.values) {

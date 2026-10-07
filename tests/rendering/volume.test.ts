@@ -1,3 +1,4 @@
+import { registeredVolumeCanvasPlacement } from '../../web/src/rendering/registered-volume-placement.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -5,7 +6,6 @@ import type { VolumeFeaturePayload } from '../../web/src/data/contracts.js';
 import type { SliceAxis } from '../../web/src/domain/types.js';
 import { locateVolumePlane } from '../../web/src/rendering/chunked-volume-source.js';
 import {
-  registeredVolumeCanvasPlacement,
   volumeScalarCacheBudget,
 } from '../../web/src/rendering/retained-projection-viewport.js';
 import {

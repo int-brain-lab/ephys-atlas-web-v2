@@ -18,7 +18,7 @@ export interface SymlogScaleSpec {
 export type ScaleSpec = LinearScaleSpec | LogScaleSpec | SymlogScaleSpec;
 
 /**
- * D082 color-only quantile map from raw knots `xs` to transformed knots `ys`
+ * D087 color-only quantile map from raw knots `xs` to transformed knots `ys`
  * (empirical CDF, optionally probit-mapped). Never a distribution axis or a
  * release-declared scale, so it is deliberately not part of `ScaleSpec`.
  */

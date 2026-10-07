@@ -54,14 +54,6 @@
   background: #c98383;
 }
 
-.view-frame[data-slice-progress='true'] .view-frame__status::before {
-  border: 3px solid rgb(var(--color-accent-rgb) / 42%);
-  border-top-color: var(--color-accent);
-  background: transparent;
-  box-shadow: 0 0 0.5rem rgb(var(--color-accent-rgb) / 24%);
-  animation: view-frame-slice-progress 0.65s linear infinite;
-}
-
 @keyframes view-frame-slice-progress {
   to { transform: rotate(1turn); }
 }
@@ -178,7 +170,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .view-frame[data-slice-progress='true'] .view-frame__status::before,
   .projection-viewport__background-activity::before {
     animation-duration: 1.8s;
   }
@@ -209,23 +200,6 @@
   stroke: rgb(var(--color-focus-rgb) / 68%);
   stroke-width: 0.75;
   vector-effect: non-scaling-stroke;
-}
-
-.view-frame__state-message {
-  position: absolute;
-  left: 50%;
-  bottom: var(--space-3);
-  max-width: calc(100% - 2 * var(--space-4));
-  transform: translateX(-50%);
-  padding: 0.26rem 0.5rem;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-muted);
-  background: rgb(7 16 25 / 76%);
-  font-size: 0.66rem;
-  text-align: center;
-  opacity: 0;
-  pointer-events: none;
 }
 
 .region-tooltip {
@@ -339,16 +313,6 @@
   font-weight: 600;
 }
 
-.view-frame[data-state='loading'] .view-frame__state-message,
-.view-frame[data-state='error'] .view-frame__state-message {
-  opacity: 1;
-}
-
-.view-frame[data-state='error'] .view-frame__state-message {
-  border-color: rgb(201 131 131 / 30%);
-  color: #cfa5a5;
-}
-
 .view-frame__footer {
   min-width: 0;
   display: grid;
@@ -425,7 +389,8 @@
   }
 }
 
-/* Retained pixels remain visible, but cannot be inspected as the new feature. */
+/* Feature changes disable the old renderer; slice loads gate picking in the shell
+   while keeping the wheel target active throughout a trackpad gesture. */
 .view-frame[data-updating='feature'] .view-frame__renderer,
 .secondary-view__surface[aria-busy='true'] .view-frame__renderer {
   pointer-events: none;

@@ -216,3 +216,5 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.secondary-projection[data-updating] .secondary-projection__renderer { pointer-events: none; }

@@ -103,7 +103,7 @@ export interface DistributionState {
 export type EffectiveColoringState = Omit<ColoringState, 'scale'> & {
   scale: ScaleSpec;
   divergingCenter?: number;
-  /** D082 knots, resolved only for a quantile color mapping. */
+  /** D087 knots, resolved only for a quantile color mapping. */
   colorQuantiles?: QuantileScaleSpec;
 };
 
@@ -117,6 +117,7 @@ export interface ViewState {
   regionOrder: RegionOrder;
   selection: readonly string[];
   cursor: CursorState;
+  autoSlice: boolean;
   workspace: WorkspaceState;
   layers: VolumeLayerState;
   scene3d: Scene3DViewState;

@@ -68,7 +68,8 @@ test('reduced mappings expose real Allen ancestors as non-selectable containers'
   const berylRegion = page.locator('.region-row[data-region-id="-985"]');
   await expect(berylContainer).toHaveAttribute('data-mapping-member', 'false');
   await expect(berylContainer).toHaveAttribute('data-parent-id', '-315');
-  await expect(berylContainer.locator('.region-row__button')).toHaveAttribute('aria-disabled', 'true');
+  await expect(berylContainer.locator('.region-row__button')).toHaveAttribute('aria-expanded', 'true');
+  await expect(berylContainer.locator('.region-row__button')).not.toHaveAttribute('aria-disabled');
   await expect(berylRegion).toHaveAttribute('data-mapping-member', 'true');
   await expect(berylRegion).toHaveAttribute('data-parent-id', '-500');
 
@@ -77,6 +78,60 @@ test('reduced mappings expose real Allen ancestors as non-selectable containers'
   await expect(page.locator('.region-row[data-region-id="-695"]')).toHaveAttribute('data-mapping-member', 'false');
   await expect(page.locator('.region-row[data-region-id="-315"]')).toHaveAttribute('data-parent-id', '-695');
   await expect(page.locator('.region-row[data-region-id="-315"]')).toHaveAttribute('data-mapping-member', 'true');
+});
+
+test('parent row clicks and keyboard activation toggle children without changing selection', async ({ page }) => {
+  await page.goto('/app/');
+  const selected = page.locator('[data-region-button="-362"]');
+  await selected.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
+  const branch = page.locator('.region-row[data-region-id="-184"]');
+  const button = branch.locator('.region-row__button');
+  const child = page.locator('.region-row[data-region-id="-68"]');
+
+  await button.click();
+  await expect(branch).toHaveAttribute('aria-expanded', 'false');
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
+  await expect(child).toBeHidden();
+  await button.click({ modifiers: ['Control'] });
+  await expect(child).toBeVisible();
+  await page.getByRole('button', { name: 'Select multiple', exact: true }).click();
+  await button.press('Space');
+  await expect(child).toBeHidden();
+  await button.press('Meta+Enter');
+  await expect(child).toBeVisible();
+  await expect(button).toBeFocused();
+  await expect(selected).toHaveAttribute('aria-pressed', 'true');
+  expect(new URL(page.url()).searchParams.get('selected')).toBe('-362');
+  await expect(button).not.toHaveAttribute('aria-pressed');
+});
+
+test('search and value sorting never make an Allen parent selectable', async ({ page }) => {
+  await page.goto('/app/');
+  await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
+  await page.getByLabel('Search brain regions').fill('MOp');
+  const parent = page.locator('[data-region-button="-985"]');
+  await parent.click();
+  await expect(parent).toHaveAttribute('aria-expanded', 'false');
+  expect(new URL(page.url()).searchParams.get('selected')).toBeNull();
+  await page.getByLabel('Search brain regions').fill('');
+  await page.getByRole('button', { name: /Region order:/ }).click();
+  await expect(page.locator('.region-list')).toHaveAttribute('data-order', 'value-desc');
+  await expect(parent).toHaveCount(0);
+  await expect(page.locator('[data-region-button="-362"]')).toBeVisible();
+});
+
+test('a Beryl mapping leaf remains selectable beneath an expandable hierarchy container', async ({ page }) => {
+  await page.goto('/app/?v=4&colors=anatomy&parcel=beryl');
+  const container = page.locator('[data-region-button="-500"]');
+  const leaf = page.locator('[data-region-button="-985"]');
+  await container.click();
+  await expect(leaf).toBeHidden();
+  await container.press('Enter');
+  await expect(leaf).toBeVisible();
+  await leaf.click();
+  await expect(leaf).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-985');
 });
 
 test('ontology branches disclose accessibly and missing feature values stay visually blank', async ({ page }) => {
@@ -166,7 +221,7 @@ test('multi-region selection keeps first-selection order and identity colors', a
   const firstSelection = page.locator('.selected-region[data-region-id="-68"]');
   await expect(firstSelection).toHaveCSS('--selection-color', '#55a7f7');
 
-  await page.getByRole('button', { name: 'FRP5, Frontal pole layer 5 (left)' }).click();
+  await page.getByRole('button', { name: 'FRP5, Frontal pole layer 5 (left)' }).click({ modifiers: ['Control'] });
   const selectedRegions = page.locator('.selected-region');
   await expect(selectedRegions).toHaveCount(2);
   await expect(selectedRegions.nth(0)).toHaveAttribute('data-region-id', '-68');
@@ -196,19 +251,16 @@ test('value ordering switches to a flat ranking and restores the anatomical tree
   await expect.poll(() => new URL(page.url()).searchParams.get('order')).toBe('value-desc');
   await expect(page.locator('.region-list')).toHaveAttribute('data-order', 'value-desc');
   await expect(page.locator('.region-tree-controls')).toBeHidden();
-  await expect(page.locator('.region-row').nth(0)).toHaveAttribute('data-region-id', '-803');
-  await expect(page.locator('.region-row').nth(1)).toHaveAttribute('data-region-id', '-382');
-  await expect(page.locator('.region-row').nth(2)).toHaveAttribute('data-region-id', '-362');
-  await expect(page.locator('.region-row').nth(3)).toHaveAttribute('data-region-id', '-477');
-  await expect(page.locator('.region-row').nth(4)).toHaveAttribute('data-missing', 'true');
+  await expect(page.locator('.region-row').nth(0)).toHaveAttribute('data-region-id', '-382');
+  await expect(page.locator('.region-row').nth(1)).toHaveAttribute('data-region-id', '-362');
+  await expect(page.locator('.region-row').nth(2)).toHaveAttribute('data-missing', 'true');
+  await expect(page.locator('[data-region-button="-803"], [data-region-button="-477"]')).toHaveCount(0);
   await expect(page.locator('.region-row').nth(0)).toHaveAttribute('data-depth', '0');
 
   await orderButton.click();
   await expect(orderButton).toHaveAttribute('data-order', 'value-asc');
-  await expect(page.locator('.region-row').nth(0)).toHaveAttribute('data-region-id', '-477');
-  await expect(page.locator('.region-row').nth(1)).toHaveAttribute('data-region-id', '-362');
-  await expect(page.locator('.region-row').nth(2)).toHaveAttribute('data-region-id', '-382');
-  await expect(page.locator('.region-row').nth(3)).toHaveAttribute('data-region-id', '-803');
+  await expect(page.locator('.region-row').nth(0)).toHaveAttribute('data-region-id', '-362');
+  await expect(page.locator('.region-row').nth(1)).toHaveAttribute('data-region-id', '-382');
 
   await orderButton.click();
   await expect(orderButton).toHaveAttribute('data-order', 'anatomy');

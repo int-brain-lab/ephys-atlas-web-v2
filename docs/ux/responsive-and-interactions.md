@@ -112,3 +112,18 @@ change scientific state, workspace state, or URL identity. It exposes progress,
 Back, Next, Skip, and Done controls. Escape dismisses it and returns focus to the
 visible Help entry point. The walkthrough is restartable and is not shown
 automatically on first visit.
+
+## UX-034 — Region selection
+
+Plain clicks select only the clicked region across the region list, registered
+slices, static maps and optional 3-D view. Clicking the sole selected region
+keeps it selected. Ctrl-click (Cmd-click on Mac) toggles membership while
+preserving the other selected regions and their first-selection order.
+
+The Regions pane exposes **Select multiple**, a session-only interaction mode
+that makes clicks/taps toggle membership across all brain views and the list.
+This provides touch and keyboard access without modifier keys. Enter/Space on
+a region follows the same rules, including Ctrl/Cmd modifiers. Arrow keys
+continue to navigate without changing selection. Clear selection and individual
+remove controls remain explicit. The selected IDs remain URL-persisted; the
+interaction mode is not part of the share URL. See D082.

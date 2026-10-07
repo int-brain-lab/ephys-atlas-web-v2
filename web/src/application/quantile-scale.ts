@@ -3,7 +3,7 @@ import type { QuantileScaleSpec } from '../domain/scale-spec.js';
 import type { ColorStatisticId } from '../domain/types.js';
 
 /**
- * D082 quantile color mappings, derived in the browser.
+ * D087 quantile color mappings, derived in the browser.
  *
  * Regional features use the exact empirical CDF of the colored per-region
  * statistic. Volumes only ship binned summaries, so their CDF is the union of

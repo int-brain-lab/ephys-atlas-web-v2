@@ -8,6 +8,7 @@ export interface RegionalPresentation {
   readonly featureColors: ReadonlyMap<number, string> | null;
   readonly visibleRegionIds: ReadonlySet<number>;
   readonly selectedRegionIds: ReadonlySet<number>;
+  /** Signed physical hover identity; logical selection is expanded separately. */
   readonly highlightedRegionId: number | null;
   readonly featureSide: 'left' | null;
 }
@@ -21,17 +22,18 @@ export interface RegionalPresentationInput {
   readonly hoveredRegionId: string | null;
 }
 
-function foldedId(value: string | number): number | null {
+function signedId(value: string | number): number | null {
   const id = Number(value);
-  return Number.isInteger(id) && id !== 0 ? -Math.abs(id) : null;
+  return Number.isInteger(id) && id !== 0 ? id : null;
 }
 
 /** Expand a logical folded region identity onto both physical hemispheres. */
 export function regionalPresentationIds(ids: Iterable<string | number>): ReadonlySet<number> {
   const result = new Set<number>();
   for (const value of ids) {
-    const id = foldedId(value);
-    if (id === null) continue;
+    const signed = signedId(value);
+    if (signed === null) continue;
+    const id = -Math.abs(signed);
     result.add(id);
     result.add(Math.abs(id));
   }
@@ -43,7 +45,7 @@ export function resolveRegionalPresentation(input: RegionalPresentationInput): R
   const anatomyColors = bilateralAtlasRegionColorMap(input.anatomyRegions);
   const visibleRegionIds = regionalPresentationIds(input.anatomyRegions.map((region) => region.atlasId));
   const selectedRegionIds = regionalPresentationIds(input.selectedRegionIds);
-  const highlightedRegionId = input.hoveredRegionId === null ? null : foldedId(input.hoveredRegionId);
+  const highlightedRegionId = input.hoveredRegionId === null ? null : signedId(input.hoveredRegionId);
   const hasCompatibleRegionalFeature = input.feature?.representation === 'regional'
     && input.feature.parcellation === input.mapping;
   const usesFeatureSide = input.coloring.mode === 'feature'

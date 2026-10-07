@@ -1,10 +1,8 @@
+import { loadVolumeFeatureFromResources } from './volume-loader.js';
 import type { DatasetId, DatasetRef, ParcellationId, RepresentationKind } from '../domain/types.js';
 import { ResourceFetcher } from './cache.js';
 import { loadRegionalFeatureFromResources, loadRegionsFromResources } from './regional-loader.js';
-import { createVolumeRegionalDistributionLoader } from './volume-regional-loader.js';
 import type { ResourceReader } from './resource-reader.js';
-import { parseVolumeResourceIndex, parseVolumeSummary } from './validation/volume-v1.js';
-import { validateDistributionMatchesDisplay } from './validation/distribution.js';
 import { metadataJsonResources, parseMetadataBundle, readBundledJson, validateMetadataBundle } from './validation/metadata-bundle.js';
 import {
   decodeBinaryArray,
@@ -14,7 +12,6 @@ import {
   parseFeatureDescriptor,
   resolveDatasetManifest,
 } from './validate.js';
-import { SCHEMA_VERSION } from './contracts.js';
 import type {
   ArtifactDescriptor,
   ArtifactPayload,
@@ -179,55 +176,11 @@ export class HttpDatasetSource implements DatasetSource {
     const reader = this.reader(release.immutable);
 
     if (representation === 'volume') {
-      const descriptor = feature.representations.volume;
-      if (!descriptor) throw new Error(`Feature ${feature.id} has no volume representation`);
-      const [resourceIndexRaw, summaryRaw] = await Promise.all([
-        reader.readJson(
-          reader.resolve(featureUrl, descriptor.resourceIndexPath),
-          signal,
-          descriptor.resourceIndexResource,
-        ),
-        reader.readJson(
-          reader.resolve(featureUrl, descriptor.summaryPath),
-          signal,
-          descriptor.summaryResource,
-        ),
-      ]);
-      const summary = parseVolumeSummary(
-        summaryRaw,
-        descriptor,
-        Object.fromEntries(Object.entries(manifest.parcellationDescriptors)
-          .map(([id, item]) => [id, item!.regionIndex.shape[0]!])),
-      );
-      const display = feature.display?.volume;
-      if (!display) throw new Error(`Feature ${feature.id} has no volume display contract`);
-      if (summary.distribution) {
-        validateDistributionMatchesDisplay(summary.distribution.binnings, display, `${feature.id}/volume`);
-      }
-      const resolvedDescriptor = {
-        ...descriptor,
-        resource: parseVolumeResourceIndex(resourceIndexRaw, descriptor),
-      };
-      const loadRegionalDistribution = createVolumeRegionalDistributionLoader({
-        reader,
-        featureLocation: featureUrl,
-        summaryPath: descriptor.summaryPath,
-        summary,
+      return loadVolumeFeatureFromResources({
+        reader, featureLocation: featureUrl, feature, baseUrl: featureUrl,
+        parcellationDescriptors: manifest.parcellationDescriptors,
+        ...(signal ? { signal } : {}),
       });
-      return {
-        schemaVersion: SCHEMA_VERSION,
-        featureId,
-        representation: 'volume',
-        descriptor: resolvedDescriptor,
-        summary,
-        baseUrl: featureUrl,
-        loadResource: (path, resourceSignal, resource) => reader.readBytes(
-          reader.resolve(featureUrl, path),
-          resourceSignal,
-          resource,
-        ),
-        loadRegionalDistribution,
-      };
     }
 
     if (!parcellation) throw new Error(`Parcellation required for regional feature ${feature.id}`);

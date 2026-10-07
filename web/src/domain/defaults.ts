@@ -12,6 +12,7 @@ export const DEFAULT_VIEW_STATE: ViewState = {
   parcellation: 'allen',
   regionOrder: 'anatomy',
   selection: [],
+  autoSlice: true,
   cursor: { xUm: -239, yUm: -1200, zUm: -3668 },
   workspace: {
     secondaryTab: 'top',

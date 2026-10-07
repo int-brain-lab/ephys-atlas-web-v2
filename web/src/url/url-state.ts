@@ -202,6 +202,7 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
     // Preserve the encoded selection order because it determines identity colors.
     selection: [...new Set(selection)],
     cursor,
+    autoSlice: params.get('autoslice') === '0' ? false : params.get('autoslice') === '1' ? true : defaults.autoSlice,
     workspace: { secondaryTab, activeCompactView, maximizedView },
     layers: {
       volumeOpacity: parseOpacity(params.get('opacity'), defaults.layers.volumeOpacity),
@@ -267,6 +268,7 @@ export function serializeViewState(view: ViewState, defaults: ViewState = DEFAUL
   if (view.featureId && view.featureId !== defaults.featureId) params.set('feature', view.featureId);
   if (view.representation !== defaults.representation) params.set('repr', view.representation);
   if (view.parcellation !== defaults.parcellation) params.set('parcel', view.parcellation);
+  if (view.autoSlice !== defaults.autoSlice) params.set('autoslice', view.autoSlice ? '1' : '0');
   if (view.regionOrder !== defaults.regionOrder) params.set('order', view.regionOrder);
   if (view.coloring.statistic !== defaults.coloring.statistic) params.set('stat', view.coloring.statistic);
   if (view.coloring.mode === 'anatomy' && defaults.coloring.mode !== 'anatomy') params.set('colors', 'anatomy');

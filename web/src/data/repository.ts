@@ -69,8 +69,9 @@ export class DatasetRepository {
     featureId: string,
     representation: RepresentationKind,
     parcellation?: ParcellationId,
+    signal?: AbortSignal,
   ): Promise<FeaturePayload> {
-    return this.sourceFor(ref).loadFeature(ref, featureId, representation, parcellation);
+    return this.sourceFor(ref).loadFeature(ref, featureId, representation, parcellation, signal);
   }
 
   loadArtifact(

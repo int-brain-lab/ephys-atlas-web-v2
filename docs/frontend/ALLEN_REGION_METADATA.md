@@ -62,6 +62,16 @@ left structural inventory and color swatches in the region browser. The mode
 is persisted as `colors=anatomy` in URL state. Selection and hover remain
 independent outlines/states and never replace either color source.
 
+In Regions, clicking a non-leaf row or pressing Enter/Space toggles its
+children, including hierarchy-only containers. Only mapping-member leaves
+select; modifiers and Select multiple retain their leaf-selection behavior.
+Leaf status comes from the complete current-parcellation tree, independent
+of search results and collapsed branches. Flat value rankings include only
+those leaves. Existing chevrons and arrow-key navigation retain their behavior;
+search continues to reveal matches through collapsed ancestors. This is a
+tree interaction rule, not a change to scientific mapping membership or
+selection through brain views or restored URLs (D084).
+
 The pinned metadata and tree swatches retain the official RGB values exactly.
 On the dark anatomical canvas only, achromatic near-white entries such as
 `root` (`#ffffff`) and `fiber tracts` (`#cccccc`) are mapped to muted slate

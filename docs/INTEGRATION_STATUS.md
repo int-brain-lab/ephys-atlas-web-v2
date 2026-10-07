@@ -2,7 +2,7 @@
 
 Status: active initial-deployment capability matrix.
 
-Last updated: 2026-09-09 on `main` for the live initial IBL review deployment.
+Last updated: 2026-10-05 on `main` for shared loading feedback, responsive 3-D picking, conservative usage analytics and parent-row navigation.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -14,9 +14,10 @@ completed implementation diaries.
 | --- | --- | --- | --- |
 | Release contract | Schema v1 is the sole builder, browser HTTP/local, publishing, fixture, and download contract; no v0.1 adapters remain. | Cross-language valid/invalid corpus and deterministic golden fixture are green. | None for contract machinery. |
 | Browser boundaries | `core/domain`, `application`, `data`, `rendering`, and `ui` dependencies point inward; catalog IDs and feature catalogs remain open/data-driven. | Architecture tests are green; the [frontend lifecycle audit](FRONTEND_LIFECYCLE_AUDIT.md) records race fixes and bounded follow-ups. | None for current launch behavior. |
+| Usage analytics | D083 adds production-only manual Umami tracking: one pageview and six once-per-document events, sanitized metadata, no custom properties, bounded queues and failure isolation. | [Contract and verification](frontend/ANALYTICS.md); deterministic transport tests and browser action coverage use synthetic fixtures and mocked delivery. | Deploy the updated site and verify receipt in Umami; no analytics deployment is claimed by this implementation. |
 | 2-D workspace | One retained `ProjectionViewport` per registered frame composites scalar Canvas, regional SVG, guides, interaction, and errors. Top/Swanson use affine-free retained static viewports. Bounded, locally persisted desktop pane resizing/collapse gives space back to the retained workspace without changing share URLs or mobile drawers. | Production projection pack and responsive pane/keyboard Chromium coverage are green. | Published; HTTPS hashes and live Chromium/Firefox workflows verified. |
 | Scientific navigation | One URL-v4 ML/AP/DV cursor drives the native bilateral 10 µm grid; sparse 80 µm SVG sampling changes display only. | Parent/sparse/projection-pack validation and performance evidence are complete. | Production-origin delivery verified. |
-| Optional 3-D context | A sibling retained Three.js viewport shares regional presentation/selection and owns camera, explode, GPU lifecycle, and failure isolation. Volume features remain anatomy-only in 3-D. | D042 real pack is losslessly repackaged; Chromium plus owner Safari/Firefox review passed. The D066/D068 real native review-only pack preserves 966,645 triangles in 1,140 components. Pointer picking is suppressed during camera drags, and hover bursts settle for 75 ms before one pick. The independent `ibl-atlas-assets` Python reader and web TypeScript adapters now match exact D070 vertex/face presentation fingerprints and strict physical/left/logical region views through one immutable asset-set lock. | D070 owner approval closes Q18 and selects the exact native movements/boundary. The approved pack is the v5 bundle's default; lazy loading, retained shared presentation/OIT and all five local datasets pass real-site Chromium checks. D042 cut/cap remains rollback evidence. Normal-view label is implemented; the D070 pack is published and the live Chromium 3-D check passes. |
+| Optional 3-D context | A sibling retained Three.js viewport shares regional presentation/selection and owns camera, explode, GPU lifecycle, and failure isolation. Volume features remain anatomy-only in 3-D. | D042 real pack is losslessly repackaged; Chromium plus owner Safari/Firefox review passed. The D066/D068 real native review-only pack preserves 966,645 triangles in 1,140 components. Pointer picking is suppressed during camera drags. CPU component bounds accelerate exact triangle queries; hover coalesces to the latest position at 32 ms without postponing feedback during continuous movement. See [picking evidence](rendering/3D_PICKING.md). The independent `ibl-atlas-assets` Python reader and web TypeScript adapters now match exact D070 vertex/face presentation fingerprints and strict physical/left/logical region views through one immutable asset-set lock. | D070 owner approval closes Q18 and selects the exact native movements/boundary. The approved pack is the v5 bundle's default; lazy loading, retained shared presentation/OIT and all five local datasets pass real-site Chromium checks. D042 cut/cap remains rollback evidence. Normal-view label is implemented; the D070 pack is published and the live Chromium 3-D check passes. |
 | Integrity/cache | Encoded resources are byte-size/SHA verified before persistent admission; corrupt entries are evicted/retried; decoded identity includes hash plus decode contract. | HTTP/local/mesh/projection/volume tests are green. | Opaque gzip, immutable cache, Range and denial behavior verified at CloudFront. |
 | Release environments | Builders record OS, machine, Python, and NumPy. Production preflight requires Linux, clean `main`, exact HEAD provenance, immutable IDs, and a fully valid release graph. macOS real-data catalogs are labelled Local. | Deterministic preflight tests and complete local-bundle validation are green. S3 release planning/apply invoke the same preflight on a private snapshot. | Initial direct production transactions verified under D074. |
 
@@ -29,6 +30,41 @@ The shared 3-D renderer now uses [weighted blended OIT](rendering/3D_TRANSPARENC
 for translucent context, with opaque-depth occlusion and a single-pass opaque
 fast path. Synthetic order/recovery tests and real Native / D042 Chromium checks
 pass; D070 records owner acceptance and waives additional Firefox/Safari review for this 3-D selection, without claiming unmeasured hardware performance.
+
+Loading feedback uses the shared plain-DOM `OperationStatus` component and
+stylesheet. Empty 2-D, Top/Swanson and 3-D views show centred download/preparation
+feedback; retained images show a compact update badge, including on phones.
+Registered slice progress keeps the D076 150 ms delay, and speculative
+“Preparing slices” activity remains independent of foreground readiness.
+Retained pixels cannot be inspected as newly requested data; the slice badge
+identifies the previous displayed coordinate. Busy view announcements live
+outside their busy subtree. Reduced-motion mode stops the shared spinner.
+Slice updates preserve the renderer's wheel hit target throughout a continuous
+trackpad gesture; capture handlers block only stale region inspection/selection.
+Passive update badges allow wheel input through. Browser hit-testing regressions
+in `slice-scroll.spec.ts` cover continued small-delta scrolling during a delayed
+pack and stale-picking suppression, with Chromium, Firefox and Linux WebKit
+coverage. Native macOS trackpad confirmation remains a manual check.
+
+Feature summary, distribution, comparison and regional values distinguish
+pending data from loaded empty/non-finite values. The anatomical tree keeps its
+buttons, keyboard focus, expansion and scroll position through value updates;
+volume mode explicitly labels regional values as anatomy-only. Region-name
+metadata, selected-region volume counts, static maps, individual slice views,
+3-D geometry and artifact downloads report failures and Retry locally. Dataset
+and feature failures retain generation guards and explicit retry scope.
+Download rows remain stable across unrelated view updates and cannot close a
+newer dialog when an obsolete row finishes.
+
+3-D loading lasts through the first successfully rendered model frame. The
+explode slider remains disabled until ready; model Retry recreates only that
+viewport and retains URL camera/explode state. Browser evidence covers delayed
+resources, error recovery, desktop/tablet/phone retained slice feedback,
+region-name failure isolation, exact volume-count retries and artifact download
+recovery in `operation-loading.spec.ts`, `regional-loading.spec.ts`,
+`feature-loading.spec.ts` and `scene3d-context.spec.ts`. These checks use canonical
+synthetic test inputs; local real-data Tailscale preview instructions remain in
+ignored `artifacts/local-dev/README.md`.
 
 ## Scientific datasets
 
@@ -125,7 +161,7 @@ that axis. The implementation is local pending owner review with real data
 before any push or deployment. Q16 continues to retain real-feature palette
 and center selections.
 
-D082 adds Quantile uniform and Quantile Gaussian color mappings. The browser
+D087 adds Quantile uniform and Quantile Gaussian color mappings. The browser
 derives rank maps from the colored regional statistic or the full-domain
 valid-voxel binnings; exact histograms and the distribution axis are unchanged.
 The owner reviewed the prototype locally with real channel and volume data.
@@ -363,6 +399,18 @@ must not be silently relabelled.
 An absent optional mesh is reported but does not block launch-critical 2-D;
 an invalid mesh already present fails closed.
 
+The active v6 bundle preserves the reviewed local channels, clusters,
+Brain-Wide Map, projection and native mesh while selecting the published
+D079 regional W26 and processed AGEA releases. These two entries pin resolved
+immutable HTTPS directories and verified root size/hash; historical descriptors
+remain unchanged. The seven-artifact local v6 graph validates in full.
+Volume charts now explain absent regional capability and keep every selected
+region in the legend through loading, errors, zero valid voxels and absent
+mapping rows. Empty selections retain the select-a-region prompt, companions
+remain lazy and hemisphere changes reuse them. The AGEA averaging caveat is
+preserved. Other bundle roles still require local bytes until their exact
+published origins are pinned.
+
 `just data-refresh-local` refreshes channel/cluster upstream aliases and
 proceeds only when their immutable source IDs match the reviewed bundle.
 `just dev-latest` combines that check with startup. New upstream bytes require
@@ -416,3 +464,78 @@ pixel comparisons skip on this host). The reviewed four-dataset local bundle
 also passes `just validate-local-full` without browser errors. The manual
 Documentation screenshots workflow provides Linux-generated, rechecked pixels
 for review from macOS.
+
+## Frontend lifecycle refactoring (2026-10-05)
+
+Download operations and retained slice/static status now have dedicated UI
+controllers using the shared `OperationStatus` presentation. Typed requested
+and displayed identities replace shell-local string keys and status tokens.
+The viewport boundary, scientific navigation, retained content, and delayed
+slice feedback remain intact. An earlier download cannot close a newly reopened
+dialog.
+
+Catalog refreshes are guarded in both the session and app navigation callers.
+Superseded foreground feature loads are cancelled through repository signals;
+generation checks still reject obsolete payloads. Startup and teardown are
+idempotent, and late results cannot revive a stopped app. Shared manifest/region
+work and in-progress IndexedDB/digest operations remain bounded cancellation
+limits. Regression coverage includes reversed catalog results, stop during
+startup, feature cancellation, and retained-status retries/disposal. See the
+[updated lifecycle audit](FRONTEND_LIFECYCLE_AUDIT.md) for evidence and remaining
+refactoring candidates.
+
+## Semantic refactoring pass (2026-10-05)
+
+The shell delegates local-data dialogs and panel layout to dedicated controllers.
+Regional summary, distribution, and comparison rendering have separate modules
+and comparison styles. HTTP and local volume loading share one materializer;
+local byte integrity/bounded decoding are separate from release-graph checks.
+Registered volume placement and pixel coloring are pure rendering modules,
+while retained viewports keep scheduling and layer coordination.
+
+Development-bundle parsing, pinned acquisition, and graph validation are
+separate implementation modules. The volume builder separates explicit
+geometry/configuration, deterministic writing, and snapshot ingestion. Python
+and TypeScript schema-v1 semantic checks are organized by contract family and
+retain the same entry points and shared parity corpus. Public authoring retains
+its model API and atomic ZIP transaction with an internal release serializer.
+Publishing catalog compilation/promotion is separated from upload management,
+with existing locks, facade APIs, and catalog-first recovery ordering intact.
+
+The original application browser suite's 44 test titles and bodies are preserved
+across five behavior-focused suites. New regressions cover volume materializer
+locations/signals/integrity descriptors, active panel-drag disposal, and recovery
+after private edition-history failure. Scientific selections, release schemas,
+geometry, and reviewed pixels are unchanged. Exact public-authoring ZIP fixture
+regeneration and the full local gate validate serialization and browser parity.
+
+## Region selection (2026-10-05)
+
+D082 is implemented across the Regions list, linked slices, Top/Swanson and
+optional 3-D. D084 makes non-leaf rows in Regions expand/collapse on click or
+Enter/Space; leaf status is independent of search or collapsed branches, and
+value rankings contain only current-parcellation leaves. Hierarchy containers
+are active navigation controls. Leaf and brain-view plain clicks replace
+selection; Ctrl/Cmd-click toggles membership.
+The Regions pane includes a session-only Select multiple control for touch and
+keyboard use, with the same behavior across views. Enter/Space retains modifier
+keys, explicit clear/remove controls remain available, and selection IDs retain
+URL persistence and first-selection order. Browser regressions cover replacement,
+modifier toggling, reload, keyboard activation, touch and shared view behavior.
+Parent-row regressions cover expansion, modifier/multiple-mode activation,
+selection preservation, search, value ordering and Beryl leaf selection. Parent
+navigation does not emit the analytics exploration event.
+
+D085/D086 add default-on, URL-persisted Auto-slice with compact target and
+multiple-selection icon buttons beside fold/unfold. Hover/focus tooltips explain
+state and switching; pending lookup remains accessible without a visible row.
+Selection uses a verified native interior anchor nearest the signed mapped
+region centroid, constrained by all three sparse display planes. All Beryl and
+Cosmos regions have anchors; five occupied Allen regions have no display-eligible
+anchor and keep slices fixed. Hierarchy-only Allen rows are unavailable.
+Cancelled/stale lookups cannot move the cursor. Explicit restored URLs retain
+their positions; disabling keeps slices fixed. Help, synthetic builder tests,
+schema parity, integrity/cancellation unit tests and browser regressions cover
+the behavior, including HATA crosshairs inside all three displayed fragments.
+See [generation and evidence](rendering/REGION_NAVIGATION.md).
+This is locally implemented behavior, not a deployed site update.

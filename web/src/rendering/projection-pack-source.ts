@@ -1,3 +1,6 @@
+import { RegionNavigationSource, type RegionNavigationAssets } from './region-navigation-source.js';
+import type { ParcellationId } from '../domain/types.js';
+import type { SliceIndices } from '../core/spatial.js';
 import { ResourceFetcher } from '../data/cache.js';
 import type {
   EncodedResourceV1,
@@ -55,6 +58,7 @@ export interface StaticProjectionFrame {
 
 export interface ProjectionPackSourceOptions {
   readonly manifestUrl: string;
+  readonly regionNavigation?: RegionNavigationAssets;
   readonly fetchImpl?: typeof fetch;
   readonly maxDecodedBytes?: number;
   /** Test hook for avoiding a module worker; production callers use the default runtime. */
@@ -70,6 +74,7 @@ export interface RegisteredProjectionSource {
   /** Queue the visible pack, nearby packs, then the rest for encoded-byte caching. */
   prefetchProgressively?(axis: SliceAxis, nativeIndex: number): Promise<void>;
   loadStaticProjection?(projectionId: StaticProjectionId, signal?: AbortSignal): Promise<StaticProjectionFrame>;
+  locateRegionAnchor?(regionId: string, mapping: ParcellationId, signal: AbortSignal): Promise<SliceIndices | null>;
   dispose(): void;
 }
 
@@ -125,6 +130,8 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
   private readonly manifestUrl: string;
   private readonly fetcher: ResourceFetcher;
   private readonly runtime: IsvgPackRuntime;
+  private readonly navigation: RegionNavigationSource | null;
+  private manifestSha256: string | null = null;
   private manifestPromise: Promise<ProjectionPackV1> | null = null;
   private readonly indexPromises = new Map<SliceAxis, Promise<RegisteredSvgResourceIndexV1>>();
   private readonly loadedPacks = new Map<string, Promise<void>>();
@@ -140,6 +147,7 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
     const baseUrl = typeof globalThis.location?.href === 'string' ? globalThis.location.href : 'http://localhost/';
     this.manifestUrl = new URL(options.manifestUrl, baseUrl).toString();
     this.fetcher = new ResourceFetcher(options.fetchImpl);
+    this.navigation = options.regionNavigation ? new RegionNavigationSource(options.regionNavigation, options.fetchImpl) : null;
     this.runtime = options.runtime ?? createIsvgPackRuntime({ maxDecodedBytes: options.maxDecodedBytes ?? 32 * 1024 * 1024 });
   }
 
@@ -149,6 +157,13 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
       void this.manifestPromise.catch(() => { this.manifestPromise = null; });
     }
     return this.manifestPromise;
+  }
+
+  async locateRegionAnchor(regionId: string, mapping: ParcellationId, signal: AbortSignal): Promise<SliceIndices | null> {
+    if (!this.navigation) return null;
+    const manifest = await this.loadManifest();
+    signal.throwIfAborted();
+    return this.navigation.locate(regionId, mapping, manifest, this.manifestSha256!, signal);
   }
 
   async getDisplaySliceInventories(): Promise<Readonly<Record<SliceAxis, DisplaySliceInventory>>> {
@@ -311,8 +326,11 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
 
   private async fetchManifest(): Promise<ProjectionPackV1> {
     const response = await this.fetcher.fetch(this.manifestUrl);
-    const document: unknown = await response.json();
+    const bytes = await response.arrayBuffer();
+    const hash = await crypto.subtle.digest('SHA-256', bytes);
+    const document: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
     validateSchemaV1Document(document, 'projection-pack.schema.json');
+    this.manifestSha256 = [...new Uint8Array(hash)].map(value => value.toString(16).padStart(2, '0')).join('');
     return document as ProjectionPackV1;
   }
 

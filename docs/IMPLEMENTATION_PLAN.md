@@ -119,9 +119,10 @@ These remain useful but must not displace the launch path:
   schema-v1 release unchanged and require a new contract/release for any
   sharded successor;
 
-- create a new development-bundle descriptor pinning the published immutable
-  HTTPS releases and prove acquisition from a clean checkout; retain the
-  historical local/candidate descriptors unchanged;
+- complete the v6 development bundle's remaining HTTPS sources and prove
+  full acquisition from a clean checkout; v6 already pins the published
+  regional W26 and processed AGEA successors, while historical descriptors
+  remain unchanged;
 
 - run the [shared atlas real-asset parity gate](rendering/SHARED_ATLAS_ASSET_EXTRACTION.md) before
   redirecting any projection bytes to `ibl-atlas-assets`; preserve the website's native 10-um

@@ -1,6 +1,11 @@
+import { RetainedViewStatus, type RetainedViewRequest } from './retained-view-status.js';
+import { element, heading, titleCaseToken } from './dom-helpers.js';
+import { DownloadDialogController } from './download-dialog.js';
+import { OperationStatus } from './operation-status.js';
 import type { DatasetCatalog, DatasetManifest, FeaturePayload, RepresentationDisplay } from '../data/contracts.js';
 import type { LocalArchivePreview } from '../data/local-archive.js';
 import type { LocalReleaseInspection, LocalStorageInspection } from '../data/local-source.js';
+import { LocalDatasetDialogs } from './local-dataset-dialogs.js';
 import type {
   AppState,
   ColorMode,
@@ -58,15 +63,8 @@ import type {
   BrainScene3DViewport,
   BrainScene3DViewportFactory,
 } from '../rendering/3d/brain-scene-viewport.js';
-import {
-  LAYOUT_PREFERENCES_KEY,
-  PANEL_WIDTH_LIMITS,
-  clampPanelWidth,
-  parseLayoutPreferences,
-  serializeLayoutPreferences,
-  type LayoutPanel,
-  type LayoutPreferences,
-} from '../application/layout-preferences.js';
+import type { LayoutPanel } from '../application/layout-preferences.js';
+import { WorkspacePanelLayoutController } from './workspace-panel-layout.js';
 import { HelpGuide } from './help-guide.js';
 import { HELP_TOUR_SEEN_KEY, HelpTour, type HelpTourAnchor } from './help-tour.js';
 
@@ -96,6 +94,8 @@ export interface AppShellCallbacks {
   clearSelection(): void;
   shareCurrentView(): Promise<void>;
   downloadCurrentFeature(): void;
+  retryFeature(): void;
+  refreshSliceInventory(): void;
   downloadArtifact(artifactId: string, featureId?: string): Promise<void>;
   prepareLocal(file: File): Promise<LocalArchivePreview>;
   admitLocal(): Promise<void>;
@@ -112,6 +112,7 @@ export interface ShellModel {
   manifest: DatasetManifest | null;
   feature: FeaturePayload | null;
   featureLoading?: boolean;
+  featureError?: string | null;
   displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null;
   regionalPresentation: RegionalPresentation;
   presentationScale: ResolvedPresentationScale;
@@ -138,10 +139,7 @@ interface ViewFrameNodes {
   tooltipLineage: HTMLElement;
   tooltipValue: HTMLElement;
   tooltipMeta: HTMLElement;
-  renderKey: string;
-  geometryKey: string;
-  renderToken: number;
-  sliceProgressTimer: number | null;
+  loadStatus: RetainedViewStatus;
 }
 
 interface ProjectionTooltipNodes {
@@ -157,14 +155,12 @@ interface StaticFrameNodes extends ProjectionTooltipNodes {
   target: HTMLElement;
   viewport: StaticProjectionViewport;
   notice: HTMLElement;
-  renderKey: string;
-  renderToken: number;
+  loadStatus: RetainedViewStatus;
 }
 
 const LOCAL_IMPORT_OPTION_ID = '__import_local_dataset__';
 const LOCAL_MANAGE_OPTION_ID = '__manage_local_datasets__';
 const LOCAL_DELETE_OPTION_ID = '__delete_local_dataset__';
-const SLICE_PROGRESS_DELAY_MS = 150;
 
 const ACTION_ICONS: Record<HeaderAction, string> = {
   share: '↗',
@@ -186,34 +182,11 @@ function blocksGlobalShortcut(event: KeyboardEvent): boolean {
   return target.isContentEditable || target.matches('input, textarea, select, [role="textbox"]');
 }
 
-function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  return node;
-}
-
-function heading(text: string, level: 1 | 2 | 3 = 2): HTMLHeadingElement {
-  const node = document.createElement(`h${level}`);
-  node.textContent = text;
-  return node;
-}
-
 function placeholderLine(width: 'short' | 'medium' | 'long' = 'medium'): HTMLSpanElement {
   const line = element('span', 'placeholder-line');
   line.dataset.width = width;
   line.setAttribute('aria-hidden', 'true');
   return line;
-}
-
-function titleCaseToken(value: string): string {
-  const words = value.replaceAll('_', ' ').replaceAll('-', ' ').trim();
-  return words ? words[0]?.toUpperCase() + words.slice(1) : 'Unavailable';
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0)} KiB`;
-  return `${(bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} MiB`;
 }
 
 export class AppShell {
@@ -222,45 +195,18 @@ export class AppShell {
   private readonly body: HTMLElement;
   private readonly regionPane: HTMLElement;
   private readonly settingsPane: HTMLElement;
-  private readonly panelCollapseButtons = new Map<LayoutPanel, HTMLButtonElement>();
-  private readonly panelRestoreButtons = new Map<LayoutPanel, HTMLButtonElement>();
-  private readonly panelResizeHandles = new Map<LayoutPanel, HTMLElement>();
-  private layoutPreferences: LayoutPreferences;
+  private readonly panelLayout: WorkspacePanelLayoutController;
   private layoutMode: LayoutMode = 'wide';
   private readonly backdrop: HTMLButtonElement;
   private readonly infoDialog: HTMLDialogElement;
   private readonly infoContent: HTMLElement;
-  private readonly downloadDialog: HTMLDialogElement;
-  private readonly downloadContent: HTMLElement;
+  private readonly downloadController: DownloadDialogController;
   private readonly helpGuide: HelpGuide;
   private readonly helpDialog: HTMLDialogElement;
   private readonly helpTour: HelpTour;
   private automaticHelpTourAttempted = false;
-  private readonly localImportInput: HTMLInputElement;
-  private readonly localImportDialog: HTMLDialogElement;
-  private readonly localImportStatus: HTMLElement;
-  private readonly localImportError: HTMLElement;
-  private readonly localImportSummary: HTMLElement;
-  private readonly localImportConfirm: HTMLButtonElement;
-  private readonly localImportCancel: HTMLButtonElement;
-  private readonly localDeleteDialog: HTMLDialogElement;
-  private readonly localDeleteIdentity: HTMLElement;
-  private readonly localDeleteError: HTMLElement;
-  private readonly localDeleteConfirm: HTMLButtonElement;
-  private readonly localManagerDialog: HTMLDialogElement;
-  private readonly localManagerStatus: HTMLElement;
-  private readonly localManagerError: HTMLElement;
-  private readonly localManagerContent: HTMLElement;
-  private readonly localShareDialog: HTMLDialogElement;
-  private readonly localShareError: HTMLElement;
-  private readonly localShareConfirm: HTMLButtonElement;
+  private readonly localDialogs: LocalDatasetDialogs;
   private readonly localDatasetBadge: HTMLElement;
-  private pendingLocalDeleteSelector: string | null = null;
-  private localDeleteCommitting = false;
-  private localManagerSequence = 0;
-  private localImportSequence = 0;
-  private localImportActive = false;
-  private localImportCommitting = false;
   private analysisDialog!: HTMLDialogElement;
   private readonly shortcutStatus: HTMLElement;
   private readonly viewButtons = new Map<WorkspaceViewId, HTMLButtonElement>();
@@ -270,6 +216,10 @@ export class AppShell {
   private readonly secondaryPanels = new Map<SecondaryTabId, HTMLElement>();
   private scene3dHost!: HTMLElement;
   private scene3dNotice!: HTMLElement;
+  private scene3dStatus!: OperationStatus;
+  private scene3dFeatureStatus!: OperationStatus;
+  private retryScene3D!: () => void;
+  private scene3dObserver: MutationObserver | null = null;
   private scene3dExplodeInput!: HTMLInputElement;
   private scene3dExplodeValue!: HTMLOutputElement;
   private scene3dViewport: BrainScene3DViewport | null = null;
@@ -321,7 +271,9 @@ export class AppShell {
 
     this.app = element('div', 'atlas-app');
     this.app.dataset.activeView = 'coronal';
-    this.layoutPreferences = this.loadLayoutPreferences();
+    this.panelLayout = new WorkspacePanelLayoutController(this.app,
+      panel => panel === 'regions' ? this.regionPane : this.settingsPane,
+      () => this.layoutMode, text => { this.shortcutStatus.textContent = text; });
 
     this.dataChooser = new DataChooser(
       (selection) => this.callbacks.selectData(selection),
@@ -333,9 +285,9 @@ export class AppShell {
         { id: LOCAL_MANAGE_OPTION_ID, label: 'Manage local datasets…', group: 'My data', description: 'Inspect storage and imported releases.' },
       ],
       (id) => {
-        if (id === LOCAL_IMPORT_OPTION_ID) this.localImportInput.click();
-        if (id === LOCAL_MANAGE_OPTION_ID) void this.openLocalManager();
-        if (id === LOCAL_DELETE_OPTION_ID) this.openLocalDeleteDialog();
+        if (id === LOCAL_IMPORT_OPTION_ID) this.localDialogs.openImportPicker();
+        if (id === LOCAL_MANAGE_OPTION_ID) this.localDialogs.openManager();
+        if (id === LOCAL_DELETE_OPTION_ID) this.localDialogs.openDelete();
       },
     );
     this.localDatasetBadge = element('span', 'context-field__local-badge');
@@ -378,42 +330,21 @@ export class AppShell {
     const info = this.createInfoDialog();
     this.infoDialog = info.dialog;
     this.infoContent = info.content;
-    const download = this.createDownloadDialog();
-    this.downloadDialog = download.dialog;
-    this.downloadContent = download.content;
+    this.downloadController = new DownloadDialogController({
+      downloadCurrentFeature: () => this.callbacks.downloadCurrentFeature(),
+      downloadArtifact: (id, featureId) => this.callbacks.downloadArtifact(id, featureId),
+    });
     this.helpGuide = new HelpGuide(() => this.startHelpTour());
     this.helpDialog = this.helpGuide.dialog;
-    const localImport = this.createLocalImportDialog();
-    this.localImportDialog = localImport.dialog;
-    this.localImportStatus = localImport.status;
-    this.localImportError = localImport.error;
-    this.localImportSummary = localImport.summary;
-    this.localImportConfirm = localImport.confirm;
-    this.localImportCancel = localImport.cancel;
-    const localDelete = this.createLocalDeleteDialog();
-    this.localDeleteDialog = localDelete.dialog;
-    this.localDeleteIdentity = localDelete.identity;
-    this.localDeleteError = localDelete.error;
-    this.localDeleteConfirm = localDelete.confirm;
-    const localManager = this.createLocalManagerDialog();
-    this.localManagerDialog = localManager.dialog;
-    this.localManagerStatus = localManager.status;
-    this.localManagerError = localManager.error;
-    this.localManagerContent = localManager.content;
-    const localShare = this.createLocalShareDialog();
-    this.localShareDialog = localShare.dialog;
-    this.localShareError = localShare.error;
-    this.localShareConfirm = localShare.confirm;
-    this.localImportInput = element('input', 'local-import__input');
-    this.localImportInput.type = 'file';
-    this.localImportInput.accept = '.ibl-ephys-atlas.zip,application/zip';
-    this.localImportInput.dataset.localImportInput = '';
-    this.localImportInput.setAttribute('aria-label', 'Local dataset ZIP archive');
-    this.localImportInput.hidden = true;
-    this.localImportInput.addEventListener('change', () => {
-      const file = this.localImportInput.files?.item(0);
-      this.localImportInput.value = '';
-      if (file) void this.prepareLocalImport(file);
+    this.localDialogs = new LocalDatasetDialogs({
+      prepareLocal: (file) => this.callbacks.prepareLocal(file),
+      admitLocal: () => this.callbacks.admitLocal(),
+      cancelLocal: () => this.callbacks.cancelLocal(),
+      deleteLocal: (selector) => this.callbacks.deleteLocal(selector),
+      inspectLocalStorage: () => this.callbacks.inspectLocalStorage(),
+      verifyLocal: (selector) => this.callbacks.verifyLocal(selector),
+      selectLocalRelease: (selector) => this.callbacks.setDataset({ datasetId: 'local', releaseId: selector }),
+      copyLocalLink: () => this.copyCurrentView(),
     });
     this.shortcutStatus = element('div', 'visually-hidden');
     this.shortcutStatus.setAttribute('role', 'status');
@@ -426,8 +357,8 @@ export class AppShell {
       this.regionPane,
       workspace,
       this.settingsPane,
-      this.createPanelRestoreButton('regions'),
-      this.createPanelRestoreButton('settings'),
+      this.panelLayout.createRestoreButton('regions'),
+      this.panelLayout.createRestoreButton('settings'),
     );
 
     this.app.append(
@@ -435,13 +366,9 @@ export class AppShell {
       this.body,
       this.backdrop,
       this.infoDialog,
-      this.downloadDialog,
+      this.downloadController.dialog,
       this.helpDialog,
-      this.localImportDialog,
-      this.localManagerDialog,
-      this.localDeleteDialog,
-      this.localShareDialog,
-      this.localImportInput,
+      ...this.localDialogs.elements,
       this.shortcutStatus,
     );
     root.append(this.app);
@@ -451,7 +378,7 @@ export class AppShell {
       resolveTarget: (anchor) => this.resolveHelpTourTarget(anchor),
     });
 
-    this.applyPanelPreferences();
+    this.panelLayout.applyPreferences();
     this.backdrop.addEventListener('click', () => this.closeDrawers());
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
@@ -462,6 +389,11 @@ export class AppShell {
 
   render(model: ShellModel): void {
     this.currentModel = model;
+    this.localDialogs.setContext({
+      datasetId: model.state.view.dataset.datasetId,
+      releaseId: model.state.view.dataset.releaseId,
+      datasetTitle: model.manifest?.dataset.title ?? null,
+    });
     const { state, catalog, manifest } = model;
     const view = state.view;
     const featureEntry = manifest?.features.find((entry) => entry.id === view.featureId);
@@ -492,7 +424,7 @@ export class AppShell {
     this.renderVolumeLayerSettings(model);
     this.helpGuide.render(view.representation);
     this.renderInfo(model);
-    this.renderDownloads(model);
+    this.downloadController.render(model);
     this.setHeaderActionDisabled('share', false);
     this.setHeaderActionDisabled('info', state.runtime.navigationStatus !== 'ready' && manifest === null);
     this.setHeaderActionDisabled('download', model.feature === null);
@@ -594,7 +526,8 @@ export class AppShell {
   }
 
   destroy(): void {
-    if (this.localImportActive) this.cancelLocalImport();
+    this.downloadController.dispose();
+    this.localDialogs.dispose();
     this.helpTour.destroy();
     this.colorRangeControl.destroy();
     window.removeEventListener('keydown', this.onKeyDown);
@@ -604,9 +537,12 @@ export class AppShell {
     this.contextMenus.forEach((menu) => menu.destroy());
     this.dataChooser.destroy();
     for (const nodes of this.viewFrames.values()) {
-      this.clearSliceProgress(nodes);
+      nodes.loadStatus.dispose();
     }
+    for (const nodes of this.staticFrames.values()) nodes.loadStatus.dispose();
+    this.panelLayout.dispose();
     this.viewportFactory.destroy();
+    this.scene3dObserver?.disconnect();
     this.scene3dFactory?.destroy();
   }
 
@@ -700,16 +636,12 @@ export class AppShell {
       return;
     }
     if (action === 'download') {
-      if (!this.downloadDialog.open) this.downloadDialog.showModal();
+      this.downloadController.show();
       if (this.overflowActions) this.overflowActions.open = false;
       return;
     }
     if (this.currentModel?.state.view.dataset.datasetId === 'local') {
-      this.localShareError.hidden = true;
-      this.localShareError.textContent = '';
-      this.localShareConfirm.disabled = false;
-      if (!this.localShareDialog.open) this.localShareDialog.showModal();
-      this.localShareConfirm.focus();
+      this.localDialogs.openShare();
       if (this.overflowActions) this.overflowActions.open = false;
       return;
     }
@@ -803,516 +735,6 @@ export class AppShell {
       target?.focus();
     });
     return { dialog, content };
-  }
-
-  private createDownloadDialog(): { dialog: HTMLDialogElement; content: HTMLElement } {
-    const dialog = element('dialog', 'info-dialog download-dialog');
-    dialog.setAttribute('aria-labelledby', 'download-dialog-title');
-    const header = element('header', 'info-dialog__header');
-    const title = heading('Download feature data', 2);
-    title.id = 'download-dialog-title';
-    const close = element('button', 'info-dialog__close');
-    close.type = 'button';
-    close.textContent = 'Close';
-    close.addEventListener('click', () => dialog.close());
-    header.append(title, close);
-    const content = element('div', 'info-dialog__content');
-    dialog.append(header, content);
-    dialog.addEventListener('click', (event) => {
-      if (event.target === dialog) dialog.close();
-    });
-    return { dialog, content };
-  }
-
-  private createLocalImportDialog(): {
-    dialog: HTMLDialogElement;
-    status: HTMLElement;
-    error: HTMLElement;
-    summary: HTMLElement;
-    confirm: HTMLButtonElement;
-    cancel: HTMLButtonElement;
-  } {
-    const dialog = element('dialog', 'info-dialog local-import');
-    dialog.dataset.localImportDialog = '';
-    dialog.setAttribute('aria-labelledby', 'local-import-title');
-    dialog.setAttribute('aria-describedby', 'local-import-note');
-
-    const header = element('header', 'info-dialog__header');
-    const title = heading('Import local dataset', 2);
-    title.id = 'local-import-title';
-    const close = element('button', 'info-dialog__close');
-    close.type = 'button';
-    close.textContent = 'Close';
-    close.addEventListener('click', () => this.cancelLocalImport());
-    header.append(title, close);
-
-    const content = element('div', 'info-dialog__content local-import__content');
-    const introduction = element('section', 'info-dialog__section');
-    const note = element('p', 'local-import__note');
-    note.id = 'local-import-note';
-    note.textContent = 'The archive is validated and stored only in this browser on this device. Its contents are not uploaded.';
-    const status = element('p', 'local-import__status');
-    status.dataset.localImportStatus = '';
-    status.setAttribute('role', 'status');
-    status.setAttribute('aria-live', 'polite');
-    const error = element('p', 'download-dialog__error local-import__error');
-    error.setAttribute('role', 'alert');
-    error.hidden = true;
-    introduction.append(note, status, error);
-
-    const summary = element('section', 'info-dialog__section local-import__summary');
-    summary.dataset.localImportPreview = '';
-    summary.hidden = true;
-
-    const actions = element('footer', 'local-import__actions');
-    const cancel = element('button', 'local-import__cancel');
-    cancel.type = 'button';
-    cancel.textContent = 'Cancel';
-    cancel.addEventListener('click', () => this.cancelLocalImport());
-    const confirm = element('button', 'local-import__confirm');
-    confirm.type = 'button';
-    confirm.textContent = 'Import';
-    confirm.disabled = true;
-    confirm.addEventListener('click', () => void this.admitLocalImport());
-    actions.append(cancel, confirm);
-
-    content.append(introduction, summary, actions);
-    dialog.append(header, content);
-    dialog.addEventListener('cancel', (event) => {
-      event.preventDefault();
-      this.cancelLocalImport();
-    });
-    dialog.addEventListener('click', (event) => {
-      if (event.target === dialog) this.cancelLocalImport();
-    });
-    return { dialog, status, error, summary, confirm, cancel };
-  }
-
-  private createLocalDeleteDialog(): {
-    dialog: HTMLDialogElement;
-    identity: HTMLElement;
-    error: HTMLElement;
-    confirm: HTMLButtonElement;
-  } {
-    const dialog = element('dialog', 'info-dialog local-delete');
-    dialog.dataset.localDeleteDialog = '';
-    dialog.setAttribute('aria-labelledby', 'local-delete-title');
-    dialog.setAttribute('aria-describedby', 'local-delete-note');
-    const header = element('header', 'info-dialog__header');
-    const title = heading('Delete local dataset', 2);
-    title.id = 'local-delete-title';
-    const close = element('button', 'info-dialog__close');
-    close.type = 'button';
-    close.textContent = 'Close';
-    close.addEventListener('click', () => this.closeLocalDeleteDialog());
-    header.append(title, close);
-
-    const content = element('div', 'info-dialog__content local-delete__content');
-    const section = element('section', 'info-dialog__section');
-    const note = element('p', 'local-delete__note');
-    note.id = 'local-delete-note';
-    note.textContent = 'This removes the release and all of its resources from this browser on this device. It does not affect the source archive or published data.';
-    const identity = element('p', 'local-delete__identity');
-    identity.dataset.localDeleteIdentity = '';
-    const error = element('p', 'download-dialog__error local-delete__error');
-    error.setAttribute('role', 'alert');
-    error.hidden = true;
-    section.append(note, identity, error);
-
-    const actions = element('footer', 'local-import__actions');
-    const cancel = element('button', 'local-import__cancel');
-    cancel.type = 'button';
-    cancel.textContent = 'Cancel';
-    cancel.addEventListener('click', () => this.closeLocalDeleteDialog());
-    const confirm = element('button', 'local-delete__confirm');
-    confirm.type = 'button';
-    confirm.textContent = 'Delete local dataset';
-    confirm.addEventListener('click', () => void this.commitLocalDelete());
-    actions.append(cancel, confirm);
-    content.append(section, actions);
-    dialog.append(header, content);
-    dialog.addEventListener('cancel', (event) => {
-      event.preventDefault();
-      this.closeLocalDeleteDialog();
-    });
-    dialog.addEventListener('click', (event) => {
-      if (event.target === dialog) this.closeLocalDeleteDialog();
-    });
-    return { dialog, identity, error, confirm };
-  }
-
-  private createLocalManagerDialog(): {
-    dialog: HTMLDialogElement;
-    status: HTMLElement;
-    error: HTMLElement;
-    content: HTMLElement;
-  } {
-    const dialog = element('dialog', 'info-dialog local-manager');
-    dialog.dataset.localManagerDialog = '';
-    dialog.setAttribute('aria-labelledby', 'local-manager-title');
-    const header = element('header', 'info-dialog__header');
-    const title = heading('Local datasets', 2);
-    title.id = 'local-manager-title';
-    const close = element('button', 'info-dialog__close');
-    close.type = 'button';
-    close.textContent = 'Close';
-    close.addEventListener('click', () => dialog.close());
-    header.append(title, close);
-
-    const body = element('div', 'info-dialog__content local-manager__body');
-    const introduction = element('section', 'info-dialog__section');
-    const note = element('p', 'local-manager__note');
-    note.textContent = 'These immutable releases are stored separately from published-data caches and remain only in this browser profile.';
-    const status = element('p', 'local-manager__status');
-    status.setAttribute('role', 'status');
-    status.setAttribute('aria-live', 'polite');
-    const error = element('p', 'download-dialog__error local-manager__error');
-    error.setAttribute('role', 'alert');
-    error.hidden = true;
-    introduction.append(note, status, error);
-    const content = element('section', 'local-manager__content');
-    body.append(introduction, content);
-    dialog.append(header, body);
-    dialog.addEventListener('click', (event) => {
-      if (event.target === dialog) dialog.close();
-    });
-    return { dialog, status, error, content };
-  }
-
-  private async openLocalManager(): Promise<void> {
-    const sequence = ++this.localManagerSequence;
-    this.localManagerStatus.textContent = 'Inspecting browser storage…';
-    this.localManagerError.hidden = true;
-    this.localManagerError.textContent = '';
-    this.localManagerContent.replaceChildren();
-    if (!this.localManagerDialog.open) this.localManagerDialog.showModal();
-    try {
-      const inspection = await this.callbacks.inspectLocalStorage();
-      if (sequence !== this.localManagerSequence) return;
-      this.renderLocalManager(inspection);
-      this.localManagerStatus.textContent = inspection.releases.length
-        ? `${inspection.releases.length.toLocaleString('en-US')} local release${inspection.releases.length === 1 ? '' : 's'}`
-        : 'No local releases are stored.';
-    } catch (error) {
-      if (sequence !== this.localManagerSequence) return;
-      this.localManagerStatus.textContent = 'Local browser storage could not be inspected.';
-      this.localManagerError.textContent = error instanceof Error ? error.message : String(error);
-      this.localManagerError.hidden = false;
-    }
-  }
-
-  private renderLocalManager(inspection: LocalStorageInspection): void {
-    const storage = element('section', 'local-manager__storage');
-    storage.append(heading('Browser storage', 3));
-    const storageDetails = element('dl', 'info-dialog__list local-manager__storage-list');
-    const storageRows: (readonly [string, string])[] = [];
-    if (inspection.usageBytes !== undefined) storageRows.push(['Site data in use', formatBytes(inspection.usageBytes)]);
-    if (inspection.quotaBytes !== undefined) storageRows.push(['Estimated site quota', formatBytes(inspection.quotaBytes)]);
-    storageRows.push(['Persistence', inspection.persisted === undefined
-      ? 'Not reported by this browser'
-      : inspection.persisted ? 'Granted' : 'Not granted; the browser may evict site data']);
-    for (const [term, description] of storageRows) {
-      const dt = element('dt');
-      dt.textContent = term;
-      const dd = element('dd');
-      dd.textContent = description;
-      storageDetails.append(dt, dd);
-    }
-    const caveat = element('p', 'local-manager__storage-note');
-    caveat.textContent = 'Usage and quota are browser estimates for all data stored by this site, not just imported releases.';
-    storage.append(storageDetails, caveat);
-
-    const releases = element('section', 'local-manager__releases');
-    releases.append(heading('Imported releases', 3));
-    if (!inspection.releases.length) {
-      const empty = element('p', 'local-manager__empty');
-      empty.textContent = 'Use “Import local dataset…” to add a validated .ibl-ephys-atlas.zip archive.';
-      releases.append(empty);
-    } else {
-      for (const release of inspection.releases) releases.append(this.localReleaseCard(release));
-    }
-    this.localManagerContent.replaceChildren(storage, releases);
-  }
-
-  private localReleaseCard(release: LocalReleaseInspection): HTMLElement {
-    const card = element('article', 'local-manager__release');
-    card.dataset.localRelease = release.selector;
-    const title = heading(release.title, 3);
-    const details = element('dl', 'info-dialog__list local-manager__release-list');
-    const checked = release.integrityCheckedAt
-      ? ` · checked ${this.formatLocalDate(release.integrityCheckedAt)}`
-      : '';
-    const integrity = release.integrityState === 'verified'
-      ? `Verified${checked}`
-      : release.integrityState === 'damaged'
-        ? `Damaged${checked}`
-        : 'Not verifiable; imported before integrity records were available';
-    const rows: readonly (readonly [string, string])[] = [
-      ['Source dataset', release.sourceDatasetId],
-      ['Source release', release.sourceReleaseId],
-      ['Local identity', release.selector],
-      ['Imported', release.importedAt ? this.formatLocalDate(release.importedAt) : 'Not recorded'],
-      ['Stored data', `${formatBytes(release.storedBytes)} · ${release.resourceCount.toLocaleString('en-US')} resource${release.resourceCount === 1 ? '' : 's'}`],
-      ['Integrity', integrity],
-    ];
-    for (const [term, description] of rows) {
-      const dt = element('dt');
-      dt.textContent = term;
-      const dd = element('dd');
-      dd.textContent = description;
-      details.append(dt, dd);
-    }
-    if (release.integrityMessage) {
-      const problem = element('p', 'local-manager__integrity-error');
-      problem.setAttribute('role', 'alert');
-      problem.textContent = `${release.integrityMessage} Remove this damaged release, then import the source archive again.`;
-      card.append(title, details, problem);
-    } else {
-      card.append(title, details);
-    }
-
-    const actions = element('div', 'local-manager__release-actions');
-    const select = element('button', 'local-manager__select');
-    select.type = 'button';
-    select.textContent = 'Select';
-    select.addEventListener('click', () => {
-      this.callbacks.setDataset({ datasetId: 'local', releaseId: release.selector });
-      this.localManagerDialog.close();
-    });
-    const verify = element('button', 'local-manager__verify');
-    verify.type = 'button';
-    verify.textContent = 'Verify integrity';
-    verify.disabled = release.integrityState === 'unverified';
-    if (release.integrityState === 'unverified') verify.title = 'Reimport the source archive to enable complete integrity checks';
-    verify.addEventListener('click', () => void this.verifyManagedRelease(release.selector, verify));
-    const remove = element('button', 'local-manager__remove');
-    remove.type = 'button';
-    remove.textContent = release.integrityState === 'damaged' ? 'Remove damaged release…' : 'Delete…';
-    remove.addEventListener('click', () => {
-      this.localManagerDialog.close();
-      this.openLocalDeleteDialog(release.selector, `${release.title} · ${release.selector}`);
-    });
-    actions.append(select, verify, remove);
-    card.append(actions);
-    return card;
-  }
-
-  private async verifyManagedRelease(selector: string, button: HTMLButtonElement): Promise<void> {
-    button.disabled = true;
-    this.localManagerStatus.textContent = `Verifying ${selector}…`;
-    this.localManagerError.hidden = true;
-    try {
-      await this.callbacks.verifyLocal(selector);
-      await this.openLocalManager();
-    } catch (error) {
-      this.localManagerStatus.textContent = `Could not verify ${selector}.`;
-      this.localManagerError.textContent = error instanceof Error ? error.message : String(error);
-      this.localManagerError.hidden = false;
-      button.disabled = false;
-    }
-  }
-
-  private formatLocalDate(value: string): string {
-    const date = new Date(value);
-    if (!Number.isFinite(date.valueOf())) return value;
-    return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
-  }
-
-  private openLocalDeleteDialog(selector?: string, label?: string): void {
-    const view = this.currentModel?.state.view;
-    const activeSelector = view?.dataset.datasetId === 'local' ? view.dataset.releaseId : null;
-    const resolvedSelector = selector ?? activeSelector;
-    if (!resolvedSelector) return;
-    this.pendingLocalDeleteSelector = resolvedSelector;
-    const manifest = this.currentModel?.manifest;
-    this.localDeleteIdentity.textContent = label ?? (manifest && activeSelector === resolvedSelector
-      ? `${manifest.dataset.title} · ${resolvedSelector}`
-      : resolvedSelector);
-    this.localDeleteError.hidden = true;
-    this.localDeleteError.textContent = '';
-    this.localDeleteConfirm.disabled = false;
-    if (!this.localDeleteDialog.open) this.localDeleteDialog.showModal();
-    this.localDeleteConfirm.focus();
-  }
-
-  private closeLocalDeleteDialog(): void {
-    if (this.localDeleteCommitting) return;
-    this.pendingLocalDeleteSelector = null;
-    if (this.localDeleteDialog.open) this.localDeleteDialog.close();
-  }
-
-  private async commitLocalDelete(): Promise<void> {
-    const selector = this.pendingLocalDeleteSelector;
-    if (!selector || this.localDeleteCommitting) return;
-    this.localDeleteCommitting = true;
-    this.localDeleteConfirm.disabled = true;
-    this.localDeleteError.hidden = true;
-    try {
-      await this.callbacks.deleteLocal(selector);
-      this.pendingLocalDeleteSelector = null;
-      this.localDeleteDialog.close();
-    } catch (error) {
-      this.localDeleteError.textContent = error instanceof Error ? error.message : String(error);
-      this.localDeleteError.hidden = false;
-      this.localDeleteConfirm.disabled = false;
-    } finally {
-      this.localDeleteCommitting = false;
-    }
-  }
-
-  private createLocalShareDialog(): {
-    dialog: HTMLDialogElement;
-    error: HTMLElement;
-    confirm: HTMLButtonElement;
-  } {
-    const dialog = element('dialog', 'info-dialog local-share');
-    dialog.dataset.localShareDialog = '';
-    dialog.setAttribute('aria-labelledby', 'local-share-title');
-    dialog.setAttribute('aria-describedby', 'local-share-note');
-    const header = element('header', 'info-dialog__header');
-    const title = heading('Share local view', 2);
-    title.id = 'local-share-title';
-    const close = element('button', 'info-dialog__close');
-    close.type = 'button';
-    close.textContent = 'Close';
-    close.addEventListener('click', () => dialog.close());
-    header.append(title, close);
-    const content = element('div', 'info-dialog__content local-share__content');
-    const section = element('section', 'info-dialog__section');
-    const note = element('p', 'local-share__note');
-    note.id = 'local-share-note';
-    note.textContent = 'This link does not contain or transfer the dataset. It works only in a browser where the exact local release is already imported.';
-    const error = element('p', 'download-dialog__error local-share__error');
-    error.setAttribute('role', 'alert');
-    error.hidden = true;
-    section.append(note, error);
-    const actions = element('footer', 'local-import__actions');
-    const cancel = element('button', 'local-import__cancel');
-    cancel.type = 'button';
-    cancel.textContent = 'Cancel';
-    cancel.addEventListener('click', () => dialog.close());
-    const confirm = element('button', 'local-import__confirm');
-    confirm.type = 'button';
-    confirm.textContent = 'Copy local link';
-    confirm.addEventListener('click', () => void this.confirmLocalShare());
-    actions.append(cancel, confirm);
-    content.append(section, actions);
-    dialog.append(header, content);
-    dialog.addEventListener('cancel', (event) => {
-      event.preventDefault();
-      dialog.close();
-    });
-    dialog.addEventListener('click', (event) => {
-      if (event.target === dialog) dialog.close();
-    });
-    return { dialog, error, confirm };
-  }
-
-  private async confirmLocalShare(): Promise<void> {
-    this.localShareConfirm.disabled = true;
-    this.localShareError.hidden = true;
-    try {
-      await this.copyCurrentView();
-      this.localShareDialog.close();
-    } catch (error) {
-      this.localShareError.textContent = error instanceof Error ? error.message : String(error);
-      this.localShareError.hidden = false;
-    } finally {
-      this.localShareConfirm.disabled = false;
-    }
-  }
-
-  private async prepareLocalImport(file: File): Promise<void> {
-    const sequence = ++this.localImportSequence;
-    this.localImportActive = true;
-    this.localImportCommitting = false;
-    this.localImportConfirm.disabled = true;
-    this.localImportCancel.disabled = false;
-    this.localImportSummary.hidden = true;
-    this.localImportSummary.replaceChildren();
-    this.localImportError.hidden = true;
-    this.localImportError.textContent = '';
-    this.localImportStatus.textContent = `Validating ${file.name}…`;
-    if (!this.localImportDialog.open) this.localImportDialog.showModal();
-
-    try {
-      if (!file.name.toLocaleLowerCase('en-US').endsWith('.ibl-ephys-atlas.zip')) {
-        throw new Error('Choose one .ibl-ephys-atlas.zip archive');
-      }
-      const preview = await this.callbacks.prepareLocal(file);
-      if (sequence !== this.localImportSequence || !this.localImportActive) return;
-      this.renderLocalImportPreview(file, preview);
-      this.localImportStatus.textContent = 'Validation complete. Review the release before importing it.';
-      this.localImportConfirm.disabled = false;
-      this.localImportConfirm.focus();
-    } catch (error) {
-      if (sequence !== this.localImportSequence) return;
-      this.callbacks.cancelLocal();
-      this.localImportActive = false;
-      this.localImportStatus.textContent = `Could not validate ${file.name}.`;
-      this.localImportError.textContent = error instanceof Error ? error.message : String(error);
-      this.localImportError.hidden = false;
-    }
-  }
-
-  private renderLocalImportPreview(file: File, preview: LocalArchivePreview): void {
-    const headingNode = heading(preview.title, 3);
-    const details = element('dl', 'info-dialog__list local-import__list');
-    const rows: readonly (readonly [string, string])[] = [
-      ['Archive', file.name],
-      ['Dataset', preview.datasetId],
-      ['Release', preview.releaseId],
-      ['Provenance', preview.provenanceSummary],
-      ['Features', `${preview.featureCount.toLocaleString('en-US')} · ${preview.featureIds.join(', ')}`],
-      ['Representations', preview.representations.map(titleCaseToken).join(', ') || 'None'],
-      ['Parcellations', preview.parcellations.map(titleCaseToken).join(', ') || 'None'],
-      ['Files', preview.fileCount.toLocaleString('en-US')],
-      ['Archive size', formatBytes(preview.archiveBytes)],
-      ['Stored size', formatBytes(preview.storedBytes)],
-      ['Declared decoded size', formatBytes(preview.declaredDecodedBytes)],
-    ];
-    for (const [term, description] of rows) {
-      const dt = element('dt');
-      dt.textContent = term;
-      const dd = element('dd');
-      dd.textContent = description;
-      details.append(dt, dd);
-    }
-    const identity = element('p', 'local-import__identity');
-    identity.textContent = `Local identity: ${preview.selector}`;
-    this.localImportSummary.replaceChildren(headingNode, details, identity);
-    this.localImportSummary.hidden = false;
-  }
-
-  private async admitLocalImport(): Promise<void> {
-    if (!this.localImportActive || this.localImportCommitting) return;
-    this.localImportCommitting = true;
-    this.localImportConfirm.disabled = true;
-    this.localImportCancel.disabled = true;
-    this.localImportStatus.textContent = 'Storing the validated release on this device…';
-    this.localImportError.hidden = true;
-    try {
-      await this.callbacks.admitLocal();
-      this.localImportActive = false;
-      this.localImportStatus.textContent = 'Import complete.';
-      this.localImportDialog.close();
-    } catch (error) {
-      this.localImportStatus.textContent = 'The validated release could not be stored.';
-      this.localImportError.textContent = error instanceof Error ? error.message : String(error);
-      this.localImportError.hidden = false;
-      this.localImportConfirm.disabled = false;
-      this.localImportCancel.disabled = false;
-    } finally {
-      this.localImportCommitting = false;
-    }
-  }
-
-  private cancelLocalImport(): void {
-    if (this.localImportCommitting) return;
-    this.localImportSequence += 1;
-    if (this.localImportActive) this.callbacks.cancelLocal();
-    this.localImportActive = false;
-    if (this.localImportDialog.open) this.localImportDialog.close();
   }
 
   private openHelpDialog(): void {
@@ -1565,103 +987,6 @@ export class AppShell {
     return section;
   }
 
-  private renderDownloads(model: ShellModel): void {
-    const { manifest, feature: payload, state } = model;
-    const feature = manifest?.features.find((item) => item.id === state.view.featureId);
-    if (!manifest || !feature || !payload) {
-      this.downloadContent.replaceChildren();
-      return;
-    }
-
-    const intro = element('section', 'info-dialog__section download-dialog__intro');
-    intro.append(heading(feature.label, 3), this.infoParagraph(
-      'Downloads preserve the bytes declared by this immutable release. File descriptions identify their scope; presentation settings do not alter them.',
-    ));
-    if (state.runtime.datasetStatus === 'error' && state.runtime.error) {
-      const error = element('p', 'download-dialog__error');
-      error.setAttribute('role', 'alert');
-      error.textContent = state.runtime.error;
-      intro.append(error);
-    }
-    const sections: HTMLElement[] = [intro];
-
-    if (payload.representation === 'regional') {
-      const derived = element('section', 'info-dialog__section');
-      derived.append(heading('Current view export', 3));
-      const button = this.downloadButton(
-        `Export ${titleCaseToken(state.view.parcellation)} ${titleCaseToken(state.view.coloring.statistic)} as CSV`,
-        'Generated from the loaded regional values with dataset, release, feature, representation, parcellation, statistic, unit, and region context.',
-        () => {
-          this.callbacks.downloadCurrentFeature();
-          this.downloadDialog.close();
-        },
-      );
-      derived.append(button);
-      sections.push(derived);
-    }
-
-    sections.push(this.artifactSection('Feature artifacts', feature.artifacts, feature.id));
-    if (manifest.artifacts.length) sections.push(this.artifactSection('Release artifacts', manifest.artifacts));
-    this.downloadContent.replaceChildren(...sections);
-  }
-
-  private artifactSection(
-    title: string,
-    artifacts: DatasetManifest['artifacts'],
-    featureId?: string,
-  ): HTMLElement {
-    const section = element('section', 'info-dialog__section');
-    section.append(heading(title, 3));
-    if (!artifacts.length) {
-      const empty = this.infoParagraph('This release declares no downloadable artifacts for the selected feature.');
-      empty.className = 'download-dialog__empty';
-      section.append(empty);
-      return section;
-    }
-    const list = element('div', 'download-dialog__list');
-    for (const artifact of artifacts) {
-      const filename = artifact.resource.path.split('/').at(-1) ?? artifact.id;
-      const description = artifact.description || `Declared ${titleCaseToken(artifact.role)} artifact`;
-      const button = this.downloadButton(
-        description,
-        `${titleCaseToken(artifact.role)} · ${filename} · ${formatBytes(artifact.resource.bytes)}`,
-        async (target) => {
-          target.disabled = true;
-          target.dataset.loading = 'true';
-          try {
-            await this.callbacks.downloadArtifact(artifact.id, featureId);
-            this.downloadDialog.close();
-          } catch (error) {
-            this.callbacks.reportError(error);
-          } finally {
-            target.disabled = false;
-            delete target.dataset.loading;
-          }
-        },
-      );
-      button.dataset.artifactId = artifact.id;
-      list.append(button);
-    }
-    section.append(list);
-    return section;
-  }
-
-  private downloadButton(
-    label: string,
-    detail: string,
-    activate: (button: HTMLButtonElement) => void | Promise<void>,
-  ): HTMLButtonElement {
-    const button = element('button', 'download-dialog__item');
-    button.type = 'button';
-    const labelNode = element('strong');
-    labelNode.textContent = label;
-    const detailNode = element('span');
-    detailNode.textContent = detail;
-    button.append(labelNode, detailNode);
-    button.addEventListener('click', () => void activate(button));
-    return button;
-  }
-
   private infoParagraph(text: string): HTMLParagraphElement {
     const paragraph = element('p');
     paragraph.textContent = text;
@@ -1732,7 +1057,7 @@ export class AppShell {
     selectedHeader.append(clearSelection);
     selected.append(selectedHeader, element('ul', 'selected-regions__list'));
 
-    pane.append(panelHeader, search, browser, selected, this.createPanelResizeHandle('regions'));
+    pane.append(panelHeader, search, browser, selected, this.panelLayout.createResizeHandle('regions'));
     return pane;
   }
 
@@ -1744,7 +1069,7 @@ export class AppShell {
     const panelHeader = this.panelHeader('Visualization settings', 'settings', () => this.closeDrawers());
     const content = element('div', 'settings-pane__content');
     content.append(this.createColorSettings(), this.createVolumeLayerSettings());
-    pane.append(panelHeader, content, this.createPanelResizeHandle('settings'));
+    pane.append(panelHeader, content, this.panelLayout.createResizeHandle('settings'));
     return pane;
   }
 
@@ -2087,8 +1412,7 @@ export class AppShell {
     collapse.textContent = panel === 'regions' ? '‹' : '›';
     collapse.setAttribute('aria-controls', panel === 'regions' ? 'regions-pane' : 'settings-pane');
     collapse.setAttribute('aria-keyshortcuts', panel === 'regions' ? '[' : ']');
-    collapse.addEventListener('click', () => this.setPanelCollapsed(panel, true, true));
-    this.panelCollapseButtons.set(panel, collapse);
+    this.panelLayout.registerCollapse(panel, collapse);
     const close = element('button', 'panel__close');
     close.type = 'button';
     close.textContent = 'Close';
@@ -2099,184 +1423,14 @@ export class AppShell {
     return header;
   }
 
-  private createPanelRestoreButton(panel: LayoutPanel): HTMLButtonElement {
-    const label = panel === 'regions' ? 'Brain regions' : 'Visualization settings';
-    const button = element('button', `panel-restore panel-restore--${panel}`);
-    button.type = 'button';
-    if (panel === 'regions') button.dataset.helpAnchor = 'regions';
-    button.textContent = panel === 'regions' ? '›' : '‹';
-    button.setAttribute('aria-label', `Show ${label}`);
-    button.setAttribute('aria-controls', panel === 'regions' ? 'regions-pane' : 'settings-pane');
-    button.setAttribute('aria-keyshortcuts', panel === 'regions' ? '[' : ']');
-    button.addEventListener('click', () => this.setPanelCollapsed(panel, false, true));
-    this.panelRestoreButtons.set(panel, button);
-    return button;
-  }
-
-  private createPanelResizeHandle(panel: LayoutPanel): HTMLElement {
-    const limits = PANEL_WIDTH_LIMITS[panel];
-    const handle = element('div', `panel-resize-handle panel-resize-handle--${panel}`);
-    const label = panel === 'regions' ? 'Resize brain regions panel' : 'Resize visualization settings panel';
-    handle.tabIndex = 0;
-    handle.setAttribute('role', 'separator');
-    handle.setAttribute('aria-label', label);
-    handle.setAttribute('aria-controls', panel === 'regions' ? 'regions-pane' : 'settings-pane');
-    handle.setAttribute('aria-orientation', 'vertical');
-    handle.setAttribute('aria-valuemin', String(limits.min));
-    handle.setAttribute('aria-valuemax', String(limits.max));
-    handle.setAttribute('aria-keyshortcuts', 'ArrowLeft ArrowRight Home End');
-    handle.addEventListener('pointerdown', (event) => this.startPanelResize(panel, handle, event));
-    handle.addEventListener('dblclick', () => this.resetPanelWidth(panel));
-    handle.addEventListener('keydown', (event) => this.onPanelResizeKeyDown(panel, event));
-    this.panelResizeHandles.set(panel, handle);
-    return handle;
-  }
-
-  private loadLayoutPreferences(): LayoutPreferences {
-    try {
-      return parseLayoutPreferences(window.localStorage.getItem(LAYOUT_PREFERENCES_KEY));
-    } catch {
-      return parseLayoutPreferences(null);
-    }
-  }
-
-  private persistLayoutPreferences(): void {
-    try {
-      window.localStorage.setItem(LAYOUT_PREFERENCES_KEY, serializeLayoutPreferences(this.layoutPreferences));
-    } catch {
-      // Layout preferences are optional; storage denial must not affect the viewer.
-    }
-  }
-
-  private applyPanelPreferences(): void {
-    this.applyPanelWidth('regions', this.layoutPreferences.regionsWidth);
-    this.applyPanelWidth('settings', this.layoutPreferences.settingsWidth);
-    this.syncPanelControls();
-  }
-
-  private applyPanelWidth(panel: LayoutPanel, width: number | null): void {
-    const property = panel === 'regions' ? '--region-pane-width' : '--settings-pane-width';
-    if (width === null) this.app.style.removeProperty(property);
-    else this.app.style.setProperty(property, `${clampPanelWidth(panel, width)}px`);
-    this.syncPanelResizeValue(panel);
-  }
-
-  private panelWidth(panel: LayoutPanel): number {
-    const pane = panel === 'regions' ? this.regionPane : this.settingsPane;
-    return clampPanelWidth(panel, pane.getBoundingClientRect().width);
-  }
-
-  private isPanelInline(panel: LayoutPanel): boolean {
-    return panel === 'regions'
-      ? this.layoutMode === 'wide' || this.layoutMode === 'compact'
-      : this.layoutMode === 'wide';
-  }
-
-  private isPanelCollapsed(panel: LayoutPanel): boolean {
-    return panel === 'regions'
-      ? this.layoutPreferences.regionsCollapsed
-      : this.layoutPreferences.settingsCollapsed;
-  }
-
-  private setPanelCollapsed(panel: LayoutPanel, collapsed: boolean, moveFocus = false): void {
-    if (!this.isPanelInline(panel)) return;
-    if (panel === 'regions') this.layoutPreferences.regionsCollapsed = collapsed;
-    else this.layoutPreferences.settingsCollapsed = collapsed;
-    this.persistLayoutPreferences();
-    this.syncPanelControls();
-    this.shortcutStatus.textContent = `${panel === 'regions' ? 'Brain regions' : 'Visualization settings'} panel ${collapsed ? 'collapsed' : 'expanded'}`;
-    if (moveFocus) {
-      const target = collapsed ? this.panelRestoreButtons.get(panel) : this.panelCollapseButtons.get(panel);
-      window.requestAnimationFrame(() => target?.focus());
-    }
-  }
-
   private togglePanel(panel: LayoutPanel): void {
-    if (this.isPanelInline(panel)) {
-      this.setPanelCollapsed(panel, !this.isPanelCollapsed(panel));
+    if (this.panelLayout.isInline(panel)) {
+      this.panelLayout.setCollapsed(panel, !this.panelLayout.isCollapsed(panel));
       return;
     }
     const open = this.app.dataset.drawerOpen === panel;
     if (open) this.closeDrawers();
     else this.openDrawer(panel, false);
-  }
-
-  private syncPanelControls(): void {
-    for (const panel of ['regions', 'settings'] as const) {
-      const inline = this.isPanelInline(panel);
-      const collapsed = inline && this.isPanelCollapsed(panel);
-      const pane = panel === 'regions' ? this.regionPane : this.settingsPane;
-      this.app.dataset[panel === 'regions' ? 'regionPanelCollapsed' : 'settingsPanelCollapsed'] = String(collapsed);
-      pane.inert = collapsed;
-      pane.setAttribute('aria-hidden', String(collapsed));
-      const collapse = this.panelCollapseButtons.get(panel);
-      collapse?.setAttribute('aria-expanded', String(!collapsed));
-      collapse?.setAttribute('aria-label', `Hide ${panel === 'regions' ? 'Brain regions' : 'Visualization settings'}`);
-      const restore = this.panelRestoreButtons.get(panel);
-      if (restore) restore.hidden = !collapsed;
-      this.syncPanelResizeValue(panel);
-    }
-  }
-
-  private syncPanelResizeValue(panel: LayoutPanel): void {
-    const handle = this.panelResizeHandles.get(panel);
-    if (!handle || !this.isPanelInline(panel)) return;
-    const saved = panel === 'regions' ? this.layoutPreferences.regionsWidth : this.layoutPreferences.settingsWidth;
-    const width = saved ?? this.panelWidth(panel);
-    handle.setAttribute('aria-valuenow', String(width));
-    handle.setAttribute('aria-valuetext', `${width} pixels`);
-  }
-
-  private setPanelWidth(panel: LayoutPanel, width: number, persist: boolean): void {
-    const clamped = clampPanelWidth(panel, width);
-    if (panel === 'regions') this.layoutPreferences.regionsWidth = clamped;
-    else this.layoutPreferences.settingsWidth = clamped;
-    this.applyPanelWidth(panel, clamped);
-    if (persist) this.persistLayoutPreferences();
-  }
-
-  private resetPanelWidth(panel: LayoutPanel): void {
-    if (panel === 'regions') this.layoutPreferences.regionsWidth = null;
-    else this.layoutPreferences.settingsWidth = null;
-    this.applyPanelWidth(panel, null);
-    this.persistLayoutPreferences();
-    window.requestAnimationFrame(() => this.syncPanelResizeValue(panel));
-    this.shortcutStatus.textContent = `${panel === 'regions' ? 'Brain regions' : 'Visualization settings'} panel width reset`;
-  }
-
-  private startPanelResize(panel: LayoutPanel, handle: HTMLElement, event: PointerEvent): void {
-    if (event.button !== 0 || !this.isPanelInline(panel) || this.isPanelCollapsed(panel)) return;
-    event.preventDefault();
-    const startX = event.clientX;
-    const startWidth = this.panelWidth(panel);
-    this.app.dataset.panelResizing = panel;
-    const move = (moveEvent: PointerEvent): void => {
-      const delta = moveEvent.clientX - startX;
-      this.setPanelWidth(panel, startWidth + (panel === 'regions' ? delta : -delta), false);
-    };
-    const finish = (): void => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', finish);
-      window.removeEventListener('pointercancel', finish);
-      delete this.app.dataset.panelResizing;
-      this.persistLayoutPreferences();
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', finish);
-    window.addEventListener('pointercancel', finish);
-  }
-
-  private onPanelResizeKeyDown(panel: LayoutPanel, event: KeyboardEvent): void {
-    if (!this.isPanelInline(panel) || this.isPanelCollapsed(panel)) return;
-    const limits = PANEL_WIDTH_LIMITS[panel];
-    let width: number | null = null;
-    if (event.key === 'Home') width = limits.min;
-    if (event.key === 'End') width = limits.max;
-    if (event.key === 'ArrowLeft') width = this.panelWidth(panel) + (panel === 'regions' ? -12 : 12);
-    if (event.key === 'ArrowRight') width = this.panelWidth(panel) + (panel === 'regions' ? 12 : -12);
-    if (width === null) return;
-    event.preventDefault();
-    this.setPanelWidth(panel, width, true);
   }
 
   private createWorkspace(): HTMLElement {
@@ -2413,10 +1567,14 @@ export class AppShell {
     const viewport = element('div', 'view-frame__viewport');
     const target = element('div', 'view-frame__renderer');
     target.setAttribute('aria-label', `${axis} renderer target`);
+    // Keep the wheel hit target stable during slice loads. Only region picking
+    // is blocked while these pixels belong to a previous request.
+    for (const type of ['pointermove', 'pointerup']) {
+      target.addEventListener(type, (event) => {
+        if (frame.dataset.updating) event.stopPropagation();
+      }, { capture: true });
+    }
     const projectionViewport = this.viewportFactory.create(target, axis);
-    const stateText = element('div', 'view-frame__state-message');
-    stateText.setAttribute('role', 'status');
-    stateText.textContent = 'Loading registered anatomy…';
     const tooltip = element('div', 'region-tooltip');
     tooltip.setAttribute('role', 'tooltip');
     tooltip.hidden = true;
@@ -2431,7 +1589,8 @@ export class AppShell {
     tooltipHint.append('Hold ', hintKey, ' for anatomy colours');
     tooltip.append(tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta, tooltipHint);
     const colorbar = new FrameColorbar();
-    viewport.append(target, stateText, colorbar.element, tooltip);
+    const loadStatus = new RetainedViewStatus(frame, this.app, status);
+    viewport.append(target, colorbar.element, tooltip, loadStatus.initialStatus.element, loadStatus.updateStatus.element);
 
     const footer = element('div', 'view-frame__footer');
     const slider = element('input', 'view-frame__slider');
@@ -2454,7 +1613,7 @@ export class AppShell {
     this.viewFrames.set(axis, {
       frame, target, viewport: projectionViewport, coordinate, slider, status, maximize, colorbar,
       tooltip, tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta,
-      renderKey: '', geometryKey: '', renderToken: 0, sliceProgressTimer: null,
+      loadStatus,
     });
     return frame;
   }
@@ -2478,10 +1637,11 @@ export class AppShell {
     const tooltipValue = element('div', 'region-tooltip__value');
     const tooltipMeta = element('div', 'region-tooltip__meta');
     tooltip.append(tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta);
-    frame.append(target, notice, tooltip);
+    const loadStatus = new RetainedViewStatus(frame, this.app);
+    frame.append(target, notice, tooltip, loadStatus.initialStatus.element, loadStatus.updateStatus.element);
     this.staticFrames.set(projectionId, {
       frame, target, viewport, notice, tooltip, tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta,
-      renderKey: '', renderToken: 0,
+      loadStatus,
     });
     this.secondaryPanels.set(projectionId, frame);
     return frame;
@@ -2512,6 +1672,23 @@ export class AppShell {
     const notice = element('p', 'secondary-view__scene3d-notice');
     notice.setAttribute('role', 'status');
     notice.textContent = '3-D anatomy is not connected in this build.';
+    const operation = new OperationStatus('centered');
+    const overlay = operation.element;
+    overlay.classList.add('secondary-view__scene3d-overlay');
+    for (const [part, alias] of [
+      ['spinner', 'spinner'], ['title', 'loading-title'], ['detail', 'loading-detail'], ['retry', 'retry'],
+    ]) overlay.querySelector(`.operation-status__${part}`)?.classList.add(`secondary-view__scene3d-${alias}`);
+    this.retryScene3D = () => {
+      this.scene3dViewport?.destroy();
+      this.scene3dViewport = null;
+      this.scene3dPresentation = null;
+      this.scene3dViewState = null;
+      this.scene3dFailed = false;
+      host.replaceChildren();
+      host.dataset.scene3dState = 'loading';
+      delete host.dataset.error;
+      if (this.currentModel) this.renderScene3D(this.currentModel, true);
+    };
     const controls = element('label', 'secondary-view__scene3d-controls');
     const label = element('span', 'secondary-view__scene3d-control-label');
     label.textContent = 'Explode';
@@ -2529,11 +1706,18 @@ export class AppShell {
       this.callbacks.setScene3DExplode(explode.valueAsNumber);
     });
     controls.append(label, explode, value);
-    frame.append(host, controls, notice);
+    const featureStatus = new OperationStatus('compact');
+    frame.append(host, controls, notice, overlay, featureStatus.element);
+    this.scene3dFeatureStatus = featureStatus;
     this.scene3dHost = host;
     this.scene3dNotice = notice;
+    this.scene3dStatus = operation;
     this.scene3dExplodeInput = explode;
     this.scene3dExplodeValue = value;
+    // Loading completes independently of application state and URL updates.
+    this.scene3dObserver = new MutationObserver(() => this.syncScene3DStatus());
+    this.scene3dObserver.observe(host, { attributes: true, attributeFilter: ['data-scene3d-state'] });
+    this.syncScene3DStatus();
     this.secondaryPanels.set('brain-3d', frame);
     return frame;
   }
@@ -2554,31 +1738,42 @@ export class AppShell {
     if (content.kind !== 'static-projection') return;
     const nodes = this.staticFrames.get(content.projectionId);
     if (!nodes) return;
-    const view = model.state.view;
     if (model.featureLoading) {
-      nodes.renderToken += 1;
-      nodes.renderKey = '';
-      nodes.frame.setAttribute('aria-busy', 'true');
+      nodes.loadStatus.invalidate();
       nodes.notice.hidden = false;
       nodes.notice.textContent = 'Updating…';
+      nodes.loadStatus.pending('feature', !!nodes.target.querySelector('[data-static-source-mode]'), {
+        state: 'loading', title: 'Updating map…', detail: 'Downloading feature data.',
+      });
+      return;
+    }
+    if (model.featureError) {
+      nodes.loadStatus.invalidate();
+      nodes.loadStatus.error('feature', !!nodes.target.querySelector('[data-static-source-mode]'), {
+        state: 'error', title: 'Couldn’t load feature data', detail: model.featureError,
+        retry: () => this.callbacks.retryFeature(),
+      });
       return;
     }
     const projectionParcellation = model.regionalPresentation.mapping;
-    const renderKey = [view.dataset.datasetId, view.dataset.releaseId ?? '', projectionParcellation,
-      model.feature?.featureId ?? '', model.feature?.representation ?? ''].join(':');
-    if (renderKey === nodes.renderKey) return;
-    nodes.renderKey = renderKey;
-    const token = ++nodes.renderToken;
+    const request: RetainedViewRequest = {
+      kind: 'static', content: this.retainedViewContent(model), projectionId: content.projectionId,
+    };
+    const operation = nodes.loadStatus.begin(request);
+    if (!operation) return;
+    const { token } = operation;
     nodes.notice.hidden = false;
     nodes.notice.textContent = 'Loading static projection…';
+    nodes.loadStatus.pending('static', !!nodes.target.querySelector('[data-static-source-mode]'), {
+      state: 'loading', title: 'Loading map…', detail: 'Downloading and preparing this projection.',
+    });
     const pending = nodes.viewport.render({
       projectionId: content.projectionId,
       parcellation: projectionParcellation,
       feature: model.feature?.representation === 'regional' ? model.feature : null,
     });
     Promise.resolve(pending).then(() => {
-      if (nodes.renderToken !== token) return;
-      nodes.frame.setAttribute('aria-busy', 'false');
+      if (!nodes.loadStatus.complete(token)) return;
       const viewport = nodes.target.querySelector<HTMLElement>('[data-static-source-mode]');
       const sourceMode = viewport?.dataset.staticSourceMode;
       nodes.notice.textContent = sourceMode === 'pinned-review'
@@ -2594,11 +1789,16 @@ export class AppShell {
           : '';
       nodes.notice.hidden = nodes.notice.textContent === '';
     }).catch((error: unknown) => {
-      if (nodes.renderToken !== token) return;
-      nodes.frame.setAttribute('aria-busy', 'false');
+      if (!nodes.loadStatus.isCurrent(token)) return;
       nodes.notice.textContent = 'Static projection unavailable';
       nodes.viewport.showError(error);
-      this.callbacks.reportError(error);
+      nodes.loadStatus.error('static', !!nodes.target.querySelector('[data-static-source-mode]'), {
+        state: 'error', title: 'Couldn’t load this map', detail: 'Please try again.',
+        retry: () => {
+          nodes.loadStatus.invalidate();
+          if (this.currentModel) this.renderSecondaryView(this.currentModel);
+        },
+      });
     });
   }
 
@@ -2606,25 +1806,25 @@ export class AppShell {
     const view = model.state.view;
     this.scene3dExplodeInput.value = String(view.scene3d.explode);
     this.scene3dExplodeValue.value = `${Math.round(view.scene3d.explode * 100)}%`;
-    this.scene3dExplodeInput.disabled = !this.scene3dFactory || this.scene3dFailed;
     const maximized = view.workspace.maximizedView;
     const visible = selected && (maximized === 'secondary'
       || (maximized === null && (window.innerWidth >= 1100 || view.workspace.activeCompactView === 'secondary')));
     if (!this.scene3dFactory) {
       this.scene3dNotice.textContent = '3-D anatomy is not connected in this build.';
       this.scene3dNotice.dataset.state = 'unavailable';
+      this.syncScene3DStatus();
       return;
     }
     if (visible && !this.scene3dViewport && !this.scene3dFailed) {
       try {
         this.scene3dViewport = this.scene3dFactory.create(this.scene3dHost);
         this.scene3dHost.dataset.scene3dHost = 'connected';
-      } catch (error) {
+      } catch {
         this.scene3dFailed = true;
         this.scene3dHost.dataset.scene3dState = 'error';
         this.scene3dNotice.textContent = '3-D anatomy unavailable.';
         this.scene3dNotice.dataset.state = 'error';
-        this.callbacks.reportError(error);
+        this.syncScene3DStatus();
         return;
       }
     }
@@ -2636,6 +1836,7 @@ export class AppShell {
         viewport.deactivate();
         this.scene3dNotice.textContent = '3-D anatomy unavailable.';
         this.scene3dNotice.dataset.state = 'error';
+        this.syncScene3DStatus();
         return;
       }
       if (this.scene3dPresentation !== model.regionalPresentation) {
@@ -2648,18 +1849,54 @@ export class AppShell {
       }
       if (visible) viewport.activate();
       else viewport.deactivate();
-      this.scene3dHost.setAttribute('aria-busy', String(!!model.featureLoading));
-      this.scene3dNotice.textContent = model.featureLoading ? 'Updating…' : view.representation === 'volume'
+      this.scene3dNotice.textContent = view.representation === 'volume'
         ? '3-D anatomy · anatomy only — volume scalars are not defined on this view'
         : '3-D anatomy';
       this.scene3dNotice.dataset.state = 'ready';
-    } catch (error) {
+      this.syncScene3DStatus();
+    } catch {
       this.scene3dFailed = true;
       viewport.deactivate();
       this.scene3dNotice.textContent = '3-D anatomy unavailable.';
       this.scene3dNotice.dataset.state = 'error';
-      this.callbacks.reportError(error);
+      this.syncScene3DStatus();
     }
+  }
+
+  private syncScene3DStatus(): void {
+    const state = this.scene3dHost.dataset.scene3dState;
+    const unavailable = !this.scene3dFactory;
+    const failed = this.scene3dFailed || state === 'error';
+    const ready = !unavailable && !failed && state === 'ready';
+    const loading = !unavailable && !failed && !ready;
+    this.scene3dHost.setAttribute('aria-busy', String(loading || (ready && !!this.currentModel?.featureLoading)));
+    this.scene3dExplodeInput.disabled = !ready;
+    this.scene3dNotice.hidden = !ready && !unavailable;
+    const model = this.currentModel;
+    this.scene3dFeatureStatus.update({
+      state: !ready ? 'ready' : model?.featureError ? 'error' : model?.featureLoading ? 'loading' : 'ready',
+      title: model?.featureError ? 'Couldn’t load feature data' : 'Updating feature context…',
+      detail: '3D anatomy is ready. Showing the previous presentation.',
+      ...(model?.featureError ? { retry: () => this.callbacks.retryFeature() } : {}),
+    });
+    this.scene3dStatus.update({
+      state: ready || unavailable ? 'ready' : failed ? 'error' : 'loading',
+      title: failed ? 'Couldn’t load the 3D brain'
+        : state === 'context-lost' ? 'Restoring the 3D view…' : 'Loading 3D brain…',
+      detail: failed ? 'Please try again.' : 'Downloading and preparing the model. This may take a moment.',
+      ...(failed ? { retry: this.retryScene3D } : {}),
+    });
+  }
+
+  private retainedViewContent(model: ShellModel): RetainedViewRequest['content'] {
+    return {
+      datasetId: model.state.view.dataset.datasetId,
+      releaseId: model.state.view.dataset.releaseId ?? null,
+      representation: model.state.view.representation,
+      featureRepresentation: model.feature?.representation ?? null,
+      featureId: model.feature?.featureId ?? null,
+      parcellation: model.regionalPresentation.mapping,
+    };
   }
 
   private renderViewFrame(axis: SliceAxis, model: ShellModel): void {
@@ -2678,67 +1915,57 @@ export class AppShell {
     nodes.slider.setAttribute('aria-valuetext', coordinate);
 
     if (model.featureLoading) {
-      this.clearSliceProgress(nodes);
-      if (nodes.frame.dataset.updating !== 'feature') {
-        nodes.renderToken += 1;
-        nodes.renderKey = '';
-        nodes.geometryKey = '';
+      if (nodes.loadStatus.updating !== 'feature') {
+        nodes.loadStatus.invalidate();
         nodes.viewport.suspend?.();
       }
       this.hideRegionTooltip(axis);
-      nodes.frame.dataset.updating = 'feature';
-      nodes.frame.setAttribute('aria-busy', 'true');
       nodes.status.removeAttribute('aria-label');
       const hasImage = !!nodes.target.dataset.sliceAsset;
       if (!hasImage) nodes.frame.dataset.state = 'loading';
       nodes.status.textContent = hasImage ? 'Updating…' : 'Loading atlas…';
+      nodes.loadStatus.pending('feature', hasImage, {
+        state: 'loading', title: hasImage ? 'Updating feature…' : 'Loading atlas…',
+        detail: hasImage ? 'Showing the previous view.' : 'Downloading data and preparing this view.',
+      });
       return;
     }
-    const featureWasLoading = nodes.frame.dataset.updating === 'feature';
+    if (model.featureError) {
+      nodes.loadStatus.invalidate();
+      nodes.loadStatus.error('feature', !!nodes.target.dataset.sliceAsset, {
+        state: 'error', title: 'Couldn’t load feature data', detail: model.featureError,
+        retry: () => this.callbacks.retryFeature(),
+      });
+      return;
+    }
+    const featureWasLoading = nodes.loadStatus.updating === 'feature';
     const projectionParcellation = model.regionalPresentation.mapping;
-    const geometryKey = [
-      view.dataset.datasetId,
-      view.dataset.releaseId ?? '',
-      view.representation,
-      model.feature?.representation ?? '',
-      projectionParcellation,
-      model.feature?.featureId ?? '',
-      sliceIndex,
-    ].join(':');
-    const renderKey = `${geometryKey}:${view.cursor.xUm}:${view.cursor.yUm}:${view.cursor.zUm}`;
-    if (nodes.renderKey === renderKey) return;
-    nodes.renderKey = renderKey;
-    const geometryChanged = nodes.geometryKey !== geometryKey;
-    nodes.geometryKey = geometryKey;
-    const token = ++nodes.renderToken;
+    const request: RetainedViewRequest = {
+      kind: 'slice', content: this.retainedViewContent(model), axis, sliceIndex,
+      cursor: { ...view.cursor }, coordinate,
+    };
+    const operation = nodes.loadStatus.begin(request);
+    if (!operation) return;
+    const { token, geometryChanged } = operation;
     const retainedSliceAsset = nodes.target.dataset.sliceAsset;
     const retainsRenderedFrame = retainedSliceAsset === 'projection-pack-v1'
       || retainedSliceAsset === 'schema-volume-v1';
-    const stateMessage = nodes.frame.querySelector<HTMLElement>('.view-frame__state-message');
     if (geometryChanged) {
-      this.clearSliceProgress(nodes);
       this.hideRegionTooltip(axis);
       nodes.frame.dataset.state = retainsRenderedFrame ? 'ready' : 'loading';
       nodes.status.removeAttribute('aria-label');
-      nodes.frame.dataset.updating = featureWasLoading ? 'feature' : 'slice';
-      nodes.frame.setAttribute('aria-busy', 'true');
       nodes.status.textContent = !retainsRenderedFrame ? 'Loading atlas…'
         : featureWasLoading ? 'Updating…' : '';
-      if (retainsRenderedFrame && !featureWasLoading) {
-        nodes.sliceProgressTimer = window.setTimeout(() => {
-          nodes.sliceProgressTimer = null;
-          if (nodes.renderToken !== token || nodes.frame.dataset.updating !== 'slice') return;
-          nodes.frame.dataset.sliceProgress = 'true';
-          nodes.status.setAttribute('aria-label', 'Loading slice');
-        }, SLICE_PROGRESS_DELAY_MS);
-      }
-      if (stateMessage) {
-        stateMessage.textContent = retainsRenderedFrame
-          ? ''
-          : view.representation === 'volume'
-            ? 'Loading scientific volume…'
-            : 'Loading registered anatomy…';
-      }
+      const previous = nodes.loadStatus.displayedRequest;
+      const previousCoordinate = previous?.kind === 'slice' ? previous.coordinate : '';
+      const delayed = retainsRenderedFrame && !featureWasLoading;
+      nodes.loadStatus.pending(featureWasLoading ? 'feature' : 'slice', retainsRenderedFrame, {
+        state: 'loading', title: delayed ? 'Loading slice…'
+          : retainsRenderedFrame && featureWasLoading ? 'Updating feature…'
+            : view.representation === 'volume' ? 'Loading scientific volume…' : 'Loading registered anatomy…',
+        detail: delayed ? `Showing the previous slice${previousCoordinate ? ` (${previousCoordinate})` : ''}.`
+          : retainsRenderedFrame ? 'Showing the previous view.' : 'Downloading data and preparing this view.',
+      }, delayed);
     }
 
     const pending = nodes.viewport.render({
@@ -2750,18 +1977,12 @@ export class AppShell {
     });
 
     Promise.resolve(pending).then(() => {
-      if (nodes.renderToken !== token) return;
-      this.clearSliceProgress(nodes);
-      delete nodes.frame.dataset.updating;
-      nodes.frame.setAttribute('aria-busy', 'false');
+      if (!nodes.loadStatus.complete(token)) return;
       nodes.frame.dataset.state = 'ready';
       nodes.status.textContent = '';
       nodes.status.setAttribute('aria-label', view.representation === 'volume' ? 'Scientific volume ready' : 'Registered anatomy ready');
     }).catch((error: unknown) => {
-      if (nodes.renderToken !== token) return;
-      this.clearSliceProgress(nodes);
-      delete nodes.frame.dataset.updating;
-      nodes.frame.setAttribute('aria-busy', 'false');
+      if (!nodes.loadStatus.isCurrent(token)) return;
       const preservedSliceAsset = nodes.target.dataset.sliceAsset;
       const preservedFrame = preservedSliceAsset === 'projection-pack-v1'
         || preservedSliceAsset === 'schema-volume-v1';
@@ -2776,21 +1997,17 @@ export class AppShell {
         nodes.status.textContent = 'Unavailable';
         nodes.viewport.clear();
         nodes.viewport.showError(error);
-        if (stateMessage) {
-          stateMessage.textContent = error instanceof Error ? error.message : 'Registered anatomy could not be loaded';
-        }
       }
-      this.callbacks.reportError(error);
+      nodes.loadStatus.error('slice', retainsRenderedFrame || preservedFrame, {
+        state: 'error', title: 'Couldn’t load this view',
+        detail: preservedFrame ? 'Showing the previous view. Please try again.' : 'Please try again.',
+        retry: () => {
+          nodes.loadStatus.invalidate();
+          this.callbacks.refreshSliceInventory();
+          if (this.currentModel) this.renderViewFrame(axis, this.currentModel);
+        },
+      });
     });
-  }
-
-  private clearSliceProgress(nodes: ViewFrameNodes): void {
-    if (nodes.sliceProgressTimer !== null) {
-      window.clearTimeout(nodes.sliceProgressTimer);
-      nodes.sliceProgressTimer = null;
-    }
-    delete nodes.frame.dataset.sliceProgress;
-    if (nodes.status.getAttribute('aria-label') === 'Loading slice') nodes.status.removeAttribute('aria-label');
   }
 
   private toggleMaximizedView(axis: WorkspaceViewId): void {
@@ -2904,7 +2121,7 @@ export class AppShell {
     if (mode !== 'phone' && this.overflowActions) this.overflowActions.open = false;
     if (mode === 'wide') this.closeDrawers();
     else if (mode === 'compact' && this.regionPane.dataset.open === 'true') this.closeDrawers();
-    this.syncPanelControls();
+    this.panelLayout.syncControls();
   }
 
   private readonly onResize = (): void => {
@@ -2918,7 +2135,7 @@ export class AppShell {
     if (this.helpTour.active) return;
     if (this.analysisDialog.open && this.analysisDialog.dataset.presentation === 'modal-sheet') return;
     if (event.key === 'Escape') {
-      if (this.infoDialog.open || this.downloadDialog.open || this.helpDialog.open) return;
+      if (this.infoDialog.open || this.downloadController.dialog.open || this.helpDialog.open) return;
       if (this.closeContextMenus()) return;
       const maximizedView = this.currentModel?.state.view.workspace.maximizedView ?? null;
       if (maximizedView) {
@@ -2932,7 +2149,7 @@ export class AppShell {
       if (this.overflowActions?.open) this.overflowActions.open = false;
       return;
     }
-    if (blocksGlobalShortcut(event) || this.infoDialog.open || this.downloadDialog.open || this.helpDialog.open) return;
+    if (blocksGlobalShortcut(event) || this.infoDialog.open || this.downloadController.dialog.open || this.helpDialog.open) return;
     if (
       (event.key === '[' || event.key === ']')
       && !event.altKey

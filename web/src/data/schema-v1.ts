@@ -142,6 +142,23 @@ export interface ProjectionPackV1 {
   readonly provenance: Readonly<Record<string, unknown>>;
 }
 
+export interface RegionNavigationV1 {
+  readonly schema_version: SchemaV1Version;
+  readonly format: 'atlas-region-navigation-v1';
+  readonly navigation_id: string;
+  readonly immutable: true;
+  readonly reference_space_id: ReferenceSpaceId;
+  readonly projection_pack: Readonly<{ pack_id: string; manifest_sha256: string }>;
+  readonly grid: Readonly<{
+    grid_id: GridId;
+    shape: readonly [number, number, number];
+    storage_axes: readonly ['ap', 'ml', 'dv'];
+    index_to_world_um: readonly number[];
+  }>;
+  readonly mappings: Readonly<Record<MeshMappingV1, BinaryArrayV1>>;
+  readonly provenance: Readonly<Record<string, unknown>>;
+}
+
 export type MeshHemisphereV1 = 'left' | 'right';
 export type MeshMappingV1 = 'allen' | 'beryl' | 'cosmos';
 export type MeshComponentLateralizationV1 = MeshHemisphereV1 | 'neutral';

@@ -17,19 +17,25 @@ import type {
 import { effectiveScalarColorRange } from '../../application/scalar-colormap.js';
 import { required, message } from './dom.js';
 import {
-  renderAnalysis,
-  renderDistribution,
   renderFeatureSummary,
   renderSelectedRegions,
+} from './details-view.js';
+import { renderAnalysis } from './comparison-view.js';
+import {
+  renderDistribution,
   updateDistributionColorRange,
   updateDistributionHover,
   type VolumeRegionalDistributionModel,
-} from './details-view.js';
+} from './distribution-view.js';
 import { buildRegionalValueMap } from './model.js';
 import { RegionalTreeView } from './tree-view.js';
 import { buildVolumeDistributionExport } from './volume-distribution-export.js';
+import { OperationStatus } from '../operation-status.js';
 
 export interface RegionalPanelCallbacks {
+  selectRegion(regionId: string, additive: boolean): void;
+  setMultiSelection(enabled: boolean): void;
+  setAutoSlice(enabled: boolean): void;
   toggleSelection(regionId: string): void;
   setRegionOrder(order: RegionOrder): void;
   setColorScale(scale: ColorScaleSelection): void;
@@ -37,17 +43,25 @@ export interface RegionalPanelCallbacks {
   clearSelection(): void;
   hoverRegion(regionId: string | null): void;
   downloadComparison(): void;
+  comparisonUsed?(): void;
   setVolumeRegionHemisphere(hemisphere: VolumeRegionHemisphere): void;
   downloadVolumeRegionDistribution(csv: string, filename: string): void;
+  retryFeature(): void;
+  retryAnatomy?(): void;
 }
 
 export interface RegionalPanelModel {
   state: AppState;
   manifest: DatasetManifest | null;
   feature: FeaturePayload | null;
+  featureLoading: boolean;
+  featureError: string | null;
   regions: readonly RegionMetadata[];
   physicalRegions: readonly RegionMetadata[];
   anatomyAtlas: string | null;
+  autoSliceStatus?: string;
+  anatomyLoading?: boolean;
+  anatomyError?: string | null;
   hoveredRegionId: string | null;
   presentationScale: ResolvedPresentationScale;
   representationDisplay: RepresentationDisplay | undefined;
@@ -81,6 +95,13 @@ export class RegionalPanelController {
   private lastFixture = false;
   private lastAnatomyAtlas: string | null = null;
   private lastHemisphere: VolumeRegionHemisphere | null = null;
+  private lastFeatureLoading = false;
+  private lastFeatureError: string | null = null;
+  private lastFeatureIdentity = '';
+  private readonly summaryStatus = new OperationStatus('inline');
+  private readonly distributionStatus = new OperationStatus('inline');
+  private readonly analysisStatus = new OperationStatus('inline');
+  private readonly anatomyStatus = new OperationStatus('inline');
   private volumeRegionalKey = '';
   private volumeRegionalStatus: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
   private volumeRegionalBinning: DistributionBinning | null = null;
@@ -106,6 +127,7 @@ export class RegionalPanelController {
     this.modalComparisonQuery = this.analysisDialog.ownerDocument.defaultView?.matchMedia('(max-width: 759px)')
       ?? window.matchMedia('(max-width: 759px)');
     this.tree = new RegionalTreeView(root, callbacks);
+    this.tree.source.parentElement!.after(this.anatomyStatus.element);
     this.clearSelectionButton.addEventListener('click', this.clearSelection);
     this.analysisToggle.addEventListener('click', this.toggleAnalysis);
     this.analysisClose.addEventListener('click', this.closeAnalysis);
@@ -118,12 +140,21 @@ export class RegionalPanelController {
 
   render(model: RegionalPanelModel): void {
     this.latestModel = model;
+    this.tree.updateAutoSlice(model.state.view.autoSlice, model.autoSliceStatus ?? '');
+    this.anatomyStatus.update({
+      state: model.anatomyLoading ? 'loading' : model.anatomyError ? 'error' : 'ready',
+      title: model.anatomyLoading ? 'Loading region names…' : 'Couldn’t load region names',
+      ...(model.anatomyError ? { detail: model.anatomyError,
+        ...(this.callbacks.retryAnatomy ? { retry: this.callbacks.retryAnatomy } : {}) } : {}),
+    });
     const feature = model.feature;
     const regionalFeature = feature?.representation === 'regional' ? feature : null;
     const statistic = model.state.view.coloring.statistic;
     const regionOrder = model.state.view.regionOrder;
     const fixture = model.manifest?.dataset.fixture === true;
     const selectionKey = model.state.view.selection.join(',');
+    const featureIdentity = JSON.stringify([model.state.view.dataset, model.state.view.featureId,
+      model.state.view.representation, model.state.view.parcellation]);
     const volumeRegional = this.syncVolumeRegionalDistribution(model, selectionKey);
     const range = feature
       ? effectiveScalarColorRange(feature, model.state.view.coloring, model.representationDisplay)
@@ -141,6 +172,9 @@ export class RegionalPanelController {
       && fixture === this.lastFixture
       && model.anatomyAtlas === this.lastAnatomyAtlas
       && model.state.view.distribution.hemisphere === this.lastHemisphere
+      && model.featureLoading === this.lastFeatureLoading
+      && model.featureError === this.lastFeatureError
+      && featureIdentity === this.lastFeatureIdentity
     ) {
       this.tree.updateHoveredRegion(model.hoveredRegionId);
       if (feature) {
@@ -177,11 +211,13 @@ export class RegionalPanelController {
     this.lastFixture = fixture;
     this.lastAnatomyAtlas = model.anatomyAtlas;
     this.lastHemisphere = model.state.view.distribution.hemisphere;
+    this.lastFeatureLoading = model.featureLoading;
+    this.lastFeatureError = model.featureError;
+    this.lastFeatureIdentity = featureIdentity;
     this.pane.dataset.phase = feature || model.anatomyAtlas ? 'regional-data' : 'empty';
     this.pane.dataset.fixture = String(fixture);
 
-    if ((!feature && !model.anatomyAtlas)
-      || (feature?.representation !== 'volume' && model.regions.length === 0)) {
+    if (feature?.representation !== 'volume' && model.regions.length === 0) {
       this.renderEmpty(model);
       return;
     }
@@ -201,9 +237,14 @@ export class RegionalPanelController {
         : regionalFeature
           ? `${model.state.view.parcellation.toUpperCase()} regional values`
           : `${model.state.view.parcellation.toUpperCase()} anatomy overlay`;
-    this.tree.render(model.regions, values, statistic, unit, selected, regionOrder);
+    this.tree.render(model.regions, values, statistic, unit, selected, regionOrder,
+      model.featureLoading ? 'loading' : model.featureError ? 'error'
+        : regionalFeature ? 'ready' : model.state.view.representation === 'volume' ? 'anatomy' : 'empty');
     renderSelectedRegions(this.detailsTargets(), model.regions, selected, values, statistic, unit);
     if (feature) {
+      this.summary.removeAttribute('aria-busy');
+      this.distribution.removeAttribute('aria-busy');
+      this.analysis.removeAttribute('aria-busy');
       renderFeatureSummary(this.summary, feature, unit, descriptor?.description ?? '');
       renderDistribution(
         this.distribution,
@@ -246,13 +287,12 @@ export class RegionalPanelController {
           fixture,
           model.presentationScale.histogram,
         );
+        this.reportComparisonUse();
       } else {
-        this.analysis.replaceChildren(message('Exact selected-region voxel distributions are overlaid in the distribution chart above; regional summary statistics are not derived from the volume.'));
+        this.analysis.replaceChildren(message(volumeRegional?.unavailableReason ?? 'Exact selected-region voxel distributions are overlaid in the distribution chart above; regional summary statistics are not derived from the volume.'));
       }
     } else {
-      this.summary.replaceChildren();
-      this.distribution.replaceChildren(message('No regional distribution loaded'));
-      this.analysis.replaceChildren(message('No feature values are available for this parcellation'));
+      this.renderFeatureStatus(model);
     }
     this.tree.updateHoveredRegion(model.hoveredRegionId);
   }
@@ -275,15 +315,35 @@ export class RegionalPanelController {
     this.selectedSection.dataset.empty = 'true';
     this.updateAnalysisDisclosure(0);
     this.tree.renderEmpty(
-      model.state.view.representation === 'volume'
-        ? 'Region values are unavailable in volume mode'
-        : 'Regional data is loading or unavailable',
+      model.featureLoading ? 'Loading regions…'
+        : model.featureError ? 'Regions unavailable'
+        : 'No regions available for this parcellation',
     );
+    this.tree.source.textContent = 'Region catalog';
     this.selectedList.replaceChildren();
     this.clearSelectionButton.disabled = true;
-    this.summary.replaceChildren();
-    this.distribution.replaceChildren(message('No regional distribution loaded'));
-    this.analysis.replaceChildren(message('Select a regional feature to compare regions'));
+    this.renderFeatureStatus(model);
+  }
+
+  private renderFeatureStatus(model: RegionalPanelModel): void {
+    const state = model.featureLoading ? 'loading' : model.featureError ? 'error' : 'empty';
+    const entries = [
+      [this.summary, this.summaryStatus, 'feature summary'],
+      [this.distribution, this.distributionStatus, 'feature distribution'],
+      [this.analysis, this.analysisStatus, 'feature comparison'],
+    ] as const;
+    for (const [target, status, label] of entries) {
+      target.removeAttribute('aria-busy');
+      status.update({
+        state,
+        title: state === 'loading' ? `Loading ${label}…`
+          : state === 'error' ? `${label[0]!.toUpperCase()}${label.slice(1)} unavailable`
+          : `No ${label} loaded`,
+        ...(state === 'error' && target === this.distribution
+          ? { detail: model.featureError!, retry: this.callbacks.retryFeature } : {}),
+      });
+      if (status.element.parentElement !== target) target.replaceChildren(status.element);
+    }
   }
 
   private detailsTargets() {
@@ -356,9 +416,25 @@ export class RegionalPanelController {
       && binning
       && companion?.binnings.some(({ binningId }) => binningId === binning.id)
       && model.physicalRegions.length > 0;
-    if (!feature || !binning || !available || !load) {
+    if (!feature || !binning) {
       this.resetVolumeRegionalDistribution();
       return undefined;
+    }
+    if (!available || !load) {
+      this.resetVolumeRegionalDistribution();
+      return {
+        binning: null,
+        physicalRegions: model.physicalRegions,
+        hemisphere: model.state.view.distribution.hemisphere,
+        status: 'idle',
+        error: null,
+        processedAgea: false,
+        unavailableReason: !companion || !load
+          ? 'This release has no regional histograms for this parcellation.'
+          : model.physicalRegions.length === 0
+            ? 'Region metadata is unavailable for regional histograms.'
+            : 'This release has no regional histogram for the current scale and distribution domain.',
+      };
     }
     const key = `${model.state.view.dataset.datasetId}/${model.state.view.dataset.releaseId ?? ''}/${feature.featureId}/${model.state.view.parcellation}/${binning.id}`;
     if (key !== this.volumeRegionalKey) {
@@ -396,6 +472,13 @@ export class RegionalPanelController {
       hemisphere: model.state.view.distribution.hemisphere,
       status: this.volumeRegionalStatus,
       error: this.volumeRegionalError,
+      ...(this.volumeRegionalStatus === 'error' ? { retry: () => {
+        if (this.volumeRegionalKey !== key || this.volumeRegionalStatus !== 'error') return;
+        this.volumeRegionalStatus = 'idle';
+        this.volumeRegionalError = null;
+        this.lastFeature = null;
+        if (this.latestModel) this.render(this.latestModel);
+      } } : {}),
       processedAgea: model.manifest?.dataset.id === 'agea'
         && model.manifest.provenance.recipe.id.includes('processed'),
     };
@@ -431,7 +514,17 @@ export class RegionalPanelController {
     else this.analysisDialog.show();
     this.syncAnalysisDisclosure();
     this.analysisClose.focus();
+    this.reportComparisonUse();
   };
+
+  private reportComparisonUse(): void {
+    const model = this.latestModel;
+    if (!this.analysisDialog.open || !model || model.featureLoading || model.featureError
+      || model.feature?.representation !== 'regional') return;
+    if (this.analysis.querySelectorAll('.regional-comparison__table tbody tr[data-region-id]').length >= 2) {
+      this.callbacks.comparisonUsed?.();
+    }
+  }
 
   private readonly closeAnalysis = (): void => {
     this.closeAnalysisAndRestoreFocus();

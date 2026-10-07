@@ -97,7 +97,11 @@ def test_site_rejects_external_or_private_dependencies(path):
         site_build.dependencies(value)
 
 
-def test_site_receipt_and_inventory_are_verified(tmp_path):
+@pytest.mark.parametrize("binary_path", [
+    "assets/allen-D5O5ctSJ.bin", "assets/beryl-CdsyXu44.bin", "assets/cosmos-test.bin",
+    "allen.bin", "assets/nested/allen.bin", "assets/allen.bin.exe",
+])
+def test_site_receipt_and_inventory_are_verified(tmp_path, binary_path):
     repo = RepositoryState("main", "a"*40, True)
     receipt = {"commit": repo.commit, "environment": build_environment(), "node": "v22.17.1", "config": config()}
     identity = hashlib.sha256(json_bytes(receipt)).hexdigest()[:32]
@@ -110,9 +114,20 @@ def test_site_receipt_and_inventory_are_verified(tmp_path):
     write_atlas_regions(tmp_path)
     (tmp_path / "assets").mkdir()
     (tmp_path / "assets/main.js").write_text("// test-only")
+    binary = tmp_path / binary_path
+    binary.parent.mkdir(parents=True, exist_ok=True)
+    binary.write_bytes(b"test-only navigation table")
     receipt["files"] = {p.relative_to(tmp_path).as_posix(): file_info(p) for p in tmp_path.rglob("*") if p.is_file()}
     (tmp_path / "_site.json").write_bytes(json_bytes(receipt))
+    if binary_path in {"allen.bin", "assets/nested/allen.bin", "assets/allen.bin.exe"}:
+        with pytest.raises(ValueError, match="unexpected site file"):
+            site_build.validate_site(tmp_path, repo)
+        return
     assert site_build.validate_site(tmp_path, repo)["build_id"] == identity
+    binary.write_bytes(b"altered navigation table")
+    with pytest.raises(ValueError, match="inventory"):
+        site_build.validate_site(tmp_path, repo)
+    binary.write_bytes(b"test-only navigation table")
     (tmp_path / "secret.txt").write_text("must not upload")
     with pytest.raises(ValueError, match="inventory"):
         site_build.validate_site(tmp_path, repo)

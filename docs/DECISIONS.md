@@ -89,8 +89,13 @@ only part of the body; the index states what remains effective.
 | D078 | Exact mapped volume-region distributions | accepted | 2026-09-17 | Allen/Beryl/Cosmos; mutually exclusive mappings; lateralized storage; bilateral default; source AGEA labels accepted; D079 later authorizes publication |
 | D079 | Publish D078 AGEA and W26 successors | accepted | 2026-09-17 | clean-Linux-main rebuilds; preserve existing releases; add immutable editions; deploy compatible site before catalog promotion |
 | D080 | Berlin as the neutral Auto palette | partially superseded | 2026-09-24 | D081 classifies Berlin as diverging and limits its Auto fallback to representations with a finite declared center; manual Berlin remains available without one; Q16 unchanged |
-| D081 | Separate color mapping from distribution scale | accepted | 2026-09-29 | Auto precedence, manual palette persistence, range-only Reset, and URL-persisted pseudo-log color mapping; exact histograms remain on their distribution axis; supersedes conflicting D050/D057/D080 presentation rules; D082 adds quantile color mappings |
-| D082 | Quantile color mappings | accepted | 2026-10-01 | Quantile uniform and Quantile Gaussian join D081's color mapping; browser-derived rank maps from the colored regional statistic or valid-voxel binnings; histograms, axis, and release bytes unchanged |
+| D081 | Separate color mapping from distribution scale | accepted | 2026-09-29 | Auto precedence, manual palette persistence, range-only Reset, and URL-persisted pseudo-log color mapping; exact histograms remain on their distribution axis; supersedes conflicting D050/D057/D080 presentation rules; D087 adds quantile color mappings |
+| D082 | Replace region selection on plain click | partially superseded | 2026-10-05 | Ctrl/Cmd-click toggles membership; session-only Select multiple retained; D084 makes non-leaf tree rows expand/collapse |
+| D083 | Conservative Umami analytics | accepted | 2026-10-05 | one manual pageview plus six once-per-document capability events; production-only, sanitized metadata and no custom properties |
+| D084 | Parent rows navigate the region tree | accepted | 2026-10-05 | click and Enter/Space expand/collapse non-leaves; leaves retain selection; value rankings contain current-parcellation leaves |
+| D085 | Optional automatic region slice navigation | partially superseded | 2026-10-05 | default-on URL-persisted Auto-slice; D086 replaces nearest-plane search and checkbox; manual movement cancels lookup |
+| D086 | Compact region controls and interior Auto-slice | accepted | 2026-10-05 | icon toggles with tooltips; pinned native interior anchors nearest signed mapped centroids, gated against sparse display coverage |
+| D087 | Quantile color mappings | accepted | 2026-10-01 | Quantile uniform and Quantile Gaussian join D081's color mapping; browser-derived rank maps from the colored regional statistic or valid-voxel binnings; histograms, axis, and release bytes unchanged |
 
 ## D001 — Separate v2
 
@@ -2054,7 +2059,119 @@ population counts, and selected distribution-axis behavior; this decision
 supersedes only the assumption that the distribution axis must always control
 color mapping.
 
-## D082 — Add quantile color mappings
+## D082 — Replace region selection on plain click
+
+Prioritize sequential region exploration: plain clicks select only the clicked
+region, replacing the existing selection. Clicking the sole selected region
+keeps it selected. Ctrl-click (Cmd-click on Mac) toggles membership without
+clearing other regions. Apply this consistently to the region list, registered
+slices, Top/Swanson and optional 3-D, using the existing shared logical IDs and
+selection actions.
+
+Expose a visible **Select multiple** checkbox in Regions, with a concise
+modifier-click hint. This session-only mode toggles regions without modifiers
+across every selection surface, including touch and Enter/Space activation.
+Keyboard modifiers must be retained during region activation. Arrow-key
+navigation does not select. Keep explicit clear/remove controls and first-
+selection ordering. Selected IDs remain URL-persisted; the interaction mode
+resets on reload and does not change scientific data or coordinate contracts.
+
+## D083 — Conservative Umami analytics
+
+Use the owner's Umami Cloud website to measure capability adoption on the
+production site. Send one manual pageview for `/` or `/app/` and at most one
+each of `data_loaded`, `exploration_started`, `comparison_used`,
+`share_copied`, `download_started` and `local_imported` per viewer document.
+The counting unit is a page load, not an identified user or Umami session.
+Reloads and additional tabs count again; retained documents retain their limits.
+
+Disable automatic tracking and load the script only in production builds on
+the exact HTTPS production hostname. Use explicit sanitized payloads with fixed
+routes/titles, source referrers without private paths, and no query/hash state,
+custom properties, local identifiers, filenames, search text or error messages.
+Do not identify users or persist analytics queues. Respect tracker opt-outs.
+Analytics failures must not block exploration, imports, sharing or downloads.
+
+Data availability does not claim first-frame rendering. Comparison use requires
+an open regional comparison with at least two rendered region rows. Sharing
+requires successful clipboard copying; downloads measure initiation; imports
+measure successful validated storage. Automatic defaults, URL hydration,
+reconciliation and retries are not deliberate exploration. Defer additional
+events and campaign attribution until there is a concrete measurement need.
+See [analytics contract and verification](frontend/ANALYTICS.md).
+
+## D084 — Parent rows navigate the region tree
+
+In Regions, clicking a non-leaf row or pressing Enter/Space expands or collapses
+its children, matching the existing chevron. This includes hierarchy-only
+containers. Modifiers and Select multiple do not turn parent activation into
+selection. Leaf mapping members retain D082's replace/toggle behavior; arrow
+navigation and branch state remain unchanged.
+
+Determine non-leaf status from the complete current-parcellation hierarchy,
+independent of search matches or collapsed descendants. Value ordering remains
+a flat ranking of mapping-member leaves, so sorting cannot make an anatomical
+parent selectable. Search retains its existing visibility behavior through
+collapsed ancestors. Parent expansion is navigation, not the D083 exploration
+event.
+
+This supersedes D082 only for activation of non-leaf rows in Regions. It does
+not alter scientific mapping membership, feature aggregation, brain-view
+selection or URL-restored selection; existing selected parents remain
+removable using the selection controls. No automatic selection of descendants
+or parcellation change is introduced.
+
+## D085 — Optional automatic region slice navigation
+
+Selecting a region moves the linked coronal, sagittal and horizontal slices to
+show that region when **Auto-slice** is enabled. Default it on and expose the
+checkbox in Regions with a visible hint explaining how to keep slices fixed;
+include the setting in URL-v4 state and both representation tours. Switching
+it on affects subsequent selections, without changing restored coordinates.
+
+Find the nearest existing display plane containing the logical mapped region
+in each projection using verified registered SVG path identities. Keep a native
+coordinate when its current display plane already contains the region. Resolve
+equal-distance ties to the lower index. The three resulting native coordinates
+update the one shared cursor atomically; this is a visibility aid, not a
+scientific centroid or a guarantee that the crosshair lies inside the region.
+Never use feature values, static-map coordinates or optional 3-D centroids.
+
+Cache small presence sets for inspected slices, reuse existing verified pack
+transport and bounded decoded caches, and scan at most one plane per projection
+concurrently. Missing coverage in any projection leaves all slices fixed with
+an explicit explanation. Lookup failures offer retry by reselecting the region.
+Subsequent selections, manual navigation, disabling the setting, context
+changes, history restoration and teardown cancel pending work. Deselection,
+branch expansion and URL hydration do not trigger automatic movement. Existing
+immutable packs and scientific grid contracts remain unchanged.
+
+## D086 — Compact region controls and interior Auto-slice
+
+Replace D085’s checkbox/hint rows and D082’s multiple-selection checkbox with
+compact icon buttons alongside fold/unfold. Use stable accessible names,
+`aria-pressed`, active styling and state-aware tooltips on hover/focus; Escape
+dismisses the tooltip. Keep pending lookup announcements accessible without
+adding a toolbar row, and expose errors visibly.
+
+Replace independent nearest-visible-plane searches with one native 10 µm
+interior point nearest the centroid of all occupied voxels of the exact signed
+mapped region. A candidate must remain in that same region at the crosshair on
+each snapped sparse display plane, and the region identity must exist in each
+verified SVG fragment. Resolve equal distances by AP, then ML, then DV. Commit
+the three coordinates atomically. This is a navigation aid, not a scientific
+feature statistic. Preserve hemisphere identity and current parcellation.
+
+Generate a small immutable navigation companion with the pinned bilateral LUT,
+signed atlas catalog and existing projection pack. Bind it to the exact pack
+manifest SHA-256, reference space, native grid and affine; verify binary bytes
+before decoding. Keep existing geometry and scientific releases immutable.
+Hierarchy-only rows without native voxels and regions without a display-eligible
+interior point return unavailable and keep slices fixed with an explanation.
+Retain D085’s default, URL persistence, cancellation and hydration behavior.
+See [region navigation](rendering/REGION_NAVIGATION.md) for generation and evidence.
+
+## D087 — Add quantile color mappings
 
 On 2026-10-01 the repository owner reviewed a local prototype against real
 channel and encoding-volume releases and accepted two further D081 color
@@ -2082,4 +2199,3 @@ than two distinct finite values exist, colors fall back to the distribution
 axis. This is presentation state only: it changes no immutable release bytes,
 estimates no scientific threshold, and does not resolve Q16. A future
 release-owned quantile table would need its own decision and schema change.
-

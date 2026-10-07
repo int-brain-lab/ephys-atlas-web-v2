@@ -20,7 +20,7 @@ export interface ResolvedPresentationScale {
   readonly automaticScale: ColorScale;
   readonly effectiveScale: ColorScale;
   readonly effectiveScaleSpec: ScaleSpec;
-  /** D082 knots for the selected quantile color mapping, if any. */
+  /** D087 knots for the selected quantile color mapping, if any. */
   readonly colorQuantiles: QuantileScaleSpec | undefined;
   /** Exact analytical binning selected by both value scale and domain. */
   readonly histogram: DistributionBinning | undefined;

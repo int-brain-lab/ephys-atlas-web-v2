@@ -1,7 +1,10 @@
+import type { RegionNavigationAssets } from './region-navigation-source.js';
+import type { ParcellationId } from '../domain/types.js';
+import { registeredVolumeCanvasPlacement, type RegisteredVolumeCanvasPlacement } from './registered-volume-placement.js';
+import { rgbaForSlice } from './volume-slice-colors.js';
 import type { EffectiveColoringState, SliceAxis } from '../domain/types.js';
-import { scaleDomainIsValid } from '../domain/scale-spec.js';
 import type { VolumeFeaturePayload } from '../data/contracts.js';
-import { applyAffine, cursorStateToWorld, worldToPlane, type Matrix4, type ViewBox } from './coordinate-space.js';
+import { cursorStateToWorld } from './coordinate-space.js';
 import { regionalPresentationColors, regionalPresentationIds } from '../application/regional-presentation.js';
 import { SvgSliceRenderer } from './svg-slice-renderer.js';
 import type { RegionalSliceFrame, SliceRegionPointerEvent } from './types.js';
@@ -16,8 +19,6 @@ import { VolumeValiditySliceSource } from './volume-validity-source.js';
 import { RecentVolumeSources } from './recent-volume-sources.js';
 import { RetainedStaticProjectionViewport } from './static-projection-viewport.js';
 import { VolumeSliceLoader, type VolumeSlice, type VolumeSliceSource } from './volume.js';
-import { paletteRgb } from '../application/colormap-palettes.js';
-import { effectiveScalarColorRange, scalarColorNormalize } from '../application/scalar-colormap.js';
 import { regionIdFromPath } from './region-id.js';
 import {
   ProjectionPackSource,
@@ -28,7 +29,6 @@ import {
 import {
   assertCompatibleReferenceSpace,
   inspectVolumePlanePoint,
-  volumeValueIsVisible,
 } from './volume-inspection.js';
 
 import type {
@@ -68,69 +68,6 @@ interface RetainedMount {
   readonly error: HTMLDivElement;
 }
 
-export interface RegisteredVolumeCanvasPlacement {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-  readonly flipX: boolean;
-  readonly flipY: boolean;
-  readonly viewBox: ViewBox;
-}
-
-function volumeIndexToPlane(
-  feature: VolumeFeaturePayload,
-  registration: RegisteredProjectionRegistration,
-  index: readonly [number, number, number],
-) {
-  const affine = feature.descriptor.grid.indexToWorldUm;
-  if (affine.length !== 16) throw new Error('volume index_to_world_um must contain 16 values');
-  const [ml, ap, dv] = applyAffine(affine as Matrix4, index);
-  return worldToPlane(registration.worldToPlaneIndex, { ml, ap, dv });
-}
-
-/** Position a raw nearest-neighbor plane inside the registered anatomy viewBox. */
-export function registeredVolumeCanvasPlacement(
-  feature: VolumeFeaturePayload,
-  slice: VolumeSlice,
-  registration: RegisteredProjectionRegistration,
-): RegisteredVolumeCanvasPlacement {
-  assertCompatibleReferenceSpace(registration, feature);
-  if (slice.axis !== registration.axis) throw new Error('volume plane and projection axes differ');
-  const fixed = volumeAxisDimension(feature, slice.axis);
-  const width = volumeAxisDimension(feature, slice.widthAxis);
-  const height = volumeAxisDimension(feature, slice.heightAxis);
-  if (new Set([fixed, width, height]).size !== 3) throw new Error('volume plane axes are not independent');
-  const corner = (rawWidth: number, rawHeight: number) => {
-    const index = [0, 0, 0] as [number, number, number];
-    index[fixed] = slice.index;
-    index[width] = rawWidth;
-    index[height] = rawHeight;
-    return volumeIndexToPlane(feature, registration, index);
-  };
-  const low = corner(-0.5, -0.5);
-  const right = corner(slice.width - 0.5, -0.5);
-  const down = corner(-0.5, slice.height - 0.5);
-  const diagonal = corner(slice.width - 0.5, slice.height - 0.5);
-  const epsilon = 1e-7;
-  if (Math.abs(right.v - low.v) > epsilon || Math.abs(down.u - low.u) > epsilon) {
-    throw new Error('volume grid is not axis-aligned with the registered projection');
-  }
-  const x = Math.min(low.u, right.u, down.u, diagonal.u);
-  const y = Math.min(low.v, right.v, down.v, diagonal.v);
-  const projectedWidth = Math.max(low.u, right.u, down.u, diagonal.u) - x;
-  const projectedHeight = Math.max(low.v, right.v, down.v, diagonal.v) - y;
-  if (!(projectedWidth > 0 && projectedHeight > 0)) throw new Error('volume plane has an empty projected extent');
-  return {
-    x,
-    y,
-    width: projectedWidth,
-    height: projectedHeight,
-    flipX: right.u < low.u,
-    flipY: down.v < low.v,
-    viewBox: registration.viewBox,
-  };
-}
 
 const DEFAULT_PRESENTATION: ProjectionPresentation = {
   regional: {
@@ -151,46 +88,6 @@ const DEFAULT_PRESENTATION: ProjectionPresentation = {
   anatomyOutlines: true,
   anatomyColors: false,
 };
-
-function finiteRange(values: Float32Array): readonly [number, number] | null {
-  let min = Infinity;
-  let max = -Infinity;
-  for (const value of values) {
-    if (!Number.isFinite(value)) continue;
-    min = Math.min(min, value);
-    max = Math.max(max, value);
-  }
-  if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
-  return max > min ? [min, max] : [min, min + 1];
-}
-
-function rgbaForSlice(
-  feature: VolumeFeaturePayload,
-  slice: VolumeSlice,
-  coloring: EffectiveColoringState,
-): Uint8ClampedArray {
-  const range = effectiveScalarColorRange(feature, coloring) ?? finiteRange(slice.data);
-  const rgba = new Uint8ClampedArray(slice.data.length * 4);
-  if (!range) return rgba;
-  const [min, max] = range;
-  if (!scaleDomainIsValid(range, coloring.scale)) return rgba;
-  for (let index = 0; index < slice.data.length; index += 1) {
-    const value = slice.data[index]!;
-    const offset = index * 4;
-    if (!volumeValueIsVisible(feature, value, slice.validity?.[index])) continue;
-    const normalized = scalarColorNormalize(
-      value, [min, max], coloring.scale, coloring.colormap, coloring.divergingCenter,
-      coloring.colorMapping, coloring.pseudoLogStrength, coloring.colorQuantiles,
-    );
-    if (normalized === null) continue;
-    const [r, g, b] = paletteRgb(coloring.colormap, normalized);
-    rgba[offset] = r;
-    rgba[offset + 1] = g;
-    rgba[offset + 2] = b;
-    rgba[offset + 3] = 255;
-  }
-  return rgba;
-}
 
 function regionalFrame(
   model: ProjectionRenderModel,
@@ -650,7 +547,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
       projectionId: this.axis,
       sliceIndex: this.requestedIndex,
     };
-    if (event.type === 'select') sink.toggleSelection(hit);
+    if (event.type === 'select') sink.selectRegion(hit, event.originalEvent.ctrlKey || event.originalEvent.metaKey);
     else if (event.type === 'hover') sink.hover(hit);
     else if (this.mount.root.dataset.mode !== 'composite') sink.inspect({
       ...hit,
@@ -761,6 +658,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
 
 export interface RetainedProjectionViewportFactoryOptions {
   readonly projectionPackUrl?: string;
+  readonly regionNavigation?: RegionNavigationAssets;
   readonly fetchImpl?: typeof fetch;
   readonly maxDecodedBytes?: number;
   readonly maxVolumeDecodedBytes?: number;
@@ -811,10 +709,15 @@ export class RetainedProjectionViewportFactory implements ProjectionViewportFact
       if (!options.projectionPackUrl) throw new Error('projectionPackUrl is required without a test source');
       this.source = new ProjectionPackSource({
         manifestUrl: options.projectionPackUrl,
+        ...(options.regionNavigation ? { regionNavigation: options.regionNavigation } : {}),
         ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
         ...(options.maxDecodedBytes ? { maxDecodedBytes: options.maxDecodedBytes } : {}),
       });
     }
+  }
+
+  locateRegionSlices(regionId: string, mapping: ParcellationId, signal: AbortSignal) {
+    return this.source.locateRegionAnchor?.(regionId, mapping, signal) ?? Promise.resolve(null);
   }
 
   create(target: HTMLElement, axis: SliceAxis): ProjectionViewport {

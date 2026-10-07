@@ -100,6 +100,77 @@ test('3-D picking returns signed IDs and a camera drag does not select', async (
   await expect(page.locator('#diagnostics')).toHaveText('');
 });
 
+test('3-D hover keeps picking during sustained pointer movement', async ({ page }) => {
+  await page.goto('/3d-lab/');
+  const scene = page.locator('#scene');
+  const canvas = scene.locator('canvas');
+  await expect(scene).toHaveAttribute('data-scene3d-state', 'ready');
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+
+  const duringMovement = await canvas.evaluate(async (element) => {
+    const bounds = element.getBoundingClientRect();
+    const dispatch = (step: number) => {
+      // Stay near the known center hit while moving continuously across it.
+      const offset = step % 2 === 0 ? -.01 : .01;
+      element.dispatchEvent(new PointerEvent('pointermove', {
+        bubbles: true,
+        clientX: bounds.left + bounds.width * (.5 + offset),
+        clientY: bounds.top + bounds.height * .5,
+      }));
+    };
+    element.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true }));
+    const pickCountBefore = Number(element.parentElement!.getAttribute('data-pick-count'));
+    let step = 0;
+    dispatch(step++);
+    const interval = window.setInterval(() => dispatch(step++), 16);
+    await new Promise((resolve) => window.setTimeout(resolve, 110));
+    const sample = {
+      pickCount: Number(element.parentElement!.getAttribute('data-pick-count')),
+      pointerType: element.parentElement!.getAttribute('data-last-pointer-type'),
+      regionId: element.parentElement!.getAttribute('data-last-region-id'),
+    };
+    window.clearInterval(interval);
+    return { pickCountBefore, ...sample };
+  });
+
+  expect(duringMovement.pickCount).toBeGreaterThan(duringMovement.pickCountBefore);
+  expect(duringMovement.pointerType).toBe('hover');
+  expect(duringMovement.regionId).not.toBe('');
+});
+
+test('3-D pointer leave cancels a pending hover pick', async ({ page }) => {
+  await page.goto('/3d-lab/');
+  const scene = page.locator('#scene');
+  const canvas = scene.locator('canvas');
+  await expect(scene).toHaveAttribute('data-scene3d-state', 'ready');
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  await page.mouse.move(box!.x + box!.width * .5, box!.y + box!.height * .5);
+  await expect(scene).toHaveAttribute('data-last-pointer-type', 'hover');
+
+  const afterLeave = await canvas.evaluate(async (element) => {
+    const bounds = element.getBoundingClientRect();
+    const parent = element.parentElement!;
+    const pickCountBefore = Number(parent.getAttribute('data-pick-count'));
+    element.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true,
+      clientX: bounds.left + bounds.width * .5,
+      clientY: bounds.top + bounds.height * .5,
+    }));
+    element.dispatchEvent(new PointerEvent('pointerleave', { bubbles: true }));
+    await new Promise((resolve) => window.setTimeout(resolve, 70));
+    return {
+      pickCountBefore,
+      pickCount: Number(parent.getAttribute('data-pick-count')),
+      pointerType: parent.getAttribute('data-last-pointer-type'),
+    };
+  });
+
+  expect(afterLeave.pickCount).toBe(afterLeave.pickCountBefore);
+  expect(afterLeave.pointerType).toBe('leave');
+});
+
 test('a failed upgrade retains the default LOD and destruction releases viewport ownership', async ({ page }) => {
   await page.goto('/app/');
   await expect(page.locator('.atlas-app')).toBeVisible();

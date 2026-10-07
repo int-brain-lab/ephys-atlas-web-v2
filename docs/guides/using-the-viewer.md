@@ -55,10 +55,15 @@ workspace. On desktop, the Regions and Settings panes can be collapsed with
 
 ## Inspect regional data
 
-Hover over a brain region to inspect its name and current value. Select a
-region from a brain view or the Regions pane to add it to the shared
-comparison. Selection is synchronized across the regional views and preserved
-in the share URL.
+Hover over a brain region to inspect its name and current value. Click a
+region in a brain view or the Regions pane to select only that region.
+Ctrl-click (Cmd-click on Mac) adds or removes a region from the comparison.
+For touch or keyboard use, enable **Select multiple** in the Regions pane to
+toggle regions without a modifier; turn it off to return to single selection.
+Clicking the sole selected region keeps it selected; **Clear selection** removes
+all selections. Selection is synchronized across the 2-D and optional 3-D
+views and preserved in the share URL. The multiple-selection mode lasts only
+for the current viewer session.
 
 The selected statistic determines which release-provided summary is shown.
 Missing values remain missing rather than being interpreted as zero. The

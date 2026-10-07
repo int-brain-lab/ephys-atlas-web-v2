@@ -66,7 +66,7 @@ test('retained viewport shares region identity, guides, presentation, and intera
         });
       },
       inspect: () => undefined,
-      toggleSelection: (hit) => { target.dataset.hit = hit.regionId; },
+      selectRegion: (hit) => { target.dataset.hit = hit.regionId; },
       stepSlice: () => undefined,
       moveCursor: () => undefined,
       reportError: () => undefined,

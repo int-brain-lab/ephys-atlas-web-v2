@@ -1,107 +1,138 @@
 # IBL Ephys Atlas Web v2
 
-IBL Ephys Atlas Web v2 builds provenance-rich scientific datasets into
-immutable schema-v1 releases and explores them through a static-read browser
-application. The viewer provides linked coronal, sagittal, and horizontal
-slices, Top and Swanson regional maps, dynamic feature discovery, regional
-statistics and comparisons, encoding-volume slices, downloads, shareable URL
-state, and validated local ZIP import. The frontend is strict TypeScript with
-Vite and plain DOM code; scientific builders and publishing tools are Python.
+Explore mouse-brain electrophysiology in the [live viewer](https://ephys-atlas.iblcore.org/app/).
+The application provides linked coronal, sagittal, and horizontal slices,
+Top and Swanson regional maps, an optional 3-D anatomy view, searchable
+features and regions, descriptive statistics and distributions, downloads,
+shareable views, and validated browser-local ZIP import.
 
-The product is pre-launch. Current real artifacts are validated locally, not
-published production releases. The channel snapshot is not the unresolved Q2
-paper selection, the W26 volume is still a Q5 transport candidate, and no
-paper default has been selected. The production hostname and private S3 origin
-are provisioned; staging delivery and release publication remain incomplete.
+Start with [Use the viewer](docs/guides/using-the-viewer.md) and
+[Understand parcellations](docs/guides/parcellations.md). To create your own
+regional or volume dataset, follow the
+[custom-data tutorial](docs/data/CUSTOM_DATA_TUTORIAL.md).
 
-## Quick start
+Scientific builders produce immutable, provenance-rich schema-v1 releases.
+Public exploration reads static data without authentication; transformation
+happens before publication. The frontend uses strict TypeScript, Vite and plain
+DOM code; the builders, authoring API and publishing tools use Python.
 
-Prerequisites are `uv` 0.12 or newer, Node 22, and `just`. Repository Python
-3.12 environments and dependencies come only from committed uv lockfiles.
+## Current status
+
+The initial IBL review website is deployed with Ephys Atlas channels, clusters
+and volumes, Brain-Wide Map, AGEA, and the approved native 3-D anatomy. Processed
+AGEA and the W26 regional-distribution successor were published under D079;
+see the [deployment record](docs/publishing/REGIONAL_DISTRIBUTION_DEPLOYMENT_20260917.md).
+
+The final paper snapshot/defaults and broader launch QA remain separate work.
+Q5's volume storage choice and Q8's origin/access choice are resolved. Use the
+[implementation plan](docs/IMPLEMENTATION_PLAN.md),
+[open questions](docs/OPEN_QUESTIONS.md) and
+[resolved-question index](docs/RESOLVED_QUESTIONS.md) for their current scope.
+Local preview and candidate releases keep their original maturity labels even
+when a separately built successor has been published.
+
+## Development setup
+
+Run commands from the repository root. Install `uv` 0.12 or newer, Node 22 and
+`just`. Bootstrap installs Python 3.12 and dependencies through the committed
+uv locks, Node dependencies through `npm ci`, and Playwright Chromium.
 
 ```bash
 just bootstrap
+just check
+```
+
+The full gate uses deterministic synthetic fixtures and does not require the
+ignored real-data bundle. It checks documentation, Python, strict TypeScript,
+unit/rendering tests, the production build, browser behavior and documentation
+screenshots. Synthetic fixtures are test inputs and never runtime substitutes
+for scientific data.
+
+### Preview the reviewed local data
+
+`just dev` uses the pinned
+[development bundle v5](data/development-bundle-v5.json). Its real artifacts
+live in ignored local directories and must be available at the exact declared
+paths. The descriptor's source URLs remain unresolved, so a fresh checkout
+cannot currently download this bundle. A new descriptor pointing to published
+immutable HTTPS releases is planned; the historical descriptor will retain
+its identities and preview labels.
+
+Once those reviewed artifacts are available locally:
+
+```bash
 just data
 just dev
 ```
 
-When the ignored local artifacts are staged, open <http://localhost:5173/>
-for the landing page or <http://localhost:5173/app/> for the viewer after Vite
-starts. `just data` synchronizes every descriptor artifact against
-the pinned [`development-bundle-v5.json`](data/development-bundle-v5.json),
-then runs full validation of root hashes, immutable identities, and complete
-file graphs. Already-valid artifacts are reused without a network request. A
-missing artifact with a resolved descriptor source downloads into bounded
-staging and is installed atomically only after encoded-byte integrity and the
-complete existing graph validator pass.
+`just data` reuses valid local bytes and validates every available artifact's
+complete graph. It can atomically download missing artifacts when a descriptor
+provides resolved HTTPS sources; unresolved required artifacts produce an
+explicit error. `just dev` validates without downloading, derives the local
+catalog and starts Vite. Open <http://localhost:5173/> for the landing page or
+<http://localhost:5173/app/> for the viewer, using the port printed by Vite.
 
-The complete local corpus validated in the current integration workspace is
-1,376,287,351 bytes across channels, clusters, Brain-Wide Map, the W26 volume
-candidate, the AGEA preview, the five-view projection pack, and the D070-approved
-Native mesh pack. Its v5 descriptor still records unresolved sources because Q8 has not supplied an
-authorized immutable origin. In a fresh checkout, `just data` therefore gives
-an actionable error for each missing unresolved launch-critical artifact, and `just dev` stops
-before startup. Development startup is read-only: it validates local bytes but
-does not download, publish, or fall back to synthetic data, an older release,
-or a mutable alias. An absent optional artifact is reported without blocking
-the launch-critical 2-D corpus; a corrupt artifact that is present still fails
-closed. D042 remains available through a separate rollback descriptor. Exact
-source/review bytes and approved Native anatomy are preserved locally;
-Q8 is only the remaining blocker to distributing their immutable browser-ready
-outputs through this path.
+Missing or corrupt required artifacts stop startup. An absent optional artifact
+does not block 2-D exploration; a corrupt artifact that is present fails
+validation. The [local-development runbook](docs/data/LOCAL_DEVELOPMENT_BUNDLE.md)
+records exact identities, integrity checks and the explicit D042 3-D rollback.
 
 ## Main commands
 
 | Command | Purpose |
 | --- | --- |
-| `just bootstrap` | Install locked Python, Node, and Chromium dependencies. |
-| `just data` | Reuse or atomically obtain descriptor-pinned artifacts, then validate the complete local graph. |
-| `just dev` | Read-only validation, local catalog derivation, and Vite startup. |
-| `just data-refresh-local` | Pull channel/cluster `latest`, then require it to match the reviewed immutable sources. |
-| `just dev-latest` | Safe local refresh followed by Vite startup. |
-| `just check` | Run the complete local CI-equivalent gate. |
-| `just docs-serve` | Preview the strict local documentation site. |
+| `just bootstrap` | Install locked Python, Node and Chromium dependencies. |
+| `just data` | Reuse or obtain descriptor-pinned artifacts and validate their graphs. |
+| `just dev` | Validate the local bundle, derive its catalog and start Vite. |
+| `just data-refresh-local` | Refresh channel/cluster source aliases; stop if they differ from reviewed inputs. |
+| `just dev-latest` | Perform that reviewed-source check, then start the viewer. |
+| `just test-python` | Run builder and publishing tests. |
+| `just test-web` | Run TypeScript, unit/rendering tests and the production build. |
+| `just test-browser` | Run the Chromium browser suite. |
+| `just check` | Run the full local completion gate. |
+| `just docs-serve` | Preview the local documentation site. |
 
-macOS is the fast development/preview host. Production releases are rebuilt,
-preflighted, and published only from clean Linux `main`; run
-`just production-release-preflight <release...>` before publication.
+Use `just --list` for dataset builders, validation, benchmarks and focused
+acceptance commands. Linux generates and checks canonical screenshot pixels;
+macOS runs semantic browser tests and skips those pixel comparisons.
 
-Dataset-specific builders, benchmarks, and focused acceptance recipes remain
-available through `just --list`; they are diagnostic and production workflows,
-not alternate interactive viewer entry points.
+## Publication and deployment
+
+Linux is the canonical scientific build, preflight and publication host.
+macOS supports development and local previews. Before publishing scientific
+releases, build on clean `main` and run
+`just production-release-preflight <release...>`.
+The [local-publisher runbook](docs/publishing/LOCAL_PUBLISHER.md) describes
+validation, immutable uploads and catalog-last promotion.
+
+The [CI workflow](.github/workflows/ci.yml) runs Python and web checks. A
+successful push to `main` or manual workflow dispatch also publishes the website
+when the production AWS role is configured. Site deployment is separate from
+scientific release publication. The MkDocs site is built locally and in CI;
+its build command does not deploy it.
 
 ## Repository map
 
-- `builder/` — deterministic scientific builders, schema validation, and public
-  Python authoring API;
-- `web/` — framework-free TypeScript viewer, data layer, rendering, UI, and
-  browser tests;
-- `publishing/` — capability-authorized staging and publication service;
-- `schema/v1/` — the sole implemented producer/consumer release contract;
-- `fixtures/` — deterministic synthetic contract and browser fixtures;
-- `data/` — committed bundle descriptors plus ignored local source/release
-  storage;
-- `docs/` — product authority, decisions, scientific recipes, evidence, and
-  operational runbooks.
+| Path | Responsibility |
+| --- | --- |
+| `builder/` | Scientific builders, schema validation and the Python authoring API. |
+| `web/` | TypeScript viewer, data layer, rendering, UI and browser tests. |
+| `publishing/` | Local S3 publication tools and the optional capability-based service. |
+| `tools/` | Bundle, validation, documentation and deployment orchestration. |
+| `schema/v1/` | The sole implemented producer/consumer release contract. |
+| `fixtures/` | Deterministic synthetic contract and browser fixtures. |
+| `data/` | Committed descriptors/configuration and ignored local source/release storage. |
+| `docs/` | Product contracts, decisions, scientific recipes, evidence and runbooks. |
 
-## Authoritative documentation
+## Contributor reference
 
-- [`SYSTEM_OVERVIEW.md`](docs/SYSTEM_OVERVIEW.md) — system flow, boundaries, and
-  documentation authority map;
-- [`LAUNCH_SPEC.md`](docs/LAUNCH_SPEC.md) — launch acceptance criteria;
-- [`IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) — ordered incomplete
-  work;
-- [`OPEN_QUESTIONS.md`](docs/OPEN_QUESTIONS.md) — decisions an implementation
-  agent must not guess;
-- [`INTEGRATION_STATUS.md`](docs/INTEGRATION_STATUS.md) — implemented capability
-  and artifact maturity;
-- [`data/README.md`](docs/data/README.md) — scientific source, recipe, selection,
-  and evidence index;
-- [`LOCAL_DEVELOPMENT_BUNDLE.md`](docs/data/LOCAL_DEVELOPMENT_BUNDLE.md) — local
-  artifact identity, verification, download, and recovery plan.
+Begin with [AGENTS.md](AGENTS.md) and its required reading sequence. Work on
+`main`, preserve unrelated changes, implement a coherent slice, run targeted
+tests followed by `just check`, and update durable documentation before committing.
 
-Contributors and coding agents must begin with [`AGENTS.md`](AGENTS.md), work on
-`main`, preserve unrelated changes, implement one coherent vertical slice, run
-targeted tests followed by `just check`, and update durable documentation when
-repository reality changes. Synthetic fixtures never stand in for scientific
-data, and unpublished or candidate artifacts must retain their maturity labels.
+- [System overview](docs/SYSTEM_OVERVIEW.md) — data flow and documentation authority.
+- [Launch specification](docs/LAUNCH_SPEC.md) — acceptance criteria.
+- [Integration status](docs/INTEGRATION_STATUS.md) — implemented behavior and maturity.
+- [Decisions](docs/DECISIONS.md) — accepted product and architecture choices.
+- [Scientific data index](docs/data/README.md) — sources, recipes, selections and evidence.
+- [Schema v1](schema/v1/README.md) — release format and invariants.

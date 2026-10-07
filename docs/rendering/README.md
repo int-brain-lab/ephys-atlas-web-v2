@@ -14,6 +14,7 @@ anatomy-pack documents remain derivation and reproducibility authorities.
 | Retained 2-D application boundary and completed cutover | D031/D035 and [`PROJECTION_VOLUME_CUTOVER_PLAN.md`](PROJECTION_VOLUME_CUTOVER_PLAN.md) |
 | Registered bilateral scientific geometry | [`BILATERAL_ANATOMY_PACKS.md`](BILATERAL_ANATOMY_PACKS.md) and D045 |
 | Sparse registered display derivation | [`ANATOMY_PACK_V3_CONTRACT.md`](ANATOMY_PACK_V3_CONTRACT.md) |
+| Optional region centering | D086 and [`REGION_NAVIGATION.md`](REGION_NAVIGATION.md) |
 | Five-view browser projection pack | schema v1, D034, and projection-pack tooling/tests |
 | Volume layers and transport-neutral slice source | [`VOLUME_ARCHITECTURE.md`](VOLUME_ARCHITECTURE.md), D036, and Q5 |
 | Static Top/Swanson sources | D049 and `LICENSES/IBL-EPHYS-ATLAS-V1-STATIC-ASSETS-MIT.txt` |
@@ -21,6 +22,7 @@ anatomy-pack documents remain derivation and reproducibility authorities.
 | Native 3-D component candidate | D066/D068 and [active task handoff](../tasks/2026-09-02-native-3d-mesh-components/README.md) |
 | Optional 3-D application integration | D037 and [`3D_INTEGRATION_PLAN.md`](3D_INTEGRATION_PLAN.md) |
 | Optional 3-D transparency | [`3D_TRANSPARENCY.md`](3D_TRANSPARENCY.md) |
+| Optional 3-D picking and hover scheduling | [`3D_PICKING.md`](3D_PICKING.md) |
 | Cross-repository asset boundary | [`SHARED_ATLAS_ASSET_EXTRACTION.md`](SHARED_ATLAS_ASSET_EXTRACTION.md) |
 
 ## Document roles

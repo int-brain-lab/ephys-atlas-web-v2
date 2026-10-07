@@ -78,6 +78,8 @@ test('volume summary and exact valid-voxel distribution reuse the loaded summary
   await expect(distribution.locator('.distribution-chart__bin')).toHaveCount(8);
   await expect(distribution.locator('.distribution-chart__global')).toHaveAttribute('data-total', '191');
   await expect(distribution.locator('.distribution-chart__region')).toHaveCount(0);
+  await expect(distribution.locator('.distribution-chart__context')).toContainText('This release has no regional histograms');
+  await expect(distribution.locator('.distribution-chart__legend-item[data-region-id="-362"]')).toContainText('MD · This release has no regional histograms');
   const log = distribution.getByRole('button', { name: 'Log', exact: true });
   await expect(log).toBeEnabled();
   await expect(distribution.getByRole('button', { name: 'Signed log' })).toBeEnabled();
@@ -126,6 +128,8 @@ test('volume features expose and download their immutable declared artifacts', a
 });
 
 test('volume artifact integrity failures remain explicit and do not download corrupt bytes', async ({ page }) => {
+  const receivedDownloads: string[] = [];
+  page.on('download', (download) => receivedDownloads.push(download.suggestedFilename()));
   await page.route('**/features/rms_ap/rms_ap.csv', (route) => route.fulfill({
     status: 200,
     contentType: 'text/csv',
@@ -136,7 +140,9 @@ test('volume artifact integrity failures remain explicit and do not download cor
   await actions.getByRole('button', { name: 'Download' }).click();
   const downloads = page.getByRole('dialog', { name: 'Download feature data' });
   await downloads.getByRole('button', { name: /Human-readable regional fixture values/ }).click();
-  await expect(downloads.getByRole('alert')).toHaveText('Resource SHA-256 mismatch');
+  await expect(downloads.locator('.operation-status[data-state="error"] .operation-status__detail')).toHaveText('Resource SHA-256 mismatch');
+  await expect(downloads.getByRole('button', { name: 'Retry', exact: true })).toBeVisible();
+  expect(receivedDownloads).toEqual([]);
   await expect(downloads).toBeVisible();
 });
 
@@ -332,7 +338,7 @@ test('anatomy colours toggle and hold-A peek cover the volume without volume req
 });
 
 test('reduced-parcellation volume selection keeps the target vivid under a neutral veil', async ({ page }) => {
-  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&parcel=cosmos&cursor=25,25,25');
+  await page.goto('/app/?v=4&feature=rms_ap&repr=volume&parcel=cosmos&cursor=25,25,25&autoslice=0');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
   const projection = page.locator('[data-view="coronal"] .projection-viewport');
   const source = projection.locator('path[data-cosmos-id]').first();

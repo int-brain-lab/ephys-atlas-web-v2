@@ -98,3 +98,27 @@ test('repository propagates cancellation to source prefetch', async () => {
 
   assert.equal(receivedSignal, controller.signal);
 });
+
+test('repository forwards foreground feature cancellation to the selected source', async () => {
+  const published = source('published', 'ephys_atlas_channels');
+  const local = source('local', 'local');
+  let receivedSignal;
+  published.loadFeature = async (_ref, _featureId, _representation, _parcellation, signal) => {
+    receivedSignal = signal;
+    return { schemaVersion: '1.0', featureId: 'feature_a', representation: 'regional', parcellation: 'allen', regionIds: [], statistics: {} };
+  };
+  const repository = new DatasetRepository(published, local);
+  const controller = new AbortController();
+
+  await repository.loadFeature(
+    { datasetId: 'ephys_atlas_channels', releaseId: 'r1' },
+    'feature_a',
+    'regional',
+    'allen',
+    controller.signal,
+  );
+  controller.abort();
+
+  assert.equal(receivedSignal, controller.signal);
+  assert.equal(receivedSignal.aborted, true);
+});

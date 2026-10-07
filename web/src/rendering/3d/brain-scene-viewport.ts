@@ -6,6 +6,7 @@ import type { LoadedMeshLod, MeshPackSource } from './mesh-pack-source.js';
 import { StableArcballControls, type CameraInteractionPhase } from './stable-arcball-controls.js';
 import { meshPresentationAtMl, MESH_PRESENTATION_GLSL } from './mesh-presentation-boundary.js';
 import { WeightedTransparency, TRANSPARENCY_FRAGMENT } from './weighted-transparency.js';
+import { ComponentMeshPicker } from './component-mesh-picker.js';
 
 export type { BrainCameraPose, Scene3DViewState } from '../../domain/types.js';
 
@@ -53,7 +54,7 @@ const DEFAULT_PRESENTATION: RegionalPresentation = {
   visibleRegionIds: new Set(), selectedRegionIds: new Set(), highlightedRegionId: null, featureSide: null,
 };
 
-const HOVER_PICK_DELAY_MS = 75;
+const HOVER_PICK_INTERVAL_MS = 32;
 
 export class RetainedBrainScene3DViewportFactory implements BrainScene3DViewportFactory {
   private sink: BrainScene3DInteractionSink = {};
@@ -90,6 +91,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2();
   private meshes: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>[] = [];
+  private picking: ComponentMeshPicker | null = null;
   private manifest: MeshPackV1 | null = null;
   private presentation = DEFAULT_PRESENTATION;
   private state: Scene3DViewState = { explode: 0, camera: null };
@@ -182,6 +184,8 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     this.canvas.removeEventListener('dblclick', this.onDoubleClick);
     this.canvas.removeEventListener('webglcontextlost', this.onContextLost);
     this.canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
+    this.picking?.dispose();
+    this.picking = null;
     this.disposeMeshes(this.meshes);
     this.transparency?.dispose();
     this.renderer.dispose();
@@ -200,7 +204,6 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
       this.installLod(lod);
       this.frameCamera();
       if (this.state.camera) this.applyCamera(this.state.camera);
-      this.host.dataset.scene3dState = 'ready';
       this.host.dataset.lod = lod.id;
       this.scheduleRender();
       void this.loadUpgrade();
@@ -211,13 +214,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     try {
       const upgrade = await this.source.loadUpgrade(this.abort.signal);
       if (!upgrade || this.destroyed) return;
-      const previous = this.meshes;
-      const next = this.buildMeshes(upgrade);
-      this.meshes = next;
-      for (const mesh of previous) this.scene.remove(mesh);
-      for (const mesh of next) this.scene.add(mesh);
-      this.disposeMeshes(previous);
-      this.updateLookupTextures();
+      this.installLod(upgrade);
       this.host.dataset.lod = upgrade.id;
       this.scheduleRender();
     } catch (error) {
@@ -230,9 +227,14 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
 
   private installLod(lod: LoadedMeshLod): void {
     const next = this.buildMeshes(lod);
+    let picking: ComponentMeshPicker;
+    try { picking = new ComponentMeshPicker(next, lod.chunks); }
+    catch (error) { this.disposeMeshes(next); throw error; }
     for (const mesh of this.meshes) this.scene.remove(mesh);
+    this.picking?.dispose();
     this.disposeMeshes(this.meshes);
     this.meshes = next;
+    this.picking = picking;
     for (const mesh of next) this.scene.add(mesh);
     this.updateLookupTextures();
   }
@@ -283,12 +285,6 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
           fragmentShader: `uniform sampler2D uLookup; uniform float uLookupWidth; uniform float uThreshold; uniform float uOnPlaneLeft; varying vec3 vNormal; varying float vLeftPresentationId; varying float vRightPresentationId; varying float vOriginalMl; ${MESH_PRESENTATION_GLSL} ${TRANSPARENCY_FRAGMENT} void main(){ float presentationId=meshPresentationAtMl(vOriginalMl,vLeftPresentationId,vRightPresentationId); if(presentationId<0.) discard; vec4 vColor=texture2D(uLookup,vec2((presentationId+.5)/uLookupWidth,.5)); if(vColor.a<.01) discard; vec3 normal=normalize(vNormal)*(gl_FrontFacing?1.:-1.); float key=max(0.,dot(normal,normalize(vec3(-.55,.65,.75)))); float fill=max(0.,dot(normal,normalize(vec3(.65,-.15,.6)))); float light=.38+.68*key+.12*fill; gl_FragColor=transparencyOutput(vec4(vColor.rgb*light,vColor.a)); }`,
         });
         const mesh = new THREE.Mesh(geometry, material);
-        const baseGetVertexPosition = mesh.getVertexPosition.bind(mesh);
-        mesh.getVertexPosition = (index, target) => {
-          baseGetVertexPosition(index, target);
-          const offset = geometry.getAttribute('explodeOffset');
-          return target.addScaledVector(new THREE.Vector3(offset.getX(index), offset.getY(index), offset.getZ(index)), this.state.explode);
-        };
         this.geometryUploads += 1;
         this.host.dataset.geometryUploads = String(this.geometryUploads);
         meshes.push(mesh);
@@ -345,7 +341,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     const bounds = this.canvas.getBoundingClientRect();
     this.pointer.set(2 * (event.clientX - bounds.left) / Math.max(1, bounds.width) - 1, 1 - 2 * (event.clientY - bounds.top) / Math.max(1, bounds.height));
     this.raycaster.setFromCamera(this.pointer, this.camera);
-    for (const hit of this.raycaster.intersectObjects(this.meshes, false)) {
+    for (const hit of this.picking?.intersect(this.raycaster, this.state.explode) ?? []) {
       const mesh = hit.object as THREE.Mesh;
       const geometry = mesh.geometry;
       const left = geometry.getAttribute('leftPresentationId');
@@ -381,15 +377,17 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
   }
 
   private scheduleHoverPick(event: PointerEvent): void {
-    this.clearPendingHoverPick();
     this.pendingHoverEvent = event;
+    // Coalesce to the latest pointer without postponing an already scheduled
+    // pick. Continuous movement must receive feedback before it stops.
+    if (this.hoverPickTimer !== null) return;
     this.hoverPickTimer = window.setTimeout(() => {
       this.hoverPickTimer = null;
       const pending = this.pendingHoverEvent;
       this.pendingHoverEvent = null;
       if (!pending || !this.active || this.destroyed || this.cameraInteractionActive) return;
       this.updateHovered(this.pick(pending), pending);
-    }, HOVER_PICK_DELAY_MS);
+    }, HOVER_PICK_INTERVAL_MS);
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
@@ -423,7 +421,7 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     this.host.dataset.scene3dState = 'context-lost';
   };
   private readonly onContextRestored = (): void => {
-    this.host.dataset.scene3dState = 'ready';
+    this.host.dataset.scene3dState = 'loading';
     this.active = this.resumeAfterContextRestore;
     this.controls.enabled = this.active;
     this.scheduleRender();
@@ -489,7 +487,8 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
           this.renderer.render(this.scene, this.camera);
           this.host.dataset.transparency = 'opaque';
         }
-        if (this.renderFailed) {
+        // A decoded model is ready only once its first frame renders successfully.
+        if (this.meshes.length && (this.renderFailed || this.host.dataset.scene3dState === 'loading')) {
           this.renderFailed = false;
           this.host.dataset.scene3dState = 'ready';
           delete this.host.dataset.error;
