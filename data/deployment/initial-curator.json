@@ -89,27 +89,6 @@
       ]
     },
     {
-      "project_id": "brainwide-map",
-      "title": "Brain-Wide Map",
-      "dataset_ids": [
-        "brainwide_map"
-      ],
-      "default_dataset": "brainwide_map",
-      "default_edition": "ibl-review-20260908-v1",
-      "editions": [
-        {
-          "edition_id": "ibl-review-20260908-v1",
-          "label": "September 2026",
-          "dataset_releases": [
-            {
-              "dataset_id": "brainwide_map",
-              "release_id": "legacy-v1-1d908bea-ibl-review-20260908-v1"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "project_id": "genomics",
       "title": "Genomics",
       "dataset_ids": [
@@ -200,18 +179,6 @@
         {
           "release_id": "2026_W39-ibl-review-20261007-v1",
           "label": "2026 W39"
-        }
-      ]
-    },
-    {
-      "dataset_id": "brainwide_map",
-      "title": "Brain-Wide Map",
-      "default_release": "legacy-v1-1d908bea-ibl-review-20260908-v1",
-      "releases": [
-        {
-          "release_id": "legacy-v1-1d908bea-ibl-review-20260908-v1",
-          "label": "Legacy website snapshot",
-          "status": "legacy"
         }
       ]
     },
