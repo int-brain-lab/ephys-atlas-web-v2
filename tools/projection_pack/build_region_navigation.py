@@ -238,16 +238,31 @@ def build_navigation(
             shutil.rmtree(stage)
 
 
+def validate_deployment_inputs(projection_root: Path, regions_path: Path, config: dict) -> None:
+    """Bind generation to the exact served bytes selected for deployment."""
+    for role, path in (("projection", projection_root / "manifest.json"), ("atlas_regions", regions_path)):
+        raw = path.read_bytes()
+        descriptor = config[role]
+        if len(raw) != descriptor["bytes"] or hashlib.sha256(raw).hexdigest() != descriptor["sha256"]:
+            raise ValueError(f"navigation generation {role} differs from deployment descriptor")
+
+
 def main() -> None:
     from iblatlas.atlas import AllenAtlas
     root = Path(__file__).resolve().parents[2]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--label", type=Path, default=Path(AllenAtlas._get_cache_dir()) / "annotation_10_lut_bilateral_v02.npy")
     parser.add_argument("--parent-manifest", type=Path, default=root / "web/public/atlas/anatomy/allen-ccfv3-10um-bilateral-exact-599b5e0bbab1/manifest.json")
-    parser.add_argument("--projection-root", type=Path, default=root / "web/public/atlas/projections/ibl-static-registered-v1")
+    parser.add_argument("--projection-root", type=Path, required=True,
+                        help="Explicit verified target pack; never defaults to development geometry")
+    parser.add_argument("--site-config", type=Path,
+                        help="Require the target projection and signed mappings to match this deployment config")
     parser.add_argument("--regions", type=Path, default=root / "web/public/atlas/allen-ccf-2017/regions.json")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if args.site_config:
+        config = json.loads(args.site_config.read_bytes())
+        validate_deployment_inputs(args.projection_root, args.regions, config)
     build_navigation(label_path=args.label, parent_manifest=args.parent_manifest, projection_root=args.projection_root, regions_path=args.regions, output=args.output)
 
 

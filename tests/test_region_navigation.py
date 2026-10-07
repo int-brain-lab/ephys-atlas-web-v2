@@ -2,8 +2,21 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+import hashlib
 
-from tools.projection_pack.build_region_navigation import compute_anchors, nearest_indices
+from tools.projection_pack.build_region_navigation import compute_anchors, nearest_indices, validate_deployment_inputs
+
+
+def test_generation_checks_explicit_deployment_target_before_loading_native_lut(tmp_path):
+    (tmp_path / "manifest.json").write_bytes(b"projection")
+    regions = tmp_path / "regions.json"
+    regions.write_bytes(b"regions")
+    descriptor = lambda raw: {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+    config = {"projection": descriptor(b"projection"), "atlas_regions": descriptor(b"regions")}
+    validate_deployment_inputs(tmp_path, regions, config)
+    config["projection"] = descriptor(b"other projection")
+    with pytest.raises(ValueError, match="projection differs"):
+        validate_deployment_inputs(tmp_path, regions, config)
 
 
 def fixture(label, inventories=None):
