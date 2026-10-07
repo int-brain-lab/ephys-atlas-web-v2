@@ -185,3 +185,27 @@ test('dark anatomy presentation tones down only near-white neutral atlas colors'
   const regions = [{ id: '-1009', atlasId: -1009, index: 0, acronym: 'fiber tracts', name: 'fiber tracts', colorHex: '#cccccc' }];
   assert.deepEqual([...bilateralAtlasRegionColorMap(regions)], [[-1009, '#616f79'], [1009, '#616f79']]);
 });
+
+test('quantile color mappings equalize ranks, invert for labels, and fall back to the axis without knots', () => {
+  const scale = { kind: 'linear' };
+  const quantiles = { kind: 'quantile-uniform', xs: [0, 1, 2, 100], ys: [0.125, 0.375, 0.625, 0.875] };
+  const normalize = (value) => scalarColorNormalize(value, [0, 100], scale, 'viridis', undefined, 'quantile-uniform', 0.05, quantiles);
+  assert.ok(Math.abs(normalize(1) - 1 / 3) < 1e-12);
+  assert.ok(Math.abs(normalize(2) - 2 / 3) < 1e-12);
+  assert.equal(scalarColorNormalize(50, [0, 100], scale, 'viridis', undefined, 'quantile-uniform', 0.05), 0.5);
+  const value = scalarColorValueAtNormalized(2 / 3, [0, 100], scale, 'viridis', undefined, 'quantile-uniform', 0.05, quantiles);
+  assert.ok(Math.abs(value - 2) < 1e-6);
+  assert.match(
+    scalarColorGradient('viridis', [0, 100], scale, undefined, 9, '90deg', 'quantile-uniform', 0.05, quantiles),
+    /^linear-gradient\(90deg/,
+  );
+});
+
+
+test('quantile color mappings fall back to the axis when the range spans an empty CDF interval', () => {
+  const scale = { kind: 'linear' };
+  const quantiles = { kind: 'quantile-uniform', xs: [0, 10, 90, 100], ys: [0.1, 0.5, 0.5, 0.9] };
+  const normalize = (value) => scalarColorNormalize(value, [20, 80], scale, 'viridis', undefined, 'quantile-uniform', 0.05, quantiles);
+  assert.equal(normalize(50), 0.5);
+  assert.equal(normalize(Number.NaN), null);
+});

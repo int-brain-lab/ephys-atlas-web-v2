@@ -10,8 +10,9 @@ import type {
   DistributionDomain,
   DistributionDomainSelection,
 } from '../domain/types.js';
-import type { ScaleSpec } from '../domain/scale-spec.js';
+import type { QuantileScaleSpec, ScaleSpec } from '../domain/scale-spec.js';
 import { scaleDomainIsValid } from '../domain/scale-spec.js';
+import { quantileScaleSpecs } from './quantile-scale.js';
 import { effectiveScalarColorRange } from './scalar-colormap.js';
 
 export interface ResolvedPresentationScale {
@@ -19,6 +20,8 @@ export interface ResolvedPresentationScale {
   readonly automaticScale: ColorScale;
   readonly effectiveScale: ColorScale;
   readonly effectiveScaleSpec: ScaleSpec;
+  /** D087 knots for the selected quantile color mapping, if any. */
+  readonly colorQuantiles: QuantileScaleSpec | undefined;
   /** Exact analytical binning selected by both value scale and domain. */
   readonly histogram: DistributionBinning | undefined;
   readonly availableScales: readonly ColorScale[];
@@ -117,6 +120,9 @@ export function resolvePresentationScale(
     automaticScale,
     effectiveScale,
     effectiveScaleSpec,
+    colorQuantiles: feature && (coloring.colorMapping === 'quantile-uniform' || coloring.colorMapping === 'quantile-gaussian')
+      ? quantileScaleSpecs(feature, coloring.statistic, binnings).find(({ kind }) => kind === coloring.colorMapping)
+      : undefined,
     histogram: matchingBinning(binnings, effectiveScale, effectiveDistributionDomain),
     availableScales,
     unavailableScaleReasons,

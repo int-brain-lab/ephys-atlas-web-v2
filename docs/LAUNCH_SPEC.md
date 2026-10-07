@@ -82,8 +82,9 @@ For a schema-v1 regional feature, the viewer must:
 - <a id="ls02-08"></a> **`LS02-08`** — show global descriptive statistics and a distribution/histogram;
 - <a id="ls02-09"></a> **`LS02-09`** — expose available Linear, Log, and Signed-log distribution axes through one
   synchronized control for histogram bins, histogram geometry, and range handles;
-  default color mapping matches that axis, while explicit Pseudo-log changes
-  colors only, including at zero;
+  default color mapping matches that axis, while explicit Pseudo-log,
+  Quantile uniform, and Quantile Gaussian mappings change colors only, Pseudo-log
+  including at zero;
 - <a id="ls02-10"></a> **`LS02-10`** — expose Full and Focused distribution domains independently across the global,
   comparison, and compact color-range histogram viewports, with exact
   underflow/overflow disclosure and whole-population normalization in Focused,

@@ -89,12 +89,13 @@ only part of the body; the index states what remains effective.
 | D078 | Exact mapped volume-region distributions | accepted | 2026-09-17 | Allen/Beryl/Cosmos; mutually exclusive mappings; lateralized storage; bilateral default; source AGEA labels accepted; D079 later authorizes publication |
 | D079 | Publish D078 AGEA and W26 successors | accepted | 2026-09-17 | clean-Linux-main rebuilds; preserve existing releases; add immutable editions; deploy compatible site before catalog promotion |
 | D080 | Berlin as the neutral Auto palette | partially superseded | 2026-09-24 | D081 classifies Berlin as diverging and limits its Auto fallback to representations with a finite declared center; manual Berlin remains available without one; Q16 unchanged |
-| D081 | Separate color mapping from distribution scale | accepted | 2026-09-29 | Auto precedence, manual palette persistence, range-only Reset, and URL-persisted pseudo-log color mapping; exact histograms remain on their distribution axis; supersedes conflicting D050/D057/D080 presentation rules |
+| D081 | Separate color mapping from distribution scale | accepted | 2026-09-29 | Auto precedence, manual palette persistence, range-only Reset, and URL-persisted pseudo-log color mapping; exact histograms remain on their distribution axis; supersedes conflicting D050/D057/D080 presentation rules; D087 adds quantile color mappings |
 | D082 | Replace region selection on plain click | partially superseded | 2026-10-05 | Ctrl/Cmd-click toggles membership; session-only Select multiple retained; D084 makes non-leaf tree rows expand/collapse |
 | D083 | Conservative Umami analytics | accepted | 2026-10-05 | one manual pageview plus six once-per-document capability events; production-only, sanitized metadata and no custom properties |
 | D084 | Parent rows navigate the region tree | accepted | 2026-10-05 | click and Enter/Space expand/collapse non-leaves; leaves retain selection; value rankings contain current-parcellation leaves |
 | D085 | Optional automatic region slice navigation | partially superseded | 2026-10-05 | default-on URL-persisted Auto-slice; D086 replaces nearest-plane search and checkbox; manual movement cancels lookup |
 | D086 | Compact region controls and interior Auto-slice | accepted | 2026-10-05 | icon toggles with tooltips; pinned native interior anchors nearest signed mapped centroids, gated against sparse display coverage |
+| D087 | Quantile color mappings | accepted | 2026-10-01 | Quantile uniform and Quantile Gaussian join D081's color mapping; browser-derived rank maps from the colored regional statistic or valid-voxel binnings; histograms, axis, and release bytes unchanged |
 
 ## D001 — Separate v2
 
@@ -2169,3 +2170,32 @@ Hierarchy-only rows without native voxels and regions without a display-eligible
 interior point return unavailable and keep slices fixed with an explanation.
 Retain D085’s default, URL persistence, cancellation and hydration behavior.
 See [region navigation](rendering/REGION_NAVIGATION.md) for generation and evidence.
+
+## D087 — Add quantile color mappings
+
+On 2026-10-01 the repository owner reviewed a local prototype against real
+channel and encoding-volume releases and accepted two further D081 color
+mappings, Quantile uniform and Quantile Gaussian. They spread the palette by
+value rank: Quantile uniform maps each value through the empirical CDF `F`;
+Quantile Gaussian maps it through `Φ⁻¹(F)`, so the color distribution
+resembles a standard normal and tails remain distinguishable. The selected
+mode persists as `cmapscale=quantile-uniform` or `quantile-gaussian`.
+
+The browser derives `F` as a monotone piecewise-linear map from the data the
+release already serves:
+
+- regional representations use mid-rank knots of the finite values of the
+  colored regional statistic, extended to the full-domain observation-histogram
+  extent with half of the unobserved tail mass on each side;
+- volume representations use the exact cumulative fractions at the edges of
+  every full-domain valid-voxel binning, merged, with probabilities clipped to
+  `[1e-6, 1 - 1e-6]`, and are linear inside each bin.
+
+These maps normalize colors within the active color range only. As D081
+requires, global, selected-region, and compact histograms keep their exact
+release bins on the selected distribution axis, and quantile maps are never a
+distribution axis, a release-declared scale, or schema content. When fewer
+than two distinct finite values exist, colors fall back to the distribution
+axis. This is presentation state only: it changes no immutable release bytes,
+estimates no scientific threshold, and does not resolve Q16. A future
+release-owned quantile table would need its own decision and schema change.

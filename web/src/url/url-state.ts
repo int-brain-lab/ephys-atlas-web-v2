@@ -15,6 +15,7 @@ import type { DatasetCatalog } from '../data/contracts.js';
 import type {
   ColorRange,
   PseudoLogStrength,
+  ColorMappingMode,
   ColorStatisticId,
   DatasetId,
   ParcellationId,
@@ -220,7 +221,8 @@ export function parseViewState(search: string, defaults: ViewState = DEFAULT_VIE
       scale: params.get('scale') === 'log' || params.get('scale') === 'linear' || params.get('scale') === 'symlog'
         ? params.get('scale') as 'linear' | 'log' | 'symlog'
         : 'auto',
-      colorMapping: params.get('cmapscale') === 'pseudolog' ? 'pseudolog' : 'match',
+      colorMapping: (['pseudolog', 'quantile-uniform', 'quantile-gaussian'] as const).includes(params.get('cmapscale') as never)
+        ? params.get('cmapscale') as ColorMappingMode : 'match',
       pseudoLogStrength: ([0.01, 0.05, 0.2] as const).includes(Number(params.get('cstrength')) as PseudoLogStrength)
         ? Number(params.get('cstrength')) as PseudoLogStrength : defaults.coloring.pseudoLogStrength,
     },

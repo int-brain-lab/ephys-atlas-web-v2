@@ -1,7 +1,10 @@
 import type { ColoringState, ColorMappingMode, EffectiveColoringState, PseudoLogStrength } from '../domain/types.js';
 import type { FeaturePayload, RegionalFeaturePayload, RegionMetadata, RepresentationDisplay } from '../data/contracts.js';
-import { clampScalePosition, scaleDenormalize, scaleDomainIsValid, scaleNormalize, type ScaleSpec } from '../domain/scale-spec.js';
+import {
+  clampScalePosition, scaleDenormalize, scaleDomainIsValid, scaleNormalize, type QuantileScaleSpec, type ScaleSpec,
+} from '../domain/scale-spec.js';
 import { colormapDefinition, paletteCssColor } from './colormap-palettes.js';
+import { quantileNormalize } from './quantile-scale.js';
 
 type ScalarRange = readonly [number, number];
 const DEFAULT_PSEUDOLOG_STRENGTH: PseudoLogStrength = 0.05;
@@ -13,8 +16,13 @@ function colorValueNormalize(
   mapping: ColorMappingMode,
   strength: PseudoLogStrength,
   fullRangeWidth: number,
+  quantiles?: QuantileScaleSpec,
 ): number | null {
   if (mapping === 'match') return scaleNormalize(value, range, scale);
+  if (mapping !== 'pseudolog') {
+    // A manual range inside one empty CDF interval has zero quantile span: use the distribution axis.
+    return (quantiles && quantileNormalize(value, range, quantiles)) ?? scaleNormalize(value, range, scale);
+  }
   const transition = fullRangeWidth * strength;
   if (!(Number.isFinite(value) && Number.isFinite(transition) && transition > 0)) return null;
   const lower = Math.asinh(range[0] / transition);
@@ -35,10 +43,11 @@ export function scalarColorNormalize(
   divergingCenter?: number,
   mapping: ColorMappingMode = 'match',
   strength: PseudoLogStrength = DEFAULT_PSEUDOLOG_STRENGTH,
+  quantiles?: QuantileScaleSpec,
 ): number | null {
   if (!scaleDomainIsValid(range, mapping === 'match' ? scale : { kind: 'linear' })) return null;
   const normalize = (domain: ScalarRange): number | null => colorValueNormalize(
-    value, domain, scale, mapping, strength, range[1] - range[0],
+    value, domain, scale, mapping, strength, range[1] - range[0], quantiles,
   );
   if (colormapDefinition(colormap)?.kind !== 'diverging') return normalize(range);
   if (typeof divergingCenter !== 'number' || !Number.isFinite(divergingCenter)) {
@@ -70,8 +79,9 @@ export function scalarColorValueAtNormalized(
   divergingCenter?: number,
   mapping: ColorMappingMode = 'match',
   strength: PseudoLogStrength = DEFAULT_PSEUDOLOG_STRENGTH,
+  quantiles?: QuantileScaleSpec,
 ): number | null {
-  const normalize = (value: number) => scalarColorNormalize(value, range, scale, colormap, divergingCenter, mapping, strength);
+  const normalize = (value: number) => scalarColorNormalize(value, range, scale, colormap, divergingCenter, mapping, strength, quantiles);
   const first = normalize(range[0]);
   const last = normalize(range[1]);
   if (first === null || last === null) return null;
@@ -97,27 +107,28 @@ export function scalarColorGradient(
   direction = '90deg',
   mapping: ColorMappingMode = 'match',
   strength: PseudoLogStrength = DEFAULT_PSEUDOLOG_STRENGTH,
+  quantiles?: QuantileScaleSpec,
 ): string {
-  const count = Math.max(mapping === 'pseudolog' ? 129 : 2, Math.floor(stops));
-  const firstColor = scalarColorNormalize(range[0], range, scale, colormap, divergingCenter, mapping, strength);
-  const lastColor = scalarColorNormalize(range[1], range, scale, colormap, divergingCenter, mapping, strength);
+  const count = Math.max(mapping === 'match' ? 2 : 129, Math.floor(stops));
+  const firstColor = scalarColorNormalize(range[0], range, scale, colormap, divergingCenter, mapping, strength, quantiles);
+  const lastColor = scalarColorNormalize(range[1], range, scale, colormap, divergingCenter, mapping, strength, quantiles);
   const positions = Array.from({ length: count }, (_, index) => index / (count - 1));
   if (colormapDefinition(colormap)?.kind === 'diverging'
     && typeof divergingCenter === 'number' && Number.isFinite(divergingCenter)) {
     const centerPosition = scaleNormalize(divergingCenter, range, scale);
     if (centerPosition !== null && centerPosition > 0 && centerPosition < 1) positions.push(centerPosition);
   }
-  if (mapping === 'pseudolog' && firstColor !== null && lastColor !== null) {
+  if (mapping !== 'match' && firstColor !== null && lastColor !== null) {
     for (let index = 0; index < count; index += 1) {
       const target = firstColor + (lastColor - firstColor) * index / (count - 1);
-      const value = scalarColorValueAtNormalized(target, range, scale, colormap, divergingCenter, mapping, strength);
+      const value = scalarColorValueAtNormalized(target, range, scale, colormap, divergingCenter, mapping, strength, quantiles);
       const axisPosition = value === null ? null : scaleNormalize(value, range, scale);
       if (axisPosition !== null) positions.push(clampScalePosition(axisPosition));
     }
   }
   const colors = [...new Set(positions)].sort((left, right) => left - right).map((position) => {
     const value = scaleDenormalize(position, range, scale);
-    const normalized = value === null ? null : scalarColorNormalize(value, range, scale, colormap, divergingCenter, mapping, strength);
+    const normalized = value === null ? null : scalarColorNormalize(value, range, scale, colormap, divergingCenter, mapping, strength, quantiles);
     return `${paletteCssColor(colormap, normalized ?? 0)} ${position * 100}%`;
   });
   return `linear-gradient(${direction}, ${colors.join(', ')})`;
@@ -132,9 +143,10 @@ export function scalarPaletteGradient(
   mapping: ColorMappingMode = 'match',
   strength: PseudoLogStrength = DEFAULT_PSEUDOLOG_STRENGTH,
   direction = '0deg',
+  quantiles?: QuantileScaleSpec,
 ): string {
-  const first = scalarColorNormalize(range[0], range, scale, colormap, divergingCenter, mapping, strength) ?? 0;
-  const last = scalarColorNormalize(range[1], range, scale, colormap, divergingCenter, mapping, strength) ?? 1;
+  const first = scalarColorNormalize(range[0], range, scale, colormap, divergingCenter, mapping, strength, quantiles) ?? 0;
+  const last = scalarColorNormalize(range[1], range, scale, colormap, divergingCenter, mapping, strength, quantiles) ?? 1;
   const colors = Array.from({ length: 65 }, (_, index) => {
     const fraction = index / 64;
     return `${paletteCssColor(colormap, first + (last - first) * fraction)} ${fraction * 100}%`;
@@ -192,7 +204,7 @@ export function regionalColorMap(feature: RegionalFeaturePayload, coloring: Effe
     if (!Number.isInteger(regionId) || value === undefined || !Number.isFinite(value)) continue;
     const normalized = scalarColorNormalize(
       value, [min, max], coloring.scale, coloring.colormap, coloring.divergingCenter,
-      coloring.colorMapping, coloring.pseudoLogStrength,
+      coloring.colorMapping, coloring.pseudoLogStrength, coloring.colorQuantiles,
     );
     if (normalized === null) continue;
     colors.set(regionId, paletteCssColor(coloring.colormap, normalized));

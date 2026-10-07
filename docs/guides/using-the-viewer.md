@@ -101,6 +101,21 @@ values.
 - **Focused** enlarges a reviewed interval while disclosing values below and
   above it.
 
+**Color mapping** changes only how values map to colors. Histograms, their
+bins, and the range handles keep the selected distribution axis.
+
+- **Match axis** colors along the distribution axis.
+- **Pseudo-log** reveals detail near zero; **Near-zero detail** sets its
+  strength.
+- **Quantile uniform** spreads colors evenly by value rank, so each color
+  covers a similar share of the population.
+- **Quantile Gaussian** also maps by rank, but shapes the color distribution
+  like a normal curve so that tails stay distinguishable.
+
+Quantile mappings rank the colored regional statistic, or all valid voxels for
+a volume. The legend shows the active color mapping next to the distribution
+axis.
+
 ![Viewer workspace with color settings, distribution controls, and selected-region comparison](../assets/generated/encoding-and-distribution-controls.png)
 
 *Synthetic demonstration data. Presentation controls affect the display, not the underlying observations.*
