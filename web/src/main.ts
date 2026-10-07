@@ -1,4 +1,4 @@
-import { REGION_NAVIGATION_ASSETS } from './assets/navigation/bindings.js';
+import { REGION_NAVIGATION_ASSETS } from 'region-navigation-assets';
 import './styles.css';
 import { AtlasApp } from './app.js';
 import { DEFAULT_VIEW_STATE } from './domain/defaults.js';
@@ -29,8 +29,20 @@ function showStartupFailure(error: unknown): void {
 const defaultProjectionPackUrl =
   '/atlas/projections/ibl-static-registered-v1/manifest.json';
 const projectionPackUrl = import.meta.env.VITE_PROJECTION_PACK_URL as string | undefined;
+const projectionBytes = import.meta.env.VITE_PROJECTION_PACK_BYTES as string | undefined;
+const projectionHash = import.meta.env.VITE_PROJECTION_PACK_SHA256 as string | undefined;
+function projectionIntegrity() {
+  if (!projectionBytes && !projectionHash) return undefined;
+  const bytes = Number(projectionBytes);
+  if (!Number.isSafeInteger(bytes) || bytes <= 0 || !/^[0-9a-f]{64}$/.test(projectionHash ?? '')) {
+    throw new Error('VITE_PROJECTION_PACK_* integrity configuration is incomplete');
+  }
+  return { bytes, sha256: projectionHash! };
+}
+const projectionManifestIntegrity = projectionIntegrity();
 const viewportFactory = new RetainedProjectionViewportFactory({
   projectionPackUrl: projectionPackUrl ?? defaultProjectionPackUrl,
+  ...(projectionManifestIntegrity ? { projectionManifestIntegrity } : {}),
   regionNavigation: REGION_NAVIGATION_ASSETS,
 });
 const catalogUrl = import.meta.env.VITE_DATASET_CATALOG_URL as string | undefined;

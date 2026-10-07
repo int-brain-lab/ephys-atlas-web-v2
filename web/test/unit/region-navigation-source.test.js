@@ -11,6 +11,17 @@ const packHash = createHash('sha256').update(packBytes).digest('hex');
 const resources = { allen: 'https://example.test/allen.bin', beryl: 'https://example.test/beryl.bin', cosmos: 'https://example.test/cosmos.bin' };
 const root = 'src/assets/navigation/';
 
+test('production companion resolves anchors against the exact deployment projection snapshot', async () => {
+  const config = JSON.parse(await readFile('../data/deployment/initial-site.json'));
+  const raw = await readFile(`../data/deployment/dependencies/${config.projection.sha256}.json`);
+  const productionManifest = JSON.parse(await readFile(root + 'production/manifest.json'));
+  const source = new RegionNavigationSource({ manifest: productionManifest, resources }, async input =>
+    new Response(await readFile(root + 'production/' + new URL(input).pathname.slice(1))));
+  assert.deepEqual(await source.locate('-68', 'allen', JSON.parse(raw), config.projection.sha256, new AbortController().signal),
+    { coronal: 193, sagittal: 468, horizontal: 273 });
+  await assert.rejects(source.locate('-68', 'allen', pack, packHash, new AbortController().signal), /unavailable/);
+});
+
 function fixture() {
   const calls = [];
   const source = new RegionNavigationSource({ manifest, resources }, async input => {

@@ -43,6 +43,10 @@ dev-latest:
 production-release-preflight +releases:
     {{uv-test}} python -m tools.release_preflight {{releases}}
 
+# Verify browser companions, immutable packs, coordinate contracts and discovery.
+site-compatibility config="data/deployment/initial-site.json":
+    {{uv-test}} python -m tools.site_compatibility "{{config}}"
+
 # Open the development-only synthetic multi-feature comparison workbench.
 comparison-ux-lab:
     cd web && npm run dev -- --open '/app/?lab=multi-feature'
@@ -253,7 +257,7 @@ atlas-regions:
     {{uv-scientific}} python tools/allen_regions/build.py --force
 
 # Full local completion gate. Keep this aligned with .github/workflows/ci.yml.
-check: docs-check docs-site test-python test-web test-browser docs-screenshots-check
+check: docs-check docs-site site-compatibility test-python test-web test-browser docs-screenshots-check
 
 # Backward-compatible alias: repository tests mean the full gate.
 test: check

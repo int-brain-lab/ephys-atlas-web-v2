@@ -5,7 +5,7 @@ import { copyFile, mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promise
 import os from 'node:os';
 import path from 'node:path';
 
-test('production build serves a static landing page and lazy viewer from immutable asset URLs', async ({ page }) => {
+test('production packaging serves a static landing and lazy viewer with test-only development data', async ({ page }) => {
   test.setTimeout(90_000);
   const temporary = await mkdtemp(path.join(os.tmpdir(), 'atlas-production-site-test-'));
   const output = path.join(temporary, 'site');

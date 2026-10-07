@@ -18,6 +18,13 @@ ATLAS_REGIONS = {
 }
 
 
+@pytest.fixture(autouse=True)
+def synthetic_compatibility(monkeypatch):
+    # These tests exercise synthetic site inventories; real dependency
+    # compatibility and production bindings have a separate integration suite.
+    monkeypatch.setattr(site_build, "check_compatibility", lambda config: {"format": "synthetic-test-only"})
+
+
 def config():
     return {"catalog": {"path": "catalog.json", "bytes": 1, "sha256": "a"*64},
             "projection": {"path": "atlas/projections/test-only/manifest.json", "bytes": 2, "sha256": "b"*64},
@@ -105,7 +112,7 @@ def test_site_receipt_and_inventory_are_verified(tmp_path, binary_path):
     repo = RepositoryState("main", "a"*40, True)
     receipt = {"commit": repo.commit, "environment": build_environment(), "node": "v22.17.1", "config": config()}
     identity = hashlib.sha256(json_bytes(receipt)).hexdigest()[:32]
-    receipt.update(format="atlas-site-build-v1", build_id=identity, dependencies=site_build.dependencies(config()))
+    receipt.update(format="atlas-site-build-v1", build_id=identity, dependencies=site_build.dependencies(config()), compatibility=site_build.check_compatibility(config()))
     (tmp_path / "index.html").write_text(
         f'<script src="/site/builds/{identity}/assets/main.js"></script>'
         f'<link href="/site/builds/{identity}/favicon.png"><a href="/app/">Open atlas</a>'
@@ -141,7 +148,7 @@ def test_site_receipt_checks_landing_resources_but_allows_navigation(tmp_path, e
     repo = RepositoryState("main", "a"*40, True)
     receipt = {"commit": repo.commit, "environment": build_environment(), "node": "v22.17.1", "config": config()}
     identity = hashlib.sha256(json_bytes(receipt)).hexdigest()[:32]
-    receipt.update(format="atlas-site-build-v1", build_id=identity, dependencies=site_build.dependencies(config()))
+    receipt.update(format="atlas-site-build-v1", build_id=identity, dependencies=site_build.dependencies(config()), compatibility=site_build.check_compatibility(config()))
     (tmp_path / "assets").mkdir()
     (tmp_path / "index.html").write_text(
         f'<img src="/site/builds/{identity}/assets/hero.jpg"><link href="/site/builds/{identity}/favicon.png">'
@@ -164,7 +171,7 @@ def test_site_rejects_missing_or_altered_atlas_regions_file(tmp_path):
     repo = RepositoryState("main", "a"*40, True)
     receipt = {"commit": repo.commit, "environment": build_environment(), "node": "v22.17.1", "config": config()}
     identity = hashlib.sha256(json_bytes(receipt)).hexdigest()[:32]
-    receipt.update(format="atlas-site-build-v1", build_id=identity, dependencies=site_build.dependencies(config()))
+    receipt.update(format="atlas-site-build-v1", build_id=identity, dependencies=site_build.dependencies(config()), compatibility=site_build.check_compatibility(config()))
     (tmp_path / "index.html").write_text(f'<script src="/site/builds/{identity}/assets/main.js"></script><link href="/site/builds/{identity}/favicon.png">')
     (tmp_path / "favicon.png").write_bytes(b"test")
     (tmp_path / "assets").mkdir()

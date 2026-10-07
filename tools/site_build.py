@@ -15,6 +15,7 @@ import tempfile
 from ephys_atlas_builder.build_environment import build_environment
 from tools.s3_assets import canonical_host
 from tools.s3_publish import REPOSITORY
+from tools.site_compatibility import check_compatibility
 from ibl_ephys_atlas_publish.client import file_info
 from ibl_ephys_atlas_publish.s3 import IMMUTABLE_CACHE, MUTABLE_CACHE, json_bytes
 
@@ -122,6 +123,8 @@ def build_environment_for_site(config: dict, build_id: str) -> dict[str, str]:
         EPHYS_ATLAS_SITE_BUILD="1",
         VITE_DATASET_CATALOG_URL="/catalog.json",
         VITE_PROJECTION_PACK_URL="/" + config["projection"]["path"],
+        VITE_PROJECTION_PACK_BYTES=str(config["projection"]["bytes"]),
+        VITE_PROJECTION_PACK_SHA256=config["projection"]["sha256"],
         VITE_ATLAS_REGIONS_URL=f"/site/builds/{build_id}/{regions['path']}",
         VITE_ATLAS_REGIONS_BYTES=str(regions["bytes"]),
         VITE_ATLAS_REGIONS_SHA256=regions["sha256"],
@@ -149,6 +152,8 @@ def validate_site(root: Path, repo) -> dict:
     default_view(receipt["config"])
     if receipt.get("dependencies") != expected_dependencies:
         raise ValueError("site dependency inventory differs")
+    if receipt.get("compatibility") != check_compatibility(receipt["config"]):
+        raise ValueError("site compatibility evidence differs from the selected browser artifacts")
     identity = hashlib.sha256(json_bytes({k: receipt[k] for k in ("commit", "environment", "node", "config")})).hexdigest()[:32]
     if receipt.get("build_id") != identity:
         raise ValueError("site build identity differs")
@@ -183,12 +188,14 @@ def build(config_path: Path, output: Path) -> dict:
     subprocess.run(["git", "ls-files", "--error-unmatch", "--", str(config_path.relative_to(REPOSITORY))],
                    cwd=REPOSITORY, check=True, capture_output=True)
     config = json.loads(config_path.read_bytes())
+    dependencies(config)
+    compatibility = check_compatibility(config)
     node = subprocess.run(["node", "--version"], check=True, text=True, capture_output=True).stdout.strip()
     if not node.startswith("v22."):
         raise ValueError("site builds require Node 22")
     receipt = {"commit": repo.commit, "environment": build_environment(), "node": node, "config": config}
     identity = hashlib.sha256(json_bytes(receipt)).hexdigest()[:32]
-    receipt.update(format="atlas-site-build-v1", build_id=identity, dependencies=dependencies(config))
+    receipt.update(format="atlas-site-build-v1", build_id=identity, dependencies=dependencies(config), compatibility=compatibility)
     with tempfile.TemporaryDirectory(prefix="atlas-site-build-") as temporary:
         root = Path(temporary) / "site"
         subprocess.run(["npm", "run", "build", "--", "--base", f"/site/builds/{identity}/",

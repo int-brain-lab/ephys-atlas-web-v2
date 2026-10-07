@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
@@ -30,6 +31,18 @@ function fileFetcher(calls, gate, gatedPack = 6) {
     return new Response(await readFile(path.join(root, relative)));
   };
 }
+
+test('pinned root projection integrity is verified before manifest parsing and failed reads can retry', async () => {
+  const raw = await readFile(path.join(root, 'manifest.json'));
+  const manifestIntegrity = { bytes: raw.length, sha256: createHash('sha256').update(raw).digest('hex') };
+  let corrupt = true;
+  const source = new ProjectionPackSource({ manifestUrl, manifestIntegrity, runtime: fakeRuntime(),
+    fetchImpl: async () => new Response(corrupt ? Buffer.alloc(raw.length) : raw) });
+  await assert.rejects(source.loadManifest(), /SHA-256/);
+  corrupt = false;
+  assert.equal((await source.loadManifest()).pack_id, JSON.parse(raw).pack_id);
+  source.dispose();
+});
 
 test('progressive prefetch warms every pack from the visible pack outward', async () => {
   const calls = [];

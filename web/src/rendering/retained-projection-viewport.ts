@@ -1,4 +1,5 @@
 import type { RegionNavigationAssets } from './region-navigation-source.js';
+import type { ResourceIntegrity } from '../data/cache.js';
 import type { ParcellationId } from '../domain/types.js';
 import { registeredVolumeCanvasPlacement, type RegisteredVolumeCanvasPlacement } from './registered-volume-placement.js';
 import { rgbaForSlice } from './volume-slice-colors.js';
@@ -658,6 +659,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
 
 export interface RetainedProjectionViewportFactoryOptions {
   readonly projectionPackUrl?: string;
+  readonly projectionManifestIntegrity?: ResourceIntegrity;
   readonly regionNavigation?: RegionNavigationAssets;
   readonly fetchImpl?: typeof fetch;
   readonly maxDecodedBytes?: number;
@@ -709,6 +711,7 @@ export class RetainedProjectionViewportFactory implements ProjectionViewportFact
       if (!options.projectionPackUrl) throw new Error('projectionPackUrl is required without a test source');
       this.source = new ProjectionPackSource({
         manifestUrl: options.projectionPackUrl,
+        ...(options.projectionManifestIntegrity ? { manifestIntegrity: options.projectionManifestIntegrity } : {}),
         ...(options.regionNavigation ? { regionNavigation: options.regionNavigation } : {}),
         ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
         ...(options.maxDecodedBytes ? { maxDecodedBytes: options.maxDecodedBytes } : {}),

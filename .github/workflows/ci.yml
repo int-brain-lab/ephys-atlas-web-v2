@@ -28,6 +28,7 @@ jobs:
       - run: uv sync --project builder --python 3.12 --extra docs --extra test --locked
       - run: uv sync --project publishing --python 3.12 --extra test --locked
       - run: uv run --project builder --extra test --locked python -m tools.docs_check
+      - run: uv run --project builder --extra test --locked python -m tools.site_compatibility data/deployment/initial-site.json
       - run: uv run --project builder --extra docs --locked mkdocs build --strict
       - run: uv run --project builder --extra test --locked python -m pytest -q tests
       - run: uv run --project publishing --extra test --locked python -m pytest -q publishing/tests
@@ -100,10 +101,17 @@ jobs:
       - name: Build and plan the site
         if: steps.current.outputs.publish == 'true'
         run: |
+          uv run --project builder --extra test --locked python -m tools.site_compatibility \
+            data/deployment/initial-site.json --origin https://ephys-atlas.iblcore.org
           uv run --project builder --extra test --extra scientific --locked python -m tools.site_build \
             data/deployment/initial-site.json "$RUNNER_TEMP/site-build"
           uv run --project builder --extra test --extra scientific --locked python -m tools.s3_assets \
             site "$RUNNER_TEMP/site-build" --environment production > "$RUNNER_TEMP/site-plan.json"
+      - name: Verify the unpublished build against production dependencies
+        if: steps.current.outputs.publish == 'true'
+        run: |
+          npx --prefix web playwright install --with-deps chromium
+          node web/scripts/verify-production-site.mjs https://ephys-atlas.iblcore.org "$RUNNER_TEMP/site-build"
       - name: Assume the site-only AWS role
         if: steps.current.outputs.publish == 'true'
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
@@ -138,3 +146,6 @@ jobs:
           done
           echo "The live site did not serve build $build_id within five minutes." >&2
           exit 1
+      - name: Verify the live viewer
+        if: steps.current.outputs.publish == 'true'
+        run: node web/scripts/verify-production-site.mjs https://ephys-atlas.iblcore.org

@@ -10,10 +10,16 @@ import { loadLocalProjectionPack, localProjectionPackPlugin } from './dev/projec
 import { loadRealDevelopmentRelease, realReleasePlugin } from './dev/real-data-plugin.js';
 
 export default defineConfig(async () => {
+  // Shared with tools.site_compatibility: the checked requirements and compiled
+  // companion must come from the same artifact profile.
+  const profiles = JSON.parse(await readFile(path.resolve('artifact-profiles.json'), 'utf8'));
+  const profile = process.env.EPHYS_ATLAS_SITE_BUILD === '1' ? 'production' : 'development';
+  const navigation = path.resolve(path.dirname(profiles[profile].navigation), 'bindings.ts');
+  const resolve = { alias: { 'region-navigation-assets': navigation } };
   if (process.env.EPHYS_ATLAS_SITE_BUILD === '1') {
     // The production wrapper supplies reviewed URLs explicitly. Never load
     // local .env settings, development plugins, or the legacy public corpus.
-    return { publicDir: false, envDir: false, plugins: [helpMarkdownPlugin()] };
+    return { resolve, publicDir: false, envDir: false, plugins: [helpMarkdownPlugin()] };
   }
   const releasePath = process.env.EPHYS_ATLAS_REAL_RELEASE;
   const defaultRepresentation = process.env.EPHYS_ATLAS_REAL_REPRESENTATION;
@@ -60,6 +66,7 @@ export default defineConfig(async () => {
     'import.meta.env.VITE_DATASET_CATALOG_URL': JSON.stringify('/__remote-data/catalog.json'),
   } : {};
   if (!releasePath) return {
+    resolve,
     ...remoteDataServer,
     define: { ...projectionDefine, ...meshDefine, ...remoteDataDefine },
     plugins,
@@ -77,6 +84,7 @@ export default defineConfig(async () => {
     return loadRealDevelopmentRelease(additionalPath, featureId);
   }));
   return {
+    resolve,
     ...remoteDataServer,
     define: {
       ...projectionDefine,

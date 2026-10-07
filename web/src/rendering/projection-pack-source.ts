@@ -1,7 +1,7 @@
 import { RegionNavigationSource, type RegionNavigationAssets } from './region-navigation-source.js';
 import type { ParcellationId } from '../domain/types.js';
 import type { SliceIndices } from '../core/spatial.js';
-import { ResourceFetcher } from '../data/cache.js';
+import { ResourceFetcher, type ResourceIntegrity } from '../data/cache.js';
 import type {
   EncodedResourceV1,
   OrthogonalProjectionId,
@@ -58,6 +58,7 @@ export interface StaticProjectionFrame {
 
 export interface ProjectionPackSourceOptions {
   readonly manifestUrl: string;
+  readonly manifestIntegrity?: ResourceIntegrity;
   readonly regionNavigation?: RegionNavigationAssets;
   readonly fetchImpl?: typeof fetch;
   readonly maxDecodedBytes?: number;
@@ -128,6 +129,7 @@ async function gunzipText(response: Response, resource: EncodedResourceV1): Prom
 /** Schema-v1 registered geometry source with verified transport and worker-owned decoded LRU. */
 export class ProjectionPackSource implements RegisteredProjectionSource {
   private readonly manifestUrl: string;
+  private readonly manifestIntegrity: ResourceIntegrity | undefined;
   private readonly fetcher: ResourceFetcher;
   private readonly runtime: IsvgPackRuntime;
   private readonly navigation: RegionNavigationSource | null;
@@ -146,6 +148,7 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
   constructor(options: ProjectionPackSourceOptions) {
     const baseUrl = typeof globalThis.location?.href === 'string' ? globalThis.location.href : 'http://localhost/';
     this.manifestUrl = new URL(options.manifestUrl, baseUrl).toString();
+    this.manifestIntegrity = options.manifestIntegrity;
     this.fetcher = new ResourceFetcher(options.fetchImpl);
     this.navigation = options.regionNavigation ? new RegionNavigationSource(options.regionNavigation, options.fetchImpl) : null;
     this.runtime = options.runtime ?? createIsvgPackRuntime({ maxDecodedBytes: options.maxDecodedBytes ?? 32 * 1024 * 1024 });
@@ -325,7 +328,8 @@ export class ProjectionPackSource implements RegisteredProjectionSource {
   }
 
   private async fetchManifest(): Promise<ProjectionPackV1> {
-    const response = await this.fetcher.fetch(this.manifestUrl);
+    const response = await this.fetcher.fetch(this.manifestUrl, this.manifestIntegrity
+      ? { immutable: true, integrity: this.manifestIntegrity } : {});
     const bytes = await response.arrayBuffer();
     const hash = await crypto.subtle.digest('SHA-256', bytes);
     const document: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));

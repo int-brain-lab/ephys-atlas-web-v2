@@ -1,0 +1,4 @@
+{
+  "development": { "navigation": "src/assets/navigation/manifest.json" },
+  "production": { "navigation": "src/assets/navigation/production/manifest.json" }
+}
