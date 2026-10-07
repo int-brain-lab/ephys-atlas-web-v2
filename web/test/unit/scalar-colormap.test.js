@@ -201,3 +201,11 @@ test('quantile color mappings equalize ranks, invert for labels, and fall back t
   );
 });
 
+
+test('quantile color mappings fall back to the axis when the range spans an empty CDF interval', () => {
+  const scale = { kind: 'linear' };
+  const quantiles = { kind: 'quantile-uniform', xs: [0, 10, 90, 100], ys: [0.1, 0.5, 0.5, 0.9] };
+  const normalize = (value) => scalarColorNormalize(value, [20, 80], scale, 'viridis', undefined, 'quantile-uniform', 0.05, quantiles);
+  assert.equal(normalize(50), 0.5);
+  assert.equal(normalize(Number.NaN), null);
+});

@@ -99,7 +99,10 @@ export function quantileScaleSpecs(
   const values = feature.representation === 'regional'
     ? feature.statistics[statistic] ?? feature.statistics.mean
     : undefined;
-  const { xs, ps } = values ? valueCdfKnots(values) : binningCdfKnots(binnings);
+  // Edge-based knots always differ, so constant volumes are detected from the valid-value extrema.
+  const { min, max } = feature.representation === 'regional' ? { min: 0, max: 1 } : feature.summary.validStatistics;
+  const { xs, ps } = values ? valueCdfKnots(values)
+    : min !== null && max !== null && max > min ? binningCdfKnots(binnings) : { xs: [], ps: [] };
   // Extend regional knots to the observation histogram extent, halfway into the
   // unobserved tail mass, so observations beyond the region extrema keep an axis.
   const edges = binnings.filter(({ domain }) => domain.kind === 'full').flatMap(({ edges }) => [edges[0]!, edges.at(-1)!]);

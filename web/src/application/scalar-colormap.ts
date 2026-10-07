@@ -19,7 +19,10 @@ function colorValueNormalize(
   quantiles?: QuantileScaleSpec,
 ): number | null {
   if (mapping === 'match') return scaleNormalize(value, range, scale);
-  if (mapping !== 'pseudolog') return quantiles ? quantileNormalize(value, range, quantiles) : scaleNormalize(value, range, scale);
+  if (mapping !== 'pseudolog') {
+    // A manual range inside one empty CDF interval has zero quantile span: use the distribution axis.
+    return (quantiles && quantileNormalize(value, range, quantiles)) ?? scaleNormalize(value, range, scale);
+  }
   const transition = fullRangeWidth * strength;
   if (!(Number.isFinite(value) && Number.isFinite(transition) && transition > 0)) return null;
   const lower = Math.asinh(range[0] / transition);

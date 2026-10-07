@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { binningCdfKnots, probit, quantileNormalize, valueCdfKnots } from '../../.test-dist/application/quantile-scale.js';
+import { binningCdfKnots, probit, quantileNormalize, quantileScaleSpecs, valueCdfKnots } from '../../.test-dist/application/quantile-scale.js';
 
 test('probit matches standard normal quantiles', () => {
   assert.ok(Math.abs(probit(0.5)) < 1e-9);
@@ -31,4 +31,12 @@ test('binning CDF knots merge full-domain binnings and ignore focused ones', () 
   ]);
   assert.deepEqual(xs, [0, 1, 5, 10]);
   assert.deepEqual(ps.map((p) => Math.round(p * 100) / 100), [0, 0.5, 0.75, 1]);
+});
+
+test('constant volumes get no quantile specs even though their histogram edges differ', () => {
+  const binnings = [{ domain: { kind: 'full' }, edges: [0, 1, 2], global: { binCounts: [0, 5], underflowCount: 0, overflowCount: 0 } }];
+  const volume = (min, max) => ({ representation: 'volume', summary: { validStatistics: { min, max } } });
+  assert.deepEqual(quantileScaleSpecs(volume(1.5, 1.5), 'mean', binnings), []);
+  assert.deepEqual(quantileScaleSpecs(volume(null, null), 'mean', binnings), []);
+  assert.equal(quantileScaleSpecs(volume(1, 2), 'mean', binnings).length, 2);
 });
