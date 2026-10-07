@@ -1,8 +1,8 @@
 {
   "catalog": {
     "path": "catalog.json",
-    "bytes": 5318,
-    "sha256": "817c3854b9be9989ba763756a554260611443823a0fe37a394f47ce113e77843"
+    "bytes": 7350,
+    "sha256": "435e77daae52affa9949f7592745ed3fa039317f30b3e5b4363b182cfe2b5f93"
   },
   "projection": {
     "path": "atlas/projections/ibl-atlas-projections-05b9f3f85db9/manifest.json",
@@ -17,8 +17,8 @@
   "default_view": {
     "project_id": "ephys-atlas",
     "dataset_id": "ephys_atlas_channels",
-    "release_id": "2026_W32-ibl-review-20260908-v1",
-    "feature_id": "rms_ap.denoised",
+    "release_id": "2026_W39-ibl-review-20261007-v1",
+    "feature_id": "rms_ap",
     "parcellation_id": "allen",
     "curator_config": "data/deployment/initial-curator.json"
   },
