@@ -2,6 +2,7 @@
 // over the configured production origin. No scientific fixtures or data copies.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { gunzipSync } from 'node:zlib';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium, expect } from '@playwright/test';
@@ -14,6 +15,17 @@ const config = receipt?.config ?? JSON.parse(await readFile(process.argv[5]
   ?? new URL('../../data/deployment/initial-site.json', import.meta.url)));
 const errors = [];
 const visited = [];
+async function verifiedJson(url, resource) {
+  const response = await fetch(url);
+  assert.ok(response.ok);
+  const raw = Buffer.from(await response.arrayBuffer());
+  assert.equal(raw.length, resource.bytes);
+  assert.equal(createHash('sha256').update(raw).digest('hex'), resource.sha256);
+  assert.ok(['none', 'gzip'].includes(resource.codec.name));
+  const decoded = resource.codec.name === 'gzip' ? gunzipSync(raw) : raw;
+  assert.equal(decoded.length, resource.codec.decoded_bytes);
+  return JSON.parse(decoded);
+}
 const browser = await chromium.launch();
 try {
   const context = await browser.newContext({ viewport: { width: 1600, height: 1000 } });
@@ -105,17 +117,15 @@ try {
   const catalog = await page.evaluate(async () => (await (await fetch('/catalog.json')).json()));
   for (const dataset of catalog.datasets) {
     const release = dataset.releases.find(r => r.release_id === dataset.default_release);
-    const response = await fetch(new URL(release.manifest.path, origin + '/'));
-    assert.ok(response.ok);
-    const raw = Buffer.from(await response.arrayBuffer());
-    assert.equal(raw.length, release.manifest.bytes);
-    assert.equal(createHash('sha256').update(raw).digest('hex'), release.manifest.sha256);
-    const manifest = JSON.parse(raw);
-    const feature = dataset.dataset_id === config.default_view.dataset_id
+    const manifestUrl = new URL(release.manifest.path, origin + '/');
+    const manifest = await verifiedJson(manifestUrl, release.manifest);
+    const feature = dataset.dataset_id === config.default_view?.dataset_id
       ? config.default_view.feature_id : manifest.features[0].id;
-    const representation = ['agea', 'ephys_atlas_volumes'].includes(dataset.dataset_id) ? 'volume' : 'regional';
-    const parcellation = manifest.parcellations.find(p => p.id === config.default_view.parcellation_id)?.id
-      ?? manifest.parcellations[0].id;
+    const resource = manifest.features.find(f => f.id === feature).descriptor.resource;
+    const descriptor = await verifiedJson(new URL(resource.path, manifestUrl), resource);
+    const representation = descriptor.representations.volume ? 'volume' : 'regional';
+    const parcellation = manifest.parcellations.find(p => p.id === config.default_view?.parcellation_id)?.id
+      ?? manifest.parcellations[0]?.id ?? 'allen';
     const params = new URLSearchParams({ v: '4', dataset: dataset.dataset_id, release: release.release_id,
       feature, repr: representation, parcel: parcellation });
     await page.goto(origin + '/app/?' + params);
