@@ -42,19 +42,20 @@ def config_with_default():
     value["default_view"] = {
         "project_id": "ephys-atlas",
         "dataset_id": "ephys_atlas_channels",
-        "release_id": "2026_W32-ibl-review-20260908-v1",
-        "feature_id": "rms_ap.denoised",
+        "release_id": "2026_W39-ibl-review-20261007-v1",
+        "feature_id": "rms_ap",
         "parcellation_id": "allen",
         "curator_config": "data/deployment/initial-curator.json",
     }
     return value
 
 
-def test_initial_curator_groups_agea_under_anatomy():
+def test_initial_curator_groups_genomics_and_lipidome_projects():
     curator = json.loads(Path("data/deployment/initial-curator.json").read_text())
-    agea = next(project for project in curator["projects"] if project["project_id"] == "agea")
-    assert agea["title"] == "Anatomy"
-    assert agea["dataset_ids"] == ["agea"]
+    projects = {project["project_id"]: project for project in curator["projects"]}
+    assert projects["genomics"]["dataset_ids"] == ["agea", "merfish_class"]
+    assert projects["lipidome"]["dataset_ids"] == ["lipids"]
+    assert {"agea", "brainwide-map"}.isdisjoint(projects)
 
 
 def test_production_environment_cannot_inherit_preview_defaults(monkeypatch):
@@ -76,8 +77,8 @@ def test_site_default_view_is_pinned_to_the_tracked_curator_default(monkeypatch)
     monkeypatch.setenv("VITE_DEFAULT_FEATURE_ID", "inherited-preview-feature")
     env = site_build.build_environment_for_site(config_with_default(), "c"*32)
     assert env["VITE_DEFAULT_DATASET_ID"] == "ephys_atlas_channels"
-    assert env["VITE_DEFAULT_RELEASE_ID"] == "2026_W32-ibl-review-20260908-v1"
-    assert env["VITE_DEFAULT_FEATURE_ID"] == "rms_ap.denoised"
+    assert env["VITE_DEFAULT_RELEASE_ID"] == "2026_W39-ibl-review-20261007-v1"
+    assert env["VITE_DEFAULT_FEATURE_ID"] == "rms_ap"
     assert env["VITE_DEFAULT_PARCELLATION_ID"] == "allen"
 
 
