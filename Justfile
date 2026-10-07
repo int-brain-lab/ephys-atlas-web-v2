@@ -25,11 +25,11 @@ bootstrap-anatomy:
 
 # Obtain any remotely resolved artifacts atomically, reuse valid local bytes, and validate.
 data:
-    {{uv-test}} python -m tools.development_bundle sync data/development-bundle-v6.json
+    {{uv-test}} python -m tools.development_bundle sync data/development-bundle-v7.json
 
 # Run the descriptor-configured local catalog after complete available-graph validation.
 dev:
-    {{uv-test}} python -m tools.development_bundle run --cwd web data/development-bundle-v6.json -- npm run dev:real
+    {{uv-test}} python -m tools.development_bundle run --cwd web data/development-bundle-v7.json -- npm run dev:real
 
 # Pull mutable upstream aliases, then fail closed unless they match reviewed releases.
 data-refresh-local:
@@ -210,7 +210,7 @@ validate-3d-local url="http://127.0.0.1:5173/app/" output="../artifacts/mesh-d04
 
 # Validate every dataset and context view exposed by `just dev`.
 validate-local-full url="http://localhost:5173/app/" output="../artifacts/local-full-browser-evidence":
-    {{uv-test}} python -m tools.development_bundle run --cwd web data/development-bundle-v6.json -- node scripts/validate-local-full.mjs {{url}} {{output}}
+    {{uv-test}} python -m tools.development_bundle run --cwd web data/development-bundle-v7.json -- node scripts/validate-local-full.mjs {{url}} {{output}}
 
 # Generate the ignored, fully offline anatomy comparison lab.
 anatomy-compare resolution="25":
