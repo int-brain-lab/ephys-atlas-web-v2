@@ -31,7 +31,11 @@ const EPHYS_ATLAS_DATASETS = new Set([
   'ephys_atlas_channels',
   'ephys_atlas_clusters',
   'ephys_atlas_volumes',
+  'ephys_atlas_eigenmodes',
+  'ephys_atlas_edges',
 ]);
+
+const ANATOMY_DATASETS = new Set(['agea', 'merfish_class', 'lipids']);
 
 function developmentProject(datasetId: string): DevelopmentProject {
   if (EPHYS_ATLAS_DATASETS.has(datasetId)) return {
@@ -44,7 +48,7 @@ function developmentProject(datasetId: string): DevelopmentProject {
     title: 'Brain-Wide Map',
     description: 'Brain-wide activity maps and preserved legacy results.',
   };
-  if (datasetId === 'agea') return {
+  if (ANATOMY_DATASETS.has(datasetId)) return {
     id: 'agea',
     title: 'Anatomy',
     description: 'Anatomical datasets from external scientific sources.',
