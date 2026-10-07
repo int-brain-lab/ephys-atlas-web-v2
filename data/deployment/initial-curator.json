@@ -8,10 +8,11 @@
       "dataset_ids": [
         "ephys_atlas_channels",
         "ephys_atlas_clusters",
-        "ephys_atlas_volumes"
+        "ephys_atlas_volumes",
+        "ephys_atlas_edges"
       ],
       "default_dataset": "ephys_atlas_channels",
-      "default_edition": "ibl-review-20260917-v3",
+      "default_edition": "ibl-review-20261007-v4",
       "editions": [
         {
           "edition_id": "ibl-review-20260908-v1",
@@ -62,6 +63,28 @@
               "release_id": "2026_W26-ibl-review-20260917-v2"
             }
           ]
+        },
+        {
+          "edition_id": "ibl-review-20261007-v4",
+          "label": "October 2026 (W39)",
+          "dataset_releases": [
+            {
+              "dataset_id": "ephys_atlas_channels",
+              "release_id": "2026_W39-ibl-review-20261007-v1"
+            },
+            {
+              "dataset_id": "ephys_atlas_clusters",
+              "release_id": "sha256-9b5e55215b306f26-ibl-review-20260908-v1"
+            },
+            {
+              "dataset_id": "ephys_atlas_volumes",
+              "release_id": "2026_W39-ibl-review-20261007-v1"
+            },
+            {
+              "dataset_id": "ephys_atlas_edges",
+              "release_id": "2026_W39-edges-ibl-review-20261007-v1"
+            }
+          ]
         }
       ]
     },
@@ -87,31 +110,47 @@
       ]
     },
     {
-      "project_id": "agea",
-      "title": "Anatomy",
+      "project_id": "genomics",
+      "title": "Genomics",
       "dataset_ids": [
-        "agea"
+        "agea",
+        "merfish_class"
       ],
       "default_dataset": "agea",
-      "default_edition": "ibl-review-20260917-v2",
+      "default_edition": "ibl-review-20261007-v1",
       "editions": [
         {
-          "edition_id": "ibl-review-20260908-v1",
-          "label": "September 2026",
-          "dataset_releases": [
-            {
-              "dataset_id": "agea",
-              "release_id": "agea-original-20260908-v1"
-            }
-          ]
-        },
-        {
-          "edition_id": "ibl-review-20260917-v2",
-          "label": "September 2026 (processed expression)",
+          "edition_id": "ibl-review-20261007-v1",
+          "label": "October 2026",
           "dataset_releases": [
             {
               "dataset_id": "agea",
               "release_id": "agea-processed-20260917-v3"
+            },
+            {
+              "dataset_id": "merfish_class",
+              "release_id": "class-processed-all-3b4a73f-ibl-review-20261007-v1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "project_id": "lipidome",
+      "title": "Lipidome",
+      "dataset_ids": [
+        "lipids"
+      ],
+      "default_dataset": "lipids",
+      "default_edition": "ibl-review-20261007-v1",
+      "editions": [
+        {
+          "edition_id": "ibl-review-20261007-v1",
+          "label": "October 2026",
+          "dataset_releases": [
+            {
+              "dataset_id": "lipids",
+              "release_id": "lba-2025-3b4a73f-ibl-review-20261007-v1"
             }
           ]
         }
@@ -122,11 +161,15 @@
     {
       "dataset_id": "ephys_atlas_channels",
       "title": "Channels",
-      "default_release": "2026_W32-ibl-review-20260908-v1",
+      "default_release": "2026_W39-ibl-review-20261007-v1",
       "releases": [
         {
           "release_id": "2026_W32-ibl-review-20260908-v1",
           "label": "2026 W32"
+        },
+        {
+          "release_id": "2026_W39-ibl-review-20261007-v1",
+          "label": "2026 W39"
         }
       ]
     },
@@ -144,7 +187,7 @@
     {
       "dataset_id": "ephys_atlas_volumes",
       "title": "Volumes",
-      "default_release": "2026_W26-ibl-review-20260917-v2",
+      "default_release": "2026_W39-ibl-review-20261007-v1",
       "releases": [
         {
           "release_id": "2026_W26-ibl-review-20260908-v1",
@@ -152,7 +195,11 @@
         },
         {
           "release_id": "2026_W26-ibl-review-20260917-v2",
-          "label": "2026 W26 · regional distributions"
+          "label": "2026 W26 \u00b7 regional distributions"
+        },
+        {
+          "release_id": "2026_W39-ibl-review-20261007-v1",
+          "label": "2026 W39"
         }
       ]
     },
@@ -180,6 +227,39 @@
         {
           "release_id": "agea-processed-20260917-v3",
           "label": "Processed expression"
+        }
+      ]
+    },
+    {
+      "dataset_id": "ephys_atlas_edges",
+      "title": "Edges",
+      "default_release": "2026_W39-edges-ibl-review-20261007-v1",
+      "releases": [
+        {
+          "release_id": "2026_W39-edges-ibl-review-20261007-v1",
+          "label": "2026 W39"
+        }
+      ]
+    },
+    {
+      "dataset_id": "merfish_class",
+      "title": "MERFISH cell classes",
+      "default_release": "class-processed-all-3b4a73f-ibl-review-20261007-v1",
+      "releases": [
+        {
+          "release_id": "class-processed-all-3b4a73f-ibl-review-20261007-v1",
+          "label": "Denoised classes"
+        }
+      ]
+    },
+    {
+      "dataset_id": "lipids",
+      "title": "Lipid Brain Atlas",
+      "default_release": "lba-2025-3b4a73f-ibl-review-20261007-v1",
+      "releases": [
+        {
+          "release_id": "lba-2025-3b4a73f-ibl-review-20261007-v1",
+          "label": "Lipid Brain Atlas 2025"
         }
       ]
     }
