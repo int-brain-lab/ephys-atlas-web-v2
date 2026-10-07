@@ -1,11 +1,11 @@
-"""Build local-preview MERFISH and lipid schema-v1 volume releases.
+"""Build MERFISH and lipid schema-v1 volume releases.
 
 Both products live on the 200 um AGEA loader grid (`iblatlas.genomics.agea`)
 and reuse its hash-pinned `label.npy` as the anatomical domain. Sources are
 staged snapshots under `data/source/<source-dataset>/<source-release>/` whose
-`source.json` pins every file by size and SHA-256. Outputs are local previews
-only: display is the Linear/Full baseline and no scientific-owner selection
-has been recorded, so they must never be published.
+`source.json` pins every file by size and SHA-256 and records the exact clean
+iblatlas commit whose loader produced them. Display is the neutral Linear/Full
+baseline, recorded as owner-approved in D090.
 """
 
 from __future__ import annotations
@@ -13,7 +13,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shlex
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -200,8 +202,15 @@ def _write_feature(release, feature_id, label, description, values, labels, grid
     return {"id": feature_id, "descriptor": json_resource(feature_path, release, "ephys-atlas-feature-v1")}
 
 
-def build_release(product: Product, source: Path, agea_source: Path, release_root: Path, created_at: str) -> Path:
-    """Build and validate one local-preview release; returns its directory.
+def build_release(
+    product: Product,
+    source: Path,
+    agea_source: Path,
+    release_root: Path,
+    created_at: str,
+    release_id: str,
+) -> Path:
+    """Build and validate one release; returns its directory.
 
     Parameters
     ----------
@@ -215,6 +224,8 @@ def build_release(product: Product, source: Path, agea_source: Path, release_roo
         Root under which `<dataset_id>/<release_id>/` is created.
     created_at : str
         ISO-8601 UTC creation timestamp recorded in the manifest.
+    release_id : str
+        Immutable output release identifier.
     """
     record = _verify_source(source)
     regional = load_regional_selection(REGIONAL_SELECTION)
@@ -226,7 +237,6 @@ def build_release(product: Product, source: Path, agea_source: Path, release_roo
     if volumes.shape[1:] != labels.shape or volumes.shape[0] != len(table):
         raise ValueError(f"unexpected source shape {volumes.shape} for {len(table)} channels")
     grid = _grid(labels.shape, _loader_affine(agea_source))
-    release_id = f"{record['resolved_release']}-local-preview-v1"
     release = release_root.joinpath(product.dataset_id, release_id)
     release.mkdir(parents=True, exist_ok=False)
     parcellations = build_physical_parcellations(labels, semantics="brainregions-index")
@@ -241,33 +251,37 @@ def build_release(product: Product, source: Path, agea_source: Path, release_roo
     json_paths += [f"features/{entry['id']}/volume/{name}" for entry in features for name in ("resource-index.json", "summary.json")]
     json_paths += [item["metadata"]["resource"]["path"] for item in parcellation_entries]
     commit = subprocess.run(["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
+    recipe = record["recipe"]
+    upstream = recipe.get("upstream_files_sha256") or {item["path"]: item["sha256"] for item in record["files"]}
     manifest = {
         "schema_version": "1.0",
         "dataset_id": product.dataset_id,
         "title": product.title,
-        "description": f"{product.title} — local preview only; never production or publication.",
+        "description": f"{product.title} on the 200 um AGEA loader grid, summarized by region.",
         "release": {"release_id": release_id, "immutable": True, "created_at": created_at, "paper_snapshot": False},
         "provenance": {
             "sources": [
                 *[
-                    {"role": "canonical-data", "description": f"Staged {product.source_dataset} source {item['path']}",
-                     "uri": f"{record['recipe']['upstream_uri']}{item['path']}", "sha256": item["sha256"]}
-                    for item in record["files"]
+                    {"role": "canonical-data", "description": f"Upstream {product.source_dataset} file {name}",
+                     "uri": f"{recipe['upstream_uri']}{name}", "sha256": digest}
+                    for name, digest in upstream.items()
                 ],
                 {"role": "scientific-code", "description": record["recipe"]["loader"],
                  "repository": record["recipe"]["code"]["repository"], "commit": record["recipe"]["code"]["commit"]},
             ],
             "builder": {
-                "name": "genomics-local-preview-builder",
-                "version": "0.1.0",
+                "name": "genomics-volume-builder",
+                "version": "1.0.0",
                 "repository": "rossant/ibl-ephys-atlas-web-v2",
                 "commit": commit,
-                "command": "python -m tools.genomics_preview (local preview only)",
+                "command": shlex.join(["python", "-m", "tools.genomics_volumes", *(
+                    "<agea-loader-folder>" if arg == str(agea_source) else arg for arg in sys.argv[1:]
+                )]),
                 "environment": build_environment(),
             },
             "recipe": {
-                "id": f"{product.dataset_id}-local-preview-v1",
-                "scientific_release": False,
+                "id": f"{product.dataset_id}-volume-v1",
+                "scientific_release": True,
                 "source_recipe": record["recipe"],
                 "axis_order": ["ml", "dv", "ap"],
                 "grid_shape": list(labels.shape),
@@ -277,7 +291,7 @@ def build_release(product: Product, source: Path, agea_source: Path, release_roo
                 "histogram": "Linear/Full, 64 bins",
                 "regional_parcellations": ["allen", "beryl", "cosmos"],
             },
-            "notes": [*product.notes, "Local preview only: display is the Linear/Full baseline without scientific-owner review."],
+            "notes": [*product.notes, "Display is the neutral Linear/Full baseline (owner-approved, D090); no feature-specific review."],
         },
         "parcellations": parcellation_entries,
         "features": features,
@@ -296,8 +310,9 @@ def main() -> None:
     parser.add_argument("--agea-source", type=Path, required=True, help="AGEA loader folder with label.npy")
     parser.add_argument("--release-root", type=Path, default=Path("data/releases"))
     parser.add_argument("--created-at", required=True)
+    parser.add_argument("--release-id", required=True, help="immutable output release identifier")
     args = parser.parse_args()
-    print(build_release(PRODUCTS[args.dataset], args.source, args.agea_source, args.release_root, args.created_at))
+    print(build_release(PRODUCTS[args.dataset], args.source, args.agea_source, args.release_root, args.created_at, args.release_id))
 
 
 if __name__ == "__main__":

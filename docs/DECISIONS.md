@@ -95,6 +95,7 @@ only part of the body; the index states what remains effective.
 | D084 | Parent rows navigate the region tree | accepted | 2026-10-05 | click and Enter/Space expand/collapse non-leaves; leaves retain selection; value rankings contain current-parcellation leaves |
 | D085 | Optional automatic region slice navigation | partially superseded | 2026-10-05 | default-on URL-persisted Auto-slice; D086 replaces nearest-plane search and checkbox; manual movement cancels lookup |
 | D086 | Compact region controls and interior Auto-slice | accepted | 2026-10-05 | icon toggles with tooltips; pinned native interior anchors nearest signed mapped centroids, gated against sparse display coverage |
+| D090 | MERFISH class and lipid volume releases | accepted | 2026-10-07 | Owner-approved production releases of denoised MERFISH classes and the Lipid Brain Atlas, neutral Linear/Full display, pinned to clean iblatlas main 3b4a73f; genomics and lipidome projects |
 | D089 | W39 channel, volume and edges release selections | accepted | 2026-10-07 | Owner-approved production selections for the W39 channels (denoised-only), volumes and edges; W32 display carried over only where comparable; six W32 features dropped upstream |
 | D088 | Relax D062: macOS or Linux release hosts | accepted | 2026-10-07 | Owner direction: preflight no longer requires Linux; provenance must still match the publishing host, main must be clean and commit-exact |
 | D087 | Quantile color mappings | accepted | 2026-10-01 | Quantile uniform and Quantile Gaussian join D081's color mapping; browser-derived rank maps from the colored regional statistic or valid-voxel binnings; histograms, axis, and release bytes unchanged |
@@ -2237,3 +2238,16 @@ linear/full for the 8 new ones; the geometry is the unchanged native 50 um Allen
 grid. Selections: `docs/data/CHANNELS_2026_W39_DISTRIBUTION_SELECTION.json`,
 `docs/data/VOLUME_2026_W39_*_SELECTION.json`. Eigenmodes and the W26
 interpretable remap are not published.
+
+## D090 — MERFISH class and lipid volume releases
+
+Owner direction recorded 2026-10-07. The MERFISH cell-class volume (denoised
+`label='processed'`, all 34 classes, non-neuronal included) and the Lipid
+Brain Atlas (173 lipids, no reliability filter) are published as production
+releases built by `tools/genomics_volumes.py` on the 200 um AGEA loader grid with
+the hash-pinned D078 label volume and the shared regional-distribution recipe.
+The staged volumes were reproduced bit-for-bit from iblatlas `main` commit
+`3b4a73f` (clean, no uncommitted paths), which is now the recorded scientific
+code; no iblatlas package release is required. Display is the neutral
+Linear/Full baseline with no feature-specific review. The catalog groups them
+as a `genomics` project (AGEA and MERFISH) and a `lipidome` project.
