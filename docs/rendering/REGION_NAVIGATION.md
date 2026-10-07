@@ -11,6 +11,12 @@ on load; enabling only affects subsequent selections.
 `tools/projection_pack/build_region_navigation.py` generates the schema-v1
 `atlas-region-navigation-v1` companion in `web/src/assets/navigation/`. These
 small imported assets are bundled even when production excludes Vite publicDir.
+Development and production select separate verified companions through
+`web/artifact-profiles.json`, shared by Vite and the deployment compatibility gate.
+The development pack is `ibl-atlas-projections-2363b6958fbf`; production retains
+`ibl-atlas-projections-05b9f3f85db9`. Their companions have independently generated
+provenance and exact manifest bindings. Production regeneration on 2026-10-07
+produced identical anchor bytes and coverage, without changing either geometry.
 No projection-pack or release bytes are changed.
 The site build accepts the emitted `.bin` files under `assets/` and includes
 their byte sizes and SHA-256 hashes in its verified immutable inventory.
@@ -38,16 +44,29 @@ survive cancellation; failed reads can be retried by reselecting the region.
 
 ## Build and verification
 
-Run on the canonical Linux host with the pinned LUT already available:
+Run on the canonical Linux host with the pinned LUT already available and the
+complete hash-verified target production pack acquired locally:
 
 ```bash
 uv run --project builder --extra anatomy --extra scientific --extra test --locked \
-  python -m tools.projection_pack.build_region_navigation --output /tmp/region-navigation
+  python -m tools.projection_pack.build_region_navigation \
+  --projection-root artifacts/production-projection-pack \
+  --site-config data/deployment/initial-site.json --output /tmp/region-navigation
 ```
 
-The generator refuses to overwrite an output directory. Review the complete
-result before replacing the bundled generated files. Source hashes, generator
+`--projection-root` is required. A development-only generation must explicitly
+select `web/public/atlas/projections/ibl-static-registered-v1` and omit the
+production config. `--site-config` verifies the target projection and signed
+catalog bytes before generation. The generator refuses to overwrite an output
+directory. Review the complete result before replacing the appropriate bundled
+profile: production lives in `web/src/assets/navigation/production/`; development
+retains `web/src/assets/navigation/`. Never edit a binding in the generated JSON
+to make a different pack pass. Source hashes, generator
 source hash, recipe and Linux environment are recorded in the manifest.
+
+Run `just site-compatibility` and the exact-build/live checks in the
+[deployment runbook](../publishing/AUTOMATIC_SITE_DEPLOYMENT.md) before claiming
+production acceptance. Local browser tests use the development pack.
 
 The current tables total 45,280 binary bytes. All 614 signed Beryl and 22 signed
 Cosmos entries have anchors. Allen has 1,338 anchors, 851 rows without their own

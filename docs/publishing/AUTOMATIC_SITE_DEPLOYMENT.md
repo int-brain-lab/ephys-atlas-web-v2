@@ -16,9 +16,68 @@ existing offline plan and conditional S3 site transaction. It verifies `/`,
 without cancelling a publication in progress. The site publisher verifies the
 pinned catalog and projection/mesh manifests before replacing `site/index.html`.
 It neither builds nor promotes dataset releases, packs, or the catalog.
+Both PR CI and `just check` run offline compatibility preflight against the
+tracked production configuration. The site receipt records the same evidence
+and apply revalidates it. Before assuming the AWS role, deployment verifies the
+served dependency manifests and tests the exact unpublished build over the
+production origin. After publishing, it repeats the viewer checks live.
 After a separate data or pack promotion changes any pinned dependency, update
 the tracked site configuration before the next site deployment; a mismatch
 stops publication rather than using unreviewed data.
+
+## Compatibility and evidence
+
+Integrity proves that an artifact matches its descriptor. Compatibility checks
+the relationships between those verified artifacts. The shared
+`web/artifact-profiles.json` selects the actual browser navigation companion;
+the production gate checks its exact projection ID/hash, native grid/affine,
+reference space and signed region catalog. It verifies companion bytes, schema-v1
+catalog discovery links, pack schemas and the optional mesh's production purpose
+and reference space. Different volume grids can share that frame; no shape or
+filename comparison substitutes for coordinate compatibility.
+
+`data/deployment/dependencies/<sha256>.json` contains exact served root-manifest
+snapshots for the configured catalog/projection/mesh. These are checked against
+descriptor size/SHA before parsing; they are not alternate release schemas or
+scientific datasets. A config update needs corresponding verified snapshots.
+Never modify a generated companion's hash binding to make a new pack pass.
+
+Run from the repository root:
+
+```bash
+just site-compatibility
+uv run --project builder --extra test --locked python -m tools.site_compatibility \
+  data/deployment/initial-site.json --origin https://ephys-atlas.iblcore.org
+```
+
+The first command is offline and part of the full local/PR gate. The second
+checks the selected manifests actually served by the origin. To exercise the
+exact candidate on clean Linux `main`, build a new output directory and run:
+
+```bash
+uv run --project builder --extra test --locked python -m tools.site_build \
+  data/deployment/initial-site.json artifacts/site-candidate
+node web/scripts/verify-production-site.mjs \
+  https://ephys-atlas.iblcore.org artifacts/site-candidate
+```
+
+The browser intercepts only that build's entry/assets, using the unmodified
+production origin for dependencies. It does not publish the candidate. The same
+script without the directory verifies the live viewer. It checks landing/startup,
+registered and static projections, representative features from every discovered
+dataset with release-declared parcellations, navigation geometry, disabled
+navigation, quantile/URL state and optional native 3-D. This is representative
+Chromium evidence, not exhaustive feature/browser QA. Synthetic packaging tests
+continue to prove packaging only.
+
+A site receipt pins the catalog **at site publication**. Runtime discovery still
+reads mutable `/catalog.json`. Production `tools.s3_catalog --apply` now checks
+the current site's dependencies and tests the proposed catalog in the running
+viewer before opening a publication transaction. The existing release-graph and
+remote integrity gates remain required. After catalog promotion, fetch the exact
+new served bytes, synchronize the tracked catalog descriptor/snapshot and run
+compatibility again before the next site push. Missing synchronization fails
+closed; it must not be bypassed by removing catalog integrity checks.
 
 ## AWS identity and access
 

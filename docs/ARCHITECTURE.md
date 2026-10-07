@@ -178,12 +178,28 @@ for large dynamic lists.
 
 ## Publishing
 
-The initial production publisher is an operator-invoked local command using
-temporary, least-privilege AWS credentials. It publishes already-built
+Scientific release, pack and catalog publication uses an operator-invoked local
+command with temporary, least-privilege AWS credentials. It publishes already-built
 releases to private S3, preserves resumable private staging, verifies complete
 size/SHA/schema graphs, prevents immutable-key overwrite, and updates mutable
 catalogs last. Public reads are lock-free static CloudFront reads; there is no
 runtime publication backend.
+
+Browser deployment is separate: successful CI on `main` automatically publishes
+the exact clean Linux site build using a site-only OIDC role. The shared browser
+artifact profile in `web/artifact-profiles.json` selects its navigation companion.
+`tools.site_compatibility` verifies that companion's exact pack/hash, native grid,
+affine and signed mappings against the deployment configuration and hash-addressed
+served manifest snapshots. Catalog/pack schema validation and mesh reference-space
+checks reuse schema v1. The compatibility evidence is recorded in the site receipt
+and revalidated before apply. Projection root bytes are also verified by the browser.
+
+CI checks the unpublished build against the production origin before changing the
+site entry and checks the live viewer afterward. Synthetic packaging tests retain
+their test-only scope. Catalog discovery remains mutable; a site receipt records
+the catalog at publication, without freezing subsequent discovery. Catalog
+promotion must validate the proposed graph against the running site and synchronize
+tracked deployment descriptors/snapshots afterward.
 
 Cross-dataset project, edition, release-presentation, and default metadata is
 owned by a repository-versioned curator configuration rather than any one

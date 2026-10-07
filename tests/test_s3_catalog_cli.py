@@ -1,5 +1,6 @@
 import json
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -95,3 +96,33 @@ def test_catalog_validation_rejects_incomplete_historical_builder_provenance(tmp
             repo=RepositoryState("main", "c" * 40, True),
             host_os="Linux",
         )
+
+
+def test_production_catalog_compatibility_failure_stops_before_browser_and_publication(tmp_path, monkeypatch):
+    config = tmp_path / "site.json"
+    config.write_text(json.dumps({"catalog": {}}))
+    from tools import site_build
+    monkeypatch.setattr(site_build, "dependencies", lambda config: [])
+    def incompatible(*args, **kwargs):
+        raise ValueError("incompatible site dependencies")
+    monkeypatch.setattr(s3_catalog, "check_compatibility", incompatible)
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kw: pytest.fail("incompatible site reached browser verification"))
+    with pytest.raises(ValueError, match="incompatible"):
+        s3_catalog.verify_catalog_site({}, config, "https://example.test")
+
+
+def test_production_catalog_browser_failure_is_not_accepted(tmp_path, monkeypatch):
+    config = tmp_path / "site.json"
+    config.write_text(json.dumps({"catalog": {}}))
+    from tools import site_build
+    monkeypatch.setattr(site_build, "dependencies", lambda config: [])
+    monkeypatch.setattr(s3_catalog, "check_compatibility", lambda *args, **kw: {})
+    monkeypatch.setattr(s3_catalog, "validate_catalog_links", lambda catalog: None)
+    def failed_browser(args, **kw):
+        assert json.loads(Path(args[4]).read_bytes()) == {"proposed": True}
+        assert args[5] == str(config.resolve())
+        assert args[3] == ""
+        raise subprocess.CalledProcessError(1, args)
+    monkeypatch.setattr(subprocess, "run", failed_browser)
+    with pytest.raises(ValueError, match="running-site verification"):
+        s3_catalog.verify_catalog_site({"proposed": True}, config, "https://example.test")

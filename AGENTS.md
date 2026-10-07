@@ -20,6 +20,11 @@ default.
 ## Branch and commit model
 
 - Work on `main`. Do not create persistent `work/*`, `agent/*`, or other parallel product branches unless the repository owner explicitly asks for an isolated experiment.
+- An authorized push to `main` automatically deploys browser code against the
+  separately pinned production dependencies in `data/deployment/initial-site.json`.
+  Run `just site-compatibility` before pushing; local development assets do not
+  establish production compatibility. Follow
+  `docs/publishing/AUTOMATIC_SITE_DEPLOYMENT.md` for exact-build and live checks.
 - The former brain-mesh 3-D experiment worktree is frozen donor evidence. Its
   reviewed behavior has been reconstructed on `main`; do not resume or merge
   the donor branch without fresh repository-owner authorization.
@@ -146,6 +151,11 @@ Scientific provenance is part of the product contract, not optional metadata.
 - Before publication, run `just production-release-preflight <release...>` on
   clean `main`. The release provenance must identify that exact Linux build
   environment and checked-out commit.
+- Site builds and publication must validate cross-artifact compatibility as
+  well as byte integrity. Preserve exact companion-to-pack bindings and the
+  separate reference-space/grid contracts. After catalog or pack promotion,
+  synchronize the tracked deployment descriptors and verified manifest
+  snapshots; a mutable catalog is not frozen by an earlier site receipt.
 
 ## Required commands
 
@@ -162,6 +172,8 @@ Python or invoke system `pip`. Then use:
 - `just test-web` — TypeScript typecheck, unit tests, and production build.
 - `just test-browser` — Playwright browser suite.
 - `just check` — the full local gate; this is the default completion criterion.
+- `just site-compatibility` — validate the browser's production artifact profile
+  against the tracked deployment manifest snapshots, without network access.
 
 CI is defined in `.github/workflows/ci.yml`. Local `just check` should stay aligned with it.
 Canonical documentation screenshot pixels are generated and compared on Linux;
@@ -177,6 +189,7 @@ Follow `docs/AGENTIC_DEVELOPMENT.md`. In particular:
 4. run targeted tests, then `just check`;
 5. update status/spec/decision docs when reality changed;
 6. commit only the intended files with a descriptive message;
-7. leave `main` green and the next action explicit.
+7. leave `main` green and the next action explicit; distinguish local checks,
+   successful publication, and verified production behavior in the handoff.
 
 If authoritative information contradicts these documents, update the durable repository documentation in the same task rather than relying on chat history.

@@ -257,6 +257,19 @@ run passed on 2026-09-28; see the
 [automatic site deployment runbook](publishing/AUTOMATIC_SITE_DEPLOYMENT.md).
 No scientific data or catalog publication is attached to a code push.
 
+The 2026-10-07 compatibility repair binds a separately generated production
+navigation companion to the unchanged public projection pack. Offline checks in
+`just check` and PR CI validate the actual production artifact profile against
+served-byte manifest snapshots, including exact companion bindings, coordinate
+contracts, signed mappings and supported schemas. Site receipts record and
+revalidate this evidence. The browser now verifies projection root size/SHA.
+Deployment checks the exact unpublished build against production dependencies and
+exercises the live viewer after publication; synthetic production-packaging tests
+are explicitly test-only evidence. Production catalog apply checks the proposed
+discovery graph in the running site before writing. Local, candidate-build,
+publication and live behavior remain separate evidence classes; the automatic
+deployment run records the last two.
+
 The capability-token publishing service supports resumable private staging,
 byte-size/SHA/schema validation, immutable publication, administrative aliases,
 bounded requests, process-safe filesystem mutations, and external validation.

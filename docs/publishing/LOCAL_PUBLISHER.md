@@ -126,6 +126,20 @@ checksum/size/serving metadata before invoking the same compiler as the
 filesystem publishing service.
 
 Each successful S3 promotion exposes a unique schema-v1 `publication_id`.
+Before production apply opens its remote transaction, the wrapper verifies the
+tracked site's selected manifest bytes and exercises the proposed catalog in
+the running production viewer. `--site-config` and `--site-origin` select the
+target (defaults are the tracked initial site and production origin). Chromium
+and the locked web dependencies must be installed. Browser failure stops apply.
+This supplements the release and catalog graph validators; it does not replace
+scientific release preflight.
+
+After successful catalog promotion, synchronize the site's tracked catalog
+descriptor and exact served-byte snapshot, then run `just site-compatibility`.
+The previous site receipt is publication-time evidence, not a permanent pin of
+mutable runtime discovery. See [automatic deployment](AUTOMATIC_SITE_DEPLOYMENT.md)
+for preflight and candidate/live verification commands.
+
 Its immutable private `_staging/catalog-history/<publication-id>.json` records
 the complete cumulative edition history and catalog hash. This record is
 created first; one conditional write replaces `catalog.json` last. Losing

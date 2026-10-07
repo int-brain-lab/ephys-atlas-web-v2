@@ -9,9 +9,9 @@ import { chromium, expect } from '@playwright/test';
 const origin = process.argv[2] ?? 'https://ephys-atlas.iblcore.org';
 const buildDirectory = process.argv[3];
 const catalogCandidate = process.argv[4];
-const config = JSON.parse(await readFile(new URL('../../data/deployment/initial-site.json', import.meta.url)));
 const receipt = buildDirectory ? JSON.parse(await readFile(path.join(buildDirectory, '_site.json'))) : null;
-if (receipt) assert.deepEqual(receipt.config, config);
+const config = receipt?.config ?? JSON.parse(await readFile(process.argv[5]
+  ?? new URL('../../data/deployment/initial-site.json', import.meta.url)));
 const errors = [];
 const visited = [];
 const browser = await chromium.launch();
@@ -114,7 +114,10 @@ try {
     const feature = dataset.dataset_id === config.default_view.dataset_id
       ? config.default_view.feature_id : manifest.features[0].id;
     const representation = ['agea', 'ephys_atlas_volumes'].includes(dataset.dataset_id) ? 'volume' : 'regional';
-    const params = new URLSearchParams({ v: '4', dataset: dataset.dataset_id, release: release.release_id, feature, repr: representation });
+    const parcellation = manifest.parcellations.find(p => p.id === config.default_view.parcellation_id)?.id
+      ?? manifest.parcellations[0].id;
+    const params = new URLSearchParams({ v: '4', dataset: dataset.dataset_id, release: release.release_id,
+      feature, repr: representation, parcel: parcellation });
     await page.goto(origin + '/app/?' + params);
     await readySlices();
     if (representation === 'volume') await check(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);

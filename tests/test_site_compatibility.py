@@ -23,7 +23,7 @@ def test_old_development_companion_is_rejected_by_exact_production_selection():
         validate_navigation(nav, projection, config["projection"]["sha256"], regions, config["atlas_regions"]["sha256"])
 
 
-def test_tracked_production_combination_passes_and_cannot_use_a_stale_snapshot(tmp_path):
+def test_tracked_production_combination_passes_and_cannot_use_a_stale_snapshot():
     config, _, _ = inputs()
     result = check_compatibility(config)
     assert result["profile"] == "production"
@@ -34,7 +34,7 @@ def test_tracked_production_combination_passes_and_cannot_use_a_stale_snapshot(t
         check_compatibility(altered)
 
 
-def test_site_receipt_must_revalidate_compatibility_even_when_all_files_are_unchanged(tmp_path, monkeypatch):
+def test_site_receipt_must_revalidate_compatibility_even_when_all_files_are_unchanged(tmp_path):
     from tools import site_build
     from tools.release_preflight import RepositoryState
     from ibl_ephys_atlas_publish.s3 import json_bytes

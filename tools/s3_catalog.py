@@ -14,6 +14,7 @@ from ephys_atlas_builder.development_bundle import _validate_release_directory
 from ephys_atlas_builder.schema_v1 import validate_schema_v1_document
 from tools.s3_publish import REPOSITORY, publication_store
 from tools.release_preflight import check_catalog_release, repository_state
+from tools.site_compatibility import check_compatibility, validate_catalog_links
 from ibl_ephys_atlas_publish.core import PublishingError
 from ibl_ephys_atlas_publish.s3 import Destination, release_plan
 from ibl_ephys_atlas_publish.s3_catalog import compile_catalog, promote_catalog
@@ -42,6 +43,23 @@ def validate_catalog(catalog):
     validate_schema_v1_document(catalog, "catalog.schema.json")
 
 
+def verify_catalog_site(catalog: dict, site_config: Path, origin: str) -> None:
+    """Exercise proposed discovery against the running browser before any write."""
+    from tools.site_build import dependencies
+    config = json.loads(site_config.read_bytes())
+    dependencies(config)
+    check_compatibility(config, origin=origin)
+    validate_catalog_links(catalog)
+    with tempfile.TemporaryDirectory(prefix="atlas-catalog-browser-") as temporary:
+        candidate = Path(temporary) / "catalog.json"
+        candidate.write_text(json.dumps(catalog))
+        try:
+            subprocess.run(["node", "web/scripts/verify-production-site.mjs", origin, "", str(candidate), str(site_config.resolve())],
+                           cwd=REPOSITORY, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as error:
+            raise ValueError(f"proposed catalog failed running-site verification: {error.stderr or error}") from error
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("config", type=Path)
@@ -51,6 +69,8 @@ def main(argv=None):
     parser.add_argument("--profile")
     parser.add_argument("--transport", choices=("cli", "sdk"), default="cli")
     parser.add_argument("--confirm-root")
+    parser.add_argument("--site-config", type=Path, default=REPOSITORY / "data/deployment/initial-site.json")
+    parser.add_argument("--site-origin", default="https://ephys-atlas.iblcore.org")
     args = parser.parse_args(argv)
     destination = Destination(args.environment)
     if args.apply and (not args.profile or args.confirm_root != destination.root):
@@ -69,6 +89,8 @@ def main(argv=None):
             preview, _ = compile_catalog(config, releases)
             validate_catalog(preview)
             if args.apply:
+                if args.environment == "production":
+                    verify_catalog_site(preview, args.site_config, args.site_origin)
                 store = publication_store(destination, args.profile, args.transport)
                 try:
                     result = promote_catalog(

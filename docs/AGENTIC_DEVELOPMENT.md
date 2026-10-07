@@ -7,6 +7,11 @@ The objective is not maximum code throughput. It is continuous, reviewable progr
 ## Operating model
 
 - `main` is the development branch and source of truth.
+- An authorized `main` push automatically deploys the browser after CI.
+  Its production packs/catalog are independently pinned, so a green development
+  combination is insufficient. The local gate includes deployment compatibility;
+  use the [automatic deployment runbook](publishing/AUTOMATIC_SITE_DEPLOYMENT.md)
+  for exact-build and live evidence.
 - Work in small coherent units that can be validated and committed independently.
 - Prefer the next unblocked acceptance criterion over speculative architecture work.
 - Repository files, tests, schemas, source evidence, and recorded decisions outrank conversation memory.
@@ -48,6 +53,8 @@ For each task:
 4. **Implement the smallest coherent change** — avoid building abstractions with no immediate consumer.
 5. **Run targeted tests** — use the narrowest test loop while iterating.
 6. **Run the full gate** — `just check` before considering the task complete.
+   This includes offline production compatibility. For a production update,
+   also verify the exact site build over its configured origin before publication.
 7. **Inspect the diff** — confirm only intended files changed; remove diagnostics, generated junk, and dead experiments.
 8. **Update durable context** — status, decisions, plan, or open questions when the repository reality changed.
 9. **Commit** — use a concise message describing the completed behavior, not the activity.
@@ -204,5 +211,7 @@ At the end of an autonomous session, another fresh agent should be able to read 
 - why key choices were made;
 - what the next unblocked task is;
 - which command proves the current baseline is healthy.
+- whether evidence is local, an exact unpublished deployment build, or live
+  production behavior. A successful HTML publication is not a viewer acceptance test.
 
 That is the handoff standard.
