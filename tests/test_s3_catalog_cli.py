@@ -69,28 +69,23 @@ def test_catalog_cli_accepts_historical_canonical_release_offline(tmp_path, monk
 @pytest.mark.parametrize(
     ("repo", "host_os", "message"),
     [
-        (RepositoryState("main", "c" * 40, True), "Darwin", "must run on Linux"),
         (RepositoryState("work", "c" * 40, True), "Linux", "requires main"),
         (RepositoryState("main", "c" * 40, False), "Linux", "clean tracked"),
     ],
 )
-def test_catalog_validation_requires_current_clean_linux_main(tmp_path, repo, host_os, message):
+def test_catalog_validation_requires_current_clean_main(tmp_path, repo, host_os, message):
     root = _release(tmp_path)
     with pytest.raises(PreflightError, match=message):
         check_catalog_release(root, repo=repo, host_os=host_os)
 
 
-@pytest.mark.parametrize("mutation", ["missing-commit", "nonlinux-environment"])
-def test_catalog_validation_rejects_incomplete_historical_builder_provenance(tmp_path, mutation):
+def test_catalog_validation_rejects_incomplete_historical_builder_provenance(tmp_path):
     root = _release(tmp_path)
     manifest_path = root / "manifest.json"
     manifest = json.loads(manifest_path.read_text())
-    if mutation == "missing-commit":
-        del manifest["provenance"]["builder"]["commit"]
-    else:
-        manifest["provenance"]["builder"]["environment"]["operating_system"] = "darwin"
+    del manifest["provenance"]["builder"]["commit"]
     manifest_path.write_text(json.dumps(manifest))
-    with pytest.raises(PreflightError, match="canonical (40-character builder commit|Linux builder environment)"):
+    with pytest.raises(PreflightError, match="canonical 40-character builder commit"):
         check_catalog_release(
             root,
             repo=RepositoryState("main", "c" * 40, True),

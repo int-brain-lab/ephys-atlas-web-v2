@@ -52,7 +52,7 @@ def _rename_release(release: Path, release_id: str) -> Path:
     return renamed
 
 
-def test_accepts_valid_linux_main_release(tmp_path):
+def test_accepts_valid_main_release(tmp_path):
     release = _release(tmp_path)
     check_release(
         release,
@@ -64,7 +64,6 @@ def test_accepts_valid_linux_main_release(tmp_path):
 @pytest.mark.parametrize(
     ("release_id", "repo", "host_os", "message"),
     [
-        ("canonical-v1", RepositoryState("main", COMMIT, True), "Darwin", "must run on Linux"),
         ("canonical-v1", RepositoryState("work", COMMIT, True), "Linux", "requires main"),
         ("canonical-v1", RepositoryState("main", COMMIT, False), "Linux", "clean tracked"),
         ("canonical-v1", RepositoryState("main", "b" * 40, True), "Linux", "builder commit"),
@@ -77,6 +76,26 @@ def test_rejects_noncanonical_conditions(tmp_path, release_id, repo, host_os, me
         release = _rename_release(release, release_id)
     with pytest.raises(PreflightError, match=message):
         check_release(release, repo=repo, host_os=host_os)
+
+
+def test_accepts_release_built_and_checked_on_macos(tmp_path):
+    """D088 relaxes D062: the host OS is recorded, not required to be Linux."""
+    release = _release(tmp_path)
+    manifest_path = release / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["provenance"]["builder"]["environment"]["operating_system"] = "darwin"
+    manifest_path.write_text(json.dumps(manifest))
+    check_release(
+        release,
+        repo=RepositoryState(branch="main", commit=COMMIT, clean=True),
+        host_os="Darwin",
+    )
+    with pytest.raises(PreflightError, match="current build environment"):
+        check_release(
+            release,
+            repo=RepositoryState(branch="main", commit=COMMIT, clean=True),
+            host_os="Linux",
+        )
 
 
 def test_staging_benchmark_accepts_candidate_with_canonical_build_guards(tmp_path):
@@ -100,7 +119,6 @@ def test_staging_benchmark_accepts_candidate_with_canonical_build_guards(tmp_pat
         ("canonical-v1", RepositoryState("main", COMMIT, True), "Linux", "candidate identity"),
         ("local-preview-candidate", RepositoryState("main", COMMIT, True), "Linux", "local preview"),
         ("canonical-candidate", RepositoryState("main", COMMIT, False), "Linux", "clean tracked"),
-        ("canonical-candidate", RepositoryState("main", COMMIT, True), "Darwin", "must run on Linux"),
     ],
 )
 def test_staging_benchmark_rejects_noncanonical_conditions(

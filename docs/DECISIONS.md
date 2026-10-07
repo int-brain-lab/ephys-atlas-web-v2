@@ -70,7 +70,7 @@ only part of the body; the index states what remains effective.
 | D059 | Shared S3 staging/production roots | partially superseded | 2026-09-02 | bucket roots and immutable-key policy retained; D072 confirms hostname after D071 |
 | D060 | Lean AWS static hosting and local publication | partially superseded | 2026-09-02 | AWS topology and local publication retained; D072 confirms hostname after D071 |
 | D061 | Curated immutable project editions | partially superseded | 2026-09-03 | identity, authority, context and resolution retained; D063 replaces wide/staged UI presentation |
-| D062 | Linux canonical release environment | accepted | 2026-09-04 | Linux-only release build/preflight/publication; macOS preview-only |
+| D062 | Linux canonical release environment | superseded by D088 | 2026-09-04 | Linux-only release build/preflight/publication; macOS preview-only |
 | D063 | Data chooser and exploration-first header | partially superseded | 2026-09-05 | D064 moves version selection into Data details; D065 moves display into the header; grouped Data and prominent Feature retained |
 | D064 | Put rare version changes in Data details | accepted | 2026-09-05 | removes header Release and user-facing edition modes; preserves exact scientific navigation |
 | D065 | Compact display control in the header | accepted | 2026-09-05 | Display & parcellation shares the desktop Data/Feature row; removes workspace control row |
@@ -95,6 +95,7 @@ only part of the body; the index states what remains effective.
 | D084 | Parent rows navigate the region tree | accepted | 2026-10-05 | click and Enter/Space expand/collapse non-leaves; leaves retain selection; value rankings contain current-parcellation leaves |
 | D085 | Optional automatic region slice navigation | partially superseded | 2026-10-05 | default-on URL-persisted Auto-slice; D086 replaces nearest-plane search and checkbox; manual movement cancels lookup |
 | D086 | Compact region controls and interior Auto-slice | accepted | 2026-10-05 | icon toggles with tooltips; pinned native interior anchors nearest signed mapped centroids, gated against sparse display coverage |
+| D088 | Relax D062: macOS or Linux release hosts | accepted | 2026-10-07 | Owner direction: preflight no longer requires Linux; provenance must still match the publishing host, main must be clean and commit-exact |
 | D087 | Quantile color mappings | accepted | 2026-10-01 | Quantile uniform and Quantile Gaussian join D081's color mapping; browser-derived rank maps from the colored regional statistic or valid-voxel binnings; histograms, axis, and release bytes unchanged |
 
 ## D001 — Separate v2
@@ -2199,3 +2200,17 @@ than two distinct finite values exist, colors fall back to the distribution
 axis. This is presentation state only: it changes no immutable release bytes,
 estimates no scientific threshold, and does not resolve Q16. A future
 release-owned quantile table would need its own decision and schema change.
+
+## D088 — Relax D062: release builds and publication may run on macOS or Linux
+
+Owner direction recorded 2026-10-07. D062's rule that only Linux may build,
+preflight and publish production releases is withdrawn. `tools.release_preflight`
+and the S3 publish and catalog commands no longer require a Linux host or Linux
+provenance. They still require clean `main`, a builder commit equal to the
+checked-out commit, immutable non-candidate non-local release IDs, a complete
+schema-v1 graph, and builder environment provenance (OS, machine, Python,
+NumPy) equal to the publishing host. Historical releases may keep their
+recorded environment for catalog compilation. Small numeric or raster
+differences between hosts are accepted; the recorded environment keeps them
+auditable. Projection and mesh pack builds, the site build and CI deployment are
+unchanged and remain Linux, and canonical screenshot pixels remain Linux-only.

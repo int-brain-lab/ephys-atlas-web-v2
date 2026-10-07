@@ -35,10 +35,10 @@ These boundaries are deliberate:
   materializers. IndexedDB changes transport, not scientific meaning.
 - Synthetic fixtures prove contracts and behavior only. A validated real
   local release is still not a staging or published-production release.
-- Linux is the canonical build and publication environment. macOS can refresh,
-  validate, and preview reviewed data quickly, but its generated scientific
-  artifacts are never promoted. Builder provenance records OS, machine,
-  Python, and NumPy so this boundary is auditable.
+- D088 (superseding D062's Linux-only rule) allows release builds and
+  publication from macOS or Linux. Builder provenance records OS, machine,
+  Python, and NumPy, and preflight requires them to match the publishing host,
+  so the environment stays auditable.
 
 ## Product components
 
@@ -85,7 +85,7 @@ Keep implementation and scientific maturity separate:
 | Published-production | Immutable public bytes and catalog entries approved for production use |
 
 Promotion from local to staging is not a relabel. A release entering the
-publication workflow must be rebuilt on clean Linux `main` and pass
+publication workflow must be rebuilt on clean `main` and pass
 `just production-release-preflight <release...>`.
 
 ## Documentation authority
@@ -131,8 +131,9 @@ candidate is validated locally but is neither staged nor published. D078
 accepts source-native AGEA registration for descriptive regional aggregation;
 Q19 retains only promotion authorization.
 
-D062 fixes the execution environment independently of those choices: Linux is
-canonical for release builds and deployment, while macOS is preview-only.
+D088 fixes the execution environment independently of those choices: releases
+may be built and published from macOS or Linux with matching provenance
+(D062's Linux-only rule is superseded).
 
 Use [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) for the exact next
 testable actions and [`OPEN_QUESTIONS.md`](OPEN_QUESTIONS.md) for their stop

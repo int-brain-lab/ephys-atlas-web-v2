@@ -145,11 +145,12 @@ Scientific provenance is part of the product contract, not optional metadata.
 - Publishing is capability-based and publishes already-built releases; it does not transform scientific data.
 - A release must pass byte-size/SHA validation and the schema validator before becoming public.
 - Keep the public browser catalog contract separate from administrative publishing state.
-- Linux is the sole canonical build, preflight, and publication host. macOS is
-  a fast development/preview host; artifacts built there must retain local or
-  candidate identity and must never be promoted.
+- D088 relaxes D062: releases may be built and published from macOS or Linux.
+  Builder provenance records the OS, machine, Python and NumPy, and preflight
+  requires them to match the publishing host. Local, candidate and preview
+  identities still cannot be promoted.
 - Before publication, run `just production-release-preflight <release...>` on
-  clean `main`. The release provenance must identify that exact Linux build
+  clean `main`. The release provenance must identify that exact build
   environment and checked-out commit.
 - Site builds and publication must validate cross-artifact compatibility as
   well as byte integrity. Preserve exact companion-to-pack bindings and the

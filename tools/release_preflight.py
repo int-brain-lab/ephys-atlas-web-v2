@@ -1,4 +1,4 @@
-"""Fail-closed checks for artifacts entering the Linux publication workflow."""
+"""Fail-closed checks for artifacts entering the publication workflow."""
 
 from __future__ import annotations
 
@@ -55,8 +55,6 @@ def _release_errors(
     environment = builder.get("environment")
     current_environment = {**build_environment(), "operating_system": host_os.lower()}
 
-    if host_os.lower() != "linux":
-        errors.append(f"{workflow} preflight must run on Linux")
     if repo.branch != "main":
         errors.append(f"{workflow} preflight requires main, found {repo.branch!r}")
     if not repo.clean:
@@ -70,7 +68,7 @@ def _release_errors(
     if not isinstance(environment, dict):
         errors.append(f"builder environment is required for {workflow}")
     elif environment != current_environment:
-        errors.append("release provenance must match the current Linux build environment")
+        errors.append("release provenance must match the current build environment")
     for source in manifest["provenance"]["sources"]:
         if source.get("release") in {"latest", "current"}:
             errors.append("provenance sources must resolve mutable aliases to immutable IDs")
@@ -104,7 +102,7 @@ def check_catalog_release(
 
     Remote catalog promotion separately proves the complete, ordinary release
     publication record and every artifact at the selected destination. The
-    operator remains on clean Linux main; the recorded canonical builder commit
+    operator remains on clean main; the recorded canonical builder commit
     and environment may be historical rather than equal to the current host.
     """
     validate_release(release_dir)
@@ -114,8 +112,6 @@ def check_catalog_release(
     builder = manifest["provenance"]["builder"]
     environment = builder.get("environment")
     errors: list[str] = []
-    if host_os.lower() != "linux":
-        errors.append("catalog promotion must run on Linux")
     if repo.branch != "main":
         errors.append(f"catalog promotion requires main, found {repo.branch!r}")
     if not repo.clean:
@@ -137,9 +133,8 @@ def check_catalog_release(
             not isinstance(environment.get(key), str) or not environment[key]
             for key in expected_environment
         )
-        or environment.get("operating_system") != "linux"
     ):
-        errors.append("release requires complete canonical Linux builder environment provenance")
+        errors.append("release requires complete canonical builder environment provenance")
     if any(
         marker in release_id.lower()
         for marker in ("candidate", "local-preview", "local-rebuild")
