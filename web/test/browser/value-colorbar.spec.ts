@@ -47,4 +47,6 @@ test('regional colorbars update their palette and nonlinear positions while pres
   await page.goto('/app/?v=4&feature=rms_ap&repr=volume');
   await expect(page.locator('.region-statistic-domain')).toContainText('Anatomy only');
   await expect(page.locator('.region-row__track')).toHaveCount(0);
+  await expect(row.locator('.region-row__identity')).toHaveCSS('opacity', '1');
+  await expect(row.locator('.region-row__button')).not.toHaveAttribute('title', /no mean value available/);
 });

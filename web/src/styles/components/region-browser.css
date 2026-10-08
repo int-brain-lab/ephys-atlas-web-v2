@@ -106,13 +106,15 @@
 
 .region-row[data-hovered=true] .region-row__swatch{filter:brightness(1.22) saturate(1.12)}
 
-.region-row[data-missing=true] .region-row__identity{opacity:.48}
+.region-pane[data-representation=regional] .region-row[data-missing=true] .region-row__identity{opacity:.48}
 
-.region-row[data-missing=true] :is(.region-row__acronym,.region-row__name){color:var(--color-text-muted)}
+.region-pane[data-representation=regional] .region-row[data-missing=true] :is(.region-row__acronym,.region-row__name){color:var(--color-text-muted)}
 
 .region-row[data-mapping-member=false] .region-row__button{cursor:default}
 
 .region-row[data-mapping-member=false] .region-row__identity{opacity:.78}
+
+.region-pane[data-representation=volume] .region-row__identity{opacity:1}
 
 .region-pane__selected{min-height:7rem;display:grid;align-content:start;gap:var(--space-2);padding:var(--space-2);border-top:1px solid var(--color-border);background:rgb(7 16 25 / 24%)}
 

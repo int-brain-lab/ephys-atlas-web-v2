@@ -2293,3 +2293,9 @@ brightening the ramp. Preserve the shared range/mapping and clipping
 semantics. Names without finite values become more subdued and disclose the
 unavailable statistic on hover, while branch controls stay usable. This refines
 D091's visual treatment only and does not invent missing scientific values.
+
+Owner clarification: volume features keep all region names at normal strength,
+including hierarchy containers. Fading for absent feature summaries applies to
+regional mode only; volume mode does not define these summaries and must not
+suggest that its anatomy regions are unavailable. Do not show missing-statistic
+tooltips while loading or in anatomy-only volume mode.

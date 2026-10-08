@@ -575,7 +575,10 @@ Finite regional values, including zero, have 44-by-3-pixel miniature colorbars
 using the active palette, effective range and color mapping, with a contrasting
 vertical tick colored by the same scalar mapping. D092 reduces background ramp
 opacity to 28%, with a shorter tick and subtle tick/track outlines. Rows without finite
-values use more subdued text and explicit no-value hover messages. Hover titles
+regional values use more subdued text and explicit no-value hover messages.
+Volume mode retains normal anatomy text, including hierarchy containers, during
+loading and after readiness; the absence of regional summary values is expected
+there and does not mark regions unavailable. Hover titles
 give exact values, units and clipping. Missing
 values and volume-only anatomy do not acquire invented regional statistics.
 Palette, range, statistic, nonlinear and quantile changes refresh the indicators.

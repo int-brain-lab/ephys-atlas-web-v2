@@ -241,7 +241,10 @@ export class RegionalTreeView {
     const retainRows = last?.regions === regions && last.displayOrder === displayOrder && this.rowById.size === rowModels.length;
     const rows = rowModels.map(({ region, depth, hasChildren }) => {
       const next = createRegionRow(region, depth, hasChildren, values.get(region.id), statistic, unit, extent, selected, this.activeCollapsedRegionIds, colorbar);
-      if (valueState !== 'ready') next.querySelector('.region-row__value')?.setAttribute('aria-hidden', 'true');
+      if (valueState !== 'ready') {
+        next.querySelector('.region-row__value')?.setAttribute('aria-hidden', 'true');
+        next.querySelector('.region-row__button')?.removeAttribute('title');
+      }
       const existing = retainRows ? this.rowById.get(region.id) : undefined;
       if (!existing) return next;
       existing.dataset.missing = next.dataset.missing!;

@@ -145,6 +145,7 @@ export class RegionalPanelController {
 
   render(model: RegionalPanelModel): void {
     this.latestModel = model;
+    this.pane.dataset.representation = model.state.view.representation;
     this.tree.updateAutoSlice(model.state.view.autoSlice, model.autoSliceStatus ?? '');
     this.anatomyStatus.update({
       state: model.anatomyLoading ? 'loading' : model.anatomyError ? 'error' : 'ready',
