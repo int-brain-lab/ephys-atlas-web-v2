@@ -100,6 +100,7 @@ only part of the body; the index states what remains effective.
 | D088 | Relax D062: macOS or Linux release hosts | accepted | 2026-10-07 | Owner direction: preflight no longer requires Linux; provenance must still match the publishing host, main must be clean and commit-exact |
 | D087 | Quantile color mappings | accepted | 2026-10-01 | Quantile uniform and Quantile Gaussian join D081's color mapping; browser-derived rank maps from the colored regional statistic or valid-voxel binnings; histograms, axis, and release bytes unchanged |
 | D091 | Contextual region search and sibling range selection | accepted | 2026-10-08 | owner-approved Shift-click sibling ranges, minimal expanded search hierarchy, read-only regional colorbars, and removal of the landing Explore link |
+| D092 | Subdued regional value indicators | accepted | 2026-10-08 | smaller faded ramps, ticks colored by the feature mapping, and more subdued no-value rows; refines D091 visuals |
 
 ## D001 — Separate v2
 
@@ -2279,3 +2280,16 @@ Expose exact values and clipping in tooltips; clamp out-of-range ticks to an
 edge. Missing values remain absent, and volume mode does not invent regional
 statistics. These are client presentation changes, with no scientific release
 or coordinate changes.
+
+## D092 — Subdued regional value indicators
+
+Owner review on 2026-10-08 found D091's full-brightness miniature ramps too
+prominent. Reduce them to 44 by 3 pixels with 28% background opacity, and use
+2-by-7-pixel ticks colored by the actual scalar colormap at each region's
+value. Keep the tick at full color strength with a subtle outline, independently
+of the subdued background. A thin neutral outline around the full track makes
+dark palette endpoints visible against the application background without
+brightening the ramp. Preserve the shared range/mapping and clipping
+semantics. Names without finite values become more subdued and disclose the
+unavailable statistic on hover, while branch controls stay usable. This refines
+D091's visual treatment only and does not invent missing scientific values.

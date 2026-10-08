@@ -1,6 +1,6 @@
 import type { RegionMetadata } from '../../data/contracts.js';
 import type { StatisticId } from '../../domain/types.js';
-import { regionalValueColorbarPosition, type RegionalValueColorbar } from '../../application/regional-value-colorbar.js';
+import { regionalValueColorbarColor, regionalValueColorbarPosition, type RegionalValueColorbar } from '../../application/regional-value-colorbar.js';
 export type { RegionalValueColorbar } from '../../application/regional-value-colorbar.js';
 import { html } from './dom.js';
 import { formatRegionalValue, regionalStatisticPosition } from './model.js';
@@ -67,7 +67,10 @@ export function createRegionRow(
   identity.append(acronym, name);
 
   const valueNode = html('span', 'region-row__value');
-  if (value === undefined || !Number.isFinite(value)) valueNode.setAttribute('aria-label', 'Value unavailable');
+  if (value === undefined || !Number.isFinite(value)) {
+    valueNode.setAttribute('aria-label', 'Value unavailable');
+    button.title = `${region.name}: no ${statistic} value available for this region.`;
+  }
   else {
     const formatted = formatRegionalValue(value, statistic, unit);
     const exact = `${value}${unit && statistic !== 'count' ? ` ${unit}` : ''}`;
@@ -76,9 +79,11 @@ export function createRegionRow(
     valueNode.title = `${statistic}: ${exact}${clipping}`;
     valueNode.setAttribute('aria-label', `${statistic} ${formatted}`);
     const track = html('span', 'region-row__track');
-    if (colorbar) track.style.background = colorbar.gradient;
+    if (colorbar) track.style.setProperty('--region-gradient', colorbar.gradient);
     const tick = html('span', 'region-row__tick');
     const position = colorbar ? regionalValueColorbarPosition(value, colorbar) : regionalStatisticPosition(value, extent);
+    const color = colorbar ? regionalValueColorbarColor(value, colorbar) : null;
+    if (color) tick.style.backgroundColor = color;
     tick.style.setProperty('--region-value', `${(position ?? 0.5) * 100}%`);
     tick.setAttribute('aria-hidden', 'true');
     track.append(tick);

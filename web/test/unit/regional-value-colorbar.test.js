@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildRegionalValueColorbar, regionalValueColorbarPosition } from '../../.test-dist/application/regional-value-colorbar.js';
+import { buildRegionalValueColorbar, regionalValueColorbarPosition, regionalValueColorbarColor } from '../../.test-dist/application/regional-value-colorbar.js';
 import { scalarColorNormalize } from '../../.test-dist/application/scalar-colormap.js';
 
 const options = {
@@ -16,6 +16,14 @@ test('finite zero has a position, missing values do not, and clipped values use 
   assert.equal(regionalValueColorbarPosition(NaN, bar), null);
   assert.equal(regionalValueColorbarPosition(Infinity, bar), null);
   assert.match(bar.gradient, /^linear-gradient\(90deg,/);
+});
+
+test('tick colors retain the palette color, including finite zero and clipped values', () => {
+  const bar = buildRegionalValueColorbar(options);
+  assert.equal(regionalValueColorbarColor(-20, bar), 'rgb(68 1 84)');
+  assert.equal(regionalValueColorbarColor(20, bar), 'rgb(253 231 37)');
+  assert.equal(regionalValueColorbarColor(0, bar), 'rgb(33 145 141)');
+  assert.equal(regionalValueColorbarColor(NaN, bar), null);
 });
 
 test('pseudo-log and quantile ticks use the atlas normalization rather than linear min-max', () => {

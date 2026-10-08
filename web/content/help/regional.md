@@ -10,7 +10,7 @@ Search highlights matching text and keeps parent and child context. Paths to mat
 
 The selected statistic determines which regional summary is displayed. Missing values remain explicit rather than being treated as zero.
 
-The miniature colorbar beside a region uses the current feature palette, range and color mapping. Its vertical tick marks that region's value. Hover for the exact value and any range clipping; the bar is a read-only indicator.
+The miniature colorbar beside a region uses the current feature palette, range and color mapping. Its colored vertical tick marks that region's value against a subdued ramp. Hover for the exact value and any range clipping; the bar is a read-only indicator. Faded region names without a colorbar have no value for the selected feature and statistic.
 
 ## Compare selected regions {#regional-comparison}
 

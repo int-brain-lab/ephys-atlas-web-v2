@@ -2,6 +2,7 @@ import type { ColorMappingMode, PseudoLogStrength } from '../domain/types.js';
 import type { QuantileScaleSpec, ScaleSpec } from '../domain/scale-spec.js';
 import { clampScalePosition } from '../domain/scale-spec.js';
 import { scalarColorNormalize, scalarPaletteGradient } from './scalar-colormap.js';
+import { paletteCssColor } from './colormap-palettes.js';
 
 export interface RegionalValueColorbar {
   readonly range: readonly [number, number];
@@ -35,4 +36,13 @@ export function regionalValueColorbarPosition(value: number, bar: RegionalValueC
   const normalized = normalize(Math.max(bar.range[0], Math.min(bar.range[1], value)));
   if (first === null || last === null || normalized === null || last <= first) return null;
   return clampScalePosition((normalized - first) / (last - first));
+}
+
+/** The tick retains the actual feature color while the background ramp is subdued. */
+export function regionalValueColorbarColor(value: number, bar: RegionalValueColorbar): string | null {
+  if (!Number.isFinite(value)) return null;
+  const clipped = Math.max(bar.range[0], Math.min(bar.range[1], value));
+  const normalized = scalarColorNormalize(clipped, bar.range, bar.scale, bar.colormap,
+    bar.divergingCenter, bar.colorMapping, bar.pseudoLogStrength, bar.colorQuantiles);
+  return normalized === null ? null : paletteCssColor(bar.colormap, normalized);
 }

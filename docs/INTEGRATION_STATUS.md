@@ -571,9 +571,12 @@ open automatically; other retained branches begin folded and remain manually
 expandable. Search temporarily shows the anatomy hierarchy and counts direct
 matches. Clearing restores the prior folding and value ordering.
 
-Finite regional values, including zero, have 52-by-6-pixel miniature colorbars
+Finite regional values, including zero, have 44-by-3-pixel miniature colorbars
 using the active palette, effective range and color mapping, with a contrasting
-vertical tick. Hover titles give exact values, units and clipping. Missing
+vertical tick colored by the same scalar mapping. D092 reduces background ramp
+opacity to 28%, with a shorter tick and subtle tick/track outlines. Rows without finite
+values use more subdued text and explicit no-value hover messages. Hover titles
+give exact values, units and clipping. Missing
 values and volume-only anatomy do not acquire invented regional statistics.
 Palette, range, statistic, nonlinear and quantile changes refresh the indicators.
 

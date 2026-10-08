@@ -246,6 +246,8 @@ export class RegionalTreeView {
       if (!existing) return next;
       existing.dataset.missing = next.dataset.missing!;
       existing.dataset.selected = next.dataset.selected!;
+      const existingButton = existing.querySelector<HTMLButtonElement>('.region-row__button');
+      if (existingButton) existingButton.title = next.querySelector<HTMLButtonElement>('.region-row__button')?.title ?? '';
       existing.setAttribute('aria-selected', String(selected.has(region.id)));
       if (!hasChildren) existing.querySelector('.region-row__button')?.setAttribute('aria-pressed', String(selected.has(region.id)));
       existing.querySelector('.region-row__value')?.replaceWith(next.querySelector('.region-row__value')!);

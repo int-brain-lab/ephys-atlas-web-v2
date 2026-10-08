@@ -90,9 +90,11 @@
 
 .region-row[data-missing=true] .region-row__value{display:none}
 
-.region-row__track{position:relative;flex:none;width:52px;height:6px;border-radius:1px;background:rgb(156 175 191 / 16%);box-shadow:0 0 0 1px rgb(255 255 255 / 12%)}
+.region-row__track{position:relative;flex:none;width:44px;height:3px;border-radius:1px;box-shadow:0 0 0 1px rgb(156 175 191 / 22%)}
 
-.region-row__tick{position:absolute;top:50%;left:var(--region-value,50%);width:2px;height:10px;transform:translate(-50%,-50%);background:#111;box-shadow:0 0 0 1px rgb(255 255 255 / 85%);pointer-events:none}
+.region-row__track::before{content:"";position:absolute;inset:0;border-radius:1px;background:var(--region-gradient,rgb(156 175 191 / 16%));opacity:.28}
+
+.region-row__tick{position:absolute;top:50%;left:var(--region-value,50%);width:2px;height:7px;transform:translate(-50%,-50%);background:var(--color-text-muted);box-shadow:0 0 0 1px rgb(255 255 255 / 25%);pointer-events:none}
 
 .region-row[data-active=true] .region-row__button{background:rgb(156 175 191 / 6%);box-shadow:inset 2px 0 0 var(--color-text-muted)}
 
@@ -104,7 +106,9 @@
 
 .region-row[data-hovered=true] .region-row__swatch{filter:brightness(1.22) saturate(1.12)}
 
-.region-row[data-missing=true] .region-row__identity{opacity:.68}
+.region-row[data-missing=true] .region-row__identity{opacity:.48}
+
+.region-row[data-missing=true] :is(.region-row__acronym,.region-row__name){color:var(--color-text-muted)}
 
 .region-row[data-mapping-member=false] .region-row__button{cursor:default}
 
