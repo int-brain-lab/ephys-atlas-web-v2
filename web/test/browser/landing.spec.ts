@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 test('landing routes into the viewer and the viewer title returns home', async ({ page }) => {
   await page.setViewportSize({ width: 1680, height: 900 });
   await page.goto('/');
+  await expect(page.locator('.landing-header').getByRole('link', { name: 'Explore', exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Electrophysiology');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('mouse brain.');
   await page.getByRole('link', { name: 'Open atlas' }).first().click();
