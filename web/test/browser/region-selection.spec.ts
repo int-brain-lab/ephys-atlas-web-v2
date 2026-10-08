@@ -132,3 +132,49 @@ test('compact region toggles explain their state on hover and focus without wide
     expect(box!.x + box!.width).toBeLessThanOrEqual(bounds!.x + bounds!.width + 1);
   }
 });
+
+
+test('Shift-click adds a sibling range and keeps its anchor across repeated ranges', async ({ page }) => {
+  await page.goto('/app/');
+  await page.getByRole('button', { name: 'Auto-slice', exact: true }).click();
+  const siblings = await page.locator('.region-row[data-parent-id="-184"][data-branch="false"]').evaluateAll(
+    (rows) => rows.map((row) => (row as HTMLElement).dataset.regionId!),
+  );
+  expect(siblings.length).toBeGreaterThan(3);
+  await region(page, siblings[1]!).click({ modifiers: ['Shift'] });
+  await expect.poll(() => selection(page)).toBeNull();
+  await region(page, '-362').click();
+  await region(page, siblings[1]!).click({ modifiers: ['Control'] });
+  await region(page, siblings[3]!).click({ modifiers: ['Shift'] });
+  await expect.poll(() => selection(page)).toBe(['-362', ...siblings.slice(1, 4)].join(','));
+  await region(page, siblings[0]!).click({ modifiers: ['Shift'] });
+  await expect.poll(() => selection(page)).toBe(['-362', ...siblings.slice(1, 4), siblings[0]].join(','));
+  await region(page, '-382').click({ modifiers: ['Shift'] });
+  await expect.poll(() => selection(page)).toBe(['-362', ...siblings.slice(1, 4), siblings[0]].join(','));
+});
+
+test('Shift-click ranges include only visible sibling leaves during search', async ({ page }) => {
+  await page.goto('/app/');
+  await page.getByLabel('Search brain regions').fill('frontal pole');
+  const siblings = await page.locator('.region-row[data-parent-id="-184"][data-branch="false"]:visible').evaluateAll(
+    (rows) => rows.map((row) => (row as HTMLElement).dataset.regionId!),
+  );
+  await region(page, siblings[0]!).click();
+  await region(page, siblings.at(-1)!).click({ modifiers: ['Shift'] });
+  await expect.poll(() => selection(page)).toBe(siblings.join(','));
+});
+
+
+test('Shift-click uses real siblings in displayed value order', async ({ page }) => {
+  await page.goto('/app/');
+  await page.getByRole('button', { name: /Region order:/ }).click();
+  const siblings = await page.locator('.region-row').evaluateAll((rows) => {
+    // Value-ranked rows are flattened, so identify the known FRP leaves by their names.
+    return rows.filter((row) => row.querySelector('.region-row__name')?.textContent?.startsWith('Frontal pole layer'))
+      .map((row) => (row as HTMLElement).dataset.regionId!);
+  });
+  expect(siblings.length).toBeGreaterThan(2);
+  await region(page, siblings[0]!).click();
+  await region(page, siblings[2]!).click({ modifiers: ['Shift'] });
+  await expect.poll(() => selection(page)).toBe(siblings.slice(0, 3).join(','));
+});

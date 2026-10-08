@@ -89,7 +89,7 @@ test('schema v1 regional fixture drives values, coloring, selection and histogra
   expect(Math.abs(coronalWhileOpen!.y - coronalBeforeSelection!.y)).toBeLessThanOrEqual(2);
   await page.locator('.region-search__input').fill('MD');
   await expect(comparisonDialog).toBeVisible();
-  await expect(page.locator('.region-search__count')).toHaveText(/region/);
+  await expect(page.locator('.region-search__count')).toHaveText(/match/);
   await page.locator('.region-search__input').fill('');
   await page.keyboard.press('Escape');
   await expect(page.locator('.analysis-panel')).toHaveAttribute('data-expanded', 'false');
@@ -343,9 +343,11 @@ test('region search filters loaded metadata rather than prototype rows', async (
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
   const search = page.getByLabel('Search brain regions');
   await search.fill('mediodorsal nucleus of thalamus');
-  await expect(page.locator('.region-row:not([hidden])')).toHaveCount(1);
-  await expect(page.locator('.region-row:not([hidden])')).toContainText('MD');
-  await expect(page.locator('.region-row:visible')).toHaveCount(1);
+  await expect(page.locator('.region-search__count')).toHaveText('1 match');
+  const match = page.locator('.region-row[data-region-id="-362"]');
+  await expect(match).toBeVisible();
+  await expect(match.locator('.region-row__name mark')).toHaveText('Mediodorsal nucleus of thalamus');
   await expect(page.locator('.region-row[data-region-id="-567"]')).toBeHidden();
+  await expect(page.locator('.region-row[data-region-id="-343"]')).toBeVisible();
 });
 

@@ -147,6 +147,7 @@ export class AtlasApp {
     }, this.viewportFactory, options.scene3dFactory);
     this.regionalPanel = new RegionalPanelController(root, {
       selectRegion: (regionId, additive) => this.selectRegion(regionId, additive),
+      selectRegionRange: (regionIds, targetRegionId) => this.selectRegionRange(regionIds, targetRegionId),
       setAutoSlice: (enabled) => this.store.dispatch({ type: 'slices/auto', enabled }),
       setMultiSelection: (enabled) => { this.multiSelection = enabled; },
       toggleSelection: (regionId) => this.store.dispatch({ type: 'selection/toggle', regionId }),
@@ -199,6 +200,12 @@ export class AtlasApp {
       ? { type: 'selection/toggle', regionId }
       : { type: 'selection/set', regionIds: [regionId] }));
     if (this.store.getState().view.selection.includes(regionId)) void this.autoSliceToRegion(regionId);
+  }
+
+  private selectRegionRange(regionIds: readonly string[], targetRegionId: string): void {
+    const selection = [...new Set([...this.store.getState().view.selection, ...regionIds])];
+    this.trackExploration(() => this.store.dispatch({ type: 'selection/set', regionIds: selection }));
+    void this.autoSliceToRegion(targetRegionId);
   }
 
   private cancelAutoSlice(): void {

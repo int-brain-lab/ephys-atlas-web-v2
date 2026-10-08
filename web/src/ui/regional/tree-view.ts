@@ -2,8 +2,8 @@ import type { RegionMetadata } from '../../data/contracts.js';
 import { buildGreyMatterHierarchy } from '../../data/region-hierarchy.js';
 import type { RegionOrder, StatisticId } from '../../domain/types.js';
 import { html, required } from './dom.js';
-import { formatRegionalValue, rankRegionsByValue, regionMatchesQuery, regionalStatisticExtent } from './model.js';
-import { createRegionRow } from './row-view.js';
+import { formatRegionalValue, rankRegionsByValue, regionSearchContext, regionalStatisticExtent } from './model.js';
+import { createRegionRow, type RegionalValueColorbar } from './row-view.js';
 import { OperationStatus } from '../operation-status.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -32,6 +32,7 @@ function createOrderIcon(order: RegionOrder): SVGSVGElement {
 
 export interface RegionalTreeCallbacks {
   selectRegion(regionId: string, additive: boolean): void;
+  selectRegionRange(regionIds: readonly string[], targetRegionId: string): void;
   setMultiSelection(enabled: boolean): void;
   setAutoSlice(enabled: boolean): void;
   setRegionOrder(order: RegionOrder): void;
@@ -58,6 +59,13 @@ export class RegionalTreeView {
   private readonly regionById = new Map<string, RegionMetadata>();
   private readonly rowById = new Map<string, HTMLLIElement>();
   private readonly collapsedRegionIds = new Set<string>();
+  private readonly searchCollapsedRegionIds = new Set<string>();
+  private requiredSearchExpanded: ReadonlySet<string> = new Set();
+  private lastQuery = '';
+  private regionInventory: readonly RegionMetadata[] | null = null;
+  private selectionAnchor: string | null = null;
+  private pendingRangeSelection: string | null = null;
+  private displayOrder: RegionOrder = 'anatomy';
   private rovingButton: HTMLButtonElement | null = null;
   private hoveredRegionId: string | null = null;
   private currentOrder: RegionOrder = 'anatomy';
@@ -70,6 +78,9 @@ export class RegionalTreeView {
     unit: string | null;
     selection: string;
     order: RegionOrder;
+    displayOrder: RegionOrder;
+    colorbar: RegionalValueColorbar | null;
+    colorbarKey: string;
     valueState: 'ready' | 'loading' | 'error' | 'anatomy' | 'empty';
   } | null = null;
 
@@ -153,6 +164,10 @@ export class RegionalTreeView {
   };
 
   setRegions(regions: readonly RegionMetadata[]): void {
+    if (regions !== this.regionInventory) {
+      this.lastQuery = '\0';
+      this.regionInventory = regions;
+    }
     this.regionById.clear();
     regions.forEach((region) => this.regionById.set(region.id, region));
   }
@@ -165,6 +180,7 @@ export class RegionalTreeView {
     selected: ReadonlySet<string>,
     order: RegionOrder,
     valueState: 'ready' | 'loading' | 'error' | 'anatomy' | 'empty' = 'ready',
+    colorbar: RegionalValueColorbar | null = null,
   ): void {
     this.source.title = this.source.textContent ?? '';
     // Volume switches have no regional values: keep the anatomical DOM, focus,
@@ -172,15 +188,27 @@ export class RegionalTreeView {
     unit = values.size ? unit : null;
     const selection = JSON.stringify([...selected]);
     const last = this.lastRender;
+    const displayOrder = this.search.value.trim() ? 'anatomy' : order;
+    const colorbarKey = JSON.stringify(colorbar);
+    if (selection !== last?.selection) {
+      if (selection !== this.pendingRangeSelection) {
+        const previous: string[] = last ? JSON.parse(last.selection) as string[] : [];
+        const added = [...selected].filter((id) => !previous.includes(id));
+        this.selectionAnchor = added.at(-1) ?? [...selected].at(-1) ?? null;
+      }
+      this.pendingRangeSelection = null;
+    }
+    if (this.selectionAnchor && !selected.has(this.selectionAnchor)) this.selectionAnchor = [...selected].at(-1) ?? null;
     if (last && last.regions === regions && last.statistic === statistic && last.unit === unit
-      && last.selection === selection && last.order === order && last.valueState === valueState && last.values.size === values.size
+      && last.selection === selection && last.order === order && last.displayOrder === displayOrder && last.colorbarKey === colorbarKey && last.valueState === valueState && last.values.size === values.size
       && [...values].every(([id, value]) => last.values.has(id) && Object.is(last.values.get(id), value))) return;
-    this.lastRender = { regions, values, statistic, unit, selection, order, valueState };
+    this.lastRender = { regions, values, statistic, unit, selection, order, displayOrder, colorbar, colorbarKey, valueState };
     this.valueState = valueState;
     this.setRegions(regions);
     this.currentOrder = order;
+    this.displayOrder = displayOrder;
     this.syncOrderButton();
-    this.list.dataset.order = order;
+    this.list.dataset.order = displayOrder;
     const extent = regionalStatisticExtent(values);
     const statisticLabel = statistic === 'count' ? 'Count' : `${statistic[0]?.toUpperCase() ?? ''}${statistic.slice(1)}`;
     const domainText = extent
@@ -203,16 +231,16 @@ export class RegionalTreeView {
     const restoreFocus = document.activeElement === this.rovingButton;
     const hierarchy = buildGreyMatterHierarchy(regions);
     const leafIds = new Set(hierarchy.filter(({ hasChildren }) => !hasChildren).map(({ region }) => region.id));
-    const rowModels = order === 'anatomy'
+    const rowModels = displayOrder === 'anatomy'
       ? hierarchy
-      : rankRegionsByValue(regions.filter(({ id }) => leafIds.has(id)), values, order).map((region) => ({
+      : rankRegionsByValue(regions.filter(({ id }) => leafIds.has(id)), values, displayOrder as Exclude<RegionOrder, 'anatomy'>).map((region) => ({
         region: { ...region, parentId: null },
         depth: 0,
         hasChildren: false,
       }));
-    const retainRows = last?.regions === regions && last.order === order && this.rowById.size === rowModels.length;
+    const retainRows = last?.regions === regions && last.displayOrder === displayOrder && this.rowById.size === rowModels.length;
     const rows = rowModels.map(({ region, depth, hasChildren }) => {
-      const next = createRegionRow(region, depth, hasChildren, values.get(region.id), statistic, unit, extent, selected, this.collapsedRegionIds);
+      const next = createRegionRow(region, depth, hasChildren, values.get(region.id), statistic, unit, extent, selected, this.activeCollapsedRegionIds, colorbar);
       if (valueState !== 'ready') next.querySelector('.region-row__value')?.setAttribute('aria-hidden', 'true');
       const existing = retainRows ? this.rowById.get(region.id) : undefined;
       if (!existing) return next;
@@ -301,7 +329,7 @@ export class RegionalTreeView {
 
   private syncMultiSelection(enabled: boolean): void {
     this.multiSelection.setAttribute('aria-pressed', String(enabled));
-    this.multiSelectionTooltip.textContent = `Select multiple ${enabled ? 'on. Click to select one region at a time.' : 'off. Click to compare multiple regions.'} Ctrl/Cmd-click also toggles selection. Branches expand; leaves select.`;
+    this.multiSelectionTooltip.textContent = `Select multiple ${enabled ? 'on. Click to select one region at a time.' : 'off. Click to compare multiple regions.'} Ctrl/Cmd-click toggles selection. Shift-click adds a visible sibling range. Branches expand; leaves select.`;
   }
 
   private treeControl(text: string, label: string): HTMLButtonElement {
@@ -314,23 +342,70 @@ export class RegionalTreeView {
   }
 
   private readonly filterRegions = (): void => {
-    const query = this.search.value;
+    const query = this.search.value.trim();
+    const last = this.lastRender;
+    const desiredOrder = query ? 'anatomy' : this.currentOrder;
+    if (last && this.displayOrder !== desiredOrder) {
+      this.render(last.regions, last.values, last.statistic, last.unit,
+        new Set(JSON.parse(last.selection) as string[]), last.order, last.valueState, last.colorbar);
+      return;
+    }
+    const context = regionSearchContext([...this.regionById.values()], query);
+    this.requiredSearchExpanded = query ? context.requiredExpanded : new Set();
+    if (query !== this.lastQuery) {
+      this.searchCollapsedRegionIds.clear();
+      if (query) for (const [id, row] of this.rowById) {
+        if (row.dataset.branch === 'true' && !context.matches.has(id) && !context.requiredExpanded.has(id)) {
+          this.searchCollapsedRegionIds.add(id);
+        }
+      }
+      this.lastQuery = query;
+    }
     let visible = 0;
+    let matchCount = 0;
     for (const [regionId, row] of this.rowById) {
       const region = this.regionById.get(regionId);
-      const matches = region ? regionMatchesQuery(region, query) : false;
-      const hiddenByCollapsedAncestor = !query.trim() && this.hasCollapsedAncestor(regionId);
-      row.hidden = !matches || hiddenByCollapsedAncestor;
+      if (!region) continue;
+      this.highlightText(row.querySelector('.region-row__acronym'), region.acronym, query);
+      this.highlightText(row.querySelector('.region-row__name'), region.name, query);
+      row.hidden = (query !== '' && !context.retained.has(regionId)) || this.hasCollapsedAncestor(regionId);
+      if (context.matches.has(regionId)) matchCount += 1;
       if (!row.hidden) visible += 1;
+      if (row.dataset.branch === 'true') this.syncBranchDisclosure(row);
     }
-    this.searchClear.hidden = !query.trim();
-    this.resultCount.textContent = `${visible} ${visible === 1 ? 'region' : 'regions'}`;
-    this.syncTreeControls(query.trim().length > 0);
+    this.searchClear.hidden = !query;
+    this.resultCount.textContent = query
+      ? `${matchCount} ${matchCount === 1 ? 'match' : 'matches'}`
+      : `${visible} ${visible === 1 ? 'region' : 'regions'}`;
+    this.syncOrderButton();
+    this.syncTreeControls(query.length > 0);
     if (this.rovingButton?.closest<HTMLLIElement>('.region-row')?.hidden) {
       const first = this.list.querySelector<HTMLButtonElement>('.region-row:not([hidden]) .region-row__button');
       if (first) this.setRovingButton(first);
     }
   };
+
+  private get activeCollapsedRegionIds(): Set<string> {
+    return this.search.value.trim() ? this.searchCollapsedRegionIds : this.collapsedRegionIds;
+  }
+
+  private highlightText(element: Element | null, text: string, query: string): void {
+    if (!element) return;
+    element.replaceChildren();
+    const normalized = text.toLocaleLowerCase();
+    const term = query.toLocaleLowerCase();
+    let position = 0;
+    let match = term ? normalized.indexOf(term) : -1;
+    while (match >= 0) {
+      element.append(document.createTextNode(text.slice(position, match)));
+      const mark = html('mark', 'region-search__match');
+      mark.textContent = text.slice(match, match + term.length);
+      element.append(mark);
+      position = match + term.length;
+      match = normalized.indexOf(term, position);
+    }
+    element.append(document.createTextNode(text.slice(position)));
+  }
 
   private readonly clearSearch = (): void => {
     this.search.value = '';
@@ -358,8 +433,14 @@ export class RegionalTreeView {
       'value-asc': 'Anatomy',
       'value-desc': 'Value ascending',
     };
-    this.orderButton.dataset.order = this.currentOrder;
-    this.orderButton.replaceChildren(createOrderIcon(this.currentOrder));
+    this.orderButton.dataset.order = this.displayOrder;
+    this.orderButton.replaceChildren(createOrderIcon(this.displayOrder));
+    if (this.search.value.trim()) {
+      const label = `Region order: Anatomy during search. Clear search to restore ${labels[this.currentOrder]}.`;
+      this.orderButton.setAttribute('aria-label', label);
+      this.orderButton.title = label;
+      return;
+    }
     this.orderButton.setAttribute(
       'aria-label',
       `Region order: ${labels[this.currentOrder]}. Activate for ${nextLabels[this.currentOrder]}.`,
@@ -382,7 +463,7 @@ export class RegionalTreeView {
     }
     const button = target?.closest<HTMLButtonElement>('[data-region-button]');
     const id = button?.dataset.regionButton;
-    if (id) this.activateRegion(id, event.ctrlKey || event.metaKey);
+    if (id) this.activateRegion(id, event.ctrlKey || event.metaKey, event.shiftKey);
   };
 
   private readonly onTreeKeyDown = (event: KeyboardEvent): void => {
@@ -397,9 +478,30 @@ export class RegionalTreeView {
     } else this.navigateRegions(event, button);
   };
 
-  private activateRegion(id: string, additive: boolean): void {
+  private activateRegion(id: string, additive: boolean, range = false): void {
     if (this.rowById.get(id)?.dataset.branch === 'true') this.toggleBranch(id);
-    else if (this.regionById.get(id)?.mappingMember !== false) this.callbacks.selectRegion(id, additive);
+    else if (this.regionById.get(id)?.mappingMember !== false) {
+      if (range) {
+        const anchor = this.selectionAnchor;
+        const parent = this.regionById.get(id)?.parentId;
+        if (!anchor || parent == null || this.regionById.get(anchor)?.parentId !== parent) return;
+        const siblings = [...this.rowById].filter(([regionId, row]) => !row.hidden
+          && row.dataset.branch !== 'true' && this.regionById.get(regionId)?.mappingMember !== false
+          && this.regionById.get(regionId)?.parentId === parent).map(([regionId]) => regionId);
+        const start = siblings.indexOf(anchor);
+        const end = siblings.indexOf(id);
+        if (start < 0 || end < 0) return;
+        const ids = siblings.slice(Math.min(start, end), Math.max(start, end) + 1);
+        const selected = new Set(this.lastRender ? JSON.parse(this.lastRender.selection) as string[] : []);
+        ids.forEach((regionId) => selected.add(regionId));
+        const expectedSelection = JSON.stringify([...selected]);
+        this.pendingRangeSelection = expectedSelection === this.lastRender?.selection ? null : expectedSelection;
+        this.callbacks.selectRegionRange(ids, id);
+      } else {
+        this.selectionAnchor = id;
+        this.callbacks.selectRegion(id, additive);
+      }
+    }
   }
 
   private readonly onTreePointerOver = (event: PointerEvent): void => {
@@ -436,9 +538,9 @@ export class RegionalTreeView {
     if (!['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
     const row = current.closest<HTMLLIElement>('.region-row');
     const regionId = row?.dataset.regionId;
-    if (this.currentOrder === 'anatomy' && regionId && event.key === 'ArrowRight') {
+    if (this.displayOrder === 'anatomy' && regionId && event.key === 'ArrowRight') {
       event.preventDefault();
-      if (row.dataset.branch === 'true' && this.collapsedRegionIds.has(regionId)) this.toggleBranch(regionId);
+      if (row.dataset.branch === 'true' && this.activeCollapsedRegionIds.has(regionId)) this.toggleBranch(regionId);
       else {
         const child = [...this.list.querySelectorAll<HTMLLIElement>('.region-row:not([hidden])')]
           .find((candidate) => candidate.dataset.parentId === regionId);
@@ -446,9 +548,9 @@ export class RegionalTreeView {
       }
       return;
     }
-    if (this.currentOrder === 'anatomy' && regionId && event.key === 'ArrowLeft') {
+    if (this.displayOrder === 'anatomy' && regionId && event.key === 'ArrowLeft') {
       event.preventDefault();
-      if (row.dataset.branch === 'true' && !this.collapsedRegionIds.has(regionId)) this.toggleBranch(regionId);
+      if (row.dataset.branch === 'true' && !this.activeCollapsedRegionIds.has(regionId)) this.toggleBranch(regionId);
       else if (row.dataset.parentId) this.focusRegionButton(
         this.rowById.get(row.dataset.parentId)?.querySelector<HTMLButtonElement>('.region-row__button') ?? null,
       );
@@ -470,10 +572,10 @@ export class RegionalTreeView {
 
   private toggleBranch(regionId: string): void {
     const row = this.rowById.get(regionId);
-    if (!row || row.dataset.branch !== 'true') return;
+    if (!row || row.dataset.branch !== 'true' || this.requiredSearchExpanded.has(regionId)) return;
     this.animateTreeMutation(() => {
-      if (this.collapsedRegionIds.has(regionId)) this.collapsedRegionIds.delete(regionId);
-      else this.collapsedRegionIds.add(regionId);
+      if (this.activeCollapsedRegionIds.has(regionId)) this.activeCollapsedRegionIds.delete(regionId);
+      else this.activeCollapsedRegionIds.add(regionId);
       this.syncBranchDisclosure(row);
     });
   }
@@ -485,8 +587,8 @@ export class RegionalTreeView {
     this.animateTreeMutation(() => {
       for (const [id, row] of this.rowById) {
         if (row.dataset.branch !== 'true') continue;
-        if (expanded) this.collapsedRegionIds.delete(id);
-        else this.collapsedRegionIds.add(id);
+        if (expanded || this.requiredSearchExpanded.has(id)) this.activeCollapsedRegionIds.delete(id);
+        else this.activeCollapsedRegionIds.add(id);
         this.syncBranchDisclosure(row);
       }
     });
@@ -495,7 +597,7 @@ export class RegionalTreeView {
   private syncBranchDisclosure(row: HTMLLIElement): void {
     const regionId = row.dataset.regionId;
     if (!regionId) return;
-    const expanded = !this.collapsedRegionIds.has(regionId);
+    const expanded = !this.activeCollapsedRegionIds.has(regionId);
     row.setAttribute('aria-expanded', String(expanded));
     row.querySelector('.region-row__button')?.setAttribute('aria-expanded', String(expanded));
     const toggle = row.querySelector<HTMLButtonElement>('.region-row__toggle');
@@ -513,16 +615,16 @@ export class RegionalTreeView {
   }
 
   private syncTreeControls(filtering: boolean): void {
-    this.orderButton.disabled = this.rowById.size === 0 || this.valueState !== 'ready';
-    this.treeControls.hidden = this.currentOrder !== 'anatomy';
-    if (this.currentOrder !== 'anatomy') {
+    this.orderButton.disabled = filtering || this.rowById.size === 0 || this.valueState !== 'ready';
+    this.treeControls.hidden = this.displayOrder !== 'anatomy';
+    if (this.displayOrder !== 'anatomy') {
       this.collapseAllButton.disabled = true;
       this.expandAllButton.disabled = true;
       return;
     }
     const branches = [...this.rowById].filter(([, row]) => row.dataset.branch === 'true');
-    this.collapseAllButton.disabled = filtering || branches.length === 0 || branches.every(([id]) => this.collapsedRegionIds.has(id));
-    this.expandAllButton.disabled = filtering || !branches.some(([id]) => this.collapsedRegionIds.has(id));
+    this.collapseAllButton.disabled = filtering || branches.length === 0 || branches.every(([id]) => this.activeCollapsedRegionIds.has(id));
+    this.expandAllButton.disabled = filtering || !branches.some(([id]) => this.activeCollapsedRegionIds.has(id));
   }
 
   private captureVisibleRowTops(): Map<string, number> {
@@ -561,11 +663,11 @@ export class RegionalTreeView {
   }
 
   private hasCollapsedAncestor(regionId: string): boolean {
-    if (this.currentOrder !== 'anatomy') return false;
+    if (this.displayOrder !== 'anatomy') return false;
     let parentId = this.regionById.get(regionId)?.parentId;
     const visited = new Set<string>();
     while (parentId !== undefined && parentId !== null && !visited.has(parentId)) {
-      if (this.collapsedRegionIds.has(parentId)) return true;
+      if (this.activeCollapsedRegionIds.has(parentId)) return true;
       visited.add(parentId);
       parentId = this.regionById.get(parentId)?.parentId;
     }

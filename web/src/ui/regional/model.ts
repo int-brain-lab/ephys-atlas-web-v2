@@ -70,6 +70,32 @@ export function regionMatchesQuery(region: RegionMetadata, query: string): boole
     || region.name.toLocaleLowerCase().includes(normalized);
 }
 
+/** Search retains full lineage and matched subtrees; only match paths must stay open. */
+export function regionSearchContext(regions: readonly RegionMetadata[], query: string): {
+  matches: ReadonlySet<string>;
+  retained: ReadonlySet<string>;
+  requiredExpanded: ReadonlySet<string>;
+} {
+  const byId = new Map(regions.map((region) => [region.id, region]));
+  const matches = new Set(regions.filter((region) => regionMatchesQuery(region, query)).map(({ id }) => id));
+  const retained = new Set(matches);
+  const requiredExpanded = new Set<string>();
+  for (const region of regions) {
+    const visited = new Set<string>([region.id]);
+    let parentId = region.parentId;
+    while (parentId != null && !visited.has(parentId)) {
+      visited.add(parentId);
+      if (matches.has(region.id)) {
+        retained.add(parentId);
+        requiredExpanded.add(parentId);
+      }
+      if (matches.has(parentId)) retained.add(region.id);
+      parentId = byId.get(parentId)?.parentId;
+    }
+  }
+  return { matches, retained, requiredExpanded };
+}
+
 export function rankRegionsByValue(
   regions: readonly RegionMetadata[],
   values: ReadonlyMap<string, number>,

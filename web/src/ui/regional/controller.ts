@@ -15,6 +15,8 @@ import type {
   VolumeRegionHemisphere,
 } from '../../domain/types.js';
 import { effectiveScalarColorRange } from '../../application/scalar-colormap.js';
+import { resolvePresentationColormap } from '../../application/presentation-colormap.js';
+import { buildRegionalValueColorbar, type RegionalValueColorbar } from '../../application/regional-value-colorbar.js';
 import { required, message } from './dom.js';
 import {
   renderFeatureSummary,
@@ -34,6 +36,7 @@ import { OperationStatus } from '../operation-status.js';
 
 export interface RegionalPanelCallbacks {
   selectRegion(regionId: string, additive: boolean): void;
+  selectRegionRange(regionIds: readonly string[], targetRegionId: string): void;
   setMultiSelection(enabled: boolean): void;
   setAutoSlice(enabled: boolean): void;
   toggleSelection(regionId: string): void;
@@ -98,6 +101,8 @@ export class RegionalPanelController {
   private lastFeatureLoading = false;
   private lastFeatureError: string | null = null;
   private lastFeatureIdentity = '';
+  private lastColorbarKey = '';
+  private valueColorbar: RegionalValueColorbar | null = null;
   private readonly summaryStatus = new OperationStatus('inline');
   private readonly distributionStatus = new OperationStatus('inline');
   private readonly analysisStatus = new OperationStatus('inline');
@@ -159,6 +164,21 @@ export class RegionalPanelController {
     const range = feature
       ? effectiveScalarColorRange(feature, model.state.view.coloring, model.representationDisplay)
       : null;
+    const palette = resolvePresentationColormap(model.state.view.coloring.colormap, model.representationDisplay);
+    const colorbarOptions = regionalFeature && range ? {
+      range,
+      scale: model.presentationScale.effectiveScaleSpec,
+      colormap: palette.effectiveColormap,
+      colorMapping: model.state.view.coloring.colorMapping,
+      pseudoLogStrength: model.state.view.coloring.pseudoLogStrength,
+      ...(palette.divergingCenter !== undefined ? { divergingCenter: palette.divergingCenter } : {}),
+      ...(model.presentationScale.colorQuantiles ? { colorQuantiles: model.presentationScale.colorQuantiles } : {}),
+    } : null;
+    const colorbarKey = JSON.stringify(colorbarOptions);
+    if (colorbarKey !== this.lastColorbarKey) {
+      this.valueColorbar = colorbarOptions ? buildRegionalValueColorbar(colorbarOptions) : null;
+    }
+    const colorbar = this.valueColorbar;
     if (
       feature === this.lastFeature
       && model.regions === this.lastRegions
@@ -175,6 +195,7 @@ export class RegionalPanelController {
       && model.featureLoading === this.lastFeatureLoading
       && model.featureError === this.lastFeatureError
       && featureIdentity === this.lastFeatureIdentity
+      && colorbarKey === this.lastColorbarKey
     ) {
       this.tree.updateHoveredRegion(model.hoveredRegionId);
       if (feature) {
@@ -214,6 +235,7 @@ export class RegionalPanelController {
     this.lastFeatureLoading = model.featureLoading;
     this.lastFeatureError = model.featureError;
     this.lastFeatureIdentity = featureIdentity;
+    this.lastColorbarKey = colorbarKey;
     this.pane.dataset.phase = feature || model.anatomyAtlas ? 'regional-data' : 'empty';
     this.pane.dataset.fixture = String(fixture);
 
@@ -239,7 +261,7 @@ export class RegionalPanelController {
           : `${model.state.view.parcellation.toUpperCase()} anatomy overlay`;
     this.tree.render(model.regions, values, statistic, unit, selected, regionOrder,
       model.featureLoading ? 'loading' : model.featureError ? 'error'
-        : regionalFeature ? 'ready' : model.state.view.representation === 'volume' ? 'anatomy' : 'empty');
+        : regionalFeature ? 'ready' : model.state.view.representation === 'volume' ? 'anatomy' : 'empty', colorbar);
     renderSelectedRegions(this.detailsTargets(), model.regions, selected, values, statistic, unit);
     if (feature) {
       this.summary.removeAttribute('aria-busy');

@@ -16,7 +16,7 @@ test('region sidebar renders parent-closed Allen hierarchies at their real depth
   }));
   expect(fullCountMetrics.scrollWidth).toBeLessThanOrEqual(fullCountMetrics.clientWidth);
   await page.getByLabel('Search brain regions').fill('mediodorsal');
-  await expect(regionCount).toHaveText('2 regions');
+  await expect(regionCount).toHaveText('2 matches');
   await expect.poll(() => regionCount.evaluate((node) => node.getBoundingClientRect().width)).toBe(fullCountMetrics.width);
   await page.getByLabel('Search brain regions').fill('');
 
@@ -112,7 +112,8 @@ test('search and value sorting never make an Allen parent selectable', async ({ 
   await page.getByLabel('Search brain regions').fill('MOp');
   const parent = page.locator('[data-region-button="-985"]');
   await parent.click();
-  await expect(parent).toHaveAttribute('aria-expanded', 'false');
+  await expect(parent).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('[data-region-button="-844"]')).toBeVisible();
   expect(new URL(page.url()).searchParams.get('selected')).toBeNull();
   await page.getByLabel('Search brain regions').fill('');
   await page.getByRole('button', { name: /Region order:/ }).click();
@@ -268,4 +269,42 @@ test('value ordering switches to a flat ranking and restores the anatomical tree
   await expect(page.locator('.region-row')).toHaveCount(874);
   await expect(frontalPole).toHaveAttribute('aria-expanded', 'false');
   await expect(page.locator('.region-row[data-region-id="-68"]')).toBeHidden();
+});
+
+
+test('search highlights matches, retains ancestry and descendants, and restores folds and ordering', async ({ page }) => {
+  await page.goto('/app/');
+  await page.getByRole('button', { name: 'Collapse all regions' }).click();
+  await page.getByRole('button', { name: /Region order:/ }).click();
+  await page.getByLabel('Search brain regions').fill('frontal pole');
+  await expect(page.locator('.region-list')).toHaveAttribute('data-order', 'anatomy');
+  await expect(page.getByRole('button', { name: /Region order:/ })).toBeDisabled();
+  const parent = page.locator('.region-row[data-region-id="-184"]');
+  await expect(parent).toBeVisible();
+  await expect(parent.locator('mark')).toHaveText('Frontal pole');
+  await expect(page.locator('.region-row[data-region-id="-567"]')).toBeVisible();
+  await expect(page.locator('.region-row[data-region-id="-343"]')).toBeHidden();
+  await expect(page.locator('.region-row[data-region-id="-68"]')).toBeVisible();
+  await expect(parent).toHaveAttribute('aria-expanded', 'true');
+  // An ancestor cannot fold away a highlighted descendant.
+  await page.locator('[data-region-button="-567"]').click();
+  await expect(parent).toBeVisible();
+  await page.getByLabel('Clear region search').click();
+  await expect(page.locator('.region-list')).toHaveAttribute('data-order', 'value-desc');
+  await page.getByRole('button', { name: /Region order:/ }).click();
+  await page.getByRole('button', { name: /Region order:/ }).click();
+  await expect(page.locator('.region-row:visible')).toHaveCount(3);
+});
+
+test('a matched parent retains folded descendant subtrees that can be opened manually', async ({ page }) => {
+  await page.goto('/app/');
+  await page.getByLabel('Search brain regions').fill('cerebrum');
+  const child = page.locator('.region-row[data-region-id="-688"]');
+  const grandchild = page.locator('.region-row[data-region-id="-695"]');
+  await expect(child).toBeVisible();
+  await expect(child).toHaveAttribute('aria-expanded', 'false');
+  await expect(grandchild).toBeHidden();
+  await child.locator('.region-row__button').click();
+  await expect(grandchild).toBeVisible();
+  await expect(page.locator('.region-search__count')).toHaveText('1 match');
 });

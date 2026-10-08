@@ -5,6 +5,7 @@ import {
   histogramDistribution,
   rankRegionsByValue,
   regionMatchesQuery,
+  regionSearchContext,
   selectedHistogramCounts,
   selectedRegionHistogramDistributions,
   regionalStatisticExtent,
@@ -114,4 +115,22 @@ test('selected regional distributions retain separate normalized shapes and samp
     { regionId: '1', counts: [1, 3], probabilities: [0.25, 0.75], total: 4, underflowCount: 0, overflowCount: 0, underflowProbability: 0, overflowProbability: 0 },
     { regionId: '2', counts: [30, 10], probabilities: [0.75, 0.25], total: 40, underflowCount: 0, overflowCount: 0, underflowProbability: 0, overflowProbability: 0 },
   ]);
+});
+
+
+test('search keeps matched subtree and ancestors but opens only highlighted paths', () => {
+  const regions = [
+    { id: 'root', acronym: 'R', name: 'Root' },
+    { id: 'a', parentId: 'root', acronym: 'A', name: 'Matched parent' },
+    { id: 'b', parentId: 'a', acronym: 'B', name: 'Context child' },
+    { id: 'c', parentId: 'b', acronym: 'C', name: 'Context grandchild' },
+    { id: 'd', parentId: 'root', acronym: 'D', name: 'Other branch' },
+  ];
+  const parent = regionSearchContext(regions, 'matched');
+  assert.deepEqual([...parent.matches], ['a']);
+  assert.deepEqual([...parent.retained].sort(), ['a', 'b', 'c', 'root']);
+  assert.deepEqual([...parent.requiredExpanded], ['root']);
+  const leaf = regionSearchContext(regions, 'grandchild');
+  assert.deepEqual([...leaf.retained].sort(), ['a', 'b', 'c', 'root']);
+  assert.deepEqual([...leaf.requiredExpanded], ['b', 'a', 'root']);
 });
