@@ -555,3 +555,32 @@ schema parity, integrity/cancellation unit tests and browser regressions cover
 the behavior, including HATA crosshairs inside all three displayed fragments.
 See [generation and evidence](rendering/REGION_NAVIGATION.md).
 This is locally implemented behavior, not a deployed site update.
+
+## Region browsing refinements (2026-10-08)
+
+D091 is implemented locally. The landing navigation omits Explore. Shift-click
+adds the inclusive visible sibling-leaf range from the most recently selected
+anchor, retains that anchor for repeated ranges, and ignores different-parent
+or unavailable anchors. Selection updates atomically and Auto-slice runs once
+for the clicked endpoint. Existing branch navigation and selection modifiers
+remain covered.
+
+Search highlights matching acronym/name substrings and retains complete
+ancestor and descendant context. Matched branches and paths to deeper matches
+open automatically; other retained branches begin folded and remain manually
+expandable. Search temporarily shows the anatomy hierarchy and counts direct
+matches. Clearing restores the prior folding and value ordering.
+
+Finite regional values, including zero, have 52-by-6-pixel miniature colorbars
+using the active palette, effective range and color mapping, with a contrasting
+vertical tick. Hover titles give exact values, units and clipping. Missing
+values and volume-only anatomy do not acquire invented regional statistics.
+Palette, range, statistic, nonlinear and quantile changes refresh the indicators.
+
+`just check` passed, including 215 browser tests and four canonical documentation
+screenshots; focused model/colorbar tests and 34 targeted browser tests also
+passed. Real W39 channels
+also load through the local dev server's existing production-data proxy: a
+frontal-pole search shows six direct matches within ten context rows, with
+515 finite regional indicators and no browser runtime errors. These changes
+have not been pushed or deployed.

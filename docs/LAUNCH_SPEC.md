@@ -74,8 +74,8 @@ For a schema-v1 regional feature, the viewer must:
 
 - <a id="ls02-01"></a> **`LS02-01`** — discover features dynamically from the selected immutable release;
 - <a id="ls02-02"></a> **`LS02-02`** — load parcellation region metadata and the region index from the release;
-- <a id="ls02-03"></a> **`LS02-03`** — search regions by loaded metadata rather than a hardcoded list;
-- <a id="ls02-04"></a> **`LS02-04`** — display the selected statistic for each region;
+- <a id="ls02-03"></a> **`LS02-03`** — search loaded region metadata, highlight matching acronym/name text, retain full ancestor and descendant context, and expand only matched branches and paths needed to show every match; clearing restores previous folding and ordering;
+- <a id="ls02-04"></a> **`LS02-04`** — display the selected statistic for each region, with a read-only miniature colorbar for every finite value using the active palette, range and mapping;
 - <a id="ls02-05"></a> **`LS02-05`** — color registered anatomical regions from the selected statistic/colormap/range;
 - <a id="ls02-06"></a> **`LS02-06`** — use one shared selection state for region-list and brain-view interactions; in Regions, non-leaf rows expand/collapse and leaves select, while brain-view clicks select the clicked region; Ctrl/Cmd-click toggles selectable regions, and an explicit Select multiple mode supports touch and keyboard use;
 - <a id="ls02-07"></a> **`LS02-07`** — persist selection in URL state;
@@ -103,6 +103,11 @@ and multiple-selection buttons sit beside fold/unfold with state-aware tooltips
 and pressed states. Auto-slice is URL-persisted; unavailable interior coverage
 keeps coordinates intact with explicit feedback. See D086 and the
 [region navigation contract](rendering/REGION_NAVIGATION.md).
+
+D091 adds Shift-left-click in Regions: add the inclusive range of visible
+selectable leaf siblings from the most recently selected anchor, retaining that
+anchor for repeated ranges. Different parents or invalid anchors do nothing.
+Apply each range atomically, with Auto-slice to the clicked endpoint only.
 
 Global, selected-region, and compact histograms retain exact release bins when
 color mapping changes. The compact gradient aligns to raw values at

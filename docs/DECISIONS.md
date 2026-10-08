@@ -99,6 +99,7 @@ only part of the body; the index states what remains effective.
 | D089 | W39 channel, volume and edges release selections | accepted | 2026-10-07 | Owner-approved production selections for the W39 channels (denoised-only), volumes and edges; W32 display carried over only where comparable; six W32 features dropped upstream |
 | D088 | Relax D062: macOS or Linux release hosts | accepted | 2026-10-07 | Owner direction: preflight no longer requires Linux; provenance must still match the publishing host, main must be clean and commit-exact |
 | D087 | Quantile color mappings | accepted | 2026-10-01 | Quantile uniform and Quantile Gaussian join D081's color mapping; browser-derived rank maps from the colored regional statistic or valid-voxel binnings; histograms, axis, and release bytes unchanged |
+| D091 | Contextual region search and sibling range selection | accepted | 2026-10-08 | owner-approved Shift-click sibling ranges, minimal expanded search hierarchy, read-only regional colorbars, and removal of the landing Explore link |
 
 ## D001 — Separate v2
 
@@ -2251,3 +2252,30 @@ The staged volumes were reproduced bit-for-bit from iblatlas `main` commit
 code; no iblatlas package release is required. Display is the neutral
 Linear/Full baseline with no feature-specific review. The catalog groups them
 as a `genomics` project (AGEA and MERFISH) and a `lipidome` project.
+
+## D091 — Contextual region search and sibling range selection
+
+Owner approved the interaction plan on 2026-10-08. Remove Explore from the
+landing navigation. In Regions, Shift-left-click adds the inclusive range of
+visible selectable leaf siblings between the most recently selected region and
+the clicked leaf, in displayed order. Both endpoints must share the same real
+parent; an invalid anchor or different parent does nothing. Repeated range
+selections retain the anchor. Apply a range in one selection transition and
+perform Auto-slice only once, to the clicked endpoint. D084 branch activation
+and existing Ctrl/Cmd and Select multiple behavior remain effective.
+
+Search retains every direct match's ancestor path and descendant subtree,
+highlights the matching substring in acronyms and names case-insensitively,
+and opens matched branches and the paths required to keep every highlighted
+row visible. Other branches start folded and can be expanded manually. Use
+the anatomical hierarchy temporarily during search, restoring prior folding
+and value ordering on clearing. Count direct matches separately from context.
+This replaces D084's earlier search visibility behavior only.
+
+Every finite regional statistic, including zero, gets a read-only miniature
+colorbar using the active feature palette, effective color range and mapping.
+Use a vertical black tick with a white outline instead of a circular thumb.
+Expose exact values and clipping in tooltips; clamp out-of-range ticks to an
+edge. Missing values remain absent, and volume mode does not invent regional
+statistics. These are client presentation changes, with no scientific release
+or coordinate changes.

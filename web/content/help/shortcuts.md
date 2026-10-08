@@ -7,4 +7,5 @@
 - **?** — open Help
 
 - **Ctrl/Cmd-click** — add or remove a region from the selection
+- **Shift-click** in Regions — add the visible range of selectable siblings from the most recently selected region
 - **Enter / Space** in Regions — expand/collapse a parent, or select a leaf; hold Ctrl/Cmd to toggle a leaf, or enable Select multiple
