@@ -7,6 +7,7 @@ import type {
 import { PrefetchQueue } from '../data/prefetch.js';
 import type { AppStore } from '../domain/store.js';
 import type { DatasetRef, ExactDatasetRef, ParcellationId, RepresentationKind } from '../domain/types.js';
+import { featureSelection, matchFeature, supportsFeatureContinuity, type FeatureSelection } from './feature-correspondence.js';
 
 export interface DatasetRepositoryPort {
   loadCatalog(options?: { allowLocalOnly?: boolean }): Promise<DatasetCatalog>;
@@ -50,6 +51,8 @@ export class DatasetSession {
   private regionsGeneration = 0;
   private featureGeneration = 0;
   private featureLoadController: AbortController | null = null;
+  private selectedFeature: FeatureSelection | null = null;
+  private readonly rememberedFeatures = new Map<string, FeatureSelection>();
 
   constructor(
     private readonly repository: DatasetRepositoryPort,
@@ -87,8 +90,10 @@ export class DatasetSession {
     }
   }
 
-  async loadDataset(ref: ExactDatasetRef): Promise<void> {
+  async loadDataset(ref: ExactDatasetRef, preserveFeature = false): Promise<void> {
     if (!ref.releaseId) throw new Error(`An exact release is required for dataset ${ref.datasetId}`);
+    const outgoing = preserveFeature ? this.selectedFeature : null;
+    if (!preserveFeature) this.selectedFeature = null;
     const generation = ++this.datasetGeneration;
     this.regionsGeneration += 1;
     this.featureGeneration += 1;
@@ -109,11 +114,17 @@ export class DatasetSession {
       this.changed();
 
       const current = this.store.getState().view;
-      const currentFeature = manifest.features.find((item) => item.id === current.featureId);
+      const remembered = this.rememberedFeatures.get(this.releaseKey(ref));
+      const matched = outgoing ? matchFeature(outgoing, manifest, remembered) : null;
+      const canRestore = outgoing && supportsFeatureContinuity(outgoing.datasetId, manifest.dataset.id);
+      const preferredId = matched?.id ?? (canRestore ? remembered?.feature.id : undefined);
+      const currentFeature = manifest.features.find((item) => item.id === (current.featureId ?? preferredId));
       this.reconcileContext(
         manifest,
         !currentFeature || !currentFeature.representations[current.representation],
+        preferredId,
       );
+      this.rememberCurrentFeature();
       const state = this.store.getState();
       const regionsReady = await this.loadRegions(state.view.dataset, state.view.parcellation, generation);
       if (!this.isCurrentDataset(generation) || !regionsReady) return;
@@ -173,6 +184,7 @@ export class DatasetSession {
       if (!hadFeature) this.changed();
       return;
     }
+    this.rememberCurrentFeature();
 
     const datasetGeneration = this.datasetGeneration;
     if (parcellation !== previousParcellation) {
@@ -268,9 +280,10 @@ export class DatasetSession {
   private reconcileContext(
     manifest: DatasetManifest,
     reconcileParcellation: boolean,
+    preferredId?: string,
   ): void {
     const view = this.store.getState().view;
-    const feature = manifest.features.find((item) => item.id === view.featureId)
+    const feature = manifest.features.find((item) => item.id === (view.featureId ?? preferredId))
       ?? manifest.features[0];
     if (!feature) return;
     const representation: RepresentationKind = feature.representations[view.representation]
@@ -298,6 +311,21 @@ export class DatasetSession {
       parcellation,
       history: 'replace',
     });
+  }
+
+  private releaseKey(ref: DatasetRef): string {
+    return JSON.stringify([ref.datasetId, ref.releaseId]);
+  }
+
+  private rememberCurrentFeature(): void {
+    const { dataset, featureId } = this.store.getState().view;
+    if (!this.manifest || this.manifest.dataset.id !== dataset.datasetId
+      || this.manifest.dataset.release !== dataset.releaseId) return;
+    const descriptor = this.manifest.features.find(({ id }) => id === featureId);
+    if (descriptor) {
+      this.selectedFeature = featureSelection(this.manifest, descriptor);
+      this.rememberedFeatures.set(this.releaseKey(dataset), this.selectedFeature);
+    }
   }
 }
 

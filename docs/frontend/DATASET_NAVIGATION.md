@@ -97,6 +97,48 @@ edition-aware dataset switching, explicit release override, and local
 selection. A generic dataset setter must not erase the difference between
 these scientific-context changes.
 
+## Feature continuity between channels and volumes
+
+User-requested navigation within `ephys_atlas_channels` and
+`ephys_atlas_volumes` preserves the corresponding selected quantity when the
+destination release declares it. This includes release/edition changes within
+these datasets. Startup, shared URLs, reload and browser Back/Forward instead
+honor their explicit feature ID; they never borrow an in-memory selection.
+
+`application/feature-correspondence.ts` matches exact IDs first within an exact
+`value_semantics.quantity` match, then uses that release-owned quantity to
+resolve differently named features. Display labels, fuzzy spelling, units and
+arbitrary suffix stripping are not identity rules. A genuine rename can retain
+its canonical quantity in the existing schema; a changed scientific quantity
+requires a separately reviewed correspondence rather than a guessed alias.
+No scientific release bytes or schema fields change for this behavior.
+
+Raw/denoised identity comes from the explicit channel `feature_mode` recipe.
+For `both`, a `.raw` or `.denoised` suffix is recognized only when its base
+matches the declared quantity or source column. When several destination
+features share the quantity, preserve the source variant if available, then
+restore the destination's remembered feature, then prefer a uniquely declared
+denoised variant. Other ambiguity produces no match. The volume product's raw,
+unnormalized transport is not treated as the channel `.raw` source variant.
+Correspondence preserves the selected quantity, not equivalence of regional
+observations and spatial predictions.
+
+The session remembers selections per exact dataset/release for its lifetime.
+When a quantity is absent or ambiguous, restore the destination's last valid
+feature or use its ordinary first-feature fallback. The destination's supported
+representation/parcellation is reconciled atomically and its actual feature ID
+replaces the pending navigation URL without an extra history entry. Generation
+guards discard obsolete matches during rapid switches. Unrelated datasets and
+local imports retain the ordinary navigation behavior.
+
+The 2026-10-13 served W39 audit verified 51 channel and 43 volume feature
+descriptors against their declared bytes/SHA-256. All 43 volume IDs, quantities
+and source columns occur in channels. The eight channel-only quantities are
+`channel_labels`, `rms_lf_csd`, and
+`psd_{alpha,beta,delta,gamma,lfp,theta}_csd`; these must not be substituted with
+`_csd_diff1`. Older W32 channel variants map by canonical quantity, preserving
+their variant preference when returning from volumes.
+
 ## Catalog contract
 
 Extend the existing schema-v1 `catalog.json`; do not add a side table, a

@@ -303,7 +303,7 @@ export class AtlasApp {
       }
       this.render();
       if (isDatasetNavigationAction(action) || action.type === 'view/hydrate') {
-        void this.session.loadDataset(requireExactDataset(state.view.dataset));
+        void this.session.loadDataset(requireExactDataset(state.view.dataset), isDatasetNavigationAction(action));
       }
       if (action.type === 'feature/set') void this.session.loadCurrentFeature(true);
       if (action.type === 'parcellation/set') {

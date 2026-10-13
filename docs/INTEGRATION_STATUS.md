@@ -146,6 +146,13 @@ parcellation discovery, region metadata/search/tree/ranking, shared list/SVG
 selection and hover, descriptive summaries, global/selected distributions,
 comparison tray/sheet, contextual CSV/artifact downloads, and URL state.
 
+Channels/volumes navigation preserves a shared canonical feature quantity,
+including differently named raw/denoised channel variants. Exact-release
+selection memory provides missing-feature fallback and raw-variant round trips;
+URL hydration remains authoritative. The deterministic matcher is scoped to
+these two datasets and rejects unresolved ambiguity. See
+[feature continuity](frontend/DATASET_NAVIGATION.md#feature-continuity-between-channels-and-volumes).
+
 D050 is the sole implemented distribution contract. Linear, Log, and Signed
 log are synchronized value scales; Full and Focused are independent domains
 used by global, selected, and compact histograms with exact whole-population

@@ -338,3 +338,125 @@ test('feature Retry clears its own failure and ignores obsolete errors', async (
   assert.equal(session.snapshot().featureError, null);
   assert.equal(store.getState().runtime.datasetStatus, 'ready');
 });
+
+function ephysManifest(id, featureIds, kind = 'regional', mode = 'denoised') {
+  const result = manifest(id);
+  result.provenance.recipe.feature_mode = mode;
+  result.features = featureIds.map((id) => ({
+    ...result.features[0], id,
+    valueSemantics: { ...result.features[0].valueSemantics, quantity: id.replace(/\.(raw|denoised)$/, '') },
+    representations: kind === 'volume' ? { volume: { kind: 'volume' } } : result.features[0].representations,
+  }));
+  return result;
+}
+
+function navigationHarness(manifests, featureId) {
+  const [initial] = Object.keys(manifests);
+  const store = createAppStore({ ...DEFAULT_APP_STATE, view: {
+    ...DEFAULT_APP_STATE.view, dataset: { datasetId: initial, releaseId: 'r1' }, featureId,
+  } });
+  const session = new DatasetSession({
+    async loadManifest(ref) { return await manifests[ref.datasetId]; },
+    async loadRegions() { return []; },
+    async loadFeature(_ref, featureId, representation) { return { featureId, representation }; },
+    async prefetchFeature() {},
+  }, store, () => {});
+  const navigate = (id) => {
+    store.dispatch({ type: 'navigation/dataset', navigation: { kind: 'custom', projectId: 'ephys' },
+      dataset: { datasetId: id, releaseId: 'r1' } });
+    return session.loadDataset(store.getState().view.dataset, true);
+  };
+  return { store, session, navigate };
+}
+const CHANNELS = 'ephys_atlas_channels';
+const VOLUMES = 'ephys_atlas_volumes';
+
+test('dataset navigation keeps a shared feature and reconciles its representation', async () => {
+  const { store, session, navigate } = navigationHarness({
+    [CHANNELS]: ephysManifest(CHANNELS, ['first', 'shared']),
+    [VOLUMES]: ephysManifest(VOLUMES, ['other_first', 'shared'], 'volume'),
+  }, 'shared');
+  await session.loadDataset(store.getState().view.dataset);
+  await navigate(VOLUMES);
+  assert.equal(store.getState().view.featureId, 'shared');
+  assert.equal(store.getState().view.representation, 'volume');
+  await navigate(CHANNELS);
+  assert.equal(store.getState().view.featureId, 'shared');
+  assert.equal(store.getState().view.representation, 'regional');
+  session.stop();
+});
+
+test('absent quantities restore the destination selection and raw variants round trip', async () => {
+  const { store, session, navigate } = navigationHarness({
+    [CHANNELS]: ephysManifest(CHANNELS, ['first', 'rms_ap.raw', 'rms_ap.denoised', 'channel_labels'], 'regional', 'both'),
+    [VOLUMES]: ephysManifest(VOLUMES, ['volume_first', 'rms_ap'], 'volume'),
+  }, 'rms_ap.raw');
+  await session.loadDataset(store.getState().view.dataset);
+  await navigate(VOLUMES);
+  assert.equal(store.getState().view.featureId, 'rms_ap');
+  await navigate(CHANNELS);
+  assert.equal(store.getState().view.featureId, 'rms_ap.raw');
+  store.dispatch({ type: 'feature/set', featureId: 'channel_labels' });
+  await session.loadCurrentFeature();
+  await navigate(VOLUMES);
+  assert.equal(store.getState().view.featureId, 'rms_ap');
+  session.stop();
+});
+
+test('hydrated selections override memory and missing hydrated IDs use normal fallback', async () => {
+  const { store, session, navigate } = navigationHarness({
+    [CHANNELS]: ephysManifest(CHANNELS, ['first', 'shared']),
+    [VOLUMES]: ephysManifest(VOLUMES, ['volume_first', 'shared'], 'volume'),
+  }, 'shared');
+  await session.loadDataset(store.getState().view.dataset);
+  await navigate(VOLUMES);
+  for (const featureId of ['first', 'missing']) {
+    store.dispatch({ type: 'view/hydrate', view: { ...store.getState().view,
+      dataset: { datasetId: CHANNELS, releaseId: 'r1' }, featureId } });
+    await session.loadDataset(store.getState().view.dataset);
+    assert.equal(store.getState().view.featureId, 'first');
+  }
+  session.stop();
+});
+
+test('rapid switches keep the outgoing quantity and ignore stale correspondence', async () => {
+  const slow = deferred();
+  const { store, session, navigate } = navigationHarness({
+    [CHANNELS]: ephysManifest(CHANNELS, ['first', 'shared']),
+    [VOLUMES]: slow.promise,
+  }, 'shared');
+  await session.loadDataset(store.getState().view.dataset);
+  const pending = navigate(VOLUMES);
+  await navigate(CHANNELS);
+  slow.resolve(ephysManifest(VOLUMES, ['volume_first', 'shared'], 'volume'));
+  await pending;
+  assert.equal(store.getState().view.featureId, 'shared');
+  assert.equal(session.snapshot().manifest.dataset.id, CHANNELS);
+  assert.equal(session.snapshot().feature.representation, 'regional');
+  session.stop();
+});
+
+test('a selection is preserved before its outgoing regional payload is ready', async () => {
+  const regions = deferred();
+  const store = createAppStore({ ...DEFAULT_APP_STATE, view: {
+    ...DEFAULT_APP_STATE.view, dataset: { datasetId: CHANNELS, releaseId: 'r1' }, featureId: 'shared',
+  } });
+  const session = new DatasetSession({
+    async loadManifest(ref) { return ephysManifest(ref.datasetId, ['first', 'shared'],
+      ref.datasetId === VOLUMES ? 'volume' : 'regional'); },
+    loadRegions(ref) { return ref.datasetId === CHANNELS ? regions.promise : Promise.resolve([]); },
+    async loadFeature(_ref, featureId, representation) { return { featureId, representation }; },
+    async prefetchFeature() {},
+  }, store, () => {});
+  const initial = session.loadDataset(store.getState().view.dataset);
+  // Wait for manifest reconciliation, while the region index remains blocked.
+  while (!session.snapshot().manifest) await Promise.resolve();
+  store.dispatch({ type: 'navigation/dataset', navigation: { kind: 'custom', projectId: 'ephys' },
+    dataset: { datasetId: VOLUMES, releaseId: 'r1' } });
+  await session.loadDataset(store.getState().view.dataset, true);
+  regions.resolve([]);
+  await initial;
+  assert.equal(store.getState().view.featureId, 'shared');
+  assert.equal(session.snapshot().feature.representation, 'volume');
+  session.stop();
+});
