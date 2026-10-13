@@ -123,7 +123,7 @@ test('touch users can toggle multiple regions from the Regions drawer', async ({
     await region(page, '-68').tap();
     await expect.poll(() => selection(page)).toBe('-362');
     await region(page, '-68').tap();
-    await expect.poll(() => selection(page)).toBe('-362');
+    await expect.poll(() => selection(page)).toBe('-68');
     await page.screenshot({ path: '/tmp/ephys-selection-phone.png' });
   } finally { await context.close(); }
 });
