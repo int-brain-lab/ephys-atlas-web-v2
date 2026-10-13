@@ -35,7 +35,7 @@ const EPHYS_ATLAS_DATASETS = new Set([
   'ephys_atlas_edges',
 ]);
 
-const ANATOMY_DATASETS = new Set(['agea', 'merfish_class', 'lipids']);
+const GENOMICS_DATASETS = new Set(['agea', 'merfish_class']);
 
 function developmentProject(datasetId: string): DevelopmentProject {
   if (EPHYS_ATLAS_DATASETS.has(datasetId)) return {
@@ -48,10 +48,15 @@ function developmentProject(datasetId: string): DevelopmentProject {
     title: 'Brain-Wide Map',
     description: 'Brain-wide activity maps and preserved legacy results.',
   };
-  if (ANATOMY_DATASETS.has(datasetId)) return {
-    id: 'agea',
-    title: 'Anatomy',
-    description: 'Anatomical datasets from external scientific sources.',
+  if (GENOMICS_DATASETS.has(datasetId)) return {
+    id: 'genomics',
+    title: 'Genomics',
+    description: 'Gene expression and MERFISH cell classes.',
+  };
+  if (datasetId === 'lipids') return {
+    id: 'lipidome',
+    title: 'Lipidome',
+    description: 'Lipid Brain Atlas measurements.',
   };
   return {
     id: 'local-development',

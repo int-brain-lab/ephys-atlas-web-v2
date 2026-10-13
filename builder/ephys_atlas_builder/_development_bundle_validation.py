@@ -152,7 +152,11 @@ def validate_development_bundle(path: Path, repository_root: Path | None = None)
     for raw in document["artifacts"]:
         role = raw["role"]
         artifact_root = root / raw["destination"]
-        if not os.path.lexists(artifact_root) and not raw["launch_critical"]:
+        if (
+            not os.path.lexists(artifact_root)
+            and not raw["launch_critical"]
+            and (raw["kind"] != "release" or raw["source"]["state"] == "unresolved")
+        ):
             unavailable.append(_runtime_unavailable(
                 raw,
                 "Optional artifact is not present locally; no fallback was selected.",

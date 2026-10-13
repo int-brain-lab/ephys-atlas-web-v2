@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+
 import fcntl
 import gzip
 import hashlib
@@ -168,25 +170,40 @@ def _download_artifact_graph(
             queue_document(item, resource_base)
 
     queue_document(manifest, PurePosixPath("."))
-    while True:
-        pending = sorted(set(queued) - downloaded)
-        if not pending:
-            break
-        preflight(
-            sum(queued[path][0]["bytes"] for path in pending),
-            "currently declared resource graph",
-        )
-        relative = pending[0]
-        descriptor, next_base = queued[relative]
-        encoded = fetch(_resource_url(base_url, relative), descriptor["bytes"])
-        check_staging_parent()
-        decoded = _verify_resource(encoded, descriptor, relative)
-        target = staging / relative
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(encoded)
-        downloaded.add(relative)
-        if descriptor.get("media_type") == "application/json":
-            queue_document(json.loads(decoded), next_base)
+    # Only transport runs concurrently. Graph discovery, integrity checks and
+    # filesystem admission remain ordered on this thread, with at most eight
+    # encoded resources in flight and a disk preflight before every batch.
+    with ThreadPoolExecutor(max_workers=8) as downloads:
+        while True:
+            pending = sorted(set(queued) - downloaded)
+            if not pending:
+                break
+            preflight(
+                sum(queued[path][0]["bytes"] for path in pending),
+                "currently declared resource graph",
+            )
+            batch = [
+                (relative, downloads.submit(
+                    fetch, _resource_url(base_url, relative), queued[relative][0]["bytes"],
+                ))
+                for relative in pending[:8]
+            ]
+            for relative, result in batch:
+                descriptor, next_base = queued[relative]
+                encoded = result.result()
+                check_staging_parent()
+                decoded = _verify_resource(encoded, descriptor, relative)
+                target = staging / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(encoded)
+                downloaded.add(relative)
+                if descriptor.get("media_type") == "application/json":
+                    child = json.loads(decoded)
+                    if isinstance(child, dict) and child.get("format") in {
+                        "ephys-atlas-regional-statistics-v1", "ephys-atlas-volume-summary-v1",
+                    }:
+                        next_base = PurePosixPath(relative).parent
+                    queue_document(child, next_base)
 
     if raw["kind"] == "release":
         provenance_sources = [
@@ -334,8 +351,7 @@ def sync_development_bundle(
             )
             admitted = True
         except Exception as error:
-            if raw["launch_critical"]:
-                errors.append(f"{role} ({raw['destination']}): download failed: {error}")
+            errors.append(f"{role} ({raw['destination']}): download failed: {error}")
         finally:
             if staging is not None and not admitted:
                 if parent_fd is not None:

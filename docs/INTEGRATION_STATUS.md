@@ -454,6 +454,16 @@ proceeds only when their immutable source IDs match the reviewed bundle.
 `just dev-latest` combines that check with startup. New upstream bytes require
 audit and selection review; Brain-Wide Map and W26 volume stay pinned.
 
+The active v7 bundle now selects all seven W39-era production datasets and
+their exact default releases, including edges, MERFISH classes and lipids.
+The local catalog uses the production Ephys Atlas, Genomics and Lipidome
+groups, with an independent regression check against the tracked production
+snapshot. Persistent launchers must also select v7; a service still pinned to
+v6 retains the older five-dataset inventory. HTTPS resource downloads run in
+bounded batches of eight while graph/disk preflight, byte integrity and atomic
+installation retain their existing gates. See the
+[local-data runbook](data/LOCAL_DEVELOPMENT_BUNDLE.md).
+
 ## Quality gates
 
 CI and local `just check` use Python 3.12 through committed uv locks, Node 22,

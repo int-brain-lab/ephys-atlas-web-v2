@@ -7,7 +7,7 @@ reviewed local bytes.
 The local viewer consumes the same immutable schema-v1 releases and validated
 packs intended for HTTP delivery. It does not copy them into a developer-only
 format or fall back to synthetic data. Its generated preview catalog retains
-the product's Ephys Atlas and Brain-Wide Map project grouping, defaults to a
+the production Ephys Atlas, Genomics and Lipidome project grouping, defaults to a
 coordinated **Current local previews** edition, and keeps exact preview IDs as
 secondary metadata. Local labels do not imply staging or publication maturity.
 
@@ -26,7 +26,23 @@ missing artifact only when the descriptor contains an exact HTTPS source;
 v7 resolves all seven published datasets. The projection pack and native mesh
 retain reviewed local artifacts and unresolved sources, so full clean-checkout
 acquisition still needs those two origins pinned and verified.
-`just dev` is read-only and stops on a missing or corrupt launch-critical artifact.
+`just dev` is read-only and stops on a missing or corrupt launch-critical artifact
+or a missing dataset with a resolved source. Run `just data` to acquire it.
+
+For a persistent development server, check its launcher as well as the
+repository's recipes: a service that still names `development-bundle-v6.json`
+continues to serve the older five-dataset inventory even after `just data`
+downloads v7. Update that service to the active v7 descriptor, reload its
+configuration and restart it after synchronization. On the fractal Tailscale
+host this is `ephys-atlas-dev.service` in the systemd user manager. The local
+`artifacts/local-dev/` wrapper preserves the `/atlas/` mount.
+
+The v7 catalog exposes the same seven datasets and exact default immutable
+release bytes as production, including edges, MERFISH classes and lipids.
+The Vite configuration regression gate compares that inventory and project
+grouping with the tracked production catalog snapshot. Local preview editions
+remain local identities; historical production versions are not included in
+this default-release bundle.
 
 Use the refresh lane on the macOS development machine when you want to know
 whether newer upstream data exists:
@@ -137,6 +153,14 @@ manifest size/SHA-256, source state, and launch criticality. The synchronizer:
 4. verifies every declared encoded size and SHA-256 before decoding;
 5. runs the existing release/projection/mesh validator;
 6. installs atomically under an advisory lock.
+
+Resource transport uses at most eight concurrent downloads. Every discovered
+graph is checked for disk capacity before its next bounded batch, and integrity
+verification, graph discovery and filesystem admission remain sequential.
+Statistics and volume-summary resources resolve from the directory containing
+that document, matching the release validator and browser readers. A failed
+download from a resolved source is always reported, including optional datasets;
+only an absent artifact with an unresolved optional source may be skipped.
 
 It never overwrites corrupt or immutable output, resolves a mutable alias,
 silently substitutes an older release, or uploads private Parquet/NPZ/LUT/donor

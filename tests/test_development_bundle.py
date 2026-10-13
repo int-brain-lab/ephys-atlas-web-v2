@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+from threading import Barrier, Lock, current_thread, main_thread
 
 import pytest
 
@@ -17,9 +18,42 @@ from ephys_atlas_builder.development_bundle import (
 )
 from ephys_atlas_builder.fixture import generate_golden
 from tools.development_bundle import _environment
+from ephys_atlas_builder._development_bundle_acquisition import _download_artifact_graph
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.mark.parametrize('format_name', [
+    'ephys-atlas-regional-statistics-v1', 'ephys-atlas-volume-summary-v1',
+])
+def test_nested_summary_resources_resolve_relative_to_the_summary(tmp_path: Path, format_name: str):
+    base = 'https://static.example.test/releases/test-v1/'
+    resources = {}
+
+    def resource(path, payload, media_type='application/json'):
+        encoded = json.dumps(payload).encode() if media_type == 'application/json' else payload
+        resources[base + path] = encoded
+        return {
+            'path': path, 'bytes': len(encoded), 'sha256': hashlib.sha256(encoded).hexdigest(),
+            'media_type': media_type, 'codec': {'name': 'none', 'decoded_bytes': len(encoded)},
+        }
+
+    counts = resource('features/test/nested/counts.u32', b'\0\0\0\0', 'application/octet-stream')
+    counts['path'] = 'counts.u32'
+    summary = resource('features/test/nested/summary.json', {'format': format_name, 'counts': counts})
+    summary['path'] = 'nested/summary.json'
+    feature = resource('features/test/feature.json', {'summary': summary})
+    manifest = resource('manifest.json', {
+        'dataset_id': 'test', 'release': {'release_id': 'test-v1'},
+        'features': [{'descriptor': {'resource': feature}}],
+    })
+    raw = {
+        'source': {'base_url': base}, 'root_manifest': manifest, 'kind': 'release',
+        'identity': {'dataset_id': 'test', 'release_id': 'test-v1'},
+    }
+    _download_artifact_graph(tmp_path, raw, lambda url, _: resources[url], lambda _: 10**12, lambda: None)
+    assert (tmp_path / 'features/test/nested/counts.u32').read_bytes() == b'\0\0\0\0'
 
 
 def descriptor(release: Path, *, destination: str = "data/releases/golden/golden-v1") -> dict:
@@ -216,6 +250,52 @@ def test_sync_downloads_absent_resolved_release_into_atomic_sibling_stage(tmp_pa
     assert (destination / "manifest.json").read_bytes() == (release / "manifest.json").read_bytes()
     assert set(requests) == set(resources)
     assert not list(destination.parent.glob(f".{destination.name}.bundle-stage-*"))
+
+
+def test_sync_overlaps_transport_but_keeps_admission_on_the_main_thread(tmp_path: Path) -> None:
+    release = generate_golden(tmp_path / "remote")
+    base_url = "https://static.example.test/releases/golden-v1/"
+    document, resources = remote_release(release, base_url)
+    repository = tmp_path / "repo"
+    path = write_descriptor(repository, document)
+    barrier = Barrier(2)
+    lock = Lock()
+    arrivals = 0
+
+    def fetch(url: str, _maximum: int) -> bytes:
+        nonlocal arrivals
+        if current_thread() is not main_thread():
+            with lock:
+                arrivals += 1
+                synchronize = arrivals <= 2
+            if synchronize:
+                barrier.wait(timeout=5)
+        return resources[url]
+
+    def free_space(_path: Path) -> int:
+        assert current_thread() is main_thread()
+        return 10**12
+
+    result = sync_development_bundle(path, repository, fetch, free_space)
+    assert arrivals >= 2
+    assert result.artifacts[0].file_count == len(resources)
+
+
+def test_sync_reports_failed_download_of_optional_resolved_artifact(tmp_path: Path) -> None:
+    release = generate_golden(tmp_path / 'remote')
+    document, _ = remote_release(release, 'https://static.example.test/releases/golden-v1/')
+    document['artifacts'][0]['launch_critical'] = False
+    repository = tmp_path / 'repo'
+    path = write_descriptor(repository, document)
+
+    def fetch(_url: str, _maximum: int) -> bytes:
+        raise OSError('transport unavailable')
+
+    with pytest.raises(DevelopmentBundleError, match='download failed: transport unavailable'):
+        sync_development_bundle(path, repository, fetch)
+    # A read-only launch must also refuse to silently drop this resolved dataset.
+    with pytest.raises(DevelopmentBundleError, match='manifest.json'):
+        validate_development_bundle(path, repository)
 
 
 def test_sync_reuses_valid_unresolved_artifact_without_network(tmp_path: Path) -> None:

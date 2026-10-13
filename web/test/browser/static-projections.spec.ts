@@ -8,7 +8,7 @@ test('Top and Swanson share regional presentation, interaction, URL state, and m
   const top = page.locator('[data-secondary-panel="top"]');
   await expect(page.getByRole('combobox', { name: 'Context view' })).toHaveValue('top');
   await expect(top).toBeVisible();
-  await expect(top.locator('path')).toHaveCount(114);
+  await expect(top.locator('path.atlas-region')).toHaveCount(114);
   await expect(top.locator('.secondary-projection__notice')).toBeHidden();
   await expect(top.locator('.static-projection-viewport')).toHaveAttribute('data-synthetic-fixture', 'false');
   await expect(top.locator('.static-projection-viewport')).toHaveAttribute(
@@ -16,7 +16,7 @@ test('Top and Swanson share regional presentation, interaction, URL state, and m
     'pinned-curated',
   );
 
-  const path = top.locator('path').last();
+  const path = top.locator('path.atlas-region').last();
   const topRegionId = await path.getAttribute('data-allen-id');
   expect(topRegionId).not.toBeNull();
   const selectedTopRegionId = String(-Math.abs(Number(topRegionId)));
@@ -29,8 +29,8 @@ test('Top and Swanson share regional presentation, interaction, URL state, and m
   await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Swanson' });
   const swanson = page.locator('[data-secondary-panel="swanson"]');
   await expect(swanson).toBeVisible();
-  await expect(swanson.locator('path')).toHaveCount(808);
-  const swansonPath = swanson.locator('path').last();
+  await expect(swanson.locator('path.atlas-region')).toHaveCount(808);
+  const swansonPath = swanson.locator('path.atlas-region').last();
   const swansonRegionId = await swansonPath.getAttribute('data-allen-id');
   expect(swansonRegionId).not.toBeNull();
   const selectedSwansonRegionId = String(-Math.abs(Number(swansonRegionId)));
