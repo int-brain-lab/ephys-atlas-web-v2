@@ -60,7 +60,7 @@ region in a brain view or the Regions pane to select only that region.
 Ctrl-click (Cmd-click on Mac) adds or removes a region from the comparison.
 For touch or keyboard use, enable **Select multiple** in the Regions pane to
 toggle regions without a modifier; turn it off to return to single selection.
-Clicking the sole selected region keeps it selected; **Clear selection** removes
+Clicking an already selected region deselects it; **Clear selection** removes
 all selections. Selection is synchronized across the 2-D and optional 3-D
 views and preserved in the share URL. The multiple-selection mode lasts only
 for the current viewer session.
