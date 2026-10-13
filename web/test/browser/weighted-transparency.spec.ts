@@ -45,7 +45,7 @@ for (const supported of [true, false]) test(supported
       viewport = factory.create(host); viewport.setPresentation(base);
       viewport.setViewState({explode:0,camera:{positionUm:[0,0,12],targetUm:[0,0,0],up:[0,1,0]}}); viewport.activate();
     };
-    (window as any).oitTest = {create, select(ids:number[]){viewport.setPresentation({...base,selectedRegionIds:new Set(ids)});}, visible(ids:number[]){viewport.setPresentation({...base,visibleRegionIds:new Set(ids)});}, destroy(){factory.destroy();}};
+    (window as any).oitTest = {create, exportImage(options:any){return viewport.exportImage(options);}, highlight(id:number|null){viewport.setPresentation({...base,highlightedRegionId:id});}, select(ids:number[]){viewport.setPresentation({...base,selectedRegionIds:new Set(ids)});}, visible(ids:number[]){viewport.setPresentation({...base,visibleRegionIds:new Set(ids)});}, destroy(){factory.destroy();}};
     create(false,false);
   })());
   await page.evaluate(() => { delete (window as any).oitSetup; });
@@ -91,6 +91,43 @@ for (const supported of [true, false]) test(supported
   expect(left[0]).toBeGreaterThan(50); // front red contributes
   expect(left[1]).toBeLessThan(30); // green behind opaque blue is rejected
   expect(right[0]).toBeGreaterThan(50); expect(right[1]).toBeGreaterThan(50);
+  const exported = await page.evaluate(async () => {
+    const state = (window as any).oitTest;
+    const decode = async (blob: Blob) => {
+      const image = await createImageBitmap(blob);
+      const canvas = document.createElement('canvas'); canvas.width=image.width;canvas.height=image.height;
+      const context=canvas.getContext('2d')!;context.drawImage(image,0,0);
+      const pixels=context.getImageData(0,0,image.width,image.height).data;
+      image.close(); return {width:canvas.width,height:canvas.height,pixels};
+    };
+    const baseline = await decode(await state.exportImage({longestEdge:800}));
+    state.highlight(1);
+    const hovered = await decode(await state.exportImage({longestEdge:800}));
+    let difference=0;
+    for(let i=0;i<baseline.pixels.length;i++) difference=Math.max(difference,Math.abs(baseline.pixels[i]! - hovered.pixels[i]!));
+    state.highlight(null);
+    const sample=(x:number,y:number)=>Array.from(baseline.pixels.slice((y*baseline.width+x)*4,(y*baseline.width+x)*4+4));
+    const defaultImage = await createImageBitmap(await state.exportImage());
+    const defaultSize=[defaultImage.width,defaultImage.height];defaultImage.close();
+    const colorbar = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    colorbar.setAttribute('viewBox','0 0 600 100');
+    colorbar.innerHTML='<rect width="600" height="100" fill="#ff0000" />';
+    document.body.append(colorbar);
+    const withColorbar=await decode(await state.exportImage({longestEdge:800,colorbar}));
+    colorbar.remove();
+    const barPixel=(Math.floor(withColorbar.height*.96)*withColorbar.width+Math.floor(withColorbar.width/2))*4;
+    return {width:baseline.width,height:baseline.height,corner:sample(0,0),left:sample(350,440),right:sample(450,440),difference,defaultSize,barSize:[withColorbar.width,withColorbar.height],barPixel:Array.from(withColorbar.pixels.slice(barPixel,barPixel+4))};
+  });
+  expect(exported.width).toBe(800); expect(exported.height).toBe(800);
+  expect(exported.defaultSize).toEqual([2400,2400]);
+  expect(exported.corner[3]).toBe(0);
+  expect(exported.left[3]).toBe(255); // opaque geometry keeps full coverage
+  expect(exported.right[3]).toBeGreaterThan(0);
+  expect(exported.right[3]).toBeLessThan(255); // OIT context retains transparent alpha
+  expect(exported.difference).toBe(0); // transient hover never enters the export
+  expect(exported.barSize[0]).toBeLessThan(800); expect(exported.barSize[1]).toBe(800);
+  expect(exported.barPixel).toEqual([255,0,0,255]);
+  await expect(host.locator('canvas')).toHaveAttribute('width','400');
   for (const split of [false,true]) {
     await page.evaluate((split) => (window as any).oitTest.create(true,split), split);
     const reversed = await pixels();
@@ -105,6 +142,11 @@ for (const supported of [true, false]) test(supported
   await expect(host).toHaveAttribute('data-geometry-uploads','3');
   await page.evaluate(() => { document.querySelector<HTMLElement>('#oit-test')!.style.width='500px'; });
   await expect(host.locator('canvas')).toHaveAttribute('width','500');
+  const rectangularExport = await page.evaluate(async () => {
+    const image=await createImageBitmap(await (window as any).oitTest.exportImage({longestEdge:800}));
+    const size=[image.width,image.height];image.close();return size;
+  });
+  expect(rectangularExport).toEqual([800,640]);
   await pixels();
   await page.evaluate(() => {
     const gl=document.querySelector<HTMLCanvasElement>('#oit-test canvas')!.getContext('webgl2')!;

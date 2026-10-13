@@ -51,8 +51,10 @@ export class WeightedTransparency {
           vec4 accum=texture2D(uAccumulation,vUv);
           float reveal=texture2D(uRevealage,vUv).r;
           vec3 transparentColor=accum.rgb/max(accum.a,.00001);
-          vec3 color=transparentColor*(1.-reveal)+texture2D(uOpaque,vUv).rgb*reveal;
-          gl_FragColor=linearToOutputTexel(vec4(color,1.));
+          vec4 opaque=texture2D(uOpaque,vUv);
+          float alpha=(1.-reveal)+opaque.a*reveal;
+          vec3 color=(transparentColor*(1.-reveal)+opaque.rgb*opaque.a*reveal)/max(alpha,.00001);
+          gl_FragColor=linearToOutputTexel(vec4(color,alpha));
         }`,
     });
     this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.material);
@@ -61,14 +63,15 @@ export class WeightedTransparency {
   }
 
   render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera, meshes: readonly AnatomyMesh[]): void {
-    renderer.getDrawingBufferSize(this.size);
+    const previousTarget = renderer.getRenderTarget();
+    if (previousTarget) this.size.set(previousTarget.width, previousTarget.height);
+    else renderer.getDrawingBufferSize(this.size);
     for (const target of [this.opaque, this.accumulation, this.revealage]) {
       if (target.width !== this.size.x || target.height !== this.size.y) target.setSize(this.size.x, this.size.y);
     }
     const background = scene.background;
     const clearColor = renderer.getClearColor(new THREE.Color());
     const clearAlpha = renderer.getClearAlpha();
-    const previousTarget = renderer.getRenderTarget();
     const autoClear = renderer.autoClear;
     renderer.autoClear = false;
     try {
@@ -79,7 +82,7 @@ export class WeightedTransparency {
       }
       this.pass(meshes, 0);
       renderer.setRenderTarget(this.opaque);
-      renderer.setClearColor(background instanceof THREE.Color ? background : clearColor, 1);
+      renderer.setClearColor(background instanceof THREE.Color ? background : clearColor, background instanceof THREE.Color ? 1 : clearAlpha);
       renderer.clear();
       renderer.render(scene, camera);
       scene.background = null;

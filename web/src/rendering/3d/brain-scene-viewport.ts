@@ -7,6 +7,7 @@ import { StableArcballControls, type CameraInteractionPhase } from './stable-arc
 import { meshPresentationAtMl, MESH_PRESENTATION_GLSL } from './mesh-presentation-boundary.js';
 import { WeightedTransparency, TRANSPARENCY_FRAGMENT } from './weighted-transparency.js';
 import { ComponentMeshPicker } from './component-mesh-picker.js';
+import { canvasPngBlob, exportSvgImage, imageExportSize } from '../image-export.js';
 
 export type { BrainCameraPose, Scene3DViewState } from '../../domain/types.js';
 
@@ -29,6 +30,7 @@ export interface BrainScene3DInteractionSink {
 }
 
 export interface BrainScene3DViewport {
+  exportImage?(options?: { longestEdge?: number; colorbar?: SVGSVGElement }): Promise<Blob>;
   setPresentation(presentation: RegionalPresentation): void;
   setViewState(state: Scene3DViewState): void;
   activate(): void;
@@ -168,6 +170,59 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
   activate(): void { this.assertActiveObject(); this.active = true; this.host.dataset.active = 'true'; this.controls.enabled = true; this.scheduleRender(); }
   deactivate(): void { this.active = false; this.host.dataset.active = 'false'; this.controls.enabled = false; this.cameraInteractionActive = false; this.pointerPress = null; this.clearPendingHoverPick(); if (this.frame !== null) cancelAnimationFrame(this.frame); this.frame = null; }
 
+  async exportImage(options: { longestEdge?: number; colorbar?: SVGSVGElement } = {}): Promise<Blob> {
+    this.assertActiveObject();
+    if (!this.meshes.length || this.host.dataset.scene3dState !== 'ready') throw new Error('3-D anatomy is not ready to export');
+    const { width, height } = imageExportSize(this.camera.aspect, 1, options.longestEdge);
+    const target = new THREE.WebGLRenderTarget(width, height, { samples: 4 });
+    target.texture.colorSpace = THREE.SRGBColorSpace;
+    const previousTarget = this.renderer.getRenderTarget();
+    const background = this.scene.background;
+    const clearColor = this.renderer.getClearColor(new THREE.Color());
+    const clearAlpha = this.renderer.getClearAlpha();
+    const pixels = new Uint8Array(width * height * 4);
+    try {
+      // All GPU work is synchronous: no camera, presentation or LOD update can
+      // interleave with this snapshot. The displayed canvas is never resized.
+      this.updateLookupTextures({ ...this.presentation, highlightedRegionId: null }, false);
+      this.scene.background = null;
+      this.renderer.setClearColor(0, 0);
+      this.renderer.setRenderTarget(target);
+      if (this.hasTranslucency) {
+        if (!this.renderer.extensions.has('EXT_color_buffer_float')) throw new Error('3-D transparency requires floating-point render targets (EXT_color_buffer_float)');
+        this.transparency ??= new WeightedTransparency();
+        this.transparency.render(this.renderer, this.scene, this.camera, this.meshes);
+      } else this.renderer.render(this.scene, this.camera);
+      this.renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+    } finally {
+      this.renderer.setRenderTarget(previousTarget);
+      this.renderer.setClearColor(clearColor, clearAlpha);
+      this.scene.background = background;
+      this.updateLookupTextures(this.presentation, false);
+      target.dispose();
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Image export requires Canvas support');
+    const image = context.createImageData(width, height);
+    // WebGL's origin is bottom-left; PNG's origin is top-left.
+    for (let row = 0; row < height; row += 1) {
+      image.data.set(pixels.subarray((height - row - 1) * width * 4, (height - row) * width * 4), row * width * 4);
+    }
+    context.putImageData(image, 0, 0);
+    if (options.colorbar) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      const raster = document.createElementNS(svg.namespaceURI, 'image');
+      raster.setAttribute('width', String(width)); raster.setAttribute('height', String(height));
+      raster.setAttribute('href', canvas.toDataURL('image/png'));
+      svg.append(raster);
+      return exportSvgImage(svg, { ...options, format: 'png' });
+    }
+    return canvasPngBlob(canvas);
+  }
+
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
@@ -306,31 +361,31 @@ class RetainedBrainScene3DViewport implements BrainScene3DViewport {
     return texture;
   }
 
-  private updateLookupTextures(): void {
+  private updateLookupTextures(presentation = this.presentation, recordUpdate = true): void {
     if (!this.manifest) return;
     this.hasTranslucency = false;
-    const regionColors = regionalPresentationColors(this.presentation, true);
+    const regionColors = regionalPresentationColors(presentation, true);
     for (const mesh of this.meshes) {
       const texture = mesh.material.uniforms.uLookup!.value as THREE.DataTexture;
       const bytes = texture.image.data as Uint8Array;
       const presentations: readonly MeshPresentationV1[] = this.manifest.presentations;
       presentations.forEach((region: MeshPresentationV1) => {
         const id = this.presentationId(region);
-        const visible = id !== null && this.presentation.visibleRegionIds.has(id);
-        const selected = id !== null && this.presentation.selectedRegionIds.has(id);
-        const highlighted = id !== null && this.presentation.highlightedRegionId === id;
+        const visible = id !== null && presentation.visibleRegionIds.has(id);
+        const selected = id !== null && presentation.selectedRegionIds.has(id);
+        const highlighted = id !== null && presentation.highlightedRegionId === id;
         const color = regionalColorTextureRgb(id === null ? '#73818b' : regionColors.get(id) ?? '#73818b');
         const intensity = selected ? 1.35 : highlighted ? 1.18 : 1;
         const offset = region.presentation_id * 4;
         bytes[offset] = Math.min(255, Math.round(color[0] * intensity));
         bytes[offset + 1] = Math.min(255, Math.round(color[1] * intensity));
         bytes[offset + 2] = Math.min(255, Math.round(color[2] * intensity));
-        bytes[offset + 3] = visible ? (this.presentation.selectedRegionIds.size && !selected ? 28 : 255) : 0;
+        bytes[offset + 3] = visible ? (presentation.selectedRegionIds.size && !selected ? 28 : 255) : 0;
         if (bytes[offset + 3] === 28) this.hasTranslucency = true;
       });
       texture.needsUpdate = true;
     }
-    this.host.dataset.presentationUpdates = String(Number(this.host.dataset.presentationUpdates ?? 0) + 1);
+    if (recordUpdate) this.host.dataset.presentationUpdates = String(Number(this.host.dataset.presentationUpdates ?? 0) + 1);
   }
 
   private presentationId(region: MeshPresentationV1): number | null { return region.mappings[this.presentation.mapping]; }

@@ -112,6 +112,12 @@ class LazyBrainScene3DViewport implements BrainScene3DViewport {
     this.inner?.deactivate();
   }
 
+  exportImage(options?: { longestEdge?: number; colorbar?: SVGSVGElement }): Promise<Blob> {
+    this.assertActiveObject();
+    if (!this.inner?.exportImage) return Promise.reject(new Error('3-D anatomy is not ready to export'));
+    return this.inner.exportImage(options);
+  }
+
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;

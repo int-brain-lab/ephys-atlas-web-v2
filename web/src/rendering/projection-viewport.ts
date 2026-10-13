@@ -1,3 +1,4 @@
+import type { ImageExportOptions } from './image-export.js';
 import type { SliceIndices } from '../core/spatial.js';
 import type { FeaturePayload } from '../data/contracts.js';
 import type {
@@ -80,6 +81,7 @@ export interface ProjectionInteractionSink {
 /** One retained DOM viewport owned by one projection frame. */
 export interface ProjectionViewport {
   render(model: ProjectionRenderModel): void | Promise<void>;
+  exportImage?(options: ImageExportOptions): Promise<Blob>;
   /** Abort pending work while retaining the currently displayed layers. */
   suspend?(): void;
   clear(): void;
@@ -89,6 +91,7 @@ export interface ProjectionViewport {
 
 export interface StaticProjectionViewport {
   render(model: StaticProjectionRenderModel): void | Promise<void>;
+  exportImage?(options: ImageExportOptions): Promise<Blob>;
   clear(): void;
   showError(error: unknown): void;
   destroy(): void;

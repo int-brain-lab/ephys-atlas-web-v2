@@ -1,3 +1,4 @@
+import { inlineSvgPresentation } from './image-export.js';
 import { regionIdFromPath } from './region-id.js';
 import type {
   MappingName,
@@ -88,6 +89,22 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     started = this.performanceStart();
     this.drawGuides(frame);
     this.reportPerformance('guides', frame, started);
+  }
+
+  /** Clone the anatomy figure without crosshair or transient hover state. */
+  exportSvg(): SVGSVGElement {
+    const svg = this.mount.svg.cloneNode(false) as SVGSVGElement;
+    const figure = this.mount.figureLayer.cloneNode(true) as SVGGElement;
+    for (const element of figure.querySelectorAll('.is-highlighted')) element.classList.remove('is-highlighted');
+    svg.append(figure);
+    svg.style.position = 'absolute';
+    svg.style.pointerEvents = 'none';
+    svg.style.visibility = 'hidden';
+    this.mount.svg.parentElement?.append(svg);
+    try { inlineSvgPresentation(svg); } finally { svg.remove(); }
+    svg.removeAttribute('role');
+    svg.removeAttribute('aria-label');
+    return svg;
   }
 
   dispose(): void {

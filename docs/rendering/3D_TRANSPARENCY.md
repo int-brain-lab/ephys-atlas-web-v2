@@ -21,6 +21,16 @@ the renderer uses one opaque pass and does not allocate OIT targets until needed
 4. Composite the weighted average and revealage over opaque colour, converting
    linear colour to display sRGB exactly once.
 
+Image download renders the current camera and retained geometry into a separate
+sRGB target at a 2,400-pixel longest edge, preserving the camera aspect ratio.
+The display canvas and camera are unchanged. Export removes transient hover
+emphasis and the scene background while preserving selection, explode and
+regional presentation. OIT composition computes coverage alpha and straight
+RGB, so translucent context remains translucent in the PNG instead of carrying
+the dark panel background. Optional colorbars are composed into the PNG by the
+shared image exporter. Export targets are disposed and renderer/presentation
+state is restored before asynchronous PNG encoding.
+
 The bounded weight uses linear view depth relative to the camera far plane.
 The method follows [McGuire and Bavoil's weighted blended OIT](https://jcgt.org/published/0002/02/09/).
 It removes draw-order dependence, but overlapping colour/depth mixing is an

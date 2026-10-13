@@ -1,3 +1,4 @@
+import { exportSvgImage, type ImageExportOptions } from './image-export.js';
 import type { StaticProjectionId } from '../domain/types.js';
 import { regionalPresentationColors, regionalPresentationIds } from '../application/regional-presentation.js';
 import { regionIdFromPath } from './region-id.js';
@@ -43,6 +44,7 @@ export class RetainedStaticProjectionViewport implements StaticProjectionViewpor
   private renderedFrame: RegionalSliceFrame | null = null;
   private model: StaticProjectionRenderModel | null = null;
   private token = 0;
+  private exportReady = false;
   private activeAbort: AbortController | null = null;
 
   constructor(
@@ -78,6 +80,7 @@ export class RetainedStaticProjectionViewport implements StaticProjectionViewpor
     if (model.projectionId !== this.projectionId) {
       throw new Error(`${this.projectionId} viewport cannot render ${model.projectionId}`);
     }
+    this.exportReady = false;
     const token = ++this.token;
     this.activeAbort?.abort();
     const abort = new AbortController();
@@ -93,6 +96,7 @@ export class RetainedStaticProjectionViewport implements StaticProjectionViewpor
       this.root.dataset.syntheticFixture = String(frame.syntheticFixture);
       this.root.dataset.staticSourceMode = frame.sourceMode;
       this.root.dataset.mode = model.feature?.representation === 'volume' ? 'anatomy-only' : 'regional';
+      this.exportReady = true;
     } finally {
       if (this.activeAbort === abort) this.activeAbort = null;
     }
@@ -114,7 +118,17 @@ export class RetainedStaticProjectionViewport implements StaticProjectionViewpor
     }
   }
 
+  exportImage(options: ImageExportOptions): Promise<Blob> {
+    if (!this.exportReady || !this.renderedFrame || this.activeAbort || !this.error.hidden
+      || this.presentation().feature !== this.model?.feature
+      || this.presentation().regional.mapping !== this.model?.parcellation) {
+      return Promise.reject(new Error('Wait until the projection has finished loading before exporting'));
+    }
+    return exportSvgImage(this.renderer.exportSvg(), options);
+  }
+
   clear(): void {
+    this.exportReady = false;
     this.token += 1;
     this.activeAbort?.abort();
     this.activeAbort = null;

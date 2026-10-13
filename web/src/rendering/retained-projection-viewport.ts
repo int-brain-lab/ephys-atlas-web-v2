@@ -1,3 +1,4 @@
+import { exportSvgImage, type ImageExportOptions } from './image-export.js';
 import type { RegionNavigationAssets } from './region-navigation-source.js';
 import type { ResourceIntegrity } from '../data/cache.js';
 import type { ParcellationId } from '../domain/types.js';
@@ -118,6 +119,7 @@ function regionalFrame(
 class RetainedProjectionViewport implements ProjectionViewport {
   private readonly mount: RetainedMount;
   private renderToken = 0;
+  private exportReady = false;
   private pending: PendingRender | null = null;
   private inFlight = false;
   private activeRenderAbort: AbortController | null = null;
@@ -151,6 +153,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
 
   render(model: ProjectionRenderModel): Promise<void> {
     if (model.axis !== this.axis) return Promise.reject(new Error(`${this.axis} viewport cannot render ${model.axis}`));
+    this.exportReady = false;
     const token = ++this.renderToken;
     const nextVolumeTarget = this.volumeRenderTarget(model);
     if (!this.sameVolumeTarget(this.activeVolumeTarget, nextVolumeTarget)) {
@@ -209,7 +212,38 @@ class RetainedProjectionViewport implements ProjectionViewport {
     }
   }
 
+  exportImage(options: ImageExportOptions): Promise<Blob> {
+    const presentation = this.presentation();
+    if (!this.exportReady || !this.frame || this.pending || this.inFlight || !this.mount.error.hidden
+      || this.renderedRequestedIndex !== this.requestedIndex
+      || this.renderedFeature !== presentation.feature
+      || this.frame.mapping !== presentation.regional.mapping) {
+      return Promise.reject(new Error('Wait until the projection has finished loading before exporting'));
+    }
+    const svg = this.mount.regional.exportSvg();
+    if (this.volumeFeature && this.volumeSlice && this.volumeRegistration) {
+      const placement = registeredVolumeCanvasPlacement(this.volumeFeature, this.volumeSlice, this.volumeRegistration);
+      const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      image.setAttribute('href', this.mount.canvas.toDataURL('image/png'));
+      image.setAttribute('x', String(placement.x));
+      image.setAttribute('y', String(placement.y));
+      image.setAttribute('width', String(placement.width));
+      image.setAttribute('height', String(placement.height));
+      image.setAttribute('preserveAspectRatio', 'none');
+      image.setAttribute('opacity', this.mount.scalar.style.opacity || '1');
+      image.setAttribute('style', 'image-rendering: pixelated');
+      if (placement.flipX || placement.flipY) {
+        const dx = placement.flipX ? 2 * placement.x + placement.width : 0;
+        const dy = placement.flipY ? 2 * placement.y + placement.height : 0;
+        image.setAttribute('transform', `translate(${dx} ${dy}) scale(${placement.flipX ? -1 : 1} ${placement.flipY ? -1 : 1})`);
+      }
+      svg.prepend(image);
+    }
+    return exportSvgImage(svg, options);
+  }
+
   clear(): void {
+    this.exportReady = false;
     this.renderToken += 1;
     this.activeRenderAbort?.abort();
     this.cancelVolumePrefetch();
@@ -236,6 +270,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
   }
 
   suspend(): void {
+    this.exportReady = false;
     this.renderToken += 1;
     this.activeRenderAbort?.abort();
     this.cancelVolumePrefetch();
@@ -296,6 +331,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
   private async renderNow(model: ProjectionRenderModel, token: number, signal: AbortSignal): Promise<void> {
     if (model.feature?.representation === 'volume') await this.renderVolume(model, token, signal);
     else await this.renderRegional(model, token, signal);
+    if (token === this.renderToken) this.exportReady = true;
   }
 
   private async renderRegional(model: ProjectionRenderModel, token: number, signal: AbortSignal): Promise<void> {
