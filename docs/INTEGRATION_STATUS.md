@@ -615,3 +615,29 @@ also load through the local dev server's existing production-data proxy: a
 frontal-pole search shows six direct matches within ten context rows, with
 515 finite regional indicators and no browser runtime errors. These changes
 have not been pushed or deployed.
+
+## Per-view image downloads — 2026-10-13
+
+D093 adds download icons beside maximize in the three registered views and
+the active Top, Swanson or 3D context. 2D exports support standalone SVG with
+vector region paths and embedded native PNG volume pixels, or flattened PNG.
+3D exports a fresh transparent PNG while preserving its camera framing and
+retained geometry. PNG output has a 2400-pixel longest edge. Registered
+placement, flips, opacity, colors and selection emphasis are preserved;
+crosshairs, transient hover effects, controls and panel backgrounds are omitted.
+An optional vector colorbar is off by default. Loading/error frames cannot
+export stale content. Filenames retain scientific context and native slice
+identity where applicable; underlying data downloads are unchanged.
+
+D097 replaces the modal with one-click downloads and an adjacent options arrow.
+The primary action chooses SVG for regional/static maps and registered
+composites, PNG for 3D and volume-only views without visible anatomy layers.
+The small menu offers alternate SVG/PNG actions, brief format descriptions,
+and a colorbar checkbox whose preference lasts for that control's session.
+
+Nine focused export browser tests and the two 3D transparency tests pass.
+`just check` passed on a frozen workspace snapshot with two browser workers:
+235 browser tests and four canonical screenshot checks, plus Python,
+TypeScript, unit/rendering, production-build and artifact-compatibility gates.
+Documentation screenshots reflect the new controls. These changes are local
+and have not been pushed or deployed.
