@@ -237,3 +237,23 @@ test('Shift-click in static projections adds and removes individual regions with
   await expect.poll(() => selection(page)).toBe('-362');
   expect(new URL(page.url()).searchParams.get('cursor')).toBe(cursor);
 });
+
+test('projection header actions stay inside narrow frames with different font metrics', async ({ page }) => {
+  await page.goto('/app/');
+  for (const width of [1100, 1280, 1480]) {
+    await page.setViewportSize({ width, height: 800 });
+    for (const font of ['Arial', 'DejaVu Sans']) {
+      const style = await page.addStyleTag({ content: `body { font-family: "${font}", sans-serif; }` });
+      for (const view of ['coronal', 'sagittal', 'horizontal']) {
+        const frame = page.locator(`[data-view="${view}"]`);
+        const bounds = await frame.boundingBox();
+        for (const action of await frame.locator('.view-frame__header button:visible').all()) {
+          const rect = await action.boundingBox();
+          expect(rect!.x).toBeGreaterThanOrEqual(bounds!.x);
+          expect(rect!.x + rect!.width).toBeLessThanOrEqual(bounds!.x + bounds!.width);
+        }
+      }
+      await style.evaluate(node => node.remove());
+    }
+  }
+});

@@ -684,3 +684,10 @@ columns and above Compare selected regions. Its header shows compact statistics;
 expansion exposes the description and volume validity counts. The secondary
 selector contains Top, Swanson and 3-D. Scientific values, coordinate state,
 selection, distribution bins and download contracts are preserved.
+
+Projection headers retain the action buttons' width and truncate the view title
+and coordinate text when space is tight. Browser coverage checks header bounds
+with multiple font metrics; scientific coordinates remain available through the
+slice control's accessible value text.
+This fixes the header-action overflow that failed CI for `2de28b0`; canonical
+Linux documentation screenshots now reflect the bounded horizontal header.
