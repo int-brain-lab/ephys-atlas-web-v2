@@ -28,6 +28,14 @@
 }
 
 .secondary-view__maximize {
+  margin-left: 0;
+}
+
+.secondary-view__header > .view-frame__download {
+  margin-left: auto;
+}
+
+.secondary-view__header > .view-frame__download[hidden] + .secondary-view__maximize {
   margin-left: auto;
 }
 

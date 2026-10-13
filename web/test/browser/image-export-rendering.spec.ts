@@ -19,6 +19,11 @@ test('standalone exports preserve vector presentation, exclude hover and guides,
       regionColors: new Map([[ -1, '#ff0000' ], [ -2, '#0000ff' ]]),
       selectedRegionIds: new Set([-1]), highlightedRegionIds: new Set([-2]),
     });
+    const selectedStroke = getComputedStyle(svg.querySelector('[data-allen-id="-1"]')!).strokeWidth;
+    const highlighted = svg.querySelector('[data-allen-id="-2"]')!;
+    highlighted.classList.remove('is-highlighted');
+    const unselectedOpacity = getComputedStyle(highlighted).fillOpacity;
+    highlighted.classList.add('is-highlighted');
     const blob = await exportSvgImage(renderer.exportSvg(), { format: 'svg' });
     const parsed = new DOMParser().parseFromString(await blob.text(), 'image/svg+xml');
     const paths = parsed.querySelectorAll('path');
@@ -39,11 +44,15 @@ test('standalone exports preserve vector presentation, exclude hover and guides,
       transientClass: parsed.querySelector('.is-highlighted') !== null,
       firstFill: paths[0]!.getAttribute('fill'), originalHighlighted,
       pngType: png.type, bitmapWidth: bitmap.width, bitmapHeight: bitmap.height, cornerAlpha, fillAlpha,
+      selectionStylePreserved: paths[0]!.getAttribute('stroke-width') === selectedStroke,
+      unhighlightedStylePreserved: paths[1]!.getAttribute('fill-opacity') === unselectedOpacity,
     };
   });
-  expect(result).toEqual({
+  expect(result.selectionStylePreserved).toBe(true);
+  expect(result.unhighlightedStylePreserved).toBe(true);
+  expect(result).toMatchObject({
     width: '2400', height: '1200', pathCount: 2, lineCount: 0,
-    selectedStroke: '1.75px', unselectedOpacity: '0.58', transientClass: false,
+    transientClass: false,
     firstFill: 'rgb(255, 0, 0)', originalHighlighted: true,
     pngType: 'image/png', bitmapWidth: 200, bitmapHeight: 100, cornerAlpha: 0, fillAlpha: 255,
   });

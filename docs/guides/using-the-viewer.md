@@ -85,7 +85,7 @@ parcellation does not resample, aggregate, or otherwise alter the volume grid
 or source voxel values. Volume distributions describe valid voxels globally.
 
 Settings can adjust volume opacity and anatomy outlines. Those presentation
-controls do not change voxel inspection, statistics, or downloads.
+controls do not change voxel inspection, statistics, or downloaded data values.
 
 ## Interpret the display
 
@@ -137,6 +137,18 @@ cursor, display choices, and regional selection where relevant.
 **Download** provides immutable release artifacts and contextual exports for
 the active feature. Exports preserve the dataset, release, feature,
 representation, and applicable statistic or parcellation identity.
+
+The download icon beside a view's maximize button saves its **image**. Choose
+**SVG** to keep region boundaries editable as vectors; any visible volume is
+embedded as a PNG in the same file. **PNG** combines the visible layers into
+a bitmap with a 2400-pixel longest edge. Top and Swanson support both formats;
+3D exports PNG from the current camera. Export size is independent of the 2D
+panel size, and 3D preserves the current camera framing.
+
+Images have transparent backgrounds and omit crosshairs, hover effects and
+controls. Colors, opacity, visible layers and selected-region emphasis are
+preserved. **Include colorbar** is optional and off by default. Image downloads
+capture presentation; the main Download action still provides underlying data.
 
 ## Import your own data
 

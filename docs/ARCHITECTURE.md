@@ -152,6 +152,15 @@ while owning camera, explode, GPU resources, lifecycle, and failures. D070 selec
 native GLB-derived geometry and D042 remains rollback evidence. Encoding volumes remain linked 2-D
 slices and are never converted into that anatomy mesh path.
 
+Per-view image export lives on these retained viewport boundaries. Regional
+SVG snapshots resolve stylesheet presentation into standalone attributes and
+omit guides and hover effects; visible scalar pixels are embedded with their
+registered placement. A shared exporter optionally appends a vector colorbar
+and creates a transparent fixed-resolution PNG. The 3D sibling renders into
+an offscreen target with coverage alpha and restores its GPU state before
+encoding. The UI owns format selection and download lifecycle separately from
+scientific artifact downloads.
+
 Opaque anatomy uses a single pass. Translucent regional context uses retained
 [weighted blended OIT targets](rendering/3D_TRANSPARENCY.md), with opaque depth
 occlusion and one final display-colour conversion; it does not sort or alter

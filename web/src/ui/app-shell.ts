@@ -1,6 +1,7 @@
 import { RetainedViewStatus, type RetainedViewRequest } from './retained-view-status.js';
 import { element, heading, titleCaseToken } from './dom-helpers.js';
 import { DownloadDialogController } from './download-dialog.js';
+import { ImageDownloadDialog } from './image-download-dialog.js';
 import { OperationStatus } from './operation-status.js';
 import type { DatasetCatalog, DatasetManifest, FeaturePayload, RepresentationDisplay } from '../data/contracts.js';
 import type { LocalArchivePreview } from '../data/local-archive.js';
@@ -190,6 +191,9 @@ function placeholderLine(width: 'short' | 'medium' | 'long' = 'medium'): HTMLSpa
 }
 
 export class AppShell {
+  private readonly imageDownload = new ImageDownloadDialog();
+  private readonly exportColorbar = new FrameColorbar();
+  private secondaryDownload!: HTMLButtonElement;
   private readonly app: HTMLDivElement;
   private readonly header: HTMLElement;
   private readonly body: HTMLElement;
@@ -367,6 +371,7 @@ export class AppShell {
       this.backdrop,
       this.infoDialog,
       this.downloadController.dialog,
+      this.imageDownload.dialog,
       this.helpDialog,
       ...this.localDialogs.elements,
       this.shortcutStatus,
@@ -542,6 +547,7 @@ export class AppShell {
     for (const nodes of this.staticFrames.values()) nodes.loadStatus.dispose();
     this.panelLayout.dispose();
     this.viewportFactory.destroy();
+    this.imageDownload.destroy();
     this.scene3dObserver?.disconnect();
     this.scene3dFactory?.destroy();
   }
@@ -1337,9 +1343,11 @@ export class AppShell {
         histogram: model.presentationScale.histogram,
       };
       this.colorRangeControl.render(legend);
+      this.exportColorbar.render(legend);
       for (const nodes of this.viewFrames.values()) nodes.colorbar.render(legend);
     } else {
       this.colorRangeControl.hide();
+      this.exportColorbar.render(null);
       for (const nodes of this.viewFrames.values()) nodes.colorbar.render(null);
     }
   }
@@ -1479,7 +1487,8 @@ export class AppShell {
     this.secondaryMaximize.setAttribute('aria-label', 'Maximize secondary panel');
     this.secondaryMaximize.setAttribute('aria-pressed', 'false');
     this.secondaryMaximize.addEventListener('click', () => this.toggleMaximizedView('secondary'));
-    secondaryHeader.append(secondaryTabs, this.secondaryMaximize);
+    this.secondaryDownload = this.createImageDownloadButton('secondary');
+    secondaryHeader.append(secondaryTabs, this.secondaryDownload, this.secondaryMaximize);
     const secondaryBody = element('div', 'secondary-view__body');
     const summary = element('div', 'secondary-view__surface secondary-view__summary');
     summary.dataset.secondaryPanel = 'summary';
@@ -1538,6 +1547,53 @@ export class AppShell {
     return workspace;
   }
 
+  private createImageDownloadButton(view: SliceAxis | 'secondary'): HTMLButtonElement {
+    const button = element('button', 'view-frame__download');
+    button.type = 'button';
+    button.setAttribute('aria-label', `Download ${view} image`);
+    button.title = `Download ${view} image`;
+    // Inline vector icon stays crisp at every display density.
+    button.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5"/></svg>';
+    button.addEventListener('click', () => this.openImageDownload(view));
+    return button;
+  }
+
+  private openImageDownload(view: SliceAxis | 'secondary'): void {
+    const model = this.currentModel;
+    if (!model) return;
+    const content = view === 'secondary' ? SECONDARY_CONTENT_BY_ID[model.state.view.workspace.secondaryTab] : null;
+    if (content?.kind === 'summary') return;
+    const scene3d = content?.kind === 'scene3d';
+    const staticId = content?.kind === 'static-projection' ? content.projectionId : null;
+    const nodes = staticId ? this.staticFrames.get(staticId) : view !== 'secondary' ? this.viewFrames.get(view) : null;
+    const viewport = scene3d ? this.scene3dViewport : nodes?.viewport;
+    const label = content?.label ?? titleCaseToken(view);
+    const id = content?.id ?? view;
+    const request = nodes?.loadStatus.displayedRequest;
+    const suffix = request?.kind === 'slice' ? `slice-${request.sliceIndex}` : null;
+    const filename = [model.manifest?.dataset.id, model.manifest?.release.releaseId, model.state.view.featureId,
+      model.state.view.representation, model.state.view.coloring.statistic,
+      model.state.view.parcellation, id, suffix].filter(Boolean).join('-').replace(/[^a-zA-Z0-9._-]+/g, '-');
+    // Static maps and 3D show anatomy only when a volume feature is active.
+    const colorbar = model.state.view.representation === 'volume' && view === 'secondary'
+      ? undefined : this.exportColorbar.exportSvg();
+    this.imageDownload.open({
+      label, filename, vector: !scene3d, hasColorbar: !!colorbar,
+      exportImage: async (format, includeColorbar) => {
+        if (this.currentModel?.manifest !== model.manifest || this.currentModel?.feature !== model.feature
+          || (nodes && nodes.loadStatus.displayedRequest !== request)) {
+          throw new Error('The view changed. Close this dialog and download the image again.');
+        }
+        if (this.currentModel?.featureLoading || this.currentModel?.state.runtime.datasetStatus === 'error'
+          || nodes?.loadStatus.updating || (scene3d && this.scene3dHost.dataset.scene3dState !== 'ready')) {
+          throw new Error('Wait for this view to finish loading before downloading its image.');
+        }
+        if (!viewport?.exportImage) throw new Error('Image export is unavailable for this view.');
+        return viewport.exportImage({ format, longestEdge: 2400, ...(includeColorbar && colorbar ? { colorbar } : {}) });
+      },
+    });
+  }
+
   private createViewFrame(axis: SliceAxis): HTMLElement {
     const frame = element('section', 'view-frame panel');
     frame.dataset.view = axis;
@@ -1561,7 +1617,7 @@ export class AppShell {
     maximize.setAttribute('aria-label', `Maximize ${axis} view`);
     maximize.setAttribute('aria-pressed', 'false');
     maximize.addEventListener('click', () => this.toggleMaximizedView(axis));
-    headerMeta.append(coordinate, status, maximize);
+    headerMeta.append(coordinate, status, this.createImageDownloadButton(axis), maximize);
     header.append(headerMeta);
 
     const viewport = element('div', 'view-frame__viewport');
@@ -1734,6 +1790,8 @@ export class AppShell {
     }
     for (const [candidate, panel] of this.secondaryPanels) panel.hidden = candidate !== tab;
     const content = SECONDARY_CONTENT_BY_ID[tab];
+    this.secondaryDownload.hidden = content.kind === 'summary';
+    this.secondaryDownload.title = `Download ${content.label} image`;
     this.renderScene3D(model, content.kind === 'scene3d');
     if (content.kind !== 'static-projection') return;
     const nodes = this.staticFrames.get(content.projectionId);
@@ -2135,7 +2193,7 @@ export class AppShell {
     if (this.helpTour.active) return;
     if (this.analysisDialog.open && this.analysisDialog.dataset.presentation === 'modal-sheet') return;
     if (event.key === 'Escape') {
-      if (this.infoDialog.open || this.downloadController.dialog.open || this.helpDialog.open) return;
+      if (this.infoDialog.open || this.downloadController.dialog.open || this.imageDownload.dialog.open || this.helpDialog.open) return;
       if (this.closeContextMenus()) return;
       const maximizedView = this.currentModel?.state.view.workspace.maximizedView ?? null;
       if (maximizedView) {
@@ -2149,7 +2207,7 @@ export class AppShell {
       if (this.overflowActions?.open) this.overflowActions.open = false;
       return;
     }
-    if (blocksGlobalShortcut(event) || this.infoDialog.open || this.downloadController.dialog.open || this.helpDialog.open) return;
+    if (blocksGlobalShortcut(event) || this.infoDialog.open || this.downloadController.dialog.open || this.imageDownload.dialog.open || this.helpDialog.open) return;
     if (
       (event.key === '[' || event.key === ']')
       && !event.altKey

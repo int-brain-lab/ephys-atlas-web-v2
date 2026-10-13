@@ -9,10 +9,17 @@
 
 .view-frame__header-meta {
   min-width: 0;
-  display: grid;
-  grid-template-columns: max-content 5.5rem 1.75rem;
+  display: flex;
   align-items: center;
   gap: var(--space-2);
+  margin-left: auto;
+}
+
+/* Narrow desktop frames keep coordinates and actions inside their own panel. */
+.view-frame > .view-frame__header {
+  flex-wrap: wrap;
+  row-gap: 0;
+  padding-block: .2rem;
 }
 
 .view-frame__coordinate {
@@ -58,7 +65,8 @@
   to { transform: rotate(1turn); }
 }
 
-.view-frame__maximize {
+.view-frame__maximize,
+.view-frame__download {
   width: 1.75rem;
   min-height: 1.75rem;
   display: inline-grid;
@@ -70,8 +78,13 @@
 }
 
 .view-frame__maximize:hover,
+.view-frame__download:hover,
 .view-frame__maximize[aria-pressed='true'] {
   color: var(--color-text);
+}
+
+.view-frame__download[hidden] {
+  display: none;
 }
 
 .view-frame__viewport::before,
@@ -366,7 +379,8 @@
     font-size: 0.72rem;
   }
 
-  .view-frame__maximize {
+  .view-frame__maximize,
+  .view-frame__download {
     min-height: 2rem;
   }
 }
