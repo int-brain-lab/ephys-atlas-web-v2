@@ -441,6 +441,15 @@ export class AtlasApp {
       navigationRecovery: this.navigationRecovery(),
     };
     this.shell.render(model);
+    const selectedInspections = state.view.selection.flatMap(regionId => {
+      const inspection = buildRegionTooltipModel({
+        regionId, physicalRegionId: Number(regionId), projectionId: 'coronal', sliceIndex: null,
+        parcellation: state.view.parcellation, clientX: 0, clientY: 0,
+      }, anatomyRegions, featureLoading || featureError ? null : data.feature,
+      data.manifest?.features.find(({ id }) => id === state.view.featureId), state.view.coloring);
+      return inspection ? [{ model: inspection, regionId }] : [];
+    });
+    this.shell.setSelectedRegionInspections(selectedInspections);
     this.regionalPanel.render({
       state,
       manifest: data.manifest,

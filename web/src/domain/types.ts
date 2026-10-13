@@ -30,7 +30,7 @@ export type RegionOrder = 'anatomy' | 'value-asc' | 'value-desc';
 export type OrthogonalProjectionId = SliceAxis;
 export type StaticProjectionId = 'top' | 'swanson';
 export type ProjectionId = OrthogonalProjectionId | StaticProjectionId;
-export type SecondaryTabId = 'summary' | StaticProjectionId | 'brain-3d';
+export type SecondaryTabId = StaticProjectionId | 'brain-3d';
 export type WorkspaceViewId = OrthogonalProjectionId | 'secondary';
 
 export interface WorkspaceState {

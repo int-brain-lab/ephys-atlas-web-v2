@@ -35,7 +35,7 @@ test('a continuous smooth wheel gesture keeps navigating while its slice pack lo
     const path = renderer.locator('path[data-allen-id="-362"]').first();
     await path.dispatchEvent('pointermove', { clientX: box.x + 30, clientY: box.y + 30 });
     await path.dispatchEvent('pointerup');
-    await expect(frame.locator('.region-tooltip')).toBeHidden();
+    await expect(page.locator('.region-tooltip')).toBeHidden();
     expect(new URL(page.url()).searchParams.has('selected')).toBe(false);
     release();
     await expect(frame).toHaveAttribute('aria-busy', 'false');

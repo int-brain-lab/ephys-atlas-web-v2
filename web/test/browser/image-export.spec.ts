@@ -118,8 +118,7 @@ test('Top and Swanson export vectors with their native framing and optional colo
   await page.getByRole('checkbox', { name: 'Include colorbar' }).check();
   const { bytes } = await downloadBytes(page, 'secondary', 'SVG');
   expect((await inspectSvg(page, bytes)).colorbars).toBe(1);
-  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Summary' });
-  await expect(page.getByRole('button', { name: 'Download secondary image', exact: true })).toBeHidden();
+  await expect(page.getByRole('combobox', { name: 'Context view' }).locator('option[value="summary"]')).toHaveCount(0);
 });
 
 test('volume SVG embeds native raster pixels at the registered location under vector boundaries', async ({ page }) => {

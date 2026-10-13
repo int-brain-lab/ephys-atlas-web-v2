@@ -47,7 +47,7 @@ for (const width of [1280, 768, 390]) {
       await expect(host).toHaveAttribute('aria-busy', 'false');
       await expect(slider).toBeEnabled();
       await expect(slider).toHaveValue('0.4');
-      await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Summary' });
+      await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Top' });
       await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: '3-D' });
       await expect(overlay).toBeHidden();
       await expect(host).toHaveAttribute('data-geometry-uploads', '1');
@@ -98,14 +98,15 @@ test('3-D context lazily loads its injected immutable fixture and persists respo
   const canvas = host.locator('canvas');
   const canvasBounds = await canvas.boundingBox();
   expect(canvasBounds).not.toBeNull();
-  await page.mouse.move(canvasBounds!.x + canvasBounds!.width * .4, canvasBounds!.y + canvasBounds!.height * .45);
+  // Drag below the Explode control, including in a short context viewport.
+  await page.mouse.move(canvasBounds!.x + canvasBounds!.width * .15, canvasBounds!.y + canvasBounds!.height * .75);
   await page.mouse.down();
-  await page.mouse.move(canvasBounds!.x + canvasBounds!.width * .65, canvasBounds!.y + canvasBounds!.height * .6, { steps: 4 });
+  await page.mouse.move(canvasBounds!.x + canvasBounds!.width * .55, canvasBounds!.y + canvasBounds!.height * .85, { steps: 4 });
   await page.mouse.up();
   await expect.poll(() => new URL(page.url()).searchParams.get('camera3d')).not.toBe(initialCamera);
   expect(await page.evaluate(() => history.length)).toBe(initialHistoryLength);
 
-  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Summary' });
+  await tab.selectOption('top');
   await expect(host).toHaveAttribute('data-active', 'false');
   await tab.selectOption('brain-3d');
   await expect(host).toHaveAttribute('data-active', 'true');
@@ -122,7 +123,7 @@ test('3-D context lazily loads its injected immutable fixture and persists respo
   await expect(page.locator('.secondary-view')).toHaveAttribute('data-maximized', 'false');
   await tab.focus();
   await page.keyboard.press('Home');
-  await expect(page.getByRole('combobox', { name: 'Context view' })).toHaveValue('summary');
+  await expect(page.getByRole('combobox', { name: 'Context view' })).toHaveValue('top');
   await page.keyboard.press('End');
   await expect(tab).toHaveValue('brain-3d');
   await expect(panel).toBeVisible();

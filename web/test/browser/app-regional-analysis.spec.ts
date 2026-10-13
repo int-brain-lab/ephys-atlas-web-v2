@@ -238,7 +238,7 @@ test('region hover is linked across all anatomical projections', async ({ page }
   }
 });
 
-test('slice hover tooltip shows current regional value and stays inside its viewport', async ({ page }) => {
+test('slice inspection shows current regional value below its viewport', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/app/');
   await expect(page.locator('.region-search__source')).toHaveText('Allen Mouse CCF 2017');
@@ -253,7 +253,8 @@ test('slice hover tooltip shows current regional value and stays inside its view
     clientY: viewportBounds!.y + viewportBounds!.height - 2,
   });
 
-  const tooltip = page.locator('[data-view="coronal"] .region-tooltip');
+  const tooltip = page.locator('.region-tooltip');
+  await page.locator('.region-inspection > summary').click();
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toHaveAttribute('data-region-id', '-362');
   await expect(tooltip.locator('.region-tooltip__identity')).toContainText('MD');
@@ -266,10 +267,8 @@ test('slice hover tooltip shows current regional value and stays inside its view
   await expect(tooltip.locator('.region-tooltip__hint')).toBeHidden();
   const tooltipBounds = await tooltip.boundingBox();
   expect(tooltipBounds).not.toBeNull();
-  expect(tooltipBounds!.x).toBeGreaterThanOrEqual(viewportBounds!.x);
-  expect(tooltipBounds!.y).toBeGreaterThanOrEqual(viewportBounds!.y);
-  expect(tooltipBounds!.x + tooltipBounds!.width).toBeLessThanOrEqual(viewportBounds!.x + viewportBounds!.width);
-  expect(tooltipBounds!.y + tooltipBounds!.height).toBeLessThanOrEqual(viewportBounds!.y + viewportBounds!.height);
+  const currentViewport = await viewport.boundingBox();
+  expect(tooltipBounds!.y).toBeGreaterThanOrEqual(currentViewport!.y + currentViewport!.height);
 
   const rightPath = page.locator('[data-view="coronal"] path[data-allen-id="362"]').first();
   await rightPath.dispatchEvent('pointermove', {
@@ -278,7 +277,7 @@ test('slice hover tooltip shows current regional value and stays inside its view
   });
   await expect(tooltip.locator('.region-tooltip__meta')).toHaveText('Right hemisphere · anatomy reference · n=3');
   await page.locator('[data-view="coronal"] .view-frame__slice-figure').dispatchEvent('pointerleave');
-  await expect(tooltip).toBeHidden();
+  await expect(page.locator('.region-inspection')).toHaveAttribute('data-source', 'recent');
 });
 
 test('region-list hover previews the region in all anatomical projections', async ({ page }) => {

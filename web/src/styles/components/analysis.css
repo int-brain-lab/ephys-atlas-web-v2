@@ -41,7 +41,8 @@
   background: var(--color-surface-hover);
 }
 
-.analysis-panel__title {
+.analysis-panel__title,
+.feature-summary-panel__title {
   color: var(--color-text-secondary);
   font-size: .72rem;
   font-weight: 650;

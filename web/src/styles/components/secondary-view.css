@@ -166,44 +166,12 @@
   box-shadow: 0 1.25rem 4rem rgb(0 0 0 / 42%);
 }
 
-.feature-summary-content {
-  height: 100%;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  overflow: hidden;
-}
-
-.feature-summary__description {
-  display: -webkit-box;
-  margin: 0;
-  padding: var(--space-2) var(--space-3);
-  overflow: hidden;
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-text-secondary);
-  font-size: .64rem;
-  line-height: 1.4;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-  line-clamp: 4;
-}
-
-.feature-summary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1px;
-  margin: 0;
-  background: var(--color-border);
-}
-
-.feature-summary__item {
-  min-width: 0;
-  min-height: 3.5rem;
-  display: grid;
-  align-content: center;
-  gap: .18rem;
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-view);
-}
+.secondary-view__summary { min-width: 0; max-height: min(14rem, 30vh); overflow: auto; }
+.feature-summary-content { display: grid; }
+.feature-summary__description { margin: .35rem 0; line-height: 1.4; }
+.feature-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 0; background: var(--color-border); }
+.feature-summary__item { min-width: 0; display: grid; align-content: center; gap: .15rem; padding: .3rem .55rem; background: var(--color-view); }
+@media (max-width: 759px) { .feature-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 .feature-summary__label {
   overflow: hidden;
@@ -225,3 +193,16 @@
 }
 
 .secondary-projection[data-updating] .secondary-projection__renderer { pointer-events: none; }
+
+.feature-summary-panel { min-width: 0; }
+.feature-summary-panel__toggle { display: flex; align-items: center; gap: .5rem; min-height: 2.25rem; padding: .25rem .65rem; cursor: pointer; }
+.feature-summary-panel__toggle::before { content: '▸'; color: var(--color-text-muted); }
+.feature-summary-panel[open] > summary::before { content: '▾'; }
+.feature-summary-panel__toggle::-webkit-details-marker { display: none; }
+.feature-summary-panel__stats { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .62rem; color: var(--color-text-muted); margin-left: auto; }
+.feature-summary__description { padding: .5rem .65rem; }
+@media (max-width: 759px) { .feature-summary-panel__stats { display: none; } }
+
+/* Feature status must not block the independent, already-ready anatomy view. */
+.secondary-view__scene3d > .operation-status[data-variant='compact'] { pointer-events: none; }
+.secondary-view__scene3d > .operation-status[data-variant='compact'] .operation-status__retry { pointer-events: auto; }

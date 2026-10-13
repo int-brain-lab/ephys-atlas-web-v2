@@ -60,6 +60,8 @@ export function renderFeatureSummary(
 ): void {
   if (feature.representation === 'regional' && !feature.global) {
     target.replaceChildren();
+    const compact = target.parentElement?.querySelector('.feature-summary-panel__stats');
+    if (compact) compact.textContent = '';
     return;
   }
   const fields: readonly (readonly [string, number | null | undefined, StatisticId])[] = feature.representation === 'regional'
@@ -75,6 +77,9 @@ export function renderFeatureSummary(
       ['Median', feature.summary.validStatistics.median, 'median'],
       ['Std. deviation', feature.summary.validStatistics.std, 'mean'],
     ];
+  const compact = target.parentElement?.querySelector('.feature-summary-panel__stats');
+  if (compact) compact.textContent = fields.filter(([, value]) => value != null && Number.isFinite(value))
+    .map(([label, value, statistic]) => `${label}: ${formatRegionalValue(value!, statistic, unit)}`).join(' · ');
   const list = html('dl', 'feature-summary');
   for (const [label, value, statistic] of fields) {
     if (value === undefined || value === null || !Number.isFinite(value)) continue;
@@ -95,6 +100,6 @@ export function renderFeatureSummary(
     description.textContent = [featureDescription, summaryNote].filter(Boolean).join(' ');
     content.append(description);
   }
-  content.append(list);
+  content.prepend(list);
   target.replaceChildren(content);
 }

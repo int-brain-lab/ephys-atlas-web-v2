@@ -1,4 +1,29 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+
+// Curved SVG regions need a point in their fill, rather than their bounding-box centre.
+async function interiorPosition(locator: Locator): Promise<{ x: number; y: number }> {
+  return locator.evaluate((node) => {
+    const path = node as SVGPathElement;
+    const transform = path.getScreenCTM()!;
+    const bounds = path.getBBox();
+    for (let row = 1; row < 40; row++) {
+      for (let column = 1; column < 40; column++) {
+        const local = new DOMPoint(bounds.x + bounds.width * column / 40, bounds.y + bounds.height * row / 40);
+        if (!path.isPointInFill(local)) continue;
+        const screen = local.matrixTransform(transform);
+        if (document.elementFromPoint(screen.x, screen.y) === path) return { x: screen.x, y: screen.y };
+      }
+    }
+    throw new Error('No visible interior point in the selected SVG region');
+  });
+}
+
+async function clickInterior(page: Page, path: Locator, modifier?: 'Meta' | 'Control'): Promise<void> {
+  const point = await interiorPosition(path);
+  if (modifier) await page.keyboard.down(modifier);
+  try { await page.mouse.click(point.x, point.y); }
+  finally { if (modifier) await page.keyboard.up(modifier); }
+}
 
 test('Top and Swanson share regional presentation, interaction, URL state, and maximize behavior', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -22,7 +47,7 @@ test('Top and Swanson share regional presentation, interaction, URL state, and m
   const selectedTopRegionId = String(-Math.abs(Number(topRegionId)));
   await path.hover();
   await expect(path).toHaveClass(/is-highlighted/);
-  await expect(top.locator('.region-tooltip')).toBeVisible();
+  await expect(page.locator('.region-inspection__compact')).not.toHaveText('');
   await path.click();
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe(selectedTopRegionId);
 
@@ -34,16 +59,17 @@ test('Top and Swanson share regional presentation, interaction, URL state, and m
   const swansonRegionId = await swansonPath.getAttribute('data-allen-id');
   expect(swansonRegionId).not.toBeNull();
   const selectedSwansonRegionId = String(-Math.abs(Number(swansonRegionId)));
-  await swansonPath.hover();
-  await expect(swanson.locator('.region-tooltip')).toBeVisible();
-  await swansonPath.click();
+  const swansonInterior = await interiorPosition(swansonPath);
+  await page.mouse.move(swansonInterior.x, swansonInterior.y);
+  await expect(page.locator('.region-inspection__compact')).not.toHaveText('');
+  await clickInterior(page, swansonPath);
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe(selectedSwansonRegionId);
-  await swansonPath.click({ modifiers: ['Meta'] });
+  await clickInterior(page, swansonPath, 'Meta');
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
   await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Top' });
   await path.click();
   await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Swanson' });
-  await swansonPath.click({ modifiers: ['Control'] });
+  await clickInterior(page, swansonPath, 'Control');
   const expectedIds = [...new Set([selectedTopRegionId, selectedSwansonRegionId])];
   if (selectedTopRegionId === selectedSwansonRegionId) expectedIds.length = 0;
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe(expectedIds.join(',') || null);
@@ -78,7 +104,8 @@ test('volume features remain explicitly anatomy-only on affine-free static maps'
   await expect(top.locator('.secondary-projection__notice')).toContainText(/anatomy only/i);
   await expect(top.locator('canvas')).toHaveCount(0);
   await top.locator('path').last().hover();
-  const tooltip = top.locator('.region-tooltip');
+  await page.locator('.region-inspection > summary').click();
+  const tooltip = page.locator('.region-tooltip');
   await expect(tooltip).toBeVisible();
   await expect(tooltip).toContainText(/(Left|Right) hemisphere/);
   await expect(tooltip.locator('.region-tooltip__value')).toBeHidden();

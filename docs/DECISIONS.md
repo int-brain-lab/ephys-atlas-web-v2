@@ -106,6 +106,7 @@ only part of the body; the index states what remains effective.
 | D096 | Reject unintended catalog removals | accepted | 2026-10-13 | preserve exposed projects, datasets, releases and editions by default; intentional retirement requires exact baseline hash, removal inventory, reason and decision; independent production inventory QA |
 | D097 | One-click image downloads and format menu | accepted | 2026-10-13 | primary button downloads immediately; adjacent arrow exposes colorbar and alternate SVG/PNG actions with brief descriptions; refines D093 interaction |
 | D098 | Omit selection borders from 2D downloads | accepted | 2026-10-13 | exported SVG/PNG omit selected-region strokes and halos; normal anatomy boundaries, feature colors and live selection remain; refines D093 |
+| D099 | Docked region inspection and compact feature summary | accepted | 2026-10-13 | fixed right-side inspection; expandable below-view fallback for narrow, collapsed and maximized layouts; full-width Summary row; persistent selection labels and discreet cursor acronyms |
 
 ## D001 — Separate v2
 
@@ -2392,3 +2393,43 @@ fills. Remove selection and hover classes only from the export clone before
 resolving its stylesheet presentation; live selection, shared state and URL
 selection remain unchanged. This replaces D093's preservation of 2D selection
 emphasis; the existing 3D presentation and all other export behavior remain.
+
+
+## D099 — Docked region inspection and compact feature summary
+
+Accepted owner direction (2026-10-13): remove the large pointer-following region
+and voxel tooltip from anatomy. Use a separate Region info card above the
+Visualization settings header. The sidebar hide arrow sits at its top edge,
+with a transparent resting background matching the Region info header. Reserve 12rem for it on wide desktops, with
+internal scrolling so hovering never moves the settings. Hover shows the
+inspected region or voxel; leaving restores selected-region information.
+Multiple selections show a count and a scrollable acronym/value list. With no
+selection, retain the last inspected sample with an explicit label so its
+details can be read after moving the pointer. Feature, mapping, navigation,
+and loading changes discard stale inspection. Outside-volume samples remain
+suppressed.
+
+When the right sidebar is unavailable or collapsed, or a view is maximized,
+place a compact acronym/value strip below the visible view. Clicking, tapping,
+or keyboard activation expands its full details without covering anatomy.
+Touch selection supplies region information without requiring hover. When
+multiple views are visible without the sidebar, reserve strip space in each
+so moving inspection does not move anatomy beneath the pointer. No
+position preference is added in this first iteration.
+
+Selected regions visible in each 2-D projection retain small acronym labels,
+using the largest visible fragment in the feature hemisphere when available.
+Labels anchor to the actual SVG contour rather than the bounding box, with
+bounded collision placement, and do not participate in pointer picking or
+image exports. Explicit Locate retains its temporary ring. Hover
+shows only a subdued acronym near the cursor; full details stay in Region info.
+
+Put Feature summary in a full-width collapsible row beneath both context
+columns and above Compare selected regions. Default it to expanded, with
+compact statistics in its header and full description and volume validity
+counts inside. Remove Summary from the secondary view selector; Top, Swanson
+and 3-D retain their existing view and URL behavior. Obsolete
+`secondary=summary` values use the normal invalid-tab fallback to Top.
+
+The owner subsequently authorized semantic commits and a push to `main` after
+verification. Site publication follows the automatic deployment workflow.

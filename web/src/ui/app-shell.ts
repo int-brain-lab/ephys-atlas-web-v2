@@ -1,3 +1,4 @@
+import { RegionInspectionCard } from './region-inspection-card.js';
 import { RetainedViewStatus, type RetainedViewRequest } from './retained-view-status.js';
 import { element, heading, titleCaseToken } from './dom-helpers.js';
 import { DownloadDialogController } from './download-dialog.js';
@@ -135,23 +136,10 @@ interface ViewFrameNodes {
   status: HTMLElement;
   maximize: HTMLButtonElement;
   colorbar: FrameColorbar;
-  tooltip: HTMLElement;
-  tooltipIdentity: HTMLElement;
-  tooltipLineage: HTMLElement;
-  tooltipValue: HTMLElement;
-  tooltipMeta: HTMLElement;
   loadStatus: RetainedViewStatus;
 }
 
-interface ProjectionTooltipNodes {
-  tooltip: HTMLElement;
-  tooltipIdentity: HTMLElement;
-  tooltipLineage: HTMLElement;
-  tooltipValue: HTMLElement;
-  tooltipMeta: HTMLElement;
-}
-
-interface StaticFrameNodes extends ProjectionTooltipNodes {
+interface StaticFrameNodes {
   frame: HTMLElement;
   target: HTMLElement;
   viewport: StaticProjectionViewport;
@@ -200,6 +188,10 @@ export class AppShell {
   private readonly regionPane: HTMLElement;
   private readonly settingsPane: HTMLElement;
   private readonly panelLayout: WorkspacePanelLayoutController;
+  private readonly hoverAcronym = element('div', 'region-hover-acronym');
+  private inspectionCard!: RegionInspectionCard;
+  private inspectionDock!: HTMLElement;
+  private inspectionContext = '';
   private layoutMode: LayoutMode = 'wide';
   private readonly backdrop: HTMLButtonElement;
   private readonly infoDialog: HTMLDialogElement;
@@ -277,7 +269,8 @@ export class AppShell {
     this.app.dataset.activeView = 'coronal';
     this.panelLayout = new WorkspacePanelLayoutController(this.app,
       panel => panel === 'regions' ? this.regionPane : this.settingsPane,
-      () => this.layoutMode, text => { this.shortcutStatus.textContent = text; });
+      () => this.layoutMode, text => { this.shortcutStatus.textContent = text; },
+      () => this.inspectionCard?.update());
 
     this.dataChooser = new DataChooser(
       (selection) => this.callbacks.selectData(selection),
@@ -357,6 +350,14 @@ export class AppShell {
     this.header = this.createHeader();
     this.body = element('main', 'app-body');
     const workspace = this.createWorkspace();
+    this.inspectionCard = new RegionInspectionCard((projectionId) => {
+      const view = this.currentModel?.state.view.workspace;
+      const docked = this.layoutMode === 'wide' && !this.panelLayout.isCollapsed('settings') && !view?.maximizedView;
+      const active = view?.maximizedView ?? (this.layoutMode === 'narrow' || this.layoutMode === 'phone'
+        ? view?.activeCompactView : projectionId === 'top' || projectionId === 'swanson' ? 'secondary' : projectionId);
+      const host = active === 'secondary' ? this.secondaryFrame : this.viewFrames.get(active ?? 'coronal')?.frame;
+      return { host: docked ? this.inspectionDock : host ?? this.secondaryFrame, docked };
+    });
     this.body.append(
       this.regionPane,
       workspace,
@@ -365,7 +366,14 @@ export class AppShell {
       this.panelLayout.createRestoreButton('settings'),
     );
 
+    this.hoverAcronym.hidden = true;
+    this.hoverAcronym.setAttribute('aria-hidden', 'true');
+    this.app.addEventListener('pointermove', (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target?.closest('.view-frame__renderer, .secondary-projection__renderer')) this.hoverAcronym.hidden = true;
+    }, { passive: true });
     this.app.append(
+      this.hoverAcronym,
       this.header,
       this.body,
       this.backdrop,
@@ -393,6 +401,14 @@ export class AppShell {
 
   render(model: ShellModel): void {
     this.currentModel = model;
+    const inspectionContext = JSON.stringify([model.state.view.dataset, model.state.view.featureId,
+      model.state.view.representation, model.state.view.parcellation, model.state.view.coloring, model.featureLoading,
+      model.featureError, model.state.view.cursor, model.state.view.workspace]);
+    if (inspectionContext !== this.inspectionContext) {
+      this.inspectionContext = inspectionContext;
+      this.inspectionCard.reset();
+      this.hoverAcronym.hidden = true;
+    }
     this.localDialogs.setContext({
       datasetId: model.state.view.dataset.datasetId,
       releaseId: model.state.view.dataset.releaseId,
@@ -407,7 +423,7 @@ export class AppShell {
     }
     for (const button of this.app.querySelectorAll<HTMLButtonElement>('.view-frame__clear')) {
       button.disabled = view.selection.length === 0;
-      button.hidden = button.dataset.selectionView === 'secondary' && view.workspace.secondaryTab === 'summary';
+      button.hidden = false;
     }
     const featureEntry = manifest?.features.find((entry) => entry.id === view.featureId);
 
@@ -447,95 +463,47 @@ export class AppShell {
     for (const projection of ORTHOGONAL_PROJECTION_REGISTRY) {
       this.renderViewFrame(projection.id, model);
     }
+    this.inspectionCard.update();
     this.maybeStartAutomaticHelpTour(model);
   }
 
+  setSelectedRegionInspections(regions: readonly { model: RegionTooltipModel; regionId: string }[]): void {
+    this.inspectionCard.setSelected(regions);
+  }
+
   showRegionTooltip(inspection: RegionInspection, model: RegionTooltipModel): void {
-    const nodes = this.projectionTooltip(inspection.projectionId);
-    if (nodes) delete nodes.tooltip.dataset.kind;
-    this.showProjectionTooltip(inspection, model, inspection.regionId);
+    this.inspectionCard.show({ model, regionId: inspection.regionId, projectionId: inspection.projectionId });
+    this.showHoverAcronym(inspection, model.acronym);
   }
 
   showVolumeTooltip(inspection: VolumeInspection, model: RegionTooltipModel): void {
-    // The kind reveals the static hold-A anatomy-colour hint in orthogonal views.
-    const nodes = this.projectionTooltip(inspection.projectionId);
-    if (nodes) nodes.tooltip.dataset.kind = 'volume';
-    this.showProjectionTooltip(inspection, model, inspection.regionId);
+    this.inspectionCard.show({ model, ...(inspection.regionId ? { regionId: inspection.regionId } : {}),
+      projectionId: inspection.projectionId, volume: true });
+    if (inspection.regionId) this.showHoverAcronym(inspection, model.acronym);
+    else this.hoverAcronym.hidden = true;
   }
 
-  private showProjectionTooltip(
-    inspection: Pick<RegionInspection, 'projectionId' | 'clientX' | 'clientY'>,
-    model: RegionTooltipModel,
-    regionId?: string,
-  ): void {
-    const nodes = this.projectionTooltip(inspection.projectionId);
-    if (!nodes) return;
-    for (const [projectionId, frame] of this.viewFrames) {
-      if (projectionId !== inspection.projectionId) frame.tooltip.hidden = true;
-    }
-    for (const [projectionId, frame] of this.staticFrames) {
-      if (projectionId !== inspection.projectionId) frame.tooltip.hidden = true;
-    }
-    const contentKey = `${regionId ?? ''}\u0000${model.acronym}\u0000${model.name}\u0000${model.atlasId ?? ''}\u0000${model.lineage?.join('/') ?? ''}\u0000${model.valueLabel ?? ''}\u0000${model.valueText ?? ''}\u0000${model.meta}`;
-    if (nodes.tooltip.dataset.contentKey !== contentKey) {
-      nodes.tooltip.dataset.contentKey = contentKey;
-      if (regionId) nodes.tooltip.dataset.regionId = regionId;
-      else delete nodes.tooltip.dataset.regionId;
-      nodes.tooltipIdentity.replaceChildren();
-      const acronym = element('strong', 'region-tooltip__acronym');
-      acronym.textContent = model.acronym;
-      const name = element('span', 'region-tooltip__name');
-      name.textContent = model.name;
-      nodes.tooltipIdentity.append(acronym, name);
-      if (model.atlasId !== undefined) {
-        const atlasId = element('span', 'region-tooltip__id');
-        atlasId.textContent = String(model.atlasId);
-        atlasId.title = 'Allen structure ID';
-        nodes.tooltipIdentity.append(atlasId);
-      }
-      nodes.tooltipLineage.textContent = model.lineage?.join(' › ') ?? '';
-      nodes.tooltipLineage.hidden = !model.lineage?.length;
-      nodes.tooltipValue.hidden = !model.valueText;
-      nodes.tooltipValue.replaceChildren();
-      if (model.valueText) {
-        if (model.valueLabel) {
-          const label = element('span', 'region-tooltip__value-label');
-          label.textContent = model.valueLabel;
-          nodes.tooltipValue.append(label);
-        }
-        const value = element('strong', 'region-tooltip__value-text');
-        value.textContent = model.valueText;
-        nodes.tooltipValue.append(value);
-      }
-      nodes.tooltipMeta.textContent = model.meta;
-    }
-    nodes.tooltip.hidden = false;
-    const viewport = nodes.tooltip.parentElement?.getBoundingClientRect();
-    if (!viewport) return;
-    const bounds = nodes.tooltip.getBoundingClientRect();
-    const gap = 12;
-    const padding = 8;
-    const localX = inspection.clientX - viewport.left;
-    const localY = inspection.clientY - viewport.top;
-    const preferredX = localX + gap + bounds.width <= viewport.width - padding
-      ? localX + gap
-      : localX - gap - bounds.width;
-    const preferredY = localY + gap + bounds.height <= viewport.height - padding
-      ? localY + gap
-      : localY - gap - bounds.height;
-    const x = Math.max(padding, Math.min(viewport.width - bounds.width - padding, preferredX));
-    const y = Math.max(padding, Math.min(viewport.height - bounds.height - padding, preferredY));
-    nodes.tooltip.style.transform = `translate3d(${Math.round(x)}px,${Math.round(y)}px,0)`;
+  hideRegionTooltip(projectionId?: import('../domain/types.js').ProjectionId): void {
+    this.inspectionCard.clear(projectionId);
+    this.hoverAcronym.hidden = true;
   }
 
-  hideRegionTooltip(except?: import('../domain/types.js').ProjectionId): void {
-    if (except) {
-      const tooltip = this.projectionTooltip(except)?.tooltip;
-      if (tooltip) tooltip.hidden = true;
+  private showHoverAcronym(inspection: RegionInspection | VolumeInspection, acronym: string): void {
+    const target = inspection.projectionId === 'top' || inspection.projectionId === 'swanson'
+      ? this.staticFrames.get(inspection.projectionId)?.target : this.viewFrames.get(inspection.projectionId)?.target;
+    const bounds = target?.getBoundingClientRect();
+    if (!bounds || bounds.width < 1 || bounds.height < 1
+      || inspection.clientX < bounds.left || inspection.clientX > bounds.right
+      || inspection.clientY < bounds.top || inspection.clientY > bounds.bottom) {
+      this.hoverAcronym.hidden = true;
       return;
     }
-    for (const nodes of this.viewFrames.values()) nodes.tooltip.hidden = true;
-    for (const nodes of this.staticFrames.values()) nodes.tooltip.hidden = true;
+    this.hoverAcronym.textContent = acronym;
+    this.hoverAcronym.hidden = false;
+    const label = this.hoverAcronym.getBoundingClientRect();
+    const x = Math.max(bounds.left + 4, Math.min(bounds.right - label.width - 4, inspection.clientX + 12));
+    const y = Math.max(bounds.top + 4, Math.min(bounds.bottom - label.height - 4, inspection.clientY + 14));
+    this.hoverAcronym.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
   }
 
   destroy(): void {
@@ -1082,8 +1050,9 @@ export class AppShell {
     pane.dataset.open = 'false';
     const panelHeader = this.panelHeader('Visualization settings', 'settings', () => this.closeDrawers());
     const content = element('div', 'settings-pane__content');
+    this.inspectionDock = element('section', 'region-inspection-dock');
     content.append(this.createColorSettings(), this.createVolumeLayerSettings());
-    pane.append(panelHeader, content, this.panelLayout.createResizeHandle('settings'));
+    pane.append(this.inspectionDock, panelHeader, content, this.panelLayout.createResizeHandle('settings'));
     return pane;
   }
 
@@ -1472,7 +1441,7 @@ export class AppShell {
     context.setAttribute('aria-label', 'Secondary atlas context');
     const secondary = element('section', 'secondary-view panel');
     secondary.dataset.view = 'secondary';
-    secondary.dataset.tab = 'summary';
+    secondary.dataset.tab = 'top';
     secondary.dataset.maximized = 'false';
     const secondaryHeader = element('div', 'view-frame__header secondary-view__header');
     this.secondarySelector = element('select', 'secondary-view__selector');
@@ -1498,16 +1467,23 @@ export class AppShell {
     this.secondaryDownload = this.imageDownloads.get('secondary')!;
     secondaryHeader.append(this.secondarySelector, this.createViewClearButton('secondary'), secondaryDownload, this.secondaryMaximize);
     const secondaryBody = element('div', 'secondary-view__body');
-    const summary = element('div', 'secondary-view__surface secondary-view__summary');
-    summary.dataset.secondaryPanel = 'summary';
-    this.secondaryPanels.set('summary', summary);
+    const summary = element('div', 'secondary-view__summary');
+    summary.setAttribute('aria-label', 'Feature summary');
     const brain3d = this.createNullScene3DPanel();
-    secondaryBody.append(summary, ...STATIC_PROJECTION_REGISTRY.map(({ id }) => this.createStaticFrame(id)), brain3d);
+    secondaryBody.append(...STATIC_PROJECTION_REGISTRY.map(({ id }) => this.createStaticFrame(id)), brain3d);
     secondary.append(secondaryHeader, secondaryBody);
     this.secondaryFrame = secondary;
     const distribution = element('section', 'distribution-band panel');
     distribution.dataset.helpAnchor = 'values';
     distribution.append(this.frameHeader('Global distribution'), element('div', 'distribution-band__surface'));
+    const featureSummary = element('details', 'feature-summary-panel panel');
+    featureSummary.open = true;
+    const summaryToggle = element('summary', 'feature-summary-panel__toggle');
+    const summaryTitle = element('span', 'feature-summary-panel__title');
+    summaryTitle.textContent = 'Feature summary';
+    const summaryStats = element('span', 'feature-summary-panel__stats');
+    summaryToggle.append(summaryTitle, summaryStats);
+    featureSummary.append(summaryToggle, summary);
     context.append(secondary, distribution);
     const analysis = element('section', 'analysis-panel panel');
     analysis.dataset.empty = 'true';
@@ -1551,7 +1527,7 @@ export class AppShell {
     analysisDialog.append(analysisFrame);
     analysis.append(analysisHeader, analysisDialog);
     this.analysisDialog = analysisDialog;
-    workspace.append(switcher, slices, context, analysis);
+    workspace.append(switcher, slices, context, featureSummary, analysis);
     return workspace;
   }
 
@@ -1577,7 +1553,6 @@ export class AppShell {
     const model = this.currentModel;
     if (!model) return null;
     const content = view === 'secondary' ? SECONDARY_CONTENT_BY_ID[model.state.view.workspace.secondaryTab] : null;
-    if (content?.kind === 'summary') return null;
     const scene3d = content?.kind === 'scene3d';
     const staticId = content?.kind === 'static-projection' ? content.projectionId : null;
     const nodes = staticId ? this.staticFrames.get(staticId) : view !== 'secondary' ? this.viewFrames.get(view) : null;
@@ -1652,22 +1627,9 @@ export class AppShell {
       }, { capture: true });
     }
     const projectionViewport = this.viewportFactory.create(target, axis);
-    const tooltip = element('div', 'region-tooltip');
-    tooltip.setAttribute('role', 'tooltip');
-    tooltip.hidden = true;
-    const tooltipIdentity = element('div', 'region-tooltip__identity');
-    const tooltipLineage = element('div', 'region-tooltip__lineage');
-    tooltipLineage.hidden = true;
-    const tooltipValue = element('div', 'region-tooltip__value');
-    const tooltipMeta = element('div', 'region-tooltip__meta');
-    const tooltipHint = element('div', 'region-tooltip__hint');
-    const hintKey = element('kbd');
-    hintKey.textContent = 'A';
-    tooltipHint.append('Hold ', hintKey, ' for anatomy colours');
-    tooltip.append(tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta, tooltipHint);
     const colorbar = new FrameColorbar();
     const loadStatus = new RetainedViewStatus(frame, this.app, status);
-    viewport.append(target, colorbar.element, tooltip, loadStatus.initialStatus.element, loadStatus.updateStatus.element);
+    viewport.append(target, colorbar.element, loadStatus.initialStatus.element, loadStatus.updateStatus.element);
 
     const footer = element('div', 'view-frame__footer');
     const slider = element('input', 'view-frame__slider');
@@ -1689,7 +1651,6 @@ export class AppShell {
     frame.append(header, viewport, footer);
     this.viewFrames.set(axis, {
       frame, target, viewport: projectionViewport, coordinate, slider, status, maximize, colorbar,
-      tooltip, tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta,
       loadStatus,
     });
     return frame;
@@ -1705,19 +1666,10 @@ export class AppShell {
     const notice = element('p', 'secondary-projection__notice');
     notice.setAttribute('role', 'status');
     notice.textContent = 'Loading static projection…';
-    const tooltip = element('div', 'region-tooltip');
-    tooltip.setAttribute('role', 'tooltip');
-    tooltip.hidden = true;
-    const tooltipIdentity = element('div', 'region-tooltip__identity');
-    const tooltipLineage = element('div', 'region-tooltip__lineage');
-    tooltipLineage.hidden = true;
-    const tooltipValue = element('div', 'region-tooltip__value');
-    const tooltipMeta = element('div', 'region-tooltip__meta');
-    tooltip.append(tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta);
     const loadStatus = new RetainedViewStatus(frame, this.app);
-    frame.append(target, notice, tooltip, loadStatus.initialStatus.element, loadStatus.updateStatus.element);
+    frame.append(target, notice, loadStatus.initialStatus.element, loadStatus.updateStatus.element);
     this.staticFrames.set(projectionId, {
-      frame, target, viewport, notice, tooltip, tooltipIdentity, tooltipLineage, tooltipValue, tooltipMeta,
+      frame, target, viewport, notice,
       loadStatus,
     });
     this.secondaryPanels.set(projectionId, frame);
@@ -1794,7 +1746,7 @@ export class AppShell {
     this.secondarySelector.disabled = model.state.runtime.navigationStatus !== 'ready';
     for (const [candidate, panel] of this.secondaryPanels) panel.hidden = candidate !== tab;
     const content = SECONDARY_CONTENT_BY_ID[tab];
-    this.secondaryDownload.element.hidden = content.kind === 'summary';
+    this.secondaryDownload.element.hidden = false;
     this.secondaryDownload.setTitle(content.label, content.kind === 'scene3d' ? 'png' : 'svg');
     this.renderScene3D(model, content.kind === 'scene3d');
     if (content.kind !== 'static-projection') return;
@@ -2118,12 +2070,6 @@ export class AppShell {
     this.callbacks.setActiveCompactView(view);
   }
 
-  private projectionTooltip(projectionId: import('../domain/types.js').ProjectionId): ProjectionTooltipNodes | undefined {
-    return projectionId === 'top' || projectionId === 'swanson'
-      ? this.staticFrames.get(projectionId)
-      : this.viewFrames.get(projectionId);
-  }
-
   private openDrawer(drawer: DrawerName, focusContent = true): void {
     this.closeContextMenus();
     const pane = drawer === 'regions' ? this.regionPane : this.settingsPane;
@@ -2184,6 +2130,7 @@ export class AppShell {
     if (mode === 'wide') this.closeDrawers();
     else if (mode === 'compact' && this.regionPane.dataset.open === 'true') this.closeDrawers();
     this.panelLayout.syncControls();
+    this.inspectionCard?.update();
   }
 
   private readonly onResize = (): void => {

@@ -659,3 +659,28 @@ Nine focused export browser tests and the two 3D transparency tests pass.
 TypeScript, unit/rendering, production-build and artifact-compatibility gates.
 Documentation screenshots reflect the new controls. These changes are local
 and have not been pushed or deployed.
+
+
+## Region inspection and feature-summary layout (2026-10-13)
+
+D099 implements the owner-reviewed inspection and feature-summary layout.
+Region and voxel inspection use a separate 12rem-high Region info card above
+Visualization settings, with internal scrolling. Narrow, collapsed-sidebar
+and maximized layouts retain an expandable compact strip below the visible
+view. Simultaneously visible views reserve strip space so hover does not
+shift anatomy. Hover takes precedence over selection; pointer leave restores the
+selected region or the full scrollable list of selected acronyms and values.
+With no selection, the last inspected sample is explicitly labelled. Context
+changes clear stale samples; touch selection supplies details without hover.
+
+Each visible selected region has a persistent acronym on its 2-D projection,
+anchored to the actual contour with collision placement, edge bounds and a
+subdued leader. The sidebar hide arrow sits at its top edge. A small acronym
+near the cursor accompanies hover. These annotations do not capture pointer
+input and are omitted from exports.
+
+Feature summary is a expanded-by-default full-width row beneath both context
+columns and above Compare selected regions. Its header shows compact statistics;
+expansion exposes the description and volume validity counts. The secondary
+selector contains Top, Swanson and 3-D. Scientific values, coordinate state,
+selection, distribution bins and download contracts are preserved.

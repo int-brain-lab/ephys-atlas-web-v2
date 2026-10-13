@@ -178,7 +178,7 @@ test('scientific context menus and color controls are driven by the loaded relea
   await expect(feature.locator('.context-menu__list')).toHaveAttribute('data-empty', 'true');
   await page.keyboard.press('Escape');
 
-  const featureSummary = page.locator('.secondary-view');
+  const featureSummary = page.locator('.secondary-view__summary');
   await expect(featureSummary.locator('.feature-summary__description')).toHaveText(
     'Synthetic feature exercising regional values, descriptive statistics, histogram, volume chunks and download metadata.',
   );

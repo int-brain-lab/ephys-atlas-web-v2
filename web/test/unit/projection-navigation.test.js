@@ -23,7 +23,6 @@ test('enabled projection and workspace registries keep projection and secondary 
     ['secondary', 'secondary'],
   ]);
   assert.deepEqual(SECONDARY_CONTENT_REGISTRY.map(({ kind, id }) => [kind, id]), [
-    ['summary', 'summary'],
     ['static-projection', 'top'],
     ['static-projection', 'swanson'],
     ['scene3d', 'brain-3d'],

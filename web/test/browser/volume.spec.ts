@@ -89,7 +89,6 @@ test('volume summary and exact valid-voxel distribution reuse the loaded summary
 
   expect(summaryRequests).toHaveLength(1);
   await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Top' });
-  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Summary' });
   await expect(summary).toBeVisible();
   expect(summaryRequests).toHaveLength(1);
 });
@@ -193,8 +192,9 @@ test('schema-v1 chunks3d volume renders all three orthogonal golden slices', asy
       clientY: bounds.top + bounds.height / 2,
     }));
   });
-  await expect(coronal.locator('.region-tooltip')).toBeVisible();
-  const tooltip = coronal.locator('.region-tooltip');
+  await page.locator('.region-inspection > summary').click();
+  await expect(page.locator('.region-tooltip')).toBeVisible();
+  const tooltip = page.locator('.region-tooltip');
   await expect(tooltip).toContainText('Voxel');
   await expect(tooltip).toContainText(/voxel \d,\d,\d/);
   await expect(tooltip.locator('.region-tooltip__value-label')).toHaveCount(0);
@@ -206,7 +206,8 @@ test('schema-v1 chunks3d volume renders all three orthogonal golden slices', asy
   await expect(tooltip.locator('.region-tooltip__id')).toHaveCount(0);
   await expect(tooltip.locator('.region-tooltip__lineage')).toBeHidden();
   await expect(tooltip.locator('.region-tooltip__hint')).toHaveText('Hold A for anatomy colours');
-  expect((await tooltip.boundingBox())?.width).toBeLessThanOrEqual(224);
+  const inspectedViewport = await coronal.locator('.view-frame__viewport').boundingBox();
+  expect((await tooltip.boundingBox())!.y).toBeGreaterThanOrEqual(inspectedViewport!.y + inspectedViewport!.height);
 
   // Beyond the declared volume extent there is no sample, so no tooltip.
   await coronal.evaluate((frame) => {

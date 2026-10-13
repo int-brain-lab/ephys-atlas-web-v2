@@ -68,6 +68,15 @@ Acceptance criteria:
   paper-facing project edition preserves its coordinated dataset-to-release
   mapping or discloses an individual-release override in Data details.
 
+D099 places region/voxel inspection in a fixed-height desktop card above
+Visualization settings, with an expandable strip beneath the visible view when the sidebar is unavailable,
+collapsed, or a view is maximized. Hover inspection returns to selected-region
+information on pointer leave; touch selection does not require hover. The
+whole-feature summary occupies a collapsible full-width row below the two
+context columns, with statistics and feature details. Visible 2-D selections
+retain acronym labels, and hover shows a discreet acronym beside the cursor.
+The secondary view selector exposes Top, Swanson and optional 3-D.
+
 ## 2. Regional feature exploration
 
 For a schema-v1 regional feature, the viewer must:

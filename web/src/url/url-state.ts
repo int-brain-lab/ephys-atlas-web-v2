@@ -38,7 +38,7 @@ const PARCELLATIONS = new Set<ParcellationId>(['allen', 'beryl', 'cosmos']);
 const REPRESENTATIONS = new Set<RepresentationKind>(['regional', 'volume']);
 const COLOR_STATISTICS = new Set<ColorStatisticId>(['mean', 'median', 'std', 'min', 'max']);
 const REGION_ORDERS = new Set<RegionOrder>(['anatomy', 'value-asc', 'value-desc']);
-const SECONDARY_TABS = new Set<SecondaryTabId>(['summary', 'top', 'swanson', 'brain-3d']);
+const SECONDARY_TABS = new Set<SecondaryTabId>(['top', 'swanson', 'brain-3d']);
 
 /** Raw URL navigation intent. It is deliberately separate from ViewState: the
  * catalog is required before these identifiers can be resolved. */

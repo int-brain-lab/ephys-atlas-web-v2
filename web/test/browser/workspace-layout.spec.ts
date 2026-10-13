@@ -5,13 +5,14 @@ test('desktop workspace keeps projections compact enough for feature context', a
   await page.goto('/app/');
   await expect(page.locator('.atlas-app')).toBeVisible();
 
+  await page.locator('.feature-summary-panel > summary').click();
   const projections = await page.locator('.slice-strip').boundingBox();
   const context = await page.locator('.context-strip').boundingBox();
 
   expect(projections).not.toBeNull();
   expect(context).not.toBeNull();
   expect(projections!.height).toBeLessThanOrEqual(405);
-  expect(context!.height).toBeGreaterThanOrEqual(255);
+  expect(context!.height).toBeGreaterThanOrEqual(215);
   expect(context!.y).toBeGreaterThan(projections!.y + projections!.height);
 });
 
@@ -20,13 +21,14 @@ test('tall desktop workspace gives excess height to feature context', async ({ p
   await page.goto('/app/');
   await expect(page.locator('.atlas-app')).toBeVisible();
 
+  await page.locator('.feature-summary-panel > summary').click();
   const projections = await page.locator('.slice-strip').boundingBox();
   const context = await page.locator('.context-strip').boundingBox();
 
   expect(projections).not.toBeNull();
   expect(context).not.toBeNull();
   expect(projections!.height).toBeLessThanOrEqual(545);
-  expect(context!.height).toBeGreaterThanOrEqual(400);
+  expect(context!.height).toBeGreaterThanOrEqual(360);
 });
 
 test('low browser zoom keeps feature context from overwhelming projections', async ({ page }) => {
@@ -34,6 +36,7 @@ test('low browser zoom keeps feature context from overwhelming projections', asy
   await page.goto('/app/');
   await expect(page.locator('.atlas-app')).toBeVisible();
 
+  await page.locator('.feature-summary-panel > summary').click();
   const projections = await page.locator('.slice-strip').boundingBox();
   const context = await page.locator('.context-strip').boundingBox();
 
@@ -42,23 +45,21 @@ test('low browser zoom keeps feature context from overwhelming projections', asy
   expect(context!.height).toBeLessThanOrEqual(projections!.height);
 });
 
-test('feature summary balances description space with compact statistics', async ({ page }) => {
+test('feature summary spans the workspace below context with expandable details', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/app/');
-  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Summary' });
-
-  const description = page.locator('.feature-summary__description');
-  const statistic = page.locator('.feature-summary__item').first();
-  const descriptionLineClamp = await description.evaluate((node) => (
-    getComputedStyle(node).getPropertyValue('-webkit-line-clamp')
-  ));
-  const descriptionBounds = await description.boundingBox();
-  const statisticBounds = await statistic.boundingBox();
-
-  expect(descriptionLineClamp).toBe('4');
-  expect(descriptionBounds).not.toBeNull();
-  expect(statisticBounds).not.toBeNull();
-  expect(descriptionBounds!.height).toBeGreaterThan(80);
-  expect(statisticBounds!.height).toBeGreaterThanOrEqual(55);
-  expect(statisticBounds!.height).toBeLessThan(60);
+  const panel = page.locator('.feature-summary-panel');
+  await expect(panel).toHaveAttribute('open');
+  await expect(panel.locator('.feature-summary__item')).toHaveCount(4);
+  const panelBounds = await panel.boundingBox();
+  const contextBounds = await page.locator('.context-strip').boundingBox();
+  expect(panelBounds!.width).toBeCloseTo(contextBounds!.width, 0);
+  expect(panelBounds!.y).toBeGreaterThanOrEqual(contextBounds!.y + contextBounds!.height);
+  await expect(panel.locator('.feature-summary__description')).toBeVisible();
+  await panel.locator('summary').click();
+  await expect(panel.locator('.feature-summary__description')).toBeHidden();
+  await panel.locator('summary').click();
+  await expect(panel.locator('.feature-summary__description')).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Context view' })).toHaveValue('top');
+  await expect(page.getByRole('combobox', { name: 'Context view' }).locator('option')).toHaveText(['Top', 'Swanson', '3-D']);
 });

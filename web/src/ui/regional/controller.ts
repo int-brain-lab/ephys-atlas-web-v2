@@ -351,6 +351,8 @@ export class RegionalPanelController {
 
   private renderFeatureStatus(model: RegionalPanelModel): void {
     const state = model.featureLoading ? 'loading' : model.featureError ? 'error' : 'empty';
+    const compactSummary = this.summary.parentElement?.querySelector('.feature-summary-panel__stats');
+    if (compactSummary) compactSummary.textContent = model.featureLoading ? 'Loading…' : model.featureError ? 'Unavailable' : '';
     const entries = [
       [this.summary, this.summaryStatus, 'feature summary'],
       [this.distribution, this.distributionStatus, 'feature distribution'],

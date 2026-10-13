@@ -192,7 +192,7 @@ test('a public-authored synthetic volume imports, renders, navigates, and reload
       clientY: bounds.top + 1,
     }));
   });
-  await expect(coronal.locator('.region-tooltip')).toBeHidden();
+  await expect(page.locator('.region-tooltip')).toBeHidden();
 
   await page.route('**/__real-data/**', (route) => route.abort());
   await page.reload();

@@ -11,7 +11,7 @@ export class WorkspacePanelLayoutController {
   private cancelResize: (() => void) | null = null;
 
   constructor(private readonly app: HTMLElement, private readonly pane: (panel: LayoutPanel) => HTMLElement,
-    private readonly layoutMode: () => string, private readonly announce: (text: string) => void) {
+    private readonly layoutMode: () => string, private readonly announce: (text: string) => void, private readonly onChange: () => void = () => {}) {
     this.layoutPreferences = this.loadLayoutPreferences();
   }
 
@@ -107,6 +107,7 @@ export class WorkspacePanelLayoutController {
     else this.layoutPreferences.settingsCollapsed = collapsed;
     this.persistLayoutPreferences();
     this.syncControls();
+    this.onChange();
     this.announce(`${panel === 'regions' ? 'Brain regions' : 'Visualization settings'} panel ${collapsed ? 'collapsed' : 'expanded'}`);
     if (moveFocus) {
       const target = collapsed ? this.panelRestoreButtons.get(panel) : this.panelCollapseButtons.get(panel);

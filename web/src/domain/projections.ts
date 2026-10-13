@@ -28,7 +28,6 @@ export interface StaticProjectionDefinition {
 export type ProjectionDefinition = OrthogonalProjectionDefinition | StaticProjectionDefinition;
 
 export type SecondaryContentDefinition =
-  | { readonly kind: 'summary'; readonly id: 'summary'; readonly label: string }
   | { readonly kind: 'static-projection'; readonly id: StaticProjectionId; readonly label: string; readonly projectionId: StaticProjectionId }
   | { readonly kind: 'scene3d'; readonly id: 'brain-3d'; readonly label: string };
 
@@ -76,7 +75,6 @@ export const STATIC_PROJECTION_REGISTRY = [
 ] as const;
 
 export const SECONDARY_CONTENT_REGISTRY = [
-  { kind: 'summary', id: 'summary', label: 'Summary' },
   ...STATIC_PROJECTION_REGISTRY.map((projection) => ({
     kind: 'static-projection' as const,
     id: projection.id,
