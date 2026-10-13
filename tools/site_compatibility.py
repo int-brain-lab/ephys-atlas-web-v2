@@ -10,11 +10,15 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import sys
 from urllib.request import urlopen
 
 from ephys_atlas_builder.schema_v1 import validate_schema_v1_document
 
 REPOSITORY = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPOSITORY / "publishing" / "src"))
+from ibl_ephys_atlas_publish.catalog_transition import validate_catalog_transition
+from ibl_ephys_atlas_publish.errors import ValidationError
 SNAPSHOTS = Path("data/deployment/dependencies")
 SCHEMAS = {"catalog": "catalog.schema.json", "projection": "projection-pack.schema.json", "mesh": "mesh-pack.schema.json"}
 
@@ -89,7 +93,12 @@ def check_compatibility(config: dict, *, repository: Path = REPOSITORY, profile:
             raise ValueError("mesh purpose/reference space is incompatible with the production site")
     validate_catalog_links(documents["catalog"])
     if catalog_candidate:
-        validate_catalog_links(json.loads(catalog_candidate.read_bytes()))
+        candidate = json.loads(catalog_candidate.read_bytes())
+        validate_catalog_links(candidate)
+        try:
+            validate_catalog_transition(documents["catalog"], candidate)
+        except ValidationError as error:
+            raise ValueError(str(error)) from error
     return {"format": "atlas-site-compatibility-v1", "profile": profile,
             "navigation_sha256": hashlib.sha256(nav_raw).hexdigest(),
             "reference_space_id": nav["reference_space_id"],

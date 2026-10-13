@@ -6,6 +6,7 @@ import { gunzipSync } from 'node:zlib';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium, expect } from '@playwright/test';
+import { assertCatalogInventory } from './catalog-inventory.mjs';
 
 const origin = process.argv[2] ?? 'https://ephys-atlas.iblcore.org';
 const buildDirectory = process.argv[3];
@@ -13,6 +14,13 @@ const catalogCandidate = process.argv[4];
 const receipt = buildDirectory ? JSON.parse(await readFile(path.join(buildDirectory, '_site.json'))) : null;
 const config = receipt?.config ?? JSON.parse(await readFile(process.argv[5]
   ?? new URL('../../data/deployment/initial-site.json', import.meta.url)));
+const repository = new URL('../../', import.meta.url);
+const snapshot = await readFile(new URL(`data/deployment/dependencies/${config.catalog.sha256}.json`, repository));
+assert.equal(snapshot.length, config.catalog.bytes);
+assert.equal(createHash('sha256').update(snapshot).digest('hex'), config.catalog.sha256);
+const expectedCatalog = catalogCandidate && config.default_view?.curator_config
+  ? JSON.parse(await readFile(new URL(config.default_view.curator_config, repository)))
+  : JSON.parse(snapshot);
 const errors = [];
 const visited = [];
 async function verifiedJson(url, resource) {
@@ -115,6 +123,15 @@ try {
     await check(page.locator(`[data-secondary-panel="${tab.toLowerCase()}"] path`).first()).toBeVisible();
   }
   const catalog = await page.evaluate(async () => (await (await fetch('/catalog.json')).json()));
+  assertCatalogInventory(catalog, expectedCatalog);
+  const dataChooser = page.locator('[data-context-field="data"]');
+  await dataChooser.getByRole('button', { name: /^Data:/ }).click();
+  for (const dataset of expectedCatalog.datasets) {
+    const option = dataChooser.locator(`[data-context-option="${dataset.dataset_id}"]`);
+    await check(option).toBeVisible();
+    await check(option).toBeEnabled();
+  }
+  await page.keyboard.press('Escape');
   for (const dataset of catalog.datasets) {
     const release = dataset.releases.find(r => r.release_id === dataset.default_release);
     const manifestUrl = new URL(release.manifest.path, origin + '/');
@@ -141,6 +158,6 @@ try {
     await check(page.locator('[data-scene3d-host="connected"]')).toHaveAttribute('data-scene3d-state', 'ready');
   }
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ mode: receipt ? 'unpublished-build' : 'live-production', build: receipt?.build_id,
-    checks: ['landing', 'registered-geometry', 'navigation', 'disabled-navigation', 'quantiles', 'URL', 'static-projections', 'datasets', 'mesh'], visited }));
+  console.log(JSON.stringify({ mode: catalogCandidate ? 'proposed-catalog' : receipt ? 'unpublished-build' : 'live-production', build: receipt?.build_id,
+    checks: ['landing', 'registered-geometry', 'navigation', 'disabled-navigation', 'quantiles', 'URL', 'static-projections', 'catalog-inventory', 'data-chooser', 'datasets', 'mesh'], visited }));
 } finally { await browser.close(); }

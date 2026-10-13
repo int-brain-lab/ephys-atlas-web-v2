@@ -69,6 +69,7 @@ def main(argv=None):
     parser.add_argument("--profile")
     parser.add_argument("--transport", choices=("cli", "sdk"), default="cli")
     parser.add_argument("--confirm-root")
+    parser.add_argument("--retirement", type=Path, help="Tracked, reviewed record authorizing exact removals from a specific catalog hash")
     parser.add_argument("--site-config", type=Path, default=REPOSITORY / "data/deployment/initial-site.json")
     parser.add_argument("--site-origin", default="https://ephys-atlas.iblcore.org")
     args = parser.parse_args(argv)
@@ -81,6 +82,13 @@ def main(argv=None):
         subprocess.run(["git", "ls-files", "--error-unmatch", "--", str(relative)],
                        cwd=REPOSITORY, check=True, capture_output=True)
         config = json.loads(config_path.read_bytes())
+        retirement = None
+        if args.retirement:
+            retirement_path = args.retirement.resolve()
+            relative = retirement_path.relative_to(REPOSITORY)
+            subprocess.run(["git", "ls-files", "--error-unmatch", "--", str(relative)],
+                           cwd=REPOSITORY, check=True, capture_output=True)
+            retirement = json.loads(retirement_path.read_bytes())
         with ExitStack() as stack:
             releases = []
             for source in args.release:
@@ -94,7 +102,7 @@ def main(argv=None):
                 store = publication_store(destination, args.profile, args.transport)
                 try:
                     result = promote_catalog(
-                        config, releases, destination, store, validate_catalog
+                        config, releases, destination, store, validate_catalog, retirement=retirement
                     )
                 finally:
                     close = getattr(store, "close", None)

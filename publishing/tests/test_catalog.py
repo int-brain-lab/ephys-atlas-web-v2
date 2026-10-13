@@ -8,6 +8,25 @@ import ibl_ephys_atlas_publish.catalog as catalog_module
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
 from ibl_ephys_atlas_publish.core import Conflict, PublicationStore, ValidationError
+from ibl_ephys_atlas_publish.catalog_transition import catalog_hash, catalog_inventory
+
+
+def retirement_record(previous, candidate):
+    before, after = catalog_inventory(previous), catalog_inventory(candidate)
+    return {"baseline_sha256": catalog_hash(previous),
+            "removed": {key: sorted(set(before[key]) - set(after[key])) for key in before},
+            "reason": "Retire the named identities", "decision": "Explicit test curator approval"}
+
+
+def test_omitted_edition_is_rejected_without_changing_catalog_or_history(tmp_path):
+    store = PublicationStore(tmp_path)
+    store.create_dataset("d", {}, "credential")
+    publish(store, "d", "r1")
+    store.promote_catalog(_config(), "credential")
+    before = {p: p.read_bytes() for p in [store.public / "catalog.json", store.state / "edition-history.json"]}
+    with pytest.raises(ValidationError, match="explicit retirement"):
+        store.promote_catalog(_config(edition=False), "credential")
+    assert all(p.read_bytes() == content for p, content in before.items())
 
 
 def artifact(path: str, data: bytes) -> dict:
@@ -152,7 +171,7 @@ def test_edition_identity_survives_omission_and_rejects_remapping(tmp_path):
     publish(store, "d", "r1")
     store.promote_catalog(_config(), "credential")
     omitted = _config(edition=False)
-    store.promote_catalog(omitted, "credential")
+    store.promote_catalog(omitted, "credential", retirement=retirement_record(public_catalog(store), omitted))
     publish(store, "d", "r2")
     changed = _config(release_id="r2")
     with pytest.raises(Conflict):

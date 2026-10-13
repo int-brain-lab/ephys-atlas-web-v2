@@ -126,6 +126,32 @@ checksum/size/serving metadata before invoking the same compiler as the
 filesystem publishing service.
 
 Each successful S3 promotion exposes a unique schema-v1 `publication_id`.
+Promotion rejects any omitted project, dataset, release entry or edition before
+writing catalog/history objects (D096). For an intentional, owner-reviewed
+retirement, commit a JSON record and supply `--retirement <tracked-record.json>`:
+
+```json
+{
+  "baseline_sha256": "<canonical current catalog SHA-256>",
+  "removed": {
+    "projects": [],
+    "datasets": [],
+    "releases": [],
+    "editions": ["<project-id>/<edition-id>"]
+  },
+  "reason": "<why these exact identities are being retired>",
+  "decision": "<reviewed decision reference>"
+}
+```
+
+Dataset/project removals also remove their nested release/edition identities;
+list all of them exactly, sorted within each array. The baseline hash uses
+sorted-key compact JSON with a final newline, matching publication history.
+The record must match the generation actually read during apply. There is no
+blanket bypass, and immutable edition remapping remains forbidden. Offline
+validation does not establish that a retirement matches the current remote
+generation. The S3 history stores the complete transition and record.
+
 Before production apply opens its remote transaction, the wrapper verifies the
 tracked site's selected manifest bytes and exercises the proposed catalog in
 the running production viewer. `--site-config` and `--site-origin` select the

@@ -34,6 +34,19 @@ def test_tracked_production_combination_passes_and_cannot_use_a_stale_snapshot()
         check_compatibility(altered)
 
 
+def test_schema_valid_candidate_cannot_hide_a_previously_published_edition(tmp_path):
+    config, _, _ = inputs()
+    catalog = json.loads((REPOSITORY / SNAPSHOTS / (config["catalog"]["sha256"] + ".json")).read_bytes())
+    project = catalog["projects"][0]
+    edition = next(e for e in project["editions"] if e["edition_id"] != project["default_edition"])
+    project["editions"].remove(edition)
+    validate_catalog_links(catalog)
+    candidate = tmp_path / "candidate.json"
+    candidate.write_text(json.dumps(catalog))
+    with pytest.raises(ValueError, match="explicit retirement"):
+        check_compatibility(config, catalog_candidate=candidate)
+
+
 def test_site_receipt_must_revalidate_compatibility_even_when_all_files_are_unchanged(tmp_path):
     from tools import site_build
     from tools.release_preflight import RepositoryState

@@ -103,6 +103,7 @@ only part of the body; the index states what remains effective.
 | D092 | Subdued regional value indicators | accepted | 2026-10-08 | smaller faded ramps, ticks colored by the feature mapping, and more subdued no-value rows; refines D091 visuals |
 | D093 | Transparent per-view image downloads | accepted | 2026-10-13 | standalone SVG vectors with embedded native PNG volume layers; transparent PNG for 2D/3D; fixed 2400-pixel longest edge, no crosshair or hover, optional colorbar |
 | D094 | Restore Brain-Wide Map discovery | accepted | 2026-10-13 | restore the existing BWM project, edition and immutable release removed by 8cedce8; preserve W39, Genomics, Lipidome and current defaults; production promotion remains separate |
+| D096 | Reject unintended catalog removals | accepted | 2026-10-13 | preserve exposed projects, datasets, releases and editions by default; intentional retirement requires exact baseline hash, removal inventory, reason and decision; independent production inventory QA |
 
 ## D001 — Separate v2
 
@@ -2340,3 +2341,26 @@ and the W39 Ephys Atlas channel default unchanged. Restore discovery only;
 never rebuild or alter the existing BWM scientific bytes. This authorizes the
 local restoration and safeguards. Production catalog promotion and a push
 remain separate actions; do not claim live restoration before verifying them.
+
+## D096 — Reject unintended catalog removals
+
+Catalog promotion must compare the candidate with the current public catalog
+before any catalog/history write. Projects, datasets, release entries and
+editions cannot disappear by omission. Both filesystem and S3 publishers use
+one inventory comparison. Additions and default changes remain permitted;
+existing edition mappings and immutable release bytes retain their own guards.
+
+An intentional retirement requires a reviewed administrative record with the
+exact canonical baseline catalog SHA-256, complete removed-identity inventory,
+reason and decision reference. The S3 command accepts a tracked record via
+`--retirement`; there is no generic allow-removals switch. A stale, incomplete
+or broader record fails. S3 history records the transition and retirement;
+local promotion audit records the retirement. The conditional catalog write
+still binds the comparison to the same generation and rejects concurrent wins.
+This administrative record does not change schema v1 or scientific metadata.
+
+Production browser QA asserts the expected discovery inventory independently
+of the live catalog before iterating through discovered datasets. Live/site
+checks use the verified tracked publication snapshot; proposed-catalog checks
+use the reviewed curator configuration. Optional site-compatibility candidate
+checks also reject unacknowledged omissions from the pinned baseline.

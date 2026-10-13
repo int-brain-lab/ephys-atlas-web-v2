@@ -70,6 +70,16 @@ navigation, quantile/URL state and optional native 3-D. This is representative
 Chromium evidence, not exhaustive feature/browser QA. Synthetic packaging tests
 continue to prove packaging only.
 
+Before iterating over datasets, browser QA checks that the expected projects,
+datasets, historical releases and editions are present. Live/site checks derive
+that inventory from the verified tracked catalog snapshot; proposed-catalog
+checks derive it from the reviewed curator configuration. Testing only entries
+that happen to remain in live discovery cannot prove inventory preservation.
+The check also verifies that every expected dataset is visible and enabled in
+the Data chooser before exercising its representative feature.
+D096 also blocks omissions in the catalog publisher before any catalog/history
+write; intentional retirements require exact reviewed records.
+
 A site receipt pins the catalog **at site publication**. Runtime discovery still
 reads mutable `/catalog.json`. Production `tools.s3_catalog --apply` now checks
 the current site's dependencies and tests the proposed catalog in the running

@@ -2,6 +2,16 @@
 
 Status: complete on 2026-10-07.
 
+2026-10-13 correction: D094 supersedes the BWM catalog removal described below.
+The tracked curator configuration restores its original project, edition and
+release; production promotion is pending. Commit `8cedce8` made the removal.
+The historical statement of owner approval below is not independent evidence
+of the underlying instruction. D096 adds removal safeguards. Read-only recovery
+checks verified the complete existing BWM release (154 files, 2,135,189 bytes)
+and its schema-v1 graph. Chromium loaded all eight datasets with the proposed
+catalog over the production origin; the catalog was intercepted for this check,
+so this is candidate evidence rather than a live restoration.
+
 The D088/D089/D090 deployment is live at <https://ephys-atlas.iblcore.org>. It
 publishes the `ea_active` `2026_W39` channels, encoding volumes and edges, the
 denoised MERFISH cell classes and the Lipid Brain Atlas as new immutable

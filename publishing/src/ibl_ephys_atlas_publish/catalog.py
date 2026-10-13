@@ -7,6 +7,7 @@ from typing import Any
 
 from .errors import Conflict, NotFound, ValidationError, _fields, _id
 from .storage import atomic_json, load_json, sha256_file
+from .catalog_transition import validate_catalog_transition
 
 
 class CatalogManager:
@@ -267,8 +268,11 @@ class CatalogManager:
             raise ValidationError("every dataset must belong to exactly one project")
         return {"schema_version": "1.0", "default_project": config["default_project"], "projects": built_projects, "datasets": [by_id[d["dataset_id"]] for d in datasets]}
 
-    def promote(self, config: dict[str, Any]) -> dict[str, Any]:
+    def promote(self, config: dict[str, Any], *, retirement: dict | None = None) -> dict[str, Any]:
         catalog = self.compile_catalog(config)
+        catalog_path = self.public / "catalog.json"
+        previous = load_json(catalog_path) if catalog_path.exists() else None
+        validate_catalog_transition(previous, catalog, retirement)
         history = self._edition_history()
         for project in catalog["projects"]:
             for edition in project["editions"]:

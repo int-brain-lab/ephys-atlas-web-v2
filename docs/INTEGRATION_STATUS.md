@@ -8,6 +8,12 @@ Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
 completed implementation diaries.
 
+On 2026-10-13, D094 restores BWM's existing project/edition/release in the tracked
+curator configuration, alongside all seven W39-era datasets. Production catalog
+promotion is pending; the site descriptor still pins the current live catalog.
+D096 implements shared filesystem/S3 removal guards, exact hash-bound retirement
+records, transition history, and independent expected-inventory production QA.
+
 ## Product architecture
 
 | Capability | Implemented state | Evidence/maturity | Remaining production work |

@@ -412,10 +412,11 @@ class PublicationStore:
     def compile_catalog(self, config: dict[str, Any]) -> dict[str, Any]:
         return self._catalog.compile_catalog(config)
 
-    def promote_catalog(self, config: dict[str, Any], credential_id: str) -> dict[str, Any]:
+    def promote_catalog(self, config: dict[str, Any], credential_id: str, *,
+                        retirement: dict | None = None) -> dict[str, Any]:
         with self._lock:
-            catalog = self._catalog.promote(config)
-            self._audit(credential_id, "catalog.promote")
+            catalog = self._catalog.promote(config, retirement=retirement)
+            self._audit(credential_id, "catalog.promote", retirement=retirement)
             return catalog
 
     def _audit(self, credential_id: str, action: str, **fields: Any) -> None:

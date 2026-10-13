@@ -120,7 +120,9 @@ local/CI-buildable only rather than a published site.
 
 The 2026-10-07 W39 deployment ([record](publishing/W39_DEPLOYMENT_20261007.md))
 is the latest production state: the Ephys Atlas, Genomics and Lipidome projects
-are live, and Brain-Wide Map is no longer catalogued. The initial IBL review website is live at `ephys-atlas.iblcore.org`, with the
+are live, and Brain-Wide Map is no longer catalogued. D094 restores BWM in the
+tracked curator configuration; production promotion is pending. D096 adds
+catalog removal guards and independent inventory QA. The initial IBL review website is live at `ephys-atlas.iblcore.org`, with the
 approved regional datasets, ephys volumes, AGEA and native 3-D anatomy. D074 keeps this
 deployment separate from Q2 (paper channel vintage), Q9 (paper aliases/defaults)
 and Q19 (processed AGEA publication promotion). D075 resolves Q5 with the real-origin depth-four volume benchmark, and the

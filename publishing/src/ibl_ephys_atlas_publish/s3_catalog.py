@@ -9,6 +9,7 @@ import tempfile
 import uuid
 
 from .s3_transfer import run_independent
+from .catalog_transition import validate_catalog_transition
 from .client import file_info
 from .core import PublicationStore, ValidationError, atomic_json
 from .s3 import (Destination, ObjectStore, IMMUTABLE_CACHE, MUTABLE_CACHE,
@@ -53,7 +54,7 @@ def compile_catalog(config: dict, releases: list[tuple[Path, dict]], *,
 
 
 def promote_catalog(config: dict, releases: list[tuple[Path, dict]], destination: Destination,
-                    store: ObjectStore, validate_catalog) -> dict:
+                    store: ObjectStore, validate_catalog, *, retirement: dict | None = None) -> dict:
     """Verify published dependencies, write immutable history, CAS catalog last.
 
     Every promotion gets a fresh public publication_id. It prevents an ABA
@@ -102,8 +103,9 @@ def promote_catalog(config: dict, releases: list[tuple[Path, dict]], destination
     catalog, updated_history = compile_catalog(config, releases, indexes=indexes, history=history, previous=previous)
     catalog["publication_id"] = uuid.uuid4().hex
     validate_catalog(catalog)
+    transition = validate_catalog_transition(previous, catalog, retirement)
     record = {"catalog_sha256": hashlib.sha256(json_bytes(catalog)).hexdigest(),
-              "editions": deepcopy(updated_history)}
+              "editions": deepcopy(updated_history), "transition": transition}
     with tempfile.TemporaryDirectory(prefix="atlas-catalog-promote-") as temporary:
         path = Path(temporary) / "document.json"
         path.write_bytes(json_bytes(record))

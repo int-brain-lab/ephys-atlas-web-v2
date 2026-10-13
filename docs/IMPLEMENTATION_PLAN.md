@@ -28,6 +28,12 @@ freeze and do not block the authorized initial deployment.
 
 ## M1/M3/M4 — Freeze the paper dataset set
 
+Before the separate paper freeze, promote the D094 BWM restoration through the
+guarded catalog path, verify all eight datasets in the running viewer, then
+synchronize the exact served catalog snapshot and site descriptor. The tracked
+curator restores the original BWM release without changing the current seven
+datasets or defaults. Local implementation does not claim production promotion.
+
 Status: reviewed local channel, cluster, and Brain-Wide Map releases are green;
 paper identity and publication remain incomplete.
 
