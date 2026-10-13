@@ -29,15 +29,9 @@
   stroke-opacity: 1;
 }
 
-/* Composite paths carry inline atlas fills; the neutral veil must override them. */
-.atlas-app:not([data-anatomy-peek='true']) .projection-viewport[data-mode='composite']:not([data-anatomy-colors='true']) .view-frame__brain-svg.has-region-selection path:not(.is-selected):not(.is-highlighted) {
-  fill: rgb(232 242 248) !important;
-  fill-opacity: .35;
-}
-
 .projection-viewport[data-mode='composite'] .view-frame__slice-figure path.is-selected {
-  stroke: rgb(235 247 255 / 96%);
-  stroke-width: 1.75;
+  stroke: #fff;
+  stroke-width: 2;
 }
 
 .projection-viewport[data-mode='composite'] .view-frame__slice-figure path.is-highlighted:not(.is-selected) {

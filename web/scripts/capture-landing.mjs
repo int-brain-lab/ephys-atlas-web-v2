@@ -108,7 +108,7 @@ try {
     if (!slices) throw new Error('Missing real slice composition');
     await capture('slices.jpg', { clip: slices });
     await page.setViewportSize({ width: 1200, height: 1000 });
-    await page.getByRole('tab', { name: '3-D', exact: true }).click();
+    await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: '3-D' });
     await page.locator('[data-scene3d-state="ready"][data-lod="native-full"]').waitFor();
     await page.getByRole('button', { name: 'Maximize secondary panel', exact: true }).click();
     await page.getByRole('slider', { name: 'Explode 3-D brain' }).fill('0.2');

@@ -4,7 +4,7 @@ Choose a dataset in Data, then search Feature. Data details contains the exact v
 
 ## Navigate linked slices {#navigate}
 
-Drag a slice control, scroll over a view, or use the arrow keys. Coronal, sagittal, and horizontal views stay linked to one atlas location. **Auto-slice** in Regions moves them to a selected region; click its target icon beside fold/unfold to keep slices fixed. Hover or focus the icon for help.
+Drag a slice control, scroll over a view, or use the arrow keys. Coronal, sagittal, and horizontal views stay linked to one atlas location. **Auto-slice** moves them to a region selected from Regions. Clicking a brain view keeps the slices fixed; click its target icon beside fold/unfold to keep slices fixed. Hover or focus the icon for help.
 
 ## Inspect and select regions {#inspect}
 

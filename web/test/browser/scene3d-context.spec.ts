@@ -18,7 +18,7 @@ for (const width of [1280, 768, 390]) {
       await page.setViewportSize({ width, height: 800 });
       await page.goto('/app/?v=4&explode3d=0.4');
       if (width < 1100) await page.getByRole('button', { name: 'Context', exact: true }).click();
-      await page.getByRole('tab', { name: '3-D' }).click();
+      await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: '3-D' });
       const panel = page.locator('[data-secondary-panel="brain-3d"]');
       const overlay = panel.locator('.secondary-view__scene3d-overlay');
       const host = panel.locator('[data-scene3d-host="connected"]');
@@ -47,8 +47,8 @@ for (const width of [1280, 768, 390]) {
       await expect(host).toHaveAttribute('aria-busy', 'false');
       await expect(slider).toBeEnabled();
       await expect(slider).toHaveValue('0.4');
-      await page.getByRole('tab', { name: 'Summary' }).click();
-      await page.getByRole('tab', { name: '3-D' }).click();
+      await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Summary' });
+      await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: '3-D' });
       await expect(overlay).toBeHidden();
       await expect(host).toHaveAttribute('data-geometry-uploads', '1');
     } finally {
@@ -67,10 +67,10 @@ test('3-D context lazily loads its injected immutable fixture and persists respo
   await page.goto('/app/?v=4&explode3d=0.4&camera3d=0,-5,3,0,0,0,0,0,1');
   expect(meshRequests).toEqual([]);
 
-  const tab = page.getByRole('tab', { name: '3-D' });
+  const tab = page.getByRole('combobox', { name: 'Context view' });
   const panel = page.locator('[data-secondary-panel="brain-3d"]');
-  await tab.click();
-  await expect(tab).toHaveAttribute('aria-selected', 'true');
+  await tab.selectOption('brain-3d');
+  await expect(tab).toHaveValue('brain-3d');
   await expect(panel).toBeVisible();
   const host = panel.locator('[data-scene3d-host="connected"]');
   await expect(host).toHaveAttribute('data-scene3d-state', 'ready');
@@ -105,16 +105,16 @@ test('3-D context lazily loads its injected immutable fixture and persists respo
   await expect.poll(() => new URL(page.url()).searchParams.get('camera3d')).not.toBe(initialCamera);
   expect(await page.evaluate(() => history.length)).toBe(initialHistoryLength);
 
-  await page.getByRole('tab', { name: 'Summary' }).click();
+  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Summary' });
   await expect(host).toHaveAttribute('data-active', 'false');
-  await tab.click();
+  await tab.selectOption('brain-3d');
   await expect(host).toHaveAttribute('data-active', 'true');
 
   await page.setViewportSize({ width: 390, height: 760 });
   await page.getByRole('button', { name: 'Context', exact: true }).click();
   await expect(panel).toBeVisible();
   await page.reload();
-  await expect(tab).toHaveAttribute('aria-selected', 'true');
+  await expect(tab).toHaveValue('brain-3d');
   await expect(panel).toBeVisible();
 
   await page.getByRole('button', { name: 'Maximize secondary panel' }).click();
@@ -122,9 +122,9 @@ test('3-D context lazily loads its injected immutable fixture and persists respo
   await expect(page.locator('.secondary-view')).toHaveAttribute('data-maximized', 'false');
   await tab.focus();
   await page.keyboard.press('Home');
-  await expect(page.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('combobox', { name: 'Context view' })).toHaveValue('summary');
   await page.keyboard.press('End');
-  await expect(tab).toHaveAttribute('aria-selected', 'true');
+  await expect(tab).toHaveValue('brain-3d');
   await expect(panel).toBeVisible();
 });
 
@@ -149,17 +149,36 @@ test('3-D shares presentation and selection without rebuilding geometry', async 
   await canvas.dblclick();
   const box = await canvas.boundingBox();
   expect(box).not.toBeNull();
-  const point = { x: box!.width * .35, y: box!.height * .5 };
-  await canvas.click({ position: point });
-  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-315');
-  await canvas.click({ position: point, modifiers: ['Control'] });
+  // Locate the rendered fixture region after the context header changes height.
+  // A fixed percentage can fall outside its triangles in a shorter viewport.
+  let point: { x: number; y: number } | null = null;
+  for (const y of [.5, .4, .6]) {
+    for (const x of [.5, .4, .6, .3, .7, .35, .45, .55, .65]) {
+      const candidate = { x: box!.width * x, y: box!.height * y };
+      await canvas.hover({ position: candidate });
+      await page.waitForTimeout(60);
+      if (await region.evaluate(node => node.closest('.region-row')?.getAttribute('data-hovered') === 'true')) {
+        point = candidate;
+        break;
+      }
+    }
+    if (point) break;
+  }
+  expect(point).not.toBeNull();
+  const fixedCursor = new URL(page.url()).searchParams.get('cursor');
+  await canvas.click({ position: point! });
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
-  await page.getByRole('button', { name: 'Select multiple', exact: true }).click();
-  await canvas.click({ position: point });
+  await canvas.click({ position: point!, modifiers: ['Control'] });
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-315');
-  await canvas.click({ position: point });
-  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
   await page.getByRole('button', { name: 'Select multiple', exact: true }).click();
+  await canvas.click({ position: point! });
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
+  await canvas.click({ position: point! });
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-315');
+  expect(new URL(page.url()).searchParams.get('cursor')).toBe(fixedCursor);
+  await page.getByRole('button', { name: 'Select multiple', exact: true }).click();
+  await canvas.click({ position: point! });
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
   await expect(host).toHaveAttribute('data-geometry-uploads', uploads!);
 
   await page.evaluate(() => {
@@ -171,7 +190,9 @@ test('3-D shares presentation and selection without rebuilding geometry', async 
   await expect.poll(() => new URL(page.url()).searchParams.get('parcel')).toBe('beryl');
   await expect(host).toHaveAttribute('data-geometry-uploads', uploads!);
   for (const y of [.35, .5, .65]) for (const x of [.25, .5, .75]) {
-    await canvas.click({ position: { x: box!.width * x, y: box!.height * y } });
+    // The absent Beryl fixture has an error badge over the retained canvas;
+    // click the visible surface normally, including that badge's hit area.
+    await page.mouse.click(box!.x + box!.width * x, box!.y + box!.height * y);
   }
   expect(new URL(page.url()).searchParams.get('selected')).toBeNull();
 });
@@ -200,7 +221,9 @@ test('3-D hover preserves the physical side while the regional panel keeps logic
     });
     try {
       await app.start();
-      root.querySelector<HTMLButtonElement>('[data-secondary-tab="brain-3d"]')!.click();
+      const selector = root.querySelector<HTMLSelectElement>('.secondary-view__selector')!;
+      selector.value = 'brain-3d';
+      selector.dispatchEvent(new Event('change'));
       const observations = [];
       // Same anatomical region, alternating sides: a logical-ID equality
       // shortcut must not suppress the second physical highlight update.
@@ -260,7 +283,9 @@ test('volume mode keeps integrated 3-D anatomy-only and scene failure isolated',
     };
     const app = new AtlasApp(root, { scene3dFactory, catalogUrl: '/__real-data/catalog.json' });
     await app.start();
-    root.querySelector<HTMLButtonElement>('[data-secondary-tab="brain-3d"]')!.click();
+    const selector = root.querySelector<HTMLSelectElement>('.secondary-view__selector')!;
+      selector.value = 'brain-3d';
+      selector.dispatchEvent(new Event('change'));
     await new Promise((resolve) => requestAnimationFrame(resolve));
     const outcome = {
       notice: root.querySelector<HTMLElement>('.secondary-view__scene3d-loading-title')?.textContent,

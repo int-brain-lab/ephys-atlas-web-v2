@@ -15,11 +15,27 @@
   margin-left: auto;
 }
 
-/* Narrow desktop frames keep coordinates and actions inside their own panel. */
 .view-frame > .view-frame__header {
-  flex-wrap: wrap;
-  row-gap: 0;
+  min-height: 2.8rem;
   padding-block: .2rem;
+}
+
+.view-frame__identity {
+  min-width: 0;
+  display: grid;
+  gap: .1rem;
+}
+
+.view-frame__identity-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.view-frame__identity-meta .view-frame__status {
+  width: 1rem;
+  flex: none;
+  font-size: 0;
 }
 
 .view-frame__coordinate {
@@ -30,6 +46,18 @@
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
+
+.view-frame__clear {
+  flex: none;
+  min-height: 1.75rem;
+  padding: 0 .35rem;
+  color: var(--color-text-secondary);
+  font-size: .65rem;
+}
+
+.view-frame__clear:disabled { opacity: .4; }
+.view-frame__clear[hidden] { display: none; }
+.secondary-view__header > .view-frame__clear { margin-left: auto; }
 
 .view-frame__status {
   min-width: 0;
@@ -380,6 +408,7 @@
   }
 
   .view-frame__maximize,
+  .view-frame__clear,
   .view-frame__download {
     min-height: 2rem;
   }

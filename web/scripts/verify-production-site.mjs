@@ -119,7 +119,7 @@ try {
     await check(page.getByLabel('Color mapping', { exact: true })).toHaveValue(mode);
   }
   for (const tab of ['Top', 'Swanson']) {
-    await page.getByRole('tab', { name: tab, exact: true }).click();
+    await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: tab });
     await check(page.locator(`[data-secondary-panel="${tab.toLowerCase()}"] path`).first()).toBeVisible();
   }
   const catalog = await page.evaluate(async () => (await (await fetch('/catalog.json')).json()));
@@ -154,7 +154,7 @@ try {
     console.log(`Loaded ${dataset.dataset_id}: ${representation}, ${release.release_id}`);
   }
   if (config.mesh) {
-    await page.getByRole('tab', { name: '3-D', exact: true }).click();
+    await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: '3-D' });
     await check(page.locator('[data-scene3d-host="connected"]')).toHaveAttribute('data-scene3d-state', 'ready');
   }
   assert.deepEqual(errors, []);

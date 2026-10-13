@@ -77,7 +77,7 @@ For a schema-v1 regional feature, the viewer must:
 - <a id="ls02-03"></a> **`LS02-03`** — search loaded region metadata, highlight matching acronym/name text, retain full ancestor and descendant context, and expand only matched branches and paths needed to show every match; clearing restores previous folding and ordering;
 - <a id="ls02-04"></a> **`LS02-04`** — display the selected statistic for each region, with a read-only miniature colorbar for every finite value using the active palette, range and mapping;
 - <a id="ls02-05"></a> **`LS02-05`** — color registered anatomical regions from the selected statistic/colormap/range;
-- <a id="ls02-06"></a> **`LS02-06`** — use one shared selection state for region-list and brain-view interactions; in Regions, non-leaf rows expand/collapse and leaves select, while brain-view clicks select the clicked region; Ctrl/Cmd-click toggles selectable regions, and an explicit Select multiple mode supports touch and keyboard use;
+- <a id="ls02-06"></a> **`LS02-06`** — use one shared selection state for region-list and brain-view interactions; in Regions, non-leaf rows expand/collapse and leaves select, while brain-view clicks select the clicked region; clicking a selected leaf or brain region deselects it; Ctrl/Cmd-click toggles selectable regions, and an explicit Select multiple mode supports touch and keyboard use;
 - <a id="ls02-07"></a> **`LS02-07`** — persist selection in URL state;
 - <a id="ls02-08"></a> **`LS02-08`** — show global descriptive statistics and a distribution/histogram;
 - <a id="ls02-09"></a> **`LS02-09`** — expose available Linear, Log, and Signed-log distribution axes through one
@@ -96,9 +96,11 @@ For a schema-v1 regional feature, the viewer must:
 - <a id="ls02-12"></a> **`LS02-12`** — compare selected-region statistics/distributions with the global population;
 - <a id="ls02-13"></a> **`LS02-13`** — clearly identify synthetic fixtures as non-scientific;
 
-Auto-slice defaults on for region selection and moves the shared cursor to the
+Auto-slice defaults on for Regions-list selection and moves the shared cursor to the
 native interior voxel nearest the signed mapped region’s centroid whose displayed
-crosshairs still intersect that region in all three projections. Compact target
+crosshairs still intersect that region in all three projections. Direct brain-view
+selection keeps the cursor and slice indices fixed and cancels pending list
+navigation. Compact target
 and multiple-selection buttons sit beside fold/unfold with state-aware tooltips
 and pressed states. Auto-slice is URL-persisted; unavailable interior coverage
 keeps coordinates intact with explicit feedback. See D086 and the

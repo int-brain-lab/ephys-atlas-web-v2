@@ -14,13 +14,13 @@ test('approved Native is lazy, retained, URL-linked anatomy in the real full web
     if(response.url().includes('/__local-assets/mesh/') && response.url().endsWith('/manifest.json')) manifest=await response.json();
   });
   await page.goto('/app/');
-  await expect(page.getByRole('tab',{name:'3-D',exact:true})).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Context view' })).toBeVisible();
   expect(requests).toEqual([]);
   const catalog=await page.evaluate(async () => (await fetch('/__real-data/catalog.json')).json());
   expect(catalog.datasets.map((dataset:any)=>dataset.dataset_id)).toEqual([
     'ephys_atlas_channels','ephys_atlas_clusters','brainwide_map','ephys_atlas_volumes','agea',
   ]);
-  await page.getByRole('tab',{name:'3-D',exact:true}).click();
+  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: '3-D' });
   const host=page.locator('[data-scene3d-host="connected"]');
   await expect(host).toHaveAttribute('data-scene3d-state','ready');
   await expect(host).toHaveAttribute('data-lod','native-full');
@@ -40,9 +40,9 @@ test('approved Native is lazy, retained, URL-linked anatomy in the real full web
   await expect(host).toHaveAttribute('data-transparency','weighted-blended');
   expect(new URL(page.url()).searchParams.get('selected')).toContain('-159');
   const meshRequestCount=requests.length;
-  await page.getByRole('tab',{name:'Summary',exact:true}).click();
+  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Summary' });
   await expect(host).toHaveAttribute('data-active','false');
-  await page.getByRole('tab',{name:'3-D',exact:true}).click();
+  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: '3-D' });
   await expect(host).toHaveAttribute('data-active','true');
   await expect(host).toHaveAttribute('data-geometry-uploads','1');
   expect(requests.length).toBe(meshRequestCount);

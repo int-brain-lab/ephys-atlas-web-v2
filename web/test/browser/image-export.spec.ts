@@ -100,7 +100,7 @@ test('all orthogonal views download standalone vector anatomy without the crossh
 test('Top and Swanson export vectors with their native framing and optional colorbar', async ({ page }) => {
   await page.goto('/app/?v=4&secondary=top');
   for (const [name, pathCount] of [['Top', 114], ['Swanson', 808]] as const) {
-    await page.getByRole('tab', { name, exact: true }).click();
+    await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: name });
     await expect(page.locator(`[data-secondary-panel="${name.toLowerCase()}"] path`)).toHaveCount(pathCount);
     await page.getByRole('button', { name: 'Download secondary image', exact: true }).click();
     await expect(page.getByRole('checkbox', { name: 'Include colorbar' })).not.toBeChecked();
@@ -116,7 +116,7 @@ test('Top and Swanson export vectors with their native framing and optional colo
   await page.getByRole('checkbox', { name: 'Include colorbar' }).check();
   const { bytes } = await downloadBytes(page, 'SVG');
   expect((await inspectSvg(page, bytes)).colorbars).toBe(1);
-  await page.getByRole('tab', { name: 'Summary', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Summary' });
   await expect(page.getByRole('button', { name: 'Download secondary image', exact: true })).toBeHidden();
 });
 
@@ -201,7 +201,7 @@ test('3-D downloads a transparent PNG while retaining camera and live renderer d
   // The canonical mesh fixture has parent315 geometry outside this Allen
   // leaf inventory. Colored 3D pixels and translucent compositing are covered
   // with a compatible synthetic presentation in weighted-transparency.spec.ts.
-  await page.getByRole('tab', { name: '3-D', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: '3-D' });
   const host = page.locator('[data-scene3d-host="connected"]');
   await expect(host).toHaveAttribute('data-scene3d-state', 'ready', { timeout: 15_000 });
   await expect.poll(async () => Number(await host.getAttribute('data-render-count'))).toBeGreaterThan(0);

@@ -153,7 +153,7 @@ export class RegionalTreeView {
 
   updateAutoSlice(enabled: boolean, status: string): void {
     this.autoSlice.setAttribute('aria-pressed', String(enabled));
-    this.autoSliceTooltip.textContent = `Auto-slice ${enabled ? 'on. Click to keep slices fixed.' : 'off. Click to follow selected regions.'}${status ? ` ${status}` : ''}`;
+    this.autoSliceTooltip.textContent = `Auto-slice ${enabled ? 'on for selections from Regions. Click to keep slices fixed.' : 'off. Click to follow selections from Regions.'} Clicking a brain view always keeps slices fixed.${status ? ` ${status}` : ''}`;
     this.autoSliceStatus.textContent = status;
     this.autoSliceStatus.classList.toggle('region-auto-slice-status--quiet', status === 'Finding slices for the selected region…');
     this.autoSliceStatus.hidden = !status;

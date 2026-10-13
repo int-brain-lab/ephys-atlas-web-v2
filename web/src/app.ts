@@ -146,7 +146,7 @@ export class AtlasApp {
       reportError: (error) => this.reportRuntimeError(error),
     }, this.viewportFactory, options.scene3dFactory);
     this.regionalPanel = new RegionalPanelController(root, {
-      selectRegion: (regionId, additive) => this.selectRegion(regionId, additive),
+      selectRegion: (regionId, additive) => this.selectRegion(regionId, additive, 'region-list'),
       selectRegionRange: (regionIds, targetRegionId) => this.selectRegionRange(regionIds, targetRegionId),
       setAutoSlice: (enabled) => this.store.dispatch({ type: 'slices/auto', enabled }),
       setMultiSelection: (enabled) => { this.multiSelection = enabled; },
@@ -173,7 +173,7 @@ export class AtlasApp {
       inspect: (inspection) => this.inspectProjection(inspection),
       selectRegion: (hit, additive) => {
         if (this.projectionMappingIsCurrent()) {
-          this.selectRegion(hit.regionId, additive);
+          this.selectRegion(hit.regionId, additive, 'brain-view');
         }
       },
       stepSlice: (axis, delta) => this.stepSlice(axis, delta),
@@ -184,7 +184,7 @@ export class AtlasApp {
       regionPointer: ({ type, regionId, originalEvent }) => {
         const logicalRegionId = regionId === null ? null : String(-Math.abs(regionId));
         if (type === 'select' && logicalRegionId !== null) {
-          this.selectRegion(logicalRegionId, originalEvent.ctrlKey || originalEvent.metaKey);
+          this.selectRegion(logicalRegionId, originalEvent.ctrlKey || originalEvent.metaKey, 'brain-view');
         } else {
           this.setHoveredRegion(type === 'hover' && regionId !== null ? String(regionId) : null);
         }
@@ -195,11 +195,14 @@ export class AtlasApp {
     });
   }
 
-  private selectRegion(regionId: string, additive: boolean): void {
-    this.trackExploration(() => this.store.dispatch(additive || this.multiSelection
+  private selectRegion(regionId: string, additive: boolean, source: 'region-list' | 'brain-view'): void {
+    const selected = this.store.getState().view.selection.includes(regionId);
+    this.trackExploration(() => this.store.dispatch(additive || this.multiSelection || selected
       ? { type: 'selection/toggle', regionId }
       : { type: 'selection/set', regionIds: [regionId] }));
-    if (this.store.getState().view.selection.includes(regionId)) void this.autoSliceToRegion(regionId);
+    if (source === 'region-list' && this.store.getState().view.selection.includes(regionId)) {
+      void this.autoSliceToRegion(regionId);
+    }
   }
 
   private selectRegionRange(regionIds: readonly string[], targetRegionId: string): void {
@@ -239,7 +242,7 @@ export class AtlasApp {
       if (this.stopped || controller.signal.aborted) return;
       controller.abort();
       this.autoSliceAbort = null;
-      this.autoSliceStatus = 'Couldn’t find slices. Select the region again to retry, or turn off Auto-slice.';
+      this.autoSliceStatus = 'Couldn’t find slices. Deselect and select the region again to retry, or turn off Auto-slice.';
       this.render();
     }
   }

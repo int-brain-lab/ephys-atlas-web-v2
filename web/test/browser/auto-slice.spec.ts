@@ -28,6 +28,76 @@ async function delayAnchorReads(page: Page, delay: number) {
   });
 }
 
+for (const representation of ['regional', 'volume']) {
+  test(`${representation} projection selection keeps every slice fixed with Auto-slice on`, async ({ page }) => {
+    let anchorReads = 0;
+    await page.route('**/navigation/allen.bin*', async route => {
+      if (route.request().resourceType() === 'fetch') anchorReads += 1;
+      await route.continue();
+    });
+    await page.goto(`/app/?v=4&repr=${representation}${representation === 'volume' ? '&cursor=25,25,25' : ''}`);
+    await expect(autoSlice(page)).toHaveAttribute('aria-pressed', 'true');
+    for (const view of ['coronal', 'sagittal', 'horizontal', 'top', 'swanson']) {
+      if (view === 'top' || view === 'swanson') {
+        await page.getByRole('combobox', { name: 'Context view' }).selectOption(view);
+      }
+      const frameSelector = view === 'top' || view === 'swanson'
+        ? `[data-secondary-panel="${view}"]` : `[data-view="${view}"]`;
+      if (view !== 'top' && view !== 'swanson') {
+        await expect(page.locator(frameSelector)).toHaveAttribute('data-state', 'ready');
+      }
+      const path = page.locator(`${frameSelector} path[data-allen-id]`).first();
+      await expect(path).toBeAttached();
+      const regionId = String(-Math.abs(Number(await path.getAttribute('data-allen-id'))));
+      const beforeCursor = cursor(page);
+      const beforeSlices = await page.locator('.view-frame__slider').evaluateAll(nodes => nodes.map(node => (node as HTMLInputElement).value));
+      await path.dispatchEvent('pointerup');
+      await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe(regionId);
+      expect(cursor(page)).toBe(beforeCursor);
+      expect(await page.locator('.view-frame__slider').evaluateAll(nodes => nodes.map(node => (node as HTMLInputElement).value))).toEqual(beforeSlices);
+      await path.dispatchEvent('pointerup');
+      await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
+      expect(cursor(page)).toBe(beforeCursor);
+    }
+    expect(anchorReads).toBe(0);
+    await expect(status(page)).toHaveText('');
+  });
+}
+
+test('a projection click cancels pending list Auto-slice navigation', async ({ page }) => {
+  await delayAnchorReads(page, 400);
+  await page.goto('/app/?v=4');
+  const path = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
+  await expect(path).toBeAttached();
+  const fixed = cursor(page);
+  await region(page, '-68').click();
+  await expect(status(page)).toHaveText('Finding slices for the selected region…');
+  await path.dispatchEvent('pointerup');
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
+  await expect(status(page)).toHaveText('');
+  await page.waitForTimeout(600);
+  expect(cursor(page)).toBe(fixed);
+  await expect(autoSlice(page)).toHaveAttribute('aria-pressed', 'true');
+});
+
+for (const source of ['list', 'projection']) {
+  test(`deselecting from the ${source} cancels pending Auto-slice without moving`, async ({ page }) => {
+    await delayAnchorReads(page, 400);
+    await page.goto('/app/?v=4');
+    const path = page.locator('[data-view="coronal"] path[data-allen-id="-362"]').first();
+    await expect(path).toBeAttached();
+    const fixed = cursor(page);
+    await region(page, '-362').click();
+    await expect(status(page)).toHaveText('Finding slices for the selected region…');
+    if (source === 'list') await region(page, '-362').click();
+    else await path.dispatchEvent('pointerup');
+    await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
+    await expect(status(page)).toHaveText('');
+    await page.waitForTimeout(600);
+    expect(cursor(page)).toBe(fixed);
+  });
+}
+
 test('auto-slice centers selected regions and disabled state survives reload', async ({ page }) => {
   await page.goto('/app/?v=4&cursor=-5399,4000,-668');
   const toggle = autoSlice(page);
@@ -48,6 +118,9 @@ test('auto-slice centers selected regions and disabled state survives reload', a
   await toggle.click();
   expect(cursor(page)).toBe(positioned);
   await region(page, '-362').press('Enter');
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
+  expect(cursor(page)).toBe(positioned);
+  await region(page, '-362').press('Enter');
   await centeredRegion(page, '362');
 });
 
@@ -55,6 +128,9 @@ test('HATA uses an interior center independent of starting slices, preserving ex
   await page.goto('/app/?v=4&colors=anatomy&parcel=allen&cursor=-2879,-3600,-5358&selected=-589508447');
   await page.locator('.region-search__input').fill('HATA');
   await expect(region(page, '-589508447')).toBeVisible();
+  expect(cursor(page)).toBe('-2879,-3600,-5358');
+  await region(page, '-589508447').click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
   expect(cursor(page)).toBe('-2879,-3600,-5358');
   await region(page, '-589508447').click();
   await expect.poll(() => cursor(page)).toBe('-2689,-3390,-5548');
@@ -106,9 +182,11 @@ test('invalid index bytes leave the cursor fixed, show retry help and reselect s
   });
   await page.goto('/app/?v=4&cursor=-5399,4000,-668');
   await region(page, '-68').click();
-  await expect(status(page)).toContainText('Select the region again to retry');
+  await expect(status(page)).toContainText('Deselect and select the region again to retry');
   expect(cursor(page)).toBe('-5399,4000,-668');
   broken = false;
+  await region(page, '-68').click();
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
   await region(page, '-68').click();
   await centeredRegion(page, '68');
 });

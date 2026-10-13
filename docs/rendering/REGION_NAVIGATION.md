@@ -4,7 +4,12 @@ D086 refines D085 Auto-slice. The target icon beside fold/unfold toggles automat
 movement; its tooltip explains the current state. The adjacent stacked icon
 toggles Select multiple. Both have accessible pressed states. Disabled Auto-slice
 persists as `autoslice=0` in URL-v4 state. Restored coordinates are never recentered
-on load; enabling only affects subsequent selections.
+on load; enabling only affects subsequent selections from the Regions list,
+including keyboard selection and Shift-click sibling ranges. Direct selection
+in registered projections, Top/Swanson, or the 3-D brain changes the shared
+selection without moving the cursor or slice indices. Such a click also cancels
+any pending Auto-slice lookup from an earlier list selection. The selection
+source is transient application intent, not additional URL or domain state.
 
 ## Source and algorithm
 
@@ -40,7 +45,8 @@ A lazy binary table per mapping stores little-endian int32 rows
 `-1` entries. IDs are sorted and unique. Browser reads verify byte size and SHA,
 then validate row order, bounds and hemisphere. Lookup checks exact pack manifest
 hash, reference-space ID, grid and affine before using any anchor. Shared reads
-survive cancellation; failed reads can be retried by reselecting the region.
+survive cancellation; failed reads can be retried by deselecting and selecting
+the region again. Deselecting never navigates and cancels pending lookups.
 
 ## Build and verification
 

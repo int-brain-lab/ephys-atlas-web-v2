@@ -88,8 +88,8 @@ test('volume summary and exact valid-voxel distribution reuse the loaded summary
   await expect(distribution.locator('.distribution-chart__color-range')).toHaveAttribute('data-maximum', '19.1');
 
   expect(summaryRequests).toHaveLength(1);
-  await page.getByRole('tab', { name: 'Top' }).click();
-  await page.getByRole('tab', { name: 'Summary' }).click();
+  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Top' });
+  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Summary' });
   await expect(summary).toBeVisible();
   expect(summaryRequests).toHaveLength(1);
 });
@@ -337,7 +337,7 @@ test('anatomy colours toggle and hold-A peek cover the volume without volume req
   expect(chunks.length).toBe(baseline);
 });
 
-test('reduced-parcellation volume selection keeps the target vivid under a neutral veil', async ({ page }) => {
+test('reduced-parcellation volume selection outlines the target without masking scalar colors', async ({ page }) => {
   await page.goto('/app/?v=4&feature=rms_ap&repr=volume&parcel=cosmos&cursor=25,25,25&autoslice=0');
   await expect(page.locator('[data-slice-asset="schema-volume-v1"]')).toHaveCount(3);
   const projection = page.locator('[data-view="coronal"] .projection-viewport');
@@ -347,11 +347,10 @@ test('reduced-parcellation volume selection keeps the target vivid under a neutr
   await expect(projection.locator('path.is-selected').first()).toBeAttached();
   for (const selected of await projection.locator('path.is-selected').all()) {
     await expect(selected).toHaveCSS('fill-opacity', '0');
-    await expect(selected).toHaveCSS('stroke-width', '1.75px');
+    await expect(selected).toHaveCSS('stroke-width', '2px');
   }
   const unselected = projection.locator('path:not(.is-selected)').first();
-  await expect(unselected).toHaveCSS('fill', 'rgb(232, 242, 248)');
-  await expect(unselected).toHaveCSS('fill-opacity', '0.35');
+  await expect(unselected).toHaveCSS('fill-opacity', '0');
   await unselected.dispatchEvent('pointermove');
   await expect(unselected).toHaveClass(/is-highlighted/);
   await expect(unselected).toHaveCSS('fill-opacity', '0');

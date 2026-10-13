@@ -191,14 +191,17 @@ test('renderer region selection flows back into shared URL state', async ({ page
   const unselected = projection.locator('path[data-allen-id="-1009"]').first();
   await expect(projection).toHaveClass(/has-region-selection/);
   await expect(path).toHaveCSS('fill-opacity', '1');
-  await expect(unselected).toHaveCSS('fill-opacity', '0.58');
+  await expect(unselected).toHaveCSS('fill-opacity', '1');
+  await expect(path).toHaveCSS('paint-order', 'stroke');
+  await expect(path).toHaveCSS('stroke-width', '2px');
+  await expect(path).toHaveCSS('stroke', 'rgb(255, 255, 255)');
   await expect(unselected).toHaveCSS('filter', 'none');
 
   await unselected.dispatchEvent('pointermove');
   await expect(unselected).toHaveClass(/is-highlighted/);
   await expect(unselected).toHaveCSS('fill-opacity', '1');
   await page.locator('[data-view="coronal"] .view-frame__slice-figure').dispatchEvent('pointerleave');
-  await expect(unselected).toHaveCSS('fill-opacity', '0.58');
+  await expect(unselected).toHaveCSS('fill-opacity', '1');
 });
 
 test('region hover is linked across all anatomical projections', async ({ page }) => {

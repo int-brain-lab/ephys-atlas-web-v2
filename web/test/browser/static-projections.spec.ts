@@ -6,7 +6,7 @@ test('Top and Swanson share regional presentation, interaction, URL state, and m
 
   const secondary = page.locator('.secondary-view');
   const top = page.locator('[data-secondary-panel="top"]');
-  await expect(page.getByRole('tab', { name: 'Top' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('combobox', { name: 'Context view' })).toHaveValue('top');
   await expect(top).toBeVisible();
   await expect(top.locator('path')).toHaveCount(114);
   await expect(top.locator('.secondary-projection__notice')).toBeHidden();
@@ -26,7 +26,7 @@ test('Top and Swanson share regional presentation, interaction, URL state, and m
   await path.click();
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe(selectedTopRegionId);
 
-  await page.getByRole('tab', { name: 'Swanson' }).click();
+  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Swanson' });
   const swanson = page.locator('[data-secondary-panel="swanson"]');
   await expect(swanson).toBeVisible();
   await expect(swanson.locator('path')).toHaveCount(808);
@@ -40,9 +40,9 @@ test('Top and Swanson share regional presentation, interaction, URL state, and m
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe(selectedSwansonRegionId);
   await swansonPath.click({ modifiers: ['Meta'] });
   await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBeNull();
-  await page.getByRole('tab', { name: 'Top', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Top' });
   await path.click();
-  await page.getByRole('tab', { name: 'Swanson', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Swanson' });
   await swansonPath.click({ modifiers: ['Control'] });
   const expectedIds = [...new Set([selectedTopRegionId, selectedSwansonRegionId])];
   if (selectedTopRegionId === selectedSwansonRegionId) expectedIds.length = 0;
@@ -64,7 +64,7 @@ test('static projections occupy the responsive secondary workspace without becom
   await expect(page.locator('.context-strip')).toBeVisible();
   await expect(page.locator('.slice-strip')).toBeHidden();
   await expect(page.locator('[data-secondary-panel="top"]')).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Top' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('combobox', { name: 'Context view' })).toHaveValue('top');
   await expect(page.getByRole('button', { name: 'Context', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('[data-secondary-panel="top"] input[type="range"]')).toHaveCount(0);
 });

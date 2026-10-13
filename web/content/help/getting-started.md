@@ -9,7 +9,7 @@ Explore how an electrophysiology feature varies across the mouse brain.
 
 > Display controls change how values look. They do not change the source or downloaded values.
 
-**Auto-slice** in Regions moves the three linked slices to an interior position near the selected region’s center. Click the target icon beside the fold/unfold buttons to switch it off and keep slices fixed. Hover or focus the icon for its current state and help. Your choice is included in shared URLs. Manual slice navigation always remains available.
+**Auto-slice** moves the three linked slices to an interior position near a region selected from the Regions list. Clicking a region directly in a brain view selects it while keeping the slices fixed. Click the target icon beside the fold/unfold buttons to switch it off and keep slices fixed. Hover or focus the icon for its current state and help. Your choice is included in shared URLs. Manual slice navigation always remains available.
 
 To save an image, use the download icon beside a view's maximize button. SVG
 keeps region boundaries as vectors and embeds any visible volume as a PNG.

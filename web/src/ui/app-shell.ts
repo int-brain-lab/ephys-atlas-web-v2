@@ -216,7 +216,7 @@ export class AppShell {
   private readonly viewButtons = new Map<WorkspaceViewId, HTMLButtonElement>();
   private readonly viewFrames = new Map<SliceAxis, ViewFrameNodes>();
   private readonly staticFrames = new Map<StaticProjectionId, StaticFrameNodes>();
-  private readonly secondaryTabButtons = new Map<SecondaryTabId, HTMLButtonElement>();
+  private secondarySelector!: HTMLSelectElement;
   private readonly secondaryPanels = new Map<SecondaryTabId, HTMLElement>();
   private scene3dHost!: HTMLElement;
   private scene3dNotice!: HTMLElement;
@@ -401,6 +401,10 @@ export class AppShell {
     });
     const { state, catalog, manifest } = model;
     const view = state.view;
+    for (const button of this.app.querySelectorAll<HTMLButtonElement>('.view-frame__clear')) {
+      button.disabled = view.selection.length === 0;
+      button.hidden = button.dataset.selectionView === 'secondary' && view.workspace.secondaryTab === 'summary';
+    }
     const featureEntry = manifest?.features.find((entry) => entry.id === view.featureId);
 
     const featureLabel = featureEntry?.label ?? (view.featureId ? titleCaseToken(view.featureId) : 'No feature selected');
@@ -1467,20 +1471,19 @@ export class AppShell {
     secondary.dataset.tab = 'summary';
     secondary.dataset.maximized = 'false';
     const secondaryHeader = element('div', 'view-frame__header secondary-view__header');
-    const secondaryTabs = element('div', 'secondary-view__tabs');
-    secondaryTabs.setAttribute('role', 'tablist');
+    this.secondarySelector = element('select', 'secondary-view__selector');
+    this.secondarySelector.setAttribute('aria-label', 'Context view');
+    this.secondarySelector.disabled = true;
     for (const { id: tab, label } of SECONDARY_CONTENT_REGISTRY) {
-      const button = element('button', 'secondary-view__tab');
-      button.type = 'button';
-      button.textContent = label;
-      button.dataset.secondaryTab = tab;
-      button.setAttribute('role', 'tab');
-      button.setAttribute('aria-selected', String(tab === 'summary'));
-      button.addEventListener('click', () => this.callbacks.setSecondaryTab(tab));
-      button.addEventListener('keydown', (event) => this.onSecondaryTabKeyDown(event, tab));
-      this.secondaryTabButtons.set(tab, button);
-      secondaryTabs.append(button);
+      const option = element('option');
+      option.value = tab;
+      option.textContent = label;
+      this.secondarySelector.append(option);
     }
+    this.secondarySelector.addEventListener('change', () => {
+      const content = SECONDARY_CONTENT_REGISTRY.find(item => item.id === this.secondarySelector.value);
+      if (content) this.callbacks.setSecondaryTab(content.id);
+    });
     this.secondaryMaximize = element('button', 'view-frame__maximize secondary-view__maximize');
     this.secondaryMaximize.type = 'button';
     this.secondaryMaximize.textContent = '↗';
@@ -1488,7 +1491,7 @@ export class AppShell {
     this.secondaryMaximize.setAttribute('aria-pressed', 'false');
     this.secondaryMaximize.addEventListener('click', () => this.toggleMaximizedView('secondary'));
     this.secondaryDownload = this.createImageDownloadButton('secondary');
-    secondaryHeader.append(secondaryTabs, this.secondaryDownload, this.secondaryMaximize);
+    secondaryHeader.append(this.secondarySelector, this.createViewClearButton('secondary'), this.secondaryDownload, this.secondaryMaximize);
     const secondaryBody = element('div', 'secondary-view__body');
     const summary = element('div', 'secondary-view__surface secondary-view__summary');
     summary.dataset.secondaryPanel = 'summary';
@@ -1545,6 +1548,18 @@ export class AppShell {
     this.analysisDialog = analysisDialog;
     workspace.append(switcher, slices, context, analysis);
     return workspace;
+  }
+
+  private createViewClearButton(view: SliceAxis | 'secondary'): HTMLButtonElement {
+    const button = element('button', 'view-frame__clear');
+    button.type = 'button';
+    button.textContent = 'Clear';
+    button.dataset.selectionView = view;
+    button.setAttribute('aria-label', `Clear region selection in ${view} view`);
+    button.title = 'Clear selection in all views';
+    button.disabled = true;
+    button.addEventListener('click', () => this.callbacks.clearSelection());
+    return button;
   }
 
   private createImageDownloadButton(view: SliceAxis | 'secondary'): HTMLButtonElement {
@@ -1604,7 +1619,10 @@ export class AppShell {
 
     const title = `${axis[0]?.toUpperCase() ?? ''}${axis.slice(1)}`;
     const header = element('div', 'view-frame__header');
-    header.append(heading(title, 3));
+    const identity = element('div', 'view-frame__identity');
+    identity.append(heading(title, 3));
+    const identityMeta = element('div', 'view-frame__identity-meta');
+    header.append(identity);
     const headerMeta = element('div', 'view-frame__header-meta');
     const coordinate = element('span', 'view-frame__coordinate');
     const initialCoordinate = formatRegionalCoordinate(axis, 0);
@@ -1617,7 +1635,9 @@ export class AppShell {
     maximize.setAttribute('aria-label', `Maximize ${axis} view`);
     maximize.setAttribute('aria-pressed', 'false');
     maximize.addEventListener('click', () => this.toggleMaximizedView(axis));
-    headerMeta.append(coordinate, status, this.createImageDownloadButton(axis), maximize);
+    identityMeta.append(coordinate, status);
+    identity.append(identityMeta);
+    headerMeta.append(this.createViewClearButton(axis), this.createImageDownloadButton(axis), maximize);
     header.append(headerMeta);
 
     const viewport = element('div', 'view-frame__viewport');
@@ -1703,21 +1723,6 @@ export class AppShell {
     return frame;
   }
 
-  private onSecondaryTabKeyDown(event: KeyboardEvent, current: SecondaryTabId): void {
-    const ids = SECONDARY_CONTENT_REGISTRY.map(({ id }) => id);
-    const index = ids.indexOf(current);
-    const nextIndex = event.key === 'ArrowRight' ? (index + 1) % ids.length
-      : event.key === 'ArrowLeft' ? (index - 1 + ids.length) % ids.length
-        : event.key === 'Home' ? 0
-          : event.key === 'End' ? ids.length - 1
-            : -1;
-    if (nextIndex < 0) return;
-    const next = ids[nextIndex]!;
-    event.preventDefault();
-    this.callbacks.setSecondaryTab(next);
-    this.secondaryTabButtons.get(next)?.focus();
-  }
-
   private createNullScene3DPanel(): HTMLElement {
     const frame = element('section', 'secondary-view__surface secondary-view__scene3d');
     frame.dataset.secondaryPanel = 'brain-3d';
@@ -1783,11 +1788,8 @@ export class AppShell {
   private renderSecondaryView(model: ShellModel): void {
     const tab = model.state.view.workspace.secondaryTab;
     this.secondaryFrame.dataset.tab = tab;
-    for (const [candidate, button] of this.secondaryTabButtons) {
-      const active = candidate === tab;
-      button.setAttribute('aria-selected', String(active));
-      button.tabIndex = active ? 0 : -1;
-    }
+    this.secondarySelector.value = tab;
+    this.secondarySelector.disabled = model.state.runtime.navigationStatus !== 'ready';
     for (const [candidate, panel] of this.secondaryPanels) panel.hidden = candidate !== tab;
     const content = SECONDARY_CONTENT_BY_ID[tab];
     this.secondaryDownload.hidden = content.kind === 'summary';

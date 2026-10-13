@@ -51,7 +51,7 @@ try {
     }
   }
   for (const tab of ['Summary', 'Top', 'Swanson', ...(expectedMesh ? ['3-D'] : [])]) {
-    if (await page.getByRole('tab', { name: tab, exact: true }).count() !== 1) throw new Error(`Missing ${tab} view`);
+    if (await page.getByRole('option', { name: tab, exact: true }).count() !== 1) throw new Error(`Missing ${tab} view`);
   }
 
   const dataField = page.locator('[data-context-field="data"]');
@@ -94,12 +94,12 @@ try {
     });
   }
 
-  await page.getByRole('tab', { name: 'Top', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Top' });
   await page.locator('[data-secondary-panel="top"] [data-static-source-mode]').waitFor({ state: 'visible' });
-  await page.getByRole('tab', { name: 'Swanson', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Swanson' });
   await page.locator('[data-secondary-panel="swanson"] [data-static-source-mode]').waitFor({ state: 'visible' });
   if (expectedMesh) {
-    await page.getByRole('tab', { name: '3-D', exact: true }).click();
+    await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: '3-D' });
     const explode = page.getByRole('slider', { name: 'Explode 3-D brain' });
     await explode.fill('0.35');
     await page.waitForFunction(() => document.querySelector('[data-scene3d-host="connected"]')?.getAttribute('data-explode') === '0.35');

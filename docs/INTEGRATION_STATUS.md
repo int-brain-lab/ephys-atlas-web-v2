@@ -16,6 +16,15 @@ records, transition history, and independent expected-inventory production QA.
 
 ## Product architecture
 
+2-D selection preserves semantic regional fills and scalar-volume colors without
+fading or a pale mask. Selected regions use a white screen-space outline with a
+dark halo; painting the outline before the fill preserves tiny regional interiors.
+Each orthogonal header and the Top/Swanson/3-D context header offers a nearby
+Clear action for the shared selection, disabled when nothing is selected.
+Context uses a compact native view selector beside its actions. Orthogonal
+headers stack their title and coordinates to the left of those same actions,
+keeping every header compact without clipped labels or a scrollbar.
+
 | Capability | Implemented state | Evidence/maturity | Remaining production work |
 | --- | --- | --- | --- |
 | Release contract | Schema v1 is the sole builder, browser HTTP/local, publishing, fixture, and download contract; no v0.1 adapters remain. | Cross-language valid/invalid corpus and deterministic golden fixture are green. | None for contract machinery. |
@@ -538,7 +547,8 @@ optional 3-D. D084 makes non-leaf rows in Regions expand/collapse on click or
 Enter/Space; leaf status is independent of search or collapsed branches, and
 value rankings contain only current-parcellation leaves. Hierarchy containers
 are active navigation controls. Leaf and brain-view plain clicks replace
-selection; Ctrl/Cmd-click toggles membership.
+selection when clicking an unselected region; clicking a selected region
+deselects it. Ctrl/Cmd-click toggles membership.
 The Regions pane includes a session-only Select multiple control for touch and
 keyboard use, with the same behavior across views. Enter/Space retains modifier
 keys, explicit clear/remove controls remain available, and selection IDs retain
@@ -551,7 +561,9 @@ navigation does not emit the analytics exploration event.
 D085/D086 add default-on, URL-persisted Auto-slice with compact target and
 multiple-selection icon buttons beside fold/unfold. Hover/focus tooltips explain
 state and switching; pending lookup remains accessible without a visible row.
-Selection uses a verified native interior anchor nearest the signed mapped
+Only Regions-list selections locate the region automatically. Direct brain-view
+selection preserves every slice and cancels pending list navigation without
+turning off Auto-slice. List selection uses a verified native interior anchor nearest the signed mapped
 region centroid, constrained by all three sparse display planes. All Beryl and
 Cosmos regions have anchors; five occupied Allen regions have no display-eligible
 anchor and keep slices fixed. Hierarchy-only Allen rows are unavailable.

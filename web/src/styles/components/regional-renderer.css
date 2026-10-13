@@ -1,15 +1,14 @@
-.view-frame__brain-svg.has-region-selection path:not(.is-selected):not(.is-highlighted) {
-  fill-opacity: .58;
-}
-
 .view-frame__slice-figure path.is-selected {
   fill-opacity: 1;
-  stroke: rgb(235 247 255 / 94%);
-  stroke-width: 1.75;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  filter: drop-shadow(0 0 1px #071019) drop-shadow(0 0 1px #071019);
   vector-effect: non-scaling-stroke;
 }
 
-.view-frame__slice-figure path.is-highlighted {
+.view-frame__slice-figure path.is-highlighted:not(.is-selected) {
   fill-opacity: 1;
   filter: brightness(1.22) saturate(1.12);
 }

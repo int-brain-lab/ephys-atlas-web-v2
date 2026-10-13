@@ -4,14 +4,44 @@ import { seenHelpTourStorageState } from '../../playwright.seen-tour.js';
 const region = (page: Page, id: string) => page.locator(`[data-region-button="${id}"]`);
 const selection = (page: Page) => new URL(page.url()).searchParams.get('selected');
 
+test('each projection offers a nearby clear action for the shared selection', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/app/?v=4&autoslice=0');
+  for (const view of ['coronal', 'sagittal', 'horizontal', 'secondary']) {
+    if (view === 'secondary') await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Top' });
+    const clear = page.getByRole('button', { name: `Clear region selection in ${view} view`, exact: true });
+    await expect(clear).toBeDisabled();
+    const frame = page.locator(`[data-view="${view}"]`);
+    const bounds = await frame.boundingBox();
+    for (const action of await frame.locator('.view-frame__header button:visible').all()) {
+      const actionBounds = await action.boundingBox();
+      expect(actionBounds!.x + actionBounds!.width).toBeLessThanOrEqual(bounds!.x + bounds!.width);
+    }
+    await region(page, '-362').click();
+    await expect(clear).toBeEnabled();
+    await clear.click();
+    await expect.poll(() => selection(page)).toBeNull();
+    await expect(page.locator('path.is-selected')).toHaveCount(0);
+    await expect(clear).toBeDisabled();
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/app/?v=4&autoslice=0&selected=-362');
+  const clear = page.getByRole('button', { name: 'Clear region selection in coronal view', exact: true });
+  await expect(clear).toBeVisible();
+  await clear.click();
+  await expect.poll(() => selection(page)).toBeNull();
+});
+
 for (const modifier of ['Control', 'Meta'] as const) {
-  test(`${modifier}-click toggles regions while plain clicks replace and remain selected`, async ({ page }) => {
+  test(`${modifier}-click toggles regions while plain clicks replace or deselect`, async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/app/');
     await region(page, '-68').click();
     await region(page, '-362').click();
     await expect.poll(() => selection(page)).toBe('-362');
     await expect(region(page, '-68')).toHaveAttribute('aria-pressed', 'false');
+    await region(page, '-362').click();
+    await expect.poll(() => selection(page)).toBeNull();
     await region(page, '-362').click();
     await expect.poll(() => selection(page)).toBe('-362');
     await region(page, '-68').click({ modifiers: [modifier] });
@@ -58,6 +88,11 @@ test('linked slices replace or toggle the shared region-list selection', async (
   await path.dispatchEvent('pointerup');
   await expect.poll(() => selection(page)).toBe('-362');
   await expect(region(page, '-68')).toHaveAttribute('aria-pressed', 'false');
+  const positioned = new URL(page.url()).searchParams.get('cursor');
+  await path.dispatchEvent('pointerup');
+  await expect.poll(() => selection(page)).toBeNull();
+  expect(new URL(page.url()).searchParams.get('cursor')).toBe(positioned);
+  await path.dispatchEvent('pointerup');
   await region(page, '-68').click();
   await path.dispatchEvent('pointerup', { ctrlKey: true });
   await expect.poll(() => selection(page)).toBe('-68,-362');
@@ -85,7 +120,7 @@ test('touch users can toggle multiple regions from the Regions drawer', async ({
     await expect.poll(() => selection(page)).toBe('-68,-362');
     await mode.tap();
     await region(page, '-68').tap();
-    await expect.poll(() => selection(page)).toBe('-68');
+    await expect.poll(() => selection(page)).toBe('-362');
     await page.screenshot({ path: '/tmp/ephys-selection-phone.png' });
   } finally { await context.close(); }
 });
