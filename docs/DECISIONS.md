@@ -104,6 +104,7 @@ only part of the body; the index states what remains effective.
 | D093 | Transparent per-view image downloads | accepted | 2026-10-13 | standalone SVG vectors with embedded native PNG volume layers; transparent PNG for 2D/3D; fixed 2400-pixel longest edge, no crosshair or hover, optional colorbar |
 | D094 | Restore Brain-Wide Map discovery | accepted | 2026-10-13 | restore the existing BWM project, edition and immutable release removed by 8cedce8; preserve W39, Genomics, Lipidome and current defaults; production promotion remains separate |
 | D096 | Reject unintended catalog removals | accepted | 2026-10-13 | preserve exposed projects, datasets, releases and editions by default; intentional retirement requires exact baseline hash, removal inventory, reason and decision; independent production inventory QA |
+| D097 | One-click image downloads and format menu | accepted | 2026-10-13 | primary button downloads immediately; adjacent arrow exposes colorbar and alternate SVG/PNG actions with brief descriptions; refines D093 interaction |
 
 ## D001 — Separate v2
 
@@ -2364,3 +2365,18 @@ of the live catalog before iterating through discovered datasets. Live/site
 checks use the verified tracked publication snapshot; proposed-catalog checks
 use the reviewed curator configuration. Optional site-compatibility candidate
 checks also reject unacknowledged omissions from the pinned baseline.
+
+## D097 — One-click image downloads and format menu
+
+Date: 2026-10-13. Status: accepted by the repository owner.
+
+Replace the image-export modal with a split button beside maximize. The primary
+icon immediately downloads the preferred format for the current view: SVG for
+regional maps and registered composites, PNG for 3D and volume-only images with
+neither anatomy outlines nor anatomy colors. The adjacent arrow opens a small
+nonmodal menu offering SVG/PNG downloads with brief descriptions and an optional
+colorbar checkbox. The checkbox is off by default and retains its preference
+for that control during the viewer session. Format actions download directly;
+the primary action continues to choose the best format for the visible layers.
+Preserve D093 transparency, resolution, registration, selection and provenance
+behavior. No push or publication is authorized.

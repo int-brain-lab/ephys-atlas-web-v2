@@ -138,9 +138,12 @@ cursor, display choices, and regional selection where relevant.
 the active feature. Exports preserve the dataset, release, feature,
 representation, and applicable statistic or parcellation identity.
 
-The download icon beside a view's maximize button saves its **image**. Choose
-**SVG** to keep region boundaries editable as vectors; any visible volume is
-embedded as a PNG in the same file. **PNG** combines the visible layers into
+Click the download icon beside maximize to save the **image** immediately.
+Regional maps and composites default to **SVG**, keeping region boundaries
+editable and embedding any visible volume as a PNG in the same file. 3D and
+volume views without visible anatomy layers default to **PNG**. Use the adjacent
+arrow for alternate formats and the optional **Include colorbar** checkbox.
+Brief descriptions explain each format. **PNG** combines the visible layers into
 a bitmap with a 2400-pixel longest edge. Top and Swanson support both formats;
 3D exports PNG from the current camera. Export size is independent of the 2D
 panel size, and 3D preserves the current camera framing.

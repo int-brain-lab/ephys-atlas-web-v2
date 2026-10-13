@@ -1,15 +1,19 @@
 import { expect, test, type Download, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
-async function downloadBytes(page: Page, format: 'SVG' | 'PNG'): Promise<{ download: Download; bytes: Buffer }> {
+async function downloadBytes(page: Page, view: string, format?: 'SVG' | 'PNG'): Promise<{ download: Download; bytes: Buffer }> {
+  const options = page.getByRole('group', { name: `Image download options for ${view}`, exact: true });
+  if (format && !await options.isVisible()) {
+    await page.getByRole('button', { name: `Image download options for ${view}`, exact: true }).click();
+  }
   const pending = page.waitForEvent('download');
-  await page.getByRole('dialog', { name: 'Download image', exact: true })
-    .getByRole('button', { name: `Download ${format}`, exact: true }).click();
+  if (format) await options.getByRole('button', { name: `Download ${format}`, exact: true }).click();
+  else await page.getByRole('button', { name: `Download ${view} image`, exact: true }).click();
   const download = await pending;
   const path = await download.path();
   expect(path).not.toBeNull();
   const bytes = await readFile(path!);
-  await page.getByRole('dialog', { name: 'Download image', exact: true }).getByRole('button', { name: 'Close', exact: true }).click();
+  if (await options.isVisible()) await page.keyboard.press('Escape');
   return { download, bytes };
 }
 
@@ -80,9 +84,8 @@ test('all orthogonal views download standalone vector anatomy without the crossh
     await expect(frame).toHaveAttribute('data-state', 'ready');
     const expectedPaths = await frame.locator('svg.projection-viewport__regional path').count();
     expect(expectedPaths).toBeGreaterThan(0);
-    await page.getByRole('button', { name: `Download ${axis} image`, exact: true }).click();
-    await expect(page.getByRole('checkbox', { name: 'Include colorbar' })).not.toBeChecked();
-    const { download, bytes } = await downloadBytes(page, 'SVG');
+    const { download, bytes } = await downloadBytes(page, axis);
+    await expect(page.getByRole('dialog', { name: 'Download image', exact: true })).toHaveCount(0);
     expect(download.suggestedFilename()).toMatch(new RegExp(`${axis}.*\\.svg$`));
     const svg = await inspectSvg(page, bytes);
     expect(svg.errors).toBe(0);
@@ -102,9 +105,7 @@ test('Top and Swanson export vectors with their native framing and optional colo
   for (const [name, pathCount] of [['Top', 114], ['Swanson', 808]] as const) {
     await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: name });
     await expect(page.locator(`[data-secondary-panel="${name.toLowerCase()}"] path`)).toHaveCount(pathCount);
-    await page.getByRole('button', { name: 'Download secondary image', exact: true }).click();
-    await expect(page.getByRole('checkbox', { name: 'Include colorbar' })).not.toBeChecked();
-    const { bytes } = await downloadBytes(page, 'SVG');
+    const { bytes } = await downloadBytes(page, 'secondary');
     const svg = await inspectSvg(page, bytes);
     expect(svg.viewBox).toBe('60 20 340 300');
     expect(svg.paths).toHaveLength(pathCount);
@@ -112,9 +113,10 @@ test('Top and Swanson export vectors with their native framing and optional colo
     expect(svg.foreignObjects).toBe(0);
     expect(svg.colorbars).toBe(0);
   }
-  await page.getByRole('button', { name: 'Download secondary image', exact: true }).click();
+  await page.getByRole('button', { name: 'Image download options for secondary', exact: true }).click();
+  await expect(page.getByRole('checkbox', { name: 'Include colorbar' })).not.toBeChecked();
   await page.getByRole('checkbox', { name: 'Include colorbar' }).check();
-  const { bytes } = await downloadBytes(page, 'SVG');
+  const { bytes } = await downloadBytes(page, 'secondary', 'SVG');
   expect((await inspectSvg(page, bytes)).colorbars).toBe(1);
   await page.getByRole('combobox', { name: 'Context view' }).selectOption({ label: 'Summary' });
   await expect(page.getByRole('button', { name: 'Download secondary image', exact: true })).toBeHidden();
@@ -136,8 +138,7 @@ test('volume SVG embeds native raster pixels at the registered location under ve
       flipX: canvas.dataset.flipX === 'true', flipY: canvas.dataset.flipY === 'true',
     };
   });
-  await page.getByRole('button', { name: 'Download coronal image', exact: true }).click();
-  const { bytes } = await downloadBytes(page, 'SVG');
+  const { bytes } = await downloadBytes(page, 'coronal');
   const svg = await inspectSvg(page, bytes);
   expect(svg.paths).toHaveLength(source.paths);
   expect(svg.viewBox).toBe(source.viewBox);
@@ -159,8 +160,9 @@ test('volume exports honor anatomy outline and color layer settings', async ({ p
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByRole('checkbox', { name: 'Show anatomy outlines', exact: true }).uncheck();
   await page.getByRole('button', { name: 'Close panel', exact: true }).click();
-  await page.getByRole('button', { name: 'Download coronal image', exact: true }).click();
-  const withoutOutlines = await inspectSvg(page, (await downloadBytes(page, 'SVG')).bytes);
+  const volumeOnly = await downloadBytes(page, 'coronal');
+  expect(volumeOnly.download.suggestedFilename()).toMatch(/\.png$/);
+  const withoutOutlines = await inspectSvg(page, (await downloadBytes(page, 'coronal', 'SVG')).bytes);
   expect(withoutOutlines.images).toHaveLength(1);
   expect(withoutOutlines.paths.length).toBeGreaterThan(0);
   expect(withoutOutlines.paths.every((path) => Number(path.strokeOpacity) === 0)).toBe(true);
@@ -170,8 +172,7 @@ test('volume exports honor anatomy outline and color layer settings', async ({ p
   await page.getByRole('checkbox', { name: 'Show anatomy outlines', exact: true }).check();
   await page.getByRole('checkbox', { name: 'Show anatomy colours', exact: true }).check();
   await page.getByRole('button', { name: 'Close panel', exact: true }).click();
-  await page.getByRole('button', { name: 'Download coronal image', exact: true }).click();
-  const anatomy = await inspectSvg(page, (await downloadBytes(page, 'SVG')).bytes);
+  const anatomy = await inspectSvg(page, (await downloadBytes(page, 'coronal', 'SVG')).bytes);
   expect(anatomy.images).toHaveLength(1);
   expect(anatomy.paths.every((path) => Number(path.fillOpacity) === 1)).toBe(true);
   expect(anatomy.paths.some((path) => Number(path.strokeOpacity) > 0)).toBe(true);
@@ -180,8 +181,7 @@ test('volume exports honor anatomy outline and color layer settings', async ({ p
 test('transparent PNG size and vector content are independent of panel maximization', async ({ page }) => {
   await page.goto('/app/?v=4&secondary=top');
   await expect(page.locator('[data-secondary-panel="top"] path')).toHaveCount(114);
-  await page.getByRole('button', { name: 'Download secondary image', exact: true }).click();
-  const first = await downloadBytes(page, 'PNG');
+  const first = await downloadBytes(page, 'secondary', 'PNG');
   expect(first.download.suggestedFilename()).toMatch(/\.png$/);
   const image = await inspectPng(page, first.bytes);
   expect(Math.max(image.width, image.height)).toBe(2400);
@@ -189,8 +189,7 @@ test('transparent PNG size and vector content are independent of panel maximizat
   expect(image.visible).toBeGreaterThan(0);
   expect(image.colors).toBeGreaterThan(1);
   await page.getByRole('button', { name: 'Maximize secondary panel' }).click();
-  await page.getByRole('button', { name: 'Download secondary image', exact: true }).click();
-  const second = await downloadBytes(page, 'PNG');
+  const second = await downloadBytes(page, 'secondary', 'PNG');
   expect(await inspectPng(page, second.bytes)).toEqual(image);
 });
 
@@ -208,9 +207,11 @@ test('3-D downloads a transparent PNG while retaining camera and live renderer d
   const before = await host.locator('canvas').evaluate((canvas: HTMLCanvasElement) => ({ width: canvas.width, height: canvas.height }));
   const urlBefore = page.url();
   const uploads = await host.getAttribute('data-geometry-uploads');
-  await page.getByRole('button', { name: 'Download secondary image', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Download image', exact: true }).getByRole('button', { name: 'Download SVG', exact: true })).toBeHidden();
-  const { bytes } = await downloadBytes(page, 'PNG');
+  await page.getByRole('button', { name: 'Image download options for secondary', exact: true }).click();
+  await expect(page.getByRole('group', { name: 'Image download options for secondary', exact: true }).getByRole('button', { name: 'Download SVG', exact: true })).toBeHidden();
+  await page.keyboard.press('Escape');
+  const { download, bytes } = await downloadBytes(page, 'secondary');
+  expect(download.suggestedFilename()).toMatch(/\.png$/);
   const image = await inspectPng(page, bytes);
   expect(Math.max(image.width, image.height)).toBe(2400);
   expect(image.transparent).toBeGreaterThan(0);
@@ -218,4 +219,31 @@ test('3-D downloads a transparent PNG while retaining camera and live renderer d
   expect(await host.locator('canvas').evaluate((canvas: HTMLCanvasElement) => ({ width: canvas.width, height: canvas.height }))).toEqual(before);
   await expect(host).toHaveAttribute('data-geometry-uploads', uploads!);
   await expect(host).toHaveAttribute('data-scene3d-state', 'ready', { timeout: 15_000 });
+});
+
+
+test('image options keep colorbar preference and dismiss without changing maximization', async ({ page }) => {
+  await page.goto('/app/?v=4&secondary=top');
+  await expect(page.locator('[data-secondary-panel="top"] path')).toHaveCount(114);
+  await page.getByRole('button', { name: 'Maximize secondary panel', exact: true }).click();
+  const caret = page.getByRole('button', { name: 'Image download options for secondary', exact: true });
+  const options = page.getByRole('group', { name: 'Image download options for secondary', exact: true });
+  await caret.click();
+  await expect(options).toBeVisible();
+  await expect(caret).toHaveAttribute('aria-expanded', 'true');
+  await expect(options.getByRole('checkbox', { name: 'Include colorbar' })).not.toBeChecked();
+  await options.getByRole('checkbox', { name: 'Include colorbar' }).check();
+  await page.keyboard.press('Escape');
+  await expect(options).toBeHidden();
+  await expect(page.locator('.secondary-view')).toHaveAttribute('data-maximized', 'true');
+  await expect(caret).toBeFocused();
+
+  await caret.click();
+  await expect(options.getByRole('checkbox', { name: 'Include colorbar' })).toBeChecked();
+  await options.getByRole('checkbox', { name: 'Include colorbar' }).uncheck();
+  await page.locator('[data-secondary-panel="top"]').click({ position: { x: 2, y: 2 } });
+  await expect(options).toBeHidden();
+  await expect(page.locator('.secondary-view')).toHaveAttribute('data-maximized', 'true');
+  const { bytes } = await downloadBytes(page, 'secondary');
+  expect((await inspectSvg(page, bytes)).colorbars).toBe(0);
 });

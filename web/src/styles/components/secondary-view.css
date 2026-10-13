@@ -26,15 +26,15 @@
   margin-left: 0;
 }
 
-.secondary-view__header > .view-frame__download {
+.secondary-view__header > .image-download {
   margin-left: auto;
 }
 
-.secondary-view__header > .view-frame__clear:not([hidden]) + .view-frame__download {
+.secondary-view__header > .view-frame__clear:not([hidden]) + .image-download {
   margin-left: 0;
 }
 
-.secondary-view__header > .view-frame__download[hidden] + .secondary-view__maximize {
+.secondary-view__header > .image-download[hidden] + .secondary-view__maximize {
   margin-left: auto;
 }
 

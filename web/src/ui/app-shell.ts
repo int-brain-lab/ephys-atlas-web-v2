@@ -1,7 +1,7 @@
 import { RetainedViewStatus, type RetainedViewRequest } from './retained-view-status.js';
 import { element, heading, titleCaseToken } from './dom-helpers.js';
 import { DownloadDialogController } from './download-dialog.js';
-import { ImageDownloadDialog } from './image-download-dialog.js';
+import { ImageDownloadControl, type ImageDownloadRequest } from './image-download-control.js';
 import { OperationStatus } from './operation-status.js';
 import type { DatasetCatalog, DatasetManifest, FeaturePayload, RepresentationDisplay } from '../data/contracts.js';
 import type { LocalArchivePreview } from '../data/local-archive.js';
@@ -191,9 +191,9 @@ function placeholderLine(width: 'short' | 'medium' | 'long' = 'medium'): HTMLSpa
 }
 
 export class AppShell {
-  private readonly imageDownload = new ImageDownloadDialog();
+  private readonly imageDownloads = new Map<SliceAxis | 'secondary', ImageDownloadControl>();
   private readonly exportColorbar = new FrameColorbar();
-  private secondaryDownload!: HTMLButtonElement;
+  private secondaryDownload!: ImageDownloadControl;
   private readonly app: HTMLDivElement;
   private readonly header: HTMLElement;
   private readonly body: HTMLElement;
@@ -371,7 +371,6 @@ export class AppShell {
       this.backdrop,
       this.infoDialog,
       this.downloadController.dialog,
-      this.imageDownload.dialog,
       this.helpDialog,
       ...this.localDialogs.elements,
       this.shortcutStatus,
@@ -401,6 +400,11 @@ export class AppShell {
     });
     const { state, catalog, manifest } = model;
     const view = state.view;
+    for (const [id, control] of this.imageDownloads) {
+      if (id === 'secondary') continue;
+      const volumeOnly = view.representation === 'volume' && !view.layers.anatomyOutlines && !view.layers.anatomyColors;
+      control.setTitle(titleCaseToken(id), volumeOnly ? 'png' : 'svg');
+    }
     for (const button of this.app.querySelectorAll<HTMLButtonElement>('.view-frame__clear')) {
       button.disabled = view.selection.length === 0;
       button.hidden = button.dataset.selectionView === 'secondary' && view.workspace.secondaryTab === 'summary';
@@ -551,7 +555,7 @@ export class AppShell {
     for (const nodes of this.staticFrames.values()) nodes.loadStatus.dispose();
     this.panelLayout.dispose();
     this.viewportFactory.destroy();
-    this.imageDownload.destroy();
+    for (const control of this.imageDownloads.values()) control.destroy();
     this.scene3dObserver?.disconnect();
     this.scene3dFactory?.destroy();
   }
@@ -1490,8 +1494,9 @@ export class AppShell {
     this.secondaryMaximize.setAttribute('aria-label', 'Maximize secondary panel');
     this.secondaryMaximize.setAttribute('aria-pressed', 'false');
     this.secondaryMaximize.addEventListener('click', () => this.toggleMaximizedView('secondary'));
-    this.secondaryDownload = this.createImageDownloadButton('secondary');
-    secondaryHeader.append(this.secondarySelector, this.createViewClearButton('secondary'), this.secondaryDownload, this.secondaryMaximize);
+    const secondaryDownload = this.createImageDownloadButton('secondary');
+    this.secondaryDownload = this.imageDownloads.get('secondary')!;
+    secondaryHeader.append(this.secondarySelector, this.createViewClearButton('secondary'), secondaryDownload, this.secondaryMaximize);
     const secondaryBody = element('div', 'secondary-view__body');
     const summary = element('div', 'secondary-view__surface secondary-view__summary');
     summary.dataset.secondaryPanel = 'summary';
@@ -1562,27 +1567,21 @@ export class AppShell {
     return button;
   }
 
-  private createImageDownloadButton(view: SliceAxis | 'secondary'): HTMLButtonElement {
-    const button = element('button', 'view-frame__download');
-    button.type = 'button';
-    button.setAttribute('aria-label', `Download ${view} image`);
-    button.title = `Download ${view} image`;
-    // Inline vector icon stays crisp at every display density.
-    button.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5"/></svg>';
-    button.addEventListener('click', () => this.openImageDownload(view));
-    return button;
+  private createImageDownloadButton(view: SliceAxis | 'secondary'): HTMLElement {
+    const control = new ImageDownloadControl(view, () => this.imageDownloadRequest(view));
+    this.imageDownloads.set(view, control);
+    return control.element;
   }
 
-  private openImageDownload(view: SliceAxis | 'secondary'): void {
+  private imageDownloadRequest(view: SliceAxis | 'secondary'): ImageDownloadRequest | null {
     const model = this.currentModel;
-    if (!model) return;
+    if (!model) return null;
     const content = view === 'secondary' ? SECONDARY_CONTENT_BY_ID[model.state.view.workspace.secondaryTab] : null;
-    if (content?.kind === 'summary') return;
+    if (content?.kind === 'summary') return null;
     const scene3d = content?.kind === 'scene3d';
     const staticId = content?.kind === 'static-projection' ? content.projectionId : null;
     const nodes = staticId ? this.staticFrames.get(staticId) : view !== 'secondary' ? this.viewFrames.get(view) : null;
     const viewport = scene3d ? this.scene3dViewport : nodes?.viewport;
-    const label = content?.label ?? titleCaseToken(view);
     const id = content?.id ?? view;
     const request = nodes?.loadStatus.displayedRequest;
     const suffix = request?.kind === 'slice' ? `slice-${request.sliceIndex}` : null;
@@ -1592,12 +1591,14 @@ export class AppShell {
     // Static maps and 3D show anatomy only when a volume feature is active.
     const colorbar = model.state.view.representation === 'volume' && view === 'secondary'
       ? undefined : this.exportColorbar.exportSvg();
-    this.imageDownload.open({
-      label, filename, vector: !scene3d, hasColorbar: !!colorbar,
+    const volumeOnly = view !== 'secondary' && model.state.view.representation === 'volume'
+      && !model.state.view.layers.anatomyOutlines && !model.state.view.layers.anatomyColors;
+    return {
+      filename, vector: !scene3d, defaultFormat: scene3d || volumeOnly ? 'png' : 'svg', hasColorbar: !!colorbar,
       exportImage: async (format, includeColorbar) => {
         if (this.currentModel?.manifest !== model.manifest || this.currentModel?.feature !== model.feature
           || (nodes && nodes.loadStatus.displayedRequest !== request)) {
-          throw new Error('The view changed. Close this dialog and download the image again.');
+          throw new Error('The view changed. Download the image again.');
         }
         if (this.currentModel?.featureLoading || this.currentModel?.state.runtime.datasetStatus === 'error'
           || nodes?.loadStatus.updating || (scene3d && this.scene3dHost.dataset.scene3dState !== 'ready')) {
@@ -1606,7 +1607,7 @@ export class AppShell {
         if (!viewport?.exportImage) throw new Error('Image export is unavailable for this view.');
         return viewport.exportImage({ format, longestEdge: 2400, ...(includeColorbar && colorbar ? { colorbar } : {}) });
       },
-    });
+    };
   }
 
   private createViewFrame(axis: SliceAxis): HTMLElement {
@@ -1787,13 +1788,14 @@ export class AppShell {
 
   private renderSecondaryView(model: ShellModel): void {
     const tab = model.state.view.workspace.secondaryTab;
+    if (this.secondaryFrame.dataset.tab !== tab) this.secondaryDownload.close();
     this.secondaryFrame.dataset.tab = tab;
     this.secondarySelector.value = tab;
     this.secondarySelector.disabled = model.state.runtime.navigationStatus !== 'ready';
     for (const [candidate, panel] of this.secondaryPanels) panel.hidden = candidate !== tab;
     const content = SECONDARY_CONTENT_BY_ID[tab];
-    this.secondaryDownload.hidden = content.kind === 'summary';
-    this.secondaryDownload.title = `Download ${content.label} image`;
+    this.secondaryDownload.element.hidden = content.kind === 'summary';
+    this.secondaryDownload.setTitle(content.label, content.kind === 'scene3d' ? 'png' : 'svg');
     this.renderScene3D(model, content.kind === 'scene3d');
     if (content.kind !== 'static-projection') return;
     const nodes = this.staticFrames.get(content.projectionId);
@@ -2195,7 +2197,7 @@ export class AppShell {
     if (this.helpTour.active) return;
     if (this.analysisDialog.open && this.analysisDialog.dataset.presentation === 'modal-sheet') return;
     if (event.key === 'Escape') {
-      if (this.infoDialog.open || this.downloadController.dialog.open || this.imageDownload.dialog.open || this.helpDialog.open) return;
+      if (this.infoDialog.open || this.downloadController.dialog.open || this.helpDialog.open) return;
       if (this.closeContextMenus()) return;
       const maximizedView = this.currentModel?.state.view.workspace.maximizedView ?? null;
       if (maximizedView) {
@@ -2209,7 +2211,7 @@ export class AppShell {
       if (this.overflowActions?.open) this.overflowActions.open = false;
       return;
     }
-    if (blocksGlobalShortcut(event) || this.infoDialog.open || this.downloadController.dialog.open || this.imageDownload.dialog.open || this.helpDialog.open) return;
+    if (blocksGlobalShortcut(event) || this.infoDialog.open || this.downloadController.dialog.open || this.helpDialog.open) return;
     if (
       (event.key === '[' || event.key === ']')
       && !event.altKey
