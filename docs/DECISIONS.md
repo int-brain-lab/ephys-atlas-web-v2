@@ -101,6 +101,7 @@ only part of the body; the index states what remains effective.
 | D087 | Quantile color mappings | accepted | 2026-10-01 | Quantile uniform and Quantile Gaussian join D081's color mapping; browser-derived rank maps from the colored regional statistic or valid-voxel binnings; histograms, axis, and release bytes unchanged |
 | D091 | Contextual region search and sibling range selection | accepted | 2026-10-08 | owner-approved Shift-click sibling ranges, minimal expanded search hierarchy, read-only regional colorbars, and removal of the landing Explore link |
 | D092 | Subdued regional value indicators | accepted | 2026-10-08 | smaller faded ramps, ticks colored by the feature mapping, and more subdued no-value rows; refines D091 visuals |
+| D093 | Transparent per-view image downloads | accepted | 2026-10-13 | standalone SVG vectors with embedded native PNG volume layers; transparent PNG for 2D/3D; fixed 2400-pixel longest edge, no crosshair or hover, optional colorbar |
 
 ## D001 — Separate v2
 
@@ -2299,3 +2300,26 @@ including hierarchy containers. Fading for absent feature summaries applies to
 regional mode only; volume mode does not define these summaries and must not
 suggest that its anatomy regions are unavailable. Do not show missing-statistic
 tooltips while loading or in anatomy-only volume mode.
+
+## D093 — Transparent per-view image downloads
+
+Date: 2026-10-13. Status: accepted by the repository owner.
+
+Place an image download control next to maximize in each orthogonal view and
+the active Top, Swanson or 3D secondary view. Offer self-contained SVG and
+transparent PNG for 2D views, and transparent PNG for 3D. SVG preserves region
+paths as vectors and embeds a visible volume as native-resolution PNG pixels
+using the registered placement, flips and opacity. The bitmap does not become
+vector data. PNG flattens the visible image layers with a 2400-pixel longest
+edge independent of the current 2D panel size; 3D renders a fresh offscreen
+image at that resolution while preserving its current camera framing.
+
+Preserve colors, visible layers, opacity and selected-region emphasis. Exclude
+panel backgrounds, controls, crosshair guides and transient hover effects.
+Colorbars are optional and off by default, and are available only where the
+view displays the feature coloring. Loading or failed retained views cannot
+export stale images. Filenames identify the dataset, immutable release,
+feature, representation, statistic, parcellation, view and native slice index
+where applicable. This is a presentation export; source values and immutable
+scientific artifacts remain unchanged. This approval does not authorize a push
+or publication.
