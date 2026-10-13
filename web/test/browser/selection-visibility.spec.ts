@@ -55,7 +55,7 @@ test('tiny locator can be replayed from the selected entry without navigation or
   await locate.click();
   const locator = page.locator('[data-view="coronal"] .projection-selection__locator');
   await expect(locator.locator('circle')).toHaveCount(1);
-  await expect(locator.locator('text')).toHaveText('MD');
+  await expect(page.locator('[data-view="coronal"] .projection-selection__label')).toHaveText('MD');
   expect(new URL(page.url()).searchParams.get('cursor')).toBe(cursor);
   await expect(locator).toHaveCSS('pointer-events', 'none');
   await page.getByRole('button', { name: 'Clear region selection in coronal view' }).click();
@@ -92,4 +92,52 @@ test('a disconnected tiny region locates its largest fragment', async ({ page })
     return center;
   });
   expect(center).toEqual([85, 85]);
+});
+
+test('all visible selections retain acronyms after the temporary locator expires', async ({ page }) => {
+  await page.clock.install();
+  await page.goto('/app/?v=4&selected=-362,-477&autoSlice=0');
+  const labels = page.locator('[data-view="coronal"] .projection-selection__label');
+  await expect(labels).toHaveCount(2);
+  await page.clock.fastForward(6000);
+  await expect(labels).toHaveCount(2);
+  const boxes = await labels.evaluateAll(nodes => nodes.map(node => {
+    const rect = node.getBoundingClientRect();
+    return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+  }));
+  expect(boxes[0]!.right <= boxes[1]!.left || boxes[1]!.right <= boxes[0]!.left
+    || boxes[0]!.bottom <= boxes[1]!.top || boxes[1]!.bottom <= boxes[0]!.top).toBe(true);
+  await page.getByRole('button', { name: 'Clear region selection in coronal view' }).click();
+  await expect(labels).toHaveCount(0);
+});
+
+test('curved-region labels attach to the actual contour rather than its empty bounding box', async ({ page }) => {
+  await page.goto('/app/');
+  const placement = await page.evaluate(async () => {
+    const { SvgSliceRenderer } = await import('/src/rendering/svg-slice-renderer.ts');
+    const host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:0;top:0;width:220px;height:220px';
+    host.innerHTML = '<svg width="220" height="220"><g></g><g></g></svg>';
+    document.body.append(host);
+    const svg = host.querySelector('svg')!;
+    const renderer = new SvgSliceRenderer({ svg, figureLayer: svg.children[0] as SVGGElement, guideLayer: svg.children[1] as SVGGElement });
+    renderer.render({ axis: 'coronal', index: 0, mapping: 'allen', viewBox: { x: 0, y: 0, width: 220, height: 220 }, guides: [],
+      svgFragment: '<g transform="translate(10 15)"><path data-allen-id="-1" d="M20 100 A80 80 0 0 1 100 20 L100 30 A70 70 0 0 0 30 100 Z"/></g>',
+      selectedRegionIds: new Set([-1]), regionLabels: new Map([[-1, 'CURVE']]),
+    });
+    const source = svg.querySelector<SVGPathElement>('[data-allen-id="-1"]')!;
+    const leader = svg.querySelector<SVGLineElement>('.projection-selection__label-leader')!;
+    const anchor = new DOMPoint(leader.x1.baseVal.value, leader.y1.baseVal.value);
+    const anchorOnPath = anchor.matrixTransform(source.getScreenCTM()!.inverse());
+    let nearest = Infinity;
+    for (let sample = 0; sample < 1024; sample++) {
+      const point = source.getPointAtLength(source.getTotalLength() * sample / 1024);
+      nearest = Math.min(nearest, Math.hypot(point.x - anchorOnPath.x, point.y - anchorOnPath.y));
+    }
+    const length = Math.hypot(leader.x2.baseVal.value - anchor.x, leader.y2.baseVal.value - anchor.y);
+    renderer.dispose(); host.remove();
+    return { nearest, length };
+  });
+  expect(placement.nearest).toBeLessThan(1);
+  expect(placement.length).toBeLessThan(20);
 });

@@ -19,17 +19,6 @@
   filter: drop-shadow(0 0 1px #071019) drop-shadow(0 0 1px #071019);
 }
 
-.projection-selection__locator-label {
-  fill: #fff;
-  stroke: #071019;
-  stroke-width: 3;
-  paint-order: stroke;
-  stroke-linejoin: round;
-  text-anchor: middle;
-  font-size: 11px;
-  font-weight: 650;
-}
-
 .projection-selection-status {
   position: absolute;
   left: .5rem;
@@ -59,3 +48,6 @@
 .atlas-app[data-anatomy-peek='true'] .view-frame__slice-figure path[style*='--anatomy-fill'] {
   fill: var(--anatomy-fill) !important;
 }
+
+.projection-selection__label { fill: #dde9ef; stroke: #071019; stroke-width: 3; paint-order: stroke; stroke-linejoin: round; font-size: 10px; font-weight: 600; }
+.projection-selection__label-leader { stroke: #b7cbd5; stroke-width: .7; opacity: .5; }

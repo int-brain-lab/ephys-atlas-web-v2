@@ -21,6 +21,7 @@ test('standalone exports preserve colors, exclude selection outlines, hover and 
     });
     const selected = svg.querySelector('[data-allen-id="-1"]')!;
     const hadSelectionOutline = svg.querySelector('.projection-selection__inner path') !== null;
+    const hadSelectionLabel = svg.querySelector('.projection-selection__label') !== null;
     selected.classList.remove('is-selected');
     const normalStroke = getComputedStyle(selected).strokeWidth;
     selected.classList.add('is-selected');
@@ -49,6 +50,7 @@ test('standalone exports preserve colors, exclude selection outlines, hover and 
       firstFill: paths[0]!.getAttribute('fill'), originalHighlighted,
       pngType: png.type, bitmapWidth: bitmap.width, bitmapHeight: bitmap.height, cornerAlpha, fillAlpha,
       selectionOutlineRemoved: hadSelectionOutline && paths[0]!.getAttribute('stroke-width') === normalStroke && !parsed.querySelector('.projection-selection'),
+      selectionLabelsRemoved: hadSelectionLabel && !parsed.querySelector('.projection-selection__labels'),
       selectionHaloRemoved: paths[0]!.getAttribute('filter') === 'none',
       liveSelectionPreserved: selected.classList.contains('is-selected'),
       unhighlightedStylePreserved: paths[1]!.getAttribute('fill-opacity') === unselectedOpacity,
@@ -56,6 +58,7 @@ test('standalone exports preserve colors, exclude selection outlines, hover and 
   });
   expect(result.selectionOutlineRemoved).toBe(true);
   expect(result.selectionHaloRemoved).toBe(true);
+  expect(result.selectionLabelsRemoved).toBe(true);
   expect(result.liveSelectionPreserved).toBe(true);
   expect(result.unhighlightedStylePreserved).toBe(true);
   expect(result).toMatchObject({

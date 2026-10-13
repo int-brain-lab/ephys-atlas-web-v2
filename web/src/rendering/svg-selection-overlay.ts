@@ -26,6 +26,7 @@ function geometry(source: SVGPathElement, root: SVGSVGElement): SVGPathElement {
 export class SvgSelectionOverlay {
   private readonly layer = svgElement('g');
   private readonly locator = svgElement('g');
+  private readonly labels = svgElement('g');
   private readonly status = document.createElement('p');
   private readonly resizeObserver: ResizeObserver;
   private frame: RegionalSliceFrame | null = null;
@@ -39,6 +40,7 @@ export class SvgSelectionOverlay {
     this.layer.classList.add('projection-selection');
     this.layer.setAttribute('pointer-events', 'none');
     this.layer.setAttribute('aria-hidden', 'true');
+    this.labels.classList.add('projection-selection__labels');
     this.locator.classList.add('projection-selection__locator');
     this.locator.setAttribute('pointer-events', 'none');
     this.locator.setAttribute('aria-hidden', 'true');
@@ -51,6 +53,7 @@ export class SvgSelectionOverlay {
     svg.parentElement?.append(this.status);
     this.resizeObserver = new ResizeObserver(() => {
       this.updatePresence();
+      this.drawLabels();
       if (this.locatorRegion !== null) this.drawLocator(this.locatorRegion);
     });
     this.resizeObserver.observe(svg);
@@ -70,6 +73,7 @@ export class SvgSelectionOverlay {
     this.clearLocator();
     if (paths.length) this.drawOutlines(frame, paths, [...new Set([...index.values()].flatMap(paths => [...paths]))]);
     this.updatePresence();
+    this.drawLabels();
     const last = ids.at(-1);
     if (last !== undefined) this.showLocator(Math.abs(last), false);
   }
@@ -178,6 +182,83 @@ export class SvgSelectionOverlay {
     })[0];
   }
 
+  /** Screen-space boundary anchor near the fragment centre, including curved/hollow paths. */
+  private labelAnchor(source: SVGPathElement): DOMPoint | null {
+    const transform = source.getScreenCTM();
+    if (!transform) return null;
+    const rect = source.getBoundingClientRect();
+    const bounds = this.svg.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const length = source.getTotalLength();
+    let anchor: DOMPoint | null = null;
+    let distance = Infinity;
+    for (let sample = 0; sample < 128; sample++) {
+      const point = source.getPointAtLength(length * sample / 128).matrixTransform(transform);
+      if (point.x < bounds.left || point.x > bounds.right || point.y < bounds.top || point.y > bounds.bottom) continue;
+      const candidateDistance = (point.x - cx) ** 2 + (point.y - cy) ** 2;
+      if (candidateDistance < distance) { anchor = point; distance = candidateDistance; }
+    }
+    return anchor;
+  }
+
+  private drawLabels(): void {
+    this.labels.replaceChildren();
+    const matrix = this.svg.getScreenCTM();
+    const bounds = this.svg.getBoundingClientRect();
+    if (!matrix || !matrix.a || !matrix.d || !bounds.width || !bounds.height) return;
+    const transform = matrix.inverse().translate(bounds.left, bounds.top);
+    this.labels.setAttribute('transform', `matrix(${transform.a} ${transform.b} ${transform.c} ${transform.d} ${transform.e} ${transform.f})`);
+    this.layer.append(this.labels);
+    const occupied: { x: number; y: number; width: number; height: number }[] = [];
+    for (const id of new Set([...(this.frame?.selectedRegionIds ?? [])].map(Math.abs))) {
+      const source = this.locatorPath(id);
+      if (!source) continue;
+      const anchor = this.labelAnchor(source);
+      const sourceMatrix = source.getScreenCTM();
+      if (!anchor || !sourceMatrix) continue;
+      const inverse = sourceMatrix.inverse();
+      const cx = anchor.x - bounds.left;
+      const cy = anchor.y - bounds.top;
+      const label = svgElement('text');
+      label.classList.add('projection-selection__label');
+      label.dataset.regionId = String(-id);
+      label.textContent = this.frame?.regionLabels?.get(-id) ?? this.frame?.regionLabels?.get(id) ?? String(id);
+      this.labels.append(label);
+      const width = Math.min(bounds.width - 8, label.getComputedTextLength() + 6);
+      const candidates = [
+        { x: cx + 5, y: cy - 7 },
+        { x: cx - width - 5, y: cy - 7 },
+        { x: cx - width / 2, y: cy - 19 },
+        { x: cx - width / 2, y: cy + 5 },
+      ];
+      for (let offset = 15; offset < bounds.height; offset += 15) {
+        candidates.push({ x: cx - width / 2, y: cy - offset }, { x: cx - width / 2, y: cy + offset });
+      }
+      const overlap = (box: typeof occupied[number]) => occupied.reduce((sum, other) => sum
+        + Math.max(0, Math.min(box.x + box.width + 3, other.x + other.width + 3) - Math.max(box.x - 3, other.x - 3))
+        * Math.max(0, Math.min(box.y + box.height + 2, other.y + other.height + 2) - Math.max(box.y - 2, other.y - 2)), 0);
+      const boxes = candidates.map(({ x, y }) => ({ x: Math.max(4, Math.min(bounds.width - width - 4, x)),
+        y: Math.max(4, Math.min(bounds.height - 18, y)), width, height: 14 }));
+      const fills = (box: typeof occupied[number]) => [
+        [box.x, box.y], [box.x + width, box.y], [box.x, box.y + 14],
+        [box.x + width, box.y + 14], [box.x + width / 2, box.y + 7],
+      ].filter(([x, y]) => source.isPointInFill(new DOMPoint(x! + bounds.left, y! + bounds.top).matrixTransform(inverse))).length;
+      const scored = boxes.map(box => ({ box, score: fills(box) * 100000 + overlap(box) }));
+      const box = scored.find(({ score }) => score === 0)?.box ?? scored.sort((a, b) => a.score - b.score)[0]!.box;
+      occupied.push(box);
+      label.setAttribute('x', String(box.x + 3));
+      label.setAttribute('y', String(box.y + 11));
+      const leader = svgElement('line');
+      leader.classList.add('projection-selection__label-leader');
+      leader.setAttribute('x1', String(cx));
+      leader.setAttribute('y1', String(cy));
+      leader.setAttribute('x2', String(Math.max(box.x, Math.min(box.x + width, cx))));
+      leader.setAttribute('y2', String(Math.max(box.y, Math.min(box.y + 14, cy))));
+      this.labels.insertBefore(leader, label);
+    }
+  }
+
   private showLocator(regionId: number, force: boolean): void {
     const path = this.locatorPath(regionId);
     if (!path) return;
@@ -206,14 +287,7 @@ export class SvgSelectionOverlay {
     ring.setAttribute('cx', String(cx)); ring.setAttribute('cy', String(cy));
     const radius = Math.max(9, Math.hypot(rect.width, rect.height) / 2 + 5);
     ring.setAttribute('r', String(radius));
-    const label = svgElement('text');
-    label.classList.add('projection-selection__locator-label');
-    label.setAttribute('x', String(Math.max(8, Math.min(bounds.width - 8, cx))));
-    label.setAttribute('y', String(Math.max(14, cy - radius - 5)));
-    label.textContent = this.frame?.regionLabels?.get(-regionId) ?? this.frame?.regionLabels?.get(regionId) ?? String(regionId);
-    this.locator.append(ring, label);
-    const halfLabel = label.getComputedTextLength() / 2 + 4;
-    label.setAttribute('x', String(Math.max(halfLabel, Math.min(bounds.width - halfLabel, cx))));
+    this.locator.append(ring);
   }
 
   private clearLocator(): void {
