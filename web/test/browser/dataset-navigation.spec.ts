@@ -111,7 +111,7 @@ for (const width of [1680, 1024, 390]) {
     await expect.poll(() => param(page, 'base_edition')).toBe('coordinated');
     await expect.poll(() => param(page, 'release')).toBe('new');
     await data.getByRole('button', { name: /^Data:/ }).click();
-    await data.getByRole('option', { name: /^Preserved legacy results/ }).click();
+    await data.getByRole('option', { name: /^Brain-Wide Map/ }).click();
     await expect.poll(() => param(page, 'project')).toBe('bwm');
     await expect.poll(() => param(page, 'edition')).toBe('legacy');
     await expect.poll(() => param(page, 'release')).toBe('old');
@@ -122,7 +122,7 @@ for (const width of [1680, 1024, 390]) {
     await page.goForward();
     await expect.poll(() => param(page, 'project')).toBe('bwm');
     await page.reload();
-    await expect(data).toContainText('Brain-Wide Map / Preserved legacy results');
+    await expect(data.locator('.context-field__value')).toHaveText('Brain-Wide Map');
   });
 }
 

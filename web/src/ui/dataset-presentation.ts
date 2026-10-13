@@ -42,6 +42,5 @@ export function presentDatasetInProject(title: string, projectTitle?: string): s
     };
     return names[presented] ?? presented;
   }
-  if (projectTitle === 'Brain-Wide Map' && presented === 'Brain-Wide Map') return 'Preserved legacy results';
   return presented;
 }

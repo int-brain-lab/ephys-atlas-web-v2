@@ -66,7 +66,8 @@ export class DataChooser {
     const release = currentDataset?.releases.find(({ id }) => id === dataset.releaseId);
     const status = release?.status === 'development' ? 'Development data'
       : release?.status === 'legacy' ? 'Preserved legacy data' : '';
-    this.menu.setDisplay(`${navigation.kind === 'local' ? 'My data' : projectTitle ?? 'Data'} / ${title}`,
+    const category = navigation.kind === 'local' ? 'My data' : projectTitle ?? 'Data';
+    this.menu.setDisplay(category === title ? title : `${category} / ${title}`,
       recovery ? 'Navigation unavailable · open to recover' : navigation.kind === 'local' ? 'Stored only in this browser' : status);
     const options: ContextMenuOption[] = [];
     this.selections.clear();

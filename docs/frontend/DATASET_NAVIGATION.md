@@ -38,7 +38,7 @@ Ephys Atlas
     Encoding volumes
 
 Brain-Wide Map
-    Preserved legacy website results
+    Brain-Wide Map
 
 My data
     Browser-local imported releases

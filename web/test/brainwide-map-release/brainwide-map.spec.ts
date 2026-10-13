@@ -17,7 +17,7 @@ test('local catalog exposes the complete preserved Beryl release', async ({ page
   await page.goto('/app/');
 
   await expect(page.locator('[data-context-field="data"] .context-field__value')).toHaveText(
-    'Brain-Wide Map / Preserved legacy results',
+    'Brain-Wide Map',
   );
   await page.locator('.app-header__desktop-actions').getByRole('button', { name: 'Data details' }).click();
   const release = page.getByRole('dialog', { name: 'Data details' });
@@ -42,7 +42,7 @@ test('local catalog exposes the complete preserved Beryl release', async ({ page
   const dataset = page.locator('[data-context-field="data"]');
   await dataset.locator('.context-menu__trigger').click();
   await expect(dataset.getByRole('option', { selected: true }).locator('.context-menu__option-label')).toHaveText(
-    'Preserved legacy results',
+    'Brain-Wide Map',
   );
   await page.keyboard.press('Escape');
   await expect(dataset).toContainText('Preserved legacy data');
