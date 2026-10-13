@@ -29,11 +29,6 @@
   stroke-opacity: 1;
 }
 
-.projection-viewport[data-mode='composite'] .view-frame__slice-figure path.is-selected {
-  stroke: #fff;
-  stroke-width: 2;
-}
-
 .projection-viewport[data-mode='composite'] .view-frame__slice-figure path.is-highlighted:not(.is-selected) {
   stroke: rgb(126 207 255 / 92%);
   stroke-width: 1.2;

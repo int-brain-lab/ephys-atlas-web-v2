@@ -347,7 +347,7 @@ test('reduced-parcellation volume selection outlines the target without masking 
   await expect(projection.locator('path.is-selected').first()).toBeAttached();
   for (const selected of await projection.locator('path.is-selected').all()) {
     await expect(selected).toHaveCSS('fill-opacity', '0');
-    await expect(selected).toHaveCSS('stroke-width', '2px');
+    await expect(projection.locator('.projection-selection__inner path').first()).toHaveCSS('stroke-width', '2px');
   }
   const unselected = projection.locator('path:not(.is-selected)').first();
   await expect(unselected).toHaveCSS('fill-opacity', '0');

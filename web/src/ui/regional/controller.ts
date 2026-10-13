@@ -35,6 +35,7 @@ import { buildVolumeDistributionExport } from './volume-distribution-export.js';
 import { OperationStatus } from '../operation-status.js';
 
 export interface RegionalPanelCallbacks {
+  locateSelectedRegion?(regionId: string): void;
   selectRegion(regionId: string, additive: boolean): void;
   selectRegionRange(regionIds: readonly string[], targetRegionId: string): void;
   setMultiSelection(enabled: boolean): void;
@@ -519,6 +520,8 @@ export class RegionalPanelController {
 
   private readonly onSelectedClick = (event: Event): void => {
     const target = event.target instanceof Element ? event.target : null;
+    const locate = target?.closest<HTMLButtonElement>('[data-locate-region]');
+    if (locate?.dataset.locateRegion) this.callbacks.locateSelectedRegion?.(locate.dataset.locateRegion);
     const button = target?.closest<HTMLButtonElement>('[data-remove-region]');
     if (button?.dataset.removeRegion) this.callbacks.toggleSelection(button.dataset.removeRegion);
   };

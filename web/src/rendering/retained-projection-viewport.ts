@@ -110,6 +110,7 @@ function regionalFrame(
     anatomyColors: semantics.anatomyColors,
     regionColors: regionalPresentationColors(semantics, model.feature?.representation !== 'volume'),
     selectedRegionIds: semantics.selectedRegionIds,
+    regionLabels: semantics.regionLabels ?? new Map(),
     highlightedRegionIds: semantics.highlightedRegionId == null
       ? new Set()
       : regionalPresentationIds([semantics.highlightedRegionId]),
@@ -117,6 +118,7 @@ function regionalFrame(
 }
 
 class RetainedProjectionViewport implements ProjectionViewport {
+  locateSelection(regionId: number): void { this.mount.regional.locateSelection(regionId); }
   private readonly mount: RetainedMount;
   private renderToken = 0;
   private exportReady = false;
@@ -721,6 +723,10 @@ export function volumeScalarCacheBudget(
 }
 
 export class RetainedProjectionViewportFactory implements ProjectionViewportFactory {
+  locateSelectedRegion(regionId: string): void {
+    for (const viewport of this.viewports) viewport.locateSelection(Number(regionId));
+    for (const viewport of this.staticViewports) viewport.locateSelection(Number(regionId));
+  }
   private readonly source: RegisteredProjectionSource;
   private readonly viewports = new Set<RetainedProjectionViewport>();
   private readonly staticViewports = new Set<RetainedStaticProjectionViewport>();

@@ -146,6 +146,7 @@ export class AtlasApp {
       reportError: (error) => this.reportRuntimeError(error),
     }, this.viewportFactory, options.scene3dFactory);
     this.regionalPanel = new RegionalPanelController(root, {
+      locateSelectedRegion: regionId => this.viewportFactory.locateSelectedRegion?.(regionId),
       selectRegion: (regionId, additive) => this.selectRegion(regionId, additive, 'region-list'),
       selectRegionRange: (regionIds, targetRegionId) => this.selectRegionRange(regionIds, targetRegionId),
       setAutoSlice: (enabled) => this.store.dispatch({ type: 'slices/auto', enabled }),

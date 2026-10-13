@@ -29,6 +29,7 @@ function presentationFrame(
     anatomyColors: semantics.anatomyColors,
     regionColors: regionalPresentationColors(semantics, presentation.feature?.representation === 'regional'),
     selectedRegionIds: semantics.selectedRegionIds,
+    regionLabels: semantics.regionLabels ?? new Map(),
     highlightedRegionIds: semantics.highlightedRegionId == null
       ? new Set()
       : regionalPresentationIds([semantics.highlightedRegionId]),
@@ -37,6 +38,7 @@ function presentationFrame(
 
 /** Affine-free retained SVG map sharing regional coloring and interaction. */
 export class RetainedStaticProjectionViewport implements StaticProjectionViewport {
+  locateSelection(regionId: number): void { this.renderer.locateSelection(regionId); }
   private readonly root: HTMLDivElement;
   private readonly renderer: SvgSliceRenderer;
   private readonly error: HTMLDivElement;

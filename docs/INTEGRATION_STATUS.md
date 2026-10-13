@@ -16,9 +16,15 @@ records, transition history, and independent expected-inventory production QA.
 
 ## Product architecture
 
-2-D selection preserves semantic regional fills and scalar-volume colors without
-fading or a pale mask. Selected regions use a white screen-space outline with a
-dark halo; painting the outline before the fill preserves tiny regional interiors.
+2-D selection preserves selected semantic regional fills and scalar-volume colors.
+Unselected anatomy is darkened by 28% when the selection is visible in that view;
+the background and views without a represented selection stay unchanged.
+The local selection-visibility review now uses retained
+topmost dark/white outlines with a union interior cutout, preserving regional
+fills and scalar pixels even when later anatomy paths cover the old border.
+Tiny selections show a five-second acronym locator; clicking their selected
+entry repeats the locator without navigation. Each view explains absent or
+partially represented selections. Downloads omit these presentation overlays.
 Each orthogonal header and the Top/Swanson/3-D context header offers a nearby
 Clear action for the shared selection, disabled when nothing is selected.
 Context uses a compact native view selector beside its actions. Orthogonal

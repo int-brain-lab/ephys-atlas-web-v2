@@ -26,7 +26,11 @@ export function renderSelectedRegions(
     const item = html('li', 'selected-region');
     item.dataset.regionId = regionId;
     item.style.setProperty('--selection-color', selectionColor(selectionIndex));
-    const identity = html('span', 'selected-region__identity');
+    const identity = html('button', 'selected-region__identity selected-region__locate');
+    identity.type = 'button';
+    identity.dataset.locateRegion = regionId;
+    identity.setAttribute('aria-label', `Locate ${region?.acronym ?? regionId} in the current views`);
+    identity.title = 'Show locator in the current views without moving slices';
     const acronym = html('strong', 'selected-region__acronym');
     acronym.textContent = region?.acronym ?? regionId;
     const name = html('span', 'selected-region__name');

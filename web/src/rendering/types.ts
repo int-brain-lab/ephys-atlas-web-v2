@@ -16,6 +16,7 @@ export interface RegionalSliceFrame {
   /** Atlas fills exposed as `--anatomy-fill` so the hold-A peek is CSS-only. */
   anatomyColors?: ReadonlyMap<number, string>;
   selectedRegionIds?: ReadonlySet<number>;
+  regionLabels?: ReadonlyMap<number, string>;
   highlightedRegionId?: number | null;
   highlightedRegionIds?: ReadonlySet<number>;
 }

@@ -1,5 +1,6 @@
 import { inlineSvgPresentation } from './image-export.js';
 import { regionIdFromPath } from './region-id.js';
+import { SvgSelectionOverlay } from './svg-selection-overlay.js';
 import type {
   MappingName,
   RegionalSliceFrame,
@@ -51,6 +52,7 @@ interface PreparedSliceLayer {
 }
 
 export class SvgSliceRenderer implements RegionalSliceRenderer {
+  private readonly selectionOverlay: SvgSelectionOverlay;
   private currentAxis: ProjectionId | null = null;
   private mapping: MappingName = 'beryl';
   private hoveredRegionId: number | null = null;
@@ -66,6 +68,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     private readonly mount: SvgSliceRendererMount,
     private readonly options: SvgSliceRendererOptions = {},
   ) {
+    this.selectionOverlay = new SvgSelectionOverlay(mount.svg, mount.guideLayer);
     const signal = this.abortController.signal;
     mount.figureLayer.addEventListener('pointermove', this.onPointerMove, { signal });
     mount.figureLayer.addEventListener('pointerleave', this.onPointerLeave, { signal });
@@ -85,6 +88,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
 
     let started = this.performanceStart();
     this.applyRegionState(frame);
+    this.selectionOverlay.update(frame, this.pathIndex);
     this.reportPerformance('region-state', frame, started);
     started = this.performanceStart();
     this.drawGuides(frame);
@@ -114,7 +118,10 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     this.abortController.abort();
     if (this.wheelFrame !== null) cancelAnimationFrame(this.wheelFrame);
     this.clear();
+    this.selectionOverlay.dispose();
   }
+
+  locateSelection(regionId: number): void { this.selectionOverlay.locate(regionId); }
 
   clear(): void {
     this.currentAxis = null;
@@ -124,6 +131,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     this.activeLayerKey = null;
     this.mount.figureLayer.replaceChildren();
     this.mount.guideLayer.replaceChildren();
+    this.selectionOverlay.clear();
   }
 
   updateGuides(frame: RegionalSliceFrame): void {

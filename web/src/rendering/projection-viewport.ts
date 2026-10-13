@@ -99,6 +99,7 @@ export interface StaticProjectionViewport {
 
 /** Shared source/presentation boundary that creates retained projection views. */
 export interface ProjectionViewportFactory {
+  locateSelectedRegion?(regionId: string): void;
   create(target: HTMLElement, axis: SliceAxis): ProjectionViewport;
   createStatic(target: HTMLElement, projectionId: StaticProjectionId): StaticProjectionViewport;
   updatePresentation(presentation: ProjectionPresentation): void;

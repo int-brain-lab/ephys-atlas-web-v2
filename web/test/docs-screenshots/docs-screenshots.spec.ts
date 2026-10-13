@@ -14,6 +14,8 @@ async function waitForViewer(page: Page): Promise<void> {
   await page.evaluate(async () => document.fonts.ready);
   await page.addStyleTag({
     content: `
+      /* Capture the steady view after the temporary locator has faded. */
+      .projection-selection__locator { visibility: hidden !important; }
       *, *::before, *::after {
         animation: none !important;
         caret-color: transparent !important;

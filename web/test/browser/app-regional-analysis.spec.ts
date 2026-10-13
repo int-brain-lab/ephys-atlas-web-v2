@@ -192,9 +192,9 @@ test('renderer region selection flows back into shared URL state', async ({ page
   await expect(projection).toHaveClass(/has-region-selection/);
   await expect(path).toHaveCSS('fill-opacity', '1');
   await expect(unselected).toHaveCSS('fill-opacity', '1');
-  await expect(path).toHaveCSS('paint-order', 'stroke');
-  await expect(path).toHaveCSS('stroke-width', '2px');
-  await expect(path).toHaveCSS('stroke', 'rgb(255, 255, 255)');
+  const outline = projection.locator('.projection-selection__inner path').first();
+  await expect(outline).toHaveCSS('stroke-width', '2px');
+  await expect(outline).toHaveCSS('stroke', 'rgb(255, 255, 255)');
   await expect(unselected).toHaveCSS('filter', 'none');
 
   await unselected.dispatchEvent('pointermove');

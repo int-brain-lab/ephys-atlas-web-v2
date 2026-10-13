@@ -1,12 +1,50 @@
 .view-frame__slice-figure path.is-selected {
   fill-opacity: 1;
-  stroke: #fff;
-  stroke-width: 2;
+}
+
+.projection-selection__outer path,
+.projection-selection__inner path {
+  fill: none;
   stroke-linejoin: round;
-  paint-order: stroke fill;
-  filter: drop-shadow(0 0 1px #071019) drop-shadow(0 0 1px #071019);
   vector-effect: non-scaling-stroke;
 }
+
+.projection-selection__outer { stroke: #071019; stroke-width: 5; }
+.projection-selection__inner { stroke: #fff; stroke-width: 2; }
+
+.projection-selection__locator-ring {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.25;
+  filter: drop-shadow(0 0 1px #071019) drop-shadow(0 0 1px #071019);
+}
+
+.projection-selection__locator-label {
+  fill: #fff;
+  stroke: #071019;
+  stroke-width: 3;
+  paint-order: stroke;
+  stroke-linejoin: round;
+  text-anchor: middle;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.projection-selection-status {
+  position: absolute;
+  left: .5rem;
+  bottom: .5rem;
+  max-width: calc(100% - 1rem);
+  margin: 0;
+  padding: .25rem .4rem;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  background: rgb(7 16 25 / 90%);
+  font-size: .65rem;
+  pointer-events: none;
+}
+
+.projection-selection-status[hidden] { display: none; }
 
 .view-frame__slice-figure path.is-highlighted:not(.is-selected) {
   fill-opacity: 1;

@@ -8,6 +8,7 @@ export interface RegionalPresentation {
   readonly featureColors: ReadonlyMap<number, string> | null;
   readonly visibleRegionIds: ReadonlySet<number>;
   readonly selectedRegionIds: ReadonlySet<number>;
+  readonly regionLabels?: ReadonlyMap<number, string>;
   /** Signed physical hover identity; logical selection is expanded separately. */
   readonly highlightedRegionId: number | null;
   readonly featureSide: 'left' | null;
@@ -62,6 +63,7 @@ export function resolveRegionalPresentation(input: RegionalPresentationInput): R
     featureColors,
     visibleRegionIds,
     selectedRegionIds,
+    regionLabels: new Map(input.anatomyRegions.map(region => [region.atlasId, region.acronym])),
     highlightedRegionId,
     featureSide: usesFeatureSide ? 'left' : null,
   };

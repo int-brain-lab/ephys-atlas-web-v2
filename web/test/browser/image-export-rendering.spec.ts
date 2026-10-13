@@ -20,7 +20,7 @@ test('standalone exports preserve colors, exclude selection outlines, hover and 
       selectedRegionIds: new Set([-1]), highlightedRegionIds: new Set([-2]),
     });
     const selected = svg.querySelector('[data-allen-id="-1"]')!;
-    const selectedStroke = getComputedStyle(selected).strokeWidth;
+    const hadSelectionOutline = svg.querySelector('.projection-selection__inner path') !== null;
     selected.classList.remove('is-selected');
     const normalStroke = getComputedStyle(selected).strokeWidth;
     selected.classList.add('is-selected');
@@ -48,7 +48,7 @@ test('standalone exports preserve colors, exclude selection outlines, hover and 
       transientClass: parsed.querySelector('.is-highlighted') !== null,
       firstFill: paths[0]!.getAttribute('fill'), originalHighlighted,
       pngType: png.type, bitmapWidth: bitmap.width, bitmapHeight: bitmap.height, cornerAlpha, fillAlpha,
-      selectionOutlineRemoved: paths[0]!.getAttribute('stroke-width') === normalStroke && normalStroke !== selectedStroke,
+      selectionOutlineRemoved: hadSelectionOutline && paths[0]!.getAttribute('stroke-width') === normalStroke && !parsed.querySelector('.projection-selection'),
       selectionHaloRemoved: paths[0]!.getAttribute('filter') === 'none',
       liveSelectionPreserved: selected.classList.contains('is-selected'),
       unhighlightedStylePreserved: paths[1]!.getAttribute('fill-opacity') === unselectedOpacity,
