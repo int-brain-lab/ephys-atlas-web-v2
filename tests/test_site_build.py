@@ -55,7 +55,14 @@ def test_initial_curator_groups_genomics_and_lipidome_projects():
     projects = {project["project_id"]: project for project in curator["projects"]}
     assert projects["genomics"]["dataset_ids"] == ["agea", "merfish_class"]
     assert projects["lipidome"]["dataset_ids"] == ["lipids"]
-    assert {"agea", "brainwide-map"}.isdisjoint(projects)
+    assert "agea" not in projects
+    assert projects["brainwide-map"]["dataset_ids"] == ["brainwide_map"]
+    bwm = next(d for d in curator["datasets"] if d["dataset_id"] == "brainwide_map")
+    assert bwm["default_release"] == "legacy-v1-1d908bea-ibl-review-20260908-v1"
+    assert projects["brainwide-map"]["editions"][0]["dataset_releases"] == [
+        {"dataset_id": "brainwide_map", "release_id": bwm["default_release"]}
+    ]
+    assert len(curator["datasets"]) == 8
 
 
 def test_production_environment_cannot_inherit_preview_defaults(monkeypatch):

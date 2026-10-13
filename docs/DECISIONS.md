@@ -102,6 +102,7 @@ only part of the body; the index states what remains effective.
 | D091 | Contextual region search and sibling range selection | accepted | 2026-10-08 | owner-approved Shift-click sibling ranges, minimal expanded search hierarchy, read-only regional colorbars, and removal of the landing Explore link |
 | D092 | Subdued regional value indicators | accepted | 2026-10-08 | smaller faded ramps, ticks colored by the feature mapping, and more subdued no-value rows; refines D091 visuals |
 | D093 | Transparent per-view image downloads | accepted | 2026-10-13 | standalone SVG vectors with embedded native PNG volume layers; transparent PNG for 2D/3D; fixed 2400-pixel longest edge, no crosshair or hover, optional colorbar |
+| D094 | Restore Brain-Wide Map discovery | accepted | 2026-10-13 | restore the existing BWM project, edition and immutable release removed by 8cedce8; preserve W39, Genomics, Lipidome and current defaults; production promotion remains separate |
 
 ## D001 — Separate v2
 
@@ -2323,3 +2324,19 @@ feature, representation, statistic, parcellation, view and native slice index
 where applicable. This is a presentation export; source values and immutable
 scientific artifacts remain unchanged. This approval does not authorize a push
 or publication.
+
+## D094 — Restore Brain-Wide Map discovery
+
+Owner direction on 2026-10-13 restores the `brainwide-map` project,
+`ibl-review-20260908-v1` edition and `brainwide_map` dataset selecting the
+existing `legacy-v1-1d908bea-ibl-review-20260908-v1` release. Commit `8cedce8`
+removed both project and dataset on 2026-10-07. The W39 deployment record calls
+that removal an owner decision, but this restoration supersedes that recorded
+catalog outcome. BWM is a distinct task-response dataset under D038 and the
+launch specification, rather than redundant ephys channel/volume measurements.
+
+Keep all seven currently catalogued datasets, historical releases and editions,
+and the W39 Ephys Atlas channel default unchanged. Restore discovery only;
+never rebuild or alter the existing BWM scientific bytes. This authorizes the
+local restoration and safeguards. Production catalog promotion and a push
+remain separate actions; do not claim live restoration before verifying them.
