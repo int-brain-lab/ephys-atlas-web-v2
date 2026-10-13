@@ -584,6 +584,8 @@ navigation does not emit the analytics exploration event.
 D085/D086 add default-on, URL-persisted Auto-slice with compact target and
 multiple-selection icon buttons beside fold/unfold. Hover/focus tooltips explain
 state and switching; pending lookup remains accessible without a visible row.
+Shift-click in projections toggles individual regions additively, alongside Ctrl/Cmd-click;
+Shift-click in the Regions list retains its sibling-range behavior.
 Only Regions-list selections locate the region automatically. Direct brain-view
 selection preserves every slice and cancels pending list navigation without
 turning off Auto-slice. List selection uses a verified native interior anchor nearest the signed mapped

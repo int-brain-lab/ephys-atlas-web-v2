@@ -185,7 +185,7 @@ export class AtlasApp {
       regionPointer: ({ type, regionId, originalEvent }) => {
         const logicalRegionId = regionId === null ? null : String(-Math.abs(regionId));
         if (type === 'select' && logicalRegionId !== null) {
-          this.selectRegion(logicalRegionId, originalEvent.ctrlKey || originalEvent.metaKey, 'brain-view');
+          this.selectRegion(logicalRegionId, originalEvent.shiftKey || originalEvent.ctrlKey || originalEvent.metaKey, 'brain-view');
         } else {
           this.setHoveredRegion(type === 'hover' && regionId !== null ? String(regionId) : null);
         }

@@ -169,7 +169,7 @@ export class RetainedStaticProjectionViewport implements StaticProjectionViewpor
       projectionId: this.projectionId,
       sliceIndex: null,
     };
-    if (event.type === 'select') sink.selectRegion(hit, event.originalEvent.ctrlKey || event.originalEvent.metaKey);
+    if (event.type === 'select') sink.selectRegion(hit, event.originalEvent.shiftKey || event.originalEvent.ctrlKey || event.originalEvent.metaKey);
     else if (event.type === 'hover') sink.hover(hit);
     else {
       const path = event.originalEvent.target instanceof SVGPathElement

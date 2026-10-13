@@ -94,6 +94,11 @@ test('linked slices replace or toggle the shared region-list selection', async (
   expect(new URL(page.url()).searchParams.get('cursor')).toBe(positioned);
   await path.dispatchEvent('pointerup');
   await region(page, '-68').click();
+  await path.dispatchEvent('pointerup', { shiftKey: true });
+  await expect.poll(() => selection(page)).toBe('-68,-362');
+  expect(new URL(page.url()).searchParams.get('cursor')).toBe(positioned);
+  await path.dispatchEvent('pointerup', { shiftKey: true });
+  await expect.poll(() => selection(page)).toBe('-68');
   await path.dispatchEvent('pointerup', { ctrlKey: true });
   await expect.poll(() => selection(page)).toBe('-68,-362');
   await path.dispatchEvent('pointerup', { metaKey: true });
@@ -215,4 +220,20 @@ test('Shift-click uses real siblings in displayed value order', async ({ page })
   await region(page, siblings[0]!).click();
   await region(page, siblings[2]!).click({ modifiers: ['Shift'] });
   await expect.poll(() => selection(page)).toBe(siblings.slice(0, 3).join(','));
+});
+
+
+test('Shift-click in static projections adds and removes individual regions without moving slices', async ({ page }) => {
+  await page.goto('/app/?v=4&autoslice=1&secondary=top&selected=-362');
+  const projection = page.locator('[data-secondary-panel="top"]');
+  await expect(projection.locator('path.atlas-region')).toHaveCount(114);
+  const path = projection.locator('path.atlas-region').last();
+  const addedId = String(-Math.abs(Number(await path.getAttribute('data-allen-id'))));
+  const cursor = new URL(page.url()).searchParams.get('cursor');
+  await path.click({ modifiers: ['Shift'] });
+  await expect.poll(() => selection(page)).toBe(`-362,${addedId}`);
+  expect(new URL(page.url()).searchParams.get('cursor')).toBe(cursor);
+  await path.click({ modifiers: ['Shift'] });
+  await expect.poll(() => selection(page)).toBe('-362');
+  expect(new URL(page.url()).searchParams.get('cursor')).toBe(cursor);
 });
