@@ -105,6 +105,7 @@ only part of the body; the index states what remains effective.
 | D094 | Restore Brain-Wide Map discovery | accepted | 2026-10-13 | restore the existing BWM project, edition and immutable release removed by 8cedce8; preserve W39, Genomics, Lipidome and current defaults; production promotion remains separate |
 | D096 | Reject unintended catalog removals | accepted | 2026-10-13 | preserve exposed projects, datasets, releases and editions by default; intentional retirement requires exact baseline hash, removal inventory, reason and decision; independent production inventory QA |
 | D097 | One-click image downloads and format menu | accepted | 2026-10-13 | primary button downloads immediately; adjacent arrow exposes colorbar and alternate SVG/PNG actions with brief descriptions; refines D093 interaction |
+| D098 | Omit selection borders from 2D downloads | accepted | 2026-10-13 | exported SVG/PNG omit selected-region strokes and halos; normal anatomy boundaries, feature colors and live selection remain; refines D093 |
 
 ## D001 — Separate v2
 
@@ -2380,3 +2381,14 @@ for that control during the viewer session. Format actions download directly;
 the primary action continues to choose the best format for the visible layers.
 Preserve D093 transparency, resolution, registration, selection and provenance
 behavior. No push or publication is authorized.
+
+## D098 — Omit selection borders from 2D downloads
+
+Date: 2026-10-13. Status: accepted by the repository owner.
+
+Export orthogonal, Top and Swanson images without selected-region borders or
+halos, in both SVG and PNG. Preserve ordinary anatomy boundaries and feature
+fills. Remove selection and hover classes only from the export clone before
+resolving its stylesheet presentation; live selection, shared state and URL
+selection remain unchanged. This replaces D093's preservation of 2D selection
+emphasis; the existing 3D presentation and all other export behavior remain.

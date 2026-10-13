@@ -91,11 +91,14 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
     this.reportPerformance('guides', frame, started);
   }
 
-  /** Clone the anatomy figure without crosshair or transient hover state. */
+  /** Clone anatomy without crosshair, selection outlines or transient hover. */
   exportSvg(): SVGSVGElement {
     const svg = this.mount.svg.cloneNode(false) as SVGSVGElement;
     const figure = this.mount.figureLayer.cloneNode(true) as SVGGElement;
-    for (const element of figure.querySelectorAll('.is-highlighted')) element.classList.remove('is-highlighted');
+    svg.classList.remove('has-region-selection');
+    for (const element of figure.querySelectorAll('.is-selected, .is-highlighted')) {
+      element.classList.remove('is-selected', 'is-highlighted');
+    }
     svg.append(figure);
     svg.style.position = 'absolute';
     svg.style.pointerEvents = 'none';

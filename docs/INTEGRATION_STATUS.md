@@ -623,8 +623,8 @@ the active Top, Swanson or 3D context. 2D exports support standalone SVG with
 vector region paths and embedded native PNG volume pixels, or flattened PNG.
 3D exports a fresh transparent PNG while preserving its camera framing and
 retained geometry. PNG output has a 2400-pixel longest edge. Registered
-placement, flips, opacity, colors and selection emphasis are preserved;
-crosshairs, transient hover effects, controls and panel backgrounds are omitted.
+placement, flips, opacity and colors are preserved; 2D selection borders and
+halos, crosshairs, transient hover effects, controls and panel backgrounds are omitted.
 An optional vector colorbar is off by default. Loading/error frames cannot
 export stale content. Filenames retain scientific context and native slice
 identity where applicable; underlying data downloads are unchanged.

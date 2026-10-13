@@ -149,8 +149,9 @@ a bitmap with a 2400-pixel longest edge. Top and Swanson support both formats;
 panel size, and 3D preserves the current camera framing.
 
 Images have transparent backgrounds and omit crosshairs, hover effects and
-controls. Colors, opacity, visible layers and selected-region emphasis are
-preserved. **Include colorbar** is optional and off by default. Image downloads
+controls. 2D downloads also omit selection borders and halos, while retaining
+ordinary region boundaries, colors, opacity and visible layers.
+**Include colorbar** is optional and off by default. Image downloads
 capture presentation; the main Download action still provides underlying data.
 
 ## Import your own data

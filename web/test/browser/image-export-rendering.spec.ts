@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('standalone exports preserve vector presentation, exclude hover and guides, and rasterize transparently', async ({ page }) => {
+test('standalone exports preserve colors, exclude selection outlines, hover and guides, and rasterize transparently', async ({ page }) => {
   await page.goto('/app/');
   await expect(page.locator('.atlas-app')).toBeVisible();
   const result = await page.evaluate(async () => {
@@ -19,7 +19,11 @@ test('standalone exports preserve vector presentation, exclude hover and guides,
       regionColors: new Map([[ -1, '#ff0000' ], [ -2, '#0000ff' ]]),
       selectedRegionIds: new Set([-1]), highlightedRegionIds: new Set([-2]),
     });
-    const selectedStroke = getComputedStyle(svg.querySelector('[data-allen-id="-1"]')!).strokeWidth;
+    const selected = svg.querySelector('[data-allen-id="-1"]')!;
+    const selectedStroke = getComputedStyle(selected).strokeWidth;
+    selected.classList.remove('is-selected');
+    const normalStroke = getComputedStyle(selected).strokeWidth;
+    selected.classList.add('is-selected');
     const highlighted = svg.querySelector('[data-allen-id="-2"]')!;
     highlighted.classList.remove('is-highlighted');
     const unselectedOpacity = getComputedStyle(highlighted).fillOpacity;
@@ -44,11 +48,15 @@ test('standalone exports preserve vector presentation, exclude hover and guides,
       transientClass: parsed.querySelector('.is-highlighted') !== null,
       firstFill: paths[0]!.getAttribute('fill'), originalHighlighted,
       pngType: png.type, bitmapWidth: bitmap.width, bitmapHeight: bitmap.height, cornerAlpha, fillAlpha,
-      selectionStylePreserved: paths[0]!.getAttribute('stroke-width') === selectedStroke,
+      selectionOutlineRemoved: paths[0]!.getAttribute('stroke-width') === normalStroke && normalStroke !== selectedStroke,
+      selectionHaloRemoved: paths[0]!.getAttribute('filter') === 'none',
+      liveSelectionPreserved: selected.classList.contains('is-selected'),
       unhighlightedStylePreserved: paths[1]!.getAttribute('fill-opacity') === unselectedOpacity,
     };
   });
-  expect(result.selectionStylePreserved).toBe(true);
+  expect(result.selectionOutlineRemoved).toBe(true);
+  expect(result.selectionHaloRemoved).toBe(true);
+  expect(result.liveSelectionPreserved).toBe(true);
   expect(result.unhighlightedStylePreserved).toBe(true);
   expect(result).toMatchObject({
     width: '2400', height: '1200', pathCount: 2, lineCount: 0,
