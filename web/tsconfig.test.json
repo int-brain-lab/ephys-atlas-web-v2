@@ -40,7 +40,8 @@
     "src/ui/regional/comparison-export.ts",
     "src/ui/regional/volume-distribution-export.ts",
     "src/ui/color-range.ts",
-    "src/ui/dataset-presentation.ts"
+    "src/ui/dataset-presentation.ts",
+    "src/ui/regional/selector-model.ts"
   ],
   "exclude": [
     "test/browser/**/*.ts",

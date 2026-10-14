@@ -66,10 +66,42 @@ export function formatRegionalValue(
 }
 
 export function regionMatchesQuery(region: RegionMetadata, query: string): boolean {
-  const normalized = query.trim().toLocaleLowerCase();
+  const normalized = query.trim().toLowerCase();
   if (!normalized) return true;
-  return region.acronym.toLocaleLowerCase().includes(normalized)
-    || region.name.toLocaleLowerCase().includes(normalized);
+  return region.acronym.toLowerCase().includes(normalized)
+    || region.name.toLowerCase().includes(normalized);
+}
+
+/** Original Unicode code-point spans for case-insensitive search highlighting.
+ * Lowercase expansions (İ -> i + combining dot) map back to their source point;
+ * substring matching uses the complete string, including contextual Greek sigma. */
+export function regionHighlightSpans(text: string, query: string): readonly (readonly [number, number])[] {
+  const term = query.trim().toLowerCase();
+  if (!term) return [];
+  const points = Array.from(text);
+  const normalized = text.toLowerCase();
+  const origins: number[] = [];
+  let prefix = '';
+  let previousLength = 0;
+  points.forEach((point, index) => {
+    prefix += point;
+    const length = prefix.toLowerCase().length;
+    for (let offset = previousLength; offset < length; offset += 1) origins.push(index);
+    previousLength = length;
+  });
+  const spans: [number, number][] = [];
+  let match = normalized.indexOf(term);
+  while (match >= 0) {
+    const start = origins[match];
+    const end = origins[match + term.length - 1];
+    if (start !== undefined && end !== undefined) {
+      const previous = spans.at(-1);
+      if (previous && start < previous[1]) previous[1] = Math.max(previous[1], end + 1);
+      else spans.push([start, end + 1]);
+    }
+    match = normalized.indexOf(term, match + term.length);
+  }
+  return spans;
 }
 
 /** Search retains full lineage and matched subtrees; only match paths must stay open. */

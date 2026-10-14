@@ -1,8 +1,8 @@
 import type { RegionMetadata } from '../../data/contracts.js';
-import { buildGreyMatterHierarchy } from '../../data/region-hierarchy.js';
+import { SelectorModel } from './selector-model.js';
 import type { RegionOrder, StatisticId } from '../../domain/types.js';
 import { html, required } from './dom.js';
-import { formatRegionalValue, rankRegionsByValue, regionSearchContext, regionalStatisticExtent } from './model.js';
+import { formatRegionalValue, regionHighlightSpans, regionalStatisticExtent } from './model.js';
 import { createRegionRow, type RegionalValueColorbar } from './row-view.js';
 import { OperationStatus } from '../operation-status.js';
 
@@ -58,16 +58,11 @@ export class RegionalTreeView {
   private readonly statisticDomain: HTMLElement;
   private readonly regionById = new Map<string, RegionMetadata>();
   private readonly rowById = new Map<string, HTMLLIElement>();
-  private readonly collapsedRegionIds = new Set<string>();
-  private readonly searchCollapsedRegionIds = new Set<string>();
-  private requiredSearchExpanded: ReadonlySet<string> = new Set();
-  private lastQuery = '';
-  private regionInventory: readonly RegionMetadata[] | null = null;
-  private selectionAnchor: string | null = null;
-  private pendingRangeSelection: string | null = null;
+  private readonly selector = new SelectorModel();
   private displayOrder: RegionOrder = 'anatomy';
   private rovingButton: HTMLButtonElement | null = null;
   private hoveredRegionId: string | null = null;
+  private localHoverRegionId: string | null = null;
   private currentOrder: RegionOrder = 'anatomy';
   private valueState: 'ready' | 'loading' | 'error' | 'anatomy' | 'empty' = 'ready';
   private readonly valueStatus = new OperationStatus('inline');
@@ -164,10 +159,7 @@ export class RegionalTreeView {
   };
 
   setRegions(regions: readonly RegionMetadata[]): void {
-    if (regions !== this.regionInventory) {
-      this.lastQuery = '\0';
-      this.regionInventory = regions;
-    }
+    this.selector.setRegions(regions);
     this.regionById.clear();
     regions.forEach((region) => this.regionById.set(region.id, region));
   }
@@ -190,15 +182,7 @@ export class RegionalTreeView {
     const last = this.lastRender;
     const displayOrder = this.search.value.trim() ? 'anatomy' : order;
     const colorbarKey = JSON.stringify(colorbar);
-    if (selection !== last?.selection) {
-      if (selection !== this.pendingRangeSelection) {
-        const previous: string[] = last ? JSON.parse(last.selection) as string[] : [];
-        const added = [...selected].filter((id) => !previous.includes(id));
-        this.selectionAnchor = added.at(-1) ?? [...selected].at(-1) ?? null;
-      }
-      this.pendingRangeSelection = null;
-    }
-    if (this.selectionAnchor && !selected.has(this.selectionAnchor)) this.selectionAnchor = [...selected].at(-1) ?? null;
+    this.selector.setSelected(selected);
     if (last && last.regions === regions && last.statistic === statistic && last.unit === unit
       && last.order === order && last.displayOrder === displayOrder && last.colorbarKey === colorbarKey && last.valueState === valueState && last.values.size === values.size
       && [...values].every(([id, value]) => last.values.has(id) && Object.is(last.values.get(id), value))) {
@@ -246,15 +230,10 @@ export class RegionalTreeView {
     }
     const previousRovingId = this.rovingButton?.dataset.regionButton;
     const restoreFocus = document.activeElement === this.rovingButton;
-    const hierarchy = buildGreyMatterHierarchy(regions);
-    const leafIds = new Set(hierarchy.filter(({ hasChildren }) => !hasChildren).map(({ region }) => region.id));
-    const rowModels = displayOrder === 'anatomy'
-      ? hierarchy
-      : rankRegionsByValue(regions.filter(({ id }) => leafIds.has(id)), values, displayOrder as Exclude<RegionOrder, 'anatomy'>).map((region) => ({
-        region: { ...region, parentId: null },
-        depth: 0,
-        hasChildren: false,
-      }));
+    this.selector.setValues(values);
+    this.selector.setOrder(order);
+    this.selector.setQuery(this.search.value);
+    const rowModels = this.selector.rows;
     const retainRows = last?.regions === regions && last.displayOrder === displayOrder && this.rowById.size === rowModels.length;
     const rows = rowModels.map(({ region, depth, hasChildren }) => {
       const next = createRegionRow(region, depth, hasChildren, values.get(region.id), statistic, unit, extent, selected, this.activeCollapsedRegionIds, colorbar);
@@ -350,6 +329,7 @@ export class RegionalTreeView {
   }
 
   private syncMultiSelection(enabled: boolean): void {
+    this.selector.setMultiple(enabled);
     this.multiSelection.setAttribute('aria-pressed', String(enabled));
     this.multiSelectionTooltip.textContent = `Select multiple ${enabled ? 'on. Click to select one region at a time.' : 'off. Click to compare multiple regions.'} Ctrl/Cmd-click toggles selection. Shift-click adds a visible sibling range. Branches expand; leaves select.`;
   }
@@ -372,17 +352,9 @@ export class RegionalTreeView {
         new Set(JSON.parse(last.selection) as string[]), last.order, last.valueState, last.colorbar);
       return;
     }
-    const context = regionSearchContext([...this.regionById.values()], query);
-    this.requiredSearchExpanded = query ? context.requiredExpanded : new Set();
-    if (query !== this.lastQuery) {
-      this.searchCollapsedRegionIds.clear();
-      if (query) for (const [id, row] of this.rowById) {
-        if (row.dataset.branch === 'true' && !context.matches.has(id) && !context.requiredExpanded.has(id)) {
-          this.searchCollapsedRegionIds.add(id);
-        }
-      }
-      this.lastQuery = query;
-    }
+    this.selector.setQuery(query);
+    if (this.localHoverRegionId && !this.selector.hover) this.hoverRegion(null);
+    const matches = new Set(this.selector.snapshot().matches);
     let visible = 0;
     let matchCount = 0;
     for (const [regionId, row] of this.rowById) {
@@ -390,8 +362,8 @@ export class RegionalTreeView {
       if (!region) continue;
       this.highlightText(row.querySelector('.region-row__acronym'), region.acronym, query);
       this.highlightText(row.querySelector('.region-row__name'), region.name, query);
-      row.hidden = (query !== '' && !context.retained.has(regionId)) || this.hasCollapsedAncestor(regionId);
-      if (context.matches.has(regionId)) matchCount += 1;
+      row.hidden = !this.selector.isVisible(regionId);
+      if (matches.has(regionId)) matchCount += 1;
       if (!row.hidden) visible += 1;
       if (row.dataset.branch === 'true') this.syncBranchDisclosure(row);
     }
@@ -408,25 +380,22 @@ export class RegionalTreeView {
   };
 
   private get activeCollapsedRegionIds(): Set<string> {
-    return this.search.value.trim() ? this.searchCollapsedRegionIds : this.collapsedRegionIds;
+    return this.selector.activeCollapsed;
   }
 
   private highlightText(element: Element | null, text: string, query: string): void {
     if (!element) return;
     element.replaceChildren();
-    const normalized = text.toLocaleLowerCase();
-    const term = query.toLocaleLowerCase();
+    const points = Array.from(text);
     let position = 0;
-    let match = term ? normalized.indexOf(term) : -1;
-    while (match >= 0) {
-      element.append(document.createTextNode(text.slice(position, match)));
+    for (const [start, end] of regionHighlightSpans(text, query)) {
+      element.append(document.createTextNode(points.slice(position, start).join('')));
       const mark = html('mark', 'region-search__match');
-      mark.textContent = text.slice(match, match + term.length);
+      mark.textContent = points.slice(start, end).join('');
       element.append(mark);
-      position = match + term.length;
-      match = normalized.indexOf(term, position);
+      position = end;
     }
-    element.append(document.createTextNode(text.slice(position)));
+    element.append(document.createTextNode(points.slice(position).join('')));
   }
 
   private readonly clearSearch = (): void => {
@@ -501,47 +470,37 @@ export class RegionalTreeView {
   };
 
   private activateRegion(id: string, additive: boolean, range = false): void {
-    if (this.rowById.get(id)?.dataset.branch === 'true') this.toggleBranch(id);
-    else if (this.regionById.get(id)?.mappingMember !== false) {
-      if (range) {
-        const anchor = this.selectionAnchor;
-        const parent = this.regionById.get(id)?.parentId;
-        if (!anchor || parent == null || this.regionById.get(anchor)?.parentId !== parent) return;
-        const siblings = [...this.rowById].filter(([regionId, row]) => !row.hidden
-          && row.dataset.branch !== 'true' && this.regionById.get(regionId)?.mappingMember !== false
-          && this.regionById.get(regionId)?.parentId === parent).map(([regionId]) => regionId);
-        const start = siblings.indexOf(anchor);
-        const end = siblings.indexOf(id);
-        if (start < 0 || end < 0) return;
-        const ids = siblings.slice(Math.min(start, end), Math.max(start, end) + 1);
-        const selected = new Set(this.lastRender ? JSON.parse(this.lastRender.selection) as string[] : []);
-        ids.forEach((regionId) => selected.add(regionId));
-        const expectedSelection = JSON.stringify([...selected]);
-        this.pendingRangeSelection = expectedSelection === this.lastRender?.selection ? null : expectedSelection;
-        this.callbacks.selectRegionRange(ids, id);
-      } else {
-        this.selectionAnchor = id;
-        this.callbacks.selectRegion(id, additive);
-      }
+    if (this.rowById.get(id)?.dataset.branch === 'true') {
+      this.toggleBranch(id);
+      return;
     }
+    const effect = this.selector.activate(id, { ctrl: additive, shift: range }, true);
+    if (effect?.kind === 'range') this.callbacks.selectRegionRange(effect.ids, effect.id);
+    else if (effect?.kind === 'select') this.callbacks.selectRegion(effect.id, effect.additive);
+  }
+
+  private hoverRegion(id: string | null): void {
+    this.selector.setHover(id);
+    this.localHoverRegionId = this.selector.hover;
+    this.callbacks.hoverRegion(this.selector.hover);
   }
 
   private readonly onTreePointerOver = (event: PointerEvent): void => {
     const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-region-button]') : null;
     if (!button || (event.relatedTarget instanceof Node && button.contains(event.relatedTarget))) return;
     const id = button.dataset.regionButton;
-    this.callbacks.hoverRegion(id && this.regionById.get(id)?.mappingMember !== false ? id : null);
+    this.hoverRegion(id ?? null);
   };
 
   private readonly onTreePointerOut = (event: PointerEvent): void => {
     const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-region-button]') : null;
     if (!button || (event.relatedTarget instanceof Node && button.contains(event.relatedTarget))) return;
-    this.callbacks.hoverRegion(null);
+    this.hoverRegion(null);
   };
 
   private readonly onPanePointerOver = (event: PointerEvent): void => {
     const target = event.target instanceof Element ? event.target : null;
-    if (!target?.closest('[data-region-button]')) this.callbacks.hoverRegion(null);
+    if (!target?.closest('[data-region-button]')) this.hoverRegion(null);
   };
 
   private readonly onTreeFocusIn = (event: FocusEvent): void => {
@@ -549,55 +508,36 @@ export class RegionalTreeView {
     if (!button) return;
     this.setRovingButton(button);
     const id = button.dataset.regionButton;
-    this.callbacks.hoverRegion(id && this.regionById.get(id)?.mappingMember !== false ? id : null);
+    this.hoverRegion(id ?? null);
   };
 
   private readonly onTreeFocusOut = (event: FocusEvent): void => {
-    if (event.target instanceof HTMLButtonElement && event.target.dataset.regionButton) this.callbacks.hoverRegion(null);
+    if (event.target instanceof HTMLButtonElement && event.target.dataset.regionButton) this.hoverRegion(null);
   };
 
   private navigateRegions(event: KeyboardEvent, current: HTMLButtonElement): void {
     if (!['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-    const row = current.closest<HTMLLIElement>('.region-row');
-    const regionId = row?.dataset.regionId;
-    if (this.displayOrder === 'anatomy' && regionId && event.key === 'ArrowRight') {
+    const id = current.dataset.regionButton;
+    if (!id) return;
+    this.selector.setFocus(id);
+    const branch = current.closest<HTMLLIElement>('.region-row')?.dataset.branch === 'true';
+    const folding = this.displayOrder === 'anatomy' && branch
+      && ((event.key === 'ArrowRight' && this.activeCollapsedRegionIds.has(id))
+        || (event.key === 'ArrowLeft' && !this.activeCollapsedRegionIds.has(id)));
+    if (folding) this.animateTreeMutation(() => this.selector.navigate(event.key));
+    else this.selector.navigate(event.key);
+    const focus = this.selector.focus;
+    if (focus !== id || (this.displayOrder === 'anatomy' && ['ArrowLeft', 'ArrowRight'].includes(event.key))) {
       event.preventDefault();
-      if (row.dataset.branch === 'true' && this.activeCollapsedRegionIds.has(regionId)) this.toggleBranch(regionId);
-      else {
-        const child = [...this.list.querySelectorAll<HTMLLIElement>('.region-row:not([hidden])')]
-          .find((candidate) => candidate.dataset.parentId === regionId);
-        this.focusRegionButton(child?.querySelector<HTMLButtonElement>('.region-row__button') ?? null);
-      }
-      return;
-    }
-    if (this.displayOrder === 'anatomy' && regionId && event.key === 'ArrowLeft') {
-      event.preventDefault();
-      if (row.dataset.branch === 'true' && !this.activeCollapsedRegionIds.has(regionId)) this.toggleBranch(regionId);
-      else if (row.dataset.parentId) this.focusRegionButton(
-        this.rowById.get(row.dataset.parentId)?.querySelector<HTMLButtonElement>('.region-row__button') ?? null,
-      );
-      return;
-    }
-    const visible = [...this.list.querySelectorAll<HTMLButtonElement>('.region-row:not([hidden]) .region-row__button')];
-    if (visible.length === 0) return;
-    const index = visible.indexOf(current);
-    let target = index;
-    if (event.key === 'ArrowDown') target = Math.min(visible.length - 1, index + 1);
-    if (event.key === 'ArrowUp') target = Math.max(0, index - 1);
-    if (event.key === 'Home') target = 0;
-    if (event.key === 'End') target = visible.length - 1;
-    if (target !== index) {
-      event.preventDefault();
-      this.focusRegionButton(visible[target] ?? null);
+      this.focusRegionButton(focus ? this.rowById.get(focus)?.querySelector<HTMLButtonElement>('.region-row__button') ?? null : null);
     }
   }
 
   private toggleBranch(regionId: string): void {
     const row = this.rowById.get(regionId);
-    if (!row || row.dataset.branch !== 'true' || this.requiredSearchExpanded.has(regionId)) return;
+    if (!row || row.dataset.branch !== 'true' || this.selector.requiredExpanded.has(regionId)) return;
     this.animateTreeMutation(() => {
-      if (this.activeCollapsedRegionIds.has(regionId)) this.activeCollapsedRegionIds.delete(regionId);
-      else this.activeCollapsedRegionIds.add(regionId);
+      this.selector.toggleBranch(regionId);
       this.syncBranchDisclosure(row);
     });
   }
@@ -607,11 +547,9 @@ export class RegionalTreeView {
 
   private setAllBranchesExpanded(expanded: boolean): void {
     this.animateTreeMutation(() => {
-      for (const [id, row] of this.rowById) {
-        if (row.dataset.branch !== 'true') continue;
-        if (expanded || this.requiredSearchExpanded.has(id)) this.activeCollapsedRegionIds.delete(id);
-        else this.activeCollapsedRegionIds.add(id);
-        this.syncBranchDisclosure(row);
+      this.selector.setAllExpanded(expanded);
+      for (const row of this.rowById.values()) {
+        if (row.dataset.branch === 'true') this.syncBranchDisclosure(row);
       }
     });
   }
@@ -684,23 +622,12 @@ export class RegionalTreeView {
     }
   }
 
-  private hasCollapsedAncestor(regionId: string): boolean {
-    if (this.displayOrder !== 'anatomy') return false;
-    let parentId = this.regionById.get(regionId)?.parentId;
-    const visited = new Set<string>();
-    while (parentId !== undefined && parentId !== null && !visited.has(parentId)) {
-      if (this.activeCollapsedRegionIds.has(parentId)) return true;
-      visited.add(parentId);
-      parentId = this.regionById.get(parentId)?.parentId;
-    }
-    return false;
-  }
-
   private setRovingButton(button: HTMLButtonElement): void {
     if (this.rovingButton === button) return;
     if (this.rovingButton) this.rovingButton.tabIndex = -1;
     button.tabIndex = 0;
     this.rovingButton = button;
+    this.selector.setFocus(button.dataset.regionButton ?? null);
   }
 
   private focusRegionButton(button: HTMLButtonElement | null): void {

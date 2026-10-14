@@ -36,6 +36,14 @@ HTTP / IndexedDB adapters -> resource readers -> data materializers
 - `rendering/` owns retained rendering runtimes and format adapters.
 - `ui/` owns plain-DOM views/controllers; complex data shaping remains pure and
   testable.
+  `ui/regional/selector-model.ts` owns pure Regions search, folding, ordering,
+  selection/range and keyboard transitions; `RegionalTreeView` retains DOM rows,
+  accessibility, animations and application selection/auto-slice callbacks.
+  The immutable [anatomy selector contract](https://github.com/int-brain-lab/ibl-anatomy/blob/81bd7d79044e4dc3a528abe50a0296381143f03e/docs/REGION_SELECTOR_CONTRACT.md)
+  owns shared behavior and conformance evidence. Its traces are mirrored under
+  `web/test/fixtures/region-selector/` for offline conformance. Search uses
+  ECMAScript trimming and Unicode default lowercasing, with no casefolding or
+  normalization; highlights map back to original Unicode code-point spans.
 
 `AtlasApp` composes these responsibilities. Avoid dependency-injection
 frameworks, global service registries, or abstractions without an existing

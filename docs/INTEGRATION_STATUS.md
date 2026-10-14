@@ -2,7 +2,7 @@
 
 Status: active initial-deployment capability matrix.
 
-Last updated: 2026-10-05 on `main` for shared loading feedback, responsive 3-D picking, conservative usage analytics and parent-row navigation.
+Last updated: 2026-10-14 on `main` for the renderer-neutral region selector and pinned anatomy conformance.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
@@ -13,6 +13,27 @@ curator configuration, alongside all seven W39-era datasets. Production catalog
 promotion is pending; the site descriptor still pins the current live catalog.
 D096 implements shared filesystem/S3 removal guards, exact hash-bound retirement
 records, transition history, and independent expected-inventory production QA.
+
+The Regions selector now separates pure search/folding, value order, selection,
+range anchors, keyboard focus and hover transitions from its retained DOM adapter.
+The [shared anatomy contract](https://github.com/int-brain-lab/ibl-anatomy/blob/81bd7d79044e4dc3a528abe50a0296381143f03e/docs/REGION_SELECTOR_CONTRACT.md)
+is the behavior authority, pinned by `web/test/fixtures/region-selector-lock.json`.
+All three mirrored bundle files have checked SHA-256 hashes; its twelve scenarios
+exercise 51 shared transitions offline. Search uses Unicode default lowercasing
+and ECMAScript trimming, preserves substring/context behavior and highlights
+original code points correctly when lowercasing expands them. DOM rows, focus,
+accessibility, animation and application selection/Auto-slice ownership remain
+in the browser adapter.
+
+Local validation passed `just check` (258 browser tests and four documentation
+screenshot checks), plus production `just site-compatibility`; optional real D070
+unit fixtures remain skipped. The selector fixture integrity/conformance tests
+and documentation checks validate the finalized upstream pin. This evidence
+establishes local implementation only. Next, commit the reviewed change on
+`main`, exercise the exact clean candidate over the production origin, then use
+the [automatic site deployment runbook](publishing/AUTOMATIC_SITE_DEPLOYMENT.md)
+to verify CI publication and the live build. No selector site deployment or live
+production verification is claimed here.
 
 ## Product architecture
 
