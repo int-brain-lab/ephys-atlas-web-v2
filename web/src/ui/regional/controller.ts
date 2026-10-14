@@ -321,6 +321,18 @@ export class RegionalPanelController {
     this.tree.updateHoveredRegion(model.hoveredRegionId);
   }
 
+  updateHoveredRegion(hoveredRegionId: string | null): void {
+    const model = this.latestModel;
+    if (!model) return;
+    this.latestModel = { ...model, hoveredRegionId };
+    this.tree.updateHoveredRegion(hoveredRegionId);
+    if (model.feature?.representation !== 'regional') return;
+    const descriptor = model.manifest?.features.find(({ id }) => id === model.feature!.featureId);
+    updateDistributionHover(this.distribution, model.feature, model.presentationScale.histogram,
+      model.presentationScale.effectiveScaleSpec, model.regions, hoveredRegionId,
+      model.state.view.coloring.statistic, descriptor?.unit ?? null);
+  }
+
   destroy(): void {
     this.volumeRegionalAbort?.abort();
     this.tree.destroy();

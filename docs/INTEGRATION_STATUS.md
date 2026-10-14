@@ -87,6 +87,15 @@ recovery in `operation-loading.spec.ts`, `regional-loading.spec.ts`,
 synthetic test inputs; local real-data Tailscale preview instructions remain in
 ignored `artifacts/local-dev/README.md`.
 
+Ready region hover now updates retained highlight classes, tree/histogram feedback
+and shared 3-D presentation without full application/control renders or scalar
+Canvas repaint. Selection changes update existing tree membership attributes
+without recreating values, search highlights or hierarchy. Browser regressions
+preserve focus, folds and range-selection behavior. The real-data interaction
+benchmark and reload-safe live Chrome recorder are documented in
+[region interaction performance](rendering/REGION_INTERACTION_PERFORMANCE.md);
+measurements are local evidence, not a production deployment claim.
+
 ## Scientific datasets
 
 | Dataset | Builder and browser machinery | Current real artifact maturity | Blocker/next action |

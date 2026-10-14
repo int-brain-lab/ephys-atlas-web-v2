@@ -104,7 +104,17 @@ export class RetainedStaticProjectionViewport implements StaticProjectionViewpor
     }
   }
 
-  updatePresentation(): void {
+  updatePresentation(highlightOnly = false): void {
+    if (highlightOnly) {
+      if (this.renderedFrame) {
+        const semantics = this.presentation().regional;
+        const highlightedRegionIds = this.renderedFrame.mapping === semantics.mapping && semantics.highlightedRegionId !== null
+          ? regionalPresentationIds([semantics.highlightedRegionId]) : new Set<number>();
+        this.renderedFrame = { ...this.renderedFrame, highlightedRegionIds };
+        this.renderer.updateHighlightedRegions(highlightedRegionIds);
+      }
+      return;
+    }
     if (this.frame && this.model) {
       const presentation = this.presentation();
       if (presentation.regional.mapping !== this.model.parcellation) {

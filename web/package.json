@@ -21,6 +21,7 @@
     "test:cluster-release": "playwright test --config playwright.cluster-release.config.ts",
     "test:volume-candidate": "playwright test --config playwright.volume-candidate.config.ts",
     "benchmark:real-volume": "playwright test --config playwright.volume-benchmark.config.ts",
+    "benchmark:interaction": "playwright test --config playwright.interaction-benchmark.config.ts",
     "benchmark:anatomy": "playwright test --config playwright.anatomy-benchmark.config.ts",
     "test": "npm run typecheck && npm run test:unit && npm run test:rendering"
   },

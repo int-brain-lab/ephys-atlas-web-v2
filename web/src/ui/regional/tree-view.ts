@@ -200,8 +200,25 @@ export class RegionalTreeView {
     }
     if (this.selectionAnchor && !selected.has(this.selectionAnchor)) this.selectionAnchor = [...selected].at(-1) ?? null;
     if (last && last.regions === regions && last.statistic === statistic && last.unit === unit
-      && last.selection === selection && last.order === order && last.displayOrder === displayOrder && last.colorbarKey === colorbarKey && last.valueState === valueState && last.values.size === values.size
-      && [...values].every(([id, value]) => last.values.has(id) && Object.is(last.values.get(id), value))) return;
+      && last.order === order && last.displayOrder === displayOrder && last.colorbarKey === colorbarKey && last.valueState === valueState && last.values.size === values.size
+      && [...values].every(([id, value]) => last.values.has(id) && Object.is(last.values.get(id), value))) {
+      // Selection does not change hierarchy, values, filtering or keyboard focus.
+      // Touch only rows whose membership changed instead of recreating every value.
+      const previous = new Set(JSON.parse(last.selection) as string[]);
+      for (const id of new Set([...previous, ...selected])) {
+        if (previous.has(id) === selected.has(id)) continue;
+        const row = this.rowById.get(id);
+        if (!row) continue;
+        const pressed = String(selected.has(id));
+        row.dataset.selected = pressed;
+        row.setAttribute('aria-selected', pressed);
+        if (row.dataset.branch !== 'true') {
+          row.querySelector('.region-row__button')?.setAttribute('aria-pressed', pressed);
+        }
+      }
+      this.lastRender = { ...last, values, selection };
+      return;
+    }
     this.lastRender = { regions, values, statistic, unit, selection, order, displayOrder, colorbar, colorbarKey, valueState };
     this.valueState = valueState;
     this.setRegions(regions);

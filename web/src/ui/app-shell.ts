@@ -467,6 +467,15 @@ export class AppShell {
     this.maybeStartAutomaticHelpTour(model);
   }
 
+  updateRegionalHover(regionalPresentation: RegionalPresentation): void {
+    if (!this.currentModel) return;
+    this.currentModel = { ...this.currentModel, regionalPresentation };
+    if (this.scene3dViewport) {
+      this.renderScene3D(this.currentModel,
+        SECONDARY_CONTENT_BY_ID[this.currentModel.state.view.workspace.secondaryTab].kind === 'scene3d');
+    }
+  }
+
   setSelectedRegionInspections(regions: readonly { model: RegionTooltipModel; regionId: string }[]): void {
     this.inspectionCard.setSelected(regions);
   }

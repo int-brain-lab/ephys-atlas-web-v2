@@ -176,8 +176,18 @@ class RetainedProjectionViewport implements ProjectionViewport {
     });
   }
 
-  updatePresentation(): void {
+  updatePresentation(highlightOnly = false): void {
     const presentation = this.presentation();
+    if (highlightOnly) {
+      if (this.frame) {
+        const highlightedRegionIds = this.frame.mapping === presentation.regional.mapping
+          && presentation.regional.highlightedRegionId !== null
+          ? regionalPresentationIds([presentation.regional.highlightedRegionId]) : new Set<number>();
+        this.frame = { ...this.frame, highlightedRegionIds };
+        this.mount.regional.updateHighlightedRegions(highlightedRegionIds);
+      }
+      return;
+    }
     if (presentation.feature !== this.renderedFeature) {
       this.cancelVolumePrefetch();
       this.applyLayerPresentation(presentation);
@@ -791,9 +801,21 @@ export class RetainedProjectionViewportFactory implements ProjectionViewportFact
   }
 
   updatePresentation(presentation: ProjectionPresentation): void {
+    const previous = this.presentation;
+    const before = previous.regional;
+    const after = presentation.regional;
+    const highlightOnly = previous.feature === presentation.feature
+      && previous.coloring === presentation.coloring
+      && previous.volumeOpacity === presentation.volumeOpacity
+      && previous.anatomyColors === presentation.anatomyColors
+      && previous.anatomyOutlines === presentation.anatomyOutlines
+      && before.mapping === after.mapping && before.featureSide === after.featureSide
+      && before.anatomyColors === after.anatomyColors && before.featureColors === after.featureColors
+      && before.visibleRegionIds === after.visibleRegionIds && before.selectedRegionIds === after.selectedRegionIds
+      && before.regionLabels === after.regionLabels;
     this.presentation = presentation;
-    for (const viewport of this.viewports) viewport.updatePresentation();
-    for (const viewport of this.staticViewports) viewport.updatePresentation();
+    for (const viewport of this.viewports) viewport.updatePresentation(highlightOnly);
+    for (const viewport of this.staticViewports) viewport.updatePresentation(highlightOnly);
   }
 
   setInteractionSink(sink: ProjectionInteractionSink): void {

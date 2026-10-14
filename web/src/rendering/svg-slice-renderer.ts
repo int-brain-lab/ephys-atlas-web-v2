@@ -56,6 +56,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   private currentAxis: ProjectionId | null = null;
   private mapping: MappingName = 'beryl';
   private hoveredRegionId: number | null = null;
+  private highlightedRegionIds: ReadonlySet<number> = new Set();
   private pathIndex: ReadonlyMap<number, readonly SVGPathElement[]> = new Map();
   private readonly preparedLayers = new Map<string, PreparedSliceLayer>();
   private activeLayerKey: string | null = null;
@@ -88,11 +89,23 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
 
     let started = this.performanceStart();
     this.applyRegionState(frame);
+    this.highlightedRegionIds = frame.highlightedRegionIds
+      ?? new Set(frame.highlightedRegionId == null ? [] : [frame.highlightedRegionId]);
     this.selectionOverlay.update(frame, this.pathIndex);
     this.reportPerformance('region-state', frame, started);
     started = this.performanceStart();
     this.drawGuides(frame);
     this.reportPerformance('guides', frame, started);
+  }
+
+  updateHighlightedRegions(ids: ReadonlySet<number>): void {
+    for (const id of new Set([...this.highlightedRegionIds, ...ids])) {
+      if (this.highlightedRegionIds.has(id) === ids.has(id)) continue;
+      for (const path of this.pathIndex.get(id) ?? []) {
+        path.classList.toggle('is-highlighted', ids.has(id));
+      }
+    }
+    this.highlightedRegionIds = ids;
   }
 
   /** Clone anatomy without crosshair, selection outlines or transient hover. */
@@ -126,6 +139,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   clear(): void {
     this.currentAxis = null;
     this.hoveredRegionId = null;
+    this.highlightedRegionIds = new Set();
     this.pathIndex = new Map();
     this.preparedLayers.clear();
     this.activeLayerKey = null;
@@ -276,7 +290,7 @@ export class SvgSliceRenderer implements RegionalSliceRenderer {
   private readonly onPointerMove = (event: PointerEvent): void => {
     const regionId = this.eventRegionId(event);
     if (regionId !== this.hoveredRegionId) {
-      if (this.hoveredRegionId != null) this.emitRegion('leave', this.hoveredRegionId, event);
+      if (regionId == null && this.hoveredRegionId != null) this.emitRegion('leave', this.hoveredRegionId, event);
       this.hoveredRegionId = regionId;
       if (regionId != null) this.emitRegion('hover', regionId, event);
     }

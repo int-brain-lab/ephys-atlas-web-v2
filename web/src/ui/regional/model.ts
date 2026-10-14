@@ -52,6 +52,8 @@ export function regionalStatisticPosition(value: number, extent: readonly [numbe
   return Math.max(0, Math.min(1, (value - extent[0]) / (extent[1] - extent[0])));
 }
 
+const regionalNumberFormatter = new Intl.NumberFormat('en-US', { maximumSignificantDigits: 4 });
+
 export function formatRegionalValue(
   value: number,
   statistic: StatisticId,
@@ -59,7 +61,7 @@ export function formatRegionalValue(
 ): string {
   const body = statistic === 'count'
     ? Math.round(value).toLocaleString('en-US')
-    : new Intl.NumberFormat('en-US', { maximumSignificantDigits: 4 }).format(value);
+    : regionalNumberFormatter.format(value);
   return unit && statistic !== 'count' ? `${body} ${unit}` : body;
 }
 

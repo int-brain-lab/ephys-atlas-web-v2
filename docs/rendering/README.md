@@ -14,6 +14,7 @@ anatomy-pack documents remain derivation and reproducibility authorities.
 | Retained 2-D application boundary and completed cutover | D031/D035 and [`PROJECTION_VOLUME_CUTOVER_PLAN.md`](PROJECTION_VOLUME_CUTOVER_PLAN.md) |
 | Registered bilateral scientific geometry | [`BILATERAL_ANATOMY_PACKS.md`](BILATERAL_ANATOMY_PACKS.md) and D045 |
 | Sparse registered display derivation | [`ANATOMY_PACK_V3_CONTRACT.md`](ANATOMY_PACK_V3_CONTRACT.md) |
+| Region hover/selection performance | [`REGION_INTERACTION_PERFORMANCE.md`](REGION_INTERACTION_PERFORMANCE.md) |
 | Optional region centering | D086 and [`REGION_NAVIGATION.md`](REGION_NAVIGATION.md) |
 | Five-view browser projection pack | schema v1, D034, and projection-pack tooling/tests |
 | Volume layers and transport-neutral slice source | [`VOLUME_ARCHITECTURE.md`](VOLUME_ARCHITECTURE.md), D036, and Q5 |

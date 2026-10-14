@@ -83,6 +83,7 @@ export class AtlasApp {
   private autoSliceAbort: AbortController | null = null;
   private autoSliceStatus = '';
   private viewportPresentation: ProjectionPresentation | null = null;
+  private renderedModel: ShellModel | null = null;
   private presentationReconciliationPending = false;
   private pendingLocalArchive: PreparedLocalArchive | null = null;
   private localImportAbort: AbortController | null = null;
@@ -440,6 +441,7 @@ export class AtlasApp {
       representationDisplay,
       navigationRecovery: this.navigationRecovery(),
     };
+    this.renderedModel = model;
     this.shell.render(model);
     const selectedInspections = state.view.selection.flatMap(regionId => {
       const inspection = buildRegionTooltipModel({
@@ -715,9 +717,25 @@ export class AtlasApp {
   }
 
   private setHoveredRegion(regionId: string | null): void {
-    if (regionId === this.hoveredRegionId) return;
+    if (this.stopped || regionId === this.hoveredRegionId) return;
     this.hoveredRegionId = regionId;
-    this.render();
+    const model = this.renderedModel;
+    const previous = this.viewportPresentation;
+    if (!model || model.state !== this.store.getState() || model.featureLoading || model.featureError
+      || !previous || !this.projectionMappingIsCurrent()) {
+      this.render();
+      return;
+    }
+    // Hover changes only interaction state. Keep the resolved data, color maps,
+    // selection and controls from the last complete application render.
+    const id = regionId === null ? null : Number(regionId);
+    const regional = { ...previous.regional,
+      highlightedRegionId: id !== null && Number.isInteger(id) && id !== 0 ? id : null };
+    this.viewportPresentation = { ...previous, regional };
+    this.viewportFactory.updatePresentation(this.viewportPresentation);
+    this.renderedModel = { ...model, regionalPresentation: regional };
+    this.shell.updateRegionalHover(regional);
+    this.regionalPanel.updateHoveredRegion(regionId === null ? null : String(-Math.abs(Number(regionId))));
   }
 
   private projectionMappingIsCurrent(): boolean {

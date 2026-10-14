@@ -1,0 +1,1404 @@
+{
+  "environment": {
+    "browser": "151.0.7922.34",
+    "platform": "linux",
+    "arch": "x64",
+    "cpu": "Intel(R) Core(TM) i9-14900K",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "commit": "430a48c01f15baa511029454ff0094b848c7a7f6",
+    "dirty": true,
+    "bundle": "data/development-bundle-v7.json",
+    "maturity": "local-real-data",
+    "metric": "capture-to-bubble handler duration; two rAF callbacks are a frame proxy, not exact presentation latency"
+  },
+  "summary": {
+    "pointermove": {
+      "handler": {
+        "n": 60,
+        "p50_ms": 8.299999997019768,
+        "p95_ms": 14.399999998509884,
+        "max_ms": 17.399999998509884
+      },
+      "frame_proxy": {
+        "n": 60,
+        "p50_ms": 18.099999994039536,
+        "p95_ms": 27,
+        "max_ms": 30.899999998509884
+      }
+    },
+    "pointerup": {
+      "handler": {
+        "n": 60,
+        "p50_ms": 22.5,
+        "p95_ms": 29.5,
+        "max_ms": 34.400000005960464
+      },
+      "frame_proxy": {
+        "n": 60,
+        "p50_ms": 32.79999999701977,
+        "p95_ms": 42,
+        "max_ms": 46.79999999701977
+      }
+    }
+  },
+  "longTasks": {
+    "n": 1,
+    "p50_ms": 52,
+    "p95_ms": 52,
+    "max_ms": 52
+  },
+  "trials": [
+    {
+      "url": "http://127.0.0.1:4197/app/?v=4&dataset=ephys_atlas_channels&release=2026_W39-ibl-review-20261007-v1&project=ephys-atlas&edition=local-preview&selected=-10703",
+      "phase": "click",
+      "events": [
+        {
+          "type": "pointermove",
+          "id": "-484682516",
+          "start": 1168.7000000029802,
+          "trusted": true,
+          "handlerMs": 3.7999999970197678,
+          "twoRafMs": 9.899999998509884
+        },
+        {
+          "type": "pointerup",
+          "id": "-484682516",
+          "start": 1276.2999999970198,
+          "trusted": true,
+          "handlerMs": 34.400000005960464,
+          "twoRafMs": 45.20000000298023
+        },
+        {
+          "type": "pointermove",
+          "id": "-1097",
+          "start": 1475.7000000029802,
+          "trusted": true,
+          "handlerMs": 13.299999997019768,
+          "twoRafMs": 21.599999994039536
+        },
+        {
+          "type": "pointerup",
+          "id": "-1097",
+          "start": 1589.1000000014901,
+          "trusted": true,
+          "handlerMs": 22.19999999552965,
+          "twoRafMs": 31.5
+        },
+        {
+          "type": "pointermove",
+          "id": "484682512",
+          "start": 1771.8999999985099,
+          "trusted": true,
+          "handlerMs": 3.7000000029802322,
+          "twoRafMs": 9.899999998509884
+        },
+        {
+          "type": "pointerup",
+          "id": "484682512",
+          "start": 1870,
+          "trusted": true,
+          "handlerMs": 21.799999997019768,
+          "twoRafMs": 31.399999998509884
+        },
+        {
+          "type": "pointermove",
+          "id": "-1009",
+          "start": 2055.2000000029802,
+          "trusted": true,
+          "handlerMs": 5.5,
+          "twoRafMs": 10.699999995529652
+        },
+        {
+          "type": "pointerup",
+          "id": "-1009",
+          "start": 2218.10000000149,
+          "trusted": true,
+          "handlerMs": 15.399999998509884,
+          "twoRafMs": 27.299999997019768
+        },
+        {
+          "type": "pointermove",
+          "id": "-803",
+          "start": 2413.10000000149,
+          "trusted": true,
+          "handlerMs": 13.199999995529652,
+          "twoRafMs": 23.600000001490116
+        },
+        {
+          "type": "pointerup",
+          "id": "-803",
+          "start": 2524.7999999970198,
+          "trusted": true,
+          "handlerMs": 14.100000001490116,
+          "twoRafMs": 25.30000000447035
+        },
+        {
+          "type": "pointermove",
+          "id": "-466",
+          "start": 2699.7000000029802,
+          "trusted": true,
+          "handlerMs": 3.5999999940395355,
+          "twoRafMs": 12.199999995529652
+        },
+        {
+          "type": "pointerup",
+          "id": "-466",
+          "start": 2795.5,
+          "trusted": true,
+          "handlerMs": 24.200000002980232,
+          "twoRafMs": 34
+        },
+        {
+          "type": "pointermove",
+          "id": "477",
+          "start": 2985.2999999970198,
+          "trusted": true,
+          "handlerMs": 7.9000000059604645,
+          "twoRafMs": 14.300000004470348
+        },
+        {
+          "type": "pointerup",
+          "id": "477",
+          "start": 3088.89999999851,
+          "trusted": true,
+          "handlerMs": 20.899999998509884,
+          "twoRafMs": 30.600000001490116
+        },
+        {
+          "type": "pointermove",
+          "id": "-6",
+          "start": 3275.10000000149,
+          "trusted": true,
+          "handlerMs": 13.5,
+          "twoRafMs": 23.600000001490116
+        },
+        {
+          "type": "pointerup",
+          "id": "-6",
+          "start": 3381.10000000149,
+          "trusted": true,
+          "handlerMs": 23.69999999552965,
+          "twoRafMs": 33.5
+        },
+        {
+          "type": "pointermove",
+          "id": "-201",
+          "start": 3569.60000000149,
+          "trusted": true,
+          "handlerMs": 11.600000001490116,
+          "twoRafMs": 22.100000001490116
+        },
+        {
+          "type": "pointerup",
+          "id": "-201",
+          "start": 3673.7000000029802,
+          "trusted": true,
+          "handlerMs": 19.599999994039536,
+          "twoRafMs": 29
+        },
+        {
+          "type": "pointermove",
+          "id": "1070",
+          "start": 3860,
+          "trusted": true,
+          "handlerMs": 8,
+          "twoRafMs": 21.100000001490116
+        },
+        {
+          "type": "pointerup",
+          "id": "1070",
+          "start": 3965.7999999970198,
+          "trusted": true,
+          "handlerMs": 20.80000000447035,
+          "twoRafMs": 30.100000001490116
+        },
+        {
+          "type": "pointermove",
+          "id": "-262",
+          "start": 4152.5,
+          "trusted": true,
+          "handlerMs": 6.700000002980232,
+          "twoRafMs": 12.399999998509884
+        },
+        {
+          "type": "pointerup",
+          "id": "-262",
+          "start": 4251.89999999851,
+          "trusted": true,
+          "handlerMs": 23,
+          "twoRafMs": 32.899999998509884
+        },
+        {
+          "type": "pointermove",
+          "id": "-981",
+          "start": 4440.60000000149,
+          "trusted": true,
+          "handlerMs": 12.399999998509884,
+          "twoRafMs": 22.600000001490116
+        },
+        {
+          "type": "pointerup",
+          "id": "-981",
+          "start": 4546.20000000298,
+          "trusted": true,
+          "handlerMs": 26.599999994039536,
+          "twoRafMs": 39.29999999701977
+        },
+        {
+          "type": "pointermove",
+          "id": "-1047",
+          "start": 4739.70000000298,
+          "trusted": true,
+          "handlerMs": 8.099999994039536,
+          "twoRafMs": 19
+        },
+        {
+          "type": "pointerup",
+          "id": "-1047",
+          "start": 4841.39999999851,
+          "trusted": true,
+          "handlerMs": 18.600000001490116,
+          "twoRafMs": 27.700000002980232
+        },
+        {
+          "type": "pointermove",
+          "id": "-1038",
+          "start": 5029.89999999851,
+          "trusted": true,
+          "handlerMs": 4.200000002980232,
+          "twoRafMs": 16
+        },
+        {
+          "type": "pointerup",
+          "id": "-1038",
+          "start": 5130.10000000149,
+          "trusted": true,
+          "handlerMs": 20.5,
+          "twoRafMs": 29.69999999552965
+        },
+        {
+          "type": "pointermove",
+          "id": "-961",
+          "start": 5319.89999999851,
+          "trusted": true,
+          "handlerMs": 7.899999998509884,
+          "twoRafMs": 20.399999998509884
+        },
+        {
+          "type": "pointerup",
+          "id": "-961",
+          "start": 5423.39999999851,
+          "trusted": true,
+          "handlerMs": 16.80000000447035,
+          "twoRafMs": 25.700000002980232
+        },
+        {
+          "type": "pointermove",
+          "id": "-672",
+          "start": 5607.29999999702,
+          "trusted": true,
+          "handlerMs": 6.600000001490116,
+          "twoRafMs": 12.200000002980232
+        },
+        {
+          "type": "pointerup",
+          "id": "-672",
+          "start": 5710.10000000149,
+          "trusted": true,
+          "handlerMs": 22.5,
+          "twoRafMs": 32.5
+        },
+        {
+          "type": "pointermove",
+          "id": "718",
+          "start": 5904.29999999702,
+          "trusted": true,
+          "handlerMs": 6.300000004470348,
+          "twoRafMs": 11.900000005960464
+        },
+        {
+          "type": "pointerup",
+          "id": "718",
+          "start": 6007.39999999851,
+          "trusted": true,
+          "handlerMs": 22.30000000447035,
+          "twoRafMs": 32.600000001490116
+        },
+        {
+          "type": "pointermove",
+          "id": "-1062",
+          "start": 6199.39999999851,
+          "trusted": true,
+          "handlerMs": 7.5,
+          "twoRafMs": 12.899999998509884
+        },
+        {
+          "type": "pointerup",
+          "id": "-1062",
+          "start": 6300.20000000298,
+          "trusted": true,
+          "handlerMs": 17.799999997019768,
+          "twoRafMs": 28.299999997019768
+        },
+        {
+          "type": "pointermove",
+          "id": "703",
+          "start": 6486.60000000149,
+          "trusted": true,
+          "handlerMs": 6.600000001490116,
+          "twoRafMs": 11.399999998509884
+        },
+        {
+          "type": "pointerup",
+          "id": "703",
+          "start": 6587,
+          "trusted": true,
+          "handlerMs": 18.600000001490116,
+          "twoRafMs": 27.299999997019768
+        },
+        {
+          "type": "pointermove",
+          "id": "-10703",
+          "start": 6772.39999999851,
+          "trusted": true,
+          "handlerMs": 13.100000001490116,
+          "twoRafMs": 21.700000002980232
+        },
+        {
+          "type": "pointerup",
+          "id": "-10703",
+          "start": 6872.20000000298,
+          "trusted": true,
+          "handlerMs": 13.5,
+          "twoRafMs": 23.799999997019768
+        }
+      ],
+      "longTasks": [
+        52
+      ],
+      "points": [
+        {
+          "x": 435,
+          "y": 244.796875,
+          "id": "-484682516",
+          "complexity": 2371
+        },
+        {
+          "x": 487,
+          "y": 374.796875,
+          "id": "-1097",
+          "complexity": 2171
+        },
+        {
+          "x": 565,
+          "y": 244.796875,
+          "id": "484682512",
+          "complexity": 1815
+        },
+        {
+          "x": 422,
+          "y": 296.796875,
+          "id": "-1009",
+          "complexity": 1753
+        },
+        {
+          "x": 448,
+          "y": 361.796875,
+          "id": "-803",
+          "complexity": 1523
+        },
+        {
+          "x": 448,
+          "y": 270.796875,
+          "id": "-466",
+          "complexity": 1490
+        },
+        {
+          "x": 591,
+          "y": 348.796875,
+          "id": "477",
+          "complexity": 1429
+        },
+        {
+          "x": 409,
+          "y": 296.796875,
+          "id": "-6",
+          "complexity": 1404
+        },
+        {
+          "x": 409,
+          "y": 218.796875,
+          "id": "-201",
+          "complexity": 1301
+        },
+        {
+          "x": 578,
+          "y": 231.796875,
+          "id": "1070",
+          "complexity": 1259
+        },
+        {
+          "x": 435,
+          "y": 296.796875,
+          "id": "-262",
+          "complexity": 1242
+        },
+        {
+          "x": 396,
+          "y": 218.796875,
+          "id": "-981",
+          "complexity": 1223
+        },
+        {
+          "x": 409,
+          "y": 231.796875,
+          "id": "-1047",
+          "complexity": 1177
+        },
+        {
+          "x": 409,
+          "y": 244.796875,
+          "id": "-1038",
+          "complexity": 1143
+        },
+        {
+          "x": 370,
+          "y": 361.796875,
+          "id": "-961",
+          "complexity": 1139
+        },
+        {
+          "x": 409,
+          "y": 270.796875,
+          "id": "-672",
+          "complexity": 1015
+        },
+        {
+          "x": 552,
+          "y": 296.796875,
+          "id": "718",
+          "complexity": 954
+        },
+        {
+          "x": 409,
+          "y": 257.796875,
+          "id": "-1062",
+          "complexity": 925
+        },
+        {
+          "x": 617,
+          "y": 361.796875,
+          "id": "703",
+          "complexity": 912
+        },
+        {
+          "x": 461,
+          "y": 257.796875,
+          "id": "-10703",
+          "complexity": 906
+        }
+      ]
+    },
+    {
+      "url": "http://127.0.0.1:4197/app/?v=4&dataset=ephys_atlas_channels&release=2026_W39-ibl-review-20261007-v1&project=ephys-atlas&edition=local-preview&selected=-10703",
+      "phase": "click",
+      "events": [
+        {
+          "type": "pointermove",
+          "id": "-484682516",
+          "start": 965,
+          "trusted": true,
+          "handlerMs": 3.2000000029802322,
+          "twoRafMs": 15.400000005960464
+        },
+        {
+          "type": "pointerup",
+          "id": "-484682516",
+          "start": 1072.5,
+          "trusted": true,
+          "handlerMs": 23.400000005960464,
+          "twoRafMs": 34
+        },
+        {
+          "type": "pointermove",
+          "id": "-1097",
+          "start": 1262.3000000044703,
+          "trusted": true,
+          "handlerMs": 12.899999998509884,
+          "twoRafMs": 21.5
+        },
+        {
+          "type": "pointerup",
+          "id": "-1097",
+          "start": 1377.3000000044703,
+          "trusted": true,
+          "handlerMs": 23.600000001490116,
+          "twoRafMs": 32.69999999552965
+        },
+        {
+          "type": "pointermove",
+          "id": "484682512",
+          "start": 1567.4000000059605,
+          "trusted": true,
+          "handlerMs": 13.899999998509884,
+          "twoRafMs": 24.299999997019768
+        },
+        {
+          "type": "pointerup",
+          "id": "484682512",
+          "start": 1679.4000000059605,
+          "trusted": true,
+          "handlerMs": 24.599999994039536,
+          "twoRafMs": 34.79999999701977
+        },
+        {
+          "type": "pointermove",
+          "id": "-1009",
+          "start": 1879.3000000044703,
+          "trusted": true,
+          "handlerMs": 12,
+          "twoRafMs": 19.600000001490116
+        },
+        {
+          "type": "pointerup",
+          "id": "-1009",
+          "start": 1988.5,
+          "trusted": true,
+          "handlerMs": 22.900000005960464,
+          "twoRafMs": 34.5
+        },
+        {
+          "type": "pointermove",
+          "id": "-803",
+          "start": 2185.5,
+          "trusted": true,
+          "handlerMs": 7.100000001490116,
+          "twoRafMs": 15.600000001490116
+        },
+        {
+          "type": "pointerup",
+          "id": "-803",
+          "start": 2285.5,
+          "trusted": true,
+          "handlerMs": 24.100000001490116,
+          "twoRafMs": 34.20000000298023
+        },
+        {
+          "type": "pointermove",
+          "id": "-466",
+          "start": 2481.9000000059605,
+          "trusted": true,
+          "handlerMs": 15.299999997019768,
+          "twoRafMs": 27
+        },
+        {
+          "type": "pointerup",
+          "id": "-466",
+          "start": 2596.7000000029802,
+          "trusted": true,
+          "handlerMs": 22.600000001490116,
+          "twoRafMs": 32.899999998509884
+        },
+        {
+          "type": "pointermove",
+          "id": "477",
+          "start": 2789.4000000059605,
+          "trusted": true,
+          "handlerMs": 9.799999997019768,
+          "twoRafMs": 18.099999994039536
+        },
+        {
+          "type": "pointerup",
+          "id": "477",
+          "start": 2897.60000000149,
+          "trusted": true,
+          "handlerMs": 24.200000002980232,
+          "twoRafMs": 35.100000001490116
+        },
+        {
+          "type": "pointermove",
+          "id": "-6",
+          "start": 3091.4000000059605,
+          "trusted": true,
+          "handlerMs": 13.899999998509884,
+          "twoRafMs": 24
+        },
+        {
+          "type": "pointerup",
+          "id": "-6",
+          "start": 3205.4000000059605,
+          "trusted": true,
+          "handlerMs": 21.599999994039536,
+          "twoRafMs": 32.19999999552965
+        },
+        {
+          "type": "pointermove",
+          "id": "-201",
+          "start": 3397.10000000149,
+          "trusted": true,
+          "handlerMs": 12.700000002980232,
+          "twoRafMs": 18
+        },
+        {
+          "type": "pointerup",
+          "id": "-201",
+          "start": 3502.7000000029802,
+          "trusted": true,
+          "handlerMs": 25,
+          "twoRafMs": 33.899999998509884
+        },
+        {
+          "type": "pointermove",
+          "id": "1070",
+          "start": 3696.3000000044703,
+          "trusted": true,
+          "handlerMs": 8.199999995529652,
+          "twoRafMs": 22
+        },
+        {
+          "type": "pointerup",
+          "id": "1070",
+          "start": 3802.5,
+          "trusted": true,
+          "handlerMs": 20.400000005960464,
+          "twoRafMs": 30.400000005960464
+        },
+        {
+          "type": "pointermove",
+          "id": "-262",
+          "start": 3992.10000000149,
+          "trusted": true,
+          "handlerMs": 11.700000002980232,
+          "twoRafMs": 21.899999998509884
+        },
+        {
+          "type": "pointerup",
+          "id": "-262",
+          "start": 4102.10000000149,
+          "trusted": true,
+          "handlerMs": 16.5,
+          "twoRafMs": 26.80000000447035
+        },
+        {
+          "type": "pointermove",
+          "id": "-981",
+          "start": 4286.60000000149,
+          "trusted": true,
+          "handlerMs": 9.600000001490116,
+          "twoRafMs": 18.100000001490116
+        },
+        {
+          "type": "pointerup",
+          "id": "-981",
+          "start": 4388.80000000447,
+          "trusted": true,
+          "handlerMs": 24,
+          "twoRafMs": 36.19999999552965
+        },
+        {
+          "type": "pointermove",
+          "id": "-1047",
+          "start": 4583.70000000298,
+          "trusted": true,
+          "handlerMs": 8.299999997019768,
+          "twoRafMs": 20
+        },
+        {
+          "type": "pointerup",
+          "id": "-1047",
+          "start": 4689.80000000447,
+          "trusted": true,
+          "handlerMs": 18.899999998509884,
+          "twoRafMs": 29.100000001490116
+        },
+        {
+          "type": "pointermove",
+          "id": "-1038",
+          "start": 4870.20000000298,
+          "trusted": true,
+          "handlerMs": 2.7000000029802322,
+          "twoRafMs": 9.899999998509884
+        },
+        {
+          "type": "pointerup",
+          "id": "-1038",
+          "start": 4967.30000000447,
+          "trusted": true,
+          "handlerMs": 23.799999997019768,
+          "twoRafMs": 32.79999999701977
+        },
+        {
+          "type": "pointermove",
+          "id": "-961",
+          "start": 5157.60000000149,
+          "trusted": true,
+          "handlerMs": 6.399999998509884,
+          "twoRafMs": 11.600000001490116
+        },
+        {
+          "type": "pointerup",
+          "id": "-961",
+          "start": 5253,
+          "trusted": true,
+          "handlerMs": 18.600000001490116,
+          "twoRafMs": 29.100000001490116
+        },
+        {
+          "type": "pointermove",
+          "id": "-672",
+          "start": 5441.70000000298,
+          "trusted": true,
+          "handlerMs": 7.5,
+          "twoRafMs": 14.100000001490116
+        },
+        {
+          "type": "pointerup",
+          "id": "-672",
+          "start": 5545.4000000059605,
+          "trusted": true,
+          "handlerMs": 24.299999997019768,
+          "twoRafMs": 34.79999999701977
+        },
+        {
+          "type": "pointermove",
+          "id": "718",
+          "start": 5738.60000000149,
+          "trusted": true,
+          "handlerMs": 11.899999998509884,
+          "twoRafMs": 18.700000002980232
+        },
+        {
+          "type": "pointerup",
+          "id": "718",
+          "start": 5846.30000000447,
+          "trusted": true,
+          "handlerMs": 21.5,
+          "twoRafMs": 33.600000001490116
+        },
+        {
+          "type": "pointermove",
+          "id": "-1062",
+          "start": 6038.30000000447,
+          "trusted": true,
+          "handlerMs": 7.199999995529652,
+          "twoRafMs": 13.5
+        },
+        {
+          "type": "pointerup",
+          "id": "-1062",
+          "start": 6142.70000000298,
+          "trusted": true,
+          "handlerMs": 18.799999997019768,
+          "twoRafMs": 29.200000002980232
+        },
+        {
+          "type": "pointermove",
+          "id": "703",
+          "start": 6332.9000000059605,
+          "trusted": true,
+          "handlerMs": 8.299999997019768,
+          "twoRafMs": 21.5
+        },
+        {
+          "type": "pointerup",
+          "id": "703",
+          "start": 6438.70000000298,
+          "trusted": true,
+          "handlerMs": 19.200000002980232,
+          "twoRafMs": 29.299999997019768
+        },
+        {
+          "type": "pointermove",
+          "id": "-10703",
+          "start": 6628.9000000059605,
+          "trusted": true,
+          "handlerMs": 14.5,
+          "twoRafMs": 29.899999998509884
+        },
+        {
+          "type": "pointerup",
+          "id": "-10703",
+          "start": 6742.10000000149,
+          "trusted": true,
+          "handlerMs": 23.399999998509884,
+          "twoRafMs": 34.80000000447035
+        }
+      ],
+      "longTasks": [],
+      "points": [
+        {
+          "x": 435,
+          "y": 244.796875,
+          "id": "-484682516",
+          "complexity": 2371
+        },
+        {
+          "x": 487,
+          "y": 374.796875,
+          "id": "-1097",
+          "complexity": 2171
+        },
+        {
+          "x": 565,
+          "y": 244.796875,
+          "id": "484682512",
+          "complexity": 1815
+        },
+        {
+          "x": 422,
+          "y": 296.796875,
+          "id": "-1009",
+          "complexity": 1753
+        },
+        {
+          "x": 448,
+          "y": 361.796875,
+          "id": "-803",
+          "complexity": 1523
+        },
+        {
+          "x": 448,
+          "y": 270.796875,
+          "id": "-466",
+          "complexity": 1490
+        },
+        {
+          "x": 591,
+          "y": 348.796875,
+          "id": "477",
+          "complexity": 1429
+        },
+        {
+          "x": 409,
+          "y": 296.796875,
+          "id": "-6",
+          "complexity": 1404
+        },
+        {
+          "x": 409,
+          "y": 218.796875,
+          "id": "-201",
+          "complexity": 1301
+        },
+        {
+          "x": 578,
+          "y": 231.796875,
+          "id": "1070",
+          "complexity": 1259
+        },
+        {
+          "x": 435,
+          "y": 296.796875,
+          "id": "-262",
+          "complexity": 1242
+        },
+        {
+          "x": 396,
+          "y": 218.796875,
+          "id": "-981",
+          "complexity": 1223
+        },
+        {
+          "x": 409,
+          "y": 231.796875,
+          "id": "-1047",
+          "complexity": 1177
+        },
+        {
+          "x": 409,
+          "y": 244.796875,
+          "id": "-1038",
+          "complexity": 1143
+        },
+        {
+          "x": 370,
+          "y": 361.796875,
+          "id": "-961",
+          "complexity": 1139
+        },
+        {
+          "x": 409,
+          "y": 270.796875,
+          "id": "-672",
+          "complexity": 1015
+        },
+        {
+          "x": 552,
+          "y": 296.796875,
+          "id": "718",
+          "complexity": 954
+        },
+        {
+          "x": 409,
+          "y": 257.796875,
+          "id": "-1062",
+          "complexity": 925
+        },
+        {
+          "x": 617,
+          "y": 361.796875,
+          "id": "703",
+          "complexity": 912
+        },
+        {
+          "x": 461,
+          "y": 257.796875,
+          "id": "-10703",
+          "complexity": 906
+        }
+      ]
+    },
+    {
+      "url": "http://127.0.0.1:4197/app/?v=4&dataset=ephys_atlas_channels&release=2026_W39-ibl-review-20261007-v1&project=ephys-atlas&edition=local-preview&selected=-10703",
+      "phase": "click",
+      "events": [
+        {
+          "type": "pointermove",
+          "id": "-484682516",
+          "start": 906.3999999985099,
+          "trusted": true,
+          "handlerMs": 4.600000001490116,
+          "twoRafMs": 16.200000002980232
+        },
+        {
+          "type": "pointerup",
+          "id": "-484682516",
+          "start": 1017.3999999985099,
+          "trusted": true,
+          "handlerMs": 24.200000002980232,
+          "twoRafMs": 34.600000001490116
+        },
+        {
+          "type": "pointermove",
+          "id": "-1097",
+          "start": 1209.6000000014901,
+          "trusted": true,
+          "handlerMs": 14.199999995529652,
+          "twoRafMs": 29.100000001490116
+        },
+        {
+          "type": "pointerup",
+          "id": "-1097",
+          "start": 1328.2000000029802,
+          "trusted": true,
+          "handlerMs": 23.799999997019768,
+          "twoRafMs": 33.79999999701977
+        },
+        {
+          "type": "pointermove",
+          "id": "484682512",
+          "start": 1522.2000000029802,
+          "trusted": true,
+          "handlerMs": 7.5999999940395355,
+          "twoRafMs": 14.5
+        },
+        {
+          "type": "pointerup",
+          "id": "484682512",
+          "start": 1626.3999999985099,
+          "trusted": true,
+          "handlerMs": 24.30000000447035,
+          "twoRafMs": 37.20000000298023
+        },
+        {
+          "type": "pointermove",
+          "id": "-1009",
+          "start": 1824.3999999985099,
+          "trusted": true,
+          "handlerMs": 11.899999998509884,
+          "twoRafMs": 19.5
+        },
+        {
+          "type": "pointerup",
+          "id": "-1009",
+          "start": 1934.6000000014901,
+          "trusted": true,
+          "handlerMs": 26,
+          "twoRafMs": 36.899999998509884
+        },
+        {
+          "type": "pointermove",
+          "id": "-803",
+          "start": 2129.2000000029802,
+          "trusted": true,
+          "handlerMs": 13.899999998509884,
+          "twoRafMs": 24.399999998509884
+        },
+        {
+          "type": "pointerup",
+          "id": "-803",
+          "start": 2240.89999999851,
+          "trusted": true,
+          "handlerMs": 24.80000000447035,
+          "twoRafMs": 39
+        },
+        {
+          "type": "pointermove",
+          "id": "-466",
+          "start": 2437.10000000149,
+          "trusted": true,
+          "handlerMs": 14.399999998509884,
+          "twoRafMs": 26.69999999552965
+        },
+        {
+          "type": "pointerup",
+          "id": "-466",
+          "start": 2547.39999999851,
+          "trusted": true,
+          "handlerMs": 24.899999998509884,
+          "twoRafMs": 35.899999998509884
+        },
+        {
+          "type": "pointermove",
+          "id": "477",
+          "start": 2743.2000000029802,
+          "trusted": true,
+          "handlerMs": 11.799999997019768,
+          "twoRafMs": 17.899999998509884
+        },
+        {
+          "type": "pointerup",
+          "id": "477",
+          "start": 2850.10000000149,
+          "trusted": true,
+          "handlerMs": 30.69999999552965,
+          "twoRafMs": 42
+        },
+        {
+          "type": "pointermove",
+          "id": "-6",
+          "start": 3041.7999999970198,
+          "trusted": true,
+          "handlerMs": 4,
+          "twoRafMs": 13.700000002980232
+        },
+        {
+          "type": "pointerup",
+          "id": "-6",
+          "start": 3142.2000000029802,
+          "trusted": true,
+          "handlerMs": 29.5,
+          "twoRafMs": 46.79999999701977
+        },
+        {
+          "type": "pointermove",
+          "id": "-201",
+          "start": 3347.2000000029802,
+          "trusted": true,
+          "handlerMs": 12.299999997019768,
+          "twoRafMs": 23.69999999552965
+        },
+        {
+          "type": "pointerup",
+          "id": "-201",
+          "start": 3455,
+          "trusted": true,
+          "handlerMs": 19,
+          "twoRafMs": 28.600000001490116
+        },
+        {
+          "type": "pointermove",
+          "id": "1070",
+          "start": 3640.39999999851,
+          "trusted": true,
+          "handlerMs": 8.399999998509884,
+          "twoRafMs": 20.700000002980232
+        },
+        {
+          "type": "pointerup",
+          "id": "1070",
+          "start": 3746.60000000149,
+          "trusted": true,
+          "handlerMs": 20.299999997019768,
+          "twoRafMs": 30.299999997019768
+        },
+        {
+          "type": "pointermove",
+          "id": "-262",
+          "start": 3929.89999999851,
+          "trusted": true,
+          "handlerMs": 7.5,
+          "twoRafMs": 20.80000000447035
+        },
+        {
+          "type": "pointerup",
+          "id": "-262",
+          "start": 4030.60000000149,
+          "trusted": true,
+          "handlerMs": 24.299999997019768,
+          "twoRafMs": 34.69999999552965
+        },
+        {
+          "type": "pointermove",
+          "id": "-981",
+          "start": 4222,
+          "trusted": true,
+          "handlerMs": 17.399999998509884,
+          "twoRafMs": 30.899999998509884
+        },
+        {
+          "type": "pointerup",
+          "id": "-981",
+          "start": 4333.79999999702,
+          "trusted": true,
+          "handlerMs": 31.200000002980232,
+          "twoRafMs": 42.100000001490116
+        },
+        {
+          "type": "pointermove",
+          "id": "-1047",
+          "start": 4531.60000000149,
+          "trusted": true,
+          "handlerMs": 6.5,
+          "twoRafMs": 11.799999997019768
+        },
+        {
+          "type": "pointerup",
+          "id": "-1047",
+          "start": 4634.29999999702,
+          "trusted": true,
+          "handlerMs": 18.5,
+          "twoRafMs": 28.30000000447035
+        },
+        {
+          "type": "pointermove",
+          "id": "-1038",
+          "start": 4815.29999999702,
+          "trusted": true,
+          "handlerMs": 6.4000000059604645,
+          "twoRafMs": 14.5
+        },
+        {
+          "type": "pointerup",
+          "id": "-1038",
+          "start": 4917.39999999851,
+          "trusted": true,
+          "handlerMs": 23.5,
+          "twoRafMs": 32.80000000447035
+        },
+        {
+          "type": "pointermove",
+          "id": "-961",
+          "start": 5106.5,
+          "trusted": true,
+          "handlerMs": 6.700000002980232,
+          "twoRafMs": 15.700000002980232
+        },
+        {
+          "type": "pointerup",
+          "id": "-961",
+          "start": 5206.79999999702,
+          "trusted": true,
+          "handlerMs": 22.30000000447035,
+          "twoRafMs": 32.900000005960464
+        },
+        {
+          "type": "pointermove",
+          "id": "-672",
+          "start": 5399.10000000149,
+          "trusted": true,
+          "handlerMs": 11.5,
+          "twoRafMs": 22.100000001490116
+        },
+        {
+          "type": "pointerup",
+          "id": "-672",
+          "start": 5504.39999999851,
+          "trusted": true,
+          "handlerMs": 24.100000001490116,
+          "twoRafMs": 34.20000000298023
+        },
+        {
+          "type": "pointermove",
+          "id": "718",
+          "start": 5697.79999999702,
+          "trusted": true,
+          "handlerMs": 10.200000002980232,
+          "twoRafMs": 17.30000000447035
+        },
+        {
+          "type": "pointerup",
+          "id": "718",
+          "start": 5803.20000000298,
+          "trusted": true,
+          "handlerMs": 21.099999994039536,
+          "twoRafMs": 32
+        },
+        {
+          "type": "pointermove",
+          "id": "-1062",
+          "start": 5993.10000000149,
+          "trusted": true,
+          "handlerMs": 9,
+          "twoRafMs": 15.199999995529652
+        },
+        {
+          "type": "pointerup",
+          "id": "-1062",
+          "start": 6098.29999999702,
+          "trusted": true,
+          "handlerMs": 18.400000005960464,
+          "twoRafMs": 28.30000000447035
+        },
+        {
+          "type": "pointermove",
+          "id": "703",
+          "start": 6285.29999999702,
+          "trusted": true,
+          "handlerMs": 8.5,
+          "twoRafMs": 16.5
+        },
+        {
+          "type": "pointerup",
+          "id": "703",
+          "start": 6397.20000000298,
+          "trusted": true,
+          "handlerMs": 16.299999997019768,
+          "twoRafMs": 26.299999997019768
+        },
+        {
+          "type": "pointermove",
+          "id": "-10703",
+          "start": 6581.60000000149,
+          "trusted": true,
+          "handlerMs": 9.199999995529652,
+          "twoRafMs": 17.19999999552965
+        },
+        {
+          "type": "pointerup",
+          "id": "-10703",
+          "start": 6682.70000000298,
+          "trusted": true,
+          "handlerMs": 24.69999999552965,
+          "twoRafMs": 35
+        }
+      ],
+      "longTasks": [],
+      "points": [
+        {
+          "x": 435,
+          "y": 244.796875,
+          "id": "-484682516",
+          "complexity": 2371
+        },
+        {
+          "x": 487,
+          "y": 374.796875,
+          "id": "-1097",
+          "complexity": 2171
+        },
+        {
+          "x": 565,
+          "y": 244.796875,
+          "id": "484682512",
+          "complexity": 1815
+        },
+        {
+          "x": 422,
+          "y": 296.796875,
+          "id": "-1009",
+          "complexity": 1753
+        },
+        {
+          "x": 448,
+          "y": 361.796875,
+          "id": "-803",
+          "complexity": 1523
+        },
+        {
+          "x": 448,
+          "y": 270.796875,
+          "id": "-466",
+          "complexity": 1490
+        },
+        {
+          "x": 591,
+          "y": 348.796875,
+          "id": "477",
+          "complexity": 1429
+        },
+        {
+          "x": 409,
+          "y": 296.796875,
+          "id": "-6",
+          "complexity": 1404
+        },
+        {
+          "x": 409,
+          "y": 218.796875,
+          "id": "-201",
+          "complexity": 1301
+        },
+        {
+          "x": 578,
+          "y": 231.796875,
+          "id": "1070",
+          "complexity": 1259
+        },
+        {
+          "x": 435,
+          "y": 296.796875,
+          "id": "-262",
+          "complexity": 1242
+        },
+        {
+          "x": 396,
+          "y": 218.796875,
+          "id": "-981",
+          "complexity": 1223
+        },
+        {
+          "x": 409,
+          "y": 231.796875,
+          "id": "-1047",
+          "complexity": 1177
+        },
+        {
+          "x": 409,
+          "y": 244.796875,
+          "id": "-1038",
+          "complexity": 1143
+        },
+        {
+          "x": 370,
+          "y": 361.796875,
+          "id": "-961",
+          "complexity": 1139
+        },
+        {
+          "x": 409,
+          "y": 270.796875,
+          "id": "-672",
+          "complexity": 1015
+        },
+        {
+          "x": 552,
+          "y": 296.796875,
+          "id": "718",
+          "complexity": 954
+        },
+        {
+          "x": 409,
+          "y": 257.796875,
+          "id": "-1062",
+          "complexity": 925
+        },
+        {
+          "x": 617,
+          "y": 361.796875,
+          "id": "703",
+          "complexity": 912
+        },
+        {
+          "x": 461,
+          "y": 257.796875,
+          "id": "-10703",
+          "complexity": 906
+        }
+      ]
+    }
+  ]
+}
