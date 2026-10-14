@@ -29,11 +29,12 @@ Local validation passed `just check` (258 browser tests and four documentation
 screenshot checks), plus production `just site-compatibility`; optional real D070
 unit fixtures remain skipped. The selector fixture integrity/conformance tests
 and documentation checks validate the finalized upstream pin. This evidence
-establishes local implementation only. Next, commit the reviewed change on
-`main`, exercise the exact clean candidate over the production origin, then use
-the [automatic site deployment runbook](publishing/AUTOMATIC_SITE_DEPLOYMENT.md)
-to verify CI publication and the live build. No selector site deployment or live
-production verification is claimed here.
+establishes local implementation. The exact clean unpublished candidate also
+passes production-origin checks over all seven discovered real datasets and
+the registered/static projections, URL/navigation state and optional 3-D view.
+The [automatic site deployment runbook](publishing/AUTOMATIC_SITE_DEPLOYMENT.md)
+remains the gate for CI publication and post-push live verification; candidate
+verification itself does not publish the site.
 
 ## Product architecture
 
