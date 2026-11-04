@@ -7,6 +7,9 @@ import numpy as np
 
 from .regional_release import FeatureInfo, RegionInfo, fold_region_ids_left
 
+# Probe-geometry columns of the denoised schema: positions of the channel, not features.
+NON_FEATURE_COLUMNS = frozenset({"axial_um", "lateral_um"})
+
 PARCELLATION_COLUMNS = {
     "allen": "Allen_id",
     "beryl": "Beryl_id",
@@ -115,6 +118,39 @@ def _feature_info(model, source_column: str, variant: str, *, label_variant: boo
     )
 
 
+def _requested_features(features, mode: str, frame, features_module) -> list[str]:
+    """Feature columns to publish for one source variant.
+
+    Parameters
+    ----------
+    features : Sequence[str] or None
+        Explicit feature ids; returned unchanged when given.
+    mode : str
+        Source variant, ``raw`` or ``denoised``.
+    frame : pandas.DataFrame
+        The variant's channel table.
+    features_module : module
+        ``ephysatlas.features``.
+
+    Returns
+    -------
+    list of str
+        For ``denoised``, the table columns described by ``ModelDenoisedFeatures``
+        (minus probe-geometry columns), so the catalog follows the vintage.
+        For ``raw``, the current ``voltage_features_set()``.
+    """
+    if features is not None:
+        return list(features)
+    if mode == "denoised":
+        schema = features_module.ModelDenoisedFeatures.to_schema().columns
+        return sorted(
+            column
+            for column in frame.columns
+            if column in schema and column not in NON_FEATURE_COLUMNS
+        )
+    return sorted(set(features_module.voltage_features_set()))
+
+
 def load_channel_scientific_inputs(
     source_snapshot: Path,
     *,
@@ -134,11 +170,6 @@ def load_channel_scientific_inputs(
 
     table_dir = discover_channel_table_dir(source_snapshot, feature_mode)
     atlas = ephysatlas.anatomy.ClassifierAtlas()
-    requested = (
-        sorted(set(ephysatlas.features.voltage_features_set()))
-        if features is None
-        else list(features)
-    )
     modes = ("raw", "denoised") if feature_mode == "both" else (feature_mode,)
     frames = {}
     for mode in modes:
@@ -160,7 +191,13 @@ def load_channel_scientific_inputs(
 
     feature_values = {}
     feature_metadata = {}
+    # Each variant is described by its own schema: the raw model lacks the denoised columns.
+    feature_models = {
+        "raw": ephysatlas.features.ModelRawFeatures,
+        "denoised": ephysatlas.features.ModelDenoisedFeatures,
+    }
     for mode, frame in frames.items():
+        requested = _requested_features(features, mode, frame, ephysatlas.features)
         missing = [feature for feature in requested if feature not in frame.columns]
         if features is not None and missing:
             raise RuntimeError(
@@ -178,7 +215,7 @@ def load_channel_scientific_inputs(
                 copy=False,
             )
             feature_metadata[output_id] = _feature_info(
-                ephysatlas.features.ModelRawFeatures,
+                feature_models[mode],
                 feature,
                 mode,
                 label_variant=feature_mode == "both",

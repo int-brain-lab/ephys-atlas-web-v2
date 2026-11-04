@@ -293,7 +293,7 @@ def main(argv: list[str] | None = None) -> int:
         "--feature",
         action="append",
         dest="features",
-        help="explicit feature id; repeat as needed; omit to resolve current voltage_features_set()",
+        help="explicit feature id; repeat as needed; omit to use the denoised schema columns of the table (raw: voltage_features_set())",
     )
     p.add_argument(
         "--distribution-selection",

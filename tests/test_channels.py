@@ -13,6 +13,7 @@ from ephys_atlas_builder.channels import (
     discover_channel_table_dir,
     fold_region_ids_left,
 )
+from ephys_atlas_builder.channel_source import _requested_features
 from ephys_atlas_builder.validate import validate_release
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -416,3 +417,38 @@ def test_channel_feature_metadata_prefers_transformed_then_raw_units():
     single = _feature_info(Model, "rms_ap", "denoised", label_variant=False)
     assert single.variant == "denoised"
     assert single.label == "rms ap"
+
+
+def test_denoised_feature_set_follows_the_denoised_schema_not_the_raw_feature_list():
+    class Schema:
+        columns: ClassVar = dict.fromkeys(
+            ["axial_um", "lateral_um", "spike_amplitude", "psd_alpha_bpr", "rms_lf_no_car"]
+        )
+
+    class Model:
+        @staticmethod
+        def to_schema():
+            return Schema()
+
+    class Features:
+        ModelDenoisedFeatures = Model
+
+        @staticmethod
+        def voltage_features_set():
+            return ["peak_val", "rms_ap"]
+
+    import pandas as pd
+
+    # Table columns absent from the schema (an extra) or the schema columns absent from the table
+    # (rms_lf_no_car) never become features; probe geometry is dropped.
+    frame = pd.DataFrame(
+        columns=["rms_ap", "spike_amplitude", "psd_alpha_bpr", "axial_um", "lateral_um", "extra"]
+    )
+    assert _requested_features(None, "denoised", frame, Features) == [
+        "psd_alpha_bpr",
+        "spike_amplitude",
+    ]
+    # The raw variant keeps the published voltage feature list.
+    assert _requested_features(None, "raw", frame, Features) == ["peak_val", "rms_ap"]
+    # Explicit ids always win.
+    assert _requested_features(["rms_ap"], "denoised", frame, Features) == ["rms_ap"]

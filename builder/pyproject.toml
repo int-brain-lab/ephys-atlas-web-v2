@@ -29,7 +29,7 @@ test = [
 ]
 scientific = [
     "botocore[crt]==1.43.75",
-    "ibleatools @ git+https://github.com/int-brain-lab/ibleatools.git@9bfa0623a16bc7a989a6b27a589887641beee0a8",
+    "ibleatools @ git+https://github.com/int-brain-lab/ibleatools.git@6ce03408772125440a42cc06648d0fe166000bff",
 ]
 anatomy = [
     "brotli>=1.1,<2",
@@ -47,5 +47,10 @@ include = ["ibl_ephys_atlas*", "ephys_atlas_builder*"]
 [tool.setuptools.package-data]
 ibl_ephys_atlas = ["_schema/v1/*"]
 
+[tool.uv]
+# ibleatools (scientific extra) requires Python >= 3.12; resolve and lock only for 3.12+
+# without narrowing the published package's requires-python.
+environments = ["python_version >= '3.12'"]
+
 [tool.uv.sources]
-iblatlas = { git = "https://github.com/int-brain-lab/iblatlas.git", rev = "52083adf44825d0622a503705e095699a5957587" }
+iblatlas = { git = "https://github.com/int-brain-lab/iblatlas.git", rev = "b88da5d8541d77285565fdb3f86f4f69c50b9e68" }
