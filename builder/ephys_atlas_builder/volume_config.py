@@ -34,6 +34,8 @@ class VolumeBuildConfig:
     chunk_shape: tuple[int, int, int] | None = None
     features: tuple[str, ...] | None = None
     feature_display: Mapping[str, dict] | None = None
+    # Optional human-readable feature descriptions (feature id -> text); missing ids keep the generic text.
+    feature_descriptions: Mapping[str, str] | None = None
     histogram_bins: int = 50
     paper_snapshot: bool = False
     ibleatools_commit: str | None = None

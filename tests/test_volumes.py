@@ -155,6 +155,24 @@ def test_volume_recipe_builds_both_schema_layouts(tmp_path, layout, options):
     ) == 22
 
 
+def test_volume_feature_description_overrides_the_generic_text_only_where_given(tmp_path):
+    release = build_volumes_release_from_arrays(
+        tmp_path / "described",
+        replace(_config(), feature_descriptions={"rms_ap": "Root mean square of the AP band."}),
+        {**_features(), "rms_lf": _features()["rms_ap"]},
+        [{"role": "canonical-data", "description": "description test"}],
+    )
+    validate_release(release, ROOT / "schema" / "v1")
+    described = json.loads((release / "features/rms_ap/feature.json").read_text())
+    assert described["description"] == "Root mean square of the AP band."
+    others = [
+        json.loads(path.read_text())["description"]
+        for path in sorted((release / "features").glob("*/feature.json"))
+        if path.parent.name != "rms_ap"
+    ]
+    assert others and all(text.startswith("Raw, unnormalized") for text in others)
+
+
 def test_volume_recipe_accepts_representation_specific_distribution_selection(tmp_path):
     display = {
         "colormap": "viridis",
