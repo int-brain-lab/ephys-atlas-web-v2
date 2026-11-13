@@ -107,6 +107,7 @@ only part of the body; the index states what remains effective.
 | D097 | One-click image downloads and format menu | accepted | 2026-10-13 | primary button downloads immediately; adjacent arrow exposes colorbar and alternate SVG/PNG actions with brief descriptions; refines D093 interaction |
 | D098 | Omit selection borders from 2D downloads | accepted | 2026-10-13 | exported SVG/PNG omit selected-region strokes and halos; normal anatomy boundaries, feature colors and live selection remain; refines D093 |
 | D099 | Docked region inspection and compact feature summary | accepted | 2026-10-13 | fixed right-side inspection; expandable below-view fallback for narrow, collapsed and maximized layouts; full-width Summary row; persistent selection labels and discreet cursor acronyms |
+| D100 | W42 channel and W46 volume and edges release selections | accepted | 2026-11-13 | W42 channels denoised-only with the D089 display; W46 volume from `ea-encoder-channel` 0.0.1 and its edges with unchanged display and geometry; unpromoted 2026-11-04 releases deleted |
 
 ## D001 — Separate v2
 
@@ -2433,3 +2434,28 @@ and 3-D retain their existing view and URL behavior. Obsolete
 
 The owner subsequently authorized semantic commits and a push to `main` after
 verification. Site publication follows the automatic deployment workflow.
+
+## D100 — W42 channel and W46 volume and edges release selections
+
+Owner direction recorded 2026-11-13. The production update publishes the
+`ea_active` `2026_W42` channel snapshot denoised-only with the D089 display
+carried over by feature id (`docs/data/CHANNELS_2026_W42_DISTRIBUTION_SELECTION.json`),
+and a new `2026_W46` encoding volume and its edges. The volume is predicted on
+the native 50 um Allen grid by paper-ephys-atlas
+`scripts/generate_dense_ephys_atlas_50um.py` with the `ea-encoder-channel`
+`0.0.1` release (Hub commit `fe7b3cba`; trained on the 2026_W42 features
+without the insertions the ibleatools 0.13.0 automatic QC marks bad),
+converted to the dense NPZ by the release runbook and published under
+`aggregates/atlas/encoding_volumes/ea_active/2026_W46/`. Edges use the
+`ephysatlas.edges.compute_edges_volume` defaults. Volume display, geometry and
+regional distributions are unchanged from W45/W39; the edges range is the 1st-99th
+percentile of the W46 in-brain values. Builds pin ibleatools `647d7ba` and
+iblatlas `b88da5d`. Everything else in the catalog stays as it is.
+
+The unpromoted 2026-11-04 releases (`2026_W42-ibl-review-20261104-v1`
+channels, `2026_W45-ibl-review-20261104-v1` volumes,
+`2026_W45-edges-ibl-review-20261104-v1` edges) were built at an unpushed
+builder commit and never entered the catalog. By owner instruction their
+objects, staging plans and dataset-index entries were deleted from the
+production root on 2026-11-13; no published catalog generation referenced
+them. This is a one-off exception to archive-not-delete.
