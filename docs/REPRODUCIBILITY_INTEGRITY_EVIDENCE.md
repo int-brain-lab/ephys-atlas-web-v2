@@ -15,8 +15,8 @@ matched each other and the committed bytes.
 | --- | ---: | ---: | --- |
 | `fixtures/golden-v1/` | 22 files | 27,572 | `4a1a83ad03a56c1da6d68c054c8b504f49de38844f17a1d1952157a1b8a61c5b` |
 | `fixtures/golden-v1.ibl-ephys-atlas.zip` | 22 | 10,558 | `474d12c6abcdcc6acec17890cf96158ce8f55a484362f1b6d303460aea372d68` |
-| `fixtures/authored-regional-v1.ibl-ephys-atlas.zip` | 8 | 4,491 | `377e570d27f79ce988bdd1818de874182b4ce2605d7a256a37aa3c17e821f1dd` |
-| `fixtures/authored-volume-v1.ibl-ephys-atlas.zip` | 13 | 6,878 | `361e3c1e2b0b6849bbfc5088ad15b4575a523f26383b0e3655e701d41484dc84` |
+| `fixtures/authored-regional-v1.ibl-ephys-atlas.zip` | 8 | 4,491 | `861d0f854ea587de011e8b0bc171b9b9f8c3050c48218c9f04b0afd5724d94e9` |
+| `fixtures/authored-volume-v1.ibl-ephys-atlas.zip` | 13 | 6,879 | `12f42dabd4fc82e9d3b8d9ef5085780e1456f32cc675d3a9c97a85ddd2729e27` |
 
 The directory fingerprint is SHA-256 over the sorted sequence of relative
 path, byte length, and per-file SHA-256 records. The corresponding committed

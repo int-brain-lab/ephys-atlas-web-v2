@@ -125,7 +125,8 @@ def _write_volume_feature(
         "schema_version": "1.0",
         "id": feature_id,
         "label": feature_id.replace("_", " "),
-        "description": f"Raw, unnormalized {feature_id} scalar encoding volume.",
+        "description": (config.feature_descriptions or {}).get(feature_id)
+        or f"Raw, unnormalized {feature_id} scalar encoding volume.",
         "unit": None,
         "display": {"volume": display},
         "value_semantics": {

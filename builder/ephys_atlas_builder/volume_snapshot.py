@@ -31,6 +31,27 @@ from .volume_regional import (
 )
 from .volume_release import build_volumes_release_from_arrays
 
+def _ibleatools_descriptions(config: VolumeBuildConfig, feature_ids) -> dict[str, str]:
+    """Feature descriptions from the ibleatools denoised schema (encoding volumes only).
+
+    The encoder predicts the denoised channel features, so their documented
+    descriptions apply. Other volume datasets and ids unknown to the schema keep
+    the generic text; a missing ibleatools install yields no descriptions.
+    """
+    if config.dataset_id != DATASET_ID:
+        return {}
+    try:
+        import ephysatlas.features as features_module
+    except ImportError:
+        return {}
+    columns = features_module.ModelDenoisedFeatures.to_schema().columns
+    return {
+        feature: columns[feature].description
+        for feature in feature_ids
+        if feature in columns and getattr(columns[feature], "description", None)
+    }
+
+
 def build_volumes_from_snapshot(
     source_snapshot: Path,
     release_dir: Path,
@@ -164,7 +185,11 @@ def build_volumes_from_snapshot(
         source_release_id=source_release_id,
         feature_ids=selected,
     )
-    config = replace(config, feature_display=feature_display)
+    config = replace(
+        config,
+        feature_display=feature_display,
+        feature_descriptions=_ibleatools_descriptions(config, selected),
+    )
 
     regional_selection = (
         load_regional_selection(config.regional_distribution_selection)

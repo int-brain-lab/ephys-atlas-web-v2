@@ -46,7 +46,7 @@ def test_project_metadata_exposes_both_namespaces_and_retains_internal_cli() -> 
     assert all("iblatlas" not in item for item in project["project"]["optional-dependencies"]["scientific"])
     assert all("iblatlas" not in item for item in project["project"]["optional-dependencies"]["anatomy"])
     assert project["tool"]["uv"]["sources"]["iblatlas"]["rev"] == (
-        "52083adf44825d0622a503705e095699a5957587"
+        "b88da5d8541d77285565fdb3f86f4f69c50b9e68"
     )
 
 
