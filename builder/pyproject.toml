@@ -29,7 +29,7 @@ test = [
 ]
 scientific = [
     "botocore[crt]==1.43.75",
-    "ibleatools @ git+https://github.com/int-brain-lab/ibleatools.git@6ce03408772125440a42cc06648d0fe166000bff",
+    "ibleatools @ git+https://github.com/int-brain-lab/ibleatools.git@647d7ba5e87ba986144bf5ef94620bb18ff49fd5",
 ]
 anatomy = [
     "brotli>=1.1,<2",

@@ -1047,7 +1047,7 @@ requires-dist = [
     { name = "botocore", extras = ["crt"], marker = "extra == 'scientific'", specifier = "==1.43.75" },
     { name = "brotli", marker = "extra == 'anatomy'", specifier = ">=1.1,<2" },
     { name = "iblatlas", git = "https://github.com/int-brain-lab/iblatlas.git?rev=b88da5d8541d77285565fdb3f86f4f69c50b9e68" },
-    { name = "ibleatools", marker = "extra == 'scientific'", git = "https://github.com/int-brain-lab/ibleatools.git?rev=6ce03408772125440a42cc06648d0fe166000bff" },
+    { name = "ibleatools", marker = "extra == 'scientific'", git = "https://github.com/int-brain-lab/ibleatools.git?rev=647d7ba5e87ba986144bf5ef94620bb18ff49fd5" },
     { name = "jsonschema", specifier = ">=4.20" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.6,<9.7" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'", specifier = ">=0.30,<1" },
@@ -1131,10 +1131,11 @@ dependencies = [
 
 [[package]]
 name = "ibleatools"
-version = "0.12.0"
-source = { git = "https://github.com/int-brain-lab/ibleatools.git?rev=6ce03408772125440a42cc06648d0fe166000bff#6ce03408772125440a42cc06648d0fe166000bff" }
+version = "0.13.0"
+source = { git = "https://github.com/int-brain-lab/ibleatools.git?rev=647d7ba5e87ba986144bf5ef94620bb18ff49fd5#647d7ba5e87ba986144bf5ef94620bb18ff49fd5" }
 dependencies = [
     { name = "filelock" },
+    { name = "h5py" },
     { name = "huggingface-hub" },
     { name = "ibl-neuropixel" },
     { name = "iblatlas" },
