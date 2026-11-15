@@ -757,7 +757,7 @@ def test_active_native_bundle_preserves_core_releases_and_pins_approved_mesh():
     assert current['artifacts'][6]['identity']['dataset_id'] == 'agea'
     assert current['artifacts'][6]['maturity'] == 'validated-real-local'
     assert current['unavailable'] == []
-    assert 'development-bundle-v7.json' in (ROOT / 'Justfile').read_text()
+    assert 'development-bundle-v8.json' in (ROOT / 'Justfile').read_text()
     rollback = load_development_bundle(ROOT / 'data/development-bundle-v5-d042-rollback.json')
     assert rollback['default_view'] == current['default_view']
     assert rollback['artifacts'][:5] == current['artifacts'][:5]
@@ -797,14 +797,18 @@ def test_regional_bundle_pins_published_successors_without_changing_historical_b
             'state': 'resolved',
             'base_url': f"https://ephys-atlas.iblcore.org/datasets/{artifact['identity']['dataset_id']}/releases/{release_id}/",
         }
-    assert 'development-bundle-v7.json' in (ROOT / 'tools/local_preview.py').read_text()
+    assert 'development-bundle-v8.json' in (ROOT / 'tools/local_preview.py').read_text()
 
 
-def test_w39_bundle_pins_every_published_release_by_served_manifest():
-    current = load_development_bundle(ROOT / 'data/development-bundle-v7.json')
+@pytest.mark.parametrize('name, default_release', [
+    ('development-bundle-v7.json', '2026_W39-ibl-review-20261007-v1'),
+    ('development-bundle-v8.json', '2026_W42-ibl-review-20261113-v1'),
+])
+def test_deployed_bundle_pins_every_published_release_by_served_manifest(name, default_release):
+    current = load_development_bundle(ROOT.joinpath('data', name))
     assert current['default_view'] == {
         'dataset_id': 'ephys_atlas_channels',
-        'release_id': '2026_W39-ibl-review-20261007-v1',
+        'release_id': default_release,
         'feature_id': 'rms_ap',
         'parcellation_id': 'allen',
     }

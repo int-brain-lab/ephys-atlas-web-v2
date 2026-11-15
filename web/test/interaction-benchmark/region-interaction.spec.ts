@@ -78,7 +78,7 @@ test('warm real-data slice hover and selection through the complete application'
   const report = { environment: { browser: browser.version(), platform: os.platform(), arch: os.arch(),
     cpu: os.cpus()[0]?.model, viewport: page.viewportSize(), commit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
     dirty: !!execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' }).trim(),
-    bundle: 'data/development-bundle-v7.json', maturity: 'local-real-data',
+    bundle: 'data/development-bundle-v8.json', maturity: 'local-real-data',
     metric: 'capture-to-bubble handler duration; two rAF callbacks are a frame proxy, not exact presentation latency' },
     summary: Object.fromEntries(['pointermove', 'pointerup'].map(type => {
       const samples = events.filter(event => event.type === type);
