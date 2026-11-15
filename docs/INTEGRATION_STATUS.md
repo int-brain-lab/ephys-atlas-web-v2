@@ -418,6 +418,8 @@ the automatic first-visit tour and all five datasets; see the
 The W39 channels, volumes, edges, MERFISH and lipid releases and the
 Genomics and Lipidome catalog projects followed on 2026-10-07; see the
 [W39 deployment record](publishing/W39_DEPLOYMENT_20261007.md).
+The W42 channels and W46 volumes and edges (D100) followed on 2026-11-15; see
+the [W42/W46 deployment record](publishing/W42_W46_DEPLOYMENT_20261115.md).
 Q2/Q9 still govern the later paper freeze. No further administrator intervention
 is needed for the approved deployment operations.
 
