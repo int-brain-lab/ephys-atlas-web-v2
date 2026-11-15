@@ -12,7 +12,7 @@
         "ephys_atlas_edges"
       ],
       "default_dataset": "ephys_atlas_channels",
-      "default_edition": "ibl-review-20261007-v4",
+      "default_edition": "ibl-review-20261113-v5",
       "editions": [
         {
           "edition_id": "ibl-review-20260908-v1",
@@ -85,25 +85,26 @@
               "release_id": "2026_W39-edges-ibl-review-20261007-v1"
             }
           ]
-        }
-      ]
-    },
-    {
-      "project_id": "brainwide-map",
-      "title": "Brain-Wide Map",
-      "dataset_ids": [
-        "brainwide_map"
-      ],
-      "default_dataset": "brainwide_map",
-      "default_edition": "ibl-review-20260908-v1",
-      "editions": [
+        },
         {
-          "edition_id": "ibl-review-20260908-v1",
-          "label": "September 2026",
+          "edition_id": "ibl-review-20261113-v5",
+          "label": "November 2026 (W42 channels, W46 volumes)",
           "dataset_releases": [
             {
-              "dataset_id": "brainwide_map",
-              "release_id": "legacy-v1-1d908bea-ibl-review-20260908-v1"
+              "dataset_id": "ephys_atlas_channels",
+              "release_id": "2026_W42-ibl-review-20261113-v1"
+            },
+            {
+              "dataset_id": "ephys_atlas_clusters",
+              "release_id": "sha256-9b5e55215b306f26-ibl-review-20260908-v1"
+            },
+            {
+              "dataset_id": "ephys_atlas_volumes",
+              "release_id": "2026_W46-ibl-review-20261113-v1"
+            },
+            {
+              "dataset_id": "ephys_atlas_edges",
+              "release_id": "2026_W46-edges-ibl-review-20261113-v1"
             }
           ]
         }
@@ -161,7 +162,7 @@
     {
       "dataset_id": "ephys_atlas_channels",
       "title": "Channels",
-      "default_release": "2026_W39-ibl-review-20261007-v1",
+      "default_release": "2026_W42-ibl-review-20261113-v1",
       "releases": [
         {
           "release_id": "2026_W32-ibl-review-20260908-v1",
@@ -170,6 +171,10 @@
         {
           "release_id": "2026_W39-ibl-review-20261007-v1",
           "label": "2026 W39"
+        },
+        {
+          "release_id": "2026_W42-ibl-review-20261113-v1",
+          "label": "2026 W42"
         }
       ]
     },
@@ -187,7 +192,7 @@
     {
       "dataset_id": "ephys_atlas_volumes",
       "title": "Volumes",
-      "default_release": "2026_W39-ibl-review-20261007-v1",
+      "default_release": "2026_W46-ibl-review-20261113-v1",
       "releases": [
         {
           "release_id": "2026_W26-ibl-review-20260908-v1",
@@ -200,18 +205,10 @@
         {
           "release_id": "2026_W39-ibl-review-20261007-v1",
           "label": "2026 W39"
-        }
-      ]
-    },
-    {
-      "dataset_id": "brainwide_map",
-      "title": "Brain-Wide Map",
-      "default_release": "legacy-v1-1d908bea-ibl-review-20260908-v1",
-      "releases": [
+        },
         {
-          "release_id": "legacy-v1-1d908bea-ibl-review-20260908-v1",
-          "label": "Legacy website snapshot",
-          "status": "legacy"
+          "release_id": "2026_W46-ibl-review-20261113-v1",
+          "label": "2026 W46"
         }
       ]
     },
@@ -233,11 +230,15 @@
     {
       "dataset_id": "ephys_atlas_edges",
       "title": "Edges",
-      "default_release": "2026_W39-edges-ibl-review-20261007-v1",
+      "default_release": "2026_W46-edges-ibl-review-20261113-v1",
       "releases": [
         {
           "release_id": "2026_W39-edges-ibl-review-20261007-v1",
           "label": "2026 W39"
+        },
+        {
+          "release_id": "2026_W46-edges-ibl-review-20261113-v1",
+          "label": "2026 W46"
         }
       ]
     },

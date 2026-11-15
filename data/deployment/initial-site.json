@@ -17,7 +17,7 @@
   "default_view": {
     "project_id": "ephys-atlas",
     "dataset_id": "ephys_atlas_channels",
-    "release_id": "2026_W39-ibl-review-20261007-v1",
+    "release_id": "2026_W42-ibl-review-20261113-v1",
     "feature_id": "rms_ap",
     "parcellation_id": "allen",
     "curator_config": "data/deployment/initial-curator.json"

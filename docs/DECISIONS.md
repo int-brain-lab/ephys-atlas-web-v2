@@ -107,7 +107,7 @@ only part of the body; the index states what remains effective.
 | D097 | One-click image downloads and format menu | accepted | 2026-10-13 | primary button downloads immediately; adjacent arrow exposes colorbar and alternate SVG/PNG actions with brief descriptions; refines D093 interaction |
 | D098 | Omit selection borders from 2D downloads | accepted | 2026-10-13 | exported SVG/PNG omit selected-region strokes and halos; normal anatomy boundaries, feature colors and live selection remain; refines D093 |
 | D099 | Docked region inspection and compact feature summary | accepted | 2026-10-13 | fixed right-side inspection; expandable below-view fallback for narrow, collapsed and maximized layouts; full-width Summary row; persistent selection labels and discreet cursor acronyms |
-| D100 | W42 channel and W46 volume and edges release selections | accepted | 2026-11-13 | W42 channels denoised-only with the D089 display; W46 volume from `ea-encoder-channel` 0.0.1 and its edges with unchanged display and geometry; unpromoted 2026-11-04 releases deleted |
+| D100 | W42 channel and W46 volume and edges release selections | accepted | 2026-11-13 | W42 channels denoised-only with the D089 display; W46 volume from `ea-encoder-channel` 0.0.1 and its edges with unchanged display and geometry; unpromoted 2026-11-04 releases deleted; Brain-Wide Map stays out (D094 unpromoted) |
 
 ## D001 — Separate v2
 
@@ -2451,6 +2451,10 @@ converted to the dense NPZ by the release runbook and published under
 regional distributions are unchanged from W45/W39; the edges range is the 1st-99th
 percentile of the W46 in-brain values. Builds pin ibleatools `647d7ba` and
 iblatlas `b88da5d`. Everything else in the catalog stays as it is.
+
+Brain-Wide Map stays out of this promotion by owner decision (2026-11-13),
+matching the live catalog. The tracked curator configuration drops the D094
+restoration, which therefore remains unpromoted.
 
 The unpromoted 2026-11-04 releases (`2026_W42-ibl-review-20261104-v1`
 channels, `2026_W45-ibl-review-20261104-v1` volumes,

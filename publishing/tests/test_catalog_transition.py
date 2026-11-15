@@ -59,13 +59,17 @@ def test_new_default_release_preserves_historical_discovery():
     assert not any(result["removed"].values())
 
 
-def test_bwm_restoration_preserves_the_entire_current_production_inventory():
+def test_w42_w46_promotion_adds_releases_and_preserves_the_w39_inventory():
     root = Path(__file__).resolve().parents[2]
-    # Frozen W39 evidence remains the incident baseline after a future promotion.
+    # Frozen W39 evidence is the baseline: the live catalog has no Brain-Wide Map.
     previous = json.loads((root / "data/deployment/dependencies/435e77daae52affa9949f7592745ed3fa039317f30b3e5b4363b182cfe2b5f93.json").read_bytes())
     candidate = json.loads((root / "data/deployment/initial-curator.json").read_bytes())
     result = validate_catalog_transition(previous, candidate)
-    assert result["added"]["datasets"] == ["brainwide_map"]
-    assert result["added"]["projects"] == ["brainwide-map"]
-    assert result["added"]["releases"] == ["brainwide_map/legacy-v1-1d908bea-ibl-review-20260908-v1"]
+    assert result["added"]["datasets"] == []
+    assert result["added"]["projects"] == []
+    assert result["added"]["releases"] == [
+        "ephys_atlas_channels/2026_W42-ibl-review-20261113-v1",
+        "ephys_atlas_edges/2026_W46-edges-ibl-review-20261113-v1",
+        "ephys_atlas_volumes/2026_W46-ibl-review-20261113-v1",
+    ]
     assert not any(result["removed"].values())

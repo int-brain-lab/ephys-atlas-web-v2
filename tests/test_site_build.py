@@ -42,7 +42,7 @@ def config_with_default():
     value["default_view"] = {
         "project_id": "ephys-atlas",
         "dataset_id": "ephys_atlas_channels",
-        "release_id": "2026_W39-ibl-review-20261007-v1",
+        "release_id": "2026_W42-ibl-review-20261113-v1",
         "feature_id": "rms_ap",
         "parcellation_id": "allen",
         "curator_config": "data/deployment/initial-curator.json",
@@ -56,13 +56,10 @@ def test_initial_curator_groups_genomics_and_lipidome_projects():
     assert projects["genomics"]["dataset_ids"] == ["agea", "merfish_class"]
     assert projects["lipidome"]["dataset_ids"] == ["lipids"]
     assert "agea" not in projects
-    assert projects["brainwide-map"]["dataset_ids"] == ["brainwide_map"]
-    bwm = next(d for d in curator["datasets"] if d["dataset_id"] == "brainwide_map")
-    assert bwm["default_release"] == "legacy-v1-1d908bea-ibl-review-20260908-v1"
-    assert projects["brainwide-map"]["editions"][0]["dataset_releases"] == [
-        {"dataset_id": "brainwide_map", "release_id": bwm["default_release"]}
-    ]
-    assert len(curator["datasets"]) == 8
+    # Brain-Wide Map is not part of the live catalog and is not promoted with it.
+    assert "brainwide-map" not in projects
+    assert all(d["dataset_id"] != "brainwide_map" for d in curator["datasets"])
+    assert len(curator["datasets"]) == 7
 
 
 def test_production_environment_cannot_inherit_preview_defaults(monkeypatch):
@@ -84,7 +81,7 @@ def test_site_default_view_is_pinned_to_the_tracked_curator_default(monkeypatch)
     monkeypatch.setenv("VITE_DEFAULT_FEATURE_ID", "inherited-preview-feature")
     env = site_build.build_environment_for_site(config_with_default(), "c"*32)
     assert env["VITE_DEFAULT_DATASET_ID"] == "ephys_atlas_channels"
-    assert env["VITE_DEFAULT_RELEASE_ID"] == "2026_W39-ibl-review-20261007-v1"
+    assert env["VITE_DEFAULT_RELEASE_ID"] == "2026_W42-ibl-review-20261113-v1"
     assert env["VITE_DEFAULT_FEATURE_ID"] == "rms_ap"
     assert env["VITE_DEFAULT_PARCELLATION_ID"] == "allen"
 
