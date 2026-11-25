@@ -4,6 +4,14 @@ Status: active initial-deployment capability matrix.
 
 Last updated: 2026-10-14 on `main` for the renderer-neutral region selector and pinned anatomy conformance.
 
+D101 implements ElectRA (Electrophysiology Reference Atlas) branding in the
+landing page, viewer and help, with descriptive dataset labels over unchanged
+catalog identities. This is a local branch change; production publication is
+separate. The full `just check` gate passes in an isolated environment
+created from the committed builder/publishing locks, including 258 browser
+checks and the four Linux documentation screenshots. The existing abstract
+favicon and the historical real-data landing capture evidence are retained.
+
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
 completed implementation diaries.
