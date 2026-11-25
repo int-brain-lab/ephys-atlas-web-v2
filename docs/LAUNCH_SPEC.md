@@ -1,6 +1,6 @@
 # Launch specification
 
-Status: active product specification for the first production release of IBL Ephys Atlas Web v2.
+Status: active product specification for ElectRA (Electrophysiology Reference Atlas).
 
 This document defines launch acceptance. Historical handoff documents provide evidence and implementation detail, but they do not override this specification or `docs/DECISIONS.md`.
 
@@ -28,7 +28,7 @@ Supported parcellations for applicable regional data are Allen, Beryl, and Cosmo
 D073 places a lightweight landing page at `/` and the full viewer at `/app/`.
 The landing uses the application's theme and real atlas imagery, with an Open
 atlas action, an existing user-guide link, and integrated about/credits/citation
-content. It distinguishes task-independent Ephys Atlas measurements summarized
+content. It distinguishes task-independent ElectRA measurements summarized
 at channel, cluster and voxel scales,
 Brain-Wide Map responses to task events, externally sourced Anatomy datasets
 including AGEA, and browser-local user imports. Separate help, about and documentation pages are not required for the
@@ -62,7 +62,7 @@ Acceptance criteria:
 - <a id="ls01-07"></a> **`LS01-07`** — Current Chrome/Edge, Firefox, and Safari are the launch browser targets. Chromium CI is necessary but not sufficient for final release QA.
 - <a id="ls01-08"></a> **`LS01-08`** — Public navigation clearly separates Project, Dataset, immutable Release,
   Feature, and display choices; the grouped Data chooser preserves project/dataset
-  identity, and Display & parcellation sits alongside Data and Feature in the header. Ephys Atlas
+  identity, and Display & parcellation sits alongside Data and Feature in the header. ElectRA
   and Brain-Wide Map are distinct projects,
   Data details exposes exact release IDs and optional version selection. A
   paper-facing project edition preserves its coordinated dataset-to-release

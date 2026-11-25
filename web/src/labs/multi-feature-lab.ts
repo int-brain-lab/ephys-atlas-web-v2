@@ -79,7 +79,7 @@ class MultiFeatureLab {
     const header = element('header', 'comparison-lab__header');
     const titleBlock = element('div');
     const eyebrow = element('p', 'comparison-lab__eyebrow');
-    eyebrow.textContent = 'IBL Ephys Atlas · development workbench';
+    eyebrow.textContent = 'ElectRA · development workbench';
     const title = element('h1');
     title.textContent = 'Multi-feature comparison UX lab';
     const subtitle = element('p', 'comparison-lab__subtitle');

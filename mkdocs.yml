@@ -1,5 +1,5 @@
-site_name: IBL Ephys Atlas
-site_description: Author and explore immutable IBL Ephys Atlas schema-v1 datasets
+site_name: ElectRA
+site_description: Electrophysiology Reference Atlas — author and explore immutable schema-v1 datasets
 repo_url: https://github.com/int-brain-lab/ephys-atlas-web-v2
 repo_name: int-brain-lab/ephys-atlas-web-v2
 

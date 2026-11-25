@@ -44,7 +44,7 @@ test('uses the immutable release and approved denoised feature as development de
   await expect(page.locator('[data-context-field="feature"] .context-field__value')).toHaveText('rms ap (denoised)');
   const dataset = page.locator('[data-context-field="data"]');
   await dataset.locator('.context-menu__trigger').click();
-  await expect(dataset.locator('.context-menu__group').first()).toHaveText('Ephys Atlas');
+  await expect(dataset.locator('.context-menu__group').first()).toHaveText('ElectRA');
   await expect(dataset.getByRole('option', { selected: true })).toContainText('Channels');
   await page.keyboard.press('Escape');
   const feature = page.locator('[data-context-field="feature"]');

@@ -77,11 +77,11 @@ test('manual pageview and deduplicated event use only sanitized fixed properties
   assert.deepEqual(env.calls, [
     {
       website: 'e0c4d44e-c85c-4f15-abbb-32091b6b8a7c', hostname: 'ephys-atlas.iblcore.org', screen: '1440x900',
-      language: 'en-GB', title: 'IBL Ephys Atlas', url: '/app/', referrer: 'https://outside.example',
+      language: 'en-GB', title: 'ElectRA', url: '/app/', referrer: 'https://outside.example',
     },
     {
       website: 'e0c4d44e-c85c-4f15-abbb-32091b6b8a7c', hostname: 'ephys-atlas.iblcore.org', screen: '1440x900',
-      language: 'en-GB', title: 'IBL Ephys Atlas', url: '/app/', referrer: 'https://outside.example', name: 'data_loaded',
+      language: 'en-GB', title: 'ElectRA', url: '/app/', referrer: 'https://outside.example', name: 'data_loaded',
     },
   ]);
   initializeAnalytics(true, env.environment);

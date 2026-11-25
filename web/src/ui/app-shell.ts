@@ -554,10 +554,10 @@ export class AppShell {
     logoLink.setAttribute('aria-label', 'Visit the IBL Core website (opens in a new tab)');
     logoLink.append(logo);
     const brandText = element('div', 'app-header__brand-text');
-    const title = heading('Ephys Atlas', 1);
+    const title = heading('ElectRA', 1);
     const home = element('a', 'app-header__home-link');
     home.href = '/';
-    home.setAttribute('aria-label', 'Ephys Atlas home');
+    home.setAttribute('aria-label', 'ElectRA home');
     home.append(title);
     const version = element('span', 'app-header__version');
     version.textContent = 'v2';

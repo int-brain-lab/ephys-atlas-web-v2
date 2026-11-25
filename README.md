@@ -1,4 +1,4 @@
-# IBL Ephys Atlas Web v2
+# ElectRA — Electrophysiology Reference Atlas
 
 Explore mouse-brain electrophysiology in the [live viewer](https://ephys-atlas.iblcore.org/app/).
 The application provides linked coronal, sagittal, and horizontal slices,
@@ -18,7 +18,7 @@ DOM code; the builders, authoring API and publishing tools use Python.
 
 ## Current status
 
-The initial IBL review website is deployed with Ephys Atlas channels, clusters
+The initial IBL review website is deployed with ElectRA channels, clusters
 and volumes, Brain-Wide Map, AGEA, and the approved native 3-D anatomy. Processed
 AGEA and the W26 regional-distribution successor were published under D079;
 see the [deployment record](docs/publishing/REGIONAL_DISTRIBUTION_DEPLOYMENT_20260917.md).

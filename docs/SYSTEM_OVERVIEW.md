@@ -2,7 +2,7 @@
 
 Status: active system and documentation map.
 
-IBL Ephys Atlas Web v2 turns pinned scientific inputs into validated,
+ElectRA (Electrophysiology Reference Atlas) turns pinned scientific inputs into validated,
 immutable browser releases. Public exploration is designed to use static
 object-storage reads; scientific transformation happens before publication,
 never in the publisher or browser.

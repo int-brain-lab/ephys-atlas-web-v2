@@ -108,6 +108,7 @@ only part of the body; the index states what remains effective.
 | D098 | Omit selection borders from 2D downloads | accepted | 2026-10-13 | exported SVG/PNG omit selected-region strokes and halos; normal anatomy boundaries, feature colors and live selection remain; refines D093 |
 | D099 | Docked region inspection and compact feature summary | accepted | 2026-10-13 | fixed right-side inspection; expandable below-view fallback for narrow, collapsed and maximized layouts; full-width Summary row; persistent selection labels and discreet cursor acronyms |
 | D100 | W42 channel and W46 volume and edges release selections | accepted | 2026-11-13 | W42 channels denoised-only with the D089 display; W46 volume from `ea-encoder-channel` 0.0.1 and its edges with unchanged display and geometry; unpromoted 2026-11-04 releases deleted; Brain-Wide Map stays out (D094 unpromoted) |
+| D101 | ElectRA product branding | accepted | 2026-11-25 | ElectRA means Electrophysiology Reference Atlas; rename website presentation and paper videos, keep descriptive dataset names and stable scientific identities |
 
 ## D001 — Separate v2
 
@@ -2463,3 +2464,26 @@ builder commit and never entered the catalog. By owner instruction their
 objects, staging plans and dataset-index entries were deleted from the
 production root on 2026-11-13; no published catalog generation referenced
 them. This is a one-off exception to archive-not-delete.
+
+## D101 — ElectRA product branding
+
+Date: 2026-11-25. Status: accepted by the repository owner.
+
+The product and scientific project are named **ElectRA**, expanded as
+**Electrophysiology Reference Atlas** on first mention. Preserve this exact
+capitalization in the landing page, viewer, help, and video presentation.
+The existing Ephys Atlas project is presented as ElectRA, with descriptive
+dataset names such as Channels, Clusters and Encoding volumes. Brain-Wide Map,
+Genomics and Lipidome keep their separate source identities.
+
+This is a presentation change: existing URLs, catalog IDs, immutable releases,
+scientific provenance, source attribution and licenses remain unchanged.
+Historical titles are mapped in the browser rather than editing published
+scientific artifacts. The existing abstract product favicon is retained.
+
+Authorized implementation is limited to the website and the two paper videos,
+including their tests, screenshots and supporting media documentation. The
+manuscript and paper figures are outside scope. Website work uses the dedicated
+`branding/electra` branch; video work uses the existing
+`paper-ephys-atlas` `feature/datoviz-media` branch. Push, merge and production
+publication are separate from this local implementation.

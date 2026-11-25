@@ -4,12 +4,15 @@ export interface DatasetPresentation {
 }
 
 const HISTORICAL_TITLES: Readonly<Record<string, DatasetPresentation>> = {
-  'IBL Ephys Atlas channel features': { title: 'Ephys Atlas channels' },
-  'IBL Ephys Atlas — Channel Features': { title: 'Ephys Atlas channels' },
-  'IBL Ephys Atlas cluster features': { title: 'Ephys Atlas clusters' },
-  'IBL Ephys Atlas — Cluster Features': { title: 'Ephys Atlas clusters' },
-  'IBL Ephys Atlas encoding volumes': { title: 'Ephys Atlas encoding volumes' },
-  'IBL Encoding Volumes': { title: 'Ephys Atlas encoding volumes' },
+  'Ephys Atlas encoding volumes': { title: 'Encoding volumes' },
+  'Ephys Atlas clusters': { title: 'Clusters' },
+  'Ephys Atlas channels': { title: 'Channels' },
+  'IBL Ephys Atlas channel features': { title: 'Channels' },
+  'IBL Ephys Atlas — Channel Features': { title: 'Channels' },
+  'IBL Ephys Atlas cluster features': { title: 'Clusters' },
+  'IBL Ephys Atlas — Cluster Features': { title: 'Clusters' },
+  'IBL Ephys Atlas encoding volumes': { title: 'Encoding volumes' },
+  'IBL Encoding Volumes': { title: 'Encoding volumes' },
   'Allen Gene Expression Atlas': { title: 'AGEA' },
   'IBL Brain-Wide Map legacy website snapshot': {
     title: 'Brain-Wide Map',
@@ -25,22 +28,15 @@ export function presentDatasetTitle(title: string): DatasetPresentation {
   return HISTORICAL_TITLES[title] ?? { title };
 }
 
-/** Preserve the stable AGEA project identity while presenting its broader category. */
+/** Present current product/category names without changing catalog identities. */
 export function presentProjectTitle(projectId: string | undefined, title: string | undefined): string | undefined {
+  if (projectId === 'ephys-atlas' && title === 'Ephys Atlas') return 'ElectRA';
   if (projectId === 'agea' && title === 'AGEA') return 'Anatomy';
   return title;
 }
 
 /** Exact reviewed titles only; arbitrary publisher labels are never stripped. */
-export function presentDatasetInProject(title: string, projectTitle?: string): string {
+export function presentDatasetInProject(title: string, _projectTitle?: string): string {
   const presented = presentDatasetTitle(title).title;
-  if (projectTitle === 'Ephys Atlas') {
-    const names: Readonly<Record<string, string>> = {
-      'Ephys Atlas channels': 'Channels',
-      'Ephys Atlas clusters': 'Clusters',
-      'Ephys Atlas encoding volumes': 'Encoding volumes',
-    };
-    return names[presented] ?? presented;
-  }
   return presented;
 }

@@ -3,7 +3,7 @@
 Status: reader guide; release metadata and the launch specification remain
 authoritative for scientific meaning and implemented behavior.
 
-The IBL Ephys Atlas places regional summaries and scalar volumes in a shared
+ElectRA (Electrophysiology Reference Atlas) places regional summaries and scalar volumes in a shared
 mouse-brain anatomical workspace. Start with **Help** in the application for a
 four-step Quick Start or choose **Show me the essentials** for a short guided
 walkthrough of the visible controls.

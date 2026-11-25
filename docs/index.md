@@ -1,9 +1,9 @@
-# IBL Ephys Atlas
+# ElectRA — Electrophysiology Reference Atlas
 
 Status: reader-facing documentation index; not a product or scientific
 authority.
 
-IBL Ephys Atlas Web v2 provides a shared anatomical framework for exploring
+ElectRA (Electrophysiology Reference Atlas) provides a shared anatomical framework for exploring
 regional summaries, voxel-scale electrophysiology features, and brain-wide
 analysis results. Every dataset resolves to an immutable, provenance-rich
 release that can be explored from static public storage or imported locally in

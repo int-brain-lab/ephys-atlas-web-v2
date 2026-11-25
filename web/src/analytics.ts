@@ -109,7 +109,7 @@ function payloadFor(env: AnalyticsEnvironment, route: string): AnalyticsPayload 
     hostname: SITE_HOST,
     screen: `${Math.max(0, env.screen.width)}x${Math.max(0, env.screen.height)}`,
     language: env.navigator.language || '',
-    title: 'IBL Ephys Atlas',
+    title: 'ElectRA',
     url: route,
     referrer: safeReferrer(env.document.referrer, SITE_ORIGIN),
   };

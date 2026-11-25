@@ -655,7 +655,7 @@ class RetainedProjectionViewport implements ProjectionViewport {
     const canvas = document.createElement('canvas');
     canvas.className = 'view-frame__volume-canvas';
     canvas.setAttribute('role', 'img');
-    canvas.setAttribute('aria-label', 'Ephys atlas volume slice');
+    canvas.setAttribute('aria-label', 'ElectRA volume slice');
     scalarHost.append(canvas);
     scalar.append(scalarHost);
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');

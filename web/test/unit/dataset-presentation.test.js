@@ -5,7 +5,7 @@ import { presentDatasetTitle, presentProjectTitle } from '../../.test-dist/ui/da
 
 test('historical immutable release titles use concise dataset presentation', () => {
   assert.deepEqual(presentDatasetTitle('IBL Ephys Atlas channel features'), {
-    title: 'Ephys Atlas channels',
+    title: 'Channels',
   });
   assert.deepEqual(presentDatasetTitle('IBL Brain-Wide Map legacy website snapshot'), {
     title: 'Brain-Wide Map',
@@ -13,10 +13,10 @@ test('historical immutable release titles use concise dataset presentation', () 
   });
 });
 
-test('current local release titles keep the dataset family prominent', () => {
-  assert.equal(presentDatasetTitle('IBL Ephys Atlas — Channel Features').title, 'Ephys Atlas channels');
-  assert.equal(presentDatasetTitle('IBL Ephys Atlas — Cluster Features').title, 'Ephys Atlas clusters');
-  assert.equal(presentDatasetTitle('IBL Encoding Volumes').title, 'Ephys Atlas encoding volumes');
+test('current local release titles use descriptive dataset names', () => {
+  assert.equal(presentDatasetTitle('IBL Ephys Atlas — Channel Features').title, 'Channels');
+  assert.equal(presentDatasetTitle('IBL Ephys Atlas — Cluster Features').title, 'Clusters');
+  assert.equal(presentDatasetTitle('IBL Encoding Volumes').title, 'Encoding volumes');
   assert.equal(presentDatasetTitle('Allen Gene Expression Atlas').title, 'AGEA');
 });
 
@@ -30,4 +30,10 @@ test('the existing AGEA project identity is presented as the Anatomy category', 
   assert.equal(presentProjectTitle('agea', 'AGEA'), 'Anatomy');
   assert.equal(presentProjectTitle('agea', 'Anatomy'), 'Anatomy');
   assert.equal(presentProjectTitle('publisher-project', 'AGEA'), 'AGEA');
+});
+
+test('ElectRA display branding preserves publisher titles and stable project identity', () => {
+  assert.equal(presentProjectTitle('ephys-atlas', 'Ephys Atlas'), 'ElectRA');
+  assert.equal(presentProjectTitle('ephys-atlas', 'ElectRA'), 'ElectRA');
+  assert.equal(presentProjectTitle('publisher-project', 'Ephys Atlas'), 'Ephys Atlas');
 });

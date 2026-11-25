@@ -13,7 +13,9 @@ test('header uses the official IBL Core negative lockup and palette', async ({ p
   await expect(logoLink).toHaveAttribute('href', 'https://iblcore.org/');
   await expect(logoLink).toHaveAttribute('target', '_blank');
   await expect(logoLink).toHaveAttribute('rel', 'noopener noreferrer');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Ephys Atlas');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('ElectRA');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCSS('text-transform', 'none');
+  await expect(page).toHaveTitle('ElectRA — Electrophysiology Reference Atlas');
 
   await expect.poll(() => logo.evaluate((node: HTMLImageElement) => ({
     complete: node.complete,
@@ -43,7 +45,7 @@ test('header uses the official IBL Core negative lockup and palette', async ({ p
   expect(phoneLogo!.height).toBeLessThanOrEqual(35);
 });
 
-test('document uses the Ephys Atlas product favicon', async ({ page, request }) => {
+test('document uses the ElectRA product favicon', async ({ page, request }) => {
   await page.goto('/app/');
 
   const favicon = page.locator('link[rel="icon"]');

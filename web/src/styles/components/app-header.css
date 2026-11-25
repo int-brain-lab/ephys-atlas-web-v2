@@ -64,7 +64,7 @@
   font-stretch: condensed;
   font-weight: 650;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .app-header__version,
