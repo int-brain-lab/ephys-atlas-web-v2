@@ -214,7 +214,7 @@
 
 /* Prototype region-pair crossplot: widen the comparison tray over the map. */
 .analysis-dialog[open]:has(.region-pair) { position: fixed; inset: calc(var(--header-height) + 1rem) 0 auto; margin: 0 auto; width: min(96vw, 1400px); max-height: none; z-index: 50; }
-.analysis-dialog:has(.region-pair) .analysis-dialog__frame { max-height: calc(100dvh - var(--header-height) - 2rem); }
+.analysis-dialog:has(.region-pair) .analysis-dialog__frame { max-height: calc(100dvh - var(--header-height) - 5rem); }
 .region-pair { --lfp: #1b5e20; --ap: #7b1fa2; --waveform: #1565c0;
   position: relative; display: grid; grid-template-columns: minmax(0, 2fr) minmax(14rem, 1fr); gap: .4rem 1.2rem; margin-top: 1rem; }
 .region-pair [data-group="lfp"] { --group: var(--lfp); }

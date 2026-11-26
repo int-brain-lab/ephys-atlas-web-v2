@@ -407,8 +407,11 @@ export class AtlasApp {
       feature: data.feature,
       anatomyRegions,
       coloring,
-      // Prototype: a selected parent highlights the union of its descendants.
-      selectedRegionIds: withDescendants(anatomyRegions, state.view.selection),
+      // Prototype: in Allen, a selected parent highlights the union of its
+      // descendants; only the selected regions themselves are labelled.
+      selectedRegionIds: state.view.parcellation === 'allen'
+        ? withDescendants(anatomyRegions, state.view.selection) : state.view.selection,
+      labelledRegionIds: state.view.selection.map(id => id.replace(OWN_SUFFIX, '')),
       hoveredRegionId: this.hoveredRegionId,
     });
     const presentation: ProjectionPresentation = {
