@@ -28,7 +28,7 @@ freeze and do not block the authorized initial deployment.
 
 ## M1/M3/M4 — Freeze the paper dataset set
 
-Before the separate paper freeze, promote the D094 BWM restoration through the
+Before the separate paper freeze, promote the D094/D101 BWM restoration through the
 guarded catalog path, verify all eight datasets in the running viewer, then
 synchronize the exact served catalog snapshot and site descriptor. The tracked
 curator restores the original BWM release without changing the current seven

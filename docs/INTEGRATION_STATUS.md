@@ -9,8 +9,10 @@ capability and artifact maturity; it links to evidence instead of repeating
 completed implementation diaries.
 
 On 2026-10-13, D094 restores BWM's existing project/edition/release in the tracked
-curator configuration, alongside all seven W39-era datasets. Production catalog
-promotion is pending; the site descriptor still pins the current live catalog.
+curator configuration, alongside all seven W39-era datasets. D100 dropped it
+from the W42/W46 promotion; on 2026-11-26 D101 restores it again on top of the
+live W42/W46 catalog. Production catalog promotion is pending; the site
+descriptor still pins the current live catalog.
 D096 implements shared filesystem/S3 removal guards, exact hash-bound retirement
 records, transition history, and independent expected-inventory production QA.
 

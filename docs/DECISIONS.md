@@ -107,7 +107,8 @@ only part of the body; the index states what remains effective.
 | D097 | One-click image downloads and format menu | accepted | 2026-10-13 | primary button downloads immediately; adjacent arrow exposes colorbar and alternate SVG/PNG actions with brief descriptions; refines D093 interaction |
 | D098 | Omit selection borders from 2D downloads | accepted | 2026-10-13 | exported SVG/PNG omit selected-region strokes and halos; normal anatomy boundaries, feature colors and live selection remain; refines D093 |
 | D099 | Docked region inspection and compact feature summary | accepted | 2026-10-13 | fixed right-side inspection; expandable below-view fallback for narrow, collapsed and maximized layouts; full-width Summary row; persistent selection labels and discreet cursor acronyms |
-| D100 | W42 channel and W46 volume and edges release selections | accepted | 2026-11-13 | W42 channels denoised-only with the D089 display; W46 volume from `ea-encoder-channel` 0.0.1 and its edges with unchanged display and geometry; unpromoted 2026-11-04 releases deleted; Brain-Wide Map stays out (D094 unpromoted) |
+| D100 | W42 channel and W46 volume and edges release selections | partially superseded | 2026-11-13 | W42 channels denoised-only with the D089 display; W46 volume from `ea-encoder-channel` 0.0.1 and its edges with unchanged display and geometry; unpromoted 2026-11-04 releases deleted; D101 reverses its Brain-Wide Map exclusion |
+| D101 | Restore Brain-Wide Map after D100 | accepted | 2026-11-26 | restore the D094 BWM project, edition and immutable release on top of the live W42/W46 catalog; all other projects, releases and defaults unchanged; production promotion remains separate |
 
 ## D001 — Separate v2
 
@@ -2463,3 +2464,21 @@ builder commit and never entered the catalog. By owner instruction their
 objects, staging plans and dataset-index entries were deleted from the
 production root on 2026-11-13; no published catalog generation referenced
 them. This is a one-off exception to archive-not-delete.
+
+## D101 — Restore Brain-Wide Map after D100
+
+Owner direction on 2026-11-26. D100 dropped the D094 Brain-Wide Map
+restoration from the tracked curator configuration on the premise that BWM was
+redundant with Ephys Atlas. That premise was wrong: BWM is not a strict subset
+of the Ephys Atlas project and carries the Brain-Wide Map paper task-event
+decoding results (D038). This decision reverses D100's BWM exclusion only.
+
+Restore the `brainwide-map` project, `ibl-review-20260908-v1` edition and
+`brainwide_map` dataset selecting the existing
+`legacy-v1-1d908bea-ibl-review-20260908-v1` release, exactly as in D094. Its
+published manifest is still served with the catalogued SHA-256
+`ae03114ff1544c91a27b7d3ad9cc2fc06d690cb4bfcc93a5d9a495fe919fdb6a`; never
+rebuild or alter its scientific bytes. Keep every project, release, edition and
+default of the live W42/W46 catalog (`058aab71…`) unchanged. Production catalog
+promotion and site-descriptor synchronization remain separate actions; do not
+claim live restoration before verifying them.

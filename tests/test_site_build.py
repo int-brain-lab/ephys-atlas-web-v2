@@ -56,10 +56,14 @@ def test_initial_curator_groups_genomics_and_lipidome_projects():
     assert projects["genomics"]["dataset_ids"] == ["agea", "merfish_class"]
     assert projects["lipidome"]["dataset_ids"] == ["lipids"]
     assert "agea" not in projects
-    # Brain-Wide Map is not part of the live catalog and is not promoted with it.
-    assert "brainwide-map" not in projects
-    assert all(d["dataset_id"] != "brainwide_map" for d in curator["datasets"])
-    assert len(curator["datasets"]) == 7
+    # Brain-Wide Map carries BWM-paper task decoding, not a subset of Ephys Atlas (D101).
+    assert projects["brainwide-map"]["dataset_ids"] == ["brainwide_map"]
+    bwm = next(d for d in curator["datasets"] if d["dataset_id"] == "brainwide_map")
+    assert bwm["default_release"] == "legacy-v1-1d908bea-ibl-review-20260908-v1"
+    assert projects["brainwide-map"]["editions"][0]["dataset_releases"] == [
+        {"dataset_id": "brainwide_map", "release_id": bwm["default_release"]}
+    ]
+    assert len(curator["datasets"]) == 8
 
 
 def test_production_environment_cannot_inherit_preview_defaults(monkeypatch):

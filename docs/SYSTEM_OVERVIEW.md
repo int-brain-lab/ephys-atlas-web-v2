@@ -122,7 +122,8 @@ The 2026-11-15 W42/W46 deployment ([record](publishing/W42_W46_DEPLOYMENT_202611
 on top of the 2026-10-07 W39 deployment ([record](publishing/W39_DEPLOYMENT_20261007.md))
 is the latest production state: the Ephys Atlas, Genomics and Lipidome projects
 are live, and Brain-Wide Map is no longer catalogued. D094 restores BWM in the
-tracked curator configuration, but D100 kept it out and it remains unpromoted. D096 adds
+tracked curator configuration; D100 kept it out of the W42/W46 promotion and D101
+reverses that exclusion. Its production promotion is pending. D096 adds
 catalog removal guards and independent inventory QA. The initial IBL review website is live at `ephys-atlas.iblcore.org`, with the
 approved regional datasets, ephys volumes, AGEA and native 3-D anatomy. D074 keeps this
 deployment separate from Q2 (paper channel vintage), Q9 (paper aliases/defaults)
