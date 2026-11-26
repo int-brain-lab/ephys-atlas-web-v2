@@ -18,7 +18,8 @@ import { worldToCursorState } from './core/spatial.js';
 import { regionalIndicesToWorld, maxRegionalSliceIndex } from './core/slice-calibration.js';
 import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
 import type { ResourceIntegrity } from './data/cache.js';
-import type { DatasetCatalog } from './data/contracts.js';
+import type { DatasetCatalog, FeaturePayload, RegionMetadata } from './data/contracts.js';
+import { expandRegionalPayload } from './data/region-aggregate.js';
 import { HttpDatasetSource } from './data/http-source.js';
 import { LocalDatasetSource } from './data/local-source.js';
 import type { PreparedLocalArchive, LocalArchivePreview } from './data/local-archive.js';
@@ -73,6 +74,7 @@ export class AtlasApp {
   private readonly urlController: UrlStateController;
   private readonly shell: AppShell;
   private readonly regionalPanel: RegionalPanelController;
+  private expandedCache: [FeaturePayload, readonly RegionMetadata[], FeaturePayload] | null = null;
   private readonly viewportFactory: ProjectionViewportFactory;
   private displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null = null;
   private atlasRegions: AtlasRegionCatalog | null = null;
@@ -461,7 +463,7 @@ export class AtlasApp {
     this.regionalPanel.render({
       state,
       manifest: data.manifest,
-      feature: data.feature,
+      feature: this.expandedFeature(data.feature, anatomyRegions),
       featureLoading,
       featureError,
       regions: anatomyRegions,
@@ -651,6 +653,15 @@ export class AtlasApp {
       });
       this.render();
     }
+  }
+
+  /** Prototype: memoized on-the-fly parent-region rows for the regional panel. */
+  private expandedFeature<T extends FeaturePayload | null>(feature: T, regions: readonly RegionMetadata[]): T {
+    if (feature?.representation !== 'regional') return feature;
+    if (this.expandedCache?.[0] !== feature || this.expandedCache[1] !== regions) {
+      this.expandedCache = [feature, regions, expandRegionalPayload(feature, regions)];
+    }
+    return this.expandedCache[2] as T;
   }
 
   private retryFeature(): void {

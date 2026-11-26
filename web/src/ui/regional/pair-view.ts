@@ -1,4 +1,5 @@
 import type { RegionalFeaturePayload } from '../../data/contracts.js';
+import { poolRows } from '../../data/region-aggregate.js';
 
 /** One feature in a two-region crossplot, in z-units across all regions of the parcellation. */
 export interface PairPoint {
@@ -15,41 +16,27 @@ export interface PairPoint {
 /** Cohen (1988) benchmarks: negligible < 0.2 ≤ small < 0.5 ≤ medium < 0.8 ≤ large. */
 export const COHEN_BENCHMARKS = [0.2, 0.5, 0.8] as const;
 
-/** Exact pooled count/mean/SD of a set of region rows (sums of n, n·mean, (n-1)·sd² + n·mean²). */
-export function poolRows(mean: readonly number[], std: readonly number[], count: readonly number[], rows: readonly number[]) {
-  let [n, sx, sxx] = [0, 0, 0];
-  for (const row of rows) {
-    const [m, s, c] = [mean[row]!, std[row]!, count[row]!];
-    if (!(c > 0) || !Number.isFinite(m)) continue;
-    n += c;
-    sx += c * m;
-    sxx += (c - 1) * (c > 1 && Number.isFinite(s) ? s * s : 0) + c * m * m;
-  }
-  const m = sx / n;
-  return { n, m, s: n > 1 ? Math.sqrt(Math.max(0, (sxx - n * m * m) / (n - 1))) : NaN };
-}
-
 /**
  * Z-score each feature's regional means across regions and pair two regions.
  *
  * Prototype normalization: (mean - mean of region means) / SD of region means.
- * `members` maps a selected region (possibly a parent) to the data region ids it
- * aggregates; statistics are pooled exactly from count/mean/std. Features lacking
- * mean/std/count, or regions without channels, are skipped.
+ * The reference is the release's own regions (parent rows appended on the fly
+ * are excluded). Features lacking mean/std/count, or regions without channels,
+ * are skipped.
  */
 export function pairPoints(
   features: readonly RegionalFeaturePayload[],
   a: string,
   b: string,
-  members: (id: string) => readonly string[] = (id) => [id],
+  releaseRowCount?: number,
 ): PairPoint[] {
   const points: PairPoint[] = [];
   for (const feature of features) {
     const { mean, std, count } = feature.statistics;
     if (!mean || !std || !count) continue;
     const index = new Map(feature.regionIds.map((id, row) => [id, row]));
-    const rows = (id: string) => members(id).flatMap((member) => index.get(member) ?? []);
-    const finite = mean.filter(Number.isFinite);
+    const rows = (id: string) => (index.has(id) ? [index.get(id)!] : []);
+    const finite = mean.slice(0, releaseRowCount).filter(Number.isFinite);
     const mu = finite.reduce((sum, value) => sum + value, 0) / finite.length;
     const sigma = Math.sqrt(finite.reduce((sum, value) => sum + (value - mu) ** 2, 0) / (finite.length - 1));
     const { m: m1, s: s1, n: n1 } = poolRows(mean, std, count, rows(a));

@@ -23,6 +23,7 @@ import {
   renderSelectedRegions,
 } from './details-view.js';
 import { renderAnalysis } from './comparison-view.js';
+import { expandRegionalPayload } from '../../data/region-aggregate.js';
 import { pairPoints, renderPair, type PairPoint } from './pair-view.js';
 import {
   renderDistribution,
@@ -187,12 +188,8 @@ export class RegionalPanelController {
       if (controller.signal.aborted) return;
       const payloads = results.flatMap((result) => (
         result.status === 'fulfilled' && result.value.representation === 'regional' ? [result.value] : []));
-      const children = new Map<string, string[]>();
-      for (const region of model.regions) {
-        if (region.parentId != null) children.set(region.parentId, [...children.get(region.parentId) ?? [], region.id]);
-      }
-      const members = (id: string): string[] => [id, ...(children.get(id) ?? []).flatMap(members)];
-      this.pairPoints = pairPoints(payloads, a, b, members);
+      this.pairPoints = pairPoints(payloads.map((payload) => expandRegionalPayload(payload, model.regions)),
+        a, b, payloads[0]?.regionIds.length);
       draw();
     });
   }
