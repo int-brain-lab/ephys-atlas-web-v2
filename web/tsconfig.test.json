@@ -36,6 +36,7 @@
     "src/rendering/region-id.ts",
     "src/rendering/3d/**/*.ts",
     "src/ui/regional/model.ts",
+    "src/ui/regional/pair-view.ts",
     "src/ui/regional/histogram-curve.ts",
     "src/ui/regional/comparison-export.ts",
     "src/ui/regional/volume-distribution-export.ts",

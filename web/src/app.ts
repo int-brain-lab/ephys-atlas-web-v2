@@ -167,6 +167,12 @@ export class AtlasApp {
       comparisonUsed: () => trackOnce('comparison_used'),
       retryFeature: () => this.retryFeature(),
       retryAnatomy: () => this.loadAtlasRegions(),
+      loadRegionalFeature: (featureId, signal) => {
+        const { dataset, parcellation } = this.store.getState().view;
+        return this.repository.loadFeature(dataset, featureId, 'regional', parcellation, signal);
+      },
+      showFeature: (featureId) => this.store.dispatch({
+        type: 'feature/set', featureId, representation: 'regional', history: 'push' }),
     });
     this.viewportFactory.setInteractionSink({
       hover: (hit) => this.setHoveredRegion(

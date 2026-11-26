@@ -17,12 +17,13 @@ import type {
 import { effectiveScalarColorRange } from '../../application/scalar-colormap.js';
 import { resolvePresentationColormap } from '../../application/presentation-colormap.js';
 import { buildRegionalValueColorbar, type RegionalValueColorbar } from '../../application/regional-value-colorbar.js';
-import { required, message } from './dom.js';
+import { html, required, message } from './dom.js';
 import {
   renderFeatureSummary,
   renderSelectedRegions,
 } from './details-view.js';
 import { renderAnalysis } from './comparison-view.js';
+import { pairPoints, renderPair, type PairPoint } from './pair-view.js';
 import {
   renderDistribution,
   updateDistributionColorRange,
@@ -52,6 +53,8 @@ export interface RegionalPanelCallbacks {
   downloadVolumeRegionDistribution(csv: string, filename: string): void;
   retryFeature(): void;
   retryAnatomy?(): void;
+  loadRegionalFeature?(featureId: string, signal: AbortSignal): Promise<FeaturePayload>;
+  showFeature?(featureId: string): void;
 }
 
 export interface RegionalPanelModel {
@@ -114,6 +117,10 @@ export class RegionalPanelController {
   private volumeRegionalError: string | null = null;
   private volumeRegionalAbort: AbortController | null = null;
   private latestModel: RegionalPanelModel | null = null;
+  private readonly pairHost = html('section', 'region-pair');
+  private pairKey = '';
+  private pairPoints: PairPoint[] | null = null;
+  private pairAbort: AbortController | null = null;
 
   constructor(root: ParentNode, private readonly callbacks: RegionalPanelCallbacks) {
     this.pane = required(root, '.region-pane');
@@ -142,6 +149,47 @@ export class RegionalPanelController {
     this.analysisDialog.ownerDocument.addEventListener('keydown', this.onAnalysisKeyDown);
     this.analysis.addEventListener('click', this.onAnalysisClick);
     this.selectedList.addEventListener('click', this.onSelectedClick);
+    this.pairHost.addEventListener('click', (event) => {
+      const id = (event.target as Element).closest<HTMLElement | SVGElement>('[data-pair-feature]')?.dataset.pairFeature;
+      if (id) this.callbacks.showFeature?.(id);
+    });
+  }
+
+  /** Prototype: crossplot of all regional features for exactly two selected regions. */
+  private syncPair(model: RegionalPanelModel): void {
+    const load = this.callbacks.loadRegionalFeature;
+    const manifest = model.manifest;
+    if (!load || !manifest) return;
+    const { dataset, parcellation, selection, featureId } = model.state.view;
+    const [a, b] = selection as [string, string];
+    const label = (id: string) => model.regions.find((region) => region.id === id)?.acronym ?? id;
+    const draw = () => this.pairPoints && renderPair(this.pairHost, this.pairPoints, {
+      region1: label(a),
+      region2: label(b),
+      feature: (id) => manifest.features.find((item) => item.id === id)?.label ?? id,
+      current: featureId,
+    });
+    this.analysis.append(this.pairHost);
+    const key = JSON.stringify([dataset, parcellation, a, b]);
+    if (key === this.pairKey) {
+      draw();
+      return;
+    }
+    this.pairAbort?.abort();
+    const controller = new AbortController();
+    this.pairAbort = controller;
+    this.pairKey = key;
+    this.pairPoints = null;
+    this.pairHost.replaceChildren(message('Loading all features for the region pair…'));
+    const ids = manifest.features.filter((item) => item.representations.regional?.parcellations[parcellation])
+      .map((item) => item.id);
+    void Promise.allSettled(ids.map((id) => load(id, controller.signal))).then((results) => {
+      if (controller.signal.aborted) return;
+      const payloads = results.flatMap((result) => (
+        result.status === 'fulfilled' && result.value.representation === 'regional' ? [result.value] : []));
+      this.pairPoints = pairPoints(payloads, a, b);
+      draw();
+    });
   }
 
   render(model: RegionalPanelModel): void {
@@ -311,6 +359,7 @@ export class RegionalPanelController {
           fixture,
           model.presentationScale.histogram,
         );
+        if (selected.size === 2) this.syncPair(model);
         this.reportComparisonUse();
       } else {
         this.analysis.replaceChildren(message(volumeRegional?.unavailableReason ?? 'Exact selected-region voxel distributions are overlaid in the distribution chart above; regional summary statistics are not derived from the volume.'));

@@ -211,3 +211,25 @@
     width: 18rem;
   }
 }
+
+/* Prototype region-pair crossplot: widen the comparison tray over the map. */
+.analysis-dialog[open]:has(.region-pair) { position: fixed; inset: calc(var(--header-height) + 1rem) 0 auto; margin: 0 auto; width: min(96vw, 1400px); max-height: none; z-index: 50; }
+.analysis-dialog:has(.region-pair) .analysis-dialog__frame { max-height: calc(100dvh - var(--header-height) - 2rem); }
+.region-pair { --lfp: rgb(66 146 230); --ap: rgb(235 104 52); --waveform: rgb(27 175 122);
+  position: relative; display: grid; grid-template-columns: minmax(0, 2fr) minmax(14rem, 1fr); gap: .4rem 1.2rem; margin-top: 1rem; }
+.region-pair [data-group="lfp"] { --group: var(--lfp); }
+.region-pair [data-group="ap"] { --group: var(--ap); }
+.region-pair [data-group="waveform"] { --group: var(--waveform); }
+.region-pair__caption { grid-column: 1 / -1; margin: 0; font-size: .7rem; opacity: .8; }
+.region-pair__caption span { color: var(--group); }
+.region-pair__plot { width: 100%; max-height: 72vh; font-size: 12px; fill: currentColor; }
+.region-pair__axis, .region-pair__diagonal { stroke: currentColor; opacity: .25; }
+.region-pair__diagonal { stroke-dasharray: 4 3; }
+.region-pair__point { cursor: pointer; stroke: var(--group); fill: var(--group); fill-opacity: .75; stroke-opacity: .5; }
+.region-pair__point:hover, .region-pair__point.is-current { fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; }
+.region-pair__point.is-current circle { stroke: white; }
+.region-pair__list { margin: 0; padding-left: 1.4rem; font-size: .75rem; line-height: 1.6; }
+.region-pair__list li { cursor: pointer; color: var(--group); }
+.region-pair__list li:hover { text-decoration: underline; }
+.region-pair__tip { position: absolute; pointer-events: none; white-space: pre; padding: .3rem .5rem; border-radius: 4px;
+  background: rgb(10 18 26 / 92%); color: white; font-size: .7rem; z-index: 1; }
