@@ -118,12 +118,12 @@ local/CI-buildable only rather than a published site.
 
 ## Current execution boundary
 
-The 2026-11-15 W42/W46 deployment ([record](publishing/W42_W46_DEPLOYMENT_20261115.md))
-on top of the 2026-10-07 W39 deployment ([record](publishing/W39_DEPLOYMENT_20261007.md))
-is the latest production state: the Ephys Atlas, Genomics and Lipidome projects
-are live, and Brain-Wide Map is no longer catalogued. D094 restores BWM in the
-tracked curator configuration; D100 kept it out of the W42/W46 promotion and D101
-reverses that exclusion. Its production promotion is pending. D096 adds
+The 2026-11-26 Brain-Wide Map restoration ([record](publishing/BWM_RESTORATION_DEPLOYMENT_20261126.md))
+on top of the 2026-11-15 W42/W46 deployment ([record](publishing/W42_W46_DEPLOYMENT_20261115.md))
+and the 2026-10-07 W39 deployment ([record](publishing/W39_DEPLOYMENT_20261007.md))
+is the latest production state: the Ephys Atlas, Brain-Wide Map, Genomics and
+Lipidome projects are live. D101 reversed D100's exclusion of the D094 BWM
+restoration. D096 adds
 catalog removal guards and independent inventory QA. The initial IBL review website is live at `ephys-atlas.iblcore.org`, with the
 approved regional datasets, ephys volumes, AGEA and native 3-D anatomy. D074 keeps this
 deployment separate from Q2 (paper channel vintage), Q9 (paper aliases/defaults)
