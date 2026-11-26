@@ -1,6 +1,6 @@
 # Local development bundle
 
-Status: active local-data runbook. Every v8 dataset resolves to an immutable
+Status: active local-data runbook. Every v9 dataset resolves to an immutable
 public HTTPS release; the projection pack and native mesh still require
 reviewed local bytes.
 
@@ -60,14 +60,22 @@ new bytes. Brain-Wide Map stays on its exact D038 preserved source and the
 volume stays on the D043 W26 source because neither has an approved mutable
 development policy.
 
-## Active v8 identity
+## Active v9 identity
+
+[`data/development-bundle-v9.json`](../../data/development-bundle-v9.json)
+is v8 plus the published Brain-Wide Map release
+`legacy-v1-1d908bea-ibl-review-20260908-v1`, restored to the catalog by D101
+(see the [deployment record](../publishing/BWM_RESTORATION_DEPLOYMENT_20261126.md)).
+The default view is unchanged. `just data`, `just dev`, `just dev-latest` and
+the full local-browser gate use it.
+
+## Historical v8 identity
 
 [`data/development-bundle-v8.json`](../../data/development-bundle-v8.json)
 pins the November 2026 deployment. It is v7 with the channels, volumes and
 edges replaced by the published W42 channels and W46 volume and edges releases;
 the default view is `rms_ap` on the W42 channels release (see the
-[deployment record](../publishing/W42_W46_DEPLOYMENT_20261115.md)). `just data`,
-`just dev`, `just dev-latest` and the full local-browser gate use it.
+[deployment record](../publishing/W42_W46_DEPLOYMENT_20261115.md)).
 
 ## Historical v7 identity
 
