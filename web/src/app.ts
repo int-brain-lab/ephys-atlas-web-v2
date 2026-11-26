@@ -461,10 +461,15 @@ export class AtlasApp {
       return inspection ? [{ model: inspection, regionId }] : [];
     });
     this.shell.setSelectedRegionInspections(selectedInspections);
+    const panelFeature = this.expandedFeature(data.feature, anatomyRegions);
+    // Use the expanded payload's binning so aggregated parent rows have histograms.
+    const panelHistogram = panelFeature?.representation === 'regional'
+      ? panelFeature.distribution?.binnings.find(({ id }) => id === presentationScale.histogram?.id)
+      : undefined;
     this.regionalPanel.render({
       state,
       manifest: data.manifest,
-      feature: this.expandedFeature(data.feature, anatomyRegions),
+      feature: panelFeature,
       featureLoading,
       featureError,
       regions: anatomyRegions,
@@ -479,7 +484,7 @@ export class AtlasApp {
       // The tree and feature rows use logical identities, while rendering
       // retains the signed physical side of a 3-D hover.
       hoveredRegionId: this.hoveredRegionId === null ? null : String(-Math.abs(Number(this.hoveredRegionId))),
-      presentationScale,
+      presentationScale: panelHistogram ? { ...presentationScale, histogram: panelHistogram } : presentationScale,
       representationDisplay,
     });
   }
