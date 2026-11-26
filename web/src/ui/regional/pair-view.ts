@@ -63,7 +63,8 @@ export function featureGroup(id: string): 'lfp' | 'ap' | 'waveform' {
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const RADII = [2.5, 4, 6, 8.5];
+/** Marker radius: area ∝ |d|, capped at |d| = 3. */
+export const markerRadius = (d: number) => 1.5 + 4.5 * Math.sqrt(Math.min(Math.abs(d), 3));
 
 function svg<K extends keyof SVGElementTagNameMap>(name: K, attrs: Record<string, string | number>): SVGElementTagNameMap[K] {
   const node = document.createElementNS(SVG_NS, name);
@@ -71,7 +72,7 @@ function svg<K extends keyof SVGElementTagNameMap>(name: K, attrs: Record<string
   return node;
 }
 
-/** Render the z-score crossplot (marker size = Cohen's d class) and a ranked list. */
+/** Render the z-score crossplot (marker area ∝ |Cohen's d|) and a ranked list. */
 export function renderPair(
   target: HTMLElement,
   points: readonly PairPoint[],
@@ -93,6 +94,14 @@ export function renderPair(
   const yLabel = svg('text', { x: 14, y: size / 2, 'text-anchor': 'middle', transform: `rotate(-90 14 ${size / 2})` });
   yLabel.textContent = `${labels.region2} (z)`;
   plot.append(xLabel, yLabel);
+  let legendX = pad + 10;
+  for (const d of [...COHEN_BENCHMARKS, 2]) {
+    const r = markerRadius(d);
+    const label = svg('text', { x: legendX + r + 3, y: pad + 14 });
+    label.textContent = `${d}`;
+    plot.append(svg('circle', { cx: legendX, cy: pad + 10, r, class: 'region-pair__legend' }), label);
+    legendX += 2 * r + 28;
+  }
   for (const p of [...points].reverse()) {
     const tip = `${labels.feature(p.featureId)}\nz: ${p.z1.toFixed(2)} → ${p.z2.toFixed(2)}  ·  d = ${p.d.toFixed(2)}`;
     const group = svg('g', { 'data-pair-feature': p.featureId, 'data-group': featureGroup(p.featureId),
@@ -102,7 +111,7 @@ export function renderPair(
     group.append(
       svg('line', { x1: sx(p.z1 - p.sem1), y1: y, x2: sx(p.z1 + p.sem1), y2: y }),
       svg('line', { x1: x, y1: sy(p.z2 - p.sem2), x2: x, y2: sy(p.z2 + p.sem2) }),
-      svg('circle', { cx: x, cy: y, r: RADII[COHEN_BENCHMARKS.filter((t) => Math.abs(p.d) >= t).length]! }),
+      svg('circle', { cx: x, cy: y, r: markerRadius(p.d) }),
     );
     plot.append(group);
   }
@@ -118,8 +127,8 @@ export function renderPair(
   const caption = document.createElement('p');
   caption.className = 'region-pair__caption';
   caption.innerHTML = `${points.length} features · z-scored across regions (prototype) · bars ±1 SEM · `
-    + 'marker size: |d| &lt; 0.2, small, medium, large · '
-    + '<span data-group="lfp">● LFP</span> <span data-group="ap">● AP</span> <span data-group="waveform">● waveform</span>';
+    + 'marker area ∝ |d| (legend top-left) · '
+    + '<span data-group="lfp">●</span> LF <span data-group="ap">●</span> AP <span data-group="waveform">●</span> Waveform';
   const tooltip = document.createElement('div');
   tooltip.className = 'region-pair__tip';
   tooltip.hidden = true;
