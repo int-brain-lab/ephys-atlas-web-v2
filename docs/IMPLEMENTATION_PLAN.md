@@ -26,6 +26,21 @@ volume measurements, the fresh production build and catalog promotion passed.
 Chromium and Firefox final volume checks pass. Keep broad-promotion QA explicit. Q2/Q9 concern a later paper
 freeze and do not block the authorized initial deployment.
 
+## ElectRA branch — synchronize after the BWM restoration
+
+Status: waiting for [PR #20](https://github.com/int-brain-lab/ephys-atlas-web-v2/pull/20)
+to merge into `main`. Keep `branding/electra` unmerged pending separate review.
+
+After PR #20 merges, fetch and merge updated `origin/main` into
+`branding/electra`. Preserve the BWM restoration and current production
+defaults, and resolve documentation conflicts without changing Olivier's BWM
+decision; renumber our ElectRA branding decision to avoid the shared decision
+ID. Include the production catalog snapshot and deployment descriptor updates
+if BWM promotion has completed; otherwise synchronize again after those land.
+Run `just check` and `just site-compatibility`, then push the updated branch for
+review. Synchronizing this branch does not authorize merging or deploying
+ElectRA, or reviewing/publishing the paper videos.
+
 ## M1/M3/M4 — Freeze the paper dataset set
 
 Before the separate paper freeze, promote the D094 BWM restoration through the
