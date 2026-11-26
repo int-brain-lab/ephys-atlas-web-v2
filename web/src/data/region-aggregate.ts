@@ -44,6 +44,9 @@ const QUANTILES: Record<string, number> = { median: 0.5, q05: 0.05, q25: 0.25, q
 /** Selection-id suffix for a parent's own channels, excluding its descendants. */
 export const OWN_SUFFIX = ':own';
 
+/** Region ids whose statistics were aggregated on the fly, per expanded payload. */
+export const aggregatedIds = new WeakMap<RegionalFeaturePayload, ReadonlySet<string>>();
+
 const childrenCache = new WeakMap<readonly RegionMetadata[], Map<string, string[]>>();
 
 /** Region ids plus all their hierarchy descendants. */
@@ -107,7 +110,7 @@ export function expandRegionalPayload(
     });
     statistics[key] = merge(values, aggregated);
   }
-  return {
+  const expanded: RegionalFeaturePayload = {
     ...payload,
     regionIds: [...payload.regionIds, ...added.map(({ id }) => id), ...own.map((row) => `${payload.regionIds[row]}${OWN_SUFFIX}`)],
     statistics,
@@ -115,4 +118,6 @@ export function expandRegionalPayload(
       ? { ...binning, regional: merge(binning.regional, targets.map(({ rows }) => sumCounts(binning.regional!, rows))) }
       : binning)) } } : {}),
   };
+  aggregatedIds.set(expanded, new Set(targets.map(({ id }) => id)));
+  return expanded;
 }

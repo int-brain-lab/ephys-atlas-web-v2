@@ -23,7 +23,7 @@ import {
   renderSelectedRegions,
 } from './details-view.js';
 import { renderAnalysis } from './comparison-view.js';
-import { expandRegionalPayload, OWN_SUFFIX } from '../../data/region-aggregate.js';
+import { aggregatedIds, expandRegionalPayload, OWN_SUFFIX } from '../../data/region-aggregate.js';
 import { pairPoints, renderPair, type PairPoint } from './pair-view.js';
 import {
   renderDistribution,
@@ -193,7 +193,7 @@ export class RegionalPanelController {
       const payloads = results.flatMap((result) => (
         result.status === 'fulfilled' && result.value.representation === 'regional' ? [result.value] : []));
       this.pairPoints = pairPoints(payloads.map((payload) => expandRegionalPayload(payload, model.regions)),
-        a, b, payloads[0]?.regionIds.length);
+        a, b, payloads);
       draw();
     });
   }
@@ -365,6 +365,9 @@ export class RegionalPanelController {
           fixture,
           model.presentationScale.histogram,
         );
+        if ([...selected].some((id) => aggregatedIds.get(feature)?.has(id))) {
+          this.analysis.append(message('Aggregated regions: count, mean, std, min, max and histograms are exact; median and quantiles are approximated from the summed histogram.'));
+        }
         if (selected.size === 2) this.syncPair(model);
         this.reportComparisonUse();
       } else {

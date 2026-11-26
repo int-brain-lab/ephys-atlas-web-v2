@@ -20,23 +20,23 @@ export const COHEN_BENCHMARKS = [0.2, 0.5, 0.8] as const;
  * Z-score each feature's regional means across regions and pair two regions.
  *
  * Prototype normalization: (mean - mean of region means) / SD of region means.
- * The reference is the release's own regions (parent rows appended on the fly
- * are excluded). Features lacking mean/std/count, or regions without channels,
+ * The reference spread comes from `references` (the unexpanded release payloads,
+ * index-aligned with `features`) when given. Features lacking mean/std/count, or regions without channels,
  * are skipped.
  */
 export function pairPoints(
   features: readonly RegionalFeaturePayload[],
   a: string,
   b: string,
-  releaseRowCount?: number,
+  references?: readonly RegionalFeaturePayload[],
 ): PairPoint[] {
   const points: PairPoint[] = [];
-  for (const feature of features) {
+  for (const [k, feature] of features.entries()) {
     const { mean, std, count } = feature.statistics;
     if (!mean || !std || !count) continue;
     const index = new Map(feature.regionIds.map((id, row) => [id, row]));
     const rows = (id: string) => (index.has(id) ? [index.get(id)!] : []);
-    const finite = mean.slice(0, releaseRowCount).filter(Number.isFinite);
+    const finite = (references?.[k]?.statistics.mean ?? mean).filter(Number.isFinite);
     const mu = finite.reduce((sum, value) => sum + value, 0) / finite.length;
     const sigma = Math.sqrt(finite.reduce((sum, value) => sum + (value - mu) ** 2, 0) / (finite.length - 1));
     const { m: m1, s: s1, n: n1 } = poolRows(mean, std, count, rows(a));

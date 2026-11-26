@@ -36,7 +36,7 @@ test('expandRegionalPayload appends exact parent rows and summed histograms', ()
   assert.equal(expanded.statistics.min[3], 0);
   assert.deepEqual(expanded.distribution.binnings[0].regional[3].binCounts, [3, 2]);
   assert.equal(expanded.statistics.median[3], histogramQuantile([0, 5, 10], counts([3, 2]), 0.5));
-  const [point] = pairPoints([expanded], 'p', 'x', 3);
+  const [point] = pairPoints([expanded], 'p', 'x', [payload]);
   assert.ok(Math.abs(point.d - (0 - 4) / Math.sqrt((4 * 10 + 3 * 1) / 7)) < 1e-12);
 });
 

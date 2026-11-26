@@ -237,3 +237,8 @@
 .region-pair__list li:hover { text-decoration: underline; }
 .region-pair__tip { position: absolute; pointer-events: none; white-space: pre; padding: .3rem .5rem; border-radius: 4px;
   background: rgb(10 18 26 / 92%); color: white; font-size: .7rem; z-index: 1; }
+/* Feature-group colours in the feature menu (prototype). */
+[data-context-group="LF"] { --group: #1b5e20; }
+[data-context-group="AP"] { --group: #7b1fa2; }
+[data-context-group="Waveform"] { --group: #1565c0; }
+[data-context-group] [data-context-option] { box-shadow: inset 3px 0 0 var(--group); }
