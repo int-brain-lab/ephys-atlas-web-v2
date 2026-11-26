@@ -94,7 +94,10 @@ export function renderPair(
   const yLabel = svg('text', { x: 14, y: size / 2, 'text-anchor': 'middle', transform: `rotate(-90 14 ${size / 2})` });
   yLabel.textContent = `${labels.region2} (z)`;
   plot.append(xLabel, yLabel);
-  let legendX = pad + 10;
+  const legendTitle = svg('text', { x: pad + 6, y: pad + 14 });
+  legendTitle.textContent = "Cohen's |d|";
+  plot.append(legendTitle);
+  let legendX = pad + 92;
   for (const d of [...COHEN_BENCHMARKS, 2]) {
     const r = markerRadius(d);
     const label = svg('text', { x: legendX + r + 3, y: pad + 14 });

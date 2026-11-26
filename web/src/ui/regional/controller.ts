@@ -23,7 +23,7 @@ import {
   renderSelectedRegions,
 } from './details-view.js';
 import { renderAnalysis } from './comparison-view.js';
-import { expandRegionalPayload } from '../../data/region-aggregate.js';
+import { expandRegionalPayload, OWN_SUFFIX } from '../../data/region-aggregate.js';
 import { pairPoints, renderPair, type PairPoint } from './pair-view.js';
 import {
   renderDistribution,
@@ -163,7 +163,11 @@ export class RegionalPanelController {
     if (!load || !manifest) return;
     const { dataset, parcellation, selection, featureId } = model.state.view;
     const [a, b] = selection as [string, string];
-    const label = (id: string) => model.regions.find((region) => region.id === id)?.acronym ?? id;
+    const label = (id: string) => {
+      const base = id.replace(OWN_SUFFIX, '');
+      const acronym = model.regions.find((region) => region.id === base)?.acronym ?? base;
+      return base === id ? acronym : `${acronym} (own channels)`;
+    };
     const draw = () => this.pairPoints && renderPair(this.pairHost, this.pairPoints, {
       region1: label(a),
       region2: label(b),

@@ -45,9 +45,18 @@ test('expandRegionalPayload replaces a parent row with the union of itself and i
   const payload = { featureId: 'f', regionIds: ['p', 'c'],
     statistics: { mean: [10, 1], std: [0, Math.SQRT2], count: [1, 2] } };
   const expanded = expandRegionalPayload(payload, [{ id: 'p', parentId: null }, { id: 'c', parentId: 'p' }]);
-  assert.deepEqual(expanded.regionIds, ['p', 'c']);
+  assert.deepEqual(expanded.regionIds.slice(0, 2), ['p', 'c']);
   assert.equal(expanded.statistics.count[0], 3);
   assert.equal(expanded.statistics.mean[0], 4);
   assert.ok(Math.abs(expanded.statistics.std[0] - Math.sqrt(28)) < 1e-12);
   assert.equal(expanded.statistics.mean[1], 1);
+});
+
+test('expandRegionalPayload keeps a replaced parent row as <id>:own', () => {
+  const payload = { featureId: 'f', regionIds: ['p', 'c'],
+    statistics: { mean: [10, 1], std: [0, Math.SQRT2], count: [1, 2] } };
+  const expanded = expandRegionalPayload(payload, [{ id: 'p', parentId: null }, { id: 'c', parentId: 'p' }]);
+  assert.deepEqual(expanded.regionIds, ['p', 'c', 'p:own']);
+  assert.equal(expanded.statistics.mean[2], 10);
+  assert.equal(expanded.statistics.count[2], 1);
 });

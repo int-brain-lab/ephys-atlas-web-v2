@@ -41,6 +41,9 @@ export function histogramQuantile(edges: readonly number[], counts: Distribution
 
 const QUANTILES: Record<string, number> = { median: 0.5, q05: 0.05, q25: 0.25, q75: 0.75, q95: 0.95 };
 
+/** Selection-id suffix for a parent's own channels, excluding its descendants. */
+export const OWN_SUFFIX = ':own';
+
 const childrenCache = new WeakMap<readonly RegionMetadata[], Map<string, string[]>>();
 
 /** Region ids plus all their hierarchy descendants. */
@@ -53,7 +56,8 @@ export function withDescendants(regions: readonly RegionMetadata[], ids: readonl
     }
     childrenCache.set(regions, children);
   }
-  const visit = (id: string): string[] => [id, ...(children.get(id) ?? []).flatMap(visit)];
+  const visit = (id: string): string[] => (id.endsWith(OWN_SUFFIX)
+    ? [id.slice(0, -OWN_SUFFIX.length)] : [id, ...(children.get(id) ?? []).flatMap(visit)]);
   return [...new Set(ids.flatMap(visit))];
 }
 
@@ -73,6 +77,8 @@ export function expandRegionalPayload(
     .filter(({ id, rows }) => rows.length > (index.has(id) ? 1 : 0));
   if (targets.length === 0) return payload;
   const added = targets.filter(({ id }) => !index.has(id));
+  // Keep each replaced release row available as `<id>:own` (the parent's own channels).
+  const own = targets.filter(({ id }) => index.has(id)).map(({ id }) => index.get(id)!);
   const binnings = payload.distribution?.binnings ?? [];
   const reference = binnings.find((b) => b.regional && b.scale.kind === 'linear' && b.domain.kind === 'full')
     ?? binnings.find((b) => b.regional);
@@ -85,7 +91,8 @@ export function expandRegionalPayload(
   const merge = <T>(values: readonly T[], aggregated: readonly T[]): T[] => {
     const result = [...values];
     targets.forEach(({ id }, k) => { if (index.has(id)) result[index.get(id)!] = aggregated[k]!; });
-    return [...result, ...targets.flatMap(({ id }, k) => (index.has(id) ? [] : [aggregated[k]!]))];
+    return [...result, ...targets.flatMap(({ id }, k) => (index.has(id) ? [] : [aggregated[k]!])),
+      ...own.map((row) => values[row]!)];
   };
   const statistics: RegionalFeaturePayload['statistics'] = {};
   for (const [key, values] of Object.entries(payload.statistics) as [keyof typeof statistics, readonly number[]][]) {
@@ -102,7 +109,7 @@ export function expandRegionalPayload(
   }
   return {
     ...payload,
-    regionIds: [...payload.regionIds, ...added.map(({ id }) => id)],
+    regionIds: [...payload.regionIds, ...added.map(({ id }) => id), ...own.map((row) => `${payload.regionIds[row]}${OWN_SUFFIX}`)],
     statistics,
     ...(payload.distribution ? { distribution: { binnings: binnings.map((binning) => (binning.regional
       ? { ...binning, regional: merge(binning.regional, targets.map(({ rows }) => sumCounts(binning.regional!, rows))) }

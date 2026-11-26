@@ -19,7 +19,7 @@ import { regionalIndicesToWorld, maxRegionalSliceIndex } from './core/slice-cali
 import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
 import type { ResourceIntegrity } from './data/cache.js';
 import type { DatasetCatalog, FeaturePayload, RegionMetadata } from './data/contracts.js';
-import { expandRegionalPayload, withDescendants } from './data/region-aggregate.js';
+import { expandRegionalPayload, OWN_SUFFIX, withDescendants } from './data/region-aggregate.js';
 import { HttpDatasetSource } from './data/http-source.js';
 import { LocalDatasetSource } from './data/local-source.js';
 import type { PreparedLocalArchive, LocalArchivePreview } from './data/local-archive.js';
@@ -211,7 +211,7 @@ export class AtlasApp {
       ? { type: 'selection/toggle', regionId }
       : { type: 'selection/set', regionIds: [regionId] }));
     if (source === 'region-list' && this.store.getState().view.selection.includes(regionId)) {
-      void this.autoSliceToRegion(regionId);
+      void this.autoSliceToRegion(regionId.replace(OWN_SUFFIX, ''));
     }
   }
 
