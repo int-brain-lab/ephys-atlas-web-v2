@@ -187,7 +187,12 @@ export class RegionalPanelController {
       if (controller.signal.aborted) return;
       const payloads = results.flatMap((result) => (
         result.status === 'fulfilled' && result.value.representation === 'regional' ? [result.value] : []));
-      this.pairPoints = pairPoints(payloads, a, b);
+      const children = new Map<string, string[]>();
+      for (const region of model.regions) {
+        if (region.parentId != null) children.set(region.parentId, [...children.get(region.parentId) ?? [], region.id]);
+      }
+      const members = (id: string): string[] => [id, ...(children.get(id) ?? []).flatMap(members)];
+      this.pairPoints = pairPoints(payloads, a, b, members);
       draw();
     });
   }

@@ -471,7 +471,9 @@ export class RegionalTreeView {
 
   private activateRegion(id: string, additive: boolean, range = false): void {
     if (this.rowById.get(id)?.dataset.branch === 'true') {
-      this.toggleBranch(id);
+      // Prototype: Cmd/Ctrl-click selects a parent region (aggregated in the region-pair crossplot).
+      if (additive) this.callbacks.selectRegion(id, true);
+      else this.toggleBranch(id);
       return;
     }
     const effect = this.selector.activate(id, { ctrl: additive, shift: range }, true);
