@@ -39,3 +39,15 @@ test('expandRegionalPayload appends exact parent rows and summed histograms', ()
   const [point] = pairPoints([expanded], 'p', 'x', 3);
   assert.ok(Math.abs(point.d - (0 - 4) / Math.sqrt((4 * 10 + 3 * 1) / 7)) < 1e-12);
 });
+
+test('expandRegionalPayload replaces a parent row with the union of itself and its descendants', () => {
+  // parent p owns {10}, child c owns {0, 2}: union {0, 2, 10}, n=3, mean 4
+  const payload = { featureId: 'f', regionIds: ['p', 'c'],
+    statistics: { mean: [10, 1], std: [0, Math.SQRT2], count: [1, 2] } };
+  const expanded = expandRegionalPayload(payload, [{ id: 'p', parentId: null }, { id: 'c', parentId: 'p' }]);
+  assert.deepEqual(expanded.regionIds, ['p', 'c']);
+  assert.equal(expanded.statistics.count[0], 3);
+  assert.equal(expanded.statistics.mean[0], 4);
+  assert.ok(Math.abs(expanded.statistics.std[0] - Math.sqrt(28)) < 1e-12);
+  assert.equal(expanded.statistics.mean[1], 1);
+});

@@ -41,38 +41,55 @@ export function histogramQuantile(edges: readonly number[], counts: Distribution
 
 const QUANTILES: Record<string, number> = { median: 0.5, q05: 0.05, q25: 0.25, q75: 0.75, q95: 0.95 };
 
+const childrenCache = new WeakMap<readonly RegionMetadata[], Map<string, string[]>>();
+
+/** Region ids plus all their hierarchy descendants. */
+export function withDescendants(regions: readonly RegionMetadata[], ids: readonly string[]): string[] {
+  let children = childrenCache.get(regions);
+  if (!children) {
+    children = new Map();
+    for (const { id, parentId } of regions) {
+      if (parentId != null) children.set(parentId, [...children.get(parentId) ?? [], id]);
+    }
+    childrenCache.set(regions, children);
+  }
+  const visit = (id: string): string[] => [id, ...(children.get(id) ?? []).flatMap(visit)];
+  return [...new Set(ids.flatMap(visit))];
+}
+
 /**
- * Prototype: append on-the-fly rows for hierarchy regions that have no release row,
- * aggregated from all their descendants that do. count, missing_count, min, max,
- * mean, std and regional histograms are exact; median and quantiles are approximated
- * from the summed histogram. Release rows are never modified.
+ * Prototype: aggregate every hierarchy region over itself and all descendants with
+ * data. Parents without a release row are appended; release rows that also have
+ * descendants (channels labelled at a coarse level, e.g. CB) are replaced by the
+ * union. count, missing_count, min, max, mean, std and regional histograms are
+ * exact; median and quantiles are approximated from the summed histogram.
  */
 export function expandRegionalPayload(
   payload: RegionalFeaturePayload,
   regions: readonly RegionMetadata[],
 ): RegionalFeaturePayload {
   const index = new Map(payload.regionIds.map((id, row) => [id, row]));
-  const children = new Map<string, string[]>();
-  for (const { id, parentId } of regions) {
-    if (parentId != null) children.set(parentId, [...children.get(parentId) ?? [], id]);
-  }
-  const rowsOf = (id: string): number[] => [
-    ...(index.has(id) ? [index.get(id)!] : []), ...(children.get(id) ?? []).flatMap(rowsOf)];
-  const added = regions.filter(({ id }) => !index.has(id))
-    .map(({ id }) => ({ id, rows: rowsOf(id) })).filter(({ rows }) => rows.length > 0);
-  if (added.length === 0) return payload;
-
+  const targets = regions.map(({ id }) => ({ id, rows: withDescendants(regions, [id]).flatMap((m) => index.get(m) ?? []) }))
+    .filter(({ id, rows }) => rows.length > (index.has(id) ? 1 : 0));
+  if (targets.length === 0) return payload;
+  const added = targets.filter(({ id }) => !index.has(id));
   const binnings = payload.distribution?.binnings ?? [];
   const reference = binnings.find((b) => b.regional && b.scale.kind === 'linear' && b.domain.kind === 'full')
     ?? binnings.find((b) => b.regional);
-  const histograms = added.map(({ rows }) => reference && sumCounts(reference.regional!, rows));
+  const histograms = targets.map(({ rows }) => reference && sumCounts(reference.regional!, rows));
   const { mean, std, count } = payload.statistics;
-  const pooled = added.map(({ rows }) => (mean && std && count ? poolRows(mean, std, count, rows) : null));
+  const pooled = targets.map(({ rows }) => (mean && std && count ? poolRows(mean, std, count, rows) : null));
   const finite = (values: readonly number[], rows: readonly number[]) => rows.map((r) => values[r]!).filter(Number.isFinite);
 
+  // Replace rows that exist, append the rest (in target order).
+  const merge = <T>(values: readonly T[], aggregated: readonly T[]): T[] => {
+    const result = [...values];
+    targets.forEach(({ id }, k) => { if (index.has(id)) result[index.get(id)!] = aggregated[k]!; });
+    return [...result, ...targets.flatMap(({ id }, k) => (index.has(id) ? [] : [aggregated[k]!]))];
+  };
   const statistics: RegionalFeaturePayload['statistics'] = {};
   for (const [key, values] of Object.entries(payload.statistics) as [keyof typeof statistics, readonly number[]][]) {
-    statistics[key] = [...values, ...added.map(({ rows }, k) => {
+    const aggregated = targets.map(({ rows }, k) => {
       if (key === 'count' || key === 'missing_count') return rows.reduce((sum, r) => sum + (values[r] ?? 0), 0);
       if (key === 'min') return Math.min(...finite(values, rows));
       if (key === 'max') return Math.max(...finite(values, rows));
@@ -80,14 +97,15 @@ export function expandRegionalPayload(
       if (key === 'std') return pooled[k]?.s ?? NaN;
       const hist = histograms[k];
       return hist && key in QUANTILES ? histogramQuantile(reference!.edges, hist, QUANTILES[key]!) : NaN;
-    })];
+    });
+    statistics[key] = merge(values, aggregated);
   }
   return {
     ...payload,
     regionIds: [...payload.regionIds, ...added.map(({ id }) => id)],
     statistics,
     ...(payload.distribution ? { distribution: { binnings: binnings.map((binning) => (binning.regional
-      ? { ...binning, regional: [...binning.regional, ...added.map(({ rows }) => sumCounts(binning.regional!, rows))] }
+      ? { ...binning, regional: merge(binning.regional, targets.map(({ rows }) => sumCounts(binning.regional!, rows))) }
       : binning)) } } : {}),
   };
 }

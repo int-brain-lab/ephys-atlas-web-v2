@@ -19,7 +19,7 @@ import { regionalIndicesToWorld, maxRegionalSliceIndex } from './core/slice-cali
 import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
 import type { ResourceIntegrity } from './data/cache.js';
 import type { DatasetCatalog, FeaturePayload, RegionMetadata } from './data/contracts.js';
-import { expandRegionalPayload } from './data/region-aggregate.js';
+import { expandRegionalPayload, withDescendants } from './data/region-aggregate.js';
 import { HttpDatasetSource } from './data/http-source.js';
 import { LocalDatasetSource } from './data/local-source.js';
 import type { PreparedLocalArchive, LocalArchivePreview } from './data/local-archive.js';
@@ -407,7 +407,8 @@ export class AtlasApp {
       feature: data.feature,
       anatomyRegions,
       coloring,
-      selectedRegionIds: state.view.selection,
+      // Prototype: a selected parent highlights the union of its descendants.
+      selectedRegionIds: withDescendants(anatomyRegions, state.view.selection),
       hoveredRegionId: this.hoveredRegionId,
     });
     const presentation: ProjectionPresentation = {
