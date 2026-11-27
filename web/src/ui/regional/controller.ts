@@ -24,7 +24,7 @@ import {
   renderSelectedRegions,
 } from './details-view.js';
 import { renderAnalysis } from './comparison-view.js';
-import { aggregatedIds, expandRegionalPayload, OWN_SUFFIX } from '../../data/region-aggregate.js';
+import { aggregatedIds, expandRegionalPayload, OWN_SUFFIX, populationsOverlap } from '../../data/region-aggregate.js';
 import { featureGroup, pairPoints, renderPair, type PairPoint } from './pair-view.js';
 import {
   renderDistribution,
@@ -212,6 +212,12 @@ export class RegionalPanelController {
       feature: (id) => manifest.features.find((item) => item.id === id)?.label ?? id,
       group: (id) => featureGroup(dataset.datasetId, id),
     });
+    if (populationsOverlap(model.regions, a, b)) {
+      this.pairHost.prepend(Object.assign(html('p', 'region-pair__status'), {
+        textContent: 'Overlapping populations: one selection contains the other\u2019s channels, so the two are not '
+          + 'independent samples; d and SEM overstate their separation.',
+      }));
+    }
     if (this.pairFailed.length > 0) {
       const status = html('p', 'region-pair__status');
       status.dataset.state = 'error';

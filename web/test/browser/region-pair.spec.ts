@@ -62,3 +62,15 @@ test('failed pair feature loads are disclosed and can be retried without reselec
   await expect(status).toHaveCount(0);
   expect(new URL(page.url()).searchParams.get('selected')).toBe('-362,-382');
 });
+
+test('a parent paired with its own descendant warns about overlapping populations', async ({ page }) => {
+  // CNU (-623) contains STR (-477); CNU versus CA1 (-382) does not overlap.
+  await page.goto('/app/?v=4&dataset=golden_fixture&release=golden-v1&feature=rms_ap&selected=-623,-477');
+  await page.locator('.analysis-panel__toggle').click();
+  await expect(page.locator('.region-pair__point')).toHaveCount(1);
+  await expect(page.locator('.region-pair__status')).toContainText('Overlapping populations');
+  await page.goto('/app/?v=4&dataset=golden_fixture&release=golden-v1&feature=rms_ap&selected=-623,-382');
+  await page.locator('.analysis-panel__toggle').click();
+  await expect(page.locator('.region-pair__point')).toHaveCount(1);
+  await expect(page.locator('.region-pair__status')).toHaveCount(0);
+});

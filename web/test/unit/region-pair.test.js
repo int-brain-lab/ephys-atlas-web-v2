@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { featureGroup, pairPoints, populationMoments } from '../../.test-dist/ui/regional/pair-view.js';
 import {
-  expandRegionalPayload, histogramQuantile, poolRows, populationSd, regionAggregation, sampleSd,
+  expandRegionalPayload, histogramQuantile, poolRows, populationSd, populationsOverlap, regionAggregation, sampleSd,
 } from '../../.test-dist/data/region-aggregate.js';
 import { buildSelectedComparisonExport } from '../../.test-dist/ui/regional/comparison-export.js';
 import { buildRegionTooltipModel } from '../../.test-dist/ui/regional/model.js';
@@ -175,4 +175,15 @@ test('featureGroup classifies only channel-feature datasets and recognizes varia
   assert.equal(featureGroup('ephys_atlas_clusters', 'firing_rate'), null);
   assert.equal(featureGroup('ephys_atlas_clusters', 'spike_count'), null);
   assert.equal(featureGroup('agea', 'Gad1'), null);
+});
+
+test('populationsOverlap flags parent/descendant and own-channel selections only', () => {
+  const regions = [{ id: 'p', parentId: null }, { id: 'c1', parentId: 'p' }, { id: 'c2', parentId: 'p' },
+    { id: 'g', parentId: 'c1' }, { id: 'x', parentId: null }];
+  assert.equal(populationsOverlap(regions, 'p', 'g'), true);
+  assert.equal(populationsOverlap(regions, 'c1', 'p'), true);
+  assert.equal(populationsOverlap(regions, 'p:own', 'p'), true);
+  assert.equal(populationsOverlap(regions, 'p:own', 'c1'), false);
+  assert.equal(populationsOverlap(regions, 'c1', 'c2'), false);
+  assert.equal(populationsOverlap(regions, 'p', 'x'), false);
 });

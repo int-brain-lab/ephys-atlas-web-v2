@@ -160,3 +160,9 @@ export function regionAggregation(
   if (id.endsWith(OWN_SUFFIX)) return 'own_channels';
   return aggregatedIds.get(payload)?.has(id) ? 'descendants_union' : 'release';
 }
+
+/** Whether two selections share observations (e.g. a parent and one of its descendants). */
+export function populationsOverlap(regions: readonly RegionMetadata[], a: string, b: string): boolean {
+  const first = new Set(withDescendants(regions, [a]));
+  return withDescendants(regions, [b]).some((id) => first.has(id));
+}
