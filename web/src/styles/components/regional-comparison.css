@@ -220,6 +220,7 @@
 .region-pair [data-group="lfp"] { --group: var(--lfp); }
 .region-pair [data-group="ap"] { --group: var(--ap); }
 .region-pair [data-group="waveform"] { --group: var(--waveform); }
+.region-pair [data-group="other"] { --group: #757575; }
 .region-pair__caption { grid-column: 1 / -1; margin: 0; font-size: .7rem; opacity: .8; }
 .region-pair__caption span { color: var(--group); }
 .region-pair__legend { fill: none; stroke: currentColor; opacity: .6; }
@@ -230,6 +231,8 @@
 .region-pair__point circle { stroke: rgb(255 255 255 / 55%); }
 .region-pair__point:hover, .region-pair__point.is-current { fill-opacity: 1; stroke-width: 2; }
 .region-pair__point.is-current circle { stroke: white; }
+.region-pair__point.is-undefined circle { fill: none; stroke: var(--group); }
+.region-pair__status { grid-column: 1 / -1; margin: 0; font-size: .75rem; }
 .region-pair__list { margin: 0; padding-left: 1.4rem; font-size: .75rem; line-height: 1.6; }
 .region-pair__list li { cursor: pointer; }
 .region-pair__list li::marker { color: var(--group); }
@@ -241,4 +244,5 @@
 [data-context-group="LF"] { --group: #1b5e20; }
 [data-context-group="AP"] { --group: #7b1fa2; }
 [data-context-group="Waveform"] { --group: #1565c0; }
+[data-context-group="Other"] { --group: #757575; }
 [data-context-group] [data-context-option] { box-shadow: inset 3px 0 0 var(--group); }

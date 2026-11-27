@@ -9,6 +9,13 @@ import type {
 import type { ColoringState, RegionOrder, StatisticId } from '../../domain/types.js';
 import type { RegionInspection } from '../../rendering/projection-viewport.js';
 import { regionLineage } from '../../data/region-hierarchy.js';
+import { OWN_SUFFIX, regionAggregation } from '../../data/region-aggregate.js';
+
+/** Short descriptions of on-the-fly aggregated selections (prototype). */
+export const AGGREGATION_LABELS = {
+  own_channels: 'own channels only',
+  descendants_union: 'incl. subregions; quantiles approximated',
+} as const;
 
 const SELECTION_COLORS = ['#55a7f7', '#ef6f61', '#73c991', '#c38cf5', '#f2b84b', '#4dc6c6', '#f08cc2', '#a5b95c'] as const;
 
@@ -183,7 +190,7 @@ export function buildRegionTooltipModel(
   descriptor: FeatureDescriptor | undefined,
   coloring: ColoringState,
 ): RegionTooltipModel | null {
-  const region = regions.find(({ id }) => id === inspection.regionId);
+  const region = regions.find(({ id }) => id === inspection.regionId.replace(OWN_SUFFIX, ''));
   if (!region) return null;
 
   const meta = [inspection.physicalRegionId < 0 ? 'Left hemisphere' : 'Right hemisphere'];
@@ -205,6 +212,8 @@ export function buildRegionTooltipModel(
     if (count !== undefined && Number.isFinite(count)) {
       meta.push(`n=${Math.round(count).toLocaleString('en-US')}`);
     }
+    const aggregation = regionAggregation(feature, inspection.regionId);
+    if (aggregation !== 'release') meta.push(AGGREGATION_LABELS[aggregation]);
   }
 
   return {

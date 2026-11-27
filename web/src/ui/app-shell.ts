@@ -72,7 +72,7 @@ import { WorkspacePanelLayoutController } from './workspace-panel-layout.js';
 import { HelpGuide } from './help-guide.js';
 import { HELP_TOUR_SEEN_KEY, HelpTour, type HelpTourAnchor } from './help-tour.js';
 
-const FEATURE_GROUP_LABELS = { lfp: 'LF', ap: 'AP', waveform: 'Waveform' } as const;
+const FEATURE_GROUP_LABELS = { lfp: 'LF', ap: 'AP', waveform: 'Waveform', other: 'Other' } as const;
 const GROUP_ORDER: readonly string[] = Object.values(FEATURE_GROUP_LABELS);
 
 export interface AppShellCallbacks {
@@ -1187,15 +1187,16 @@ export class AppShell {
         const representations = this.featureRepresentations(feature);
         const preferred = representations.includes(state.view.representation) ? state.view.representation : representations[0];
         if (preferred) this.featureRepresentation.set(feature.id, preferred);
+        const group = featureGroup(state.view.dataset.datasetId, feature.id);
         return {
           id: feature.id,
           label: feature.label,
           description: [feature.unit, representations.map(titleCaseToken).join(' / ')].filter(Boolean).join(' · '),
           detail: feature.description,
-          group: FEATURE_GROUP_LABELS[featureGroup(feature.id)],
+          ...(group ? { group: FEATURE_GROUP_LABELS[group] } : {}),
           keywords: `${feature.id} ${feature.description} ${feature.valueSemantics.quantity}`,
         };
-      }).sort((x, y) => GROUP_ORDER.indexOf(x.group) - GROUP_ORDER.indexOf(y.group)) ?? [];
+      }).sort((x, y) => GROUP_ORDER.indexOf(x.group ?? '') - GROUP_ORDER.indexOf(y.group ?? '')) ?? [];
     }
     this.featureContext.setOptions(this.featureOptions, state.view.featureId ? [state.view.featureId] : [], {
       emptyMessage: state.runtime.datasetStatus === 'error'

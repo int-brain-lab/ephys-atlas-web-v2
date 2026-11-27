@@ -455,16 +455,17 @@ export class AtlasApp {
     };
     this.renderedModel = model;
     this.shell.render(model);
+    // Selected regions are described by the same (expanded) population as the panel and CSV.
+    const panelFeature = this.expandedFeature(data.feature, anatomyRegions);
     const selectedInspections = state.view.selection.flatMap(regionId => {
       const inspection = buildRegionTooltipModel({
-        regionId, physicalRegionId: Number(regionId), projectionId: 'coronal', sliceIndex: null,
+        regionId, physicalRegionId: Number(regionId.replace(OWN_SUFFIX, '')), projectionId: 'coronal', sliceIndex: null,
         parcellation: state.view.parcellation, clientX: 0, clientY: 0,
-      }, anatomyRegions, featureLoading || featureError ? null : data.feature,
+      }, anatomyRegions, featureLoading || featureError ? null : panelFeature,
       data.manifest?.features.find(({ id }) => id === state.view.featureId), state.view.coloring);
       return inspection ? [{ model: inspection, regionId }] : [];
     });
     this.shell.setSelectedRegionInspections(selectedInspections);
-    const panelFeature = this.expandedFeature(data.feature, anatomyRegions);
     // Use the expanded payload's binning so aggregated parent rows have histograms.
     const panelHistogram = panelFeature?.representation === 'regional'
       ? panelFeature.distribution?.binnings.find(({ id }) => id === presentationScale.histogram?.id)
@@ -1000,11 +1001,14 @@ export class AtlasApp {
       descriptor?.display?.regional,
       state.distribution.domain,
     );
+    // Export the population shown in the panel (aggregated parents, `:own` rows).
+    const expanded = this.expandedFeature(feature, regions);
     const comparison = buildSelectedComparisonExport({
       datasetId: state.dataset.datasetId,
       releaseId: state.dataset.releaseId ?? manifest.release.releaseId,
-      feature,
-      ...(presentationScale.histogram ? { binning: presentationScale.histogram } : {}),
+      feature: expanded,
+      ...(presentationScale.histogram ? { binning: expanded.distribution?.binnings
+        .find(({ id }) => id === presentationScale.histogram?.id) ?? presentationScale.histogram } : {}),
       ...(descriptor ? { descriptor } : {}),
       regions,
       selectedRegionIds: state.selection,

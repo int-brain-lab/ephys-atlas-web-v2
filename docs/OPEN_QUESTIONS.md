@@ -122,6 +122,9 @@ summary population. Record reviewed parameters in versioned selection
 artifacts and immutable release provenance. Do not calculate an undocumented
 baseline from whatever values the browser happens to have loaded.
 
+D102 records the owner's choice for the region-pair crossplot only: the
+full source-observation population (release `global` moments).
+
 Blocks: real-data z-score comparison defaults and releases only. It does not
 block pure domain/application machinery, synthetic fixtures, the UX lab, or
 scientist testing with clearly labelled synthetic normalization.

@@ -1,7 +1,7 @@
 import type { RegionalFeaturePayload } from '../../data/contracts.js';
-import { poolRows } from '../../data/region-aggregate.js';
+import { poolRows, populationSd, sampleSd, type Moments } from '../../data/region-aggregate.js';
 
-/** One feature in a two-region crossplot, in z-units across all regions of the parcellation. */
+/** One feature in a two-region crossplot, in full-population z-units. */
 export interface PairPoint {
   featureId: string;
   z1: number;
@@ -9,7 +9,11 @@ export interface PairPoint {
   /** Standard error of each region mean, in the same z-units. */
   sem1: number;
   sem2: number;
-  /** Cohen's d of region 2 versus region 1 (pooled within-region SD). */
+  /**
+   * Cohen's d of region 2 versus region 1 (pooled within-region sample SD).
+   * NaN when both regions are constant but differ: the standardized effect is
+   * undefined, so such features rank after every finite effect.
+   */
   d: number;
 }
 
@@ -17,12 +21,26 @@ export interface PairPoint {
 export const COHEN_BENCHMARKS = [0.2, 0.5, 0.8] as const;
 
 /**
- * Z-score each feature's regional means across regions and pair two regions.
+ * Full-population moments of a release payload: its `global` count, mean and
+ * population SD when present, otherwise pooled from all of its (disjoint) rows.
+ */
+export function populationMoments(payload: RegionalFeaturePayload): Moments {
+  const { count, mean, std } = payload.global ?? {};
+  if (count !== undefined && mean !== undefined && std !== undefined) return { n: count, mean, m2: count * std * std };
+  const stats = payload.statistics;
+  return stats.mean && stats.count
+    ? poolRows(stats.mean, stats.std, stats.count, payload.regionIds.map((_, row) => row))
+    : { n: 0, mean: NaN, m2: NaN };
+}
+
+/**
+ * Pair two regions over all features, z-scored against the full population.
  *
- * Prototype normalization: (mean - mean of region means) / SD of region means.
- * The reference spread comes from `references` (the unexpanded release payloads,
- * index-aligned with `features`) when given. Features lacking mean/std/count, or regions without channels,
- * are skipped.
+ * z = (region mean − population mean) / population SD, identically on both
+ * axes (owner decision, see docs). The population comes from `references`
+ * (the unexpanded release payloads, index-aligned with `features`), else from
+ * the feature itself. Features without mean/std/count, regions with fewer than
+ * two observations, and features with a zero population SD are skipped.
  */
 export function pairPoints(
   features: readonly RegionalFeaturePayload[],
@@ -34,37 +52,53 @@ export function pairPoints(
   for (const [k, feature] of features.entries()) {
     const { mean, std, count } = feature.statistics;
     if (!mean || !std || !count) continue;
+    const population = populationMoments(references?.[k] ?? feature);
+    const [mu, sigma] = [population.mean, populationSd(population)];
     const index = new Map(feature.regionIds.map((id, row) => [id, row]));
-    const rows = (id: string) => (index.has(id) ? [index.get(id)!] : []);
-    const finite = (references?.[k]?.statistics.mean ?? mean).filter(Number.isFinite);
-    const mu = finite.reduce((sum, value) => sum + value, 0) / finite.length;
-    const sigma = Math.sqrt(finite.reduce((sum, value) => sum + (value - mu) ** 2, 0) / (finite.length - 1));
-    const { m: m1, s: s1, n: n1 } = poolRows(mean, std, count, rows(a));
-    const { m: m2, s: s2, n: n2 } = poolRows(mean, std, count, rows(b));
-    if (!(sigma > 0) || ![m1, m2, s1, s2].every(Number.isFinite) || n1 < 2 || n2 < 2) continue;
-    const pooled = Math.sqrt(((n1 - 1) * s1 ** 2 + (n2 - 1) * s2 ** 2) / (n1 + n2 - 2));
+    const pool = (id: string) => poolRows(mean, std, count, index.has(id) ? [index.get(id)!] : []);
+    const [r1, r2] = [pool(a), pool(b)];
+    if (!(sigma > 0) || !Number.isFinite(mu) || r1.n < 2 || r2.n < 2
+      || ![r1.mean, r2.mean, r1.m2, r2.m2].every(Number.isFinite)) continue;
+    const within = Math.sqrt((r1.m2 + r2.m2) / (r1.n + r2.n - 2));
+    const diff = r2.mean - r1.mean;
     points.push({
       featureId: feature.featureId,
-      z1: (m1 - mu) / sigma,
-      z2: (m2 - mu) / sigma,
-      sem1: s1 / Math.sqrt(n1) / sigma,
-      sem2: s2 / Math.sqrt(n2) / sigma,
-      d: pooled > 0 ? (m2 - m1) / pooled : 0,
+      z1: (r1.mean - mu) / sigma,
+      z2: (r2.mean - mu) / sigma,
+      sem1: sampleSd(r1) / Math.sqrt(r1.n) / sigma,
+      sem2: sampleSd(r2) / Math.sqrt(r2.n) / sigma,
+      d: within > 0 ? diff / within : diff === 0 ? 0 : NaN,
     });
   }
-  return points.sort((p, q) => Math.abs(q.d) - Math.abs(p.d));
+  const rank = (d: number) => (Number.isNaN(d) ? -1 : Math.abs(d));
+  return points.sort((p, q) => rank(q.d) - rank(p.d));
 }
 
-/** Provisional LFP / AP / waveform grouping by feature id (ibleatools feature models). */
-export function featureGroup(id: string): 'lfp' | 'ap' | 'waveform' {
-  if (/^(psd_|rms_lf|aperiodic_|decay_)/.test(id)) return 'lfp';
-  if (/^(rms_ap|cor_ratio|channel_labels)$/.test(id)) return 'ap';
-  return 'waveform';
+export type FeatureGroup = 'lfp' | 'ap' | 'waveform' | 'other';
+
+/** Datasets whose features follow the ephys-atlas channel feature models (the golden fixture mirrors them). */
+const CHANNEL_FEATURE_DATASETS = new Set(['ephys_atlas_channels', 'ephys_atlas_volumes', 'golden_fixture']);
+const WAVEFORM = /^(alpha_|depolarisation_|peak_to_trough_|polarity$|predepolarisation_|recovery_|repolarisation_|slowness_|spatial_spread_|spike_|tip_val$)/;
+
+/**
+ * Provisional LF / AP / waveform grouping (ibleatools feature models) for
+ * channel-feature datasets; `.raw`/`.denoised` variants share their base group.
+ * Unknown channel features are `other`; other datasets are not grouped (null).
+ */
+export function featureGroup(datasetId: string, id: string): FeatureGroup | null {
+  if (!CHANNEL_FEATURE_DATASETS.has(datasetId)) return null;
+  const base = id.replace(/\.(raw|denoised)$/, '');
+  if (/^(psd_|rms_lf|aperiodic_|decay_)/.test(base)) return 'lfp';
+  if (/^(rms_ap|cor_ratio|channel_labels)$/.test(base)) return 'ap';
+  return WAVEFORM.test(base) ? 'waveform' : 'other';
 }
+
+/** Effect-size label; an undefined d means both regions are constant and differ. */
+export const formatD = (d: number) => (Number.isNaN(d) ? 'd undefined (no within-region spread)' : `d = ${d.toFixed(2)}`);
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 /** Marker radius: area ∝ |d|, capped at |d| = 3. */
-export const markerRadius = (d: number) => 1.5 + 4.5 * Math.sqrt(Math.min(Math.abs(d), 3));
+export const markerRadius = (d: number) => 1.5 + 4.5 * Math.sqrt(Number.isNaN(d) ? 0 : Math.min(Math.abs(d), 3));
 
 function svg<K extends keyof SVGElementTagNameMap>(name: K, attrs: Record<string, string | number>): SVGElementTagNameMap[K] {
   const node = document.createElementNS(SVG_NS, name);
@@ -76,7 +110,10 @@ function svg<K extends keyof SVGElementTagNameMap>(name: K, attrs: Record<string
 export function renderPair(
   target: HTMLElement,
   points: readonly PairPoint[],
-  labels: { region1: string; region2: string; feature(id: string): string; current: string | null },
+  labels: {
+    region1: string; region2: string; current: string | null;
+    feature(id: string): string; group(id: string): FeatureGroup | null;
+  },
 ): void {
   const size = 600;
   const pad = 40;
@@ -106,10 +143,11 @@ export function renderPair(
     legendX += 2 * r + 28;
   }
   for (const p of [...points].reverse()) {
-    const tip = `${labels.feature(p.featureId)}\nz: ${p.z1.toFixed(2)} → ${p.z2.toFixed(2)}  ·  d = ${p.d.toFixed(2)}`;
-    const group = svg('g', { 'data-pair-feature': p.featureId, 'data-group': featureGroup(p.featureId),
+    const tip = `${labels.feature(p.featureId)}\nz: ${p.z1.toFixed(2)} → ${p.z2.toFixed(2)}  ·  ${formatD(p.d)}`;
+    const group = svg('g', { 'data-pair-feature': p.featureId, 'data-group': labels.group(p.featureId) ?? 'other',
       'data-tip': tip, class: 'region-pair__point' });
-    if (p.featureId === labels.current) group.classList.add('is-current');
+    group.classList.toggle('is-current', p.featureId === labels.current);
+    group.classList.toggle('is-undefined', Number.isNaN(p.d));
     const [x, y] = [sx(p.z1), sy(p.z2)];
     group.append(
       svg('line', { x1: sx(p.z1 - p.sem1), y1: y, x2: sx(p.z1 + p.sem1), y2: y }),
@@ -123,15 +161,16 @@ export function renderPair(
   for (const p of points.slice(0, 15)) {
     const item = document.createElement('li');
     item.dataset.pairFeature = p.featureId;
-    item.dataset.group = featureGroup(p.featureId);
-    item.textContent = `${labels.feature(p.featureId)} — d = ${p.d.toFixed(2)}`;
+    item.dataset.group = labels.group(p.featureId) ?? 'other';
+    item.textContent = `${labels.feature(p.featureId)} — ${formatD(p.d)}`;
     list.append(item);
   }
   const caption = document.createElement('p');
   caption.className = 'region-pair__caption';
-  caption.innerHTML = `${points.length} features · z-scored across regions (prototype) · bars ±1 SEM · `
+  caption.innerHTML = `${points.length} features · z-scored against the full population · bars ±1 SEM (channels treated as independent) · `
     + 'marker area ∝ |d| (legend top-left) · '
-    + '<span data-group="lfp">●</span> LF <span data-group="ap">●</span> AP <span data-group="waveform">●</span> Waveform';
+    + '<span data-group="lfp">●</span> LF <span data-group="ap">●</span> AP <span data-group="waveform">●</span> Waveform '
+    + '<span data-group="other">●</span> Other';
   const tooltip = document.createElement('div');
   tooltip.className = 'region-pair__tip';
   tooltip.hidden = true;
