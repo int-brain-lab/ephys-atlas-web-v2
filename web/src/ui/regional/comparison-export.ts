@@ -6,6 +6,14 @@ import type {
 } from '../../data/contracts.js';
 import type { StatisticId } from '../../domain/types.js';
 import { histogramDistribution } from './model.js';
+import { OWN_SUFFIX, regionAggregation } from '../../data/region-aggregate.js';
+
+/** Provenance of each exported row's statistics (prototype on-the-fly aggregation). */
+const AGGREGATION_EXPORT = {
+  release: 'release',
+  own_channels: 'own_channels',
+  descendants_union: 'descendants_union; quantiles approximated from histogram',
+} as const;
 
 export interface ComparisonExportOptions {
   datasetId: string;
@@ -40,6 +48,7 @@ const FIELDS = [
   'region_id',
   'acronym',
   'region_name',
+  'aggregation',
   'observation_count',
   'missing_count',
   'min',
@@ -70,7 +79,7 @@ export function buildSelectedComparisonExport(options: ComparisonExportOptions):
   for (const regionId of selectedRegionIds) {
     const rowIndex = indexById.get(regionId);
     if (rowIndex === undefined) continue;
-    const region = regionById.get(regionId);
+    const region = regionById.get(regionId.replace(OWN_SUFFIX, ''));
     const value = (field: keyof RegionalFeaturePayload['statistics']): string => {
       const number = feature.statistics[field]?.[rowIndex];
       return number !== undefined && Number.isFinite(number) ? String(number) : '';
@@ -97,6 +106,7 @@ export function buildSelectedComparisonExport(options: ComparisonExportOptions):
         regionId,
         region?.acronym ?? '',
         region?.name ?? '',
+        AGGREGATION_EXPORT[regionAggregation(feature, regionId)],
         value('count'),
         value('missing_count'),
         value('min'),

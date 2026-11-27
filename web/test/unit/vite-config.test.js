@@ -64,7 +64,7 @@ test('remote catalog proxy coexists with a configured local release context', as
 });
 
 test('the current local bundle exposes the production datasets, defaults and project groups', async () => {
-  const bundle = JSON.parse(await readFile('../data/development-bundle-v8.json', 'utf8'));
+  const bundle = JSON.parse(await readFile('../data/development-bundle-v9.json', 'utf8'));
   const site = JSON.parse(await readFile('../data/deployment/initial-site.json', 'utf8'));
   const published = JSON.parse(await readFile(
     `../data/deployment/dependencies/${site.catalog.sha256}.json`, 'utf8',

@@ -1,3 +1,4 @@
+import { OWN_SUFFIX } from '../../data/region-aggregate.js';
 import type { RegionMetadata } from '../../data/contracts.js';
 import { SelectorModel } from './selector-model.js';
 import type { RegionOrder, StatisticId } from '../../domain/types.js';
@@ -454,7 +455,7 @@ export class RegionalTreeView {
     }
     const button = target?.closest<HTMLButtonElement>('[data-region-button]');
     const id = button?.dataset.regionButton;
-    if (id) this.activateRegion(id, event.ctrlKey || event.metaKey, event.shiftKey);
+    if (id) this.activateRegion(id, event.ctrlKey || event.metaKey, event.shiftKey, event.altKey);
   };
 
   private readonly onTreeKeyDown = (event: KeyboardEvent): void => {
@@ -469,9 +470,10 @@ export class RegionalTreeView {
     } else this.navigateRegions(event, button);
   };
 
-  private activateRegion(id: string, additive: boolean, range = false): void {
+  private activateRegion(id: string, additive: boolean, range = false, ownOnly = false): void {
     if (this.rowById.get(id)?.dataset.branch === 'true') {
-      this.toggleBranch(id);
+      // Prototype: a parent selects the union of its descendants; Option/Alt selects its own channels only.
+      this.callbacks.selectRegion(ownOnly ? `${id}${OWN_SUFFIX}` : id, additive);
       return;
     }
     const effect = this.selector.activate(id, { ctrl: additive, shift: range }, true);

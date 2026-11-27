@@ -44,7 +44,7 @@ function developmentProject(datasetId: string): DevelopmentProject {
     description: 'Channel features, cluster features, and encoding volumes.',
   };
   if (datasetId === 'brainwide_map') return {
-    id: 'brain-wide-map',
+    id: 'brainwide-map',
     title: 'Brain-Wide Map',
     description: 'Brain-wide activity maps and preserved legacy results.',
   };

@@ -26,28 +26,24 @@ volume measurements, the fresh production build and catalog promotion passed.
 Chromium and Firefox final volume checks pass. Keep broad-promotion QA explicit. Q2/Q9 concern a later paper
 freeze and do not block the authorized initial deployment.
 
-## ElectRA branch — synchronize after the BWM restoration
+## ElectRA branch — review the integrated branding
 
-Status: waiting for [PR #20](https://github.com/int-brain-lab/ephys-atlas-web-v2/pull/20)
-to merge into `main`. Keep `branding/electra` unmerged pending separate review.
+Status: `branding/electra` includes updated `main` through `9256273`, including
+the published BWM restoration and the region-pair crossplot from PR #22.
+D101 remains the BWM restoration, D102 remains crossplot normalization, and
+ElectRA branding uses D103. Production defaults, catalog snapshots and
+deployment descriptors follow `main`.
 
-After PR #20 merges, fetch and merge updated `origin/main` into
-`branding/electra`. Preserve the BWM restoration and current production
-defaults, and resolve documentation conflicts without changing Olivier's BWM
-decision. ElectRA branding uses D103 so the two decisions keep distinct IDs.
-Include the production catalog snapshot and deployment descriptor updates
-if BWM promotion has completed; otherwise synchronize again after those land.
-Run `just check` and `just site-compatibility`, then push the updated branch for
-review. Synchronizing this branch does not authorize merging or deploying
-ElectRA, or reviewing/publishing the paper videos.
+Review the integrated landing page, viewer branding and descriptive dataset
+labels before merging this branch. The paper videos remain on
+`paper-ephys-atlas` branch `feature/datoviz-media` for separate review.
+Branch synchronization and validation do not publish ElectRA or the videos.
 
 ## M1/M3/M4 — Freeze the paper dataset set
 
-Before the separate paper freeze, promote the D094 BWM restoration through the
-guarded catalog path, verify all eight datasets in the running viewer, then
-synchronize the exact served catalog snapshot and site descriptor. The tracked
-curator restores the original BWM release without changing the current seven
-datasets or defaults. Local implementation does not claim production promotion.
+The D094/D101 BWM restoration was promoted on 2026-11-26 and all eight
+datasets were verified live; see the
+[BWM restoration record](publishing/BWM_RESTORATION_DEPLOYMENT_20261126.md).
 
 Status: reviewed local channel, cluster, and Brain-Wide Map releases are green;
 paper identity and publication remain incomplete.

@@ -74,7 +74,7 @@ export class SvgSelectionOverlay {
     if (paths.length) this.drawOutlines(frame, paths, [...new Set([...index.values()].flatMap(paths => [...paths]))]);
     this.updatePresence();
     this.drawLabels();
-    const last = ids.at(-1);
+    const last = [...(frame.labelledRegionIds ?? ids)].at(-1);
     if (last !== undefined) this.showLocator(Math.abs(last), false);
   }
 
@@ -211,7 +211,7 @@ export class SvgSelectionOverlay {
     this.labels.setAttribute('transform', `matrix(${transform.a} ${transform.b} ${transform.c} ${transform.d} ${transform.e} ${transform.f})`);
     this.layer.append(this.labels);
     const occupied: { x: number; y: number; width: number; height: number }[] = [];
-    for (const id of new Set([...(this.frame?.selectedRegionIds ?? [])].map(Math.abs))) {
+    for (const id of new Set([...(this.frame?.labelledRegionIds ?? this.frame?.selectedRegionIds ?? [])].map(Math.abs))) {
       const source = this.locatorPath(id);
       if (!source) continue;
       const anchor = this.labelAnchor(source);

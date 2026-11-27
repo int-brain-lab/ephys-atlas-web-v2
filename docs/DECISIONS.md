@@ -107,7 +107,9 @@ only part of the body; the index states what remains effective.
 | D097 | One-click image downloads and format menu | accepted | 2026-10-13 | primary button downloads immediately; adjacent arrow exposes colorbar and alternate SVG/PNG actions with brief descriptions; refines D093 interaction |
 | D098 | Omit selection borders from 2D downloads | accepted | 2026-10-13 | exported SVG/PNG omit selected-region strokes and halos; normal anatomy boundaries, feature colors and live selection remain; refines D093 |
 | D099 | Docked region inspection and compact feature summary | accepted | 2026-10-13 | fixed right-side inspection; expandable below-view fallback for narrow, collapsed and maximized layouts; full-width Summary row; persistent selection labels and discreet cursor acronyms |
-| D100 | W42 channel and W46 volume and edges release selections | accepted | 2026-11-13 | W42 channels denoised-only with the D089 display; W46 volume from `ea-encoder-channel` 0.0.1 and its edges with unchanged display and geometry; unpromoted 2026-11-04 releases deleted; Brain-Wide Map stays out (D094 unpromoted) |
+| D100 | W42 channel and W46 volume and edges release selections | partially superseded | 2026-11-13 | W42 channels denoised-only with the D089 display; W46 volume from `ea-encoder-channel` 0.0.1 and its edges with unchanged display and geometry; unpromoted 2026-11-04 releases deleted; D101 reverses its Brain-Wide Map exclusion |
+| D101 | Restore Brain-Wide Map after D100 | accepted | 2026-11-26 | restore the D094 BWM project, edition and immutable release on top of the live W42/W46 catalog; all other projects, releases and defaults unchanged; production promotion remains separate |
+| D102 | Region-pair crossplot z-scores against the full observation population | accepted | 2026-11-26 | crossplot axes z-scored by the release `global` mean and population SD (pooled from regional rows if absent); SEM from sample SD; undefined d ranked last; Q17 stays open for the comparison workspace |
 | D103 | ElectRA product branding | accepted | 2026-11-25 | ElectRA means Electrophysiology Reference Atlas; rename website presentation and paper videos, keep descriptive dataset names and stable scientific identities |
 
 ## D001 — Separate v2
@@ -2464,6 +2466,42 @@ builder commit and never entered the catalog. By owner instruction their
 objects, staging plans and dataset-index entries were deleted from the
 production root on 2026-11-13; no published catalog generation referenced
 them. This is a one-off exception to archive-not-delete.
+
+## D101 — Restore Brain-Wide Map after D100
+
+Owner direction on 2026-11-26. D100 dropped the D094 Brain-Wide Map
+restoration from the tracked curator configuration on the premise that BWM was
+redundant with Ephys Atlas. That premise was wrong: BWM is not a strict subset
+of the Ephys Atlas project and carries the Brain-Wide Map paper task-event
+decoding results (D038). This decision reverses D100's BWM exclusion only.
+
+Restore the `brainwide-map` project, `ibl-review-20260908-v1` edition and
+`brainwide_map` dataset selecting the existing
+`legacy-v1-1d908bea-ibl-review-20260908-v1` release, exactly as in D094. Its
+published manifest is still served with the catalogued SHA-256
+`ae03114ff1544c91a27b7d3ad9cc2fc06d690cb4bfcc93a5d9a495fe919fdb6a`; never
+rebuild or alter its scientific bytes. Keep every project, release, edition and
+default of the live W42/W46 catalog (`058aab71…`) unchanged. Production catalog
+promotion and site-descriptor synchronization remain separate actions; do not
+claim live restoration before verifying them.
+
+## D102 — Region-pair crossplot z-scores against the full observation population
+
+Owner direction on 2026-11-26 for the region-pair crossplot prototype (PR #22).
+Both axes use one normalization per feature: z = (regional mean − population
+mean) / population SD, where the population is every finite source observation
+of the release (the statistics document's `global` count, mean and
+population SD, `ddof=0`), not the spread of regional means. When `global` is
+absent, the same moments are pooled exactly from the release's disjoint
+regional rows. Error bars are ±1 SEM from the region's sample SD and treat
+channels as independent. Cohen's d uses the pooled within-region sample SD;
+when both regions are constant but differ, d is undefined, labelled as such
+and ranked after every finite effect.
+
+This answers Q17's "source observations versus regional summary population"
+for this crossplot only. It does not resolve Q17 for the multi-feature
+comparison workspace (QC inclusion, transforms, weighting and immutable
+normalization parameters remain open there).
 
 ## D103 — ElectRA product branding
 

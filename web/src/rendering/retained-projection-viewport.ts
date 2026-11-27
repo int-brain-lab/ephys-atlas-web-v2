@@ -110,6 +110,7 @@ function regionalFrame(
     anatomyColors: semantics.anatomyColors,
     regionColors: regionalPresentationColors(semantics, model.feature?.representation !== 'volume'),
     selectedRegionIds: semantics.selectedRegionIds,
+    ...(semantics.labelledRegionIds ? { labelledRegionIds: semantics.labelledRegionIds } : {}),
     regionLabels: semantics.regionLabels ?? new Map(),
     highlightedRegionIds: semantics.highlightedRegionId == null
       ? new Set()

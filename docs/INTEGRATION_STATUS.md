@@ -2,23 +2,24 @@
 
 Status: active initial-deployment capability matrix.
 
-Last updated: 2026-10-14 on `main` for the renderer-neutral region selector and pinned anatomy conformance.
+Last updated: 2026-11-27 on `branding/electra` for integration with the BWM restoration and region-pair crossplot.
 
 D103 implements ElectRA (Electrophysiology Reference Atlas) branding in the
 landing page, viewer and help, with descriptive dataset labels over unchanged
-catalog identities. This is a local branch change; production publication is
-separate. The full `just check` gate passes in an isolated environment
-created from the committed builder/publishing locks, including 258 browser
-checks and the four Linux documentation screenshots. The existing abstract
-favicon and the historical real-data landing capture evidence are retained.
+catalog identities. The branch integrates `main` through `9256273`, preserving
+the live BWM catalog/defaults and D102 crossplot behavior. It remains separate
+from production publication and awaits branding review. The existing abstract
+favicon and historical real-data landing capture evidence are retained.
 
 Code and tests are the implementation authority. This file summarizes current
 capability and artifact maturity; it links to evidence instead of repeating
 completed implementation diaries.
 
 On 2026-10-13, D094 restores BWM's existing project/edition/release in the tracked
-curator configuration, alongside all seven W39-era datasets. Production catalog
-promotion is pending; the site descriptor still pins the current live catalog.
+curator configuration, alongside all seven W39-era datasets. D100 dropped it
+from the W42/W46 promotion; on 2026-11-26 D101 restores it again on top of the
+live W42/W46 catalog, and the restoration was promoted to production that day
+(see the [deployment record](publishing/BWM_RESTORATION_DEPLOYMENT_20261126.md)).
 D096 implements shared filesystem/S3 removal guards, exact hash-bound retirement
 records, transition history, and independent expected-inventory production QA.
 
@@ -428,6 +429,8 @@ Genomics and Lipidome catalog projects followed on 2026-10-07; see the
 [W39 deployment record](publishing/W39_DEPLOYMENT_20261007.md).
 The W42 channels and W46 volumes and edges (D100) followed on 2026-11-15; see
 the [W42/W46 deployment record](publishing/W42_W46_DEPLOYMENT_20261115.md).
+Brain-Wide Map (D101) returned to the catalog on 2026-11-26; see the
+[BWM restoration record](publishing/BWM_RESTORATION_DEPLOYMENT_20261126.md).
 Q2/Q9 still govern the later paper freeze. No further administrator intervention
 is needed for the approved deployment operations.
 
