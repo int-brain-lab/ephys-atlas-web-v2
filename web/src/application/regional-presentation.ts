@@ -8,6 +8,8 @@ export interface RegionalPresentation {
   readonly featureColors: ReadonlyMap<number, string> | null;
   readonly visibleRegionIds: ReadonlySet<number>;
   readonly selectedRegionIds: ReadonlySet<number>;
+  /** Selected regions that carry a label and locator (defaults to the selection). */
+  readonly labelledRegionIds?: ReadonlySet<number>;
   readonly regionLabels?: ReadonlyMap<number, string>;
   /** Signed physical hover identity; logical selection is expanded separately. */
   readonly highlightedRegionId: number | null;
@@ -20,6 +22,7 @@ export interface RegionalPresentationInput {
   readonly anatomyRegions: readonly RegionMetadata[];
   readonly coloring: EffectiveColoringState;
   readonly selectedRegionIds: readonly string[];
+  readonly labelledRegionIds?: readonly string[];
   readonly hoveredRegionId: string | null;
 }
 
@@ -63,6 +66,7 @@ export function resolveRegionalPresentation(input: RegionalPresentationInput): R
     featureColors,
     visibleRegionIds,
     selectedRegionIds,
+    labelledRegionIds: regionalPresentationIds(input.labelledRegionIds ?? input.selectedRegionIds),
     regionLabels: new Map(input.anatomyRegions.map(region => [region.atlasId, region.acronym])),
     highlightedRegionId,
     featureSide: usesFeatureSide ? 'left' : null,
@@ -126,5 +130,6 @@ export function regionalPresentationsEqual(left: RegionalPresentation, right: Re
     && mapEqual(left.featureColors, right.featureColors)
     && setEqual(left.visibleRegionIds, right.visibleRegionIds)
     && setEqual(left.selectedRegionIds, right.selectedRegionIds)
+    && setEqual(left.labelledRegionIds ?? new Set(), right.labelledRegionIds ?? new Set())
   );
 }

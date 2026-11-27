@@ -42,7 +42,8 @@ test('initial data load is recorded once, while hydrated state and navigation ar
   await expect.poll(() => new URL(page.url()).searchParams.get('cursor')).not.toBe(originalCursor);
   expect(await events(page)).not.toContain('exploration_started');
 
-  await page.locator('[data-region-button="-315"]').click({ modifiers: ['Control'] });
+  // Expanding a branch with its disclosure button is navigation, not exploration.
+  await page.locator('[data-region-toggle="-315"]').click();
   expect(await events(page)).not.toContain('exploration_started');
   await page.getByLabel('Search brain regions').fill('CA1');
   await page.locator('[data-region-button="-382"]').click({ modifiers: ['Control'] });

@@ -2,6 +2,7 @@ import type {
   DatasetManifest,
   DistributionBinning,
   FeaturePayload,
+  RegionalFeaturePayload,
   RegionMetadata,
   RepresentationDisplay,
 } from '../../data/contracts.js';
@@ -17,12 +18,14 @@ import type {
 import { effectiveScalarColorRange } from '../../application/scalar-colormap.js';
 import { resolvePresentationColormap } from '../../application/presentation-colormap.js';
 import { buildRegionalValueColorbar, type RegionalValueColorbar } from '../../application/regional-value-colorbar.js';
-import { required, message } from './dom.js';
+import { html, required, message } from './dom.js';
 import {
   renderFeatureSummary,
   renderSelectedRegions,
 } from './details-view.js';
 import { renderAnalysis } from './comparison-view.js';
+import { aggregatedIds, expandRegionalPayload, OWN_SUFFIX, populationsOverlap } from '../../data/region-aggregate.js';
+import { featureGroup, pairPoints, renderPair, type PairPoint } from './pair-view.js';
 import {
   renderDistribution,
   updateDistributionColorRange,
@@ -52,6 +55,8 @@ export interface RegionalPanelCallbacks {
   downloadVolumeRegionDistribution(csv: string, filename: string): void;
   retryFeature(): void;
   retryAnatomy?(): void;
+  loadRegionalFeature?(featureId: string, signal: AbortSignal): Promise<FeaturePayload>;
+  showFeature?(featureId: string): void;
 }
 
 export interface RegionalPanelModel {
@@ -114,6 +119,14 @@ export class RegionalPanelController {
   private volumeRegionalError: string | null = null;
   private volumeRegionalAbort: AbortController | null = null;
   private latestModel: RegionalPanelModel | null = null;
+  private readonly pairHost = html('section', 'region-pair');
+  private pairKey = '';
+  private pairPoints: PairPoint[] = [];
+  private pairAbort: AbortController | null = null;
+  private pairPayloads = new Map<string, RegionalFeaturePayload>();
+  /** Features not loaded yet (initially all, then the failed ones). */
+  private pairFailed: string[] = [];
+  private pairRegions: readonly RegionMetadata[] | null = null;
 
   constructor(root: ParentNode, private readonly callbacks: RegionalPanelCallbacks) {
     this.pane = required(root, '.region-pane');
@@ -142,6 +155,107 @@ export class RegionalPanelController {
     this.analysisDialog.ownerDocument.addEventListener('keydown', this.onAnalysisKeyDown);
     this.analysis.addEventListener('click', this.onAnalysisClick);
     this.selectedList.addEventListener('click', this.onSelectedClick);
+    this.pairHost.addEventListener('click', (event) => {
+      const target = event.target as Element;
+      const load = this.callbacks.loadRegionalFeature;
+      if (target.closest('[data-pair-retry]') && load && this.latestModel && !this.pairAbort) {
+        this.loadPair(load, this.latestModel);
+        this.syncPair(this.latestModel);
+      }
+      const id = target.closest<HTMLElement | SVGElement>('[data-pair-feature]')?.dataset.pairFeature;
+      if (id) this.callbacks.showFeature?.(id);
+    });
+  }
+
+  /**
+   * Prototype: crossplot of all regional features for exactly two selected regions.
+   *
+   * Release payloads are cached per dataset/parcellation/pair and re-expanded
+   * whenever the region hierarchy changes, so parents appear once anatomy loads.
+   * Failed features are disclosed and can be retried without changing the selection.
+   */
+  private syncPair(model: RegionalPanelModel): void {
+    const load = this.callbacks.loadRegionalFeature;
+    const manifest = model.manifest;
+    if (!load || !manifest) return;
+    const { dataset, parcellation, selection, featureId } = model.state.view;
+    const [a, b] = selection as [string, string];
+    this.analysis.append(this.pairHost);
+    const key = JSON.stringify([dataset, parcellation, a, b]);
+    if (key !== this.pairKey) {
+      this.cancelPair();
+      this.pairKey = key;
+      this.pairPayloads = new Map();
+      this.pairFailed = manifest.features.filter((item) => item.representations.regional?.parcellations[parcellation])
+        .map((item) => item.id);
+      this.loadPair(load, model);
+    }
+    const loading = this.pairAbort !== null;
+    if (this.pairRegions !== model.regions && !loading) {
+      const payloads = [...this.pairPayloads.values()];
+      this.pairPoints = pairPoints(payloads.map((payload) => expandRegionalPayload(payload, model.regions)), a, b, payloads);
+      this.pairRegions = model.regions;
+    }
+    if (loading) {
+      this.pairHost.replaceChildren(message('Loading all features for the region pair…'));
+      return;
+    }
+    const label = (id: string) => {
+      const base = id.replace(OWN_SUFFIX, '');
+      const acronym = model.regions.find((region) => region.id === base)?.acronym ?? base;
+      return base === id ? acronym : `${acronym} (own channels only)`;
+    };
+    renderPair(this.pairHost, this.pairPoints, {
+      region1: label(a),
+      region2: label(b),
+      current: featureId,
+      feature: (id) => manifest.features.find((item) => item.id === id)?.label ?? id,
+      group: (id) => featureGroup(dataset.datasetId, id),
+    });
+    if (populationsOverlap(model.regions, a, b)) {
+      this.pairHost.prepend(Object.assign(html('p', 'region-pair__status'), {
+        textContent: 'Overlapping populations: one selection contains the other\u2019s channels, so the two are not '
+          + 'independent samples; d and SEM overstate their separation.',
+      }));
+    }
+    if (this.pairFailed.length > 0) {
+      const status = html('p', 'region-pair__status');
+      status.dataset.state = 'error';
+      status.textContent = `Incomplete: ${this.pairFailed.length} of ${this.pairFailed.length + this.pairPayloads.size} features failed to load. `;
+      const retry = html('button', 'region-pair__retry');
+      retry.type = 'button';
+      retry.dataset.pairRetry = 'true';
+      retry.textContent = 'Retry';
+      status.append(retry);
+      this.pairHost.prepend(status);
+    }
+  }
+
+  /** Load the features not loaded yet; failures stay pending for a retry. */
+  private loadPair(load: NonNullable<RegionalPanelCallbacks['loadRegionalFeature']>, model: RegionalPanelModel): void {
+    const controller = new AbortController();
+    this.pairAbort = controller;
+    const ids = this.pairFailed;
+    void Promise.allSettled(ids.map((id) => load(id, controller.signal))).then((results) => {
+      if (controller.signal.aborted) return;
+      this.pairFailed = [];
+      results.forEach((result, k) => {
+        if (result.status === 'rejected') this.pairFailed.push(ids[k]!);
+        else if (result.value.representation === 'regional') this.pairPayloads.set(ids[k]!, result.value);
+      });
+      this.pairAbort = null;
+      this.pairRegions = null;
+      this.syncPair(this.latestModel ?? model);
+    });
+  }
+
+  /** Abort in-flight pair loads and forget the pair, e.g. when the selection changes. */
+  private cancelPair(): void {
+    this.pairAbort?.abort();
+    this.pairAbort = null;
+    this.pairKey = '';
+    this.pairRegions = null;
+    this.pairPoints = [];
   }
 
   render(model: RegionalPanelModel): void {
@@ -311,8 +425,14 @@ export class RegionalPanelController {
           fixture,
           model.presentationScale.histogram,
         );
+        if ([...selected].some((id) => aggregatedIds.get(feature)?.has(id))) {
+          this.analysis.append(message('Aggregated regions: count, mean, std, min, max and histograms are exact; median and quantiles are approximated from the summed histogram.'));
+        }
+        if (selected.size === 2) this.syncPair(model);
+        else this.cancelPair();
         this.reportComparisonUse();
       } else {
+        this.cancelPair();
         this.analysis.replaceChildren(message(volumeRegional?.unavailableReason ?? 'Exact selected-region voxel distributions are overlaid in the distribution chart above; regional summary statistics are not derived from the volume.'));
       }
     } else {

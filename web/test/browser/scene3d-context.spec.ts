@@ -234,11 +234,11 @@ test('3-D hover preserves the physical side while the regional panel keeps logic
           logicalHovered: root.querySelector('.region-row[data-hovered="true"]')?.getAttribute('data-region-id') });
       }
       sink.regionPointer({ type: 'select', regionId: 315, originalEvent: new PointerEvent('pointerup') });
-      const selected = [...presentation.selectedRegionIds];
+      const selected = [...presentation.labelledRegionIds];
       const selections = [selected];
       for (const [regionId, modifiers] of [[343, {}], [315, { ctrlKey: true }], [343, { metaKey: true }]] as const) {
         sink.regionPointer({ type: 'select', regionId, originalEvent: new PointerEvent('pointerup', modifiers) });
-        selections.push([...presentation.selectedRegionIds]);
+        selections.push([...presentation.labelledRegionIds]);
       }
       sink.regionPointer({ type: 'leave', regionId: null, originalEvent: new PointerEvent('pointerleave') });
       return { observations, selected, selections, afterLeave: presentation.highlightedRegionId,

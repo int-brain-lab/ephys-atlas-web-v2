@@ -80,33 +80,21 @@ test('reduced mappings expose real Allen ancestors as non-selectable containers'
   await expect(page.locator('.region-row[data-region-id="-315"]')).toHaveAttribute('data-mapping-member', 'true');
 });
 
-test('parent row clicks and keyboard activation toggle children without changing selection', async ({ page }) => {
+test('parent row click selects the parent, Alt selects its own channels, and the toggle folds', async ({ page }) => {
   await page.goto('/app/');
-  const selected = page.locator('[data-region-button="-362"]');
-  await selected.click();
-  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-362');
   const branch = page.locator('.region-row[data-region-id="-184"]');
   const button = branch.locator('.region-row__button');
   const child = page.locator('.region-row[data-region-id="-68"]');
-
   await button.click();
-  await expect(branch).toHaveAttribute('aria-expanded', 'false');
-  await expect(button).toHaveAttribute('aria-expanded', 'false');
-  await expect(child).toBeHidden();
-  await button.click({ modifiers: ['Control'] });
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-184');
   await expect(child).toBeVisible();
-  await page.getByRole('button', { name: 'Select multiple', exact: true }).click();
-  await button.press('Space');
+  await button.click({ modifiers: ['Alt'] });
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-184%3Aown');
+  await branch.locator('.region-row__toggle').click();
   await expect(child).toBeHidden();
-  await button.press('Meta+Enter');
-  await expect(child).toBeVisible();
-  await expect(button).toBeFocused();
-  await expect(selected).toHaveAttribute('aria-pressed', 'true');
-  expect(new URL(page.url()).searchParams.get('selected')).toBe('-362');
-  await expect(button).not.toHaveAttribute('aria-pressed');
 });
 
-test('search and value sorting never make an Allen parent selectable', async ({ page }) => {
+test('search keeps a matched Allen parent expanded and selectable', async ({ page }) => {
   await page.goto('/app/');
   await expect(page.locator('.distribution-chart__bin')).toHaveCount(8);
   await page.getByLabel('Search brain regions').fill('MOp');
@@ -114,7 +102,7 @@ test('search and value sorting never make an Allen parent selectable', async ({ 
   await parent.click();
   await expect(parent).toHaveAttribute('aria-expanded', 'true');
   await expect(page.locator('[data-region-button="-844"]')).toBeVisible();
-  expect(new URL(page.url()).searchParams.get('selected')).toBeNull();
+  await expect.poll(() => new URL(page.url()).searchParams.get('selected')).toBe('-985');
   await page.getByLabel('Search brain regions').fill('');
   await page.getByRole('button', { name: /Region order:/ }).click();
   await expect(page.locator('.region-list')).toHaveAttribute('data-order', 'value-desc');
@@ -124,11 +112,11 @@ test('search and value sorting never make an Allen parent selectable', async ({ 
 
 test('a Beryl mapping leaf remains selectable beneath an expandable hierarchy container', async ({ page }) => {
   await page.goto('/app/?v=4&colors=anatomy&parcel=beryl');
-  const container = page.locator('[data-region-button="-500"]');
+  const toggle = page.locator('.region-row[data-region-id="-500"] .region-row__toggle');
   const leaf = page.locator('[data-region-button="-985"]');
-  await container.click();
+  await toggle.click();
   await expect(leaf).toBeHidden();
-  await container.press('Enter');
+  await toggle.click();
   await expect(leaf).toBeVisible();
   await leaf.click();
   await expect(leaf).toHaveAttribute('aria-pressed', 'true');
@@ -304,7 +292,7 @@ test('a matched parent retains folded descendant subtrees that can be opened man
   await expect(child).toBeVisible();
   await expect(child).toHaveAttribute('aria-expanded', 'false');
   await expect(grandchild).toBeHidden();
-  await child.locator('.region-row__button').click();
+  await child.locator('.region-row__toggle').click();
   await expect(grandchild).toBeVisible();
   await expect(page.locator('.region-search__count')).toHaveText('1 match');
 });

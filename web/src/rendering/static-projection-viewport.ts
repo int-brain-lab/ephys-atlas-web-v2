@@ -29,6 +29,7 @@ function presentationFrame(
     anatomyColors: semantics.anatomyColors,
     regionColors: regionalPresentationColors(semantics, presentation.feature?.representation === 'regional'),
     selectedRegionIds: semantics.selectedRegionIds,
+    ...(semantics.labelledRegionIds ? { labelledRegionIds: semantics.labelledRegionIds } : {}),
     regionLabels: semantics.regionLabels ?? new Map(),
     highlightedRegionIds: semantics.highlightedRegionId == null
       ? new Set()

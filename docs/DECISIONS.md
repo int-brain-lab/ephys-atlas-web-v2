@@ -109,6 +109,7 @@ only part of the body; the index states what remains effective.
 | D099 | Docked region inspection and compact feature summary | accepted | 2026-10-13 | fixed right-side inspection; expandable below-view fallback for narrow, collapsed and maximized layouts; full-width Summary row; persistent selection labels and discreet cursor acronyms |
 | D100 | W42 channel and W46 volume and edges release selections | partially superseded | 2026-11-13 | W42 channels denoised-only with the D089 display; W46 volume from `ea-encoder-channel` 0.0.1 and its edges with unchanged display and geometry; unpromoted 2026-11-04 releases deleted; D101 reverses its Brain-Wide Map exclusion |
 | D101 | Restore Brain-Wide Map after D100 | accepted | 2026-11-26 | restore the D094 BWM project, edition and immutable release on top of the live W42/W46 catalog; all other projects, releases and defaults unchanged; production promotion remains separate |
+| D102 | Region-pair crossplot z-scores against the full observation population | accepted | 2026-11-26 | crossplot axes z-scored by the release `global` mean and population SD (pooled from regional rows if absent); SEM from sample SD; undefined d ranked last; Q17 stays open for the comparison workspace |
 
 ## D001 — Separate v2
 
@@ -2482,3 +2483,21 @@ rebuild or alter its scientific bytes. Keep every project, release, edition and
 default of the live W42/W46 catalog (`058aab71…`) unchanged. Production catalog
 promotion and site-descriptor synchronization remain separate actions; do not
 claim live restoration before verifying them.
+
+## D102 — Region-pair crossplot z-scores against the full observation population
+
+Owner direction on 2026-11-26 for the region-pair crossplot prototype (PR #22).
+Both axes use one normalization per feature: z = (regional mean − population
+mean) / population SD, where the population is every finite source observation
+of the release (the statistics document's `global` count, mean and
+population SD, `ddof=0`), not the spread of regional means. When `global` is
+absent, the same moments are pooled exactly from the release's disjoint
+regional rows. Error bars are ±1 SEM from the region's sample SD and treat
+channels as independent. Cohen's d uses the pooled within-region sample SD;
+when both regions are constant but differ, d is undefined, labelled as such
+and ranked after every finite effect.
+
+This answers Q17's "source observations versus regional summary population"
+for this crossplot only. It does not resolve Q17 for the multi-feature
+comparison workspace (QC inclusion, transforms, weighting and immutable
+normalization parameters remain open there).

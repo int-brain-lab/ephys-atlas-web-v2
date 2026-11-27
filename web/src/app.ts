@@ -18,7 +18,8 @@ import { worldToCursorState } from './core/spatial.js';
 import { regionalIndicesToWorld, maxRegionalSliceIndex } from './core/slice-calibration.js';
 import { loadAtlasRegionCatalog, type AtlasRegionCatalog } from './data/atlas-regions.js';
 import type { ResourceIntegrity } from './data/cache.js';
-import type { DatasetCatalog } from './data/contracts.js';
+import type { DatasetCatalog, FeaturePayload, RegionMetadata } from './data/contracts.js';
+import { expandRegionalPayload, OWN_SUFFIX, withDescendants } from './data/region-aggregate.js';
 import { HttpDatasetSource } from './data/http-source.js';
 import { LocalDatasetSource } from './data/local-source.js';
 import type { PreparedLocalArchive, LocalArchivePreview } from './data/local-archive.js';
@@ -73,6 +74,7 @@ export class AtlasApp {
   private readonly urlController: UrlStateController;
   private readonly shell: AppShell;
   private readonly regionalPanel: RegionalPanelController;
+  private expandedCache: [FeaturePayload, readonly RegionMetadata[], FeaturePayload] | null = null;
   private readonly viewportFactory: ProjectionViewportFactory;
   private displaySliceInventories: Readonly<Record<SliceAxis, DisplaySliceInventory>> | null = null;
   private atlasRegions: AtlasRegionCatalog | null = null;
@@ -167,6 +169,12 @@ export class AtlasApp {
       comparisonUsed: () => trackOnce('comparison_used'),
       retryFeature: () => this.retryFeature(),
       retryAnatomy: () => this.loadAtlasRegions(),
+      loadRegionalFeature: (featureId, signal) => {
+        const { dataset, parcellation } = this.store.getState().view;
+        return this.repository.loadFeature(dataset, featureId, 'regional', parcellation, signal);
+      },
+      showFeature: (featureId) => this.store.dispatch({
+        type: 'feature/set', featureId, representation: 'regional', history: 'push' }),
     });
     this.viewportFactory.setInteractionSink({
       hover: (hit) => this.setHoveredRegion(
@@ -203,7 +211,7 @@ export class AtlasApp {
       ? { type: 'selection/toggle', regionId }
       : { type: 'selection/set', regionIds: [regionId] }));
     if (source === 'region-list' && this.store.getState().view.selection.includes(regionId)) {
-      void this.autoSliceToRegion(regionId);
+      void this.autoSliceToRegion(regionId.replace(OWN_SUFFIX, ''));
     }
   }
 
@@ -399,7 +407,11 @@ export class AtlasApp {
       feature: data.feature,
       anatomyRegions,
       coloring,
-      selectedRegionIds: state.view.selection,
+      // Prototype: in Allen, a selected parent highlights the union of its
+      // descendants; only the selected regions themselves are labelled.
+      selectedRegionIds: state.view.parcellation === 'allen'
+        ? withDescendants(anatomyRegions, state.view.selection) : state.view.selection,
+      labelledRegionIds: state.view.selection.map(id => id.replace(OWN_SUFFIX, '')),
       hoveredRegionId: this.hoveredRegionId,
     });
     const presentation: ProjectionPresentation = {
@@ -443,19 +455,25 @@ export class AtlasApp {
     };
     this.renderedModel = model;
     this.shell.render(model);
+    // Selected regions are described by the same (expanded) population as the panel and CSV.
+    const panelFeature = this.expandedFeature(data.feature, anatomyRegions);
     const selectedInspections = state.view.selection.flatMap(regionId => {
       const inspection = buildRegionTooltipModel({
-        regionId, physicalRegionId: Number(regionId), projectionId: 'coronal', sliceIndex: null,
+        regionId, physicalRegionId: Number(regionId.replace(OWN_SUFFIX, '')), projectionId: 'coronal', sliceIndex: null,
         parcellation: state.view.parcellation, clientX: 0, clientY: 0,
-      }, anatomyRegions, featureLoading || featureError ? null : data.feature,
+      }, anatomyRegions, featureLoading || featureError ? null : panelFeature,
       data.manifest?.features.find(({ id }) => id === state.view.featureId), state.view.coloring);
       return inspection ? [{ model: inspection, regionId }] : [];
     });
     this.shell.setSelectedRegionInspections(selectedInspections);
+    // Use the expanded payload's binning so aggregated parent rows have histograms.
+    const panelHistogram = panelFeature?.representation === 'regional'
+      ? panelFeature.distribution?.binnings.find(({ id }) => id === presentationScale.histogram?.id)
+      : undefined;
     this.regionalPanel.render({
       state,
       manifest: data.manifest,
-      feature: data.feature,
+      feature: panelFeature,
       featureLoading,
       featureError,
       regions: anatomyRegions,
@@ -470,7 +488,7 @@ export class AtlasApp {
       // The tree and feature rows use logical identities, while rendering
       // retains the signed physical side of a 3-D hover.
       hoveredRegionId: this.hoveredRegionId === null ? null : String(-Math.abs(Number(this.hoveredRegionId))),
-      presentationScale,
+      presentationScale: panelHistogram ? { ...presentationScale, histogram: panelHistogram } : presentationScale,
       representationDisplay,
     });
   }
@@ -645,6 +663,15 @@ export class AtlasApp {
       });
       this.render();
     }
+  }
+
+  /** Prototype: memoized on-the-fly parent-region rows for the regional panel. */
+  private expandedFeature<T extends FeaturePayload | null>(feature: T, regions: readonly RegionMetadata[]): T {
+    if (feature?.representation !== 'regional') return feature;
+    if (this.expandedCache?.[0] !== feature || this.expandedCache[1] !== regions) {
+      this.expandedCache = [feature, regions, expandRegionalPayload(feature, regions)];
+    }
+    return this.expandedCache[2] as T;
   }
 
   private retryFeature(): void {
@@ -974,11 +1001,14 @@ export class AtlasApp {
       descriptor?.display?.regional,
       state.distribution.domain,
     );
+    // Export the population shown in the panel (aggregated parents, `:own` rows).
+    const expanded = this.expandedFeature(feature, regions);
     const comparison = buildSelectedComparisonExport({
       datasetId: state.dataset.datasetId,
       releaseId: state.dataset.releaseId ?? manifest.release.releaseId,
-      feature,
-      ...(presentationScale.histogram ? { binning: presentationScale.histogram } : {}),
+      feature: expanded,
+      ...(presentationScale.histogram ? { binning: expanded.distribution?.binnings
+        .find(({ id }) => id === presentationScale.histogram?.id) ?? presentationScale.histogram } : {}),
       ...(descriptor ? { descriptor } : {}),
       regions,
       selectedRegionIds: state.selection,
