@@ -108,7 +108,7 @@ only part of the body; the index states what remains effective.
 | D098 | Omit selection borders from 2D downloads | accepted | 2026-10-13 | exported SVG/PNG omit selected-region strokes and halos; normal anatomy boundaries, feature colors and live selection remain; refines D093 |
 | D099 | Docked region inspection and compact feature summary | accepted | 2026-10-13 | fixed right-side inspection; expandable below-view fallback for narrow, collapsed and maximized layouts; full-width Summary row; persistent selection labels and discreet cursor acronyms |
 | D100 | W42 channel and W46 volume and edges release selections | accepted | 2026-11-13 | W42 channels denoised-only with the D089 display; W46 volume from `ea-encoder-channel` 0.0.1 and its edges with unchanged display and geometry; unpromoted 2026-11-04 releases deleted; Brain-Wide Map stays out (D094 unpromoted) |
-| D102 | ElectRA product branding | accepted | 2026-11-25 | ElectRA means Electrophysiology Reference Atlas; rename website presentation and paper videos, keep descriptive dataset names and stable scientific identities |
+| D103 | ElectRA product branding | accepted | 2026-11-25 | ElectRA means Electrophysiology Reference Atlas; rename website presentation and paper videos, keep descriptive dataset names and stable scientific identities |
 
 ## D001 — Separate v2
 
@@ -2465,7 +2465,7 @@ objects, staging plans and dataset-index entries were deleted from the
 production root on 2026-11-13; no published catalog generation referenced
 them. This is a one-off exception to archive-not-delete.
 
-## D102 — ElectRA product branding
+## D103 — ElectRA product branding
 
 Date: 2026-11-25. Status: accepted by the repository owner.
 

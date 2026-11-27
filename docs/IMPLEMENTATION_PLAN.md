@@ -34,7 +34,7 @@ to merge into `main`. Keep `branding/electra` unmerged pending separate review.
 After PR #20 merges, fetch and merge updated `origin/main` into
 `branding/electra`. Preserve the BWM restoration and current production
 defaults, and resolve documentation conflicts without changing Olivier's BWM
-decision. ElectRA branding uses D102 so the two decisions keep distinct IDs.
+decision. ElectRA branding uses D103 so the two decisions keep distinct IDs.
 Include the production catalog snapshot and deployment descriptor updates
 if BWM promotion has completed; otherwise synchronize again after those land.
 Run `just check` and `just site-compatibility`, then push the updated branch for
